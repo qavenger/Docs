@@ -226,6 +226,34 @@ $reports = @(
     Plan = @("阶段 1：PCG/Niagara/Hair 回迁中剥离 Dataflow 依赖。", "阶段 2：确认角色布料是否必须升级到 UE5 ChaosCloth。", "阶段 3：若需要，只移植 Runtime 与 Cook 数据，不先做完整编辑器。", "阶段 4：DataflowEditor 后置到工具链专项。")
   },
   [ordered]@{
+    Slug = "UE5_Chaos_Physics_to_UE426_Port_Assessment"
+    Title = "UE5 Chaos 物理移植到 UE4.26 评估报告"
+    ShortTitle = "Chaos Physics"
+    Lead = "评估 UE5 Chaos 物理体系回迁到 UE4.26 的可行性。这里关注 Chaos Runtime、ChaosCore、ChaosSolverEngine、GeometryCollection、FieldSystem、ChaosCaching、Vehicles、ChaosVD 等物理生态，不把 ChaosCloth/Dataflow 角色工具链并入主线。"
+    Verdict = "建议保留 UE4.26 已有 Chaos 基线，只按业务问题做局部补丁或接口适配。UE5 Chaos 已经从早期实验物理扩展成完整生态，直接回迁会牵动 Solver、GeometryCollection、FieldSystem、Vehicles、Debug/VD、Cloth/Flesh 等多条链路，不适合作为 PCG/Niagara/RDG 主移植前置。"
+    Difficulty = "极高"
+    Status = "UE4.26 已有早期 Chaos，UE5 Chaos API 和生态大幅扩张"
+    Strategy = "从主链路摘出，作为可选/暂缓物理专项；只在 ChaosNiagara、破碎或车辆确实需要时局部评估。"
+    Kpis = @("Chaos Runtime：UE5 787 文件 / 243,921 行；UE4.26 384 文件 / 95,908 行", "ChaosCore：UE5 39 文件 / 8,773 行；UE4.26 14 文件 / 2,114 行", "GeometryCollectionEngine：UE5 75 文件 / 22,575 行；UE4.26 51 文件 / 13,712 行", "外围插件：ChaosCaching 12,620 行、ChaosVehicles 19,434 行、ChaosVD 48,460 行、ChaosModularVehicle 14,499 行")
+    Evidence = @(
+      "UE5 与 UE4.26 都有 Source\\Runtime\\Experimental\\Chaos，但 UE5 文件数约为 UE4.26 的 2 倍，行数约为 2.5 倍。",
+      "UE5 插件侧 Chaos 命中 22,458 次，UE4.26 插件侧 Chaos 命中 3,245 次；UE5 外围生态明显更大。",
+      "UE5 新增或大幅扩展 ChaosVD、ChaosInsights、ChaosModularVehicle、ChaosFlesh、ChaosOutfitAsset、ChaosRigidAsset 等插件。",
+      "Niagara 报告中 ChaosNiagara 可单独专项适配；这不要求先回迁 UE5 Chaos 全生态。"
+    )
+    Modules = @(
+      @("Chaos Runtime", "UE5 787 文件 / 243,921 行；UE4.26 384 文件 / 95,908 行", "ChaosCore、Engine Physics、Solver", "极高", "不建议整包替换；只补必要 bugfix/API。"),
+      @("ChaosSolverEngine", "UE5 26 文件 / 4,327 行；UE4.26 19 文件 / 1,673 行", "Solver Actor、场景查询、物理场景", "高", "如 ChaosNiagara 或破碎需要，可局部适配。"),
+      @("GeometryCollection / FieldSystem", "UE5 GeometryCollectionEngine 75 文件 / 22,575 行；UE4.26 51 文件 / 13,712 行", "破碎、Cluster、FieldSystem", "高", "破碎专项才需要，不作为 PCG/Niagara 前置。"),
+      @("ChaosCaching", "UE5 92 文件 / 12,620 行；UE4.26 35 文件 / 5,423 行", "GeometryCache、Sequencer、缓存资产", "中高", "影视/回放需求再评估。"),
+      @("Vehicles / ModularVehicle", "ChaosVehicles 19,434 行；ModularVehicle UE4.26 缺失", "车辆物理、网络、Gameplay", "高", "独立车辆专项。"),
+      @("ChaosVD / Insights", "ChaosVD 441 文件 / 48,460 行；UE4.26 缺失", "Trace、调试可视化、Editor", "高", "调试工具后置，不进入 Runtime 首轮。")
+    )
+    Dependencies = @("UE5 Chaos solver/particle/constraint API 差异", "Engine PhysicsEngine 与物理场景集成差异", "GeometryCollection、FieldSystem、Cluster 破碎链路差异", "Chaos Debug/Trace/VD 与 UE5 Editor/Insights 依赖", "移动端物理性能、Determinism 与 Cook 数据兼容")
+    Platforms = @("PC：适合按破碎、车辆、ChaosNiagara 等业务场景单独验证，不能默认替换 UE4.26 物理栈。", "移动端：建议保留 UE4.26 现有物理和烘焙数据；复杂 Chaos 破碎、车辆、缓存和调试链路默认暂缓。")
+    Plan = @("阶段 1：从主移植链路摘出 UE5 Chaos 全生态，仅记录当前 UE4.26 Chaos 可用基线。", "阶段 2：如果 Niagara 需要 Chaos 事件，只做 ChaosNiagara 所需接口适配。", "阶段 3：如果项目需要破碎/车辆，再分别建立 GeometryCollection 或 Vehicles 专项。", "阶段 4：ChaosVD、Flesh、Outfit、ModularVehicle 等后置，不进入 PCG/Niagara/RDG 主计划。")
+  },
+  [ordered]@{
     Slug = "UE5_Animation_Rigging_to_UE426_Port_Assessment"
     Title = "UE5 Animation Rigging / ControlRig / IKRig 移植到 UE4.26 评估报告"
     ShortTitle = "Animation Rigging"
