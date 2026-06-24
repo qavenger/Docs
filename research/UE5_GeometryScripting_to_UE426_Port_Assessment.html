@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UE5 GeometryScripting / GeometryProcessing 移植到 UE4.26 评估报告</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d9e0ea;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --purple: #7c3aed;
+      --teal: #0f766e;
+      --soft-blue: #eaf1ff;
+      --soft-green: #e8f7ee;
+      --soft-amber: #fff4df;
+      --soft-red: #ffe7e7;
+      --soft-purple: #f2eaff;
+      --shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.65; padding-bottom: 0; }
+    header { color: #fff; background: linear-gradient(135deg, #102033 0%, #1d4ed8 52%, #0f766e 100%); padding: 42px 0 34px; }
+    .wrap { width: min(1180px, calc(100% - 36px)); margin: 0 auto; }
+    .title-row { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; }
+    h1 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 46px); line-height: 1.12; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 24px; letter-spacing: 0; }
+    h3 { margin: 0 0 10px; font-size: 18px; letter-spacing: 0; }
+    p { margin: 0 0 12px; }
+    code { padding: 2px 6px; border-radius: 4px; background: #eef2f7; color: #172554; font-family: Consolas, "Courier New", monospace; font-size: 0.92em; }
+    .subtitle { max-width: 870px; color: #dcecff; font-size: 17px; }
+    .meta { display: grid; gap: 8px; min-width: 270px; padding: 14px 16px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); border-radius: 8px; color: #eef8ff; font-size: 14px; }
+    .toc { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .toc a { color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.28); border-radius: 999px; padding: 7px 12px; background: rgba(255,255,255,0.1); font-size: 14px; }
+    main { padding: 28px 0 56px; }
+    section { margin: 0 0 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+    .section-head { padding: 22px 24px 8px; }
+    .section-body { padding: 0 24px 24px; }
+    .grid { display: grid; gap: 16px; }
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .kpi { border: 1px solid var(--line); border-radius: 8px; padding: 16px; background: #fbfcff; }
+    .kpi .num { font-size: 22px; line-height: 1.18; font-weight: 800; color: #111827; }
+    .kpi .label { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .b-low { background: var(--soft-green); color: var(--green); }
+    .b-mid { background: var(--soft-amber); color: var(--amber); }
+    .b-high { background: var(--soft-red); color: var(--red); }
+    .b-extreme { background: #fee2ff; color: #a21caf; }
+    .b-info { background: var(--soft-blue); color: var(--blue); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 16px 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #f9fbff; }
+    .toolbar input, .toolbar select { min-height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 11px; color: var(--ink); background: #fff; font-size: 14px; }
+    .toolbar input { flex: 1 1 260px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 12px 10px; vertical-align: top; text-align: left; }
+    th { color: #344054; background: #f8fafc; font-size: 13px; position: sticky; top: 0; z-index: 1; }
+    tr:hover td { background: #fcfdff; }
+    .table-scroll { overflow: auto; max-height: 650px; }
+    .callout { border-left: 4px solid var(--blue); padding: 12px 14px; background: var(--soft-blue); border-radius: 6px; margin: 12px 0; }
+    .callout.warn { border-left-color: var(--amber); background: var(--soft-amber); }
+    .callout.danger { border-left-color: var(--red); background: var(--soft-red); }
+    .source-list, .compact-list { margin: 8px 0 0; padding-left: 18px; }
+    .source-list li, .compact-list li { margin: 5px 0; }
+    .source-list { color: #344054; font-size: 14px; }
+    .phase { display: grid; grid-template-columns: 170px 1fr; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .phase:last-child { border-bottom: 0; }
+    .phase-title { font-weight: 800; color: #0f172a; }
+    .home-link { position: fixed; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); z-index: 50; min-height: 42px; padding: 9px 13px; border: 1px solid rgba(255,255,255,0.55); border-radius: 999px; color: #fff; background: rgba(16,32,51,0.72); box-shadow: 0 12px 30px rgba(16,32,51,0.24); text-decoration: none; font-size: 14px; font-weight: 800; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: inline-flex; align-items: center; gap: 7px; }
+    .home-link:hover, .home-link:focus-visible { background: rgba(15,118,110,0.92); outline: none; }
+    .hidden { display: none; }
+    @media (max-width: 860px) {
+      .title-row, .grid.cols-2, .grid.cols-4, .phase { grid-template-columns: 1fr; }
+      .section-head, .section-body, .toolbar { padding-left: 16px; padding-right: 16px; }
+    }
+    @media (max-width: 640px) {
+      body { padding-bottom: calc(74px + env(safe-area-inset-bottom)); }
+      .home-link { top: auto; right: auto; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); min-height: 46px; padding: 10px 16px; color: #102033; background: rgba(255,255,255,0.94); border-color: rgba(148,163,184,0.62); box-shadow: 0 14px 36px rgba(16,32,51,0.2); }
+      .home-link:hover, .home-link:focus-visible { color: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <a class="home-link" href="../index.html" aria-label="返回报告目录">← 目录</a>
+  <header>
+    <div class="wrap">
+      <div class="title-row">
+        <div>
+          <h1>UE5 GeometryScripting / GeometryProcessing 移植到 UE4.26 评估报告</h1>
+          <p class="subtitle">评估 UE5 GeometryScripting、GeometryProcessing、GeometryCore、GeometryFramework 回迁到 UE4.26 的范围。该模块直接影响 PCGGeometryScriptInterop、Biome、Water、建模工具和 DynamicMesh 工作流。</p>
+        </div>
+        <div class="meta">
+          <div><strong>当前工程：</strong>UE 4.26.2</div>
+          <div><strong>参考源码：</strong>UE 5.7.4</div>
+          <div><strong>报告日期：</strong>2026-06-24</div>
+          <div><strong>总体难度：</strong><span class="badge b-high">极高</span></div>
+        </div>
+      </div>
+      <nav class="toc" aria-label="目录">
+        <a href="#summary">结论摘要</a>
+        <a href="#evidence">源码证据</a>
+        <a href="#matrix">模块矩阵</a>
+        <a href="#platforms">平台判断</a>
+        <a href="#dependencies">依赖缺口</a>
+        <a href="#plan">实施路线</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="summary">
+      <div class="section-head"><h2>结论摘要</h2></div>
+      <div class="section-body">
+        <div class="callout warn"><strong>总判断：</strong>不建议全量移植 UE5 几何栈。推荐按节点/函数白名单回迁 DynamicMesh 与必要 Mesh 查询能力，PCGGeometryScriptInterop 首轮剥离。</div>
+        <div class="grid cols-4">
+          <div class="kpi"><div class="num">GeometryScripting</div><div class="label">模块族</div></div>
+          <div class="kpi"><div class="num">UE5 有完整 Runtime 几何栈，UE4.26 仅有较旧 Experimental GeometryProcessing</div><div class="label">UE5 / UE4.26 状态</div></div>
+          <div class="kpi"><div class="num">极高</div><div class="label">移植难度</div></div>
+          <div class="kpi"><div class="num">建议</div><div class="label">建立最小几何适配层，不搬完整 GeometryScripting 蓝图库。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="evidence">
+      <div class="section-head"><h2>源码证据</h2></div>
+      <div class="section-body">
+        <div class="grid cols-2">
+          <div>
+            <h3>扫描摘要</h3>
+            <div class="grid cols-2">
+              <div class="kpi"><div class="num">GeometryScripting</div><div class="label">213 文件 / 120,380 行</div></div>
+<div class="kpi"><div class="num">GeometryProcessing</div><div class="label">742 文件 / 185,761 行</div></div>
+<div class="kpi"><div class="num">GeometryCore</div><div class="label">317 文件 / 108,304 行</div></div>
+<div class="kpi"><div class="num">GeometryFramework</div><div class="label">26 文件 / 7,706 行</div></div>
+
+            </div>
+          </div>
+          <div>
+            <h3>关键证据</h3>
+            <ul class="source-list">
+              <li>UE5 Runtime GeometryScripting 插件依赖 GeometryProcessing、MeshModelingToolset、PlanarCut。</li>
+<li>关键命中：GeometryScript 24466、DynamicMesh 15663、UE_INLINE_GENERATED_CPP_BY_NAME 55。</li>
+<li>PCG 报告中 PCGGeometryScriptInterop 36 文件 / 3,831 行，但其前置几何栈非常大。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="matrix">
+      <div class="section-head"><h2>模块难度矩阵</h2></div>
+      <div class="toolbar">
+        <input id="moduleSearch" type="search" placeholder="搜索模块、依赖、建议">
+        <select id="riskFilter">
+          <option value="">全部难度</option>
+          <option value="中">中</option>
+          <option value="中高">中高</option>
+          <option value="高">高</option>
+          <option value="极高">极高</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>模块/能力</th><th>规模</th><th>主要依赖</th><th>风险</th><th>移植建议</th></tr>
+          </thead>
+          <tbody id="moduleRows">
+            <tr data-risk="极高"><td><strong>GeometryScriptingCore</strong></td><td>213 文件 / 120,380 行</td><td>GeometryProcessing、MeshModelingToolset</td><td><span class="badge b-high">极高</span></td><td>不建议整包回迁，蓝图库面太宽。</td></tr>
+<tr data-risk="极高"><td><strong>GeometryProcessing</strong></td><td>742 文件 / 185,761 行</td><td>DynamicMesh、Modeling、PlanarCut</td><td><span class="badge b-high">极高</span></td><td>UE4.26 旧版本可复用一部分，需逐 API 对齐。</td></tr>
+<tr data-risk="高"><td><strong>GeometryCore</strong></td><td>317 文件 / 108,304 行</td><td>数学/网格基础库</td><td><span class="badge b-high">高</span></td><td>可抽最小 DynamicMesh 数据结构。</td></tr>
+<tr data-risk="中高"><td><strong>GeometryFramework</strong></td><td>26 文件 / 7,706 行</td><td>DynamicMeshComponent 等</td><td><span class="badge b-mid">中高</span></td><td>如果需要运行时几何组件再评估。</td></tr>
+<tr data-risk="极高"><td><strong>PCGGeometryScriptInterop</strong></td><td>36 文件 / 3,831 行</td><td>PCG、GeometryScripting</td><td><span class="badge b-high">极高</span></td><td>首轮剥离。</td></tr>
+
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="platforms">
+      <div class="section-head"><h2>移动端与 PC 判断</h2></div>
+      <div class="section-body">
+        <ul class="compact-list">
+          <li>PC：可用于编辑器工具和离线生成，运行时需控制内存与 Cook 数据。</li>
+<li>移动端：不建议携带重型 GeometryScripting Runtime，优先把结果烘焙成 StaticMesh/InstancedMesh。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="dependencies">
+      <div class="section-head"><h2>主要依赖缺口</h2></div>
+      <div class="section-body">
+        <p>本节只列本模块族迁移时最容易放大工作量的依赖。Lumen、Nanite、World Partition、DataLayer 不作为本批报告目标；遇到相关调用点时默认剥离或降级。</p>
+        <ul class="compact-list">
+          <li>DynamicMesh 新 API</li>
+<li>ModelingTools/InteractiveToolsFramework 差异</li>
+<li>PlanarCut 与 MeshConversion</li>
+<li>UE5 编辑器建模模式依赖</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="plan">
+      <div class="section-head"><h2>建议实施路线</h2></div>
+      <div class="section-body">
+        <div class="phase"><div class="phase-title">阶段 1</div><div>列出业务实际需要的几何节点。</div></div>
+<div class="phase"><div class="phase-title">阶段 2</div><div>从 UE4.26 旧 GeometryProcessing 能覆盖的 API 开始映射。</div></div>
+<div class="phase"><div class="phase-title">阶段 3</div><div>补最小 DynamicMesh/采样/布尔或投影能力。</div></div>
+<div class="phase"><div class="phase-title">阶段 4</div><div>PCG Geometry Interop 单独打开，不作为 PCG 主线前置。</div></div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const search = document.getElementById("moduleSearch");
+    const risk = document.getElementById("riskFilter");
+    const rows = Array.from(document.querySelectorAll("#moduleRows tr"));
+    function applyFilters() {
+      const term = search.value.trim().toLowerCase();
+      const selectedRisk = risk.value;
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const rowRisk = row.dataset.risk || "";
+        const showByText = !term || text.includes(term);
+        const showByRisk = !selectedRisk || rowRisk === selectedRisk;
+        row.classList.toggle("hidden", !(showByText && showByRisk));
+      });
+    }
+    search.addEventListener("input", applyFilters);
+    risk.addEventListener("change", applyFilters);
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener("click", event => {
+        const target = document.querySelector(anchor.getAttribute("href"));
+        if (target) {
+          event.preventDefault();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
