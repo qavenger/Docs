@@ -192,6 +192,32 @@
       font-weight: 800;
     }
 
+    .optional-dependencies {
+      margin-top: 16px;
+      border: 1px dashed #b9c8bf;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.56);
+      padding: 16px;
+    }
+
+    .optional-dependencies h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .optional-dependencies p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .optional-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     .report {
       min-height: 258px;
       padding: 24px;
@@ -291,6 +317,10 @@
       }
 
       .dependency-lanes {
+        grid-template-columns: 1fr;
+      }
+
+      .optional-grid {
         grid-template-columns: 1fr;
       }
 
@@ -523,7 +553,7 @@
     </section>
 
     <section id="dependencyView" class="dependency-view" aria-label="模块依赖关系视图">
-      <p class="dependency-note">这个视图按“迁移时通常需要先解决谁”的关系排布。越靠左越偏底层基础设施，越靠右越偏上层功能插件；箭头文字表示主要牵引方向，并不等同于严格的 Build.cs 编译依赖。</p>
+      <p class="dependency-note">这个视图按“迁移时通常需要先解决谁”的关系排布。越靠左越偏底层基础设施，越靠右越偏上层功能插件；箭头文字表示主要牵引方向，并不等同于严格的 Build.cs 编译依赖。角色布料/Dataflow 与音频图已从主链路摘出，放到下方可选区。</p>
       <div class="dependency-lanes">
         <section class="lane">
           <h2>底层引擎基础</h2>
@@ -552,17 +582,12 @@
             <a class="dependency-card" href="./research/UE5_ComputeFramework_to_UE426_Port_Assessment.html">
               <strong>ComputeFramework</strong>
               <span>GPU 计算图、Shader/RDG/RHI 计算调度。</span>
-              <span class="dependency-arrow">依赖 RDG → 支撑 PCGCompute、Deformer、Cloth/Hair</span>
+              <span class="dependency-arrow">依赖 RDG → 支撑 PCGCompute、Deformer 等 GPU 计算路径</span>
             </a>
             <a class="dependency-card" href="./research/UE5_GeometryScripting_to_UE426_Port_Assessment.html">
               <strong>GeometryScripting</strong>
               <span>DynamicMesh、GeometryProcessing、几何蓝图库。</span>
               <span class="dependency-arrow">→ 支撑 PCG Geometry、Water、建模工具</span>
-            </a>
-            <a class="dependency-card" href="./research/UE5_Dataflow_ChaosCloth_to_UE426_Port_Assessment.html">
-              <strong>Dataflow / ChaosCloth</strong>
-              <span>Dataflow 图、ChaosCloth 资产与编辑器链。</span>
-              <span class="dependency-arrow">依赖 Geometry/Compute/Editor → 支撑角色工具链</span>
             </a>
           </div>
         </section>
@@ -579,11 +604,6 @@
               <strong>Water / Landmass</strong>
               <span>水体、地形刷、采样与水体渲染接口。</span>
               <span class="dependency-arrow">依赖 RDG/Geometry/Niagara → 影响 PCG/Niagara Water Interop</span>
-            </a>
-            <a class="dependency-card" href="./research/UE5_MetaSounds_Audio_to_UE426_Port_Assessment.html">
-              <strong>MetaSounds / Audio</strong>
-              <span>程序化音频图、音频 Gameplay 体积。</span>
-              <span class="dependency-arrow">依赖 Editor/Audio 基线 → 独立音频专项</span>
             </a>
             <a class="dependency-card" href="./research/UE5_Animation_Rigging_to_UE426_Port_Assessment.html">
               <strong>Animation Rigging</strong>
@@ -614,6 +634,23 @@
           </div>
         </section>
       </div>
+
+      <section class="optional-dependencies" aria-label="可选或暂缓模块">
+        <h2>可选/暂缓，不纳入主移植链路</h2>
+        <p>这两个模块可能被某些 UE5 高阶功能间接提到，但不是 PCG、Niagara、RDG、Geometry、Editor 等主线移植的硬前置。建议保留调研报告，默认从执行计划中摘出。</p>
+        <div class="optional-grid">
+          <a class="dependency-card" href="./research/UE5_Dataflow_ChaosCloth_to_UE426_Port_Assessment.html">
+            <strong>Dataflow / ChaosCloth</strong>
+            <span>主要服务角色布料、Dataflow 图资产、Hair/Deformer 等后置工具链。</span>
+            <span class="dependency-arrow">摘出理由：不是 PCG/Niagara 基础路径；需要时单独立角色专项</span>
+          </a>
+          <a class="dependency-card" href="./research/UE5_MetaSounds_Audio_to_UE426_Port_Assessment.html">
+            <strong>MetaSounds / Audio</strong>
+            <span>程序化音频图和 AudioGameplay 能力，和当前视觉/生成/渲染迁移链路弱耦合。</span>
+            <span class="dependency-arrow">摘出理由：独立音频专项；不作为上层功能插件前置依赖</span>
+          </a>
+        </div>
+      </section>
     </section>
 
     <footer>
