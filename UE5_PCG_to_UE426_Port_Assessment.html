@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UE5 PCG 插件移植到 UE4.26 评估报告</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --ink: #182230;
+      --muted: #667085;
+      --line: #d9e0ea;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --purple: #7c3aed;
+      --teal: #0f766e;
+      --soft-blue: #eaf1ff;
+      --soft-green: #e8f7ee;
+      --soft-amber: #fff4df;
+      --soft-red: #ffe7e7;
+      --soft-purple: #f2eaff;
+      --shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.65;
+    }
+
+    header {
+      color: #fff;
+      background:
+        radial-gradient(circle at 12% 20%, rgba(20, 184, 166, 0.28), transparent 28%),
+        linear-gradient(135deg, #102033 0%, #173b2f 45%, #1d4ed8 100%);
+      padding: 42px 0 34px;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .title-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 0 0 12px; }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #172554;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.92em;
+    }
+
+    .subtitle {
+      max-width: 860px;
+      color: #dcecff;
+      font-size: 17px;
+    }
+
+    .meta {
+      display: grid;
+      gap: 8px;
+      min-width: 270px;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      color: #eef8ff;
+      font-size: 14px;
+    }
+
+    .toc {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toc a {
+      color: #fff;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      padding: 7px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+    }
+
+    main { padding: 28px 0 56px; }
+
+    section {
+      margin: 0 0 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .section-head { padding: 22px 24px 8px; }
+    .section-body { padding: 0 24px 24px; }
+
+    .grid { display: grid; gap: 16px; }
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfcff;
+    }
+
+    .kpi .num {
+      font-size: 30px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .b-low { background: var(--soft-green); color: var(--green); }
+    .b-mid { background: var(--soft-amber); color: var(--amber); }
+    .b-high { background: var(--soft-red); color: var(--red); }
+    .b-extreme { background: #fee2ff; color: #a21caf; }
+    .b-info { background: var(--soft-blue); color: var(--blue); }
+    .b-purple { background: var(--soft-purple); color: var(--purple); }
+    .b-teal { background: #e6fffb; color: var(--teal); }
+    .b-gray { background: #edf0f5; color: #475467; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 16px 24px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: #f9fbff;
+    }
+
+    .toolbar input,
+    .toolbar select {
+      min-height: 38px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 0 11px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .toolbar input { flex: 1 1 260px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      color: #344054;
+      background: #f8fafc;
+      font-size: 13px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr:hover td { background: #fcfdff; }
+    .table-scroll { overflow: auto; max-height: 650px; }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    details + details { margin-top: 10px; }
+
+    summary {
+      cursor: pointer;
+      padding: 14px 16px;
+      font-weight: 800;
+      background: #f8fafc;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; float: right; color: var(--blue); font-weight: 900; }
+    details[open] summary::after { content: "-"; }
+
+    .detail-content {
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .callout {
+      border-left: 4px solid var(--blue);
+      padding: 12px 14px;
+      background: var(--soft-blue);
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+
+    .callout.warn { border-left-color: var(--amber); background: var(--soft-amber); }
+    .callout.danger { border-left-color: var(--red); background: var(--soft-red); }
+    .callout.good { border-left-color: var(--green); background: var(--soft-green); }
+
+    .phase {
+      display: grid;
+      grid-template-columns: 170px 1fr;
+      gap: 14px;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .phase:last-child { border-bottom: 0; }
+    .phase-title { font-weight: 800; color: #0f172a; }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .source-list,
+    .compact-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .source-list li,
+    .compact-list li { margin: 5px 0; }
+
+    .source-list {
+      color: #344054;
+      font-size: 14px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 860px) {
+      .title-row,
+      .grid.cols-2,
+      .grid.cols-3,
+      .phase {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head,
+      .section-body,
+      .toolbar {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title-row">
+        <div>
+          <h1>UE5 PCG 插件移植到 UE4.26 评估报告</h1>
+          <p class="subtitle">目标是评估将 UE5.7.4 的 Procedural Content Generation Framework（PCG）及相关 Interop/示例插件移植到当前 UE4.26.2 工作区的改动范围、风险、兼容性问题和原生依赖缺口。本文档只做调研与评估，不修改引擎代码。</p>
+        </div>
+        <div class="meta">
+          <div><strong>当前工程：</strong>UE 4.26.2</div>
+          <div><strong>参考源码：</strong>UE 5.7.4</div>
+          <div><strong>报告日期：</strong>2026-06-24</div>
+          <div><strong>范围：</strong>PCG Runtime / Compute / Editor / Interops / PC + 移动端</div>
+        </div>
+      </div>
+      <nav class="toc" aria-label="目录">
+        <a href="#summary">结论摘要</a>
+        <a href="#evidence">源码证据</a>
+        <a href="#matrix">模块难度矩阵</a>
+        <a href="#core">PCG 核心专项</a>
+        <a href="#interops">Interop 插件</a>
+        <a href="#platforms">移动端与 PC</a>
+        <a href="#dependencies">依赖缺口</a>
+        <a href="#partition">需剥离功能</a>
+        <a href="#plan">实施路线</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="summary">
+      <div class="section-head">
+        <h2>结论摘要</h2>
+      </div>
+      <div class="section-body">
+        <div class="grid cols-3">
+          <div class="kpi">
+            <div class="num">极高</div>
+            <div class="label">整体风险。UE4.26 没有 PCG 插件本体，移植不是补小模块，而是回迁一套图执行框架、编辑器和大世界生成体系。</div>
+          </div>
+          <div class="kpi">
+            <div class="num">228k+</div>
+            <div class="label">UE5 PCG 主插件源码规模：Runtime 约 190,521 行，Editor 约 37,060 行，Compute 约 336 行。</div>
+          </div>
+          <div class="kpi">
+            <div class="num">10+</div>
+            <div class="label">PCG 相关插件/Interop：GeometryScript、ExternalData、Python、Niagara、Water、Nanite、InstancedActors、Biome 等。</div>
+          </div>
+        </div>
+
+        <div class="callout danger">
+          <strong>总判断：</strong>如果目标是“UE5 PCG 完整能力”移植到 UE4.26，工作量接近一个中型引擎子系统回迁工程。PCG 本体深度依赖 UE5 的 World Partition/DataLayer、PropertyBag/StructUtils、ActorPartition、ComputeFramework、GeometryFramework/GeometryScripting、AssetDefinition、ContentBrowserData、TypedElement、EditorSubsystem 等。建议采用“核心运行时 + 最小编辑器 + 逐个 Interop”的分阶段回迁，而不是复制整个 UE5 PCG 插件目录。
+        </div>
+
+        <div class="grid cols-2">
+          <div>
+            <h3>优先级建议</h3>
+            <ul class="compact-list">
+              <li><strong>第一优先：</strong>PCG Graph、Node、Settings、Metadata、Point Data、基本 Spatial Data、Component 和 Subsystem。</li>
+              <li><strong>第二优先：</strong>最小 Editor 图编辑、资产创建、基础调试与手动生成。</li>
+              <li><strong>第三优先：</strong>Landscape/Foliage/StaticMesh 生成节点和必要运行时生成。</li>
+              <li><strong>暂缓/剥离：</strong>World Partition Builder、DataLayer、Nanite Assemblies、PCG Water、PCG Niagara、GPU Compute、Biome 工具链。</li>
+            </ul>
+          </div>
+          <div>
+            <h3>关键限制</h3>
+            <ul class="compact-list">
+              <li>UE4.26 不支持 UE5 World Partition；PCG 的 partition actor 与 builder 必须改造为 UE4 Level/Streaming 或直接裁剪。</li>
+              <li>UE5 PCG 广泛使用 <code>TObjectPtr</code>、<code>FInstancedPropertyBag</code>、<code>UE_INLINE_GENERATED_CPP_BY_NAME</code>，需要降级。</li>
+              <li>移动端不能默认承诺 GPU PCG/Compute；应先限定 CPU 生成、离线 Bake、Cook 后运行。</li>
+              <li>Interop 插件很小但依赖很重，实际难度取决于目标系统是否存在。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="evidence">
+      <div class="section-head">
+        <h2>源码证据与盘点结果</h2>
+      </div>
+      <div class="section-body">
+        <div class="grid cols-2">
+          <div class="kpi">
+            <div class="num">4.26.2</div>
+            <div class="label">当前工作区 <code>D:\tl_quexiuchen_ArtTestUGS_01\frontend\trunk\Editor\Engine\Build\Build.version</code></div>
+          </div>
+          <div class="kpi">
+            <div class="num">5.7.4</div>
+            <div class="label">参考源码 <code>E:\UnrealEngine\Engine\Build\Build.version</code></div>
+          </div>
+        </div>
+
+        <div class="table-scroll" style="margin-top:16px">
+          <table>
+            <thead>
+              <tr>
+                <th>证据项</th>
+                <th>UE5.7 状态</th>
+                <th>UE4.26 状态</th>
+                <th>结论</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>PCG.uplugin</td><td><code>E:\UnrealEngine\Engine\Plugins\PCG\PCG.uplugin</code> 存在</td><td>不存在</td><td>UE4.26 没有 PCG 插件本体。</td></tr>
+              <tr><td>PCG 模块</td><td><code>PCG</code>、<code>PCGCompute</code>、<code>PCGEditor</code></td><td>不存在</td><td>需要新增完整插件模块体系。</td></tr>
+              <tr><td>PCG Runtime 源码</td><td>956 文件 / 190,521 行</td><td>无同等实现</td><td>核心运行时规模大，不能作为小功能补丁。</td></tr>
+              <tr><td>PCG Editor 源码</td><td>213 文件 / 37,060 行</td><td>无同等实现</td><td>编辑器回迁依赖大量 UE5 Editor API。</td></tr>
+              <tr><td>PCGCompute</td><td>9 文件 / 336 行</td><td>无</td><td>源码小，但依赖 ComputeFramework、Renderer/RHI，平台验证成本高。</td></tr>
+              <tr><td>PCG 关键依赖命中</td><td><code>WorldPartition</code> 383、<code>DataLayer</code> 369、<code>Landscape</code> 1445、<code>PropertyBag</code> 546、<code>TObjectPtr</code> 617</td><td>多项缺失</td><td>需要系统性降级和功能裁剪。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top:18px">关键源码位置</h3>
+        <ul class="source-list">
+          <li>UE5 PCG 主插件：<code>E:\UnrealEngine\Engine\Plugins\PCG</code></li>
+          <li>PCG Runtime：<code>E:\UnrealEngine\Engine\Plugins\PCG\Source\PCG</code></li>
+          <li>PCG Editor：<code>E:\UnrealEngine\Engine\Plugins\PCG\Source\PCGEditor</code></li>
+          <li>PCG Interops：<code>E:\UnrealEngine\Engine\Plugins\PCGInterops</code> 与 <code>E:\UnrealEngine\Engine\Plugins\Experimental\PCGInterops</code></li>
+          <li>World Partition 相关：<code>PCGEditor\Private\WorldPartitionBuilder</code>、<code>Grid\PCGPartitionActor.h</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="matrix">
+      <div class="section-head">
+        <h2>模块移植难度矩阵</h2>
+        <p>可通过搜索或难度筛选。难度评估综合源码规模、UE5 原生依赖、移动端适配成本、World Partition 剥离成本和编辑器侵入程度。</p>
+      </div>
+      <div class="toolbar">
+        <input id="moduleSearch" type="search" placeholder="搜索模块、依赖、风险关键字">
+        <select id="difficultyFilter">
+          <option value="all">全部难度</option>
+          <option value="low">低</option>
+          <option value="mid">中</option>
+          <option value="high">高</option>
+          <option value="extreme">极高</option>
+        </select>
+        <select id="platformFilter">
+          <option value="all">全部平台</option>
+          <option value="pc">PC 相关</option>
+          <option value="mobile">移动端相关</option>
+          <option value="editor">Editor 相关</option>
+          <option value="runtime">Runtime 相关</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table id="moduleTable">
+          <thead>
+            <tr>
+              <th>模块/功能块</th>
+              <th>建议</th>
+              <th>难度</th>
+              <th>平台</th>
+              <th>主要兼容性问题</th>
+              <th>原生依赖缺口</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-difficulty="extreme" data-platform="runtime pc mobile">
+              <td><strong>PCG Runtime 主模块</strong></td>
+              <td>可回迁，但必须先定义功能子集</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / PC / Mobile</td>
+              <td>Graph、Node、Settings、Metadata、Point/Spatial Data、Component、Subsystem、调度器、资源管理全部需要从零接入 UE4.26。</td>
+              <td>PropertyBag/StructUtils、TObjectPtr、ActorPartition、UE5 Subsystem/Editor API、GeometryFramework。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>PCG Graph / Node / Settings</strong></td>
+              <td>第一阶段核心</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime</td>
+              <td>图资产序列化、Pin 类型、Override 参数、Subgraph、Preconfiguration 都依赖 UE5 反射和 PropertyBag。</td>
+              <td>FInstancedPropertyBag、StructUtils、UE5 Graph 参数扩展。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>Metadata / PointData / SpatialData</strong></td>
+              <td>第一阶段核心</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime / Mobile CPU</td>
+              <td>PCG 数据模型是所有节点的底座，移动端可先支持 CPU 数据处理。</td>
+              <td>UE5 容器/API 降级、属性系统差异。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>PCGComponent / PCGSubsystem</strong></td>
+              <td>第一阶段核心</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime</td>
+              <td>生成触发、异步任务、缓存、组件生命周期、Landscape 编辑通知都要适配 UE4.26。</td>
+              <td>Subsystem 差异、TransactionallySafe 锁、ObjectPtr 降级。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>PCG Partition Actor / Grid</strong></td>
+              <td>建议改造或首轮剥离</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / Editor / PC</td>
+              <td>UE5 使用 <code>APartitionActor</code>、WorldPartition ActorDesc、网格分区和大世界生成。</td>
+              <td>World Partition、ActorPartition、OFPA/DataLayer。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="editor pc">
+              <td><strong>PCG WorldPartitionBuilder</strong></td>
+              <td>UE4.26 中剥离</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Editor / Commandlet</td>
+              <td>直接继承 UE5 <code>UWorldPartitionBuilder</code>，大量引用 WorldPartition/DataLayer/LoaderAdapter。</td>
+              <td>WorldPartitionBuilder、DataLayerAsset、WorldPartitionHandle。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="editor pc mobile">
+              <td><strong>PCGEditor</strong></td>
+              <td>做最小图编辑器，不追求 UE5 完整体验</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Editor</td>
+              <td>依赖 AssetDefinition、ContentBrowserData、StructUtilsEditor、TypedElement、SubobjectDataInterface、WidgetRegistration。</td>
+              <td>UE5 Editor 资产体系、Details/GraphEditor API 差异。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>Landscape / Foliage / StaticMesh 节点</strong></td>
+              <td>按项目需求逐步回迁</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime / Editor</td>
+              <td>PCG 对 Landscape 命中极多，含缓存、采样、Grass Map、编辑器回调。</td>
+              <td>UE4 Landscape API 与 UE5 差异，Virtual Texture/GPU 采样差异。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc mobile">
+              <td><strong>PCGCompute / GPU PCG</strong></td>
+              <td>首轮关闭，后续 PC 专项</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / PC / Mobile</td>
+              <td>源码小但牵引 ComputeFramework、Renderer、RHI、Shader 参数与移动端 permutation。</td>
+              <td>ComputeFramework、UE5 RDG/Renderer 接口。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>Runtime Generation</strong></td>
+              <td>移动端谨慎启用</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime / Mobile</td>
+              <td>运行时调度、生成源、异步加载和资源清理复杂；移动端性能预算小。</td>
+              <td>World Partition 生成源要替代，Streaming/Level 逻辑重写。</td>
+            </tr>
+            <tr data-difficulty="mid" data-platform="editor pc">
+              <td><strong>PCGExternalDataInterop</strong></td>
+              <td>可选，低优先级</td>
+              <td><span class="badge b-mid">中</span></td>
+              <td>Editor / PC</td>
+              <td>源码较小，但依赖 AlembicImporter 和外部数据格式管线。</td>
+              <td>AlembicImporter、编辑器导入流程。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc mobile">
+              <td><strong>PCGGeometryScriptInterop</strong></td>
+              <td>除非移植 GeometryScripting，否则剥离</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / Editor</td>
+              <td>Interop 自身不大，但 UE4.26 没有 UE5 Runtime GeometryScripting。</td>
+              <td>GeometryScripting、GeometryFramework、DynamicMesh 新 API。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="editor pc">
+              <td><strong>PCGPythonInterop</strong></td>
+              <td>编辑器工具需求明确时再做</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Editor / PC</td>
+              <td>依赖 UE5 Python/编辑器工具链，不影响核心运行时。</td>
+              <td>PythonScriptPlugin API 差异。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>PCGNiagaraInterop</strong></td>
+              <td>与 Niagara 回迁完成后再评估</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / PC</td>
+              <td>源码很小，但同时要求 PCG 与 Niagara 现代 Data Interface/数据通道基础可用。</td>
+              <td>UE5 Niagara、PCG 双侧接口。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>PCGWaterInterop</strong></td>
+              <td>剥离或依赖 UE4 Water 重写</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / Editor</td>
+              <td>依赖 UE5 Water；UE4.26 Water 与 UE5 Water/Zone/Body API 不等价。</td>
+              <td>Water、Landmass、GeometryProcessing、World Partition 相关路径。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="editor pc">
+              <td><strong>PCGNaniteAssembliesInterop</strong></td>
+              <td>剥离</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Editor / PC</td>
+              <td>UE4.26 没有 Nanite，也没有 Nanite Assembly 工具链。</td>
+              <td>NaniteAssemblyEditorUtils、Nanite。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>PCGInstancedActorsInterop</strong></td>
+              <td>剥离，除非同步移植 InstancedActors/Mass</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / PC</td>
+              <td>依赖 UE5 大量实体/实例化 Actor 生态，UE4.26 无基础。</td>
+              <td>InstancedActors、MassEntity。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="editor pc">
+              <td><strong>PCGBiomeCore / Sample</strong></td>
+              <td>内容/工具后置</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Editor / PC</td>
+              <td>BiomeCore 本身小，但依赖 PCGGeometryScriptInterop；Sample 主要是内容资产。</td>
+              <td>PCG、GeometryScriptInterop、内容资产转换。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-body">
+        <div class="legend">
+          <span class="badge b-low">低：样例/参考</span>
+          <span class="badge b-mid">中：插件级适配</span>
+          <span class="badge b-high">高：核心模块回迁</span>
+          <span class="badge b-extreme">极高：牵引 UE5 底层系统</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="core">
+      <div class="section-head">
+        <h2>PCG 核心专项分析</h2>
+      </div>
+      <div class="section-body">
+        <details open>
+          <summary>PCG 核心由哪些子系统组成</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li><strong>图与节点：</strong><code>UPCGGraph</code>、<code>UPCGNode</code>、<code>UPCGSettings</code>、Subgraph、GraphInstance。</li>
+              <li><strong>数据模型：</strong>PointData、ParamData、SpatialData、SurfaceData、VolumeData、LandscapeData、Metadata。</li>
+              <li><strong>执行系统：</strong>Graph Executor、Task、Context、Async Loading、Runtime Generation Scheduler。</li>
+              <li><strong>组件与子系统：</strong><code>UPCGComponent</code>、<code>UPCGSubsystem</code>、Generated Resource 管理。</li>
+              <li><strong>分区与大世界：</strong><code>APCGPartitionActor</code>、Grid、WorldPartitionBuilder、DataLayer 参数。</li>
+              <li><strong>编辑器：</strong>PCG 图编辑器、节点菜单、Pin 类型、可视化、AssetDefinition、Builder Settings。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>为什么不能直接复制 UE5 PCG</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li>UE5 PCG 代码广泛使用 <code>TObjectPtr</code>、<code>TSoftObjectPtr</code>、<code>UE_INLINE_GENERATED_CPP_BY_NAME</code>，UE4.26 需要批量降级。</li>
+              <li><code>UPCGGraph</code> 依赖 <code>ComputeFramework/ComputeGraphInstance.h</code> 和 <code>StructUtils/PropertyBag.h</code>，UE4.26 没有等价基础设施。</li>
+              <li><code>APCGPartitionActor</code> 继承 <code>APartitionActor</code> 并创建 <code>FWorldPartitionActorDesc</code>，UE4.26 没有 World Partition。</li>
+              <li>PCGEditor 依赖 UE5 AssetDefinition/ContentBrowserData/TypedElement/SubobjectDataInterface 等编辑器框架。</li>
+              <li>PCGCompute 依赖 ComputeFramework 和新版 Renderer/RHI 管线，移动端风险尤其高。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>建议保留的最小功能集</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li>PCG Graph 资产、基础节点执行、Metadata、PointData、ParamData、基础 SpatialData。</li>
+              <li>PCGComponent 手动生成、编辑器内生成、基础 Runtime 生成，不接 World Partition Builder。</li>
+              <li>StaticMesh/InstancedStaticMesh/Foliage 生成的最小闭环。</li>
+              <li>Landscape CPU 采样可作为第二阶段，GPU GrassMap/VirtualTexture 采样延后。</li>
+              <li>移动端以 Cook 后资源和 CPU 运行时为主，不承诺编辑器构建和 GPU PCG。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="interops">
+      <div class="section-head">
+        <h2>PCG 相关 Interop 插件评估</h2>
+      </div>
+      <div class="section-body">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>插件</th>
+                <th>源码规模</th>
+                <th>依赖</th>
+                <th>建议</th>
+                <th>难度</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>PCGExternalDataInterop</td><td>8 文件 / 777 行</td><td>PCG、AlembicImporter</td><td>低优先级，可后置。</td><td><span class="badge b-mid">中</span></td></tr>
+              <tr><td>PCGGeometryScriptInterop</td><td>36 文件 / 3,831 行</td><td>PCG、GeometryScripting</td><td>UE4.26 无 GeometryScripting，建议剥离。</td><td><span class="badge b-extreme">极高</span></td></tr>
+              <tr><td>PCGPythonInterop</td><td>5 文件 / 444 行</td><td>PCG、Python 编辑器工具</td><td>只影响工具链，核心移植不需要。</td><td><span class="badge b-high">高</span></td></tr>
+              <tr><td>PCGFastGeoInterop</td><td>7 文件 / 263 行</td><td>PCG、FastGeo 相关系统</td><td>剥离。</td><td><span class="badge b-high">高</span></td></tr>
+              <tr><td>PCGInstancedActorsInterop</td><td>7 文件 / 320 行</td><td>PCG、InstancedActors</td><td>剥离。</td><td><span class="badge b-extreme">极高</span></td></tr>
+              <tr><td>PCGNaniteAssembliesInterop</td><td>5 文件 / 339 行</td><td>PCG、NaniteAssemblyEditorUtils</td><td>剥离。</td><td><span class="badge b-extreme">极高</span></td></tr>
+              <tr><td>PCGNiagaraInterop</td><td>7 文件 / 357 行</td><td>PCG、Niagara</td><td>需等待 PCG 与 Niagara 回迁稳定。</td><td><span class="badge b-extreme">极高</span></td></tr>
+              <tr><td>PCGWaterInterop</td><td>7 文件 / 249 行</td><td>PCG、Water</td><td>若保留 UE4 Water，则需要重写接口。</td><td><span class="badge b-extreme">极高</span></td></tr>
+              <tr><td>PCGBiomeCore</td><td>3 文件 / 77 行</td><td>PCG、PCGGeometryScriptInterop</td><td>源码小但依赖重，后置。</td><td><span class="badge b-high">高</span></td></tr>
+              <tr><td>PCGBiomeSample</td><td>内容插件</td><td>PCG Biome 内容资产</td><td>只作为样例参考，不进入核心。</td><td><span class="badge b-mid">中</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="platforms">
+      <div class="section-head">
+        <h2>移动端与 PC 适配评估</h2>
+      </div>
+      <div class="section-body">
+        <div class="grid cols-2">
+          <div>
+            <h3>PC 端</h3>
+            <ul class="compact-list">
+              <li>适合作为 PCG Editor 与完整 Runtime 的主要目标平台。</li>
+              <li>可以逐步启用 PCGCompute、Landscape 缓存、Foliage/StaticMesh 批量生成。</li>
+              <li>World Partition Builder 在 UE4.26 不可用，PC 端也建议剥离或改为传统关卡批处理。</li>
+              <li>PCG Interop 可按业务需求逐个开：GeometryScript/Water/Niagara 都需要对应插件先稳定。</li>
+            </ul>
+          </div>
+          <div>
+            <h3>移动端</h3>
+            <ul class="compact-list">
+              <li>建议目标是 Cook 后运行时生成或离线 Bake，不建议开放完整编辑器式动态生成。</li>
+              <li>首轮仅支持 CPU PCG、Point/Metadata、基础 StaticMesh/ISM 生成。</li>
+              <li>PCGCompute/GPU Landscape Sampling/VirtualTexture 采样需要 Android Vulkan、Android ES3.1、iOS Metal 分别验证。</li>
+              <li>运行时异步生成需要严格预算，避免大图、递归 Subgraph 和高密度点云导致卡顿。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout warn">
+          <strong>移动端建议口径：</strong>“适配移动端”应定义为 PCG 结果可 Cook、可加载、可运行基本 CPU 生成。不要默认承诺 UE5 PCG 的 GPU Compute、复杂 Landscape/Water/Niagara Interop、Runtime Partition Generation。
+        </div>
+      </div>
+    </section>
+
+    <section id="dependencies">
+      <div class="section-head">
+        <h2>引擎版本差异导致的原生依赖问题</h2>
+      </div>
+      <div class="section-body">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>依赖/系统</th>
+                <th>PCG 使用场景</th>
+                <th>UE4.26 状态</th>
+                <th>处理建议</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>World Partition</td><td>WorldPartitionBuilder、PartitionActor、ActorDesc、Cell Loading</td><td>缺失</td><td>剥离或重写为传统 Level/Streaming 流程。</td></tr>
+              <tr><td>DataLayer</td><td>PCG Builder 参数、过滤、加载策略</td><td>缺失</td><td>剥离，改为 Level/Tag/Layer 自定义过滤。</td></tr>
+              <tr><td>ActorPartition / PartitionActor</td><td>PCG 分区生成 Actor</td><td>缺失或不等价</td><td>首轮改为普通 AActor/管理组件，放弃网格分区。</td></tr>
+              <tr><td>StructUtils / PropertyBag</td><td>Graph 参数、Override、动态属性</td><td>缺失</td><td>回迁最小 PropertyBag 或改用 UStruct + 自定义参数表。</td></tr>
+              <tr><td>ComputeFramework</td><td>PCGCompute、Graph Compute Instance</td><td>缺失</td><td>首轮禁用 PCGCompute；PC 专项再移植。</td></tr>
+              <tr><td>GeometryScripting</td><td>PCGGeometryScriptInterop、BiomeCore</td><td>缺失</td><td>剥离，除非同步移植 GeometryScripting。</td></tr>
+              <tr><td>GeometryFramework / GeometryCore</td><td>PCG Runtime 几何数据、Mesh/Volume 节点</td><td>UE4.26 仅有旧 GeometryProcessing</td><td>按节点逐步适配，不要全量依赖 UE5 GeometryScripting。</td></tr>
+              <tr><td>AssetDefinition</td><td>PCGEditor 资产菜单和类型动作</td><td>缺失</td><td>回落到 UE4 <code>AssetTypeActions</code>。</td></tr>
+              <tr><td>ContentBrowserData</td><td>UE5 内容浏览器集成</td><td>API 不等价或缺失</td><td>重写 Content Browser 扩展。</td></tr>
+              <tr><td>TypedElement / SubobjectDataInterface</td><td>PCGEditor 选择与子对象编辑</td><td>缺失或早期</td><td>编辑器体验降级。</td></tr>
+              <tr><td>TObjectPtr / UE Object Handle</td><td>UE5 代码大量使用</td><td>不支持</td><td>批量降级为裸指针并检查 GC/UPROPERTY。</td></tr>
+              <tr><td>UE_INLINE_GENERATED_CPP_BY_NAME</td><td>UE5 生成代码包含方式</td><td>不支持</td><td>删除/替换为 UE4 include 模式。</td></tr>
+              <tr><td>Nanite</td><td>PCGNaniteAssembliesInterop</td><td>缺失</td><td>剥离。</td></tr>
+              <tr><td>InstancedActors / MassEntity</td><td>PCGInstancedActorsInterop</td><td>缺失</td><td>剥离。</td></tr>
+              <tr><td>Water UE5</td><td>PCGWaterInterop</td><td>UE4.26 Water 不等价</td><td>重写或剥离。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="partition">
+      <div class="section-head">
+        <h2>World Partition / 地形与大世界功能剥离建议</h2>
+      </div>
+      <div class="section-body">
+        <p>PCG 比 Niagara 更强地绑定 UE5 大世界体系。源码中 <code>WorldPartition</code> 命中 383 次，<code>DataLayer</code> 命中 369 次，<code>Landscape</code> 命中 1445 次。UE4.26 没有 World Partition，因此必须在设计阶段决定哪些功能不移植。</p>
+        <div class="grid cols-2">
+          <div class="callout good">
+            <strong>建议保留：</strong>传统关卡中的 PCG Component、手动/运行时生成、基础 Landscape CPU 采样、StaticMesh/ISM/Foliage 输出、Cook 后资源加载。
+          </div>
+          <div class="callout warn">
+            <strong>建议剥离：</strong>WorldPartitionBuilder、DataLayer 过滤、Partition Actor ActorDesc、Cell Loading、One File Per Actor 绑定流程、Nanite/InstancedActors Interop。
+          </div>
+        </div>
+        <h3>替代设计</h3>
+        <ul class="compact-list">
+          <li>将 <code>APCGPartitionActor</code> 替换为普通管理 Actor 或直接禁用分区生成。</li>
+          <li>将 DataLayer 选择改为 Actor Tag、Level Streaming 名称、编辑器自定义过滤器。</li>
+          <li>将 WorldPartitionBuilder 命令行构建改为 UE4 Commandlet 或 Editor Utility 的传统关卡遍历。</li>
+          <li>对于开放世界项目，PCG 生成结果建议先 Bake 到关卡/子关卡，而不是运行时动态全量生成。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="plan">
+      <div class="section-head">
+        <h2>建议实施路线</h2>
+      </div>
+      <div class="section-body">
+        <div class="phase">
+          <div class="phase-title">阶段 0：范围冻结</div>
+          <div>
+            <p>明确 PCG 最小功能集：图资产、基础节点、点数据、Metadata、Component、手动生成。明确剥离 World Partition、GPU Compute、Interop。</p>
+            <div class="chips"><span class="badge b-info">1-2 周</span><span class="badge b-gray">架构设计</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 1：Runtime 骨架</div>
+          <div>
+            <p>新增 PCG 插件和 Runtime 模块，回迁 Graph/Node/Settings/Data/Metadata/Executor 的最小闭环，替换 UE5 专属类型。</p>
+            <div class="chips"><span class="badge b-extreme">极高风险</span><span class="badge b-teal">核心闭环</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 2：Editor 最小化</div>
+          <div>
+            <p>实现 PCG 资产创建、图编辑、节点菜单、基础 Details。AssetDefinition 回落到 AssetTypeActions，暂不移植完整 UE5 UI。</p>
+            <div class="chips"><span class="badge b-high">高风险</span><span class="badge b-purple">Editor</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 3：生成输出</div>
+          <div>
+            <p>接入 StaticMesh/InstancedStaticMesh/Foliage/Actor 输出，验证生成资源生命周期、清理、Undo/Redo、Cook。</p>
+            <div class="chips"><span class="badge b-high">高风险</span><span class="badge b-info">PC + 移动 CPU</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 4：平台与性能</div>
+          <div>
+            <p>PC 做大图和异步调度压力测试；移动端限定 CPU 路径、点数预算、Cook 后运行，建立 Device Profile 开关。</p>
+            <div class="chips"><span class="badge b-high">高风险</span><span class="badge b-gray">性能验证</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 5：Interop 取舍</div>
+          <div>
+            <p>按业务逐个评估 GeometryScript、Niagara、Water、Python、External Data。Nanite/InstancedActors/Biome 建议最后或剥离。</p>
+            <div class="chips"><span class="badge b-mid">可裁剪</span><span class="badge b-gray">业务驱动</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="decision">
+      <div class="section-head">
+        <h2>决策建议</h2>
+      </div>
+      <div class="section-body">
+        <details open>
+          <summary>推荐方案：PCG 子集回迁</summary>
+          <div class="detail-content">
+            <p>以 UE4.26 为底座新增 PCG 插件，先回迁 Runtime 最小闭环，再补最小 Editor。World Partition、PCGCompute、Interop 全部后置。这样最可能在可控周期内拿到可用结果。</p>
+          </div>
+        </details>
+        <details>
+          <summary>不推荐方案：全量复制 UE5 PCG</summary>
+          <div class="detail-content">
+            <p>UE5 PCG 已经与 UE5 大世界、编辑器资产体系、几何脚本、计算框架深度绑定。全量复制会迅速扩散为“把 UE5 一批基础设施搬回 UE4.26”的工程。</p>
+          </div>
+        </details>
+        <details>
+          <summary>验收口径建议</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li>PC Editor 可创建 PCG Graph，并能通过 PCGComponent 执行基础点生成。</li>
+              <li>PC Runtime 可生成 StaticMesh/ISM/Foliage 类结果，并能清理生成资源。</li>
+              <li>移动端可加载 Cook 后 PCG 资产，基础 CPU 生成无崩溃、无大量 shader 阻塞。</li>
+              <li>World Partition/DataLayer/Nanite/PCGCompute/Interop 被明确剥离或置灰。</li>
+              <li>现有 UE4.26 工程模块无编译回归。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const search = document.getElementById("moduleSearch");
+    const diff = document.getElementById("difficultyFilter");
+    const platform = document.getElementById("platformFilter");
+    const rows = [...document.querySelectorAll("#moduleTable tbody tr")];
+
+    function applyFilters() {
+      const q = search.value.trim().toLowerCase();
+      const d = diff.value;
+      const p = platform.value;
+
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const matchText = q === "" || text.includes(q);
+        const matchDiff = d === "all" || row.dataset.difficulty === d;
+        const matchPlatform = p === "all" || row.dataset.platform.includes(p);
+        row.classList.toggle("hidden", !(matchText && matchDiff && matchPlatform));
+      });
+    }
+
+    [search, diff, platform].forEach(el => el.addEventListener("input", applyFilters));
+
+    document.querySelectorAll(".toc a").forEach(anchor => {
+      anchor.addEventListener("click", event => {
+        event.preventDefault();
+        document.querySelector(anchor.getAttribute("href")).scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  </script>
+</body>
+</html>

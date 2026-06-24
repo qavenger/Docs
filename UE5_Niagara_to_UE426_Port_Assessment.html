@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UE5 Niagara 移植到 UE4.26 评估报告</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --ink: #18202f;
+      --muted: #667085;
+      --line: #d9dfeb;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --purple: #7c3aed;
+      --gray: #475467;
+      --soft-blue: #e8f0ff;
+      --soft-green: #e8f7ee;
+      --soft-amber: #fff4df;
+      --soft-red: #ffe7e7;
+      --soft-purple: #f1e9ff;
+      --shadow: 0 12px 32px rgba(17, 24, 39, 0.08);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.65;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 48%, #0e7490 100%);
+      color: #fff;
+      padding: 42px 28px 34px;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .title-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 0 0 12px; }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #eef2f7;
+      color: #172554;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.92em;
+    }
+
+    .subtitle {
+      max-width: 850px;
+      color: #dbeafe;
+      font-size: 17px;
+    }
+
+    .meta {
+      display: grid;
+      gap: 8px;
+      min-width: 260px;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      color: #eef6ff;
+      font-size: 14px;
+    }
+
+    .toc {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toc a {
+      color: #fff;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      padding: 7px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+    }
+
+    main {
+      padding: 28px 0 56px;
+    }
+
+    section {
+      margin: 0 0 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .section-head {
+      padding: 22px 24px 8px;
+    }
+
+    .section-body {
+      padding: 0 24px 24px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfcff;
+    }
+
+    .kpi .num {
+      font-size: 30px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .b-low { background: var(--soft-green); color: var(--green); }
+    .b-mid { background: var(--soft-amber); color: var(--amber); }
+    .b-high { background: var(--soft-red); color: var(--red); }
+    .b-extreme { background: #fee2ff; color: #a21caf; }
+    .b-info { background: var(--soft-blue); color: var(--blue); }
+    .b-purple { background: var(--soft-purple); color: var(--purple); }
+    .b-gray { background: #edf0f5; color: var(--gray); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 16px 24px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: #f9fbff;
+    }
+
+    .toolbar input,
+    .toolbar select {
+      min-height: 38px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 0 11px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .toolbar input {
+      flex: 1 1 260px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      color: #344054;
+      background: #f8fafc;
+      font-size: 13px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr:hover td {
+      background: #fcfdff;
+    }
+
+    .table-scroll {
+      overflow: auto;
+      max-height: 640px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    details + details {
+      margin-top: 10px;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 14px 16px;
+      font-weight: 800;
+      background: #f8fafc;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+
+    summary::after {
+      content: "+";
+      float: right;
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    details[open] summary::after {
+      content: "-";
+    }
+
+    .detail-content {
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .callout {
+      border-left: 4px solid var(--blue);
+      padding: 12px 14px;
+      background: var(--soft-blue);
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--amber);
+      background: var(--soft-amber);
+    }
+
+    .callout.danger {
+      border-left-color: var(--red);
+      background: var(--soft-red);
+    }
+
+    .phase {
+      display: grid;
+      grid-template-columns: 170px 1fr;
+      gap: 14px;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .phase:last-child {
+      border-bottom: 0;
+    }
+
+    .phase-title {
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .source-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #344054;
+      font-size: 14px;
+    }
+
+    .source-list li {
+      margin: 6px 0;
+    }
+
+    .compact-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .compact-list li {
+      margin: 5px 0;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 860px) {
+      .title-row,
+      .grid.cols-2,
+      .grid.cols-3,
+      .phase {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        padding: 32px 0 26px;
+      }
+
+      .section-head,
+      .section-body,
+      .toolbar {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title-row">
+        <div>
+          <h1>UE5 Niagara 移植到 UE4.26 评估报告</h1>
+          <p class="subtitle">目标是评估将 UE5.7.4 Niagara 及其相关插件移植到当前 UE4.26.2 工作区的改动范围、风险、兼容性问题和原生依赖缺口。本文档只做评估，不包含任何源码修改。</p>
+        </div>
+        <div class="meta">
+          <div><strong>当前工程：</strong>UE 4.26.2</div>
+          <div><strong>参考源码：</strong>UE 5.7.4</div>
+          <div><strong>报告日期：</strong>2026-06-24</div>
+          <div><strong>范围：</strong>移动端 + PC，Runtime + Editor + 相关插件</div>
+        </div>
+      </div>
+      <nav class="toc" aria-label="目录">
+        <a href="#summary">结论摘要</a>
+        <a href="#evidence">源码证据</a>
+        <a href="#module-matrix">模块难度矩阵</a>
+        <a href="#data-channel">Niagara Data Channel</a>
+        <a href="#plugins">相关插件</a>
+        <a href="#platforms">移动端与 PC</a>
+        <a href="#dependencies">引擎依赖缺口</a>
+        <a href="#world-partition">需剥离功能</a>
+        <a href="#plan">建议路线</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="summary">
+      <div class="section-head">
+        <h2>结论摘要</h2>
+      </div>
+      <div class="section-body">
+        <div class="grid cols-3">
+          <div class="kpi">
+            <div class="num">极高</div>
+            <div class="label">整体移植风险。不是插件复制级任务，而是跨 4.26 到 5.7 的渲染、编辑器、VM、数据接口、资产系统和工具链回迁。</div>
+          </div>
+          <div class="kpi">
+            <div class="num">89</div>
+            <div class="label">UE5 Niagara 中命中 <code>NiagaraDataChannel/DataChannel</code> 的 C++/Build 文件数量；UE4.26 Niagara 中为 0。</div>
+          </div>
+          <div class="kpi">
+            <div class="num">2.4x</div>
+            <div class="label">UE5 Niagara Runtime 源码行数约为 UE4.26 的 2.4 倍，Editor 约为 2.1 倍。</div>
+          </div>
+        </div>
+
+        <div class="callout danger">
+          <strong>总判断：</strong>若要求“UE5 Niagara 主干能力 + Niagara Data Channel + UE5 Niagara 相关插件 + 移动端和 PC 适配”全部落地，推荐按“功能回迁”而不是“整包替换”执行。直接把 UE5 插件搬到 UE4.26 会遇到大量 UE5 原生基础设施缺失，包括 AssetDefinition、ContentBrowserData、StructUtils、PCG、Nanite、Dataflow、ComputeFramework、新版 RDG/Renderer、WorldPartition/DataLayer 等。
+        </div>
+
+        <div class="grid cols-2">
+          <div>
+            <h3>建议目标拆分</h3>
+            <ul class="compact-list">
+              <li><strong>可优先移植：</strong>Niagara Data Channel 的 Runtime 核心、Blueprint 读写节点、基础调试和编辑器资产创建。</li>
+              <li><strong>谨慎移植：</strong>SimCache、GPU Compute 调度增强、部分 Data Interface、Niagara Editor 新特性。</li>
+              <li><strong>建议暂缓或另立专项：</strong>NiagaraFluids、NiagaraNanite、PCGNiagaraInterop、HairStrands UE5 版、Water UE5 版完整套件。</li>
+              <li><strong>需要剥离：</strong>World Partition、DataLayer、PCG、Nanite、Dataflow、ComputeFramework、UE5 AssetDefinition 等 UE5 专属能力。</li>
+            </ul>
+          </div>
+          <div>
+            <h3>最现实路径</h3>
+            <ul class="compact-list">
+              <li>不要替换整个 Niagara 插件，先在 UE4.26 Niagara 上增量回迁 Data Channel。</li>
+              <li>保持 CPU Niagara 稳定，移动端先定义特性白名单，GPU Compute 分平台开关。</li>
+              <li>PC 端可保留更多 GPU/Editor 能力，移动端避免 Fluids、Nanite、复杂 SimCache 回放。</li>
+              <li>UE5 相关插件按“业务必要性”单独评估，不建议一次性全量移植。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="evidence">
+      <div class="section-head">
+        <h2>源码证据与盘点结果</h2>
+      </div>
+      <div class="section-body">
+        <div class="grid cols-2">
+          <div class="kpi">
+            <div class="num">4.26.2</div>
+            <div class="label">当前工作区 <code>D:\tl_quexiuchen_ArtTestUGS_01\frontend\trunk\Editor\Engine\Build\Build.version</code></div>
+          </div>
+          <div class="kpi">
+            <div class="num">5.7.4</div>
+            <div class="label">参考源码 <code>E:\UnrealEngine\Engine\Build\Build.version</code></div>
+          </div>
+        </div>
+
+        <div class="table-scroll" style="margin-top:16px">
+          <table>
+            <thead>
+              <tr>
+                <th>模块</th>
+                <th>UE4.26 文件/行数</th>
+                <th>UE5.7 文件/行数</th>
+                <th>变化解读</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Niagara Runtime</td><td>243 / 82,689</td><td>636 / 201,673</td><td>主体增量最大，Data Channel、GPU 调度、SimCache、调试、数据接口、参数系统都有明显扩展。</td></tr>
+              <tr><td>NiagaraEditor</td><td>392 / 97,038</td><td>694 / 201,972</td><td>编辑器资产、Stack、调试器、SimCache 可视化、AssetDefinition/ContentBrowserData 适配增量很大。</td></tr>
+              <tr><td>NiagaraEditorWidgets</td><td>67 / 11,989</td><td>125 / 23,319</td><td>细节面板和 Data Channel 自定义详情页需要回迁或简化。</td></tr>
+              <tr><td>NiagaraShader</td><td>18 / 3,575</td><td>45 / 6,683</td><td>Shader/VM 编译元数据和 GPU 管线接口变化，影响移动端和 PC GPU Compute。</td></tr>
+              <tr><td>NiagaraBlueprintNodes</td><td>不存在</td><td>14 / 1,839</td><td>Data Channel 蓝图读写节点依赖该新模块；UE4.26 需要新建模块或并入 Editor。</td></tr>
+              <tr><td>NiagaraCore</td><td>11 / 471</td><td>13 / 542</td><td>增量小，但 CustomVersion、类型定义和 VM 编译 ID 变化会影响序列化兼容。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top:18px">关键源码位置</h3>
+        <ul class="source-list">
+          <li>UE4.26 Niagara：<code>D:\tl_quexiuchen_ArtTestUGS_01\frontend\trunk\Editor\Engine\Plugins\FX\Niagara</code></li>
+          <li>UE5 Niagara：<code>E:\UnrealEngine\Engine\Plugins\FX\Niagara</code></li>
+          <li>UE5 Data Channel Runtime：<code>E:\UnrealEngine\Engine\Plugins\FX\Niagara\Source\Niagara\Public\NiagaraDataChannel*.h</code> 与 <code>Private\NiagaraDataChannel*.cpp</code></li>
+          <li>UE5 Data Channel 蓝图节点：<code>Source\NiagaraBlueprintNodes\Private\K2Node_*DataChannel*.cpp</code></li>
+          <li>UE5 编译器插值逻辑参考：<code>Source\NiagaraEditor\Private\NiagaraHlslTranslator.cpp</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="module-matrix">
+      <div class="section-head">
+        <h2>模块移植难度矩阵</h2>
+        <p>可通过搜索或难度筛选。难度评估基于源码规模、UE5 原生依赖、移动端适配成本和对 UE4.26 底层系统的侵入程度。</p>
+      </div>
+      <div class="toolbar">
+        <input id="moduleSearch" type="search" placeholder="搜索模块、依赖、风险关键字">
+        <select id="difficultyFilter">
+          <option value="all">全部难度</option>
+          <option value="low">低</option>
+          <option value="mid">中</option>
+          <option value="high">高</option>
+          <option value="extreme">极高</option>
+        </select>
+        <select id="platformFilter">
+          <option value="all">全部平台</option>
+          <option value="pc">PC 相关</option>
+          <option value="mobile">移动端相关</option>
+          <option value="editor">Editor 相关</option>
+          <option value="runtime">Runtime 相关</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table id="moduleTable">
+          <thead>
+            <tr>
+              <th>模块/功能块</th>
+              <th>建议</th>
+              <th>难度</th>
+              <th>平台</th>
+              <th>主要兼容性问题</th>
+              <th>原生依赖缺口</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>Niagara Runtime 主模块</strong></td>
+              <td>增量回迁，不建议整包替换</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime / PC / Mobile</td>
+              <td>参数存储、VM 编译 ID、GPU Tick、Data Interface、DataSet、SimCache、调试器、WorldManager 均有增量。</td>
+              <td>新版 Renderer/RHI/RDG、GameplayTags、PhysicsCore 差异、部分 UE5 容器/API。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>Niagara Data Channel Runtime</strong></td>
+              <td>可作为第一阶段核心目标</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime / PC / Mobile</td>
+              <td>UE4.26 无同名实现，需要回迁资产、WorldManager 注册、GameData、Handler、Accessor、Data Interface Read/Write。</td>
+              <td>部分 SimCache/Debugger/GPU Dispatch 接口，新版 NiagaraDataSet 和 FProperty 处理。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="editor">
+              <td><strong>NiagaraBlueprintNodes</strong></td>
+              <td>需要新建 UE4 模块或合并进 NiagaraEditor</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Editor</td>
+              <td>UE4.26 没有该模块；K2Node_DataChannel 系列依赖 BlueprintGraph、KismetCompiler、StructUtilsEditor。</td>
+              <td>StructUtilsEditor、BlueprintEditorLibrary、UE5 K2 节点 API 差异。</td>
+            </tr>
+            <tr data-difficulty="mid" data-platform="runtime pc mobile">
+              <td><strong>NiagaraCore / CustomVersion</strong></td>
+              <td>选择性回迁类型与版本号</td>
+              <td><span class="badge b-mid">中</span></td>
+              <td>Runtime</td>
+              <td>新增版本号可能影响资产加载和 DDC，不能盲目覆盖 UE4.26 版本体系。</td>
+              <td>UE5 CustomVersion 枚举与资产序列化路径。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc mobile">
+              <td><strong>NiagaraShader / GPU Compute</strong></td>
+              <td>按功能回迁，移动端设白名单</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Runtime / PC / Mobile</td>
+              <td>GPU 参数、shader permutation、external constants、RDG/Compute Dispatch 与 UE4.26 差异大。</td>
+              <td>UE5 RenderGraph、ShaderParametersMetadata、GPU dispatch 结构变化。</td>
+            </tr>
+            <tr data-difficulty="mid" data-platform="runtime pc mobile">
+              <td><strong>NiagaraVertexFactories</strong></td>
+              <td>谨慎对齐必要变更</td>
+              <td><span class="badge b-mid">中</span></td>
+              <td>Runtime / PC / Mobile</td>
+              <td>源码规模变化不大，但渲染管线接口变更会影响 Mesh/Sprite/Ribbon。</td>
+              <td>UE5 Renderer/RHI/Nanite 相关接口。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="editor">
+              <td><strong>NiagaraEditor</strong></td>
+              <td>分批回迁，不追求 UE5 完整 UI</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>Editor</td>
+              <td>UE5 使用 AssetDefinition、ContentBrowserData、UserAssetTagsEditor、SparseVolumeTexture、EditorConfig 等 UE4.26 缺失或不同的编辑器模块。</td>
+              <td>AssetDefinition、ContentBrowserData 新接口、ToolMenus 差异、PythonScriptPlugin 差异。</td>
+            </tr>
+            <tr data-difficulty="mid" data-platform="editor">
+              <td><strong>NiagaraEditorWidgets</strong></td>
+              <td>只回迁 Data Channel 所需详情面板</td>
+              <td><span class="badge b-mid">中</span></td>
+              <td>Editor</td>
+              <td>Data Channel Details、SimCache Visualizer、Stack 小部件要适配 UE4 Slate/PropertyEditor。</td>
+              <td>UE5 属性自定义、AssetDefinition 集成。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>Niagara SimCache / NiagaraSimCaching 插件</strong></td>
+              <td>第二阶段之后再评估</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / Editor / PC</td>
+              <td>涉及 Sequencer、TakeRecorder、缓存资产、回放轨道、Data Channel 可视化，移动端收益有限。</td>
+              <td>Takes、TakeRecorder、CacheTrackRecorder、UE5 Sequencer API。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc mobile">
+              <td><strong>Niagara Data Interface 全量同步</strong></td>
+              <td>只回迁业务必要 DI</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / PC / Mobile</td>
+              <td>UE5 新 DI 覆盖 SkeletalMesh、StaticMesh、Socket、DataChannel、MRQ、PCG、Hair、Water 等，平台差异巨大。</td>
+              <td>各插件独立依赖，GPU/CPU 双路径维护成本高。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>NiagaraFluids</strong></td>
+              <td>不建议纳入首轮</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>PC 优先</td>
+              <td>流体模拟依赖大量内容、网格/体积/Compute Shader 管线；移动端成本高且性能风险大。</td>
+              <td>UE5 Niagara GPU、RenderCore、内容资产和 shader 差异。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>NiagaraNanite</strong></td>
+              <td>建议剥离</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>PC</td>
+              <td>UE4.26 没有 Nanite。即使移植插件，也需要移植 Nanite 渲染后端，范围远超 Niagara。</td>
+              <td>NaniteResources、Renderer Nanite pass、平台限制。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc editor">
+              <td><strong>PCGNiagaraInterop</strong></td>
+              <td>建议剥离</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>PC / Editor</td>
+              <td>UE4.26 没有 PCG 框架。移植该插件等于同时移植 PCG。</td>
+              <td>PCG 插件、UE5 GeometryScript/StructUtils。</td>
+            </tr>
+            <tr data-difficulty="high" data-platform="runtime pc">
+              <td><strong>ChaosNiagara</strong></td>
+              <td>可专项适配 UE4 Chaos</td>
+              <td><span class="badge b-high">高</span></td>
+              <td>PC / Runtime</td>
+              <td>UE4.26 有 ChaosNiagara，但 UE5 版依赖 ChaosSolverEngine、GeometryCollectionEngine、FieldSystemEngine 的新版接口。</td>
+              <td>Chaos API、FieldSystem、GeometryCollection 差异。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc mobile">
+              <td><strong>Water / Niagara Water Interop</strong></td>
+              <td>只保留 UE4.26 Water 可用部分</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>Runtime / Editor</td>
+              <td>UE5 Water 依赖 Landmass、GeometryProcessing、Landscape 编辑器与水体系统；UE4.26 无 World Partition，需剥离 DataLayer/Partition 相关路径。</td>
+              <td>GeometryCore、DynamicMesh、MeshConversion、UE5 Landscape/Water API。</td>
+            </tr>
+            <tr data-difficulty="extreme" data-platform="runtime pc">
+              <td><strong>HairStrands 与 Niagara Hair DI</strong></td>
+              <td>不建议全量回迁 UE5 版</td>
+              <td><span class="badge b-extreme">极高</span></td>
+              <td>PC</td>
+              <td>UE5 HairStrands 依赖 Dataflow、ComputeFramework、Optimus、ChaosCaching，且插件声明对 Android/iOS 有限制。</td>
+              <td>Dataflow、ComputeFramework、OptimusCore、HairStrandsSolver。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-body">
+        <div class="legend">
+          <span class="badge b-low">低：局部适配</span>
+          <span class="badge b-mid">中：模块级适配</span>
+          <span class="badge b-high">高：跨模块回迁</span>
+          <span class="badge b-extreme">极高：牵引 UE5 底层能力</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="data-channel">
+      <div class="section-head">
+        <h2>Niagara Data Channel 专项评估</h2>
+      </div>
+      <div class="section-body">
+        <div class="callout warn">
+          <strong>结论：</strong>Data Channel 是本次需求中最适合作为第一阶段核心目标的 UE5 功能，但仍然是高难度。它不是单个 Data Interface，而是一套 Runtime 数据通道、资产、蓝图节点、WorldManager 生命周期、调试器和编辑器详情面板。
+        </div>
+
+        <details open>
+          <summary>UE5 Data Channel 组成</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li><strong>Runtime 资产与数据：</strong><code>UNiagaraDataChannel</code>、<code>NiagaraDataChannelAsset</code>、<code>NiagaraDataChannelData</code>、<code>NiagaraDataChannelGameData</code>。</li>
+              <li><strong>访问层：</strong><code>NiagaraDataChannelAccessor</code>、<code>NiagaraDataChannelFunctionLibrary</code>、<code>NiagaraDataChannelReference</code>。</li>
+              <li><strong>类型与布局：</strong><code>NiagaraDataChannelVariable</code>、<code>NiagaraDataChannelLayoutInfo</code>、<code>NiagaraDataChannelVariableBuffer</code>。</li>
+              <li><strong>数据接口：</strong><code>NiagaraDataInterfaceDataChannelRead</code>、<code>NiagaraDataInterfaceDataChannelWrite</code>、Common。</li>
+              <li><strong>蓝图节点：</strong><code>K2Node_ReadDataChannel</code>、<code>K2Node_WriteDataChannel</code>、<code>K2Node_DataChannelBase</code>。</li>
+              <li><strong>管理与调试：</strong><code>NiagaraDataChannelManager</code>、<code>NiagaraDataChannelDebugUtilities</code>、Niagara Debug HUD 集成。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>移植到 UE4.26 的主要改动</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li>在 UE4.26 Niagara Runtime 中新增 Data Channel 类型和管理器，并接入 <code>FNiagaraWorldManager</code> 生命周期。</li>
+              <li>回迁 Data Interface Read/Write 的 VM 外部函数绑定，适配 UE4.26 <code>FVectorVMExternalFunctionContext</code> 与 DataSet API。</li>
+              <li>重写或降级 UE5 的蓝图 K2 节点依赖，UE4.26 没有 <code>NiagaraBlueprintNodes</code> 模块。</li>
+              <li>编辑器资产创建、详情面板、菜单注册需要从 UE5 <code>AssetDefinition</code> 路径回落到 UE4.26 <code>AssetTypeActions</code>。</li>
+              <li>SimCache/Debugger 集成建议先做空实现或条件编译，避免第一阶段被缓存系统拖住。</li>
+              <li>移动端先支持 CPU 路径和基本数据读写；GPU 路径需要根据 ES3.1/Vulkan/Metal 单独验证。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>兼容性风险</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li><strong>线程与生命周期：</strong>Data Channel 涉及 GameThread/Concurrent tick/RenderThread 数据可见性，UE4.26 Niagara tick 架构较旧。</li>
+              <li><strong>内存布局：</strong>UE5 Data Channel 使用新版变量布局和访问器，回迁时必须验证对齐、Stride、组件类型。</li>
+              <li><strong>资产兼容：</strong>UE5 NDC 资产不能直接假设可在 UE4.26 打开，需要独立版本号或转换路径。</li>
+              <li><strong>蓝图 API：</strong>UE5 K2 节点的 Pin/Compiler 接口和 UE4.26 存在差异，直接复制编译概率低。</li>
+              <li><strong>Cook 与移动端：</strong>运行时依赖的资产引用、反射类型、Data Interface shader 参数需要 Cook 白名单验证。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="plugins">
+      <div class="section-head">
+        <h2>UE5 Niagara 相关插件移植评估</h2>
+      </div>
+      <div class="section-body">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>插件</th>
+                <th>UE5 状态</th>
+                <th>UE4.26 是否已有近似项</th>
+                <th>建议</th>
+                <th>难度</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>NiagaraFluids</td>
+                <td>UE5 FX 插件，流体模拟工具包</td>
+                <td>无</td>
+                <td>暂缓。PC 高端专项可评估，移动端不建议。</td>
+                <td><span class="badge b-extreme">极高</span></td>
+              </tr>
+              <tr>
+                <td>NiagaraSimCaching</td>
+                <td>UE5 FX 插件，Sequencer/TakeRecorder 缓存</td>
+                <td>UE4.26 Niagara 有较旧缓存能力但不等价</td>
+                <td>第二阶段。先保证 Data Channel Runtime。</td>
+                <td><span class="badge b-extreme">极高</span></td>
+              </tr>
+              <tr>
+                <td>NiagaraNanite</td>
+                <td>UE5 Experimental，Nanite Renderer</td>
+                <td>无 Nanite</td>
+                <td>剥离。</td>
+                <td><span class="badge b-extreme">极高</span></td>
+              </tr>
+              <tr>
+                <td>NiagaraMRQ</td>
+                <td>依赖 MovieRenderPipeline</td>
+                <td>UE4.26 MRQ 能力不同</td>
+                <td>PC 编辑器/离线渲染需求再做。</td>
+                <td><span class="badge b-high">高</span></td>
+              </tr>
+              <tr>
+                <td>PCGNiagaraInterop</td>
+                <td>依赖 PCG 插件</td>
+                <td>无 PCG</td>
+                <td>剥离，除非同步移植 PCG。</td>
+                <td><span class="badge b-extreme">极高</span></td>
+              </tr>
+              <tr>
+                <td>ChaosNiagara</td>
+                <td>UE5 版依赖新版 Chaos/FieldSystem</td>
+                <td>UE4.26 已有 Experimental ChaosNiagara</td>
+                <td>优先保留 UE4.26 版本，按需补 UE5 功能。</td>
+                <td><span class="badge b-high">高</span></td>
+              </tr>
+              <tr>
+                <td>Water</td>
+                <td>依赖 Landmass、GeometryProcessing、Niagara</td>
+                <td>UE4.26 有 Experimental Water</td>
+                <td>不要全量替换；只移植 Niagara 交互需要的 DI/函数。</td>
+                <td><span class="badge b-extreme">极高</span></td>
+              </tr>
+              <tr>
+                <td>HairStrands</td>
+                <td>依赖 Dataflow、ComputeFramework、DeformerGraph</td>
+                <td>UE4.26 有 HairStrands 早期版本</td>
+                <td>保留 UE4.26 版本，避免回迁 UE5 全量。</td>
+                <td><span class="badge b-extreme">极高</span></td>
+              </tr>
+              <tr>
+                <td>NiagaraPreviewContent</td>
+                <td>内容插件</td>
+                <td>无直接风险</td>
+                <td>可最后导入，用于测试样例，不进入核心移植。</td>
+                <td><span class="badge b-mid">中</span></td>
+              </tr>
+              <tr>
+                <td>ExampleCustomDataInterface</td>
+                <td>示例插件</td>
+                <td>无</td>
+                <td>不需要移植，可作为 DI 适配参考。</td>
+                <td><span class="badge b-low">低</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="platforms">
+      <div class="section-head">
+        <h2>移动端与 PC 适配评估</h2>
+      </div>
+      <div class="section-body">
+        <div class="grid cols-2">
+          <div>
+            <h3>PC 端</h3>
+            <ul class="compact-list">
+              <li>可承载较完整的 CPU/GPU Niagara、Data Channel、调试器和编辑器工作流。</li>
+              <li>GPU Compute、SimCache、复杂 Data Interface 可逐步启用，但必须逐项验证 shader 编译和 DDC。</li>
+              <li>Nanite、PCG、UE5 Hair/Water 全量功能不建议作为 Niagara 移植的一部分。</li>
+            </ul>
+          </div>
+          <div>
+            <h3>移动端</h3>
+            <ul class="compact-list">
+              <li>优先支持 CPU Niagara 与轻量 Data Channel 读写。</li>
+              <li>GPU Compute 需要按 Android Vulkan、Android ES3.1、iOS Metal 分别验证；不能默认与 PC 同功能。</li>
+              <li>NiagaraFluids、复杂 SimCache、HairStrands Deformer、Nanite Renderer 不建议进入移动端目标。</li>
+              <li>需要建立 Cook 测试、shader permutation 白名单、功能降级策略和运行时 CVar 开关。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <strong>移动端底线建议：</strong>把“移动端适配”定义为 Niagara 基础粒子 + CPU Data Channel + 部分 GPU 粒子，而不是 UE5 Niagara 全功能矩阵。否则移植范围会从 Niagara 扩散到 Renderer、Shader Compiler、RHI、Cook、Device Profile 和内容规范。
+        </div>
+      </div>
+    </section>
+
+    <section id="dependencies">
+      <div class="section-head">
+        <h2>引擎版本差异导致的原生依赖问题</h2>
+      </div>
+      <div class="section-body">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>依赖/系统</th>
+                <th>UE5 使用场景</th>
+                <th>UE4.26 状态</th>
+                <th>处理建议</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>AssetDefinition</td><td>NiagaraEditor、WaterEditor、资产菜单</td><td>缺失</td><td>回落到 <code>AssetTypeActions</code> 和旧 Content Browser 扩展。</td></tr>
+              <tr><td>ContentBrowserData</td><td>UE5 内容浏览器数据源</td><td>UE4.26 有早期插件但 API 不同</td><td>避免依赖 UE5 ContentBrowserData，重写编辑器注册。</td></tr>
+              <tr><td>StructUtils / StructUtilsEditor</td><td>Data Channel K2 节点、PropertyBag 类能力</td><td>缺失</td><td>只移植必要结构，或用 UE4 反射/FStructOnScope 替代。</td></tr>
+              <tr><td>PCG</td><td>PCGNiagaraInterop</td><td>缺失</td><td>剥离。</td></tr>
+              <tr><td>Nanite</td><td>NiagaraNanite</td><td>缺失</td><td>剥离。</td></tr>
+              <tr><td>Dataflow / ComputeFramework / Optimus</td><td>HairStrands UE5 版</td><td>缺失</td><td>不回迁 UE5 HairStrands 全量。</td></tr>
+              <tr><td>World Partition / DataLayer</td><td>UE5 Water、Landscape、编辑器工具链</td><td>缺失</td><td>编译期剥离，保持 UE4.26 World/Landscape 路径。</td></tr>
+              <tr><td>新版 RDG / Renderer</td><td>Niagara GPU、Fluids、Nanite、Water、Hair</td><td>部分存在但 API 年代不同</td><td>逐调用点适配，避免直接替换渲染模块。</td></tr>
+              <tr><td>Movie Render Pipeline / Takes</td><td>NiagaraMRQ、NiagaraSimCaching</td><td>UE4.26 API 不等价</td><td>延后，先保证 Runtime。</td></tr>
+              <tr><td>TObjectPtr / UE5 Object Handle</td><td>UE5 代码常见</td><td>UE4.26 不支持</td><td>批量降级为裸 UObject 指针，并检查 GC/UPROPERTY。</td></tr>
+              <tr><td>Enhanced Editor APIs</td><td>ToolMenus、PlacementMode、EditorConfig</td><td>部分差异</td><td>编辑器功能最小化回迁。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="world-partition">
+      <div class="section-head">
+        <h2>World Partition / 地形相关功能剥离建议</h2>
+      </div>
+      <div class="section-body">
+        <p>当前 UE4.26 不支持 UE5 World Partition 和 DataLayer 系统。如果全量移植 UE5 Water、PCG、部分 Landscape 编辑器工具，会将 Niagara 移植范围扩大到世界构建系统，风险不可控。</p>
+        <div class="grid cols-2">
+          <div class="callout">
+            <strong>保留：</strong>UE4.26 已有的 Landscape、Landmass、Water 可用路径；Niagara 与地形/水体的最小 Data Interface；不依赖 World Partition 的运行时采样。
+          </div>
+          <div class="callout warn">
+            <strong>剥离：</strong>DataLayer、WorldPartitionSubsystem、PCG 图、UE5 Water Zone 与 Streaming/Partition 强绑定逻辑、Nanite 地形渲染路径。
+          </div>
+        </div>
+        <h3>建议做法</h3>
+        <ul class="compact-list">
+          <li>建立 <code>UE5_NIAGARA_BACKPORT</code> 或类似编译宏，用于隔离回迁代码，不污染 UE4.26 原路径。</li>
+          <li>对 Water/Hair/PCG/Nanite 相关 Niagara DI 使用插件级开关，默认关闭。</li>
+          <li>凡是依赖 World Partition 的代码，优先删除功能入口，而不是移植 World Partition。</li>
+          <li>若业务确实需要大世界地形交互，另开“大世界/地形系统适配”专项，不并入 Niagara 里程碑。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="plan">
+      <div class="section-head">
+        <h2>建议实施路线</h2>
+      </div>
+      <div class="section-body">
+        <div class="phase">
+          <div class="phase-title">阶段 0：基线冻结</div>
+          <div>
+            <p>冻结 UE4.26 Niagara 当前功能，建立 PC、Android、iOS 的最小测试工程和自动化用例。确认现有项目粒子资产不可回归。</p>
+            <div class="chips"><span class="badge b-info">1-2 周</span><span class="badge b-gray">无功能移植</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 1：Data Channel Runtime</div>
+          <div>
+            <p>回迁 NDC 核心 Runtime、数据布局、WorldManager 生命周期、CPU Data Interface Read/Write。先不做完整 Editor 和 SimCache。</p>
+            <div class="chips"><span class="badge b-high">高风险</span><span class="badge b-info">PC + 移动 CPU</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 2：蓝图与编辑器</div>
+          <div>
+            <p>新增或合并 NiagaraBlueprintNodes，适配 K2 Data Channel 节点、资产创建、详情面板和调试入口。UE5 AssetDefinition 全部回落到 UE4 资产操作体系。</p>
+            <div class="chips"><span class="badge b-high">高风险</span><span class="badge b-purple">Editor</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 3：GPU 与平台适配</div>
+          <div>
+            <p>按平台验证 GPU Niagara、Data Channel GPU 路径、Shader 编译、Cook、Device Profile。移动端默认保持功能白名单。</p>
+            <div class="chips"><span class="badge b-extreme">极高风险</span><span class="badge b-info">PC / Android / iOS</span></div>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-title">阶段 4：相关插件取舍</div>
+          <div>
+            <p>只按业务需要选择插件。优先考虑 ChaosNiagara 差异补丁、MRQ/SimCaching；剥离 NiagaraNanite、PCGNiagaraInterop；NiagaraFluids、UE5 Hair/Water 单独立项。</p>
+            <div class="chips"><span class="badge b-mid">可裁剪</span><span class="badge b-gray">业务驱动</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="decision">
+      <div class="section-head">
+        <h2>决策建议</h2>
+      </div>
+      <div class="section-body">
+        <details open>
+          <summary>推荐方案：功能回迁，而不是全量移植 UE5 Niagara</summary>
+          <div class="detail-content">
+            <p>以 UE4.26 Niagara 为基底，分阶段回迁 Data Channel 和必要 Data Interface。这样能控制移动端风险，也能避免 UE5 渲染器、世界系统、编辑器资产系统被动进入工程。</p>
+          </div>
+        </details>
+        <details>
+          <summary>不推荐方案：直接替换 Niagara 插件目录</summary>
+          <div class="detail-content">
+            <p>UE5 Niagara 编译依赖和运行时依赖已经深入 UE5 Engine。直接替换会引发大量编译错误，并且即使编译通过，也会出现资产序列化、Cook、GPU shader、移动端运行时不稳定的问题。</p>
+          </div>
+        </details>
+        <details>
+          <summary>验收口径建议</summary>
+          <div class="detail-content">
+            <ul class="compact-list">
+              <li>PC Editor 可创建 NDC 资产，并可在 Niagara 中读写。</li>
+              <li>PC Runtime 可通过蓝图/C++ 写入 Data Channel，Niagara 系统读取并生成粒子。</li>
+              <li>Android/iOS 至少通过 CPU 路径运行，无 Cook 丢失、无 shader 编译阻塞。</li>
+              <li>现有 UE4.26 Niagara 资产行为不回归。</li>
+              <li>被剥离插件和功能有明确编译开关和文档说明。</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const search = document.getElementById("moduleSearch");
+    const diff = document.getElementById("difficultyFilter");
+    const platform = document.getElementById("platformFilter");
+    const rows = [...document.querySelectorAll("#moduleTable tbody tr")];
+
+    function applyFilters() {
+      const q = search.value.trim().toLowerCase();
+      const d = diff.value;
+      const p = platform.value;
+
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const matchText = q === "" || text.includes(q);
+        const matchDiff = d === "all" || row.dataset.difficulty === d;
+        const matchPlatform = p === "all" || row.dataset.platform.includes(p);
+        row.classList.toggle("hidden", !(matchText && matchDiff && matchPlatform));
+      });
+    }
+
+    [search, diff, platform].forEach(el => el.addEventListener("input", applyFilters));
+
+    document.querySelectorAll(".toc a").forEach(anchor => {
+      anchor.addEventListener("click", event => {
+        event.preventDefault();
+        document.querySelector(anchor.getAttribute("href")).scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  </script>
+</body>
+</html>
