@@ -85,6 +85,13 @@
       gap: 12px;
     }
 
+    .control-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 9px;
+    }
+
     .controls label {
       color: var(--muted);
       font-size: 14px;
@@ -100,6 +107,89 @@
       background: #fff;
       color: var(--text);
       font-size: 14px;
+    }
+
+    .dependency-view {
+      display: none;
+      margin-top: 34px;
+    }
+
+    .dependency-view.active {
+      display: block;
+    }
+
+    .dependency-note {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .dependency-lanes {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .lane h2 {
+      margin: 0;
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0;
+      background: #fbfdfb;
+    }
+
+    .lane-body {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .dependency-card {
+      min-height: 0;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: none;
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .dependency-card:hover {
+      border-color: rgba(33, 110, 91, 0.45);
+      box-shadow: 0 10px 28px rgba(24, 32, 29, 0.08);
+    }
+
+    .dependency-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .dependency-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .dependency-arrow {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .report {
@@ -200,10 +290,15 @@
         grid-template-columns: 1fr;
       }
 
+      .dependency-lanes {
+        grid-template-columns: 1fr;
+      }
+
       .controls {
         align-items: stretch;
       }
 
+      .control-group,
       .controls select {
         width: 100%;
       }
@@ -222,16 +317,25 @@
       <p class="lead">这里汇总了面向 UE4.26 的 UE5 插件与模块移植评估报告。报告以本地 UE5 源码和当前 UE4.26 工程差异为依据，重点关注依赖缺口、迁移风险、平台适配和可执行路线；Lumen、Nanite、World Partition、DataLayer 不在本批报告范围内。</p>
     </header>
 
-    <div class="controls" aria-label="报告排序">
-      <label for="sortSelect">报告排序</label>
-      <select id="sortSelect">
-        <option value="default">默认：按调研链路</option>
-        <option value="difficulty-desc">难度：高到低</option>
-        <option value="difficulty-asc">难度：低到高</option>
-        <option value="lines-desc">源码量：大到小</option>
-        <option value="lines-asc">源码量：小到大</option>
-        <option value="title-asc">名称：A 到 Z</option>
-      </select>
+    <div class="controls" aria-label="报告视图与排序">
+      <div class="control-group">
+        <label for="viewSelect">视图模式</label>
+        <select id="viewSelect">
+          <option value="grid">报告卡片</option>
+          <option value="dependency">依赖关系</option>
+        </select>
+      </div>
+      <div class="control-group" id="sortControl">
+        <label for="sortSelect">报告排序</label>
+        <select id="sortSelect">
+          <option value="default">默认：按调研链路</option>
+          <option value="difficulty-desc">难度：高到低</option>
+          <option value="difficulty-asc">难度：低到高</option>
+          <option value="lines-desc">源码量：大到小</option>
+          <option value="lines-asc">源码量：小到大</option>
+          <option value="title-asc">名称：A 到 Z</option>
+        </select>
+      </div>
     </div>
 
     <section id="reportGrid" class="grid" aria-label="报告列表">
@@ -418,14 +522,118 @@
       </article>
     </section>
 
+    <section id="dependencyView" class="dependency-view" aria-label="模块依赖关系视图">
+      <p class="dependency-note">这个视图按“迁移时通常需要先解决谁”的关系排布。越靠左越偏底层基础设施，越靠右越偏上层功能插件；箭头文字表示主要牵引方向，并不等同于严格的 Build.cs 编译依赖。</p>
+      <div class="dependency-lanes">
+        <section class="lane">
+          <h2>底层引擎基础</h2>
+          <div class="lane-body">
+            <a class="dependency-card" href="./research/UE5_RDG_RenderGraph_to_UE426_Port_Assessment.html">
+              <strong>RDG / RenderGraph</strong>
+              <span>渲染图、资源生命周期、Pass 调度、RHI 状态。</span>
+              <span class="dependency-arrow">→ 支撑 GPU 渲染、Compute、Water、Niagara GPU</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_EditorFramework_to_UE426_Port_Assessment.html">
+              <strong>Editor Framework</strong>
+              <span>AssetDefinition、TypedElement、ContentBrowserData。</span>
+              <span class="dependency-arrow">→ 支撑各插件编辑器移植</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_StructUtils_PropertyBag_to_UE426_Port_Assessment.html">
+              <strong>StructUtils / PropertyBag</strong>
+              <span>动态参数、图参数覆盖、属性绑定。</span>
+              <span class="dependency-arrow">→ 支撑 PCG、StateTree、Niagara Data Channel</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="lane">
+          <h2>中间支撑系统</h2>
+          <div class="lane-body">
+            <a class="dependency-card" href="./research/UE5_ComputeFramework_to_UE426_Port_Assessment.html">
+              <strong>ComputeFramework</strong>
+              <span>GPU 计算图、Shader/RDG/RHI 计算调度。</span>
+              <span class="dependency-arrow">依赖 RDG → 支撑 PCGCompute、Deformer、Cloth/Hair</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_GeometryScripting_to_UE426_Port_Assessment.html">
+              <strong>GeometryScripting</strong>
+              <span>DynamicMesh、GeometryProcessing、几何蓝图库。</span>
+              <span class="dependency-arrow">→ 支撑 PCG Geometry、Water、建模工具</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_Dataflow_ChaosCloth_to_UE426_Port_Assessment.html">
+              <strong>Dataflow / ChaosCloth</strong>
+              <span>Dataflow 图、ChaosCloth 资产与编辑器链。</span>
+              <span class="dependency-arrow">依赖 Geometry/Compute/Editor → 支撑角色工具链</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="lane">
+          <h2>领域框架</h2>
+          <div class="lane-body">
+            <a class="dependency-card" href="./research/UE5_Mass_StateTree_SmartObjects_to_UE426_Port_Assessment.html">
+              <strong>Mass / StateTree / SmartObjects</strong>
+              <span>大规模 AI、状态树、智能对象生态。</span>
+              <span class="dependency-arrow">依赖 PropertyBag/Editor → 影响 PCG InstancedActors</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_Water_Landmass_to_UE426_Port_Assessment.html">
+              <strong>Water / Landmass</strong>
+              <span>水体、地形刷、采样与水体渲染接口。</span>
+              <span class="dependency-arrow">依赖 RDG/Geometry/Niagara → 影响 PCG/Niagara Water Interop</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_MetaSounds_Audio_to_UE426_Port_Assessment.html">
+              <strong>MetaSounds / Audio</strong>
+              <span>程序化音频图、音频 Gameplay 体积。</span>
+              <span class="dependency-arrow">依赖 Editor/Audio 基线 → 独立音频专项</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_Animation_Rigging_to_UE426_Port_Assessment.html">
+              <strong>Animation Rigging</strong>
+              <span>ControlRig、IKRig、MotionWarping、PoseSearch。</span>
+              <span class="dependency-arrow">依赖 Editor/RigVM/动画系统 → 独立动画专项</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="lane">
+          <h2>上层功能插件</h2>
+          <div class="lane-body">
+            <a class="dependency-card" href="./research/UE5_PCG_to_UE426_Port_Assessment.html">
+              <strong>PCG</strong>
+              <span>程序化生成图、编辑器、Runtime 生成和 Interop。</span>
+              <span class="dependency-arrow">牵引 PropertyBag、Geometry、Compute、Editor、Water、Niagara</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_Niagara_to_UE426_Port_Assessment.html">
+              <strong>Niagara</strong>
+              <span>粒子系统、GPU Sim、Data Channel、相关 Interop。</span>
+              <span class="dependency-arrow">牵引 RDG、Compute、Editor、Water、PCG</span>
+            </a>
+            <a class="dependency-card" href="./research/UE5_EnhancedInput_to_UE426_Port_Assessment.html">
+              <strong>Enhanced Input</strong>
+              <span>InputAction、MappingContext、Trigger、Modifier。</span>
+              <span class="dependency-arrow">相对独立 → 可单独回迁</span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <footer>
       GitHub Pages 地址通常是 <code>https://qavenger.github.io/Docs/</code>。如果 Pages 来源选择的是 <code>main / root</code>，上传后即可通过该地址访问。
     </footer>
   </main>
   <script>
+    const viewSelect = document.getElementById("viewSelect");
     const sortSelect = document.getElementById("sortSelect");
+    const sortControl = document.getElementById("sortControl");
     const reportGrid = document.getElementById("reportGrid");
+    const dependencyView = document.getElementById("dependencyView");
     const reports = Array.from(reportGrid.querySelectorAll(".report"));
+
+    function setView(mode) {
+      const dependencyMode = mode === "dependency";
+      reportGrid.style.display = dependencyMode ? "none" : "";
+      dependencyView.classList.toggle("active", dependencyMode);
+      sortControl.style.display = dependencyMode ? "none" : "";
+    }
 
     function sortReports(mode) {
       const sorted = [...reports].sort((a, b) => {
@@ -451,6 +659,7 @@
     }
 
     sortSelect.addEventListener("change", () => sortReports(sortSelect.value));
+    viewSelect.addEventListener("change", () => setView(viewSelect.value));
   </script>
 </body>
 </html>
