@@ -45,6 +45,33 @@ $reports = @(
     Plan = @("阶段 1：在 PCG/Niagara 回迁中加编译开关，默认关闭 ComputeFramework 依赖。", "阶段 2：抽取最小 Runtime，跑一个独立 ComputeGraph smoke test。", "阶段 3：按 PC 平台补齐 Shader/RDG/RHI 差异。", "阶段 4：移动端只做可用性验证，不作为功能承诺。")
   },
   [ordered]@{
+    Slug = "UE5_RDG_RenderGraph_to_UE426_Port_Assessment"
+    Title = "UE5 RDG / RenderGraph 移植到 UE4.26 评估报告"
+    ShortTitle = "RDG / RenderGraph"
+    Lead = "评估 UE5 Render Dependency Graph（RDG / RenderGraph）与 UE4.26 既有 RDG 的差异。该模块不是插件，而是 RenderCore、Renderer、RHI 的核心渲染基础设施，会影响 Niagara GPU、PCGCompute、Water、Hair、后处理和大量 UE5 渲染特性回迁。"
+    Verdict = "UE4.26 已经有早期 RDG，因此不建议直接替换整套 RenderCore/Renderer。合理路线是保留 UE4.26 RDG 基线，按 UE5 调用点补兼容 API、工具函数和资源状态能力；只有明确要回迁大量 UE5 渲染管线时，才考虑系统性升级 RDG。"
+    Difficulty = "极高"
+    Status = "UE4.26 已有旧版 RDG，UE5 API 与覆盖面明显扩张"
+    Strategy = "做兼容层和调用点适配，不做 RenderCore/Renderer 整包替换。"
+    Kpis = @("RenderCore 规模：UE5 182 文件 / 81,516 行；UE4.26 110 文件 / 44,617 行", "RDG 命名文件：UE5 40 文件 / 23,020 行；UE4.26 28 文件 / 13,235 行", "Renderer RDG 使用面：UE5 命中 533 个文件；UE4.26 命中 224 个文件", "关键命中：UE5 Renderer 中 GraphBuilder 16076、FRDGTexture 3900、AddPass 1077")
+    Evidence = @(
+      "UE5 与 UE4.26 都有 Runtime\\RenderCore\\Public\\RenderGraph.h，但 RenderGraphBuilder.h 从 UE4.26 的 292 行扩展到 UE5 的 960 行，RenderGraphBuilder.cpp 从 2,067 行扩展到 4,347 行。",
+      "UE5 新增 RenderGraphAllocator、RenderGraphBlackboard、RenderGraphTrace、RenderGraphFwd 等文件，UE4.26 对应文件不存在。",
+      "UE5 RenderGraphUtils.h 为 1,246 行，UE4.26 为 580 行；UE5 增加 FRDGExternalAccessQueue、更多 AddPass/Dispatch/Readback/Upload 辅助函数。",
+      "Renderer 使用面从 UE4.26 的 224 个 RDG 相关文件扩大到 UE5 的 533 个文件，说明移植 UE5 渲染特性时会不断碰到 RDG API 缺口。"
+    )
+    Modules = @(
+      @("RenderCore RDG 核心", "UE5 40 个 RDG 命名文件 / 23,020 行；UE4.26 28 个 / 13,235 行", "RenderCore、RHI、ShaderCore", "极高", "不建议替换整套；优先补兼容 API。"),
+      @("FRDGBuilder", "UE5 Header 960 行 + CPP 4,347 行；UE4.26 Header 292 行 + CPP 2,067 行", "Pass 调度、资源生命周期、屏障、异步计算", "极高", "UE5 调用点需要逐个降级到 UE4.26 Builder 能力。"),
+      @("RenderGraphUtils", "UE5 1,246 行；UE4.26 580 行", "ComputeShaderUtils、Readback、Upload、ExternalAccess", "高", "适合做 shim 层，补常用 helper 而不是搬整文件。"),
+      @("Renderer RDG 调用面", "UE5 533 个文件命中；UE4.26 224 个文件命中", "后处理、SceneTextures、VT、BasePass、Deferred", "极高", "任何 UE5 渲染功能回迁都要逐调用点适配。"),
+      @("RHI 资源描述与状态", "UE5 RHI 有 RDG 命名文件 1 个 / 376 行；UE4.26 无同名文件", "FRHITextureCreateDesc、ERHIAccess、Transient Resource", "高", "资源创建与状态转换是主要兼容风险。")
+    )
+    Dependencies = @("FRDGBuilder AddPass/Dispatch/Readback API 差异", "FRDGExternalAccessQueue、RenderGraphTrace、Blackboard、Allocator 等 UE5 新文件", "FRHITextureCreateDesc、Transient Resource、ERHIAccess 状态模型差异", "Shader parameter struct、RDG resource extraction、UAV/SRV helper 差异", "Renderer 中 ScreenPass、SceneTextures、后处理与 RDG 的绑定方式变化")
+    Platforms = @("PC：RDG 升级影响 D3D11/D3D12/Vulkan/Metal 等后端，必须建立渲染回归集；更适合作为底层渲染专项。", "移动端：风险更高，许多 UE5 RDG pass、async compute、transient aliasing 和复杂后处理不应默认承诺；建议优先做降级或关闭。")
+    Plan = @("阶段 1：不要替换 UE4.26 RenderCore/Renderer，先建立 RDG 兼容头和 helper shim。", "阶段 2：为 Niagara GPU、PCGCompute、Water/Hair 等实际调用点补最小 API。", "阶段 3：按平台验证资源状态、Pass flags、Readback、External texture/buffer 生命周期。", "阶段 4：若必须回迁 UE5 大量渲染特性，再独立评估 RenderCore/RHI 系统升级。")
+  },
+  [ordered]@{
     Slug = "UE5_GeometryScripting_to_UE426_Port_Assessment"
     Title = "UE5 GeometryScripting / GeometryProcessing 移植到 UE4.26 评估报告"
     ShortTitle = "GeometryScripting"
