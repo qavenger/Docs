@@ -1,15 +1,6 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>失败系统 - Book of Verse 中文批注版</title>
-<link rel="stylesheet" href="../assets/styles.css">
-<script src="../assets/reader.js"></script>
-</head>
-<body>
-<div class="layout">
-<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>失败系统 - Book of Verse 中文阅读稿</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/reader.js"></script></head>
+<body><div class="layout"><aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文阅读稿 · 原文折叠 · 代码保留</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -18,7 +9,7 @@
 <a href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
 <a href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
 <a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
-<a class="active" href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
+<a class=active href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
 <a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
 <a href="../10_classes_interfaces/index.html"><span>Classes &amp; Interfaces</span><br><small>类与接口</small></a>
 <a href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
@@ -30,95 +21,118 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
-<main class="main">
-<div class="crumb">Failure / <a href="https://verselang.github.io/book/08_failure/">原文页面</a></div>
-<section class="hero"><h1>失败系统</h1><p class="lead">本页讲 Verse 最重要的控制机制之一：成功/失败，而不是布尔条件或异常。</p><div class="meta"><span class="pill">源文件：08_failure.md</span><span class="pill">批注段落：17</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>这一页读什么</h2><p>数组索引、map 查找、比较、cast、整数除法和 &lt;decides&gt; 函数都依赖 failure context。</p><h3>注意点</h3><ul class="list"><li>失败会回滚推测性 mutation。</li><li>Err() 是运行时错误，不是可恢复 failure。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-failure">Failure</a></li><li class="lvl2"><a href="#s1-failable-expressions">Failable Expressions</a></li><li class="lvl2"><a href="#s2-failure-contexts">Failure Contexts</a></li><li class="lvl2"><a href="#s3-speculative-execution">Speculative Execution</a></li><li class="lvl2"><a href="#s4-the-logic-of-failure">The Logic of Failure</a></li><li class="lvl2"><a href="#s5-expressions-in-decides">Expressions in Decides</a></li><li class="lvl2"><a href="#s6-option-types">Option Types</a></li><li class="lvl3"><a href="#s7-unwrapping">Unwrapping</a></li><li class="lvl3"><a href="#s8-nesting">Nesting</a></li><li class="lvl3"><a href="#s9-chained-access">Chained Access</a></li><li class="lvl3"><a href="#s10-defaulting">Defaulting</a></li><li class="lvl3"><a href="#s11-comparison">Comparison</a></li><li class="lvl2"><a href="#s12-failure-with-optionals">Failure with Optionals</a></li><li class="lvl2"><a href="#s13-casts-as-decides">Casts as Decides</a></li><li class="lvl2"><a href="#s14-idioms-and-patterns">Idioms and Patterns</a></li><li class="lvl2"><a href="#s15-runtime-errors">Runtime Errors</a></li><li class="lvl2"><a href="#s16-living-with-failure">Living with Failure</a></li></ol></article></section>
-<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
+<div class="crumb">Failure / <a href="https://verselang.github.io/book/08_failure/">原文页面</a></div><section class="hero"><h1>失败系统</h1><p class="lead">失败系统页，解释成功/失败、失败上下文、推测执行、option、cast 和运行时错误的区别。</p><div class="meta"><span class="pill">源文件：08_failure.md</span><span class="pill">中文段落：17</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-failure">失败 / Failure</a></li><li class="lvl2"><a href="#s1-failable-expressions">可失败表达式 / Failable Expressions</a></li><li class="lvl2"><a href="#s2-failure-contexts">失败上下文 / Failure Contexts</a></li><li class="lvl2"><a href="#s3-speculative-execution">推测执行 / Speculative Execution</a></li><li class="lvl2"><a href="#s4-the-logic-of-failure">The Logic of Failure</a></li><li class="lvl2"><a href="#s5-expressions-in-decides">Expressions in Decides</a></li><li class="lvl2"><a href="#s6-option-types">Option Types</a></li><li class="lvl3"><a href="#s7-unwrapping">Unwrapping</a></li><li class="lvl3"><a href="#s8-nesting">Nesting</a></li><li class="lvl3"><a href="#s9-chained-access">Chained Access</a></li><li class="lvl3"><a href="#s10-defaulting">Defaulting</a></li><li class="lvl3"><a href="#s11-comparison">Comparison</a></li><li class="lvl2"><a href="#s12-failure-with-optionals">Failure with Optionals</a></li><li class="lvl2"><a href="#s13-casts-as-decides">Casts as Decides</a></li><li class="lvl2"><a href="#s14-idioms-and-patterns">Idioms and Patterns</a></li><li class="lvl2"><a href="#s15-runtime-errors">Runtime Errors</a></li><li class="lvl2"><a href="#s16-living-with-failure">Living with Failure</a></li></ol></article></section>
+<div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-failure">
-  <div class="annotation">
-    <h3>中文批注：Failure</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Failure”展开。阅读时先抓住这些英文关键词：Most、programming、languages、treat、control。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">branch</span><span class="chip">if</span><span class="chip">class</span><span class="chip">array</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Failure</summary>
+  <article class="cn-read">
+    <h2>失败 <small>Failure</small></h2>
+    <p>大多数编程语言将控制流视为真或假、是或否、一或零的问题。他们评估布尔条件并相应地进行分支，创建一个二元决策的世界，通常需要检查两次条件 - 一次是为了查看某件事是否可能，另一次是为了实际执行它。 Verse采取了不同的方法。 Verse 没有问“这是真的吗？”，而是问“这成功了吗？”</p>
+<p>这种区别可能看起来很微妙，但它改变了程序的编写和推理方式。失败不是错误或异常，而是驱动控制流的一流概念。当表达式失败时，它不会使您的程序崩溃或引发需要捕获的异常。相反，失败是一种正常的、预期的结果，您的代码可以通过语言本身的结构优雅地处理它。</p>
+<p>考虑访问数组元素的简单行为。在传统语言中，您可能会这样写：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (Index &lt; Array.Length) {  # Traditional, non-Verse
+    Value = Array[Index]
+    Process(Value)
+}</code></pre></figure>
+<p>这将检查有效性与访问分开，如果检查和访问分开或者数组在它们之间发生变化，就会产生错误的机会。在 Verse 中，验证和访问是统一的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (Value := Array[Index]):
+    Process(Value)</code></pre></figure>
+<p>数组访问要么成功并绑定该值，要么失败并继续执行。没有单独的验证步骤，因此检查和访问不会变得不一致，并且访问无效索引不会导致未定义的行为。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Failure</summary>
     <div class="md"><h1>Failure</h1>
 <p>Most programming languages treat control flow as a matter of true or false, yes or no, one or zero. They evaluate boolean conditions and branch accordingly, creating a world of binary decisions that often requires checking conditions twice - once to see if something is possible, and again to actually do it. Verse takes a different approach. Instead of asking &quot;is this true?&quot;, Verse asks &quot;does this succeed?&quot;</p>
 <p>This distinction might seem subtle, but it changes how programs are written and reasoned about. Failure isn&#x27;t an error or an exception-it&#x27;s a first-class concept that drives control flow. When an expression fails, it doesn&#x27;t crash your program or throw an exception that needs to be caught. Instead, failure is a normal, expected outcome that your code handles gracefully through the structure of the language itself.</p>
 <p>Consider the simple act of accessing an array element. In traditional languages, you might write:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 01 --&gt;</p>
 <pre><code>if (Index &lt; Array.Length) {  # Traditional, non-Verse
     Value = Array[Index]
     Process(Value)
 }</code></pre>
 <p>This checks validity separately from access, creating opportunities for bugs if the check and access become separated or if the array changes between them. In Verse, validation and access are unified:</p>
-<p>&lt;!--versetest Array:[]int = array{1,2,3} Index:int = 1 Process(V:int):void = {} --&gt; &lt;!-- 02 --&gt;</p>
 <pre><code>if (Value := Array[Index]):
     Process(Value)</code></pre>
 <p>The array access either succeeds and binds the value, or it fails and execution moves on. There is no separate validation step, so the check and access cannot become inconsistent, and no undefined behavior from accessing invalid indices.</p></div>
   </details>
 </section><section class="section" id="s1-failable-expressions">
-  <div class="annotation">
-    <h3>中文批注：Failable Expressions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Failable Expressions”展开。可把它先理解为“可失败表达式”。阅读时先抓住这些英文关键词：failable、expression、one、either、succeed。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!-- #&gt; --&gt;
-
-The query operator</span><span class="chip">false</span><span class="chip">&lt;decides&gt;</span><span class="chip">decides</span><span class="chip">for</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Failable Expressions</summary>
+  <article class="cn-read">
+    <h2>可失败表达式 <small>Failable Expressions</small></h2>
+    <p>可失败表达式是指要么成功并产生一个值，要么失败但不产生任何结果的表达式。这与返回 null 或错误代码不同 - 当表达式失败时，它实际上根本不产生任何值。计算在该特定执行路径中的该点停止。</p>
+<p>许多操作自然会失败。当索引越界时，数组索引会失败。当键不存在时，map查找会失败。当值不相等时比较失败。除以零时除法失败。即使是简单的文字也可能会失败：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>42      # Always succeeds with value 42
+false?  # Always fails - the query of false
+true?   # Always succeeds - the query of true</code></pre></figure>
+<p>查询运算符 <code>?</code> 将任何值转换为失败的表达式。当应用于<code>false</code>时，总是失败。当应用于任何其他值时，它会以该值成功。这种简单的机制为控制程序流程提供了巨大的力量。</p>
+<p>您可以通过标有 <code>&lt;decides&gt;</code> 效果的函数创建自己的失败表达式：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateAge(Age:int)&lt;decides&gt;:int =
+    Age &gt;= 0    # Fails if age is negative
+    Age &lt;= 150  # Fails if age is unrealistic
+    Age         # Returns the age if both checks pass</code></pre></figure>
+<p>这个函数不只是检查条件——它体现了它们。如果年龄无效，则该功能失败。如果有效，则成功并显示年龄值。验证和价值是密不可分的。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Failable Expressions</summary>
     <div class="md"><h2>Failable Expressions</h2>
 <p>A failable expression is one that can either succeed and produce a value, or fail and produce nothing. This isn&#x27;t the same as returning null or an error code - when an expression fails, it literally produces no value at all. The computation stops at that point in that particular path of execution.</p>
 <p>Many operations are naturally failable. Array indexing fails when the index is out of bounds. Map lookups fail when the key doesn&#x27;t exist. Comparisons fail when the values aren&#x27;t equal. Division fails when dividing by zero. Even simple literals can be made to fail:</p>
-<p>&lt;!--versetest M()&lt;decides&gt;:void = 42 false? true? &lt;# --&gt; &lt;!-- 03 --&gt;</p>
 <pre><code>42      # Always succeeds with value 42
 false?  # Always fails - the query of false
 true?   # Always succeeds - the query of true</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The query operator <code>?</code> turns any value into a failable expression. When applied to <code>false</code>, it always fails. When applied to any other value, it succeeds with that value. This simple mechanism provides immense power for controlling program flow.</p>
 <p>You can create your own failable expressions through functions marked with the <code>&lt;decides&gt;</code> effect:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 04 --&gt;</p>
 <pre><code>ValidateAge(Age:int)&lt;decides&gt;:int =
     Age &gt;= 0    # Fails if age is negative
     Age &lt;= 150  # Fails if age is unrealistic
     Age         # Returns the age if both checks pass</code></pre>
-<p>&lt;!-- ValidateAge[10] --&gt;</p>
 <p>This function doesn&#x27;t just check conditions - it embodies them. If the age is invalid, the function fails. If it&#x27;s valid, it succeeds with the age value. The validation and the value are inseparable.</p></div>
   </details>
 </section><section class="section" id="s2-failure-contexts">
-  <div class="annotation">
-    <h3>中文批注：Failure Contexts</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Failure Contexts”展开。可把它先理解为“失败上下文”。阅读时先抓住这些英文关键词：Not、every、part、program、execute。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">if</span><span class="chip">This</span><span class="chip">else</span><span class="chip">Score</span><span class="chip">Player</span><span class="chip">for</span><span class="chip">first</span><span class="chip">Unlike</span><span class="chip">, if there are no successful iterations,</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Failure Contexts</summary>
+  <article class="cn-read">
+    <h2>失败上下文 <small>Failure Contexts</small></h2>
+    <p>并非程序的每个部分都可以执行失败的表达式。它们只能出现在失败环境中——语言知道如何处理成功和失败的地方。每个失败上下文定义了当其中的表达式失败时会发生什么。</p>
+<p>最常见的失败上下文是 <code>if</code> 表达式的条件：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (Player := GetPlayerByName[Name], Score := GetPlayerScore[Player], Score &gt; 100):
+    Print(&quot;High scorer: {Name} with {Score} points!&quot;)</code></pre></figure>
+<p>此 <code>if</code> 条件包含三个可能失败的表达式。一切都必须成功，身体才能执行。如果其中任何一个失败，则整个条件失败，并且控制将移至 <code>else</code> 分支（如果存在）或完全越过 <code>if</code>。美妙之处在于每个表达式都可以使用先前表达式的结果 - 仅当我们成功找到 <code>Player</code> 时才会计算 <code>Score</code>。</p>
+<p><code>for</code> 表达式为域子句的每次迭代创建失败上下文：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>for (Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50):
+    Print(&quot;Powerful weapon: {Item} with {Damage} damage&quot;)</code></pre></figure>
+<p>每次迭代都会尝试可失败表达式。如果它们全部成功，则主体会针对该项目执行。如果有任何失败，则跳过该迭代，并继续循环执行下一项。这创建了一种自然的过滤机制，无需明确的条件逻辑。</p>
+<p>!!!注意“未发布的功能”<code>first</code> 尚未发布。以下记录了当前不可用的计划功能。</p>
+<p>与 <code>for</code> 类似，<code>first</code> 表达式为域子句创建失败上下文：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PowerfulWeapon := option. first(Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50). Item</code></pre></figure>
+<p>与 <code>for</code> 不同，如果没有成功的迭代，<code>first</code> 本身就会失败，因此必须在失败上下文中使用。在上面的例子中，<code>option</code>用于处理<code>first</code>的故障。</p>
+<p>标有 <code>&lt;decides&gt;</code> 的函数为其整个主体创建失败上下文：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindBestWeapon(Inventory:[]item)&lt;decides&gt;:item =
+    var BestWeapon:?item = false
+    var MaxDamage:int = 0
+
+    for (Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item]):
+        if (Damage &gt; MaxDamage):
+            set BestWeapon = option{Item}
+            set MaxDamage = Damage
+
+    BestWeapon?  # Fails if no weapon was found</code></pre></figure>
+<p>函数体是一个失败上下文，允许整个表达式失败。最后一行从选项中提取值，如果没有找到武器则失败。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Failure Contexts</summary>
     <div class="md"><h2>Failure Contexts</h2>
 <p>Not every part of a program can execute failable expressions. They can only appear in failure contexts--places where the language knows how to handle both success and failure. Each failure context defines what happens when expressions within it fail.</p>
 <p>The most common failure context is the condition of an <code>if</code> expression:</p>
-<p>&lt;!--versetest Name:string=&quot;Joe&quot; GetPlayerByName(B:string)&lt;decides&gt;&lt;transacts&gt;:int = 0 GetPlayerScore(B:int)&lt;transacts&gt;&lt;decides&gt;:int = 0 --&gt; &lt;!-- 05 --&gt;</p>
 <pre><code>if (Player := GetPlayerByName[Name], Score := GetPlayerScore[Player], Score &gt; 100):
     Print(&quot;High scorer: {Name} with {Score} points!&quot;)</code></pre>
 <p>This <code>if</code> condition contains three potentially failable expressions. All must succeed for the body to execute. If any fails, the entire condition fails, and control moves to the <code>else</code> branch (if present) or past the <code>if</code> entirely. The beauty is that each expression can use the results of previous ones - <code>Score</code> is only computed if we successfully found the <code>Player</code>.</p>
 <p>The <code>for</code> expression creates a failure context for each iteration of the domain clause:</p>
-<p>&lt;!--versetest Inventory:[]int= array{1} IsWeapon:[]int= array{1} GetDamage(:int)&lt;computes&gt;&lt;decides&gt;:int=1 --&gt; &lt;!-- 06 --&gt;</p>
 <pre><code>for (Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50):
     Print(&quot;Powerful weapon: {Item} with {Damage} damage&quot;)</code></pre>
 <p>Each iteration attempts the failable expressions. If they all succeed, the body executes for that item. If any fails, that iteration is skipped, and the loop continues with the next item. This creates a natural filtering mechanism without explicit conditional logic.</p>
-<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p><code>first</code> has not yet been released. The following documents planned functionality that is not currently available.</p></div>
-<p>Similar to <code>for</code>, the <code>first</code> expression creates a failure context for the domain clause: &lt;!--versetest Inventory:[]int= array{1} IsWeapon:[]int= array{1} GetDamage(:int)&lt;computes&gt;&lt;decides&gt;:int=1 --&gt; &lt;!-- 100 --&gt;</p>
+<p>!!! note &quot;Unreleased Feature&quot; <code>first</code> has not yet been released. The following documents planned functionality that is not currently available.</p>
+<p>Similar to <code>for</code>, the <code>first</code> expression creates a failure context for the domain clause:</p>
 <pre><code>PowerfulWeapon := option. first(Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50). Item</code></pre>
 <p>Unlike <code>for</code>, if there are no successful iterations, <code>first</code> itself will fail, and so must be used in a failure context. In the above example, <code>option</code> is used to handle failure of the <code>first</code>.</p>
 <p>Functions marked with <code>&lt;decides&gt;</code> create a failure context for their entire body:</p>
-<p>&lt;!--versetest item:=struct{} IsWeapon(i:item)&lt;computes&gt;&lt;decides&gt;:void={} GetDamage(i:item)&lt;computes&gt;&lt;decides&gt;:int=0 --&gt; &lt;!-- 07 --&gt;</p>
 <pre><code>FindBestWeapon(Inventory:[]item)&lt;decides&gt;:item =
     var BestWeapon:?item = false
     var MaxDamage:int = 0
@@ -132,21 +146,31 @@ true?   # Always succeeds - the query of true</code></pre>
 <p>The function body is a failure context, allowing failable expressions throughout. The final line extracts the value from the option, failing if no weapon was found.</p></div>
   </details>
 </section><section class="section" id="s3-speculative-execution">
-  <div class="annotation">
-    <h3>中文批注：Speculative Execution</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Speculative Execution”展开。可把它先理解为“推测执行”。阅读时先抓住这些英文关键词：execute、code、failure、context、changes。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;writes&gt;</span><span class="chip">&lt;!-- #&gt; --&gt;
-
-The</span><span class="chip">class has multiple methods that update the</span><span class="chip">,
-before returning</span><span class="chip">&lt;decides&gt;</span><span class="chip">if</span><span class="chip">transacts</span><span class="chip">writes</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Speculative Execution</summary>
+  <article class="cn-read">
+    <h2>推测执行 <small>Speculative Execution</small></h2>
+    <p>当您在失败上下文中执行代码时，对可变变量的更改是临时的，只有在整个上下文成功时它们才会成为永久性的。在失败上下文中修改状态的函数必须使用 <code>&lt;transacts&gt;</code> 或 <code>&lt;writes&gt;</code> 效果说明符（请参阅 [效果](13_effects.md)）：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>m:=module:
+    buyer := class:
+        var PlayerGold:int
+        AttemptPurchase(Cost:int)&lt;transacts&gt;&lt;decides&gt;:void =
+           set PlayerGold = PlayerGold - Cost  # Provisional change
+           PlayerGold &gt;= 0                     # Check if still valid
+           # If this fails, PlayerGold reverts to original value</code></pre></figure>
+<p>如果检查失败，减法会自动回滚。您无需在修改状态之前手动恢复原始值或检查条件。</p>
+<p>这种事务行为使得复杂的状态更新变得安全且可预测。要么一切成功并且所有更改都已提交，要么某些事情失败并且没有任何改变。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game := class:
+    var State:game_state
+    ComplexOperation()&lt;transacts&gt;&lt;decides&gt;:void =
+       ModifyHealth()       # All these operations
+       UpdateInventory()    # are provisional
+       ChargeResources()    # until all succeed
+       ValidateFinalState[] # If this fails, everything rolls back</code></pre></figure>
+<p><code>game</code> 类有多个更新 <code>game_state</code> 的方法，在返回 <code>ComplexOperation</code> 之前验证对象是否处于有效状态，如果不是，则回滚在该方法中执行的所有更改。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Speculative Execution</summary>
     <div class="md"><h2>Speculative Execution</h2>
 <p>When you execute code in a failure context, changes to mutable variables are provisional—they only become permanent if the entire context succeeds. Functions that modify state in failure contexts must use the <code>&lt;transacts&gt;</code>  or the <code>&lt;writes&gt;</code> effect specifier (see <a href="../13_effects/index.html">Effects</a>):</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 08 --&gt;</p>
 <pre><code>m:=module:
     buyer := class:
         var PlayerGold:int
@@ -156,7 +180,6 @@ before returning</span><span class="chip">&lt;decides&gt;</span><span class="chi
            # If this fails, PlayerGold reverts to original value</code></pre>
 <p>If the check fails, the subtraction is automatically rolled back. You don&#x27;t need to manually restore the original value or check conditions before modifying state.</p>
 <p>This transactional behavior makes complex state updates safe and predictable. Either everything succeeds and all changes are committed, or something fails and nothing changes.</p>
-<p>&lt;!--versetest game_state := struct{} game := class: var State:game_state = game_state{} ModifyHealth()&lt;transacts&gt;:void = {} UpdateInventory()&lt;transacts&gt;:void = {} ChargeResources()&lt;transacts&gt;:void = {} ValidateFinalState()&lt;transacts&gt;&lt;decides&gt;:void = {} ComplexOperation()&lt;transacts&gt;&lt;decides&gt;:void = ModifyHealth() UpdateInventory() ChargeResources() ValidateFinalState[] &lt;# --&gt; &lt;!-- 09 --&gt;</p>
 <pre><code>game := class:
     var State:game_state
     ComplexOperation()&lt;transacts&gt;&lt;decides&gt;:void =
@@ -164,35 +187,39 @@ before returning</span><span class="chip">&lt;decides&gt;</span><span class="chi
        UpdateInventory()    # are provisional
        ChargeResources()    # until all succeed
        ValidateFinalState[] # If this fails, everything rolls back</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The <code>game</code> class has multiple methods that update the <code>game_state</code>, before returning <code>ComplexOperation</code> validates that the object is in a valid state, if it is not, all changes performed in the method are rolled back.</p></div>
   </details>
 </section><section class="section" id="s4-the-logic-of-failure">
-  <div class="annotation">
-    <h3>中文批注：The Logic of Failure</h3>
-    <div class="rows">
-      <div><p>这一节围绕“The Logic of Failure”展开。阅读时先抓住这些英文关键词：provides、logical、operators、work、failure。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">and</span><span class="chip">not</span><span class="chip">It is noteworthy that</span><span class="chip">is not in scope within the</span><span class="chip">branch
-because it is under a</span><span class="chip">.
-
-The</span><span class="chip">not not Exp</span><span class="chip">Exp</span><span class="chip">&lt;decides&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：The Logic of Failure</summary>
+  <article class="cn-read">
+    <h2>失败的逻辑 <small>The Logic of Failure</small></h2>
+    <p>Verse 提供了处理失败的逻辑运算符，创建了用于组合失败表达式的代数。</p>
+<p><code>and</code> 运算符确保两个表达式都成功。 <code>not</code> 运算符反转成功和失败：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (not (Enemy := GetNearestEnemy[]) and Score &gt; 0):
+    Print(&quot;Coast is clear!&quot;)  # Executes when GetNearestEnemy fails</code></pre></figure>
+<p>值得注意的是，<code>Enemy</code> 不在 <code>then</code> 分支的范围内，因为它位于 <code>not</code> 下。</p>
+<p><code>or</code> 运算符提供了替代方案：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Weapon := PrimaryWeapon[] or SecondaryWeapon[] or DefaultWeapon?</code></pre></figure>
+<p>这将按顺序尝试每个选项，并在第一次成功时停止。它不是评估布尔条件 - 它正在尝试计算并采用第一个成功的计算。</p>
+<p>您可以组合这些运算符来创建复杂的控制流：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidatePlayer(Player:player)&lt;decides&gt;:void =
+    IsAlive[Player]
+    not IsStunned[Player]
+    HasAmmunition[Player] or HasMeleeWeapon[Player]</code></pre></figure>
+<p>仅当玩家还活着、没有被击晕并且拥有弹药或近战武器时，此功能才会成功。每一行都是一个单独的、可能失败但必须成功的表达式。</p>
+<p>另一个有趣的用例是 <code>not not Exp</code>——如果 <code>Exp</code> 成功，它就会成功，但 <code>Exp</code> 的所有效果都被丢弃。这是尝试查看复杂操作是否会成功的一种方法。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：The Logic of Failure</summary>
     <div class="md"><h2>The Logic of Failure</h2>
 <p>Verse provides logical operators that work with failure, creating an algebra for combining failable expressions.</p>
 <p>The <code>and</code> operator ensures that both expression succeed. The <code>not</code> operator inverts success and failure:</p>
-<p>&lt;!--versetest Score:int=10 GetNearestEnemy()&lt;decides&gt;&lt;computes&gt;:int=0 --&gt; &lt;!-- 10 --&gt;</p>
 <pre><code>if (not (Enemy := GetNearestEnemy[]) and Score &gt; 0):
     Print(&quot;Coast is clear!&quot;)  # Executes when GetNearestEnemy fails</code></pre>
 <p>It is noteworthy that <code>Enemy</code> is not in scope within the <code>then</code> branch because it is under a <code>not</code>.</p>
 <p>The <code>or</code> operator provides alternatives:</p>
-<p>&lt;!--versetest DefaultWeapon:?string=false PrimaryWeapon()&lt;decides&gt;&lt;computes&gt;:string=&quot;primary&quot; SecondaryWeapon()&lt;decides&gt;&lt;computes&gt;:string=&quot;sword&quot; --&gt; &lt;!-- 11 --&gt;</p>
 <pre><code>Weapon := PrimaryWeapon[] or SecondaryWeapon[] or DefaultWeapon?</code></pre>
 <p>This tries each option in order, stopping at the first success. It&#x27;s not evaluating boolean conditions - it&#x27;s attempting computations and taking the first one that succeeds.</p>
 <p>You can combine these operators to create sophisticated control flow:</p>
-<p>&lt;!--versetest player := struct{} IsAlive(P:player)&lt;computes&gt;&lt;decides&gt;:void = {} IsStunned(P:player)&lt;computes&gt;&lt;decides&gt;:void = {} HasAmmunition(P:player)&lt;computes&gt;&lt;decides&gt;:void = {} HasMeleeWeapon(P:player)&lt;computes&gt;&lt;decides&gt;:void = {} --&gt; &lt;!-- 12 --&gt;</p>
 <pre><code>ValidatePlayer(Player:player)&lt;decides&gt;:void =
     IsAlive[Player]
     not IsStunned[Player]
@@ -201,18 +228,26 @@ The</span><span class="chip">not not Exp</span><span class="chip">Exp</span><spa
 <p>Another interesting use case is <code>not not Exp</code> -- it succeeds if <code>Exp</code> succeeds but all effects of <code>Exp</code> are thrown away. This is a way to try to see if a complex operation would succeed.</p></div>
   </details>
 </section><section class="section" id="s5-expressions-in-decides">
-  <div class="annotation">
-    <h3>中文批注：Expressions in Decides</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Expressions in Decides”展开。阅读时先抓住这些英文关键词：subtle、feature、how、relational、expressions。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">X&gt;0</span><span class="chip">X</span><span class="chip">0&lt;=X</span><span class="chip">0</span><span class="chip">A op B</span><span class="chip">A</span><span class="chip">Value</span><span class="chip">&lt;decides&gt;</span><span class="chip">decides</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Expressions in Decides</summary>
+  <article class="cn-read">
+    <h2>决策中的表达式 <small>Expressions in Decides</small></h2>
+    <p>一个微妙的特征是关系表达式在决定上下文中的行为方式。当比较出现在可以处理失败的上下文中时，它不仅仅测试条件 - 它会生成一个值，特别是返回其左侧。因此，<code>X&gt;0</code> 返回 <code>X</code>，<code>0&lt;=X</code> 返回 <code>0</code>。此行为适用于决定上下文中的所有比较运算符：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetIfNotEqual(X:int, Y:int)&lt;decides&gt;:int =
+    X &lt;&gt; Y  # Returns X when X ≠ Y, fails when X = Y
+
+GetIfLessOrEqual(X:int, Limit:int)&lt;decides&gt;:int =
+    X &lt;= Limit  # Returns X when X ≤ Limit, fails otherwise
+
+GetIfGreaterThan(X:int, Threshold:int)&lt;decides&gt;:int =
+    X &gt; Threshold  # Returns X when X &gt; Threshold, fails otherwise</code></pre></figure>
+<p><code>A op B</code> 形式的比较表达式在比较成功时返回 <code>A</code>，在比较错误时返回失败。</p>
+<p>这将创建简洁的验证函数，要么返回 <code>Value</code>，要么失败：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInRange(Value:int, LwrBnd:int, UprBnd:int)&lt;decides&gt;:int =
+    Value &gt;= LwrBnd and Value &lt;= UprBnd</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Expressions in Decides</summary>
     <div class="md"><h2>Expressions in Decides</h2>
 <p>A subtle feature is how relational expressions behave in decides contexts. When a comparison appears in a context that can handle failure, it doesn&#x27;t just test a condition—it produces a value, specifically it returns its left-hand side. So <code>X&gt;0</code> returns <code>X</code> and <code>0&lt;=X</code> returns <code>0</code>.  This behavior applies to all comparison operators in decides contexts:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 14 --&gt;</p>
 <pre><code>GetIfNotEqual(X:int, Y:int)&lt;decides&gt;:int =
     X &lt;&gt; Y  # Returns X when X ≠ Y, fails when X = Y
 
@@ -221,32 +256,49 @@ GetIfLessOrEqual(X:int, Limit:int)&lt;decides&gt;:int =
 
 GetIfGreaterThan(X:int, Threshold:int)&lt;decides&gt;:int =
     X &gt; Threshold  # Returns X when X &gt; Threshold, fails otherwise</code></pre>
-<p>&lt;!-- GetIfNotEqual[1,2] GetIfGreaterThan[11,2] GetIfLessOrEqual[1,2] --&gt;</p>
 <p>Comparison expressions of the form <code>A op B</code> return <code>A</code> when the comparison succeeds, and fail when the comparison is false.</p>
 <p>This creates concise validation functions that either return <code>Value</code> or fail:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 16 --&gt;</p>
 <pre><code>ValidateInRange(Value:int, LwrBnd:int, UprBnd:int)&lt;decides&gt;:int =
-    Value &gt;= LwrBnd and Value &lt;= UprBnd</code></pre>
-<p>&lt;!-- ValidateInRange[5,0,10] --&gt;</p></div>
+    Value &gt;= LwrBnd and Value &lt;= UprBnd</code></pre></div>
   </details>
 </section><section class="section" id="s6-option-types">
-  <div class="annotation">
-    <h3>中文批注：Option Types</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Option Types”展开。可把它先理解为“可选类型”。阅读时先抓住这些英文关键词：option、failure、intimately、connected、either。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">false</span><span class="chip">?</span><span class="chip">The</span><span class="chip">?T</span><span class="chip">&lt;!-- ValidSyntax? --&gt;
+  <article class="cn-read">
+    <h2>期权类型 <small>Option Types</small></h2>
+    <p>期权类型和失败密切相关。选项要么包含值，要么为空（由 <code>false</code> 表示）。查询运算符 <code>?</code> 在选项和失败之间进行转换：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>M()&lt;decides&gt;:void=
+    MaybeValue:?int = option{42}  # An optional int
+    Value := MaybeValue?          # Succeeds with 42
 
-The</span><span class="chip">Use the</span><span class="chip">Empty options and</span><span class="chip">are equivalent—an empty option *is*</span><span class="chip">:
+    Empty:?int = false            # An empty value
+    Other := Empty?               # Failure</code></pre></figure>
+<p><code>option{}</code> 构造函数反向工作，将失败转换为空选项：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Result := option{RiskyComputation[]} # option{value} if computation succeeds
+                                     # otherwise false</code></pre></figure>
+<p>这种双向转换使选项和故障可以互换，使您可以为您的特定用例选择最合适的表示形式。</p>
+<p>选项类型 <code>?T</code> 表示可能存在也可能不存在的值。问号出现在类型*之前*，而不是之后：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidSyntax:?int = option{42}      # Correct</code></pre></figure>
+<p><code>?</code> 前缀适用于任何类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybeNumber:?int = option{42}
+MaybeText:?string = option{&quot;hello&quot;}
+MaybePlayer:?player = option{player{}}</code></pre></figure>
+<p>使用 <code>option{}</code> 构造函数来包装一个值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Filled:?int = option{42}
+Empty:?int  = false
+Result:?int = option{RiskyComputation[]}  # false if computation fails</code></pre></figure>
+<p>空选项和 <code>false</code> 是等价的——空选项*是* <code>false</code>：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>EmptyOption:?int = false
+EmptyOption = false  # This comparison succeeds</code></pre></figure>
+<p>Verse 具有丰富而灵活的语法，有时也会导致微妙的错误。逗号产生 <code>option</code> 中的元组，而分号计算所有值但仅保留最后一个值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Comma creates tuple
+option{1, 2}? = (1, 2)
 
-&lt;!--versetest--&gt;
-&lt;!-- 23 --&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Option Types</summary>
+# Semicolon creates sequence - last value is used
+option{1; 2}? = 2</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Option Types</summary>
     <div class="md"><h2>Option Types</h2>
 <p>The option type and failure are intimately connected. An option either contains a value or is empty (represented by <code>false</code>). The query operator <code>?</code> converts between options and failure:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 18 --&gt;</p>
 <pre><code>M()&lt;decides&gt;:void=
     MaybeValue:?int = option{42}  # An optional int
     Value := MaybeValue?          # Succeeds with 42
@@ -254,31 +306,23 @@ The</span><span class="chip">Use the</span><span class="chip">Empty options and<
     Empty:?int = false            # An empty value
     Other := Empty?               # Failure</code></pre>
 <p>The <code>option{}</code> constructor works in reverse, converting failure to an empty option:</p>
-<p>&lt;!--versetest RiskyComputation()&lt;computes&gt;&lt;decides&gt;:int=1 --&gt; &lt;!-- 19 --&gt;</p>
 <pre><code>Result := option{RiskyComputation[]} # option{value} if computation succeeds
                                      # otherwise false</code></pre>
-<p>&lt;!-- Result --&gt;</p>
 <p>This bidirectional conversion makes options and failure interchangeable, allowing you to choose the most appropriate representation for your specific use case.</p>
 <p>The option type <code>?T</code> represents values that may or may not be present. The question mark appears <em>before</em> the type, not after:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 20 --&gt;</p>
 <pre><code>ValidSyntax:?int = option{42}      # Correct</code></pre>
-<p>&lt;!-- ValidSyntax? --&gt;</p>
 <p>The <code>?</code> prefix applies to any type:</p>
-<p>&lt;!--versetest player := struct{} --&gt; &lt;!-- 21 --&gt;</p>
 <pre><code>MaybeNumber:?int = option{42}
 MaybeText:?string = option{&quot;hello&quot;}
 MaybePlayer:?player = option{player{}}</code></pre>
 <p>Use the <code>option{}</code> constructor to wrap a value:</p>
-<p>&lt;!--versetest RiskyComputation()&lt;computes&gt;&lt;decides&gt;:int=1 --&gt; &lt;!-- 22 --&gt;</p>
 <pre><code>Filled:?int = option{42}
 Empty:?int  = false
 Result:?int = option{RiskyComputation[]}  # false if computation fails</code></pre>
 <p>Empty options and <code>false</code> are equivalent—an empty option <em>is</em> <code>false</code>:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 23 --&gt;</p>
 <pre><code>EmptyOption:?int = false
 EmptyOption = false  # This comparison succeeds</code></pre>
 <p>Verse has a rich and flexible syntax which can also sometimes cause subtle bugs. A comma gives rise to a tuple in an <code>option</code> whereas a semicolon evaluates all values but retain only the last one:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 24 --&gt;</p>
 <pre><code># Comma creates tuple
 option{1, 2}? = (1, 2)
 
@@ -286,18 +330,32 @@ option{1, 2}? = (1, 2)
 option{1; 2}? = 2</code></pre></div>
   </details>
 </section><section class="section" id="s7-unwrapping">
-  <div class="annotation">
-    <h3>中文批注：Unwrapping</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Unwrapping”展开。阅读时先抓住这些英文关键词：query、operator、extracts、options、failing。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">?</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">if</span><span class="chip">option</span><span class="chip">decides</span><span class="chip">computes</span><span class="chip">array</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Unwrapping</summary>
+  <article class="cn-read">
+    <h2>展开 <small>Unwrapping</small></h2>
+    <p>查询运算符 <code>?</code> 从选项中提取值，如果选项为空则失败：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>M()&lt;decides&gt;:void=
+    MaybeValue:?int = option{42}
+    Value := MaybeValue?  # Succeeds with 42
+
+    Empty:?int = false
+    Other := Empty?  # Fails - cannot unwrap empty option</code></pre></figure>
+<p>仅允许在失败上下文中展开：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: In if condition (failure context)
+if (Value := MaybeInt?):
+    Print(&quot;Got {Value}&quot;)
+
+# Valid: In for loop (failure context)
+for (Item : Items, ValidItem := ProcessItem(Item)?):
+    UseItem(Item)
+
+# Valid: In &lt;decides&gt; function body (failure context)
+GetRequired(Maybe:?int)&lt;decides&gt;:int =
+    Maybe?  # Fails if Maybe is empty</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Unwrapping</summary>
     <div class="md"><h3>Unwrapping</h3>
 <p>The query operator <code>?</code> extracts values from options, failing if the option is empty:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 25 --&gt;</p>
 <pre><code>M()&lt;decides&gt;:void=
     MaybeValue:?int = option{42}
     Value := MaybeValue?  # Succeeds with 42
@@ -305,7 +363,6 @@ option{1; 2}? = 2</code></pre></div>
     Empty:?int = false
     Other := Empty?  # Fails - cannot unwrap empty option</code></pre>
 <p>Unwrapping is only allowed in failure contexts:</p>
-<p>&lt;!--versetest MaybeInt:?int = option{42} UseItem(I:int):void={} ProcessItem(I:int)&lt;computes&gt;:?int=option{3} Items:[]int = array{1,2,3} --&gt; &lt;!-- 26 --&gt;</p>
 <pre><code># Valid: In if condition (failure context)
 if (Value := MaybeInt?):
     Print(&quot;Got {Value}&quot;)
@@ -319,18 +376,36 @@ GetRequired(Maybe:?int)&lt;decides&gt;:int =
     Maybe?  # Fails if Maybe is empty</code></pre></div>
   </details>
 </section><section class="section" id="s8-nesting">
-  <div class="annotation">
-    <h3>中文批注：Nesting</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Nesting”展开。阅读时先抓住这些英文关键词：Options、nested、represent、multiple、layers。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">option</span><span class="chip">if</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Nesting</summary>
+  <article class="cn-read">
+    <h2>嵌套 <small>Nesting</small></h2>
+    <p>选项可以嵌套来表示多层缺席：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Double-nested option
+Double:??int = option{option{42}}
+
+# Single unwrap gets outer option
+if (Inner := Double?):
+    if (TheValue := Inner?):
+        # TheValue has type int, equals 42
+
+# Double unwrap gets the value directly
+Value := Double??  # Fails if either layer is empty</code></pre></figure>
+<p>辅助函数也适用于嵌套选项：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>UnpackNested(MaybeValue:??int):?int =
+    if (Inner := MaybeValue?):
+        Inner
+    else:
+        option{-1}  # Default for outer empty
+
+DirectUnpack(MaybeValue:??int):int =
+    if (Value := MaybeValue??):
+        Value
+    else:
+        -1  # Default for any level empty</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Nesting</summary>
     <div class="md"><h3>Nesting</h3>
 <p>Options can be nested to represent multiple layers of absence:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 27 --&gt;</p>
 <pre><code># Double-nested option
 Double:??int = option{option{42}}
 
@@ -342,7 +417,6 @@ if (Inner := Double?):
 # Double unwrap gets the value directly
 Value := Double??  # Fails if either layer is empty</code></pre>
 <p>Helper functions also work with nested options:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 28 --&gt;</p>
 <pre><code>UnpackNested(MaybeValue:??int):?int =
     if (Inner := MaybeValue?):
         Inner
@@ -353,22 +427,38 @@ DirectUnpack(MaybeValue:??int):int =
     if (Value := MaybeValue??):
         Value
     else:
-        -1  # Default for any level empty</code></pre>
-<p>&lt;!-- UnpackNested(option{option{1}}) DirectUnpack(option{option{2}}) --&gt;</p></div>
+        -1  # Default for any level empty</code></pre></div>
   </details>
 </section><section class="section" id="s9-chained-access">
-  <div class="annotation">
-    <h3>中文批注：Chained Access</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Chained Access”展开。阅读时先抓住这些英文关键词：operator、provides、safe、member、access。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">?.</span><span class="chip">The</span><span class="chip">class</span><span class="chip">option</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Chained Access</summary>
+  <article class="cn-read">
+    <h2>链式访问 <small>Chained Access</small></h2>
+    <p><code>?.</code> 运算符提供对可选值的安全成员访问：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
+    Name:string = &quot;Unknown&quot;
+    Health:int = 100
+
+MaybeEntity:?entity = option{entity{}}
+
+# Safe field access
+if (Name := MaybeEntity?.Name):
+    Print(&quot;Entity: {Name}&quot;)  # Succeeds
+
+# Safe method call
+MaybeEntity?.TakeDamage(10)  # Only calls if entity present
+
+# Chaining through multiple optionals
+linked_list := class:
+    Value:int = 0
+    Next:?linked_list = false
+
+Head:?linked_list = option{linked_list{Value := 1}}
+SecondValue := Head?.Next?.Value  # Fails if any link is empty</code></pre></figure>
+<p><code>?.</code> 运算符短路 - 如果选项为空，则整个表达式将失败，而不评估成员访问权限。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Chained Access</summary>
     <div class="md"><h3>Chained Access</h3>
 <p>The <code>?.</code> operator provides safe member access on optional values:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 29 --&gt;</p>
 <pre><code>entity := class:
     Name:string = &quot;Unknown&quot;
     Health:int = 100
@@ -392,18 +482,23 @@ SecondValue := Head?.Next?.Value  # Fails if any link is empty</code></pre>
 <p>The <code>?.</code> operator short-circuits—if the option is empty, the entire expression fails without evaluating the member access.</p></div>
   </details>
 </section><section class="section" id="s10-defaulting">
-  <div class="annotation">
-    <h3>中文批注：Defaulting</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Defaulting”展开。阅读时先抓住这些英文关键词：Use、operator、provide、fallback、empty。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">or</span><span class="chip">for</span><span class="chip">option</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Defaulting</summary>
+  <article class="cn-read">
+    <h2>违约 <small>Defaulting</small></h2>
+    <p>使用 <code>or</code> 运算符为空选项提供后备值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybeValue:?int = false
+Value := MaybeValue? or 42  # Yields 42
+
+# Chaining multiple options
+Primary:?string = false
+Secondary:?string = option{&quot;backup&quot;}
+Default:string = &quot;default&quot;
+
+Result := Primary? or Secondary? or Default</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Defaulting</summary>
     <div class="md"><h3>Defaulting</h3>
 <p>Use the <code>or</code> operator to provide fallback values for empty options:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 30 --&gt;</p>
 <pre><code>MaybeValue:?int = false
 Value := MaybeValue? or 42  # Yields 42
 
@@ -415,25 +510,32 @@ Default:string = &quot;default&quot;
 Result := Primary? or Secondary? or Default</code></pre></div>
   </details>
 </section><section class="section" id="s11-comparison">
-  <div class="annotation">
-    <h3>中文批注：Comparison</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Comparison”展开。阅读时先抓住这些英文关键词：Empty、options、equal、false、filled。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">false</span><span class="chip">option</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Comparison</summary>
+  <article class="cn-read">
+    <h2>比较 <small>Comparison</small></h2>
+    <p>正确比较时，空选项等于 <code>false</code>，填充选项等于其展开值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>EmptyOption:?int = false
+EmptyOption = false  # Succeeds
+
+FilledOption:?int = option{1}
+FilledOption? = 1  # Succeeds - unwrap then compare</code></pre></figure>
+<p>但是，您不能在不展开的情况下直接比较可选值和非可选值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Opt:?int = option{42}
+Regular:int = 42
+
+# Must unwrap to compare
+if (Opt? = Regular):
+    Print(&quot;Equal&quot;)</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Comparison</summary>
     <div class="md"><h3>Comparison</h3>
 <p>Empty options equal <code>false</code>, and filled options equal their unwrapped values when compared properly:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 40 --&gt;</p>
 <pre><code>EmptyOption:?int = false
 EmptyOption = false  # Succeeds
 
 FilledOption:?int = option{1}
 FilledOption? = 1  # Succeeds - unwrap then compare</code></pre>
 <p>However, you cannot directly compare optional and non-optional values without unwrapping:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 41 --&gt;</p>
 <pre><code>Opt:?int = option{42}
 Regular:int = 42
 
@@ -442,36 +544,49 @@ if (Opt? = Regular):
     Print(&quot;Equal&quot;)</code></pre></div>
   </details>
 </section><section class="section" id="s12-failure-with-optionals">
-  <div class="annotation">
-    <h3>中文批注：Failure with Optionals</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Failure with Optionals”展开。阅读时先抓住这些英文关键词：Combining、decides、functions、optional、return。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">decides</span><span class="chip">using</span><span class="chip">option</span><span class="chip">transacts</span><span class="chip">if</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Failure with Optionals</summary>
+  <article class="cn-read">
+    <h2>选项失败 <small>Failure with Optionals</small></h2>
+    <p>将决定函数与可选返回类型相结合，创建一个具有多层故障的系统。这种模式可以简洁地表达复杂的条件，同时保持清晰度。</p>
+<p>一个函数可能会在两个层面上失败：</p>
+<ul><li>*函数级故障*：使用 <code>&lt;decides&gt;</code> 整个函数失败</li><li>*值级失败*：函数成功但返回空选项</li></ul>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindEligiblePlayer(Name:string)&lt;decides&gt;:?player =
+    Name &lt;&gt; &quot;&quot;           # Layer 1: Fail if name is empty
+    Player := LookupPlayer[Name]  # Layer 1: Fail if player not found
+    option{IsActive[Player]}      # Layer 2: Empty option if player inactive</code></pre></figure>
+<p>该函数有三种可能的结果：</p>
+<ul><li>*功能失败*：名称为空或未找到玩家</li><li>*功能成功，选项为空*：找到玩家但不活动</li><li>*功能成功并填充选项*：玩家已找到并处于活动状态</li></ul>
+<p>调用此函数演示了分层故障：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function-level failure
+Result1 := FindEligiblePlayer[&quot;&quot;]  # Fails, Result1 never assigned
+
+# Function succeeds, returns empty option
+if (Player := FindEligiblePlayer[&quot;InactiveUser&quot;]?):
+    # Won&#x27;t execute - function succeeds but ? query fails
+else:
+    # Executes here
+
+# Function succeeds, returns filled option
+if (Player := FindEligiblePlayer[&quot;ActiveUser&quot;]?):
+    # Executes with Player bound to the active player</code></pre></figure>
+<p>此模式对于验证不同的故障模式特别强大：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateScore(Score:int)&lt;decides&gt;:?int =
+    Score &gt;= 0           # Layer 1: Reject negative scores (invalid input)
+    option{Score &lt;= 100} # Layer 2: Reject high scores (out of range)</code></pre></figure>
+<p>功能级故障和值级故障之间的区别使您可以表达不同类型的错误。功能级故障通常意味着“此操作无法完成”，而值级故障意味着“操作已完成，但结果不符合预期标准”。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Failure with Optionals</summary>
     <div class="md"><h2>Failure with Optionals</h2>
 <p>Combining decides functions with optional return types, creates a system with multiple layers of failure. This pattern enables expressing complex conditions concisely while maintaining clarity.</p>
 <p>A function can fail at two levels:</p>
-<ul>
-<li><em>Function-level failure</em>: The entire function fails using <code>&lt;decides&gt;</code></li>
-<li><em>Value-level failure</em>: The function succeeds but returns an empty option</li>
-</ul>
-<p>&lt;!--versetest player := string IsActive(S:string)&lt;transacts&gt;&lt;decides&gt;:string=&quot;&quot; LookupPlayer(S:string)&lt;transacts&gt;&lt;decides&gt;:string=&quot;player&quot; --&gt; &lt;!-- 42 --&gt;</p>
+<ul><li><em>Function-level failure</em>: The entire function fails using <code>&lt;decides&gt;</code></li><li><em>Value-level failure</em>: The function succeeds but returns an empty option</li></ul>
 <pre><code>FindEligiblePlayer(Name:string)&lt;decides&gt;:?player =
     Name &lt;&gt; &quot;&quot;           # Layer 1: Fail if name is empty
     Player := LookupPlayer[Name]  # Layer 1: Fail if player not found
     option{IsActive[Player]}      # Layer 2: Empty option if player inactive</code></pre>
-<p>&lt;!-- FindEligiblePlayer[&quot;Someone&quot;] --&gt;</p>
 <p>This function has three possible outcomes:</p>
-<ul>
-<li><em>Function fails</em>: Empty name or player not found</li>
-<li><em>Function succeeds with empty option</em>: Player found but inactive</li>
-<li><em>Function succeeds with filled option</em>: Player found and active</li>
-</ul>
+<ul><li><em>Function fails</em>: Empty name or player not found</li><li><em>Function succeeds with empty option</em>: Player found but inactive</li><li><em>Function succeeds with filled option</em>: Player found and active</li></ul>
 <p>Calling this function demonstrates the layered failure:</p>
-<p>&lt;!--versetest FindEligiblePlayer(S:string)&lt;transacts&gt;&lt;decides&gt;:?string=option{S} --&gt; &lt;!-- 43 --&gt;</p>
 <pre><code># Function-level failure
 Result1 := FindEligiblePlayer[&quot;&quot;]  # Fails, Result1 never assigned
 
@@ -485,28 +600,54 @@ else:
 if (Player := FindEligiblePlayer[&quot;ActiveUser&quot;]?):
     # Executes with Player bound to the active player</code></pre>
 <p>This pattern is particularly powerful for validation with different failure modes:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 44 --&gt;</p>
 <pre><code>ValidateScore(Score:int)&lt;decides&gt;:?int =
     Score &gt;= 0           # Layer 1: Reject negative scores (invalid input)
     option{Score &lt;= 100} # Layer 2: Reject high scores (out of range)</code></pre>
 <p>The distinction between function-level and value-level failure lets you express different kinds of errors. Function-level failure typically means &quot;this operation couldn&#x27;t complete&quot; while value-level failure means &quot;the operation completed but the result doesn&#x27;t meet the expected criteria.&quot;</p></div>
   </details>
 </section><section class="section" id="s13-casts-as-decides">
-  <div class="annotation">
-    <h3>中文批注：Casts as Decides</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Casts as Decides”展开。阅读时先抓住这些英文关键词：casting、integrated、failure、system、dynamic。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">Type[value]</span><span class="chip">value</span><span class="chip">Type</span><span class="chip">&lt;castable&gt;</span><span class="chip">or</span><span class="chip">component</span><span class="chip">&lt;transacts&gt;</span><span class="chip">decides</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Casts as Decides</summary>
+  <article class="cn-read">
+    <h2>演员阵容决定 <small>Casts as Decides</small></h2>
+    <p>Verse 中的类型转换已集成到故障系统中。动态转换的行为就像 <code>&lt;decides&gt;</code> 函数调用一样，并且类似地使用括号语法。例如，<code>Type[value]</code> 尝试将 <code>value</code> 的类型强制转换为 <code>Type</code>，如果不成功则失败。</p>
+<p>这也适用于必须指定 <code>&lt;castable&gt;</code> 的用户定义类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;castable&gt;:
+    Name:string = &quot;Component&quot;
+
+physics_component := class&lt;castable&gt;(component):
+    Velocity:float = 0.0
+
+# Casting as a decides operation
+TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
+    physics_component[Comp]  # Succeeds if Comp is actually a physics_component</code></pre></figure>
+<p>这使得基于类型的调度很容易表达：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessComponent(Comp:component):void =
+    if (Physics := physics_component[Comp]):
+        UpdatePhysics(Physics)
+    else if (Render := render_component[Comp]):
+        UpdateRendering(Render)
+    else:
+        # Unknown component type
+        UpdateGeneric(Comp)</code></pre></figure>
+<p>强制转换本身就是条件——不需要单独的类型检查。当转换成功时，您既确认了类型又获得了正确类型的引用。</p>
+<p>您可以将强制转换与其他决定操作链接起来：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetActivePhysicsComponent(Entity:entity)&lt;decides&gt;:physics_component =
+    Comp := Entity.GetComponent[]  # Fails if no component
+    Physics := physics_component[Comp]  # Fails if not physics
+    IsActive[Physics]  # Fails if inactive
+    Physics</code></pre></figure>
+<p>每个步骤都必须成功，函数才能返回值。这将创建自记录验证链，其中类型要求是明确的。</p>
+<p>强制转换与 <code>or</code> 组合器一起用于后备类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetInteractable(Entity:entity)&lt;decides&gt;:component =
+    physics_component[Entity] or
+    trigger_component[Entity] or
+    scripted_component[Entity]</code></pre></figure>
+<p>这会按顺序尝试每个转换，返回第一个成功的转换。它是类型安全的，因为所有选项都共享通用的 <code>component</code> 基本类型。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Casts as Decides</summary>
     <div class="md"><h2>Casts as Decides</h2>
 <p>Type casting in Verse is integrated into the failure system. A dynamic cast behaves just like a <code>&lt;decides&gt;</code> function call and similarly uses bracket syntax. For example <code>Type[value]</code> attempts to cast <code>value</code>&#x27;s type to <code>Type</code> and fails if unsuccessful.</p>
 <p>This is also works with user defined types which must specify <code>&lt;castable&gt;</code>:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;: Name:string = &quot;Component&quot;</p>
-<p>physics_component := class&lt;castable&gt;(component): Velocity:float = 0.0</p>
-<p>TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component = physics_component[Comp] &lt;# --&gt; &lt;!-- 48 --&gt;</p>
 <pre><code>component := class&lt;castable&gt;:
     Name:string = &quot;Component&quot;
 
@@ -516,9 +657,7 @@ physics_component := class&lt;castable&gt;(component):
 # Casting as a decides operation
 TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
     physics_component[Comp]  # Succeeds if Comp is actually a physics_component</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>This makes type-based dispatch easily expressible:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;: Name:string = &quot;Component&quot; physics_component := class&lt;castable&gt;(component): Velocity:float = 0.0 render_component := class&lt;castable&gt;(component): Renderer:string = &quot;RayTrace&quot; UpdatePhysics(P:physics_component):void={} UpdateRendering(R:render_component):void={} UpdateGeneric(G:component):void={} --&gt; &lt;!-- 49 --&gt;</p>
 <pre><code>ProcessComponent(Comp:component):void =
     if (Physics := physics_component[Comp]):
         UpdatePhysics(Physics)
@@ -527,10 +666,8 @@ TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
     else:
         # Unknown component type
         UpdateGeneric(Comp)</code></pre>
-<p>&lt;!-- ProcessComponent(component{}) --&gt;</p>
 <p>The cast itself is the condition—no separate type checking needed. When the cast succeeds, you have both confirmed the type and obtained a properly-typed reference.</p>
 <p>You can chain casts with other decides operations:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;: Name:string = &quot;Component&quot; physics_component := class&lt;castable&gt;(component): Velocity:float = 0.0 render_component := class&lt;castable&gt;(component): Renderer:string = &quot;RayTrace&quot; UpdatePhysics(P:physics_component):void=return UpdateRendering(R:render_component):void=return UpdateGeneric(G:component):void=return entity := class: GetComponent()&lt;transacts&gt;&lt;decides&gt;:component= component{} IsActive(c:component)&lt;transacts&gt;&lt;decides&gt;:logic=true --&gt; &lt;!-- 50 --&gt;</p>
 <pre><code>GetActivePhysicsComponent(Entity:entity)&lt;decides&gt;:physics_component =
     Comp := Entity.GetComponent[]  # Fails if no component
     Physics := physics_component[Comp]  # Fails if not physics
@@ -538,30 +675,90 @@ TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
     Physics</code></pre>
 <p>Each step must succeed for the function to return a value. This creates self-documenting validation chains where type requirements are explicit.</p>
 <p>Casts work with the <code>or</code> combinator for fallback types:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;: Name:string = &quot;Component&quot; physics_component := class&lt;castable&gt;(component): Velocity:float = 0.0 trigger_component := class&lt;castable&gt;(component): Trigger:float = 0.0 scripted_component := class&lt;castable&gt;(component): Scripted:string = &quot;Something&quot; UpdatePhysics(P:physics_component):void=return UpdateGeneric(G:component):void=return entity := class: GetComponent()&lt;transacts&gt;&lt;decides&gt;:component= component{} IsActive(c:component)&lt;transacts&gt;&lt;decides&gt;:logic=true GetInteractable(Entity:entity)&lt;decides&gt;&lt;transacts&gt;:component = physics_component[Entity] or trigger_component[Entity] or scripted_component[Entity] &lt;# --&gt; &lt;!-- 51 --&gt;</p>
 <pre><code>GetInteractable(Entity:entity)&lt;decides&gt;:component =
     physics_component[Entity] or
     trigger_component[Entity] or
     scripted_component[Entity]</code></pre>
-<p>&lt;!-- #&gt; GetInteractable[entity{}] --&gt;</p>
 <p>This tries each cast in order, returning the first successful one. It&#x27;s type-safe because all options share the common <code>component</code> base type.</p></div>
   </details>
 </section><section class="section" id="s14-idioms-and-patterns">
-  <div class="annotation">
-    <h3>中文批注：Idioms and Patterns</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Idioms and Patterns”展开。阅读时先抓住这些英文关键词：work、failure、certain、patterns、emerge。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">The syntax</span><span class="chip">&lt;!-- Double[2] --&gt;
+  <article class="cn-read">
+    <h2>习语和模式 <small>Idioms and Patterns</small></h2>
+    <p>当你面对失败时，某些模式会出现，可以优雅地解决常见问题。</p>
+<p>验证链模式使用顺序失败来确保满足所有条件：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessAction(Action:action)&lt;decides&gt;:void =
+    Player := GetActingPlayer[Action]
+    IsValidTurn[Player]
+    HasRequiredResources[Player, Action]
+    Location := GetTargetLocation[Action]
+    IsValidLocation[Location]
+    ExecuteAction[Action]</code></pre></figure>
+<p>每行都必须成功才能继续执行。这将创建自记录代码，其中前提条件是明确的并按顺序检查。</p>
+<p>第一次成功模式会尝试替代方案，直到其中一个有效为止：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindPath(Start:location, End:location)&lt;decides&gt;:path =
+    DirectPath[Start, End] or
+    PathAroundObstacles[Start, End] or
+    ComplexPathfinding[Start, End]</code></pre></figure>
+<p>这自然表示先尝试简单的解决方案，然后再尝试复杂的解决方案。</p>
+<p>过滤模式使用失败来选择项目：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetEliteEnemies(Enemies:[]enemy):[]enemy =
+    for (Enemy : Enemies, Level := GetLevel[Enemy], Level &gt;= 10):
+        Enemy</code></pre></figure>
+<p>结果中仅包含具有等级且等级至少为 10 的敌人。</p>
+<p>事务模式组相关变化：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TradeItems(PlayerA:player, PlayerB:player, ItemA:item, ItemB:item)&lt;transacts&gt;&lt;decides&gt;:void =
+    RemoveItem[PlayerA, ItemA]
+    RemoveItem[PlayerB, ItemB]
+    AddItem(PlayerA, ItemB)
+    AddItem(PlayerB, ItemA)
+    ValidateTrade[PlayerA, PlayerB]</code></pre></figure>
+<p>要么整个​​事务成功，要么什么都没有改变。</p>
+<p>**可选索引**</p>
+<p>使用可选容器时，您可以使用将可选检查与元素访问相结合的专用查询语法来访问其内容。可选元组支持通过查询运算符直接访问元素：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybePair:?tuple(int, string) = option{(42, &quot;answer&quot;)}
 
-If</span><span class="chip">fails,</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">struct</span><span class="chip">transacts</span><span class="chip">decides</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Idioms and Patterns</summary>
+# Access first element
+if (FirstValue := MaybePair?(0)):
+    # FirstValue is 42 (type: int)
+    Print(&quot;First: {FirstValue}&quot;)
+
+# Access second element
+if (SecondValue := MaybePair?(1)):
+    # SecondValue is &quot;answer&quot; (type: string)
+    Print(&quot;Second: {SecondValue}&quot;)</code></pre></figure>
+<p>同时语法<code>Option?(index)</code>：</p>
+<ul><li>查询选项是否非空</li><li>访问给定索引处的元组元素</li><li>如果两者都成功则绑定元素值</li></ul>
+<p>**组合和调用链**</p>
+<p>决定函数自然地组合，允许从简单、可重用的部分构建复杂的操作。当一个决定函数调用另一个决定函数时，失败会自动传播。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidatePositive(X:int)&lt;decides&gt;:int =
+    X &gt; 0
+
+Double(X:int)&lt;decides&gt;:int =
+    Validated := ValidatePositive[X]  # Fails if X ≤ 0
+    Validated * 2</code></pre></figure>
+<p>如果 <code>ValidatePositive</code> 失败，<code>Double</code> 立即失败。经过验证的价值在链条中流动。</p>
+<p>**保留失败上下文：**</p>
+<p>当在非决定上下文中调用决定函数时，必须显式处理失败：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># This won&#x27;t compile - ProcessPlayer doesn&#x27;t have &lt;decides&gt;
+# BadProcessPlayer(Name:string):void =
+#    Player := FindPlayer[Name]  # ERROR: Unhandled failure
+
+# Handle with if
+ProcessPlayerWithIf(Name:string):void =
+    if (Player := FindPlayer[Name]):
+        UsePlayer(Player)
+
+# Handle with or
+ProcessPlayerWithOr(Name:string):void =
+    Player := FindPlayer[Name] or GetDefaultPlayer()
+    UsePlayer(Player)</code></pre></figure>
+<p>了解组合可以帮助您从简单、可测试的部分构建复杂的验证逻辑。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Idioms and Patterns</summary>
     <div class="md"><h2>Idioms and Patterns</h2>
 <p>As you work with failure, certain patterns emerge that solve common problems elegantly.</p>
 <p>The validation chain pattern uses sequential failures to ensure all conditions are met:</p>
-<p>&lt;!--versetest action := struct{} player := struct{} location := struct{} GetActingPlayer(A:action)&lt;transacts&gt;&lt;decides&gt;:player = player{} IsValidTurn(P:player)&lt;computes&gt;&lt;decides&gt;:void = {} HasRequiredResources(P:player, A:action)&lt;computes&gt;&lt;decides&gt;:void = {} GetTargetLocation(A:action)&lt;transacts&gt;&lt;decides&gt;:location = location{} IsValidLocation(L:location)&lt;computes&gt;&lt;decides&gt;:void = {} ExecuteAction(A:action)&lt;transacts&gt;&lt;decides&gt;:void = {} --&gt; &lt;!-- 62 --&gt;</p>
 <pre><code>ProcessAction(Action:action)&lt;decides&gt;:void =
     Player := GetActingPlayer[Action]
     IsValidTurn[Player]
@@ -571,20 +768,17 @@ If</span><span class="chip">fails,</span><span class="chip">&lt;transacts&gt;</s
     ExecuteAction[Action]</code></pre>
 <p>Each line must succeed for execution to continue. This creates self-documenting code where preconditions are explicit and checked in order.</p>
 <p>The first-success pattern tries alternatives until one works:</p>
-<p>&lt;!--versetest location := struct{} path := struct{} DirectPath(S:location, E:location)&lt;transacts&gt;&lt;decides&gt;:path = path{} PathAroundObstacles(S:location, E:location)&lt;transacts&gt;&lt;decides&gt;:path = path{} ComplexPathfinding(S:location, E:location)&lt;transacts&gt;&lt;decides&gt;:path = path{} --&gt; &lt;!-- 63 --&gt;</p>
 <pre><code>FindPath(Start:location, End:location)&lt;decides&gt;:path =
     DirectPath[Start, End] or
     PathAroundObstacles[Start, End] or
     ComplexPathfinding[Start, End]</code></pre>
 <p>This naturally expresses trying simple solutions before complex ones.</p>
 <p>The filtering pattern uses failure to select items:</p>
-<p>&lt;!--versetest enemy := struct{} GetLevel(E:enemy)&lt;computes&gt;&lt;decides&gt;:int = 10 --&gt; &lt;!-- 64 --&gt;</p>
 <pre><code>GetEliteEnemies(Enemies:[]enemy):[]enemy =
     for (Enemy : Enemies, Level := GetLevel[Enemy], Level &gt;= 10):
         Enemy</code></pre>
 <p>Only enemies that have a level and whose level is at least 10 are included in the result.</p>
 <p>The transaction pattern groups related changes:</p>
-<p>&lt;!--versetest player := class: var Inventory:[]item = array{} item := struct{} RemoveItem(P:player, I:item)&lt;transacts&gt;&lt;decides&gt;:void = {} AddItem(P:player, I:item)&lt;transacts&gt;:void = {} ValidateTrade(P1:player, P2:player)&lt;computes&gt;&lt;decides&gt;:void = {} --&gt; &lt;!-- 65 --&gt;</p>
 <pre><code>TradeItems(PlayerA:player, PlayerB:player, ItemA:item, ItemB:item)&lt;transacts&gt;&lt;decides&gt;:void =
     RemoveItem[PlayerA, ItemA]
     RemoveItem[PlayerB, ItemB]
@@ -594,7 +788,6 @@ If</span><span class="chip">fails,</span><span class="chip">&lt;transacts&gt;</s
 <p>Either the entire trade succeeds, or nothing changes.</p>
 <p><strong>Optional Indexing</strong></p>
 <p>When working with optional containers, you can access their contents using specialized query syntax that combines optional checking with element access.  Optional tuples support direct element access through the query operator:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 58 --&gt;</p>
 <pre><code>MaybePair:?tuple(int, string) = option{(42, &quot;answer&quot;)}
 
 # Access first element
@@ -607,25 +800,18 @@ if (SecondValue := MaybePair?(1)):
     # SecondValue is &quot;answer&quot; (type: string)
     Print(&quot;Second: {SecondValue}&quot;)</code></pre>
 <p>The syntax <code>Option?(index)</code> simultaneously:</p>
-<ul>
-<li>Queries whether the option is non-empty</li>
-<li>Accesses the tuple element at the given index</li>
-<li>Binds the element value if both succeed</li>
-</ul>
+<ul><li>Queries whether the option is non-empty</li><li>Accesses the tuple element at the given index</li><li>Binds the element value if both succeed</li></ul>
 <p><strong>Composition and Call Chains</strong></p>
 <p>Decides functions compose naturally, allowing complex operations to be built from simple, reusable pieces. When a decides function calls another decides function, failures propagate automatically.</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 52 --&gt;</p>
 <pre><code>ValidatePositive(X:int)&lt;decides&gt;:int =
     X &gt; 0
 
 Double(X:int)&lt;decides&gt;:int =
     Validated := ValidatePositive[X]  # Fails if X ≤ 0
     Validated * 2</code></pre>
-<p>&lt;!-- Double[2] --&gt;</p>
 <p>If <code>ValidatePositive</code> fails, <code>Double</code> fails immediately. The validated value flows through the chain.</p>
 <p><strong>Preserving failure context:</strong></p>
 <p>When calling decides functions in non-decides contexts, you must handle failure explicitly:</p>
-<p>&lt;!--versetest FindPlayer(Name:string)&lt;transacts&gt;&lt;decides&gt;:string=Name GetDefaultPlayer():string=&quot;Default&quot; UsePlayer(P:string):void=return --&gt; &lt;!-- 57 --&gt;</p>
 <pre><code># This won&#x27;t compile - ProcessPlayer doesn&#x27;t have &lt;decides&gt;
 # BadProcessPlayer(Name:string):void =
 #    Player := FindPlayer[Name]  # ERROR: Unhandled failure
@@ -639,29 +825,62 @@ ProcessPlayerWithIf(Name:string):void =
 ProcessPlayerWithOr(Name:string):void =
     Player := FindPlayer[Name] or GetDefaultPlayer()
     UsePlayer(Player)</code></pre>
-<p>&lt;!-- PlayerOne := &quot;PlayerOne&quot; ProcessPlayerWithIf(PlayerOne) ProcessPlayerWithOr(PlayerOne) --&gt;</p>
 <p>Understanding composition helps you build complex validation logic from simple, testable pieces.</p></div>
   </details>
 </section><section class="section" id="s15-runtime-errors">
-  <div class="annotation">
-    <h3>中文批注：Runtime Errors</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Runtime Errors”展开。阅读时先抓住这些英文关键词：While、failure、decides、represents、normal。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">Err()</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">decides</span><span class="chip">if</span><span class="chip">transacts</span><span class="chip">suspends</span><span class="chip">task</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Runtime Errors</summary>
+  <article class="cn-read">
+    <h2>运行时错误 <small>Runtime Errors</small></h2>
+    <p>虽然失败 (<code>&lt;decides&gt;</code>) 表示具有事务回滚的正常控制流，但*运行时错误*表示终止执行的不可恢复条件。运行时错误在调用堆栈中向上传播，绕过正常的故障处理，并且无法在 Verse 代码中捕获或恢复。</p>
+<p><code>Err()</code> 函数显式触发运行时错误，并带有可选消息：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInput(Value:int):int =
+    if (Value &lt; 0):
+        Err(&quot;Negative values not allowed&quot;)
+    Value</code></pre></figure>
+<p>当发生运行时错误时，执行将通过调用堆栈展开，终止当前操作：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>DeepFunction()&lt;transacts&gt;:int =
+    Log(&quot;C&quot;)
+    Err(&quot;Fatal error&quot;)  # Runtime error here
+    Log(&quot;D&quot;)            # Never executes
+    return 1
+
+MiddleFunction():int =
+    Log(&quot;B&quot;)
+    Result := DeepFunction()  # Error propagates through here
+    Log(&quot;E&quot;)                  # Never executes
+    return Result
+
+TopFunction():void =
+    Log(&quot;A&quot;)
+    Value := MiddleFunction()  # Error propagates to here
+    Log(&quot;F&quot;)                   # Never executes
+
+# Execution order: A, B, C, then terminates
+# Output: &quot;ABC&quot;</code></pre></figure>
+<p>运行时错误立即传播，绕过调用链中的所有后续代码。</p>
+<p>运行时错误通过异步操作传播，终止生成的任务：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AsyncOperation()&lt;suspends&gt;:int =
+    Log(&quot;Start&quot;)
+    WaitTicks(1)
+    Err(&quot;Async error&quot;)  # Runtime error during async execution
+    WaitTicks(1)        # Never executes
+    return 1
+
+KickOff()&lt;suspends&gt;:void=
+    # Error propagates out of spawned task
+    spawn{ AsyncOperation() }
+</code></pre></figure>
+<p>当生成的任务遇到运行时错误时，该特定任务将终止。运行时错误不会自动传播到生成上下文。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Runtime Errors</summary>
     <div class="md"><h2>Runtime Errors</h2>
 <p>While failure (<code>&lt;decides&gt;</code>) represents normal control flow with transactional rollback, <em>runtime errors</em> represent unrecoverable conditions that terminate execution. Runtime errors propagate up the call stack, bypassing normal failure handling, and cannot be caught or recovered within Verse code.</p>
 <p>The <code>Err()</code> function explicitly triggers a runtime error with an optional message:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 66 --&gt;</p>
 <pre><code>ValidateInput(Value:int):int =
     if (Value &lt; 0):
         Err(&quot;Negative values not allowed&quot;)
     Value</code></pre>
 <p>When a runtime error occurs, execution unwinds through the call stack, terminating the current operation:</p>
-<p>&lt;!--versetest Log(Message:string)&lt;transacts&gt;:void = {} --&gt; &lt;!-- 68 --&gt;</p>
 <pre><code>DeepFunction()&lt;transacts&gt;:int =
     Log(&quot;C&quot;)
     Err(&quot;Fatal error&quot;)  # Runtime error here
@@ -683,7 +902,6 @@ TopFunction():void =
 # Output: &quot;ABC&quot;</code></pre>
 <p>The runtime error propagates immediately, bypassing all subsequent code in the call chain.</p>
 <p>Runtime errors propagate through asynchronous operations, terminating spawned tasks:</p>
-<p>&lt;!--versetest Log(Message:string)&lt;transacts&gt;:void = {} WaitTicks(Count:int)&lt;suspends&gt;:void = {} --&gt; &lt;!-- 69 --&gt;</p>
 <pre><code>AsyncOperation()&lt;suspends&gt;:int =
     Log(&quot;Start&quot;)
     WaitTicks(1)
@@ -698,19 +916,27 @@ KickOff()&lt;suspends&gt;:void=
 <p>When a spawned task encounters a runtime error, that specific task terminates. The runtime error does not automatically propagate to the spawning context.</p></div>
   </details>
 </section><section class="section" id="s16-living-with-failure">
-  <div class="annotation">
-    <h3>中文批注：Living with Failure</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Living with Failure”展开。阅读时先抓住这些英文关键词：approach、failure、has、roots、logic。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">or</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">where</span><span class="chip">for</span><span class="chip">struct</span><span class="chip">transacts</span><span class="chip">computes</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Living with Failure</summary>
+  <article class="cn-read">
+    <h2>与失败共存 <small>Living with Failure</small></h2>
+    <p>Verse 的失败方法源于逻辑编程，其中计算搜索解决方案而不是执行步骤。当路径失败时，计算会回溯并尝试替代方案。这种非确定性模型虽然强大，但很难完全推理其普遍性。 Verse 通过明确失败上下文并限制对特定结构的回溯来驯服这种力量。您可以获得逻辑编程的好处 - 声明性代码、自动搜索、优雅的替代方案处理 - 无需完全统一和无限制回溯的复杂性。</p>
+<p>考虑一个简单的逻辑谜题求解器：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SolvePuzzle(Constraints:[]constraint)&lt;decides&gt;:solution =
+    var State:solution = InitialState()
+    for (Constraint : Constraints):
+        ApplyConstraint(State, Constraint)
+    ValidateSolution[State]
+    State</code></pre></figure>
+<p>如果不能满足任何约束，则整个尝试都会失败。在完整的逻辑编程语言中，这可能会触发复杂的回溯。在 Verse 中，故障模型更简单、更可预测，同时对于大多数问题仍然具有足够的表现力。</p>
+<p>在 Verse 中有效地应对失败需要转变心态。不要考虑需要避免的错误条件，而要考虑需要满足的成功条件。与其在采取行动之前检查所有内容的防御性编程，不如编写尝试操作并优雅地处理失败的乐观代码。</p>
+<p>这种视角使代码更具可读性，意图更清晰。当您看到标有 <code>&lt;decides&gt;</code> 的函数时，您就知道它表示可能没有结果的计算。当您在失败上下文中按顺序看到表达式时，您就知道它们代表必须全部满足的条件。当您看到 <code>or</code> 运算符时，您就知道它代表了可以尝试的替代方案。</p>
+<p>Verse 中的失败并不是值得恐惧或避免的事情，而是一种值得拥抱的工具。它通过消除某些类别的错误来使程序更安全。它通过统一验证和操作使代码更加清晰。它通过提供自动回滚使复杂的操作变得更加简单。最重要的是，它使我们编写程序的方式与我们思考现实世界中的行动和决策的方式保持一致。</p>
+<p>当你编写更多的 Verse 代码时，你会发现失败成为你的第二天性。在表达条件时，您会自然而然地使用可失败表达式。您将构建您的函数，以便在不满足先决条件时尽早失败。您将在没有嵌套条件的情况下编写失败来创建复杂的控制流。您将欣赏到这种关于控制流的不同思考方式如何产生比传统方法更健壮且更具表现力的代码。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Living with Failure</summary>
     <div class="md"><h2>Living with Failure</h2>
 <p>Verse&#x27;s approach to failure has roots in logic programming, where computations search for solutions rather than executing steps. When a path fails, the computation backtracks and tries alternatives. This non-deterministic model, while powerful, can be hard to reason about in its full generality.  Verse tames this power by making failure contexts explicit and limiting backtracking to specific constructs. You get the benefits of logic programming - declarative code, automatic search, elegant handling of alternatives - without the complexity of full unification and unbounded backtracking.</p>
 <p>Consider a simple logic puzzle solver:</p>
-<p>&lt;!--versetest constraint := struct{} solution := struct{} InitialState()&lt;transacts&gt;:solution = solution{} ApplyConstraint(S:solution, C:constraint)&lt;transacts&gt;:void = {} ValidateSolution(S:solution)&lt;computes&gt;&lt;decides&gt;:void = {} --&gt; &lt;!-- 73 --&gt;</p>
 <pre><code>SolvePuzzle(Constraints:[]constraint)&lt;decides&gt;:solution =
     var State:solution = InitialState()
     for (Constraint : Constraints):
@@ -723,6 +949,4 @@ KickOff()&lt;suspends&gt;:void=
 <p>Failure in Verse isn&#x27;t something to be feared or avoided - it&#x27;s a tool to be embraced. It makes programs safer by eliminating certain categories of bugs. It makes code clearer by unifying validation and action. It makes complex operations simpler by providing automatic rollback. Most importantly, it aligns the way we write programs with the way we think about actions and decisions in the real world.</p>
 <p>As you write more Verse code, you&#x27;ll find that failure becomes second nature. You&#x27;ll reach for failable expressions naturally when expressing conditions. You&#x27;ll structure your functions to fail early when preconditions aren&#x27;t met. You&#x27;ll compose failures to create sophisticated control flow without nested conditionals. And you&#x27;ll appreciate how this different way of thinking about control flow leads to code that is both more robust and more expressive than traditional approaches.</p></div>
   </details>
-</section>
-<nav class="footer-nav"><div><a href="../07_control/index.html">上一页：控制流</a></div><div><a href="../09_structs_enums/index.html">下一页：结构体与枚举</a></div></nav>
-</main></div></body></html>
+</section><nav class="footer-nav"><div><a href="../07_control/index.html">上一页：控制流</a></div><div><a href="../09_structs_enums/index.html">下一页：结构体与枚举</a></div></nav></main></div></body></html>

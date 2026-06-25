@@ -1,22 +1,13 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>函数 - Book of Verse 中文批注版</title>
-<link rel="stylesheet" href="../assets/styles.css">
-<script src="../assets/reader.js"></script>
-</head>
-<body>
-<div class="layout">
-<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>函数 - Book of Verse 中文阅读稿</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/reader.js"></script></head>
+<body><div class="layout"><aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文阅读稿 · 原文折叠 · 代码保留</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
 <a href="../03_containers/index.html"><span>Containers types</span><br><small>容器类型</small></a>
 <a href="../04_operators/index.html"><span>Operators</span><br><small>运算符</small></a>
 <a href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
-<a class="active" href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
+<a class=active href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
 <a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
 <a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
 <a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
@@ -30,69 +21,185 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
-<main class="main">
-<div class="crumb">Functions / <a href="https://verselang.github.io/book/06_functions/">原文页面</a></div>
-<section class="hero"><h1>函数</h1><p class="lead">本页讲函数签名、参数、命名参数、扩展方法、函数类型、泛型和重载。</p><div class="meta"><span class="pill">源文件：06_functions.md</span><span class="pill">批注段落：29</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>这一页读什么</h2><p>函数签名在 Verse 里不仅包括参数和返回值，也包括 effect。</p><h3>注意点</h3><ul class="list"><li>命名参数和默认值会影响重载歧义。</li><li>部分 lambda/嵌套函数能力标注为未发布。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-functions">Functions</a></li><li class="lvl2"><a href="#s1-parameters">Parameters</a></li><li class="lvl3"><a href="#s2-named-parameters">Named Parameters</a></li><li class="lvl3"><a href="#s3-tuple-as-arguments">Tuple as Arguments</a></li><li class="lvl3"><a href="#s4-flattening-and-unflattening">Flattening and Unflattening</a></li><li class="lvl3"><a href="#s5-evaluation-order">Evaluation Order</a></li><li class="lvl2"><a href="#s6-extension-methods">Extension Methods</a></li><li class="lvl3"><a href="#s7-overloading">Overloading</a></li><li class="lvl3"><a href="#s8-rules">Rules</a></li><li class="lvl2"><a href="#s9-lambdas">Lambdas</a></li><li class="lvl3"><a href="#s10-types-variance-and-effects">Types, Variance and Effects</a></li><li class="lvl3"><a href="#s11-using-type">Using type{}</a></li><li class="lvl3"><a href="#s12-examples">Examples</a></li><li class="lvl2"><a href="#s13-nested-functions">Nested Functions</a></li><li class="lvl3"><a href="#s14-closures-with-state">Closures with State</a></li><li class="lvl3"><a href="#s15-restrictions">Restrictions</a></li><li class="lvl2"><a href="#s16-parametric-functions">Parametric Functions</a></li><li class="lvl3"><a href="#s17-type-constraints">Type Constraints</a></li><li class="lvl3"><a href="#s18-member-access">Member Access</a></li><li class="lvl3"><a href="#s19-polarity-and-variance">Polarity and Variance</a></li><li class="lvl2"><a href="#s20-overloading-2">Overloading</a></li><li class="lvl3"><a href="#s21-capture">Capture</a></li><li class="lvl3"><a href="#s22-effects">Effects</a></li><li class="lvl3"><a href="#s23-overloads-in-subclasses">Overloads in Subclasses</a></li><li class="lvl3"><a href="#s24-interfaces-with-overloaded-methods">Interfaces with Overloaded Methods</a></li><li class="lvl3"><a href="#s25-restrictions-2">Restrictions</a></li><li class="lvl3"><a href="#s26-overloading-with-suspends">Overloading with &lt;suspends&gt;</a></li><li class="lvl3"><a href="#s27-types">Types</a></li><li class="lvl2"><a href="#s28-publishing-functions">Publishing Functions</a></li></ol></article></section>
-<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
+<div class="crumb">Functions / <a href="https://verselang.github.io/book/06_functions/">原文页面</a></div><section class="hero"><h1>函数</h1><p class="lead">函数页，覆盖参数、命名参数、扩展方法、函数类型、泛型和重载。</p><div class="meta"><span class="pill">源文件：06_functions.md</span><span class="pill">中文段落：29</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-functions">函数 / Functions</a></li><li class="lvl2"><a href="#s1-parameters">参数 / Parameters</a></li><li class="lvl3"><a href="#s2-named-parameters">Named Parameters</a></li><li class="lvl3"><a href="#s3-tuple-as-arguments">Tuple as Arguments</a></li><li class="lvl3"><a href="#s4-flattening-and-unflattening">Flattening and Unflattening</a></li><li class="lvl3"><a href="#s5-evaluation-order">Evaluation Order</a></li><li class="lvl2"><a href="#s6-extension-methods">扩展方法 / Extension Methods</a></li><li class="lvl3"><a href="#s7-overloading">Overloading</a></li><li class="lvl3"><a href="#s8-rules">Rules</a></li><li class="lvl2"><a href="#s9-lambdas">Lambdas</a></li><li class="lvl3"><a href="#s10-types-variance-and-effects">Types, Variance and Effects</a></li><li class="lvl3"><a href="#s11-using-type">Using type{}</a></li><li class="lvl3"><a href="#s12-examples">Examples</a></li><li class="lvl2"><a href="#s13-nested-functions">Nested Functions</a></li><li class="lvl3"><a href="#s14-closures-with-state">Closures with State</a></li><li class="lvl3"><a href="#s15-restrictions">Restrictions</a></li><li class="lvl2"><a href="#s16-parametric-functions">Parametric Functions</a></li><li class="lvl3"><a href="#s17-type-constraints">Type Constraints</a></li><li class="lvl3"><a href="#s18-member-access">Member Access</a></li><li class="lvl3"><a href="#s19-polarity-and-variance">Polarity and Variance</a></li><li class="lvl2"><a href="#s20-overloading-2">Overloading</a></li><li class="lvl3"><a href="#s21-capture">Capture</a></li><li class="lvl3"><a href="#s22-effects">效果 / Effects</a></li><li class="lvl3"><a href="#s23-overloads-in-subclasses">Overloads in Subclasses</a></li><li class="lvl3"><a href="#s24-interfaces-with-overloaded-methods">Interfaces with Overloaded Methods</a></li><li class="lvl3"><a href="#s25-restrictions-2">Restrictions</a></li><li class="lvl3"><a href="#s26-overloading-with-suspends">Overloading with &lt;suspends&gt;</a></li><li class="lvl3"><a href="#s27-types">Types</a></li><li class="lvl2"><a href="#s28-publishing-functions">Publishing Functions</a></li></ol></article></section>
+<div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-functions">
-  <div class="annotation">
-    <h3>中文批注：Functions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Functions”展开。可把它先理解为“函数”。阅读时先抓住这些英文关键词：Functions、reusable、code、blocks、perform。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">OrderFood(&quot;Ramen&quot;)</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Functions</summary>
+  <article class="cn-read">
+    <h2>函数 <small>Functions</small></h2>
+    <p>函数是可重用的代码块，它们执行操作并根据输入生成输出。将它们视为行为的抽象，就像在餐厅从菜单上点菜一样。点餐时，告诉服务员您想从菜单中选择什么，例如<code>OrderFood(&quot;Ramen&quot;)</code>。您不需要知道厨房如何准备菜肴，但您希望在点餐后收到食物。这种抽象使函数变得强大 - 您定义一次指令并在整个代码的不同上下文中重用它们。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Functions</summary>
     <div class="md"><h1>Functions</h1>
 <p>Functions are reusable code blocks that perform actions and produce outputs based on inputs. Think of them as abstractions for behaviors, much like ordering food from a menu at a restaurant. When you order, you tell the waiter what you want from the menu, such as <code>OrderFood(&quot;Ramen&quot;)</code>. You don&#x27;t need to know how the kitchen prepares your dish, but you expect to receive food after ordering. This abstraction is what makes functions powerful - you define the instructions once and reuse them in different contexts throughout your code.</p></div>
   </details>
 </section><section class="section" id="s1-parameters">
-  <div class="annotation">
-    <h3>中文批注：Parameters</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Parameters”展开。可把它先理解为“参数”。阅读时先抓住这些英文关键词：Functions、accept、any、number、parameters。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Parameters</summary>
+  <article class="cn-read">
+    <h2>参数 <small>Parameters</small></h2>
+    <p>函数可以接受任意数量的参数，从没有参数到需要的参数。语法遵循简单的模式，其中每个参数都有一个标识符和一个类型，以逗号分隔：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessData(Name:string, Age:int, Score:float):string =
+    &quot;{Name} is {Age} years old with a score of {Score}&quot;</code></pre></figure>
+<p>对于具有许多参数或可选配置的函数，Verse 支持命名参数和默认参数。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Parameters</summary>
     <div class="md"><h2>Parameters</h2>
 <p>Functions can accept any number of parameters, from none at all to as many as needed. The syntax follows a straightforward pattern where each parameter has an identifier and a type, separated by commas:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 01--&gt;</p>
 <pre><code>ProcessData(Name:string, Age:int, Score:float):string =
     &quot;{Name} is {Age} years old with a score of {Score}&quot;</code></pre>
 <p>For functions with many parameters or optional configuration, Verse supports named and default parameters.</p></div>
   </details>
 </section><section class="section" id="s2-named-parameters">
-  <div class="annotation">
-    <h3>中文批注：Named Parameters</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Named Parameters”展开。可把它先理解为“命名参数”。阅读时先抓住这些英文关键词：Named、parameters、defaults、make、functions。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">?</span><span class="chip">:=</span><span class="chip">?Name:=Value</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;override&gt;</span><span class="chip">for</span><span class="chip">interface</span><span class="chip">class</span><span class="chip">transacts</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Named Parameters</summary>
+  <article class="cn-read">
+    <h2>命名参数 <small>Named Parameters</small></h2>
+    <p>具有默认值的命名参数使功能更加灵活且符合人体工程学。它们允许您：</p>
+<ul><li>按名称而不是位置指定参数</li><li>为可选参数提供默认值</li><li>仅使用您需要的参数调用函数</li><li>添加新的可选参数而不破坏现有代码</li></ul>
+<p>命名参数使用 <code>?</code> 前缀进行声明，并使用名称和 <code>:=</code> 后跟值进行调用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># A function with named parameters
+Greet(?Name:string, ?Greeting:string):string = &quot;{Greeting} {Name}!&quot;
+
+# A call with named arguments 
+Greet(?Name := &quot;Alice&quot;, ?Greeting := &quot;Hello&quot;) </code></pre></figure>
+<p>具有默认值的命名参数确实是可选的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Named parameters with defaults
+Log(Message:string, ?Level:int=1, ?Color:string=&quot;white&quot;):string =
+    &quot;[Level {Level}] {Message} ({Color})&quot;
+
+# Call with all defaults
+Log(&quot;Starting&quot;)                          # Returns &quot;[Level 1] Starting (white)&quot;
+
+# Call with some arguments
+Log(&quot;Warning&quot;, ?Level:=2)                # Returns &quot;[Level 2] Warning (white)&quot;
+
+# Call with arguments in any order
+Log(&quot;Error&quot;, ?Color:=&quot;red&quot;, ?Level:= 3)  # Returns &quot;[Level 3] Error (red)&quot;</code></pre></figure>
+<p>在第一个命名参数之后，所有后续参数也必须命名：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: named followed by positional
+Invalid(?Named:int, Positional:string):void = {}  # ERROR</code></pre></figure>
+<p>调用带有命名参数的函数时，必须使用 <code>?Name:=Value</code> 语法。所有没有默认值的参数都必须指定。位置参数优先：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Configure(Required:int, ?Option1:string, ?Option2:logic):void = { }
+
+# Valid
+Configure(42, ?Option1:=&quot;test&quot;, ?Option2:=true)
+
+# Invalid: named arg before positional
+Configure(?Option1:=&quot;test&quot;, 42, ?Option2:=true)  # ERROR</code></pre></figure>
+<p>默认值在函数的定义范围内计算；他们可以参考：</p>
+<ul><li>模块级定义</li><li>类或接口成员</li><li>早期参数</li></ul>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Module-level definition
+ModuleTimeout:int = 30
+
+# Access module-level definition
+Connect(?Host:string, ?Timeout:int = ModuleTimeout):void =...
+
+# Access member definition
+game_config := class:
+    DefaultLives:int = 3
+
+    StartGame(?Lives:int = DefaultLives):void =...
+
+# Access earlier parameter
+CreateRange(?Start:int, ?End:int = Start + 10):[]int =...</code></pre></figure>
+<p>默认值适用于类层次结构中的重写成员：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base_game := class:
+    DefaultSpeed:float = 1.0
+
+    Move(?Speed:float = DefaultSpeed):void =...
+    # Uses DefaultSpeed from current instance
+
+fast_game := class(base_game):
+    DefaultSpeed&lt;override&gt;:float = 2.0
+
+base_game{}.Move()         # Uses 1.0
+fast_game{}.Move()         # Uses 2.0 (overridden value)</code></pre></figure>
+<p>命名参数和默认参数与类型系统交互。具有默认参数的函数是不带这些参数的同一函数的子类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Process(?Required:int, ?Optional:int = 0):int = Required + Optional
+
+# Can assign to type without optional parameter
+F1:type{_(?Required:int):int} = Process
+F1(?Required := 5)                          # Returns 5 (uses default)
+
+# Can assign to type with optional parameter
+F2:type{_(?Required:int, ?Optional:int):int} = Process
+F2(?Required := 5, ?Optional := 3)          # Returns 8
+
+# Can even assign to type with no parameters (all have defaults)
+DefaultAll(?A:int = 1, ?B:int = 2):int = A + B
+F3:type{_():int} = DefaultAll
+F3()                                        # Returns 3</code></pre></figure>
+<p>函数类型保留命名参数名称：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Calculate(?Amount:float, ?Rate:float):float = Amount * Rate
+
+# Valid: names match
+F1:type{_(?Amount:float, ?Rate:float):float} = Calculate
+
+# Invalid: different names
+# F2:type{_(?Value:float, ?Factor:float):float} = Calculate  # ERROR</code></pre></figure>
+<p>函数类型不包含默认值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F1(?X:int=1):int = X
+
+F2:type{_(?X:int=99):int} = F1    # F1 and F2 are of the same type</code></pre></figure>
+<p>命名参数参与函数重载决策：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Process(Value:int):string = &quot;One parameter&quot;
+Process(Value:int, ?Option:string):string = &quot;Two parameters&quot;
+Process(Value:int, ?Option1:string, ?Option2:logic):string = &quot;Three parameters&quot;
+
+Process(42)                                        # Calls first overload
+Process(42, ?Option := &quot;test&quot;)                     # Calls second overload
+Process(42, ?Option1 := &quot;test&quot;, ?Option2 := true)  # Calls third overload</code></pre></figure>
+<p>编译器选择与提供的参数匹配的重载。命名参数使重载解析更加精确，因为名称必须完全匹配。</p>
+<p>命名参数具有与位置参数不同的“重载独特性”特定规则。如果可以使用相同的参数调用两个函数签名，则它们被视为**不明确**（无法重载）。</p>
+<p>**顺序对于命名参数来说并不重要：**命名参数按名称匹配，而不是位置匹配，因此重新排序不会产生区别：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Not distinct - same parameters, different order
+F(?Y:int, ?X:int):int = X + Y
+F(?X:int, ?Y:int):int = X - Y  # ERROR</code></pre></figure>
+<p>**默认值不会产生独特性：**如果参数名称相同，默认值的存在或不存在并不会使签名不同：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Same parameter name with/without default
+F(?X:int=42):int = X
+F(?X:int):int = X  # ERROR</code></pre></figure>
+<p>**全默认规则：** 如果两个重载中的所有参数都有默认值，则签名不明确，因为两者都可以在不带参数的情况下调用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR Both can be called as F()
+# F(?X:int=42):int = X
+# F(?Y:int=42):int = Y         # ERROR
+
+# ERROR Both callable with no args
+# F(?X:int=42):int = X
+# F(?X:float=3.14):float = X  # ERROR</code></pre></figure>
+<p>**不同的参数名称是不同的：** 具有不同命名参数名称的函数可以重载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Different names
+F(?X:int):int = X
+F(?Y:int):int = Y  # OK - distinct parameter names</code></pre></figure>
+<p>**命名参数与位置参数是不同的：** 命名参数与位置参数不同，即使名称和类型相同：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Named vs positional
+F(?X:int):int = X
+F(X:int):int = X  # OK</code></pre></figure>
+<p>**至少一个必需参数必须不同：** 如果一组必需（无默认）命名参数不同，则重载是不同的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: First requires ?Y, second doesn&#x27;t
+F(?Y:int, ?X:int=42):int = X
+F(?X:int):int = X  # OK - different required parameter set</code></pre></figure>
+<p>**位置参数创建独特性：**不同的位置参数类型使签名不同，即使命名参数相同：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Different positional parameter types
+F(Arg:float, ?X:int):int = X
+F(Arg:int, ?X:int):int = X  # OK</code></pre></figure>
+<p>**调用的超集：** 如果一个签名可以处理另一个签名可以处理的所有调用，那么它们是模糊的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR 3532: First can handle all calls to second
+# F(?Y:int=42, ?X:int=42):int = X
+# F(?X:int):int = X  # ERROR - can call first as F(?X := 10)</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Named Parameters</summary>
     <div class="md"><h3>Named Parameters</h3>
 <p>Named parameters with defaults make functions more flexible and ergonomic. They allow you to:</p>
-<ul>
-<li>Specify arguments by name rather than position</li>
-<li>Provide default values for optional parameters</li>
-<li>Call functions with only the arguments you need</li>
-<li>Add new optional parameters without breaking existing code</li>
-</ul>
+<ul><li>Specify arguments by name rather than position</li><li>Provide default values for optional parameters</li><li>Call functions with only the arguments you need</li><li>Add new optional parameters without breaking existing code</li></ul>
 <p>Named parameters are declared with a <code>?</code> prefix and called with the name and a <code>:=</code> followed by a value:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 02--&gt;</p>
 <pre><code># A function with named parameters
 Greet(?Name:string, ?Greeting:string):string = &quot;{Greeting} {Name}!&quot;
 
 # A call with named arguments 
 Greet(?Name := &quot;Alice&quot;, ?Greeting := &quot;Hello&quot;) </code></pre>
 <p>Named parameters with default values are truly optional:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 03--&gt;</p>
 <pre><code># Named parameters with defaults
 Log(Message:string, ?Level:int=1, ?Color:string=&quot;white&quot;):string =
     &quot;[Level {Level}] {Message} ({Color})&quot;
@@ -106,12 +213,9 @@ Log(&quot;Warning&quot;, ?Level:=2)                # Returns &quot;[Level 2] War
 # Call with arguments in any order
 Log(&quot;Error&quot;, ?Color:=&quot;red&quot;, ?Level:= 3)  # Returns &quot;[Level 3] Error (red)&quot;</code></pre>
 <p>After the first named parameter, all subsequent parameters must also be named:</p>
-<p>&lt;!--versetest assert_semantic_error(3629): Invalid(?Named:int, Positional:string):void = {} &lt;# --&gt; &lt;!-- 04--&gt;</p>
 <pre><code># Invalid: named followed by positional
 Invalid(?Named:int, Positional:string):void = {}  # ERROR</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>When calling functions with named parameters, you must use the <code>?Name:=Value</code> syntax. All parameters without default must be specified. Positional arguments come first:</p>
-<p>&lt;!--versetest Configure(Required:int, ?Option1:string = &quot;&quot;, ?Option2:logic = false):void = {} &lt;# --&gt; &lt;!-- 07--&gt;</p>
 <pre><code>Configure(Required:int, ?Option1:string, ?Option2:logic):void = { }
 
 # Valid
@@ -119,18 +223,8 @@ Configure(42, ?Option1:=&quot;test&quot;, ?Option2:=true)
 
 # Invalid: named arg before positional
 Configure(?Option1:=&quot;test&quot;, 42, ?Option2:=true)  # ERROR</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>Default values are evaluated in the function&#x27;s defining scope; they can reference:</p>
-<ul>
-<li>Module-level definitions</li>
-<li>Class or interface members</li>
-<li>Earlier parameters</li>
-</ul>
-<p>&lt;!--versetest ModuleTimeout:int = 30</p>
-<p>Connect(?Host:string = &quot;localhost&quot;, ?Timeout:int = ModuleTimeout):void = {}</p>
-<p>game_config := class: DefaultLives:int = 3</p>
-<p>StartGame(?Lives:int = DefaultLives)&lt;transacts&gt;:void = {}</p>
-<p>CreateRange(?Start:int = 0, ?End:int = Start + 10):[]int = array{Start, End} &lt;# --&gt; &lt;!-- 09--&gt;</p>
+<ul><li>Module-level definitions</li><li>Class or interface members</li><li>Earlier parameters</li></ul>
 <pre><code># Module-level definition
 ModuleTimeout:int = 30
 
@@ -145,11 +239,7 @@ game_config := class:
 
 # Access earlier parameter
 CreateRange(?Start:int, ?End:int = Start + 10):[]int =...</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>Default values work with overridden members in class hierarchies:</p>
-<p>&lt;!--versetest base_game := class: DefaultSpeed:float = 1.0</p>
-<p>Move(?Speed:float = DefaultSpeed)&lt;transacts&gt;:void = {}</p>
-<p>fast_game := class(base_game): DefaultSpeed&lt;override&gt;:float = 2.0 &lt;# --&gt; &lt;!-- 13--&gt;</p>
 <pre><code>base_game := class:
     DefaultSpeed:float = 1.0
 
@@ -161,9 +251,7 @@ fast_game := class(base_game):
 
 base_game{}.Move()         # Uses 1.0
 fast_game{}.Move()         # Uses 2.0 (overridden value)</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>Named and default parameters interact with the type system.  A function with default parameters is a subtype of the same function without those parameters:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 14--&gt;</p>
 <pre><code>Process(?Required:int, ?Optional:int = 0):int = Required + Optional
 
 # Can assign to type without optional parameter
@@ -179,7 +267,6 @@ DefaultAll(?A:int = 1, ?B:int = 2):int = A + B
 F3:type{_():int} = DefaultAll
 F3()                                        # Returns 3</code></pre>
 <p>Function types preserve named parameter names:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 15--&gt;</p>
 <pre><code>Calculate(?Amount:float, ?Rate:float):float = Amount * Rate
 
 # Valid: names match
@@ -188,12 +275,10 @@ F1:type{_(?Amount:float, ?Rate:float):float} = Calculate
 # Invalid: different names
 # F2:type{_(?Value:float, ?Factor:float):float} = Calculate  # ERROR</code></pre>
 <p>Function types do not include default values:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 16--&gt;</p>
 <pre><code>F1(?X:int=1):int = X
 
 F2:type{_(?X:int=99):int} = F1    # F1 and F2 are of the same type</code></pre>
 <p>Named parameters participate in function overload resolution:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 17--&gt;</p>
 <pre><code>Process(Value:int):string = &quot;One parameter&quot;
 Process(Value:int, ?Option:string):string = &quot;Two parameters&quot;
 Process(Value:int, ?Option1:string, ?Option2:logic):string = &quot;Three parameters&quot;
@@ -204,19 +289,14 @@ Process(42, ?Option1 := &quot;test&quot;, ?Option2 := true)  # Calls third overl
 <p>The compiler selects the overload that matches the provided arguments. Named parameters make overload resolution more precise since names must match exactly.</p>
 <p>Named parameters have specific rules for <em>overload distinctness</em> that differ from positional parameters. Two function signatures are considered <strong>indistinct</strong> (cannot overload) if they could be called with the same arguments.</p>
 <p><strong>Order doesn&#x27;t matter for named parameters:</strong> Named parameters are matched by name, not position, so reordering doesn&#x27;t create distinctness:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(?Y:int, ?X:int):int = X + Y F(?X:int, ?Y:int):int = X - Y &lt;# --&gt; &lt;!-- 18--&gt;</p>
 <pre><code># Not distinct - same parameters, different order
 F(?Y:int, ?X:int):int = X + Y
 F(?X:int, ?Y:int):int = X - Y  # ERROR</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Defaults don&#x27;t create distinctness:</strong> The presence or absence of default values doesn&#x27;t make signatures distinct if the parameter names are the same:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(?X:int=42):int = X F(?X:int):int = X &lt;# --&gt; &lt;!-- 19--&gt;</p>
 <pre><code># Same parameter name with/without default
 F(?X:int=42):int = X
 F(?X:int):int = X  # ERROR</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>The all-defaults rule:</strong> If all parameters in both overloads have default values, the signatures are indistinct because both can be called with no arguments:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(?X:int=42):int = X F(?Y:int=42):int = Y &lt;# --&gt; &lt;!-- 20--&gt;</p>
 <pre><code># ERROR Both can be called as F()
 # F(?X:int=42):int = X
 # F(?Y:int=42):int = Y         # ERROR
@@ -224,47 +304,116 @@ F(?X:int):int = X  # ERROR</code></pre>
 # ERROR Both callable with no args
 # F(?X:int=42):int = X
 # F(?X:float=3.14):float = X  # ERROR</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Different parameter names are distinct:</strong> Functions with different named parameter names can overload:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 22--&gt;</p>
 <pre><code># Valid: Different names
 F(?X:int):int = X
 F(?Y:int):int = Y  # OK - distinct parameter names</code></pre>
 <p><strong>Named vs positional parameters are distinct:</strong> A named parameter is distinct from a positional parameter, even with the same name and type:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 23--&gt;</p>
 <pre><code># Valid: Named vs positional
 F(?X:int):int = X
 F(X:int):int = X  # OK</code></pre>
 <p><strong>At least one required parameter must differ:</strong> If the set of required (no default) named parameters differs, the overloads are distinct:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 24--&gt;</p>
 <pre><code># Valid: First requires ?Y, second doesn&#x27;t
 F(?Y:int, ?X:int=42):int = X
 F(?X:int):int = X  # OK - different required parameter set</code></pre>
 <p><strong>Positional parameters create distinctness:</strong> Different positional parameter types make signatures distinct, even if named parameters are the same:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 25--&gt;</p>
 <pre><code># Valid: Different positional parameter types
 F(Arg:float, ?X:int):int = X
 F(Arg:int, ?X:int):int = X  # OK</code></pre>
 <p><strong>Superset of calls:</strong> If one signature can handle all the calls that another can, they&#x27;re indistinct:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(?Y:int=42, ?X:int=42):int = X F(?X:int):int = X &lt;# --&gt; &lt;!-- 26--&gt;</p>
 <pre><code># ERROR 3532: First can handle all calls to second
 # F(?Y:int=42, ?X:int=42):int = X
-# F(?X:int):int = X  # ERROR - can call first as F(?X := 10)</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+# F(?X:int):int = X  # ERROR - can call first as F(?X := 10)</code></pre></div>
   </details>
 </section><section class="section" id="s3-tuple-as-arguments">
-  <div class="annotation">
-    <h3>中文批注：Tuple as Arguments</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Tuple as Arguments”展开。阅读时先抓住这些英文关键词：Tuples、used、provide、positional、arguments。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">The parameter</span><span class="chip">and</span><span class="chip">instead of requiring</span><span class="chip">()</span><span class="chip">for</span><span class="chip">if</span><span class="chip">array</span><span class="chip">using</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Tuple as Arguments</summary>
+  <article class="cn-read">
+    <h2>元组作为参数 <small>Tuple as Arguments</small></h2>
+    <p>元组可用于提供位置参数。但是，您不能将预构造的元组变量与其他命名参数混合：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Calculate(A:int, B:int, ?C:int = 0):int = A + B + C
+
+# Valid: tuple provides positional arguments
+Args:tuple(int, int) = (1, 2)
+Calculate(Args)  # Returns 3
+
+# Valid: all arguments provided directly
+Calculate(1, 2, ?C := 5)  # Returns 8
+
+# Invalid: cannot mix tuple variable with named arguments
+# Calculate(Args, ?C := 5)  # ERROR</code></pre></figure>
+<p>函数可以直接在参数列表中解构元组参数，允许您内联提取元组元素，而无需手动索引：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Destructure tuple parameter in place
+Func(A:int, (B:int, C:int), D:int):int =
+    A + B + C + D
+
+Func(1, (2, 3), 4)        # Direct tuple literal - returns 10
+X := (2, 3)
+Func(1, X, 4)             # Tuple variable - returns 10
+Y := (1, (2, 3), 4)
+Func(Y)                   # Entire argument list as tuple - returns 10</code></pre></figure>
+<p>参数 <code>(B:int, C:int)</code> 解构元组，从而可以直接访问 <code>B</code> 和 <code>C</code>，而不需要 <code>Tuple(0)</code> 和 <code>Tuple(1)</code> 索引。</p>
+<p>元组可以解构到任意深度：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Simple nesting
+H(A:int, (B:int, (C:int, D:int)), E:int):int =
+    A + B + C + D + E
+
+H(1, (2, (3, 4)), 5)              # Returns 15
+T := (2, (3, 4))
+H(1, T, 5)                        # Returns 15
+T2 := (1, (2, (3, 4)), 5)
+H(T2)                             # Returns 15</code></pre></figure>
+<p>您可以将解构元组参数与未解构的常规元组参数混合：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Destructured form - access elements directly
+F(A:int, (B:int, C:int), D:int):int =
+    A + B + C + D
+
+# Non-destructured form - use tuple indexing
+G(A:int, T:tuple(int, int), D:int):int =
+    A + T(0) + T(1) + D
+
+# Both work identically
+F(1, (2, 3), 4)  # Returns 10
+G(1, (2, 3), 4)  # Returns 10</code></pre></figure>
+<p>当您需要直接访问单个元素时，请选择解构形式；当您需要将元组作为一个整体传递给其他函数时，请选择非解构形式。</p>
+<p>元组参数可以包含命名/可选参数，允许灵活的 API 将结构分解与可选值相结合：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Named parameter inside nested tuple
+SumValues(A:int, (X:int, (Y:int, ?Z:int = 0))):int =
+    A + X + Y + Z
+
+# Can provide Z explicitly
+SumValues(1, (2, (3, ?Z := 4)))  # Returns 10
+
+# Can omit Z to use default
+SumValues((1, (2, 3)))           # Returns 6</code></pre></figure>
+<p>一个元组可以包含多个命名参数，并且可以按任意顺序指定它们：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessData(Base:int, (Items:[]int, ?Scale:int = 1, ?Offset:int = 0)):int =
+    if (First := Items[0]):
+        First * Scale + Offset + Base
+    else:
+        Base
+
+Data := array{100, 200}
+
+ProcessData(10, Data)                              # Uses defaults: 110
+ProcessData(10, (Data, ?Scale := 2))               # 210
+ProcessData(10, (Data, ?Offset := 5))              # 115
+ProcessData(10, (Data, ?Scale := 2, ?Offset := 5)) # 215
+ProcessData(10, (Data, ?Offset := 5, ?Scale := 2)) # 215 (order doesn&#x27;t matter)</code></pre></figure>
+<p>当元组参数仅包含命名参数（无位置参数）时，即使使用所有默认值，也必须提供空元组 <code>()</code>：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Tuple with only named parameters
+Configure(Base:int, (?Width:int = 10, ?Height:int = 20)):int =
+    Base + Width + Height
+
+# Must provide empty tuple when using all defaults
+Configure(5, ())  # Returns 35
+
+# Cannot omit the tuple entirely
+# Configure(5)  # ERROR - tuple parameter required</code></pre></figure>
+<p>这是当前实施中的已知限制。当元组至少包含一个位置参数时，此限制不适用。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Tuple as Arguments</summary>
     <div class="md"><h3>Tuple as Arguments</h3>
 <p>Tuples can be used to provide positional arguments. However, you cannot mix a pre-constructed tuple variable with additional named arguments:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 28--&gt;</p>
 <pre><code>Calculate(A:int, B:int, ?C:int = 0):int = A + B + C
 
 # Valid: tuple provides positional arguments
@@ -277,7 +426,6 @@ Calculate(1, 2, ?C := 5)  # Returns 8
 # Invalid: cannot mix tuple variable with named arguments
 # Calculate(Args, ?C := 5)  # ERROR</code></pre>
 <p>Functions can destructure tuple parameters directly in the parameter list, allowing you to extract tuple elements inline without manual indexing:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 29--&gt;</p>
 <pre><code># Destructure tuple parameter in place
 Func(A:int, (B:int, C:int), D:int):int =
     A + B + C + D
@@ -289,7 +437,6 @@ Y := (1, (2, 3), 4)
 Func(Y)                   # Entire argument list as tuple - returns 10</code></pre>
 <p>The parameter <code>(B:int, C:int)</code> destructures the tuple, giving direct access to <code>B</code> and <code>C</code> instead of requiring <code>Tuple(0)</code> and <code>Tuple(1)</code> indexing.</p>
 <p>Tuples can be destructured to arbitrary depth:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 30--&gt;</p>
 <pre><code># Simple nesting
 H(A:int, (B:int, (C:int, D:int)), E:int):int =
     A + B + C + D + E
@@ -300,7 +447,6 @@ H(1, T, 5)                        # Returns 15
 T2 := (1, (2, (3, 4)), 5)
 H(T2)                             # Returns 15</code></pre>
 <p>You can mix destructured tuple parameters with regular tuple parameters that aren&#x27;t destructured:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 31--&gt;</p>
 <pre><code># Destructured form - access elements directly
 F(A:int, (B:int, C:int), D:int):int =
     A + B + C + D
@@ -314,7 +460,6 @@ F(1, (2, 3), 4)  # Returns 10
 G(1, (2, 3), 4)  # Returns 10</code></pre>
 <p>Choose destructured form when you need direct access to individual elements, and non-destructured when you need to pass the tuple as a whole to other functions.</p>
 <p>Tuple parameters can contain named/optional parameters, allowing for flexible APIs that combine structural decomposition with optional values:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 32--&gt;</p>
 <pre><code># Named parameter inside nested tuple
 SumValues(A:int, (X:int, (Y:int, ?Z:int = 0))):int =
     A + X + Y + Z
@@ -325,7 +470,6 @@ SumValues(1, (2, (3, ?Z := 4)))  # Returns 10
 # Can omit Z to use default
 SumValues((1, (2, 3)))           # Returns 6</code></pre>
 <p>A tuple can contain multiple named parameters, and they can be specified in any order:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 33--&gt;</p>
 <pre><code>ProcessData(Base:int, (Items:[]int, ?Scale:int = 1, ?Offset:int = 0)):int =
     if (First := Items[0]):
         First * Scale + Offset + Base
@@ -340,7 +484,6 @@ ProcessData(10, (Data, ?Offset := 5))              # 115
 ProcessData(10, (Data, ?Scale := 2, ?Offset := 5)) # 215
 ProcessData(10, (Data, ?Offset := 5, ?Scale := 2)) # 215 (order doesn&#x27;t matter)</code></pre>
 <p>When a tuple parameter contains <strong>only</strong> named parameters (no positional parameters), you must provide an empty tuple <code>()</code> even when using all defaults:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 34--&gt;</p>
 <pre><code># Tuple with only named parameters
 Configure(Base:int, (?Width:int = 10, ?Height:int = 20)):int =
     Base + Width + Height
@@ -353,30 +496,37 @@ Configure(5, ())  # Returns 35
 <p>This is a known limitation in the current implementation. When the tuple contains at least one positional parameter, this restriction doesn&#x27;t apply.</p></div>
   </details>
 </section><section class="section" id="s4-flattening-and-unflattening">
-  <div class="annotation">
-    <h3>中文批注：Flattening and Unflattening</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Flattening and Unflattening”展开。阅读时先抓住这些英文关键词：provides、automatic、conversion、between、tuples。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Args</span><span class="chip">Add</span><span class="chip">F</span><span class="chip">F(P:tuple(int, int))</span><span class="chip">F(X:int,
-Y:int)</span><span class="chip">F(3, 5)</span><span class="chip">F(Xs:[]int)</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Flattening and Unflattening</summary>
+  <article class="cn-read">
+    <h2>展平和反展平 <small>Flattening and Unflattening</small></h2>
+    <p>Verse 在函数调用站点提供元组和多个参数之间的自动转换，从而无需显式打包或解包即可实现灵活的调用约定。</p>
+<p>*扁平化：*可以使用单个元组调用需要多个参数的函数。下面，元组 <code>Args</code> 自动解包到 <code>Add</code> 函数的参数中：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Add(X:int, Y:int):int= X + Y
+Args:= (3, 5)
+Add(Args)       # Returns 8 - tuple automatically flattened</code></pre></figure>
+<p>*取消扁平化：*可以使用扁平化参数调用需要单个元组参数的函数。调用 <code>F</code> 的各个参数会自动打包到元组参数中：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F(P:tuple(int, int)):int = P(0) + P(1)
+
+F(3, 5)  # Returns 8 - args automatically packed into tuple</code></pre></figure>
+<p>空元组具有相同的展平行为：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F(X:tuple()):int = 42
+
+F(())   # Explicit empty tuple
+F()     # No arguments - automatically creates empty tuple</code></pre></figure>
+<p>**重载限制：** 由于自动展平和反展平，您无法定义不明确的重载。如果定义 <code>F(P:tuple(int, int))</code>，则不能同时定义 <code>F(X:int, Y:int)</code>，因为调用 <code>F(3, 5)</code> 可能与任一签名匹配。同样，<code>F(P:tuple(int, int))</code> 和 <code>F(Xs:[]int)</code> 也没有区别，因为也可以使用相同的语法调用数组。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Flattening and Unflattening</summary>
     <div class="md"><h3>Flattening and Unflattening</h3>
 <p>Verse provides automatic conversion between tuples and multiple arguments at function call sites, enabling flexible calling conventions without explicit packing or unpacking.</p>
 <p><em>Flattening:</em> A function expecting multiple parameters can be called with a single tuple. In the following, the tuple <code>Args</code> is automatically unpacked into the <code>Add</code> function&#x27;s parameters:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 36--&gt;</p>
 <pre><code>Add(X:int, Y:int):int= X + Y
 Args:= (3, 5)
 Add(Args)       # Returns 8 - tuple automatically flattened</code></pre>
 <p><em>Unflattening:</em> A function expecting a single tuple parameter can be called with flattened arguments.  The individual arguments of the call to <code>F</code> are automatically packed into the tuple parameter:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 37--&gt;</p>
 <pre><code>F(P:tuple(int, int)):int = P(0) + P(1)
 
 F(3, 5)  # Returns 8 - args automatically packed into tuple</code></pre>
 <p>The empty tuple has the same flattening behavior:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 39--&gt;</p>
 <pre><code>F(X:tuple()):int = 42
 
 F(())   # Explicit empty tuple
@@ -384,25 +534,29 @@ F()     # No arguments - automatically creates empty tuple</code></pre>
 <p><strong>Overload restrictions:</strong> Because of automatic flattening and unflattening, you cannot define overloads that would be ambiguous. If you define <code>F(P:tuple(int, int))</code>, you cannot also define <code>F(X:int, Y:int)</code> because the call <code>F(3, 5)</code> could match either signature. Similarly, <code>F(P:tuple(int, int))</code> and <code>F(Xs:[]int)</code> are indistinct because arrays can also be called with the same syntax.</p></div>
   </details>
 </section><section class="section" id="s5-evaluation-order">
-  <div class="annotation">
-    <h3>中文批注：Evaluation Order</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Evaluation Order”展开。阅读时先抓住这些英文关键词：Arguments、evaluated、specific、order、maintain。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Evaluation Order</summary>
+  <article class="cn-read">
+    <h2>评估顺序 <small>Evaluation Order</small></h2>
+    <p>参数按特定顺序进行评估，以保持可预测的行为：</p>
+<ol><li>*位置参数*：调用中从左到右</li><li>*命名参数*：从左到右在调用中遇到</li><li>*默认值*：省略的参数填写，从左到右</li></ol>
+<p>按参数顺序</p>
+<p>如果命名参数以与参数不同的顺序出现，编译器将使用临时变量来保留您指定的计算顺序：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Process(A:int, ?B:int, ?C:int, ?D:int):string =
+    &quot;{A}, {B}, {C}, {D}&quot;
+
+# Call with reordered named args
+Process(1, ?D := 4, ?B := 2, ?C := 3)
+
+# Evaluation order: 1, 4, 2, 3 (as written)
+# But passed to function in parameter order: 1, 2, 3, 4</code></pre></figure>
+<p>这可以确保参数表达式中的副作用按照您编写它们的顺序发生，而不是按照参数顺序。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Evaluation Order</summary>
     <div class="md"><h3>Evaluation Order</h3>
 <p>Arguments are evaluated in a specific order to maintain predictable behavior:</p>
-<ol>
-<li><em>Positional arguments</em>: Left to right in the call</li>
-<li><em>Named arguments</em>: Left to right as encountered in the call</li>
-<li><em>Default values</em>: Filled in for omitted parameters, left to right</li>
+<ol><li><em>Positional arguments</em>: Left to right in the call</li><li><em>Named arguments</em>: Left to right as encountered in the call</li><li><em>Default values</em>: Filled in for omitted parameters, left to right</li></ol>
 <p>in parameter order</p>
-</ol>
 <p>If named arguments appear in a different order than parameters, the compiler uses temporary variables to preserve the evaluation order you specified:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 40--&gt;</p>
 <pre><code>Process(A:int, ?B:int, ?C:int, ?D:int):string =
     &quot;{A}, {B}, {C}, {D}&quot;
 
@@ -414,26 +568,77 @@ Process(1, ?D := 4, ?B := 2, ?C := 3)
 <p>This ensures that side effects in argument expressions happen in the order you write them, not in parameter order.</p></div>
   </details>
 </section><section class="section" id="s6-extension-methods">
-  <div class="annotation">
-    <h3>中文批注：Extension Methods</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Extension Methods”展开。可把它先理解为“扩展方法”。阅读时先抓住这些英文关键词：Extension、methods、allow、add、new。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">int</span><span class="chip">string</span><span class="chip">(Point:tuple(int, int))</span><span class="chip">(X:int, Y:int)</span><span class="chip">tuple()</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;transacts&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Extension Methods</summary>
+  <article class="cn-read">
+    <h2>扩展方法 <small>Extension Methods</small></h2>
+    <p>扩展方法允许您向现有类型添加新方法，而无需修改其原始定义。这一强大的功能使您能够使用自定义功能扩展 Verse 中的任何类型（包括 <code>int</code>、<code>string</code>、数组和映射等内置类型），同时保持不同关注点之间的清晰分离。</p>
+<p>扩展方法在以下情况下特别有价值：</p>
+<ul><li>您想要将特定于域的操作添加到内置类型</li><li>您需要从您无法控制的库中扩展类型</li><li>您正在构建流畅的或构建器风格的 API</li><li>您希望将相关功能与类型定义分开组织</li></ul>
+<p>扩展方法使用特殊语法，其中扩展类型出现在方法名称之前的括号中：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Extend int with a custom method
+(Value:int).Double()&lt;computes&gt;:int = Value * 2
+
+# Call the extension method using dot notation
+X := 5
+Y := X.Double()  # Returns 10
+
+# Can also call on literals
+Z := 7.Double()  # Returns 14</code></pre></figure>
+<p>括号中的类型可以是任何 Verse 类型：基元、元组、类、接口、数组、映射或结构。</p>
+<p>扩展原语：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(N:int).IsEven()&lt;decides&gt;&lt;computes&gt;:void = Mod[N,2] = 0
+(S:string).FirstChar()&lt;decides&gt;&lt;computes&gt;:char = S[0]
+
+42.IsEven[]           # Succeeds
+&quot;Hello&quot;.FirstChar[] = &#x27;H&#x27; </code></pre></figure>
+<p>扩展元组：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Extend a specific tuple type (Note: Sqrt is &lt;reads&gt;)
+(Point:tuple(int, int)).Distance()&lt;reads&gt;:float =
+    Sqrt( (Point(0) * Point(0) + Point(1) * Point(1)) * 1.0)
+
+(3, 4).Distance()  # Returns 5.0</code></pre></figure>
+<p>扩展元组时，必须显式指定元组类型（例如，<code>(Point:tuple(int, int))</code>）。您不能将解构参数语法（例如，<code>(X:int, Y:int)</code>）用于扩展方法上下文。</p>
+<p>空元组 <code>tuple()</code> 表示单元类型，并且可以具有扩展方法：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(Unit:tuple()).GetMagicNumber():int = 42
+
+().GetMagicNumber()  # Returns 42</code></pre></figure>
+<p>扩展数组：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(Vals:[]int).Sum()&lt;transacts&gt;:int =
+    var Total:int = 0
+    for (N:Vals):
+        set Total += N
+    Total
+
+array{1, 2, 3, 4, 5}.Sum()  # Returns 15</code></pre></figure>
+<p>扩展map：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(M:[int]string).Keys()&lt;computes&gt;:[]int =
+    for (Key-&gt;X:M):
+        Key
+
+map{1=&gt;&quot;a&quot;, 2=&gt;&quot;b&quot;, 3=&gt;&quot;c&quot;}.Keys()  # Returns array{1, 2, 3}</code></pre></figure>
+<p>扩展类：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player := class:
+    Name:string
+    var Score:int</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Add method to existing class
+(P:player).AddScore(Points:int):void =
+    set P.Score += Points
+
+Player1 := player{Name := &quot;Alice&quot;, Score := 100}
+Player1.AddScore(50)  # Score becomes 150</code></pre></figure>
+<p>扩展方法支持所有参数功能，包括命名参数和默认参数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>#(Text:string).Pad(?Left:int = 0, ?Right:int = 0):string = ...
+
+&quot;Hello&quot;.Pad(?Left:=5)               # &quot;     Hello&quot;
+&quot;Hello&quot;.Pad(?Right:=5)              # &quot;Hello     &quot;
+&quot;Hello&quot;.Pad(?Left:= 2, ?Right:=3)   # &quot;  Hello   &quot;</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Extension Methods</summary>
     <div class="md"><h2>Extension Methods</h2>
 <p>Extension methods allow you to add new methods to existing types without modifying their original definitions. This powerful feature enables you to extend any type in Verse—including built-in types like <code>int</code>, <code>string</code>, arrays, and maps—with custom functionality while maintaining clean separation between different concerns.</p>
 <p>Extension methods are particularly valuable when:</p>
-<ul>
-<li>You want to add domain-specific operations to built-in types</li>
-<li>You need to extend types from libraries you don&#x27;t control</li>
-<li>You&#x27;re building fluent or builder-style APIs</li>
-<li>You want to organize related functionality separately from type definitions</li>
-</ul>
+<ul><li>You want to add domain-specific operations to built-in types</li><li>You need to extend types from libraries you don&#x27;t control</li><li>You&#x27;re building fluent or builder-style APIs</li><li>You want to organize related functionality separately from type definitions</li></ul>
 <p>Extension methods use a special syntax where the extended type appears in parentheses before the method name:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 41--&gt;</p>
 <pre><code># Extend int with a custom method
 (Value:int).Double()&lt;computes&gt;:int = Value * 2
 
@@ -445,14 +650,12 @@ Y := X.Double()  # Returns 10
 Z := 7.Double()  # Returns 14</code></pre>
 <p>The type in parentheses can be any Verse type: primitives, tuples, classes, interfaces, arrays, maps, or structs.</p>
 <p>Extending primitives:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 42--&gt;</p>
 <pre><code>(N:int).IsEven()&lt;decides&gt;&lt;computes&gt;:void = Mod[N,2] = 0
 (S:string).FirstChar()&lt;decides&gt;&lt;computes&gt;:char = S[0]
 
 42.IsEven[]           # Succeeds
 &quot;Hello&quot;.FirstChar[] = &#x27;H&#x27; </code></pre>
 <p>Extending tuples:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 43--&gt;</p>
 <pre><code># Extend a specific tuple type (Note: Sqrt is &lt;reads&gt;)
 (Point:tuple(int, int)).Distance()&lt;reads&gt;:float =
     Sqrt( (Point(0) * Point(0) + Point(1) * Point(1)) * 1.0)
@@ -460,12 +663,10 @@ Z := 7.Double()  # Returns 14</code></pre>
 (3, 4).Distance()  # Returns 5.0</code></pre>
 <p>When extending tuples, you must specify the tuple type explicitly (e.g., <code>(Point:tuple(int, int))</code>). You cannot use destructured parameter syntax (e.g., <code>(X:int, Y:int)</code>) for extension method contexts.</p>
 <p>The empty tuple <code>tuple()</code> represents the unit type and can have extension methods:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 49--&gt;</p>
 <pre><code>(Unit:tuple()).GetMagicNumber():int = 42
 
 ().GetMagicNumber()  # Returns 42</code></pre>
 <p>Extending arrays:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 44--&gt;</p>
 <pre><code>(Vals:[]int).Sum()&lt;transacts&gt;:int =
     var Total:int = 0
     for (N:Vals):
@@ -474,18 +675,15 @@ Z := 7.Double()  # Returns 14</code></pre>
 
 array{1, 2, 3, 4, 5}.Sum()  # Returns 15</code></pre>
 <p>Extending maps:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 45--&gt;</p>
 <pre><code>(M:[int]string).Keys()&lt;computes&gt;:[]int =
     for (Key-&gt;X:M):
         Key
 
 map{1=&gt;&quot;a&quot;, 2=&gt;&quot;b&quot;, 3=&gt;&quot;c&quot;}.Keys()  # Returns array{1, 2, 3}</code></pre>
 <p>Extending classes:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!--246--&gt;</p>
 <pre><code>player := class:
     Name:string
     var Score:int</code></pre>
-<p>&lt;!--versetest player := class: Name:string var Score:int --&gt; &lt;!-- 46--&gt;</p>
 <pre><code># Add method to existing class
 (P:player).AddScore(Points:int):void =
     set P.Score += Points
@@ -493,27 +691,28 @@ map{1=&gt;&quot;a&quot;, 2=&gt;&quot;b&quot;, 3=&gt;&quot;c&quot;}.Keys()  # Ret
 Player1 := player{Name := &quot;Alice&quot;, Score := 100}
 Player1.AddScore(50)  # Score becomes 150</code></pre>
 <p>Extension methods support all parameter features including named and default parameters:</p>
-<p>&lt;!--versetest &lt;# --&gt; &lt;!-- 47--&gt;</p>
 <pre><code>#(Text:string).Pad(?Left:int = 0, ?Right:int = 0):string = ...
 
 &quot;Hello&quot;.Pad(?Left:=5)               # &quot;     Hello&quot;
 &quot;Hello&quot;.Pad(?Right:=5)              # &quot;Hello     &quot;
-&quot;Hello&quot;.Pad(?Left:= 2, ?Right:=3)   # &quot;  Hello   &quot;</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+&quot;Hello&quot;.Pad(?Left:= 2, ?Right:=3)   # &quot;  Hello   &quot;</code></pre></div>
   </details>
 </section><section class="section" id="s7-overloading">
-  <div class="annotation">
-    <h3>中文批注：Overloading</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Overloading”展开。可把它先理解为“重载”。阅读时先抓住这些英文关键词：define、multiple、extension、methods、same。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Overloading</summary>
+  <article class="cn-read">
+    <h2>超载 <small>Overloading</small></h2>
+    <p>您可以为不同类型定义多个具有相同名称的扩展方法：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Overloaded Extension method for different types
+(N:int).Format():string = &quot;int:{N}&quot;
+(B:logic).Format():string = if (B?) {&quot;logic:true&quot;} else {&quot;logic:false&quot;}
+
+42.Format()      # Returns &quot;int:42&quot;
+true.Format()    # Returns &quot;logic:true&quot;</code></pre></figure>
+<p>编译器根据接收器类型选择适当的重载。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Overloading</summary>
     <div class="md"><h3>Overloading</h3>
 <p>You can define multiple extension methods with the same name for different types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 48--&gt;</p>
 <pre><code># Overloaded Extension method for different types
 (N:int).Format():string = &quot;int:{N}&quot;
 (B:logic).Format():string = if (B?) {&quot;logic:true&quot;} else {&quot;logic:false&quot;}
@@ -523,18 +722,61 @@ true.Format()    # Returns &quot;logic:true&quot;</code></pre>
 <p>The compiler selects the appropriate overload based on the receiver type.</p></div>
   </details>
 </section><section class="section" id="s8-rules">
-  <div class="annotation">
-    <h3>中文批注：Rules</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Rules”展开。阅读时先抓住这些英文关键词：Must、called、Extension、methods、cannot。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;allocates&gt;</span><span class="chip">class</span><span class="chip">where</span><span class="chip">module</span><span class="chip">public</span><span class="chip">using</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Rules</summary>
+  <article class="cn-read">
+    <h2>规则 <small>Rules</small></h2>
+    <p>**必须调用**：扩展方法不能在不调用它们的情况下被引用为第一类值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(N:int).Double():int = N * 2
+
+# Valid: calling the method
+X := 5.Double()
+
+# Invalid: referencing without calling
+# F := 5.Double  # ERROR</code></pre></figure>
+<p>**与类方法冲突：**扩展方法不能与直接在类或接口中定义的方法具有相同的签名：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player := class:
+    Health():int = 100
+
+# Invalid: Conflicts with class method
+# (P:player).Health():int = 50  # ERROR</code></pre></figure>
+<p>这可以防止歧义并确保类方法始终优先。</p>
+<p>**范围和可见性：** 扩展方法的范围与常规函数类似。它们仅在定义或导入的地方可见：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># In module A
+Utils := module:
+    (S:string).Reverse&lt;public&gt;():string =
+        # Implementation
+
+# In module B
+using { Utils }
+
+&quot;Hello&quot;.Reverse()  # Available after importing</code></pre></figure>
+<p>**类范围内的扩展方法：** 扩展方法可以在类内部定义并访问类成员：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game_manager := class:
+    Multiplier:int = 10
+
+    (Score:int).ScaledScore()&lt;computes&gt;:int =
+        Score * Multiplier  # Accesses class field
+
+    ProcessScore(Value:int)&lt;computes&gt;:int =
+        Value.ScaledScore()  # Uses extension method
+
+GM := game_manager{}
+GM.ProcessScore(5)  # Returns 50</code></pre></figure>
+<p>这将创建一个词法闭包，其中扩展方法可以引用封闭类的成员。</p>
+<p>**元组参数转换：** 当扩展方法有多个参数时，您可以传递一个元组来一次提供所有参数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>point := class&lt;computes&gt;{ X:int; Y:int }
+
+(P:point).Translate(DX:int, DY:int)&lt;allocates&gt;:point =
+    point{X := P.X + DX, Y := P.Y + DY}
+
+Origin := point{X := 0, Y := 0}
+Delta := (5, 10)
+NewPoint := Origin.Translate(Delta)  # Tuple expands to two arguments</code></pre></figure>
+<p>当元组类型与参数列表匹配时，此方法有效。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Rules</summary>
     <div class="md"><h3>Rules</h3>
 <p><strong>Must be called</strong>: Extension methods cannot be referenced as first-class values without calling them:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 50--&gt;</p>
 <pre><code>(N:int).Double():int = N * 2
 
 # Valid: calling the method
@@ -543,17 +785,13 @@ X := 5.Double()
 # Invalid: referencing without calling
 # F := 5.Double  # ERROR</code></pre>
 <p><strong>Conflicts with Class Methods:</strong> Extension methods cannot have the same signature as methods defined directly in classes or interfaces:</p>
-<p>&lt;!--versetest player := class: Health():int = 100</p>
-<p>&lt;# --&gt; &lt;!-- 51--&gt;</p>
 <pre><code>player := class:
     Health():int = 100
 
 # Invalid: Conflicts with class method
 # (P:player).Health():int = 50  # ERROR</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>This prevents ambiguity and ensures that class methods always take precedence.</p>
 <p><strong>Scope and Visibility:</strong> Extension methods are scoped like regular functions. They&#x27;re only visible where they&#x27;re defined or imported:</p>
-<p>&lt;!--versetest Utils := module: (S:string).Reverse&lt;public&gt;():string = S &lt;# --&gt; &lt;!-- 52--&gt;</p>
 <pre><code># In module A
 Utils := module:
     (S:string).Reverse&lt;public&gt;():string =
@@ -563,12 +801,7 @@ Utils := module:
 using { Utils }
 
 &quot;Hello&quot;.Reverse()  # Available after importing</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Extension Methods in Class Scope:</strong> Extension methods can be defined inside classes and access class members:</p>
-<p>&lt;!--versetest game_manager := class: Multiplier:int = 10</p>
-<p>(Score:int).ScaledScore()&lt;computes&gt;:int = Score * Multiplier</p>
-<p>ProcessScore(Value:int)&lt;computes&gt;:int = Value.ScaledScore()</p>
-<p>M()&lt;transacts&gt;:void={ GM := game_manager{} GM.ProcessScore(5) } &lt;# --&gt; &lt;!-- 53--&gt;</p>
 <pre><code>game_manager := class:
     Multiplier:int = 10
 
@@ -580,10 +813,8 @@ using { Utils }
 
 GM := game_manager{}
 GM.ProcessScore(5)  # Returns 50</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>This creates a lexical closure where the extension method can reference the enclosing class&#x27;s members.</p>
 <p><strong>Tuple Argument Conversion:</strong> When an extension method has multiple parameters, you can pass a tuple to provide all arguments at once:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 54 --&gt;</p>
 <pre><code>point := class&lt;computes&gt;{ X:int; Y:int }
 
 (P:point).Translate(DX:int, DY:int)&lt;allocates&gt;:point =
@@ -595,41 +826,90 @@ NewPoint := Origin.Translate(Delta)  # Tuple expands to two arguments</code></pr
 <p>This works when the tuple type matches the parameter list.</p></div>
   </details>
 </section><section class="section" id="s9-lambdas">
-  <div class="annotation">
-    <h3>中文批注：Lambdas</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Lambdas”展开。可把它先理解为“Lambda”。阅读时先抓住这些英文关键词：Lambda、expressions、operator、not、supported。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">=&gt;</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Lambdas</summary>
+  <article class="cn-read">
+    <h2>拉姆达斯 <small>Lambdas</small></h2>
+    <p>当前版本的 Verse 不支持带有 <code>=&gt;</code> 运算符的 Lambda 表达式。要创建函数值和闭包，请改用嵌套函数。</p>
+<p>函数是一流的值；它们可以存储在变量中，作为参数传递，并从其他函数返回。这使得强大的函数式编程模式成为可能，包括高阶函数、回调和可组合操作。目前，这些功能是通过嵌套函数而不是 lambda 表达式提供的。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Lambdas</summary>
     <div class="md"><h2>Lambdas</h2>
 <p>Lambda expressions with the <code>=&gt;</code> operator are not supported in the current version of Verse. For creating function values and closures, use nested functions instead.</p>
 <p>Functions are first-class values; they can be stored in variables, passed as parameters, and returned from other functions. This enables powerful functional programming patterns including higher-order functions, callbacks, and composable operations. Currently, these capabilities are provided through nested functions rather than lambda expressions.</p></div>
   </details>
 </section><section class="section" id="s10-types-variance-and-effects">
-  <div class="annotation">
-    <h3>中文批注：Types, Variance and Effects</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Types, Variance and Effects”展开。阅读时先抓住这些英文关键词：Function、types、follow、specific、subtyping。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">A</span><span class="chip">function can be passed where</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">for</span><span class="chip">class</span><span class="chip">var</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Types, Variance and Effects</summary>
+  <article class="cn-read">
+    <h2>类型、差异和影响 <small>Types, Variance and Effects</small></h2>
+    <p>函数类型遵循基于*方差*的特定子类型规则：</p>
+<ul><li>*参数是逆变的*：接受更通用的函数</li></ul>
+<p>类型可以替代接受特定类型的类型。</p>
+<ul><li>*返回是协变的*：返回更具体类型的函数</li></ul>
+<p>可以替代一种返回的通用类型。</p>
+<p>考虑以下三个类：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>animal := class:
+    Name:string
+
+dog := class(animal):
+    Breed:string
+
+working_dog := class(dog):
+    Work:string</code></pre></figure>
+<p>以及一些用例：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Some functions on animals
+AnimalToDog(X:animal):dog = dog{Name := X.Name, Breed := &quot;Unknown&quot;}
+DogToWorkingDog(X:dog):working_dog = working_dog{Name := X.Name, Breed := &quot;Unknown&quot;, Work := &quot;Guard&quot;}
+DogToAnimal(X:dog):animal = X
+WorkingDogToDog(X:working_dog):dog = X
+
+# Example of valid assignments
+var ProcessDog:type{_(:dog):dog} = AnimalToDog
+
+# Valid: Accepts more general (animal), returns exact (dog)
+# Contravariant parameter: animal &lt;: dog allows this
+set ProcessDog = AnimalToDog  # OK: tuple(animal)-&gt;dog &lt;: tuple(dog)-&gt;dog
+
+# Valid: Accepts exact (dog), returns more specific (working_dog)
+# Covariant return: working_dog &lt;: dog allows this
+set ProcessDog = DogToWorkingDog  # OK: tuple(dog)-&gt;working_dog &lt;: tuple(dog)-&gt;dog
+
+
+ProcessDog1 := AnimalToDog  # Inferred as type{_(:animal):dog}
+set ProcessDog1 = DogToAnimal  # ERROR: incompatible assignment
+
+ProcessDog2 := AnimalToDog  # Inferred as type{_(:animal):dog}
+set ProcessDog2 = WorkingDogToDog  # ERROR: incompatible assignment</code></pre></figure>
+<p>效果是函数类型的一部分。当需要具有更多效果的函数时，可以使用效果较少的函数 - 效果是**协变**（效果较少=子类型）：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>UsePure(Pure)                    # OK
+UseTransactional(Transactional)  # OK
+UseSuspendable(Suspendable)      # OK
+
+# Covariance: fewer effects can substitute for more effects
+UseTransactional(Pure)           # OK: ():int &lt;: ()&lt;transacts&gt;:int
+
+# Invalid: more effects cannot substitute for fewer
+# UsePure(Transactional)         # ERROR: ()&lt;transacts&gt;:int &lt;/: ():int</code></pre></figure>
+<p>可以在需要 <code>&lt;transacts&gt;</code> 的地方传递 <code>&lt;computes&gt;</code> 函数，因为效果越少意味着该函数受到的约束越多。</p>
+<p>当您有条件地分配不同的函数时，Verse 会找到其类型的最小上限（连接）：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Assume the following:
+# base := class{Value:int}
+# derived := class(base){Extra:string}
+
+F1():base = base{Value:=1}
+F2():derived = derived{Value:=2, Extra:=&quot;test&quot;}
+
+# Join: ()-&gt;base (common supertype)
+G := if(true?) {F1} else {F2}
+G().Value  # Can access base members</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Types, Variance and Effects</summary>
     <div class="md"><h3>Types, Variance and Effects</h3>
 <p>Function types follow specific subtyping rules based on <em>variance</em>:</p>
-<ul>
-<li><em>Parameters are contravariant</em>: A function accepting more general</li>
+<ul><li><em>Parameters are contravariant</em>: A function accepting more general</li></ul>
 <p>types can substitute for one accepting specific types.</p>
-</ul>
-<ul>
-<li><em>Returns are covariant</em>: A function returning more specific types</li>
+<ul><li><em>Returns are covariant</em>: A function returning more specific types</li></ul>
 <p>can substitute for one returning general types.</p>
-</ul>
 <p>Consider the following three classes:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!--264--&gt;</p>
 <pre><code>animal := class:
     Name:string
 
@@ -639,9 +919,6 @@ dog := class(animal):
 working_dog := class(dog):
     Work:string</code></pre>
 <p>And some use cases:</p>
-<p>&lt;!--versetest animal := class: Name:string dog := class(animal): Breed:string working_dog := class(dog): Work:string</p>
-<p>AnimalToDog(X:animal):dog = dog{Name := X.Name, Breed := &quot;Unknown&quot;} DogToWorkingDog(X:dog):working_dog = working_dog{Name := X.Name, Breed := &quot;Unknown&quot;, Work := &quot;Guard&quot;} DogToAnimal(X:dog):animal = X WorkingDogToDog(X:working_dog):dog = X</p>
-<p>TestValid():void = var ProcessDog:type{_(:dog):dog} = AnimalToDog set ProcessDog = AnimalToDog  # OK: tuple(animal)-&gt;dog &lt;: tuple(dog)-&gt;dog set ProcessDog = DogToWorkingDog  # OK: tuple(dog)-&gt;working_dog &lt;: tuple(dog)-&gt;dog &lt;# --&gt; &lt;!-- 64 --&gt;</p>
 <pre><code># Some functions on animals
 AnimalToDog(X:animal):dog = dog{Name := X.Name, Breed := &quot;Unknown&quot;}
 DogToWorkingDog(X:dog):working_dog = working_dog{Name := X.Name, Breed := &quot;Unknown&quot;, Work := &quot;Guard&quot;}
@@ -665,9 +942,7 @@ set ProcessDog1 = DogToAnimal  # ERROR: incompatible assignment
 
 ProcessDog2 := AnimalToDog  # Inferred as type{_(:animal):dog}
 set ProcessDog2 = WorkingDogToDog  # ERROR: incompatible assignment</code></pre>
-<p>&lt;!--  #&gt; --&gt;</p>
 <p>Effects are part of the function type. A function with fewer effects can be used where a function with more effects is expected - effects are <strong>covariant</strong> (fewer effects = subtype):</p>
-<p>&lt;!--versetest Pure()&lt;computes&gt;:int = 42 Transactional()&lt;transacts&gt;:int = 42 Suspendable()&lt;suspends&gt;:int = 42 UsePure(F()&lt;computes&gt;:int):int = F() UseTransactional(F()&lt;transacts&gt;:int):int = F() UseSuspendable(F()&lt;suspends&gt;:int):task(int) = spawn{ F() } --&gt; &lt;!-- 65--&gt;</p>
 <pre><code>UsePure(Pure)                    # OK
 UseTransactional(Transactional)  # OK
 UseSuspendable(Suspendable)      # OK
@@ -679,8 +954,6 @@ UseTransactional(Pure)           # OK: ():int &lt;: ()&lt;transacts&gt;:int
 # UsePure(Transactional)         # ERROR: ()&lt;transacts&gt;:int &lt;/: ():int</code></pre>
 <p>A <code>&lt;computes&gt;</code> function can be passed where <code>&lt;transacts&gt;</code> is expected because fewer effects means the function is more constrained.</p>
 <p>When you assign different functions conditionally, Verse finds the least upper bound (join) of their types:</p>
-<p>&lt;!--versetest base := class: Value:int</p>
-<p>derived := class(base): Extra:string --&gt; &lt;!-- 66--&gt;</p>
 <pre><code># Assume the following:
 # base := class{Value:int}
 # derived := class(base){Extra:string}
@@ -693,20 +966,88 @@ G := if(true?) {F1} else {F2}
 G().Value  # Can access base members</code></pre></div>
   </details>
 </section><section class="section" id="s11-using-type">
-  <div class="annotation">
-    <h3>中文批注：Using type{}</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Using type{}”展开。阅读时先抓住这些英文关键词：syntax、declares、function、types、full。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">type{}</span><span class="chip">type{_(...):...}</span><span class="chip">_</span><span class="chip">The</span><span class="chip">&lt;!-- #&gt;--&gt;
+  <article class="cn-read">
+    <h2>使用类型{} <small>Using type{}</small></h2>
+    <p><code>type{_(...):...}</code> 语法声明了完整详细的函数类型。这是创建函数类型签名的机制，其中包括参数类型、返回类型和效果。下划线<code>_</code>是函数名的占位符，强调它描述的是一个签名，而不是一个特定的函数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function type variable
+var Handler:?type{_(:string, :int)&lt;decides&gt;:void} = false
 
-Within</span><span class="chip">Combine</span><span class="chip">with</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;transacts&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Using type{}</summary>
+# Nested function matching the signature
+MakeHandler(Name:string, Count:int)&lt;decides&gt;:void =
+    Print(&quot;{Name}: {Count}&quot;)
+    Count &gt; 0  # Decides effect
+
+set Handler = option{MakeHandler}
+
+# Function accepting function parameter
+Process(F:type{_(:int):int}, Value:int):int =
+    F(Value)
+
+# Nested function to pass
+Double(X:int):int = X * 2
+Process(Double, 5)  # Returns 10</code></pre></figure>
+<p><code>type{}</code> 构造*声明函数类型签名*：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Type definitions for function signatures
+ValidType1 := type{_():int}
+ValidType2 := type{_(:string, :int):float}
+ValidType3 := type{_()&lt;transacts&gt;&lt;decides&gt;:void}</code></pre></figure>
+<p>在 <code>type{}</code> 中，函数声明必须具有返回类型，但*不能具有函数体*。</p>
+<p>函数类型在类中用作字段类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Assume:
+# calculator := class:
+#    Operation:type{_(:int,:int):int}
+
+Add(X:int, Y:int):int = X + Y
+Multiply(X:int, Y:int):int = X * Y
+
+# Create instances with different operations
+Adder := calculator{Operation := Add}
+Multiplier := calculator{Operation := Multiply}
+
+Adder.Operation(5, 3)      # Returns 8
+Multiplier.Operation(5, 3) # Returns 15</code></pre></figure>
+<p>函数类型可用于局部变量，从而实现条件函数选择：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessA():int = 10
+ProcessB():int = 20
+
+SelectFunction(UseA:logic):int =
+    # Choose function based on condition
+    Fn:type{_():int} =
+        if (UseA?):
+            ProcessA
+        else:
+            ProcessB
+    Fn()
+
+SelectFunction(true)   # Returns 10
+SelectFunction(false)  # Returns 20</code></pre></figure>
+<p>将 <code>type{}</code> 与 <code>?</code> 组合以创建可选函数类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>DefaultHandler()&lt;computes&gt;:int = -1
+CustomHandler()&lt;computes&gt;:int = 42
+
+Process(Handler:?type{_()&lt;computes&gt;:int})&lt;computes&gt;&lt;decides&gt;:int =
+    # Use handler if provided, otherwise use default
+    Handler?() or DefaultHandler()
+
+Process[false]                   # Returns -1 (no handler)
+Process[option{CustomHandler}]   # Returns 42 (custom handler)</code></pre></figure>
+<p>创建共享相同签名的函数数组：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetZero():int = 0
+GetOne():int = 1
+GetTwo():int = 2
+
+SumFunctions(Functions:[]type{_():int}):int =
+    var Result:int = 0
+    for (Fn : Functions):
+        set Result += Fn()
+    Result
+
+SumFunctions(array{GetZero, GetOne, GetTwo})  # Returns 3</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Using type{}</summary>
     <div class="md"><h3>Using <code>type{}</code></h3>
 <p>The <code>type{_(...):...}</code> syntax declares function types with full detail. This is the mechanism for creating function type signatures that include parameter types, return types, and effects. Underscore <code>_</code> is a placeholder for the function name, emphasizing that it describes a signature, not a specific function:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 72--&gt;</p>
 <pre><code># Function type variable
 var Handler:?type{_(:string, :int)&lt;decides&gt;:void} = false
 
@@ -725,15 +1066,12 @@ Process(F:type{_(:int):int}, Value:int):int =
 Double(X:int):int = X * 2
 Process(Double, 5)  # Returns 10</code></pre>
 <p>The <code>type{}</code> construct <em>declares function type signatures</em>:</p>
-<p>&lt;!--versetest m:= module: ValidType1 := type{_():int} ValidType2 := type{_(:string, :int):float} ValidType3 := type{_()&lt;transacts&gt;&lt;decides&gt;:void} &lt;# --&gt; &lt;!-- 73--&gt;</p>
 <pre><code># Type definitions for function signatures
 ValidType1 := type{_():int}
 ValidType2 := type{_(:string, :int):float}
 ValidType3 := type{_()&lt;transacts&gt;&lt;decides&gt;:void}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>Within <code>type{}</code>, function declarations must have return types but <em>cannot have bodies</em>.</p>
 <p>Function types work as field types in classes:</p>
-<p>&lt;!--versetest calculator := class: Operation:type{_(:int,:int):int} --&gt; &lt;!-- 74--&gt;</p>
 <pre><code># Assume:
 # calculator := class:
 #    Operation:type{_(:int,:int):int}
@@ -748,7 +1086,6 @@ Multiplier := calculator{Operation := Multiply}
 Adder.Operation(5, 3)      # Returns 8
 Multiplier.Operation(5, 3) # Returns 15</code></pre>
 <p>Function types can be used for local variables, enabling conditional function selection:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 75--&gt;</p>
 <pre><code>ProcessA():int = 10
 ProcessB():int = 20
 
@@ -764,7 +1101,6 @@ SelectFunction(UseA:logic):int =
 SelectFunction(true)   # Returns 10
 SelectFunction(false)  # Returns 20</code></pre>
 <p>Combine <code>type{}</code> with <code>?</code> to create optional function types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 76--&gt;</p>
 <pre><code>DefaultHandler()&lt;computes&gt;:int = -1
 CustomHandler()&lt;computes&gt;:int = 42
 
@@ -775,7 +1111,6 @@ Process(Handler:?type{_()&lt;computes&gt;:int})&lt;computes&gt;&lt;decides&gt;:i
 Process[false]                   # Returns -1 (no handler)
 Process[option{CustomHandler}]   # Returns 42 (custom handler)</code></pre>
 <p>Create arrays of functions sharing the same signature:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 77--&gt;</p>
 <pre><code>GetZero():int = 0
 GetOne():int = 1
 GetTwo():int = 2
@@ -789,18 +1124,63 @@ SumFunctions(Functions:[]type{_():int}):int =
 SumFunctions(array{GetZero, GetOne, GetTwo})  # Returns 3</code></pre></div>
   </details>
 </section><section class="section" id="s12-examples">
-  <div class="annotation">
-    <h3>中文批注：Examples</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Examples”展开。阅读时先抓住这些英文关键词：Map-Filter-Reduce、versetest、Generic、map、Map。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">map</span><span class="chip">transacts</span><span class="chip">where</span><span class="chip">for</span><span class="chip">computes</span><span class="chip">decides</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Examples</summary>
+  <article class="cn-read">
+    <h2>示例 <small>Examples</small></h2>
+    <p>**映射-过滤-减少**：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Generic map
+Map(Items:[]t, F(:t)&lt;transacts&gt;:u where t:type, u:type)&lt;transacts&gt;:[]u =
+    for (Item:Items):
+        F(Item)
+
+# Generic filter
+Filter(Items:[]t, Pred(:t)&lt;computes&gt;&lt;decides&gt;:void where t:type)&lt;computes&gt;:[]t =
+    for (Item:Items, Pred[Item]):
+        Item
+
+# Generic fold/reduce
+Fold(Items:[]t, Initial:u, F(:u, :t)&lt;transacts&gt;:u where t:type, u:type)&lt;transacts&gt;:u =
+    var Acc:u = Initial
+    for (Item:Items):
+        set Acc = F(Acc, Item)
+    Acc
+
+# Usage with nested functions
+Values := array{1, 2, 3, 4, 5}
+
+# Define nested functions for operations
+Square(X:int)&lt;computes&gt;:int = X * X
+IsEven(X:int)&lt;computes&gt;&lt;decides&gt;:void = X = 0 or Mod[X,2] = 0
+AddTo(Acc:int, X:int)&lt;computes&gt;:int = Acc + X
+
+Squared := Map(Values, Square)
+Evens := Filter(Values, IsEven)
+Sum := Fold(Values, 0, AddTo)</code></pre></figure>
+<p>**功能组成**：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Compose(F(:b):c, G(:a):b where a:type, b:type, c:type):type{_(:a):c} =
+    # Return a nested function that composes F and G
+    Composed(X:a):c = F(G(X))
+    Composed
+
+Add1(X:int):int = X + 1
+Double(X:int):int = X * 2
+
+# Compose: first doubles, then adds 1
+DoubleThenIncrement := Compose(Add1, Double)
+DoubleThenIncrement(5)  # Returns 11 (5*2 + 1)</code></pre></figure>
+<p>**部分应用**：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Partial(F(:a, :b):c, X:a where a:type, b:type, c:type):type{_(:b):c} =
+    # Return a nested function with X captured
+    PartialFunc(Y:b):c = F(X, Y)
+    PartialFunc
+
+Add(X:int, Y:int):int = X + Y
+Add5 := Partial(Add, 5)
+Add5(3)  # Returns 8</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Examples</summary>
     <div class="md"><h3>Examples</h3>
 <p><strong>Map-Filter-Reduce</strong>:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 78--&gt;</p>
 <pre><code># Generic map
 Map(Items:[]t, F(:t)&lt;transacts&gt;:u where t:type, u:type)&lt;transacts&gt;:[]u =
     for (Item:Items):
@@ -830,7 +1210,6 @@ Squared := Map(Values, Square)
 Evens := Filter(Values, IsEven)
 Sum := Fold(Values, 0, AddTo)</code></pre>
 <p><strong>Function composition</strong>:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 79--&gt;</p>
 <pre><code>Compose(F(:b):c, G(:a):b where a:type, b:type, c:type):type{_(:a):c} =
     # Return a nested function that composes F and G
     Composed(X:a):c = F(G(X))
@@ -843,7 +1222,6 @@ Double(X:int):int = X * 2
 DoubleThenIncrement := Compose(Add1, Double)
 DoubleThenIncrement(5)  # Returns 11 (5*2 + 1)</code></pre>
 <p><strong>Partial application</strong>:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 80--&gt;</p>
 <pre><code>Partial(F(:a, :b):c, X:a where a:type, b:type, c:type):type{_(:b):c} =
     # Return a nested function with X captured
     PartialFunc(Y:b):c = F(X, Y)
@@ -854,20 +1232,55 @@ Add5 := Partial(Add, 5)
 Add5(3)  # Returns 8</code></pre></div>
   </details>
 </section><section class="section" id="s13-nested-functions">
-  <div class="annotation">
-    <h3>中文批注：Nested Functions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Nested Functions”展开。阅读时先抓住这些英文关键词：warning、Unreleased、Feature、Nested、functions。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Each call to</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Nested Functions</summary>
+  <article class="cn-read">
+    <h2>嵌套函数 <small>Nested Functions</small></h2>
+    <p>!!!警告“未发布的功能” 嵌套函数尚未发布。本节记录了当前不可用的计划功能。</p>
+<p>嵌套函数（也称为局部函数）是在其他函数内部定义的函数。它们提供封装，启用局部变量的闭包，并帮助组织函数范围内的复杂逻辑。嵌套函数有名称，可以递归，是在 Verse 中创建函数值和闭包的主要方式。</p>
+<p>嵌套函数的声明方式与顶级函数类似，但在另一个函数体内：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Outer(X:int):int =
+    # Nested function definition
+    Inner(Y:int):int = Y * 2
+
+    # Call nested function
+    Inner(X)
+
+Outer(5)  # Returns 10</code></pre></figure>
+<p>嵌套函数仅在其封闭函数的作用域内可见。无法从外部访问它们。</p>
+<p>嵌套函数从任何封闭范围捕获（封闭）变量，创建强大的闭包：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MakeGreeter(Name:string):type{_():string} =
+    # Greeting captures Name from outer scope
+    Greeting():string = &quot;Hello, {Name}!&quot;
+
+    # Return the nested function
+    Greeting
+
+SayHello := MakeGreeter(&quot;Alice&quot;)
+SayHello()  # Returns &quot;Hello, Alice!&quot;
+
+SayHi := MakeGreeter(&quot;Bob&quot;)
+SayHi()  # Returns &quot;Hello, Bob!&quot;</code></pre></figure>
+<p>每次调用 <code>MakeGreeter</code> 都会创建一个新的闭包，其中包含自己捕获的 <code>Name</code> 值。</p>
+<p>嵌套函数支持按参数类型重载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Process(X:int):string =
+    # Overloaded nested functions
+    Format(Value:int):string = &quot;int: {Value}&quot;
+    Format(Value:float):string = &quot;float: {Value}&quot;
+
+    # Calls appropriate overload
+    IntResult := Format(42)       # Calls int version
+    FloatResult := Format(3.14)   # Calls float version
+
+    &quot;{IntResult}, {FloatResult}&quot;
+
+Process(1)  # Returns &quot;Int: 42, Float: 3.14&quot;</code></pre></figure>
+<p>重载解析的工作方式与顶级函数相同。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Nested Functions</summary>
     <div class="md"><h2>Nested Functions</h2>
-<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>Nested functions have not yet been released. This section documents planned functionality that is not currently available.</p></div>
+<p>!!! warning &quot;Unreleased Feature&quot; Nested functions have not yet been released. This section documents planned functionality that is not currently available.</p>
 <p>Nested functions (also called local functions) are functions defined inside other functions. They provide encapsulation, enable closures over local variables, and help organize complex logic within a function&#x27;s scope. Nested functions have names, can be recursive, and are the primary way to create function values and closures in Verse.</p>
 <p>A nested function is declared just like a top-level function, but inside another function&#x27;s body:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 81--&gt;</p>
 <pre><code>Outer(X:int):int =
     # Nested function definition
     Inner(Y:int):int = Y * 2
@@ -878,7 +1291,6 @@ Add5(3)  # Returns 8</code></pre></div>
 Outer(5)  # Returns 10</code></pre>
 <p>Nested functions are only visible within their enclosing function&#x27;s scope. They cannot be accessed from outside.</p>
 <p>Nested functions capture (close over) variables from any enclosing scope, creating powerful closures:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 82--&gt;</p>
 <pre><code>MakeGreeter(Name:string):type{_():string} =
     # Greeting captures Name from outer scope
     Greeting():string = &quot;Hello, {Name}!&quot;
@@ -893,7 +1305,6 @@ SayHi := MakeGreeter(&quot;Bob&quot;)
 SayHi()  # Returns &quot;Hello, Bob!&quot;</code></pre>
 <p>Each call to <code>MakeGreeter</code> creates a new closure with its own captured <code>Name</code> value.</p>
 <p>Nested functions support overloading by parameter types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 83--&gt;</p>
 <pre><code>Process(X:int):string =
     # Overloaded nested functions
     Format(Value:int):string = &quot;int: {Value}&quot;
@@ -909,18 +1320,35 @@ Process(1)  # Returns &quot;Int: 42, Float: 3.14&quot;</code></pre>
 <p>Overload resolution works the same as for top-level functions.</p></div>
   </details>
 </section><section class="section" id="s14-closures-with-state">
-  <div class="annotation">
-    <h3>中文批注：Closures with State</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Closures with State”展开。阅读时先抓住这些英文关键词：Nested、functions、capture、var、variables。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">set</span><span class="chip">private</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Closures with State</summary>
+  <article class="cn-read">
+    <h2>与国家关闭 <small>Closures with State</small></h2>
+    <p>嵌套函数可以捕获 <code>var</code> 变量并改变它们，创建有状态闭包：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MakeCounter(Initial:int):tuple(type{_():int}, type{_():void}) =
+    var Count:int = Initial
+
+    # Getter captures Count
+    GetCount():int = Count
+
+    # Incrementer mutates captured Count
+    Increment():void = set Count = Count + 1
+
+    (GetCount, Increment)
+
+Counter := MakeCounter(0)
+GetValue := Counter(0)
+IncrementValue := Counter(1)
+
+GetValue()        # Returns 0
+IncrementValue()  # Increments count
+GetValue()        # Returns 1
+IncrementValue()  # Increments count
+GetValue()        # Returns 2</code></pre></figure>
+<p>该模式创建了一个维护私有可变状态的闭包。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Closures with State</summary>
     <div class="md"><h3>Closures with State</h3>
 <p>Nested functions can capture <code>var</code> variables and mutate them, creating stateful closures:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 84--&gt;</p>
 <pre><code>MakeCounter(Initial:int):tuple(type{_():int}, type{_():void}) =
     var Count:int = Initial
 
@@ -944,26 +1372,57 @@ GetValue()        # Returns 2</code></pre>
 <p>This pattern creates a closure that maintains private mutable state.</p></div>
   </details>
 </section><section class="section" id="s15-restrictions">
-  <div class="annotation">
-    <h3>中文批注：Restrictions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Restrictions”展开。阅读时先抓住这些英文关键词：Nested、functions、have、several、important。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">&lt;internal&gt;</span><span class="chip">&lt;private&gt;</span><span class="chip">&lt;!-- #&gt;--&gt;
+  <article class="cn-read">
+    <h2>限制 <small>Restrictions</small></h2>
+    <p>嵌套函数有几个与顶级函数不同的重要限制：</p>
+<ul><li>嵌套函数**不能**具有访问说明符，例如 <code>&lt;public&gt;</code>、</li></ul>
+<p><code>&lt;internal&gt;</code> 或 <code>&lt;private&gt;</code>：</p>
+<ul><li>嵌套函数对于其封闭函数始终是私有的。</li><li>您不能在函数内部定义类（嵌套或其他方式）：</li></ul>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot define classes in local scope
+F():void =
+    my_class := class {}  # ERROR
 
-- The</span><span class="chip">&lt;override&gt;</span><span class="chip">public</span><span class="chip">internal</span><span class="chip">private</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Restrictions</summary>
+# Correct: Define classes at module level
+my_class := class {}
+
+F():void =
+    Instance := my_class{}  # OK - can use class</code></pre></figure>
+<ul><li>嵌套函数不能引用变量或其他嵌套函数</li></ul>
+<p>稍后在同一作用域中定义的函数（这也意味着不允许相互递归嵌套函数）：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR 3506: G used before defined
+F():void =
+    X := G()     # ERROR: G not yet defined
+    G():int = 42
+
+# Correct: Define before use
+F():void =
+    G():int = 42
+    X := G()     # OK: G is defined</code></pre></figure>
+<ul><li>调用父类方法的 <code>(super:)</code> 语法**不能**用于嵌套函数：</li></ul>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR 3612: super not allowed in nested function
+base_class := class:
+    F(X:int):int = X
+
+derived_class := class(base_class):
+    F&lt;override&gt;(X:int):int =
+        G():int =
+            (super:)F(X)  # ERROR: super not allowed here
+        G()
+
+# Correct: Use super directly in the overriding method
+derived_class := class(base_class):
+    F&lt;override&gt;(X:int):int =
+        BaseResult := (super:)F(X)  # OK
+        G():int = BaseResult * 2
+        G()</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Restrictions</summary>
     <div class="md"><h3>Restrictions</h3>
 <p>Nested functions have several important restrictions that distinguish them from top-level functions:</p>
-<ul>
-<li>Nested functions <strong>cannot</strong> have access specifiers like <code>&lt;public&gt;</code>,</li>
+<ul><li>Nested functions <strong>cannot</strong> have access specifiers like <code>&lt;public&gt;</code>,</li></ul>
 <p><code>&lt;internal&gt;</code>, or <code>&lt;private&gt;</code>:</p>
-<li>Nested functions are always private to their enclosing function.</li>
-<li>You cannot define classes inside functions (nested or otherwise):</li>
-</ul>
-<p>&lt;!--versetest assert_semantic_error(3502): F():void = my_class := class {} &lt;# --&gt; &lt;!-- 86--&gt;</p>
+<ul><li>Nested functions are always private to their enclosing function.</li><li>You cannot define classes inside functions (nested or otherwise):</li></ul>
 <pre><code># ERROR: Cannot define classes in local scope
 F():void =
     my_class := class {}  # ERROR
@@ -973,12 +1432,8 @@ my_class := class {}
 
 F():void =
     Instance := my_class{}  # OK - can use class</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
-<ul>
-<li>Nested functions cannot reference variables or other nested</li>
+<ul><li>Nested functions cannot reference variables or other nested</li></ul>
 <p>functions defined later in the same scope (this also means mutually recursive nested functions are not allowed):</p>
-</ul>
-<p>&lt;!--versetest assert_semantic_error(3506): F():void = X := G() G():int = 42 &lt;# --&gt; &lt;!-- 87--&gt;</p>
 <pre><code># ERROR 3506: G used before defined
 F():void =
     X := G()     # ERROR: G not yet defined
@@ -988,12 +1443,7 @@ F():void =
 F():void =
     G():int = 42
     X := G()     # OK: G is defined</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
-<ul>
-<li>The <code>(super:)</code> syntax for calling parent class methods <strong>cannot</strong> be used in nested functions:</li>
-</ul>
-<p>&lt;!--versetest assert_semantic_error(3612): base_class := class: F(X:int):int = X</p>
-<p>derived_class := class(base_class): F&lt;override&gt;(X:int):int = G():int = (super:)F(X) G() &lt;# --&gt; &lt;!-- 88--&gt;</p>
+<ul><li>The <code>(super:)</code> syntax for calling parent class methods <strong>cannot</strong> be used in nested functions:</li></ul>
 <pre><code># ERROR 3612: super not allowed in nested function
 base_class := class:
     F(X:int):int = X
@@ -1009,25 +1459,65 @@ derived_class := class(base_class):
     F&lt;override&gt;(X:int):int =
         BaseResult := (super:)F(X)  # OK
         G():int = BaseResult * 2
-        G()</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+        G()</code></pre></div>
   </details>
 </section><section class="section" id="s16-parametric-functions">
-  <div class="annotation">
-    <h3>中文批注：Parametric Functions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Parametric Functions”展开。阅读时先抓住这些英文关键词：Parametric、functions、also、called、generic。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where</span><span class="chip">The</span><span class="chip">clause declares</span><span class="chip">as a type parameter with the constraint</span><span class="chip">means &quot;takes a value of type</span><span class="chip">and returns a value of that same type</span><span class="chip">.&quot;
+  <article class="cn-read">
+    <h2>参数函数 <small>Parametric Functions</small></h2>
+    <p>参数函数（也称为泛型函数）允许您编写适用于多种类型的代码，同时保持完整的类型安全。您无需为每种类型编写单独的函数，而是可以定义一个带有类型参数的函数，该参数可以适应您使用的任何类型。</p>
+<p>参数函数使用 <code>where</code> 子句声明类型参数，该子句指定对这些类型的约束：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Simple identity function - works with any type
+Identity(X:t where t:type):t = X
+# Usage - type parameter inferred automatically
+Identity(42)        # t inferred as int, returns 42
+Identity(&quot;hello&quot;)   # t inferred as string, returns &quot;hello&quot;</code></pre></figure>
+<p><code>where t:type</code> 子句将 <code>t</code> 声明为带有约束 <code>type</code> 的类型参数，这意味着它可以是任何 Verse 类型。函数签名 <code>(X:t):t</code> 的意思是“获取 <code>t</code> 类型的值并返回相同类型 <code>t</code> 的值”。</p>
+<p>泛型类型参数 <code>t</code> 捕获完整的类型信息，而不仅仅是顶级类型。这意味着传递给通用函数的容器保留其内部结构：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># The Identity function preserves exact container types
+Identity(X:t where t:type):t = X
 
-The generic type parameter</span><span class="chip">This is fundamentally different from using</span><span class="chip">- *Type parameters* appear in the</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Parametric Functions</summary>
+# Maps maintain their key and value types
+IntToString:[int]string = map{1 =&gt; &quot;one&quot;}
+Result1 := Identity(IntToString)  # Result1: [int]string
+
+# Arrays maintain element types
+IntArray:[]int = array{1, 2, 3}
+Result2 := Identity(IntArray)  # Result2: []int
+
+# Even nested containers preserve structure
+NestedMap:[int][]string = map{1 =&gt; array{&quot;a&quot;, &quot;b&quot;}}
+Result3 := Identity(NestedMap)  # Result3: [int][]string</code></pre></figure>
+<p>这与使用 <code>any</code> 根本不同，后者会擦除类型信息。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FunctionName(Parameters where TypeParameter:Constraint, ...):ReturnType = Body</code></pre></figure>
+<ul><li>*类型参数*出现在 <code>where</code> 子句中</li><li>*约束*指定要求（例如，<code>type</code>、<code>subtype(comparable)</code>）</li><li>*多个类型参数*在 <code>where</code> 子句中以逗号分隔</li></ul>
+<p>Verse 会自动从您传递的参数推断类型参数，在大多数情况下无需显式类型注释：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function with two type parameters
+Pair(X:t, Y:u where t:type, u:type):tuple(t, u) = (X, Y)
+
+# All type parameters inferred
+Pair(1, &quot;one&quot;)        # t = int, u = string, returns (1, &quot;one&quot;)
+Pair(true, 3.14)      # t = logic, u = float, returns (true, 3.14)</code></pre></figure>
+<p>集合推断：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Generic first element function
+First(Items:[]t where t:type)&lt;decides&gt;:t = Items[0]
+
+Values := array{1, 2, 3}
+Result :int= First[Values]  # t inferred as int from []int</code></pre></figure>
+<p>当您将多个值传递给需要单个类型参数的参数函数时，Verse 可以推断元组或数组：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Returns the argument unchanged
+Identity(X:t where t:type):t = X
+
+# Passing multiple values creates a tuple
+Result1:tuple(int, int) = Identity(1, 2)  # t = tuple(int, int)
+
+# Can also be treated as an array
+Result2:[]int = Identity(1, 2)  # t = []int via conversion</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Parametric Functions</summary>
     <div class="md"><h2>Parametric Functions</h2>
 <p>Parametric functions (also called generic functions) allow you to write code that works with multiple types while maintaining complete type safety. Rather than writing separate functions for each type, you define a single function with type parameters that adapt to whatever types you use them with.</p>
 <p>A parametric function declares type parameters using a <code>where</code> clause that specifies constraints on those types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 89--&gt;</p>
 <pre><code># Simple identity function - works with any type
 Identity(X:t where t:type):t = X
 # Usage - type parameter inferred automatically
@@ -1035,7 +1525,6 @@ Identity(42)        # t inferred as int, returns 42
 Identity(&quot;hello&quot;)   # t inferred as string, returns &quot;hello&quot;</code></pre>
 <p>The <code>where t:type</code> clause declares <code>t</code> as a type parameter with the constraint <code>type</code>, meaning it can be any Verse type. The function signature <code>(X:t):t</code> means &quot;takes a value of type <code>t</code> and returns a value of that same type <code>t</code>.&quot;</p>
 <p>The generic type parameter <code>t</code> captures the complete type information, not just the top-level type. This means containers passed to generic functions preserve their internal structure:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 901--&gt;</p>
 <pre><code># The Identity function preserves exact container types
 Identity(X:t where t:type):t = X
 
@@ -1051,15 +1540,9 @@ Result2 := Identity(IntArray)  # Result2: []int
 NestedMap:[int][]string = map{1 =&gt; array{&quot;a&quot;, &quot;b&quot;}}
 Result3 := Identity(NestedMap)  # Result3: [int][]string</code></pre>
 <p>This is fundamentally different from using <code>any</code>, which would erase type information.</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 90--&gt;</p>
 <pre><code>FunctionName(Parameters where TypeParameter:Constraint, ...):ReturnType = Body</code></pre>
-<ul>
-<li><em>Type parameters</em> appear in the <code>where</code> clause</li>
-<li><em>Constraints</em> specify requirements (e.g., <code>type</code>, <code>subtype(comparable)</code>)</li>
-<li><em>Multiple type parameters</em> are comma-separated in the <code>where</code> clause</li>
-</ul>
+<ul><li><em>Type parameters</em> appear in the <code>where</code> clause</li><li><em>Constraints</em> specify requirements (e.g., <code>type</code>, <code>subtype(comparable)</code>)</li><li><em>Multiple type parameters</em> are comma-separated in the <code>where</code> clause</li></ul>
 <p>Verse automatically infers type parameters from the arguments you pass, eliminating the need for explicit type annotations in most cases:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 91--&gt;</p>
 <pre><code># Function with two type parameters
 Pair(X:t, Y:u where t:type, u:type):tuple(t, u) = (X, Y)
 
@@ -1067,14 +1550,12 @@ Pair(X:t, Y:u where t:type, u:type):tuple(t, u) = (X, Y)
 Pair(1, &quot;one&quot;)        # t = int, u = string, returns (1, &quot;one&quot;)
 Pair(true, 3.14)      # t = logic, u = float, returns (true, 3.14)</code></pre>
 <p>Inference with collections:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 92--&gt;</p>
 <pre><code># Generic first element function
 First(Items:[]t where t:type)&lt;decides&gt;:t = Items[0]
 
 Values := array{1, 2, 3}
 Result :int= First[Values]  # t inferred as int from []int</code></pre>
 <p>When you pass multiple values to a parametric function expecting a single type parameter, Verse can infer either a tuple or an array:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 93--&gt;</p>
 <pre><code># Returns the argument unchanged
 Identity(X:t where t:type):t = X
 
@@ -1085,25 +1566,50 @@ Result1:tuple(int, int) = Identity(1, 2)  # t = tuple(int, int)
 Result2:[]int = Identity(1, 2)  # t = []int via conversion</code></pre></div>
   </details>
 </section><section class="section" id="s17-type-constraints">
-  <div class="annotation">
-    <h3>中文批注：Type Constraints</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Type Constraints”展开。阅读时先抓住这些英文关键词：constraints、restrict、types、used、parameters。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">The function returns type</span><span class="chip">The</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">where</span><span class="chip">class</span><span class="chip">transacts</span><span class="chip">decides</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Type Constraints</summary>
+  <article class="cn-read">
+    <h2>类型约束 <small>Type Constraints</small></h2>
+    <p>类型约束限制哪些类型可以与类型参数一起使用，从而启用需要特定功能的操作。</p>
+<p>最宽松的约束接受任何类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Works with absolutely any type
+Store(Value:t where t:type):t = Value</code></pre></figure>
+<p>限制为指定类型的子类型的类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>vehicle := class:
+    Speed:float = 0.0
+
+car := class(vehicle):
+    NumDoors:int = 4
+
+# Only accepts vehicle or its subtypes
+ProcessVehicle(V:t where t:subtype(vehicle)):t =
+    # Can access Speed because we know V is a vehicle
+    Print(&quot;Speed: {V.Speed}&quot;)
+    V</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid calls
+ProcessVehicle(vehicle{})      # t = vehicle
+ProcessVehicle(car{})          # t = car (subtype of vehicle)</code></pre></figure>
+<p>该函数返回类型 <code>t</code>，而不是基本类型。这保留了特定类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Type-preserving function with subtype constraint
+MyCar := car{NumDoors:=4, Speed:=60.0}
+Result:car= ProcessVehicle(MyCar)  # Result has type car, not vehicle
+Result.NumDoors                  # Can access car-specific fields</code></pre></figure>
+<p><code>subtype(comparable)</code> 约束启用相等比较：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Can use = and &lt;&gt; operators on t
+FindInArray(Items:[]t, Target:t where t:subtype(comparable))&lt;decides&gt;:[]int =
+    for (Index -&gt; Item : Items, Item = Target):
+        Index</code></pre></figure>
+<p>类型参数可以在约束中相互引用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># u must be a subtype of t
+Convert(Base:t, Derived:u where t:type, u:subtype(t)):t = Base
+# This ensures type safety across related types</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Type Constraints</summary>
     <div class="md"><h3>Type Constraints</h3>
 <p>Type constraints restrict which types can be used with type parameters, enabling operations that require specific capabilities.</p>
 <p>The most permissive constraint accepts any type:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 94--&gt;</p>
 <pre><code># Works with absolutely any type
 Store(Value:t where t:type):t = Value</code></pre>
 <p>Restricts to types that are subtypes of a specified type:</p>
-<p>&lt;!--versetest vehicle := class: Speed:float = 0.0</p>
-<p>car := class(vehicle): NumDoors:int = 4</p>
-<p>ProcessVehicle(V:t where t:subtype(vehicle)):t = Print(&quot;Speed: {V.Speed}&quot;) V &lt;# --&gt; &lt;!-- 95--&gt;</p>
 <pre><code>vehicle := class:
     Speed:float = 0.0
 
@@ -1115,47 +1621,54 @@ ProcessVehicle(V:t where t:subtype(vehicle)):t =
     # Can access Speed because we know V is a vehicle
     Print(&quot;Speed: {V.Speed}&quot;)
     V</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
-<p>&lt;!--versetest vehicle := class: Speed:float = 0.0</p>
-<p>car := class(vehicle): NumDoors:int = 4</p>
-<p>ProcessVehicle(V:t where t:subtype(vehicle)):t = Print(&quot;Speed: {V.Speed}&quot;) V --&gt; &lt;!-- 200--&gt;</p>
 <pre><code># Valid calls
 ProcessVehicle(vehicle{})      # t = vehicle
 ProcessVehicle(car{})          # t = car (subtype of vehicle)</code></pre>
 <p>The function returns type <code>t</code>, not the base type. This preserves the specific type:</p>
-<p>&lt;!--versetest vehicle := class: Speed:float = 0.0</p>
-<p>car := class(vehicle): NumDoors:int = 4</p>
-<p>ProcessVehicle(V:t where t:subtype(vehicle))&lt;transacts&gt;:t = Print(&quot;Speed: {V.Speed}&quot;) V --&gt; &lt;!-- 96--&gt;</p>
 <pre><code># Type-preserving function with subtype constraint
 MyCar := car{NumDoors:=4, Speed:=60.0}
 Result:car= ProcessVehicle(MyCar)  # Result has type car, not vehicle
 Result.NumDoors                  # Can access car-specific fields</code></pre>
 <p>The <code>subtype(comparable)</code> constraint enables equality comparisons:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 97--&gt;</p>
 <pre><code># Can use = and &lt;&gt; operators on t
 FindInArray(Items:[]t, Target:t where t:subtype(comparable))&lt;decides&gt;:[]int =
     for (Index -&gt; Item : Items, Item = Target):
         Index</code></pre>
 <p>Type parameters can reference each other in constraints:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 98--&gt;</p>
 <pre><code># u must be a subtype of t
 Convert(Base:t, Derived:u where t:type, u:subtype(t)):t = Base
 # This ensures type safety across related types</code></pre></div>
   </details>
 </section><section class="section" id="s18-member-access">
-  <div class="annotation">
-    <h3>中文批注：Member Access</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Member Access”展开。阅读时先抓住这些英文关键词：subtype、constraints、access、members、exist。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">class</span><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Member Access</summary>
+  <article class="cn-read">
+    <h2>会员访问 <small>Member Access</small></h2>
+    <p>使用子类型约束时，您可以访问基类型上存在的成员：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
+    Name:string = &quot;Entity&quot;
+    Health:int = 100
+
+player := class(entity):
+    Score:int = 0
+</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Can access entity members through type parameter
+GetInfo(E:t where t:subtype(entity)):tuple(t, string, int) =
+    (E, E.Name, E.Health)            # Can access Name and Health
+
+P := player{Name := &quot;Alice&quot;, Health := 100, Score := 1500}
+Info := GetInfo(P)                   # Returns (player instance, &quot;Alice&quot;, 100)
+                                     # Info(0) has type player, not entity </code></pre></figure>
+<p>方法调用也有效：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
+    GetStatus():string = &quot;Active&quot;
+
+# Call methods on parametrically-typed values
+CheckStatus(E:t where t:subtype(entity)):string =
+    E.GetStatus()  # Method call through type parameter</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Member Access</summary>
     <div class="md"><h3>Member Access</h3>
 <p>When using subtype constraints, you can access members that exist on the base type:</p>
-<p>&lt;!--versetest entity := class: Name:string = &quot;Entity&quot; Health:int = 100</p>
-<p>player := class(entity): Score:int = 0 &lt;# --&gt; &lt;!-- 99--&gt;</p>
 <pre><code>entity := class:
     Name:string = &quot;Entity&quot;
     Health:int = 100
@@ -1163,9 +1676,6 @@ Convert(Base:t, Derived:u where t:type, u:subtype(t)):t = Base
 player := class(entity):
     Score:int = 0
 </code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
-<p>&lt;!--versetest entity := class: Name:string = &quot;Entity&quot; Health:int = 100</p>
-<p>player := class(entity): Score:int = 0 --&gt; &lt;!-- 299--&gt;</p>
 <pre><code># Can access entity members through type parameter
 GetInfo(E:t where t:subtype(entity)):tuple(t, string, int) =
     (E, E.Name, E.Health)            # Can access Name and Health
@@ -1174,43 +1684,48 @@ P := player{Name := &quot;Alice&quot;, Health := 100, Score := 1500}
 Info := GetInfo(P)                   # Returns (player instance, &quot;Alice&quot;, 100)
                                      # Info(0) has type player, not entity </code></pre>
 <p>Method calls work too:</p>
-<p>&lt;!--versetest entity := class: GetStatus():string = &quot;Active&quot;</p>
-<p>CheckStatus(E:t where t:subtype(entity)):string = E.GetStatus() &lt;# --&gt; &lt;!-- 100--&gt;</p>
 <pre><code>entity := class:
     GetStatus():string = &quot;Active&quot;
 
 # Call methods on parametrically-typed values
 CheckStatus(E:t where t:subtype(entity)):string =
-    E.GetStatus()  # Method call through type parameter</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+    E.GetStatus()  # Method call through type parameter</code></pre></div>
   </details>
 </section><section class="section" id="s19-polarity-and-variance">
-  <div class="annotation">
-    <h3>中文批注：Polarity and Variance</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Polarity and Variance”展开。阅读时先抓住这些英文关键词：parameters、must、used、consistently、according。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!-- #&gt;--&gt;
+  <article class="cn-read">
+    <h2>极性和方差 <small>Polarity and Variance</small></h2>
+    <p>类型参数必须根据方差规则一致地使用。当函数用作值或作为参数传递时，这可以确保类型安全。</p>
+<p>**协变位置**（对于返回类型是安全的）：</p>
+<ul><li>函数返回类型</li><li>元组/数组元素类型（作为返回）</li><li>映射键类型（作为返回）</li><li>映射值类型（作为返回）</li></ul>
+<p>**逆变位置**（对于参数类型是安全的）：</p>
+<ul><li>函数参数类型</li></ul>
+<p>**极性检查：** Verse 验证类型参数仅出现在与其预期用途兼容的位置：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: t appears covariantly (return type)
+GetValue(X:t where t:type):t = X
 
-The error occurs because</span><span class="chip">contains a mutable field of type</span><span class="chip">for</span><span class="chip">array</span><span class="chip">where</span><span class="chip">class</span><span class="chip">var</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Polarity and Variance</summary>
+# Valid: t appears contravariantly (parameter)
+Consume(X:t where t:type):void = {}
+
+# Valid: t appears in both positions (through function parameter and return)
+Apply(F:type{_(:t):t}, X:t where t:type):t = F(X)</code></pre></figure>
+<p>**不变类型会导致错误：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot return type that&#x27;s invariant in t
+c(t:type) := class{var X:t}  # Mutable field makes c invariant in t
+MakeContainer(X:t where t:type):c(t) = c(t){X := X}</code></pre></figure>
+<p>发生错误的原因是 <code>c(t)</code> 包含 <code>t</code> 类型的可变字段，使其保持不变 - 既不是协变也不是逆变。从参数函数返回此类类型是不安全的。</p>
+<p>**映射极性：** 映射在键和值上都是协变的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: covariant key and value
+ProcessMap(M:[t]u where t:subtype(comparable), u:type):[t]u = M</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Polarity and Variance</summary>
     <div class="md"><h3>Polarity and Variance</h3>
 <p>Type parameters must be used consistently according to variance rules. This ensures type safety when functions are used as values or passed as arguments.</p>
 <p><strong>Covariant positions</strong> (safe for return types):</p>
-<ul>
-<li>Function return types</li>
-<li>Tuple/array element types (as return)</li>
-<li>Map key types (as return)</li>
-<li>Map value types (as return)</li>
-</ul>
+<ul><li>Function return types</li><li>Tuple/array element types (as return)</li><li>Map key types (as return)</li><li>Map value types (as return)</li></ul>
 <p><strong>Contravariant positions</strong> (safe for parameter types):</p>
-<ul>
-<li>Function parameter types</li>
-</ul>
+<ul><li>Function parameter types</li></ul>
 <p><strong>The polarity check:</strong> Verse validates that type parameters appear only in positions compatible with their intended use:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 101--&gt;</p>
 <pre><code># Valid: t appears covariantly (return type)
 GetValue(X:t where t:type):t = X
 
@@ -1220,31 +1735,35 @@ Consume(X:t where t:type):void = {}
 # Valid: t appears in both positions (through function parameter and return)
 Apply(F:type{_(:t):t}, X:t where t:type):t = F(X)</code></pre>
 <p><strong>Invariant types cause errors:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3552): c(t:type) := class{var X:t} MakeContainer(X:t where t:type):c(t) = c(t){X := X} &lt;# --&gt; &lt;!-- 102--&gt;</p>
 <pre><code># ERROR: Cannot return type that&#x27;s invariant in t
 c(t:type) := class{var X:t}  # Mutable field makes c invariant in t
 MakeContainer(X:t where t:type):c(t) = c(t){X := X}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>The error occurs because <code>c(t)</code> contains a mutable field of type <code>t</code>, making it invariant - neither covariant nor contravariant. Returning such a type from a parametric function is unsafe.</p>
 <p><strong>Map polarity:</strong> Maps are covariant in both keys and values:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 103--&gt;</p>
 <pre><code># Valid: covariant key and value
 ProcessMap(M:[t]u where t:subtype(comparable), u:type):[t]u = M</code></pre></div>
   </details>
 </section><section class="section" id="s20-overloading-2">
-  <div class="annotation">
-    <h3>中文批注：Overloading</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Overloading”展开。可把它先理解为“重载”。阅读时先抓住这些英文关键词：Function、overloading、allows、define、multiple。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Overloading</summary>
+  <article class="cn-read">
+    <h2>超载 <small>Overloading</small></h2>
+    <p>函数重载允许您定义多个具有相同名称但参数类型不同的函数。编译器根据调用站点提供的参数类型选择正确的版本。</p>
+<p>定义多个名称相同但参数类型不同的函数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Overload by parameter type
+Process(Value:int):string = &quot;Integer: {Value}&quot;
+Process(Value:float):string = &quot;Float: {Value}&quot;
+Process(Value:string):string = &quot;String: {Value}&quot;
+
+# Calls select the appropriate overload
+Process(42)        # Returns &quot;Integer: 42&quot;
+Process(3.14)      # Returns &quot;Float: 3.14&quot;
+Process(&quot;hello&quot;)   # Returns &quot;String: hello&quot;</code></pre></figure>
+<p>编译器根据参数类型确定要调用哪个重载。每个重载必须具有不同的参数类型签名。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Overloading</summary>
     <div class="md"><h2>Overloading</h2>
 <p>Function overloading allows you to define multiple functions with the same name but different parameter types. The compiler selects the correct version based on the types of the arguments provided at the call site.</p>
 <p>Define multiple functions with the same name but different parameter types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 104--&gt;</p>
 <pre><code># Overload by parameter type
 Process(Value:int):string = &quot;Integer: {Value}&quot;
 Process(Value:float):string = &quot;Float: {Value}&quot;
@@ -1257,88 +1776,104 @@ Process(&quot;hello&quot;)   # Returns &quot;String: hello&quot;</code></pre>
 <p>The compiler determines which overload to call based on the argument types. Each overload must have a distinct parameter type signature.</p></div>
   </details>
 </section><section class="section" id="s21-capture">
-  <div class="annotation">
-    <h3>中文批注：Capture</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Capture”展开。阅读时先抓住这些英文关键词：cannot、take、reference、overloaded、function。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Capture</summary>
+  <article class="cn-read">
+    <h2>捕获 <small>Capture</small></h2>
+    <p>您不能引用重载函数名称：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot capture overloaded function
+f(x:int):void = {}
+f(x:float):void = {}
+
+# Error: which f?
+g:void = f</code></pre></figure>
+<p>存在此限制是因为编译器无法在未查看带有参数的调用站点的情况下确定您所指的重载。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Capture</summary>
     <div class="md"><h3>Capture</h3>
 <p>You cannot take a reference to an overloaded function name:</p>
-<p>&lt;!--versetest assert_semantic_error(3502): f(x:int):void = {} f(x:float):void = {} g := f &lt;# --&gt; &lt;!-- 105--&gt;</p>
 <pre><code># ERROR: Cannot capture overloaded function
 f(x:int):void = {}
 f(x:float):void = {}
 
 # Error: which f?
 g:void = f</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>This restriction exists because the compiler cannot determine which overload you mean without seeing the call site with arguments.</p></div>
   </details>
 </section><section class="section" id="s22-effects">
-  <div class="annotation">
-    <h3>中文批注：Effects</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Effects”展开。可把它先理解为“效果”。阅读时先抓住这些英文关键词：overload、functions、different、effects、but。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">if</span><span class="chip">transacts</span><span class="chip">decides</span><span class="chip">option</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Effects</summary>
+  <article class="cn-read">
+    <h2>效果 <small>Effects</small></h2>
+    <p>您可以重载具有不同效果的函数，但前提是参数类型也不同：</p>
+<p>**有效：不同类型，不同效果：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Process(x:float):float = x
+Process(x:int)&lt;transacts&gt;&lt;decides&gt;:int = x = 1
+
+Process(3.0)   # Returns 3.0 (non-failable)
+Process[1]     # Returns option{1} (failable)</code></pre></figure>
+<p>**无效：相同类型，不同效果：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Same parameter type
+f(x:int):void = {}
+f(x:int)&lt;transacts&gt;&lt;decides&gt;:void = {}  # ERROR</code></pre></figure>
+<p>效果本身并不能创造独特性 - 您需要不同的参数类型。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Effects</summary>
     <div class="md"><h3>Effects</h3>
 <p>You can overload functions with different effects, but only if the parameter types are also different:</p>
 <p><strong>Valid: Different types, different effects:</strong></p>
-<p>&lt;!--versetest--&gt; &lt;!-- 106--&gt;</p>
 <pre><code>Process(x:float):float = x
 Process(x:int)&lt;transacts&gt;&lt;decides&gt;:int = x = 1
 
 Process(3.0)   # Returns 3.0 (non-failable)
 Process[1]     # Returns option{1} (failable)</code></pre>
 <p><strong>Invalid: Same types, different effects:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3532): f(x:int):void = {} f(x:int)&lt;transacts&gt;&lt;decides&gt;:void = {} &lt;# --&gt; &lt;!-- 107--&gt;</p>
 <pre><code># ERROR: Same parameter type
 f(x:int):void = {}
 f(x:int)&lt;transacts&gt;&lt;decides&gt;:void = {}  # ERROR</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>Effects alone don&#x27;t create distinctness - you need different parameter types.</p></div>
   </details>
 </section><section class="section" id="s23-overloads-in-subclasses">
-  <div class="annotation">
-    <h3>中文批注：Overloads in Subclasses</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Overloads in Subclasses”展开。阅读时先抓住这些英文关键词：Subclasses、add、new、overloads、methods。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;override&gt;</span><span class="chip">&lt;allocates&gt;</span><span class="chip">class</span><span class="chip">for</span><span class="chip">using</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Overloads in Subclasses</summary>
+  <article class="cn-read">
+    <h2>子类中的重载 <small>Overloads in Subclasses</small></h2>
+    <p>子类可以向方法添加新的重载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>c0 := class:
+    f(X:int):int = X
+
+c1 := class(c0):
+    # Add new overload for float
+    f(X:float):float = X</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>c0{}.f(5)     # OK - int overload
+c1{}.f(5)     # OK - inherited int overload
+c1{}.f(5.0)   # OK - new float overload</code></pre></figure>
+<p>当子类定义与父方法共享名称的方法时，它必须：</p>
+<ol><li>提供**不同的参数类型**（不同于所有父重载）</li><li>**使用 <code>&lt;override&gt;</code> 精确覆盖一个**父重载</li></ol>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Parent class with overloads
+e := class:
+     func(C:c):c = C
+     func(E:e):e = E
+
+# Valid: Overrides one parent overload
+myf := class(e):
+     func&lt;override&gt;(C:c):d = d{}
+
+# ERROR: d is subtype of c, overlaps but doesn&#x27;t override
+# g := class(e):
+#     func(D:d):d = D  # ERROR - ambiguous with func(C:c)</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Overloads in Subclasses</summary>
     <div class="md"><h3>Overloads in Subclasses</h3>
 <p>Subclasses can add new overloads to methods:</p>
-<p>&lt;!--versetest c0 := class: f(X:int):int = X</p>
-<p>c1 := class(c0): f(X:float):float = X &lt;# --&gt; &lt;!-- 108--&gt;</p>
 <pre><code>c0 := class:
     f(X:int):int = X
 
 c1 := class(c0):
     # Add new overload for float
     f(X:float):float = X</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
-<p>&lt;!--versetest c0 := class: f(X:int):int = X</p>
-<p>c1 := class(c0): f(X:float):float = X --&gt; &lt;!-- 208--&gt;</p>
 <pre><code>c0{}.f(5)     # OK - int overload
 c1{}.f(5)     # OK - inherited int overload
 c1{}.f(5.0)   # OK - new float overload</code></pre>
 <p>When a subclass defines a method that shares a name with a parent method, it must either:</p>
-<ol>
-<li>Provide a <strong>distinct parameter type</strong> (different from all parent overloads)</li>
-<li><strong>Override exactly one</strong> parent overload using <code>&lt;override&gt;</code></li>
-</ol>
-<p>&lt;!--versetest c := class&lt;allocates&gt;{} d := class&lt;allocates&gt;(c){}</p>
-<p>e := class&lt;allocates&gt;: func(C:c):c = C func(E:e):e = E</p>
-<p>myf := class&lt;allocates&gt;(e): func&lt;override&gt;(C:c):d = d{} &lt;# --&gt; &lt;!-- 109--&gt;</p>
+<ol><li>Provide a <strong>distinct parameter type</strong> (different from all parent overloads)</li><li><strong>Override exactly one</strong> parent overload using <code>&lt;override&gt;</code></li></ol>
 <pre><code># Parent class with overloads
 e := class:
      func(C:c):c = C
@@ -1350,75 +1885,94 @@ myf := class(e):
 
 # ERROR: d is subtype of c, overlaps but doesn&#x27;t override
 # g := class(e):
-#     func(D:d):d = D  # ERROR - ambiguous with func(C:c)</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+#     func(D:d):d = D  # ERROR - ambiguous with func(C:c)</code></pre></div>
   </details>
 </section><section class="section" id="s24-interfaces-with-overloaded-methods">
-  <div class="annotation">
-    <h3>中文批注：Interfaces with Overloaded Methods</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Interfaces with Overloaded Methods”展开。阅读时先抓住这些英文关键词：Interfaces、declare、overloaded、methods、versetest。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;override&gt;</span><span class="chip">interface</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Interfaces with Overloaded Methods</summary>
+  <article class="cn-read">
+    <h2>具有重载方法的接口 <small>Interfaces with Overloaded Methods</small></h2>
+    <p>接口可以声明重载方法：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>formatter := interface:
+    Format(X:int):string = &quot;{X}&quot;
+    Format(X:float):string = &quot;{X}&quot;
+
+entity := class(formatter):
+    Format&lt;override&gt;(X:int):string = &quot;Entity-{X}&quot;
+    Format&lt;override&gt;(X:float):string = &quot;Entity-{X}&quot;</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Interfaces with Overloaded Methods</summary>
     <div class="md"><h3>Interfaces with Overloaded Methods</h3>
 <p>Interfaces can declare overloaded methods:</p>
-<p>&lt;!--versetest formatter := interface: Format(X:int):string = &quot;{X}&quot; Format(X:float):string = &quot;{X}&quot;</p>
-<p>entity := class(formatter): Format&lt;override&gt;(X:int):string = &quot;Entity-{X}&quot; Format&lt;override&gt;(X:float):string = &quot;Entity-{X}&quot; &lt;# --&gt; &lt;!-- 110--&gt;</p>
 <pre><code>formatter := interface:
     Format(X:int):string = &quot;{X}&quot;
     Format(X:float):string = &quot;{X}&quot;
 
 entity := class(formatter):
     Format&lt;override&gt;(X:int):string = &quot;Entity-{X}&quot;
-    Format&lt;override&gt;(X:float):string = &quot;Entity-{X}&quot;</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+    Format&lt;override&gt;(X:float):string = &quot;Entity-{X}&quot;</code></pre></div>
   </details>
 </section><section class="section" id="s25-restrictions-2">
-  <div class="annotation">
-    <h3>中文批注：Restrictions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Restrictions”展开。阅读时先抓住这些英文关键词：Cannot、overload、functions、non-functions、name。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">return</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Restrictions</summary>
+  <article class="cn-read">
+    <h2>限制 <small>Restrictions</small></h2>
+    <p>**不能用非函数重载函数：**</p>
+<p>名称不能同时是函数和非函数值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot overload with variable
+# f:int = 0
+# f():void = {}</code></pre></figure>
+<p>**底层类型无法解决重载：**</p>
+<p>底部类型（来自没有值的 <code>return</code>）不能用于重载决策：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot determine which overload
+F(X:int):int = X
+F(X:float):float = X
+
+# G():void =
+#     F(@ignore_unreachable return)  # ERROR - which F?
+#     0</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Restrictions</summary>
     <div class="md"><h3>Restrictions</h3>
 <p><strong>Cannot overload functions with non-functions:</strong></p>
 <p>A name cannot be both a function and a non-function value:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): f:int = 0 f():void = {} &lt;# --&gt; &lt;!-- 112--&gt;</p>
 <pre><code># ERROR: Cannot overload with variable
 # f:int = 0
 # f():void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Bottom type cannot resolve overloads:</strong></p>
 <p>The bottom type (from <code>return</code> without a value) cannot be used for overload resolution:</p>
-<p>&lt;!--versetest assert_semantic_error(3518): F(X:int):int = X F(X:float):float = X G():void = F(@ignore_unreachable return) 0 &lt;# --&gt; &lt;!-- 114--&gt;</p>
 <pre><code># ERROR: Cannot determine which overload
 F(X:int):int = X
 F(X:float):float = X
 
 # G():void =
 #     F(@ignore_unreachable return)  # ERROR - which F?
-#     0</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+#     0</code></pre></div>
   </details>
 </section><section class="section" id="s26-overloading-with-suspends">
-  <div class="annotation">
-    <h3>中文批注：Overloading with &lt;suspends&gt;</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Overloading with &lt;suspends&gt;”展开。阅读时先抓住这些英文关键词：mix、suspending、non-suspending、overloads、parameter。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;suspends&gt;</span><span class="chip">suspends</span><span class="chip">if</span><span class="chip">spawn</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Overloading with &lt;suspends&gt;</summary>
+  <article class="cn-read">
+    <h2>使用 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt; 重载 <small>Overloading with &lt;suspends&gt;</small></h2>
+    <p>如果参数类型不同，您可以混合使用暂停和非暂停重载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>f(x:int)&lt;suspends&gt;:void =
+    Sleep(1.0)
+
+f(x:float):void =
+    Print(&quot;Non-suspending&quot;)
+
+# Call non-suspending directly
+f(1.0)
+
+# Call suspending with spawn
+spawn{f(1)}</code></pre></figure>
+<p>**无法在没有生成的情况下调用暂停重载：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: suspends version needs spawn context
+f(x:int):void = {}
+f(x:float)&lt;suspends&gt;:void = {}
+
+g():void = f(1.0)  # ERROR - float version is suspends</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Overloading with &lt;suspends&gt;</summary>
     <div class="md"><h3>Overloading with <code>&lt;suspends&gt;</code></h3>
 <p>You can mix suspending and non-suspending overloads if the parameter types differ:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 115--&gt;</p>
 <pre><code>f(x:int)&lt;suspends&gt;:void =
     Sleep(1.0)
 
@@ -1431,34 +1985,119 @@ f(1.0)
 # Call suspending with spawn
 spawn{f(1)}</code></pre>
 <p><strong>Cannot call suspending overload without spawn:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3512): f(x:int):void = {} f(x:float)&lt;suspends&gt;:void = {} g():void = f(1.0) &lt;# --&gt; &lt;!-- 116--&gt;</p>
 <pre><code># ERROR: suspends version needs spawn context
 f(x:int):void = {}
 f(x:float)&lt;suspends&gt;:void = {}
 
-g():void = f(1.0)  # ERROR - float version is suspends</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+g():void = f(1.0)  # ERROR - float version is suspends</code></pre></div>
   </details>
 </section><section class="section" id="s27-types">
-  <div class="annotation">
-    <h3>中文批注：Types</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Types”展开。阅读时先抓住这些英文关键词：Every、function、has、captures、its。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">verse
-type{_(:int,:string)&lt;decides&gt;:float}</span><span class="chip">?t</span><span class="chip">logic</span><span class="chip">false</span><span class="chip">&lt;!-- #&gt;--&gt;
+  <article class="cn-read">
+    <h2>类型 <small>Types</small></h2>
+    <p>每个函数都有一个类型来捕获其参数、效果和返回值。类型语法使用下划线作为函数名称的占位符：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>type{_(:int,:string)&lt;decides&gt;:float}</code></pre></figure>
+<p>这表示任何采用整数和字符串的函数，可能会失败，并在成功时返回浮点数。</p>
+<p>多个函数可以通过重载共享一个名称，只要它们的签名不会产生歧义。编译器可以根据参数类型区分重载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Transform(X:int):string = &quot;I:{X}&quot;
+Transform(X:float):string = &quot;F:{X}&quot;
+Transform(X:string):string = &quot;S:{X}&quot;
 
-Note that</span><span class="chip">and</span><span class="chip">are not equivalent types—</span><span class="chip">contains</span><span class="chip">, while</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Types</summary>
+Result1 := Transform(42)        # Calls int version
+Result2 := Transform(3.14)      # Calls float version
+Result3 := Transform(&quot;Hello&quot;)   # Calls string version</code></pre></figure>
+<p>然而，重载具有基于**类型独特性**的严格限制。仅当没有可能的值可以匹配这两种类型时，两种类型才被视为“不同”以用于重载目的。此限制可防止歧义并确保函数调用始终可以在编译时明确解析。</p>
+<p>Verse 使用精确的规则来确定两个参数类型是否足够不同以允许重载。了解这些规则对于设计清晰的 API 至关重要。</p>
+<p>以下类型对**不不同**，不能用于重载函数：</p>
+<p>**1.可选和逻辑。** <code>?t</code> 和 <code>logic</code> 并不不同，因为这两种类型都包含 <code>false</code> 作为值，当 <code>false</code> 作为参数传递时会产生重载歧义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
+F(:?any):void = {}
+F(:logic):void = {}</code></pre></figure>
+<p>请注意，<code>?t</code> 和 <code>logic</code> 不是等效类型 - <code>logic</code> 包含 <code>true</code> 和 <code>false</code>，而 <code>?t</code> 包含 <code>false</code> 和 <code>option{false}</code> 等选项值。但是，它们共享的 <code>false</code> 值意味着编译器无法区分它们以进行重载解析。</p>
+<p>**2.数组和映射。** 数组 <code>[]t</code> 和映射 <code>[k]t</code> 并不不同：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
+F(:[]int):void = {}
+F(:[string]int):void = {}</code></pre></figure>
+<p>**3.函数和映射。** 函数类型和映射没有区别：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
+F(:[string]int):void = {}
+F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {}</code></pre></figure>
+<p>**4.函数和数组。** 函数类型和数组并不不同，因为重载函数可以同时匹配两者：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
+F(:[]int):void = {}
+F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {}</code></pre></figure>
+<p>**5.接口和类。** 接口和任何类永远不会不同，即使该类没有实现该接口，因为该类的子类型可能：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>i := interface{}
+t := class{}
+
+# ERROR: Not distinct (subtype of t might implement i)
+f(:i):void = {}
+f(:t):void = {}</code></pre></figure>
+<p>**6。具有不同效果的功能。** 功能并不能仅根据效果来区分。更改或删除效果不会造成明显的过载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
+b := class{}
+
+# ERROR: Not distinct
+F(G(:a)&lt;transacts&gt;&lt;decides&gt;:b):void = {}
+F(G(:a):b):void = {}</code></pre></figure>
+<p>**7.具有不同签名的函数。** 由于函数重载，具有不同参数或返回类型的函数并不不同：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
+F(G(:b):b):void = {}
+F(G(:a):b):void = {}</code></pre></figure>
+<p>**8. void as Top Type。** <code>void</code> 被视为等同于顶级类型（接受 <code>any</code>），因此它与任何其他类型没有区别：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
+F(:int):void = {}
+F(:void):void = {}</code></pre></figure>
+<p>**9.子类型关系。** 具有子类型关系的类并不不同：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
+b := class(a){}
+
+# ERROR: Not distinct
+F(:a):void = {}
+F(:b):void = {}</code></pre></figure>
+<p>**10.元组独特性规则。** 元组具有复杂的独特性规则：</p>
+<p>**空元组和空数组没有区别：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
+
+# ERROR: Not distinct
+F(:tuple(), :a):void = {}
+F(:[]a, :a):void = {}</code></pre></figure>
+<p>**仅当元组元素类型完全不同时，元组和数组才是不同的：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
+b := class(a){}
+
+# ERROR: Not distinct (b is subtype of a)
+F(:tuple(a, b), :a):void = {}
+F(:[]a, :a):void = {}</code></pre></figure>
+<p>**带有 <code>int</code> 键的元组和映射并不不同：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
+
+# ERROR: Not distinct
+F(:tuple(a), :a):void = {}
+F(:[int]a, :a):void = {}</code></pre></figure>
+<p>**具有非 <code>int</code> 键的元组和映射是不同的：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
+
+# Valid: Distinct types
+F(:tuple(a), :a):void = {}
+F(:[logic]a, :a):void = {}  # OK</code></pre></figure>
+<p>**单例元组和 <code>int</code> 的可选元组没有区别：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
+
+# ERROR: Not distinct
+F(:tuple(int), :a):void = {}
+F(:?int, :a):void = {}</code></pre></figure>
+<p>**单例元组和非 <code>int</code> 的可选元组是不同的：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Distinct types
+F(:tuple(a), :a):void = {}
+F(:?a, :a):void = {}  # OK</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Types</summary>
     <div class="md"><h3>Types</h3>
 <p>Every function has a type that captures its parameters, effects, and return value. The type syntax uses an underscore as a placeholder for the function name:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 118--&gt;</p>
 <pre><code>type{_(:int,:string)&lt;decides&gt;:float}</code></pre>
 <p>This represents any function that takes an integer and a string, might fail, and returns a float when successful.</p>
 <p>Multiple functions may share a name through overloading, as long as their signatures do not create ambiguity. The compiler can distinguish between overloads based on the argument types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 119--&gt;</p>
 <pre><code>Transform(X:int):string = &quot;I:{X}&quot;
 Transform(X:float):string = &quot;F:{X}&quot;
 Transform(X:string):string = &quot;S:{X}&quot;
@@ -1470,144 +2109,112 @@ Result3 := Transform(&quot;Hello&quot;)   # Calls string version</code></pre>
 <p>Verse uses precise rules to determine whether two parameter types are distinct enough to allow overloading. Understanding these rules is critical for designing clear APIs.</p>
 <p>The following type pairs are <strong>not distinct</strong> and cannot be used to overload functions:</p>
 <p><strong>1. Optional and Logic.</strong> <code>?t</code> and <code>logic</code> are not distinct because both types include <code>false</code> as a value, creating overload ambiguity when <code>false</code> is passed as an argument:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(:?any):void = {} F(:logic):void = {} &lt;# --&gt; &lt;!-- 120--&gt;</p>
 <pre><code># ERROR: Not distinct
 F(:?any):void = {}
 F(:logic):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>Note that <code>?t</code> and <code>logic</code> are not equivalent types—<code>logic</code> contains <code>true</code> and <code>false</code>, while <code>?t</code> contains <code>false</code> and option values like <code>option{false}</code>. However, their shared <code>false</code> value means the compiler cannot distinguish between them for overload resolution.</p>
 <p><strong>2. Arrays and Maps.</strong>  Arrays <code>[]t</code> and maps <code>[k]t</code> are not distinct:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(:[]int):void = {} F(:[string]int):void = {} &lt;# --&gt; &lt;!-- 121--&gt;</p>
 <pre><code># ERROR: Not distinct
 F(:[]int):void = {}
 F(:[string]int):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>3. Functions and Maps.</strong> Function types and maps are not distinct:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(:[string]int):void = {} F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {} &lt;# --&gt; &lt;!-- 122--&gt;</p>
 <pre><code># ERROR: Not distinct
 F(:[string]int):void = {}
 F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>4. Functions and Arrays.</strong> Function types and arrays are not distinct because an overloaded function could match both:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(:[]int):void = {} F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {} &lt;# --&gt; &lt;!-- 123--&gt;</p>
 <pre><code># ERROR: Not distinct
 F(:[]int):void = {}
 F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>5. Interfaces and Classes.</strong> An interface and any class are never distinct, even if the class doesn&#x27;t implement the interface, because a subtype of the class might:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): i := interface{} t := class{} f(:i):void = {} f(:t):void = {} &lt;# --&gt; &lt;!-- 124--&gt;</p>
 <pre><code>i := interface{}
 t := class{}
 
 # ERROR: Not distinct (subtype of t might implement i)
 f(:i):void = {}
 f(:t):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>6. Functions with Different Effects.</strong> Functions are not distinct based on effects alone. Changing or removing effects doesn&#x27;t create a distinct overload:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): a := class{} b := class{} F(G(:a)&lt;transacts&gt;&lt;decides&gt;:b):void = {} F(G(:a):b):void = {} &lt;# --&gt; &lt;!-- 126--&gt;</p>
 <pre><code>a := class{}
 b := class{}
 
 # ERROR: Not distinct
 F(G(:a)&lt;transacts&gt;&lt;decides&gt;:b):void = {}
 F(G(:a):b):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>7. Functions with Different Signatures.</strong> Functions with different parameter or return types are not distinct because of function overloading:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): a := class{} b := class{} F(G(:b):b):void = {} F(G(:a):b):void = {} &lt;# --&gt; &lt;!-- 127--&gt;</p>
 <pre><code># ERROR: Not distinct
 F(G(:b):b):void = {}
 F(G(:a):b):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>8. void as Top Type.</strong> <code>void</code> is treated as equivalent to the top type (accepts <code>any</code>), so it&#x27;s not distinct from any other type:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(:int):void = {} F(:void):void = {} &lt;# --&gt; &lt;!-- 128--&gt;</p>
 <pre><code># ERROR: Not distinct
 F(:int):void = {}
 F(:void):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>9. Subtype Relationships.</strong> Classes with subtype relationships are not distinct:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): a := class{} b := class(a){} F(:a):void = {} F(:b):void = {} &lt;# --&gt; &lt;!-- 129--&gt;</p>
 <pre><code>a := class{}
 b := class(a){}
 
 # ERROR: Not distinct
 F(:a):void = {}
 F(:b):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>10. Tuple Distinctness Rules.</strong>  Tuples have complex distinctness rules:</p>
 <p><strong>Empty tuples and arrays are not distinct:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3532): a := class{} F(:tuple(), :a):void = {} F(:[]a, :a):void = {} &lt;# --&gt; &lt;!-- 130--&gt;</p>
 <pre><code>a := class{}
 
 # ERROR: Not distinct
 F(:tuple(), :a):void = {}
 F(:[]a, :a):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Tuples and arrays are distinct only if tuple element types are completely distinct:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3532): a := class{} b := class(a){} F(:tuple(a, b), :a):void = {} F(:[]a, :a):void = {} &lt;# --&gt; &lt;!-- 131--&gt;</p>
 <pre><code>a := class{}
 b := class(a){}
 
 # ERROR: Not distinct (b is subtype of a)
 F(:tuple(a, b), :a):void = {}
 F(:[]a, :a):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Tuples and maps with <code>int</code> key are not distinct:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3532): a := class{} F(:tuple(a), :a):void = {} F(:[int]a, :a):void = {} &lt;# --&gt; &lt;!-- 132--&gt;</p>
 <pre><code>a := class{}
 
 # ERROR: Not distinct
 F(:tuple(a), :a):void = {}
 F(:[int]a, :a):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Tuples and maps with non-<code>int</code> key ARE distinct:</strong></p>
-<p>&lt;!--versetest a := class{}</p>
-<p>F(:tuple(a), :a):void = {} F(:[logic]a, :a):void = {} &lt;# --&gt; &lt;!-- 133--&gt;</p>
 <pre><code>a := class{}
 
 # Valid: Distinct types
 F(:tuple(a), :a):void = {}
 F(:[logic]a, :a):void = {}  # OK</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Singleton tuples and optional for <code>int</code> are not distinct:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3532): a := class{} F(:tuple(int), :a):void = {} F(:?int, :a):void = {} &lt;# --&gt; &lt;!-- 134--&gt;</p>
 <pre><code>a := class{}
 
 # ERROR: Not distinct
 F(:tuple(int), :a):void = {}
 F(:?int, :a):void = {}</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Singleton tuples and optional for non-<code>int</code> ARE distinct:</strong></p>
-<p>&lt;!--versetest a := class{} --&gt; &lt;!-- 135--&gt;</p>
 <pre><code># Valid: Distinct types
 F(:tuple(a), :a):void = {}
 F(:?a, :a):void = {}  # OK</code></pre></div>
   </details>
 </section><section class="section" id="s28-publishing-functions">
-  <div class="annotation">
-    <h3>中文批注：Publishing Functions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Publishing Functions”展开。阅读时先抓住这些英文关键词：Publishing、function、promise、backwards、compatibility。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">verse
-F1&lt;public&gt;(X:int):int = X + 1</span><span class="chip">The type annotation (</span><span class="chip">&lt;reads&gt;</span><span class="chip">Because it has the</span><span class="chip">effect specifier, it does not have the</span><span class="chip">X + 2</span><span class="chip">F1</span><span class="chip">F2</span><span class="chip">verse
-F2&lt;public&gt;(X:int) := X + 1</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Publishing Functions</summary>
+  <article class="cn-read">
+    <h2>出版功能 <small>Publishing Functions</small></h2>
+    <p>发布函数是函数与其客户端之间向后兼容性的承诺。考虑这个函数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F1&lt;public&gt;(X:int):int = X + 1</code></pre></figure>
+<p>类型注释（<code>X:int):int</code>）告诉我们，这个函数承诺给定任何整数，它总是返回一个整数。在未来版本的代码中，该合同不能被打破。由于它具有默认效果（包括 <code>&lt;reads&gt;</code> 效果），因此只要保持其签名，该实现将来可能会发生变化，也许会执行其他操作或优化。</p>
+<p>没有 <code>&lt;reads&gt;</code> 效果的函数灵活性较差。考虑这个函数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F2&lt;public&gt;(X:int)&lt;computes&gt;:int = X + 1</code></pre></figure>
+<p>由于它具有 <code>&lt;computes&gt;</code> 效果说明符，因此它不具有 <code>&lt;reads&gt;</code> 效果。在给定版本中，这保证了引用透明性：对于相同的参数，函数将始终返回相同的结果。 Across versions, this creates a stronger constraint: since the compiler cannot verify that a modified body preserves the same input-output mapping for all possible arguments, it conservatively forbids any body changes.因此，在未来版本中更改主体以返回 <code>X + 2</code> 将因向后不兼容而被拒绝。</p>
+<p>诸如 <code>F1</code> 和 <code>F2</code> 之类的函数有时被称为“不透明”，因为返回类型抽象了函数的主体。 Verse 的未来版本将支持*透明*功能：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F2&lt;public&gt;(X:int) := X + 1</code></pre></figure>
+<p>透明函数不声明其返回类型，而是从函数体推断函数的类型。这意味着一个非常不同的承诺：永远保证函数体在模块代码的整个生命周期中保持完全相同。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Publishing Functions</summary>
     <div class="md"><h2>Publishing Functions</h2>
 <p>Publishing a function is a promise of backwards compatibility between the function and its clients. Consider this function:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 139--&gt;</p>
 <pre><code>F1&lt;public&gt;(X:int):int = X + 1</code></pre>
 <p>The type annotation (<code>X:int):int</code>) tells us that this function promises that given any integer it will always return an integer. That contract cannot be broken in future versions of the code. Because it has the default effect, which includes the <code>&lt;reads&gt;</code> effect, the implementation could change in the future, perhaps to perform additional operations or optimizations, as long as it maintains its signature.</p>
 <p>Functions that do not have the <code>&lt;reads&gt;</code> effect are less flexible. Consider this function:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 140--&gt;</p>
 <pre><code>F2&lt;public&gt;(X:int)&lt;computes&gt;:int = X + 1</code></pre>
 <p>Because it has the <code>&lt;computes&gt;</code> effect specifier, it does not have the <code>&lt;reads&gt;</code> effect. Within a given version, this guarantees referential transparency: the function will always return the same result for the same arguments. Across versions, this creates a stronger constraint: since the compiler cannot verify that a modified body preserves the same input-output mapping for all possible arguments, it conservatively forbids any body changes. Thus, changing the body to return <code>X + 2</code> in a future version would be rejected as backward incompatible.</p>
 <p>Functions such as <code>F1</code> and <code>F2</code> are sometimes called <em>opaque</em> as the return type abstracts the function&#x27;s body. Future version of Verse will support <em>transparent</em> functions:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 141--&gt;</p>
 <pre><code>F2&lt;public&gt;(X:int) := X + 1</code></pre>
 <p>A transparent function does not declare its return type, instead the function&#x27;s type is inferred from its body. This implies a very different promise: a forever guarantee that the function&#x27;s body will remain exactly the same throughout the lifetime of the module code.</p></div>
   </details>
-</section>
-<nav class="footer-nav"><div><a href="../05_mutability/index.html">上一页：可变性</a></div><div><a href="../07_control/index.html">下一页：控制流</a></div></nav>
-</main></div></body></html>
+</section><nav class="footer-nav"><div><a href="../05_mutability/index.html">上一页：可变性</a></div><div><a href="../07_control/index.html">下一页：控制流</a></div></nav></main></div></body></html>

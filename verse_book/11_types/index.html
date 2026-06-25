@@ -1,15 +1,6 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>类型系统 - Book of Verse 中文批注版</title>
-<link rel="stylesheet" href="../assets/styles.css">
-<script src="../assets/reader.js"></script>
-</head>
-<body>
-<div class="layout">
-<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>类型系统 - Book of Verse 中文阅读稿</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/reader.js"></script></head>
+<body><div class="layout"><aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文阅读稿 · 原文折叠 · 代码保留</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -21,7 +12,7 @@
 <a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
 <a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
 <a href="../10_classes_interfaces/index.html"><span>Classes &amp; Interfaces</span><br><small>类与接口</small></a>
-<a class="active" href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
+<a class=active href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
 <a href="../12_access/index.html"><span>Access Specifiers</span><br><small>访问控制与元数据</small></a>
 <a href="../13_effects/index.html"><span>Effects</span><br><small>效果系统</small></a>
 <a href="../14_concurrency/index.html"><span>Concurrency</span><br><small>并发</small></a>
@@ -30,41 +21,53 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
-<main class="main">
-<div class="crumb">Type System / <a href="https://verselang.github.io/book/11_types/">原文页面</a></div>
-<section class="hero"><h1>类型系统</h1><p class="lead">本页讲类型作为一等概念，包括 subtype、comparable、generic、variance、cast、refinement。</p><div class="meta"><span class="pill">源文件：11_types.md</span><span class="pill">批注段落：45</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>这一页读什么</h2><p>Verse 的类型系统用于静态验证，也用于长期兼容和运行时类型查询。</p><h3>注意点</h3><ul class="list"><li>comparable 不代表所有类型都能比较。</li><li>refinement type 的约束表达式限制很强。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-types">Types</a></li><li class="lvl2"><a href="#s1-understanding-subtyping">Understanding Subtyping</a></li><li class="lvl2"><a href="#s2-numeric-and-string-conversions">Numeric and String Conversions</a></li><li class="lvl2"><a href="#s3-type-any">Type any</a></li><li class="lvl3"><a href="#s4-generic-functions-and-type-preservation">Generic Functions and Type Preservation</a></li><li class="lvl2"><a href="#s5-class-and-interface-casting">Class and Interface Casting</a></li><li class="lvl3"><a href="#s6-dynamic-type-based-casting">Dynamic Type-Based Casting</a></li><li class="lvl2"><a href="#s7-where-clauses">Where Clauses</a></li><li class="lvl2"><a href="#s8-refinement-types">Refinement Types</a></li><li class="lvl3"><a href="#s9-ieee-754-edge-cases">IEEE 754 Edge Cases</a></li><li class="lvl3"><a href="#s10-constraint-expression-restrictions">Constraint Expression Restrictions</a></li><li class="lvl3"><a href="#s11-fallible-casts">Fallible Casts</a></li><li class="lvl3"><a href="#s12-examples">Examples</a></li><li class="lvl3"><a href="#s13-overloading-restrictions">Overloading Restrictions</a></li><li class="lvl2"><a href="#s14-comparable-and-equality">Comparable and Equality</a></li><li class="lvl3"><a href="#s15-comparable-as-a-generic-constraint">Comparable as a Generic Constraint</a></li><li class="lvl3"><a href="#s16-array-tuple-comparison">Array-Tuple Comparison</a></li><li class="lvl3"><a href="#s17-overload-distinctness-with-comparable">Overload Distinctness with Comparable</a></li><li class="lvl3"><a href="#s18-dynamic-comparable-values">Dynamic Comparable Values</a></li><li class="lvl3"><a href="#s19-map-keys-and-comparable">Map Keys and Comparable</a></li><li class="lvl2"><a href="#s20-type-hierarchies">Type Hierarchies</a></li><li class="lvl3"><a href="#s21-understanding-void">Understanding void</a></li><li class="lvl1"><a href="#s22-test-that-this-conversion-is-not-allowed">Test that this conversion is not allowed</a></li><li class="lvl1"><a href="#s23-concrete-function-that-matches-functiontype1">Concrete function that matches functiontype1</a></li><li class="lvl1"><a href="#s24-function-that-takes-functiontype2-and-uses-it">Function that takes functiontype2 and uses it</a></li><li class="lvl2"><a href="#s25-type-aliases">Type Aliases</a></li><li class="lvl1"><a href="#s26-at-module-scope">At module scope</a></li><li class="lvl1"><a href="#s27-simple-type-aliases">Simple type aliases</a></li><li class="lvl1"><a href="#s28-function-type-aliases">Function type aliases</a></li><li class="lvl1"><a href="#s29-public-alias-accessible-from-other-modules">Public alias - accessible from other modules</a></li><li class="lvl1"><a href="#s30-internal-alias-only-accessible-within-defining-module">Internal alias - only accessible within defining module</a></li><li class="lvl1"><a href="#s31-note-protected-private-are-for-classes-and-interfaces-not-type-aliases">Note: Protected/private are for classes and interfaces, not type aliases at module scope</a></li><li class="lvl1"><a href="#s32-test-that-public-alias-to-internal-type-produces-error">Test that public alias to internal type produces error</a></li><li class="lvl3"><a href="#s33-requirement">Requirement</a></li><li class="lvl2"><a href="#s34-metatypes">Metatypes</a></li><li class="lvl3"><a href="#s35-subtype">subtype</a></li><li class="lvl3"><a href="#s36-concretesubtype">concretesubtype</a></li><li class="lvl3"><a href="#s37-castablesubtype">castablesubtype</a></li><li class="lvl3"><a href="#s38-finalsuper-and-type-queries">finalsuper and Type Queries</a></li><li class="lvl1"><a href="#s39-test-that-the-calls-succeed-don-t-fail">Test that the calls succeed (don&#x27;t fail)</a></li><li class="lvl1"><a href="#s40-test-that-the-calls-succeed">Test that the calls succeed</a></li><li class="lvl1"><a href="#s41-test-both-functions-work">Test both functions work</a></li><li class="lvl3"><a href="#s42-castableconcretesubtype">castableconcretesubtype</a></li><li class="lvl3"><a href="#s43-classifiablesubset">classifiablesubset</a></li><li class="lvl1"><a href="#s44-test-filterbytype">Test FilterByType</a></li></ol></article></section>
-<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
+<div class="crumb">Type System / <a href="https://verselang.github.io/book/11_types/">原文页面</a></div><section class="hero"><h1>类型系统</h1><p class="lead">类型系统页，讲 subtype、comparable、泛型、variance、cast、where 和 refinement types。</p><div class="meta"><span class="pill">源文件：11_types.md</span><span class="pill">中文段落：31</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-types">Types</a></li><li class="lvl2"><a href="#s1-understanding-subtyping">Understanding Subtyping</a></li><li class="lvl2"><a href="#s2-numeric-and-string-conversions">Numeric and String Conversions</a></li><li class="lvl2"><a href="#s3-type-any">Type any</a></li><li class="lvl3"><a href="#s4-generic-functions-and-type-preservation">Generic Functions and Type Preservation</a></li><li class="lvl2"><a href="#s5-class-and-interface-casting">Class and Interface Casting</a></li><li class="lvl3"><a href="#s6-dynamic-type-based-casting">Dynamic Type-Based Casting</a></li><li class="lvl2"><a href="#s7-where-clauses">where 约束 / Where Clauses</a></li><li class="lvl2"><a href="#s8-refinement-types">细化类型 / Refinement Types</a></li><li class="lvl3"><a href="#s9-ieee-754-edge-cases">IEEE 754 Edge Cases</a></li><li class="lvl3"><a href="#s10-constraint-expression-restrictions">Constraint Expression Restrictions</a></li><li class="lvl3"><a href="#s11-fallible-casts">Fallible Casts</a></li><li class="lvl3"><a href="#s12-examples">Examples</a></li><li class="lvl3"><a href="#s13-overloading-restrictions">Overloading Restrictions</a></li><li class="lvl2"><a href="#s14-comparable-and-equality">Comparable and Equality</a></li><li class="lvl3"><a href="#s15-comparable-as-a-generic-constraint">Comparable as a Generic Constraint</a></li><li class="lvl3"><a href="#s16-array-tuple-comparison">Array-Tuple Comparison</a></li><li class="lvl3"><a href="#s17-overload-distinctness-with-comparable">Overload Distinctness with Comparable</a></li><li class="lvl3"><a href="#s18-dynamic-comparable-values">Dynamic Comparable Values</a></li><li class="lvl3"><a href="#s19-map-keys-and-comparable">Map Keys and Comparable</a></li><li class="lvl2"><a href="#s20-type-hierarchies">Type Hierarchies</a></li><li class="lvl3"><a href="#s21-understanding-void">Understanding void</a></li><li class="lvl2"><a href="#s22-type-aliases">Type Aliases</a></li><li class="lvl3"><a href="#s23-requirement">Requirement</a></li><li class="lvl2"><a href="#s24-metatypes">Metatypes</a></li><li class="lvl3"><a href="#s25-subtype">subtype</a></li><li class="lvl3"><a href="#s26-concretesubtype">concretesubtype</a></li><li class="lvl3"><a href="#s27-castablesubtype">castablesubtype</a></li><li class="lvl3"><a href="#s28-finalsuper-and-type-queries">finalsuper and Type Queries</a></li><li class="lvl3"><a href="#s29-castableconcretesubtype">castableconcretesubtype</a></li><li class="lvl3"><a href="#s30-classifiablesubset">classifiablesubset</a></li></ol></article></section>
+<div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-types">
-  <div class="annotation">
-    <h3>中文批注：Types</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Types”展开。阅读时先抓住这些英文关键词：Every、has、understanding、system、fundamental。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">any</span><span class="chip">false</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Types</summary>
+  <article class="cn-read">
+    <h2>类型 <small>Types</small></h2>
+    <p>每个值都有一个类型，理解类型系统是掌握任何语言的基础。 Types aren't merely labels - they form a rich hierarchy that governs how values flow through your program, what operations are permitted, and how the compiler reasons about your code. The type system combines static verification with practical flexibility, catching errors at compile time while still allowing sophisticated patterns of code reuse and abstraction.</p>
+<p>在这个层次结构的顶部是 <code>any</code>，它是所有其他类型的通用超类型。底部是 <code>false</code>，即根本不包含任何值的空类型（无人居住类型）。在这些极端之间存在着精心设计的类型网格，每种类型都有自己的功能和限制。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Types</summary>
     <div class="md"><h1>Types</h1>
 <p>Every value has a type, and understanding the type system is fundamental to mastering any language. Types aren&#x27;t merely labels - they form a rich hierarchy that governs how values flow through your program, what operations are permitted, and how the compiler reasons about your code. The type system combines static verification with practical flexibility, catching errors at compile time while still allowing sophisticated patterns of code reuse and abstraction.</p>
 <p>At the top of this hierarchy sits <code>any</code>, the universal supertype from which all other types descend. At the bottom lies <code>false</code>, the empty type that contains no values at all (the uninhabited type). Between these extremes exists a carefully designed lattice of types, each with its own capabilities and constraints.</p></div>
   </details>
 </section><section class="section" id="s1-understanding-subtyping">
-  <div class="annotation">
-    <h3>中文批注：Understanding Subtyping</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Understanding Subtyping”展开。阅读时先抓住这些英文关键词：Subtyping、foundation、hierarchy、say、subtype。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">rational</span><span class="chip">int</span><span class="chip">[]int</span><span class="chip">[]rational</span><span class="chip">tuple(int, int)</span><span class="chip">tuple(rational,
-rational)</span><span class="chip">[K1]V1</span><span class="chip">[K2]V2</span><span class="chip">K2</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Understanding Subtyping</summary>
+  <article class="cn-read">
+    <h2>了解子类型 <small>Understanding Subtyping</small></h2>
+    <p>子类型化是类型层次结构的基础。当我们说类型 A 是类型 B 的子类型时，我们的意思是，只要需要类型 B 的值，就可以使用类型 A 的每个值。这种关系在类型之间创建了从最具体到最一般的自然排序。</p>
+<p>考虑<code>rational</code>和<code>int</code>之间的关系。每个整数都是有理数，但并非每个有理数都是整数。因此，<code>int</code> 是 <code>rational</code> 的子类型。这意味着您可以将 <code>int</code> 传递给任何需要 <code>rational</code> 的函数，但反之则不然：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetInt(X:int):void = Print(&quot;Integer: {X}&quot;)
+GetRat(X:rational):void = Print(&quot;Rational&quot;)
+
+MyRat:rational = 1/3
+MyInt:int = -10
+
+GetRat(MyInt)  # OK -- int is a subtype of rational
+GetInt(MyRat)  # Compile error -  rational is not a subtype of int</code></pre></figure>
+<p>子类型关系以复杂的方式扩展到复合类型。数组和元组的元素遵循协变子类型规则。这意味着 <code>[]int</code> 是 <code>[]rational</code> 的子类型。同样，<code>tuple(int, int)</code> 是 <code>tuple(rational, rational)</code> 的子类型。这种协变性允许在需要更通用类型的集合的地方使用更具体类型的集合。</p>
+<p>map表现出更复杂的子类型行为。 A map type <code>[K1]V1</code> is a subtype of <code>[K2]V2</code> when <code>K2</code> is a subtype of <code>K1</code> (contravariant in keys) and <code>V1</code> is a subtype of <code>V2</code> (covariant in values). The contravariance in keys might seem counterintuitive at first, but it ensures type safety: if you can look up values using a more general key type, you must be able to handle more specific key types as well.</p>
+<p>类和接口通过继承引入名义子类型。当一个类继承另一个类或实现一个接口时，它显式声明子类型关系：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>vehicle := class:
+    Speed:float = 0.0
+
+car := class(vehicle):  # car is a subtype of vehicle
+    NumDoors:int = 4
+
+sports_car := class(car):  # sports_car is a subtype of car (and vehicle)
+    Turbo:logic = true</code></pre></figure>
+<p>这种继承层次结构意味着 <code>sports_car</code> 可以在任何需要 <code>car</code> 或 <code>vehicle</code> 的地方使用，但反之则不然。子类型继承其超类型的所有字段和方法，同时可能添加新字段和方法或覆盖现有字段和方法。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Understanding Subtyping</summary>
     <div class="md"><h2>Understanding Subtyping</h2>
 <p>Subtyping is the foundation of the type hierarchy. When we say that type A is a subtype of type B, we mean that every value of type A can be used wherever a value of type B is expected. This relationship creates a natural ordering among types, from the most specific to the most general.</p>
 <p>Consider the relationship between <code>rational</code> and <code>int</code>. Every integer is a rational number, but not every rational is an integer. Therefore, <code>int</code> is a subtype of <code>rational</code>. This means you can pass an <code>int</code> to any function expecting a <code>rational</code>, but not vice versa:</p>
-<p>&lt;!--versetest GetInt(X:int):void = Print(&quot;Integer: {X}&quot;) GetRat(X:rational):void = Print(&quot;Rational&quot;) assert: MyRat:rational = 1/3 MyInt:int = -10 GetRat(MyInt) &lt;# --&gt; &lt;!-- 01 --&gt;</p>
 <pre><code>GetInt(X:int):void = Print(&quot;Integer: {X}&quot;)
 GetRat(X:rational):void = Print(&quot;Rational&quot;)
 
@@ -73,11 +76,9 @@ MyInt:int = -10
 
 GetRat(MyInt)  # OK -- int is a subtype of rational
 GetInt(MyRat)  # Compile error -  rational is not a subtype of int</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The subtyping relationship extends to composite types in sophisticated ways. Arrays and tuples follow covariant subtyping rules for their elements. This means that <code>[]int</code> is a subtype of <code>[]rational</code>. Similarly, <code>tuple(int, int)</code> is a subtype of <code>tuple(rational, rational)</code>. This covariance allows collections of more specific types to be used where collections of more general types are expected.</p>
 <p>Maps exhibit more complex subtyping behavior. A map type <code>[K1]V1</code> is a subtype of <code>[K2]V2</code> when <code>K2</code> is a subtype of <code>K1</code> (contravariant in keys) and <code>V1</code> is a subtype of <code>V2</code> (covariant in values). The contravariance in keys might seem counterintuitive at first, but it ensures type safety: if you can look up values using a more general key type, you must be able to handle more specific key types as well.</p>
 <p>Classes and interfaces introduce nominal subtyping through inheritance. When a class inherits from another class or implements an interface, it explicitly declares a subtyping relationship:</p>
-<p>&lt;!--versetest 02 --&gt; &lt;!-- 02 --&gt;</p>
 <pre><code>vehicle := class:
     Speed:float = 0.0
 
@@ -89,30 +90,44 @@ sports_car := class(car):  # sports_car is a subtype of car (and vehicle)
 <p>This inheritance hierarchy means that a <code>sports_car</code> can be used anywhere a <code>car</code> or <code>vehicle</code> is expected, but not the reverse. The subtype inherits all fields and methods from its supertypes while potentially adding new ones or overriding existing ones.</p></div>
   </details>
 </section><section class="section" id="s2-numeric-and-string-conversions">
-  <div class="annotation">
-    <h3>中文批注：Numeric and String Conversions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Numeric and String Conversions”展开。阅读时先抓住这些英文关键词：All、conversions、must、explicit、design。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">f</span><span class="chip">f(1)</span><span class="chip">f(:int)</span><span class="chip">or</span><span class="chip">&lt;decides&gt;</span><span class="chip">for</span><span class="chip">if</span><span class="chip">decides</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Numeric and String Conversions</summary>
+  <article class="cn-read">
+    <h2>数字和字符串转换 <small>Numeric and String Conversions</small></h2>
+    <p>所有类型转换都必须是显式的，这种设计选择可以消除整个类别的错误，同时使程序员的意图清晰。数字类型之间的转换清楚地说明了这一原理。要将整数转换为浮点数，请乘以 1.0：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MyI:int   = 42
+MyF:float = MyI * 1.0  # Explicit conversion to float</code></pre></figure>
+<p>!!!注意 禁止隐式转换的最主要原因是，当向函数添加新的重载时，隐式转换可能会导致代码中断。想象一下对采用浮点型（例如 <code>f(1)</code>）的函数 <code>f</code> 的调用，如果整数参数被隐式转换为浮点型，并且在未来的某个库版本中添加了重载 <code>f(:int)</code>，则该调用将默默地调用该新函数并可能更改计算结果。</p>
+<p>从浮点到整数的反向转换需要选择舍入策略：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MyF:float = 3.7
+Opt1:int = Floor[MyF]  # Results in 3
+Opt2:int = Ceil[MyF]   # Results in 4
+Opt3:int = Round[MyF]  # Results in 4 (rounds to nearest)</code></pre></figure>
+<p>这些转换函数是失败的 - 它们具有 <code>&lt;decides&gt;</code> 效果，如果传递非有限值（如 <code>NaN</code> 或 <code>Inf</code>），它们将会失败。显式失败迫使您处理边缘情况：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SafeConvert(Value:float):int =
+    if:
+       Value &lt;&gt; NaN
+       Value &lt;&gt; Inf
+       Result:= Floor[Value]
+    then:
+       Result
+    else:
+       0  # Assuming that this is safe value</code></pre></figure>
+<p>字符串转换遵循类似的原则。 The <code>ToString()</code> function converts various types to their string representations, while string interpolation provides a convenient syntax for embedding values in strings:</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Score:int  = 1500
+Msg:string = &quot;Your score: {Score}&quot;  # Implicit ToString() call</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Numeric and String Conversions</summary>
     <div class="md"><h2>Numeric and String Conversions</h2>
 <p>All type conversions must be explicit, a design choice that eliminates entire categories of bugs while making the programmer&#x27;s intent clear. Converting between numeric types illustrates this principle clearly. To convert an integer to a float, you multiply by 1.0:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 03 --&gt;</p>
 <pre><code>MyI:int   = 42
 MyF:float = MyI * 1.0  # Explicit conversion to float</code></pre>
-<div class="admonition"><div class="admonition-title">Note</div><p>The strongest reason for disallowing implicit conversions is that</p></div>
-<p>they can cause code to break when new overloadings to a function are added. Imagine a call to function <code>f</code> that takes a float such as <code>f(1)</code>, if the integer argument was implicitly converted to a float and, in some future library release, an overload <code>f(:int)</code> was added, the call would silently invoke that new function and potentially change the result of the computation.</p>
+<p>!!! note The strongest reason for disallowing implicit conversions is that they can cause code to break when new overloadings to a function are added. Imagine a call to function <code>f</code> that takes a float such as <code>f(1)</code>, if the integer argument was implicitly converted to a float and, in some future library release, an overload <code>f(:int)</code> was added, the call would silently invoke that new function and potentially change the result of the computation.</p>
 <p>The reverse conversion, from float to integer, requires choosing a rounding strategy:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 04 --&gt;</p>
 <pre><code>MyF:float = 3.7
 Opt1:int = Floor[MyF]  # Results in 3
 Opt2:int = Ceil[MyF]   # Results in 4
 Opt3:int = Round[MyF]  # Results in 4 (rounds to nearest)</code></pre>
 <p>These conversion functions are failable - they have the <code>&lt;decides&gt;</code> effect and will fail if passed non-finite values like <code>NaN</code> or <code>Inf</code>. The explicit failure forces you to handle edge cases:</p>
-<p>&lt;!--versetest 05 --&gt; &lt;!-- 05 --&gt;</p>
 <pre><code>SafeConvert(Value:float):int =
     if:
        Value &lt;&gt; NaN
@@ -123,36 +138,46 @@ Opt3:int = Round[MyF]  # Results in 4 (rounds to nearest)</code></pre>
     else:
        0  # Assuming that this is safe value</code></pre>
 <p>String conversions follow similar principles. The <code>ToString()</code> function converts various types to their string representations, while string interpolation provides a convenient syntax for embedding values in strings:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 06 --&gt;</p>
 <pre><code>Score:int  = 1500
 Msg:string = &quot;Your score: {Score}&quot;  # Implicit ToString() call</code></pre></div>
   </details>
 </section><section class="section" id="s3-type-any">
-  <div class="annotation">
-    <h3>中文批注：Type any</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Type any”展开。阅读时先抓住这些英文关键词：TODO、add、link、builtin、types。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">any</span><span class="chip">any(42)</span><span class="chip">Logical OR with disjoint types coerces to</span><span class="chip">:
-
-&lt;!--versetest--&gt;
-&lt;!-- 12 --&gt;</span><span class="chip">The</span><span class="chip">using</span><span class="chip">if</span><span class="chip">array</span><span class="chip">map</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Type any</summary>
+  <article class="cn-read">
+    <h2>输入任意 <small>Type any</small></h2>
+    <p>类型 <code>any</code> 位于类型层次结构的顶部，它是可以保存任何类型值的通用超类型。 Verse 中的每种类型都是 <code>any</code> 的子类型，使其成为最宽松的类型。当您确实需要处理未知或不同类型的值时，它可以作为逃生舱口。</p>
+<p>Once a value is typed as <code>any</code>, you've effectively told the compiler "I don't know what this is," and the compiler responds by preventing most operations.这是设计使然——在不知道实际类型的情况下，编译器无法验证操作是否安全。</p>
+<p>您可以使用函数调用语法 <code>any(42)</code> 将任何值显式强制为 <code>any</code>。</p>
+<p>当值的类型不兼容时，Verse 会自动将值强制转换为 <code>any</code>。了解这些规则有助于处理异构数据。</p>
+<p>混合类型数组和映射会自动强制转换为最具体的共享类型，如果未找到通用类型，则数组强制转换为 <code>any</code>：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MixedArray := array{42, &quot;hello&quot;, true, 3.14} # []comparable
+MixedMap := map{0=&gt;&quot;zero&quot;, 1=&gt;1, 2=&gt;2.0} # [int]comparable
+ConfigMap := map{&quot;count&quot;=&gt;42, &quot;process&quot;=&gt;SomeFunction, &quot;name&quot;=&gt;&quot;Player&quot;} # [string]any</code></pre></figure>
+<p>具有不相交分支类型的条件表达式生成 <code>any</code>：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># If branches return different types
+GetValue(UseString:logic):any =
+    if (UseString?):
+        &quot;text result&quot;
+    else:
+        42</code></pre></figure>
+<p>具有不相交类型的逻辑或强制为 <code>any</code>：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Returns either int or string
+OneOf(Flag:logic, I:int, S:string):any =
+    (if (Flag?) then {option{I}} else {1=2}) or S</code></pre></figure>
+<p><code>any</code> 类型具有反映其作为通用容器角色的限制：</p>
+<ul><li>您不能将相等运算符与 <code>any</code> 一起使用</li><li>由于<code>any</code>不具有可比性，因此不能用作映射键类型</li><li>因为<code>any</code>不可铸造，所以它是粘性类型。</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Type any</summary>
     <div class="md"><h2>Type <code>any</code></h2>
-<p>&lt;!-- TODO add a link to the builtin types --&gt;</p>
 <p>Type <code>any</code> is at the top of the type hierarchy it is the universal supertype that can hold a value of any type. Every type in Verse is a subtype of <code>any</code>, making it the most permissive type.  It serves as an escape hatch when you genuinely need to work with values of unknown or varying types.</p>
 <p>Once a value is typed as <code>any</code>, you&#x27;ve effectively told the compiler &quot;I don&#x27;t know what this is,&quot; and the compiler responds by preventing most operations. This is by design—without knowing the actual type, the compiler cannot verify that operations are safe.</p>
 <p>You can explicitly coerce any value to <code>any</code> using function call syntax, <code>any(42)</code>.</p>
 <p>Verse automatically coerces values to <code>any</code> when their types would otherwise be incompatible. Understanding these rules help when working with heterogeneous data.</p>
 <p>Mixed-type arrays and maps automatically coerces to the most specific shared type, if no common type is found, the array coerces to <code>any</code>:</p>
-<p>&lt;!--versetest SomeFunction():void={} --&gt; &lt;!-- 09 --&gt;</p>
 <pre><code>MixedArray := array{42, &quot;hello&quot;, true, 3.14} # []comparable
 MixedMap := map{0=&gt;&quot;zero&quot;, 1=&gt;1, 2=&gt;2.0} # [int]comparable
 ConfigMap := map{&quot;count&quot;=&gt;42, &quot;process&quot;=&gt;SomeFunction, &quot;name&quot;=&gt;&quot;Player&quot;} # [string]any</code></pre>
 <p>Conditional expressions with disjoint branch types produce <code>any</code>:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 11 --&gt;</p>
 <pre><code># If branches return different types
 GetValue(UseString:logic):any =
     if (UseString?):
@@ -160,52 +185,67 @@ GetValue(UseString:logic):any =
     else:
         42</code></pre>
 <p>Logical OR with disjoint types coerces to <code>any</code>:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 12 --&gt;</p>
 <pre><code># Returns either int or string
 OneOf(Flag:logic, I:int, S:string):any =
     (if (Flag?) then {option{I}} else {1=2}) or S</code></pre>
 <p>The <code>any</code> type has restrictions that reflect its role as a generic container:</p>
-<ul>
-<li>You cannot use equality operators with <code>any</code></li>
-<li>Because <code>any</code> is not comparable, it cannot be used as a map key type</li>
-<li>Because <code>any</code> is not castable, it is a sticky type.</li>
-</ul></div>
+<ul><li>You cannot use equality operators with <code>any</code></li><li>Because <code>any</code> is not comparable, it cannot be used as a map key type</li><li>Because <code>any</code> is not castable, it is a sticky type.</li></ul></div>
   </details>
 </section><section class="section" id="s4-generic-functions-and-type-preservation">
-  <div class="annotation">
-    <h3>中文批注：Generic Functions and Type Preservation</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Generic Functions and Type Preservation”展开。阅读时先抓住这些英文关键词：Generic、functions、t:type、constraints、behave。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where t:type</span><span class="chip">any</span><span class="chip">where</span><span class="chip">for</span><span class="chip">map</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Generic Functions and Type Preservation</summary>
+  <article class="cn-read">
+    <h2>通用函数和类型保留 <small>Generic Functions and Type Preservation</small></h2>
+    <p>具有 <code>where t:type</code> 约束的通用函数的行为与接受 <code>any</code> 的函数有根本不同。理解这种差异对于编写类型安全代码至关重要。</p>
+<p>当您将值传递给参数类型为 <code>any</code> 的函数时，类型信息将丢失：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AcceptAny(X:any):any = X
+
+MyMap:[int]string = map{1 =&gt; &quot;one&quot;}
+Result := AcceptAny(MyMap)  # Result has type any - type info lost</code></pre></figure>
+<p>相反，泛型函数保留精确类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Identity(X:t where t:type):t = X
+
+MyMap:[int]string = map{1 =&gt; &quot;one&quot;}
+Result := Identity(MyMap)  # Result has type [int]string - type preserved
+MyMap = Result  # Succeeds - same type</code></pre></figure>
+<p>这种保留扩展到所有容器类型，包括数组、映射、元组和结构。泛型类型参数捕获完整类型，包括：</p>
+<ul><li>映射键和值类型</li><li>数组元素类型</li><li>元组组件类型</li><li>结构体字段类型</li></ul>
+<p>**实际影响：**</p>
+<p>通过泛型函数传递的容器类型完全保持其结构：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Identity(X:t where t:type):t = X
+
+# All key types are preserved
+IntMap:[int]int = map{1 =&gt; 2, 3 =&gt; 4}
+IntMap = Identity(IntMap)  # Same type
+
+FloatMap:[float]string = map{1.0 =&gt; &quot;one&quot;, 2.5 =&gt; &quot;two&quot;}
+FloatMap = Identity(FloatMap)  # Same type
+
+TupleMap:[tuple(int, string)]int = map{(1, &quot;a&quot;) =&gt; 100}
+TupleMap = Identity(TupleMap)  # Same type
+
+# Iteration and equality work as expected
+for (Key-&gt;Value : IntMap):
+    Identity(IntMap)[Key] = Value  # All lookups succeed</code></pre></figure>
+<p>当您需要编写与容器一起使用的可重用代码并同时保持类型安全时，这使得泛型函数成为首选方法。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Generic Functions and Type Preservation</summary>
     <div class="md"><h3>Generic Functions and Type Preservation</h3>
 <p>Generic functions with <code>where t:type</code> constraints behave fundamentally differently from functions that accept <code>any</code>. Understanding this difference is crucial for writing type-safe code.</p>
 <p>When you pass a value to a function with parameter type <code>any</code>, the type information is lost:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 53 --&gt;</p>
 <pre><code>AcceptAny(X:any):any = X
 
 MyMap:[int]string = map{1 =&gt; &quot;one&quot;}
 Result := AcceptAny(MyMap)  # Result has type any - type info lost</code></pre>
 <p>In contrast, generic functions preserve exact types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 54 --&gt;</p>
 <pre><code>Identity(X:t where t:type):t = X
 
 MyMap:[int]string = map{1 =&gt; &quot;one&quot;}
 Result := Identity(MyMap)  # Result has type [int]string - type preserved
 MyMap = Result  # Succeeds - same type</code></pre>
 <p>This preservation extends to all container types, including arrays, maps, tuples, and structs. The generic type parameter captures the complete type, including:</p>
-<ul>
-<li>Map key and value types</li>
-<li>Array element types</li>
-<li>Tuple component types</li>
-<li>Struct field types</li>
-</ul>
+<ul><li>Map key and value types</li><li>Array element types</li><li>Tuple component types</li><li>Struct field types</li></ul>
 <p><strong>Practical implications:</strong></p>
 <p>Container types passed through generic functions maintain their structure completely:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 55 --&gt;</p>
 <pre><code>Identity(X:t where t:type):t = X
 
 # All key types are preserved
@@ -224,22 +264,83 @@ for (Key-&gt;Value : IntMap):
 <p>This makes generic functions the preferred approach when you need to write reusable code that works with containers while maintaining type safety.</p></div>
   </details>
 </section><section class="section" id="s5-class-and-interface-casting">
-  <div class="annotation">
-    <h3>中文批注：Class and Interface Casting</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Class and Interface Casting”展开。阅读时先抓住这些英文关键词：provides、two、distinct、casting、mechanisms。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">TargetType[value]</span><span class="chip">TargetType</span><span class="chip">(Variable := Expression)</span><span class="chip">&lt;unique&gt;</span><span class="chip">TargetType(value)</span><span class="chip">Any type can be infallibly cast to</span><span class="chip">&lt;castable&gt;</span><span class="chip">for</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Class and Interface Casting</summary>
+  <article class="cn-read">
+    <h2>类和接口转换 <small>Class and Interface Casting</small></h2>
+    <p>Verse 为类和接口提供了两种不同的转换机制：用于运行时类型检查的易错转换，以及用于编译时验证转换的可靠转换。了解何时以及如何使用它们对于处理继承层次结构和多态代码至关重要。</p>
+<p>易错的转换使用方括号语法 <code>TargetType[value]</code> 来执行运行时类型检查。这些转换成功并返回转换后的值 (<code>TargetType</code>)，如果该值不是有效的目标类型或子类型，则失败：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Define a class hierarchy
+component := class&lt;castable&gt;:
+    Name:string = &quot;Component&quot;
+
+physics_component := class&lt;castable&gt;(component):
+    Velocity:float = 0.0
+
+render_component := class&lt;castable&gt;(component):
+    Material:string = &quot;default&quot;
+
+# Runtime type checking with fallible casts
+ProcessComponent(Comp:component):void =
+    if (PhysicsComp := physics_component[Comp]):
+        # Successfully cast - PhysicsComp is physics_component
+        Print(&quot;Physics velocity: {PhysicsComp.Velocity}&quot;)
+    else if (RenderComp := render_component[Comp]):
+        # Different type - RenderComp is render_component
+        Print(&quot;Render material: {RenderComp.Material}&quot;)
+    else:
+        # Neither type matched
+        Print(&quot;Unknown component type&quot;)</code></pre></figure>
+<p>如果运行时类型不匹配，则转换表达式的计算结果为 <code>false</code>，从而允许您直接在条件中使用它。可选的绑定模式 <code>(Variable := Expression)</code> 既执行强制转换，又在成功时将结果绑定到变量。</p>
+<p>对于标记为 <code>&lt;unique&gt;</code> 的类，易出错的转换保留身份 - 成功的转换返回相同的实例，而不是副本：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class&lt;unique&gt;&lt;castable&gt;:
+    ID:int
+
+player := class&lt;unique&gt;(entity):
+    Name:string
+
+# Create an instance
+P := player{ID := 1, Name := &quot;Alice&quot;}
+
+# Cast to base type
+if (E := entity[P]):
+    E = P  # True - same instance</code></pre></figure>
+<p>易错的转换**仅适用于类和接口类型**。您不能动态地从原始类型、结构体、数组或其他值类型进行转换：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;castable&gt;{}
+
+# Error: cannot cast from primitives
+Comp := component[42]          # int to class - not allowed
+Comp := component[3.14]        # float to class - not allowed
+Comp := component[&quot;text&quot;]      # string to class - not allowed
+Comp := component[array{1,2}]  # array to class - not allowed
+
+# Error: cannot cast to non-class types
+Value := int[component{}]      # class to int - not allowed
+Value := logic[component{}]    # class to logic - not allowed
+Value := (?int)[component{}]   # class to option - not allowed</code></pre></figure>
+<p>存在该限制是因为易出错的强制转换依赖于仅类和接口维护的运行时类型信息。诸如整数和结构之类的值类型没有运行时类型标签。</p>
+<p>*万无一失*强制转换使用括号语法 <code>TargetType(value)</code> 进行编译器可以验证的转换始终会成功。这些转换要求源类型是目标类型的编译时子类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;castable&gt;:
+    Name:string = &quot;Component&quot;
+
+physics_component := class&lt;castable&gt;(component):
+    Velocity:float = 0.0
+
+# Upcasting: always safe, always succeeds
+Base:physics_component = physics_component{Velocity := 10.0}
+
+BaseComp:component = component(Base) # upcast during expression
+# or
+AlsoBaseComp:component = Base # upcast during assignment</code></pre></figure>
+<p>任何类型都可以正确地转换为 <code>void</code>，这会丢弃该值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>void(42)           # Discard an integer
+void(&quot;result&quot;)     # Discard a string
+void(component{})  # Discard an object</code></pre></figure>
+<p>当您因函数的副作用而调用函数并希望忽略其返回值时，就会隐式发生这种情况。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Class and Interface Casting</summary>
     <div class="md"><h2>Class and Interface Casting</h2>
 <p>Verse provides two distinct casting mechanisms for classes and interfaces: fallible casts for runtime type checking, and infallible casts for compile-time verified conversions. Understanding when and how to use each is essential for working with inheritance hierarchies and polymorphic code.</p>
 <p>Fallible casts use square bracket syntax <code>TargetType[value]</code> to perform runtime type checks. These casts succeeds and return the casted value (<code>TargetType</code>), and failing if the value is not of a valid target type or a subtype:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;: Name:string = &quot;Component&quot;</p>
-<p>physics_component := class&lt;castable&gt;(component): Velocity:float = 0.0</p>
-<p>render_component := class&lt;castable&gt;(component): Material:string = &quot;default&quot;</p>
-<p>ProcessComponent(Comp:component):void = if (PhysicsComp := physics_component[Comp]): Print(&quot;Physics velocity: {PhysicsComp.Velocity}&quot;) else if (RenderComp := render_component[Comp]): Print(&quot;Render material: {RenderComp.Material}&quot;) else: Print(&quot;Unknown component type&quot;) &lt;# --&gt; &lt;!-- 17 --&gt;</p>
 <pre><code># Define a class hierarchy
 component := class&lt;castable&gt;:
     Name:string = &quot;Component&quot;
@@ -261,10 +362,8 @@ ProcessComponent(Comp:component):void =
     else:
         # Neither type matched
         Print(&quot;Unknown component type&quot;)</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The cast expression evaluates to <code>false</code> if the runtime type doesn&#x27;t match, allowing you to use it directly in conditionals. The optional binding pattern <code>(Variable := Expression)</code> both performs the cast and binds the result to a variable when successful.</p>
 <p>For classes marked <code>&lt;unique&gt;</code>, fallible casts preserve identity—a successful cast returns the same instance, not a copy:</p>
-<p>&lt;!--versetest entity := class&lt;unique&gt;&lt;castable&gt;: ID:int player := class&lt;unique&gt;(entity): Name:string assert: P := player{ID := 1, Name := &quot;Alice&quot;} if (E := entity[P]): E = P &lt;# --&gt; &lt;!-- 18 --&gt;</p>
 <pre><code>entity := class&lt;unique&gt;&lt;castable&gt;:
     ID:int
 
@@ -277,15 +376,7 @@ P := player{ID := 1, Name := &quot;Alice&quot;}
 # Cast to base type
 if (E := entity[P]):
     E = P  # True - same instance</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Fallible casts work <strong>only with class and interface types</strong>. You cannot dynamically cast from or to primitive types, structs, arrays, or other value types:</p>
-<p>&lt;!--versetest assert_semantic_error(3512, 3509, 3547): component := class&lt;castable&gt;{} Comp := component[42]</p>
-<p>assert_semantic_error(3512, 3509, 3547): component := class&lt;castable&gt;{} Comp := component[3.14]</p>
-<p>assert_semantic_error(3512, 3509, 3547): component := class&lt;castable&gt;{} Comp := component[&quot;text&quot;]</p>
-<p>assert_semantic_error(3512, 3509, 3547): component := class&lt;castable&gt;{} Comp := component[array{1,2}]</p>
-<p>assert_semantic_error(3512, 3509, 3547, 3512): component := class&lt;castable&gt;{} Value := int[component{}]</p>
-<p>assert_semantic_error(3512, 3552, 3547, 3512): component := class&lt;castable&gt;{} Value := logic[component{}]</p>
-<p>assert_semantic_error(3512, 3552, 3547, 3512): component := class&lt;castable&gt;{} Value := (?int)[component{}] &lt;# --&gt; &lt;!-- 19 --&gt;</p>
 <pre><code>component := class&lt;castable&gt;{}
 
 # Error: cannot cast from primitives
@@ -298,10 +389,8 @@ Comp := component[array{1,2}]  # array to class - not allowed
 Value := int[component{}]      # class to int - not allowed
 Value := logic[component{}]    # class to logic - not allowed
 Value := (?int)[component{}]   # class to option - not allowed</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>The restriction exists because fallible casts rely on runtime type information that only classes and interfaces maintain. Value types like integers and structs don&#x27;t have runtime type tags.</p>
 <p><em>Infallible</em> casts use parenthesis syntax <code>TargetType(value)</code> for conversions that the compiler can verify will always succeed. These casts require the source type to be a compile-time subtype of the target type:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 20 --&gt;</p>
 <pre><code>component := class&lt;castable&gt;:
     Name:string = &quot;Component&quot;
 
@@ -315,28 +404,56 @@ BaseComp:component = component(Base) # upcast during expression
 # or
 AlsoBaseComp:component = Base # upcast during assignment</code></pre>
 <p>Any type can be infallibly cast to <code>void</code>, which discards the value:</p>
-<p>&lt;!--versetest component:=class{} --&gt; &lt;!-- 21 --&gt;</p>
 <pre><code>void(42)           # Discard an integer
 void(&quot;result&quot;)     # Discard a string
 void(component{})  # Discard an object</code></pre>
 <p>This implicitly happens when you call a function for its side effects and want to ignore its return value.</p></div>
   </details>
 </section><section class="section" id="s6-dynamic-type-based-casting">
-  <div class="annotation">
-    <h3>中文批注：Dynamic Type-Based Casting</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Dynamic Type-Based Casting”展开。阅读时先抓住这些英文关键词：Types、first-class、means、store、types。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;castable&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">class</span><span class="chip">for</span><span class="chip">castable</span><span class="chip">if</span><span class="chip">using</span><span class="chip">array</span><span class="chip">computes</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Dynamic Type-Based Casting</summary>
+  <article class="cn-read">
+    <h2>基于动态类型的铸造 <small>Dynamic Type-Based Casting</small></h2>
+    <p>Verse 中的类型是一流的值，这意味着您可以将类型存储在变量中并动态使用它们进行转换。这为运行时多态性提供了强大的模式：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Type hierarchy
+component := class&lt;castable&gt;{}
+physics_component := class&lt;castable&gt;(component){}
+render_component := class&lt;castable&gt;(component){}
+
+# Store types as values
+ComponentType:castable_subtype(component) = physics_component
+
+# Cast using the stored type
+Test(Comp:component, ExpectedType:castable_subtype(component)):logic =
+    if (Specific := ExpectedType[Comp]):
+        true  # Component matches expected type
+    else:
+        false
+
+# Use with different types
+P := physics_component{}
+Test(P, physics_component)  # true
+Test(P, render_component)   # false</code></pre></figure>
+<p>当要检查的类型直到运行时才知道时，此模式特别强大：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Select type based on configuration
+GetComponentType(Config:string):castable_subtype(component) =
+    if (Config = &quot;physics&quot;):
+        physics_component
+    else if (Config = &quot;render&quot;):
+        render_component
+    else:
+        component
+
+# Use the dynamically selected type
+RequiredType := GetComponentType(LoadedConfig)
+for (Comp : Components):
+    if (Specific := RequiredType[Comp]):
+        # Process components of the required type
+        ProcessSpecific(Specific)</code></pre></figure>
+<p>这将编译时类型安全性与运行时灵活性联系起来，允许根据程序状态做出类型决策，同时保持类型正确性。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Dynamic Type-Based Casting</summary>
     <div class="md"><h3>Dynamic Type-Based Casting</h3>
 <p>Types in Verse are first-class values, which means you can store types in variables and use them dynamically for casting. This enables powerful patterns for runtime polymorphism:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){}</p>
-<p>ComponentType:castable_subtype(component) = physics_component</p>
-<p>TestComponent(Comp:component, ExpectedType:castable_subtype(component)):logic = if (Specific := ExpectedType[Comp]): true else: false</p>
-<p>assert: P := physics_component{} TestComponent(P, physics_component) TestComponent(P, render_component) &lt;# --&gt; &lt;!-- 22 --&gt;</p>
 <pre><code># Type hierarchy
 component := class&lt;castable&gt;{}
 physics_component := class&lt;castable&gt;(component){}
@@ -356,9 +473,7 @@ Test(Comp:component, ExpectedType:castable_subtype(component)):logic =
 P := physics_component{}
 Test(P, physics_component)  # true
 Test(P, render_component)   # false</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>This pattern is particularly powerful when the type to check isn&#x27;t known until runtime:</p>
-<p>&lt;!--versetest entity:=class{} component := class&lt;castable&gt;: Owner:entity physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){} Components:[]component=array{} ProcessSpecific(:component)&lt;computes&gt;:void={} LoadedConfig:string=&quot;&quot; --&gt; &lt;!-- 23 --&gt;</p>
 <pre><code># Select type based on configuration
 GetComponentType(Config:string):castable_subtype(component) =
     if (Config = &quot;physics&quot;):
@@ -377,31 +492,56 @@ for (Comp : Components):
 <p>This bridges compile-time type safety with runtime flexibility, allowing type decisions to be made based on program state while maintaining type correctness.</p></div>
   </details>
 </section><section class="section" id="s7-where-clauses">
-  <div class="annotation">
-    <h3>中文批注：Where Clauses</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Where Clauses”展开。可把它先理解为“where 约束”。阅读时先抓住这些英文关键词：clauses、mechanism、constraining、parameters、generic。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">for</span><span class="chip">where</span><span class="chip">if</span><span class="chip">interface</span><span class="chip">decides</span><span class="chip">computes</span><span class="chip">var</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Where Clauses</summary>
+  <article class="cn-read">
+    <h2>where 约束 <small>Where Clauses</small></h2>
+    <p>Where 子句是在泛型代码中约束类型参数的机制。它们出现在类型参数之后，并指定类型必须满足才能成为有效参数的要求。这创建了一个强大的系统，用于编写灵活且类型安全的通用代码。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Simple subtype constraint
+Process(Value:t where t:subtype(comparable)):void =
+    if (Value = Value):  # We know it supports equality
+        Print(&quot;Value equals itself&quot;)</code></pre></figure>
+<p>尚不支持在多个约束中使用相同类型，实现后，它将允许编写如下代码：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Multiple constraints on the same type
+F(In:t where t:subtype(comparable), t:subtype(printable)):t = # Not supported
+    Print(&quot;Processing: {In}&quot;)
+    In</code></pre></figure>
+<p>当使用多个类型参数时，Where 子句变得更加强大：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Independent constraints on different parameters
+Combine(A:t1, B:t2 where t1:type, t2:type):tuple(t1, t2) =
+    (A, B)
+
+# Related constraints
+Convert(From:t1, Converter:type{_(:t1):t2} where t1:type, t2:type):t2 =
+    Converter(From)</code></pre></figure>
+<p>Where 子句可以表达类型之间的复杂关系：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Constraint that ensures compatible types for an operation
+Merge(Container1:[]t, Container2:[]t where t:subtype(comparable)):[]t =
+    var Result:[]t = Container1
+    for (Element : Container2, not Contains[Result, Element]):
+        set Result += array{Element}
+    Result
+
+# Function type constraints
+ApplyTwice(F:type{_(:t):t}, Value:t where t:type):t =
+    F(F(Value))</code></pre></figure>
+<p>Where 子句支持复杂的通用编程模式：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MapFunction(F:type{_(:a):b}, Container:[]a where a:type, b:type):[]b =
+    for (Element : Container):
+        F(Element)</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Where Clauses</summary>
     <div class="md"><h2>Where Clauses</h2>
 <p>Where clauses are the mechanism for constraining type parameters in generic code. They appear after type parameters and specify requirements that types must satisfy to be valid arguments. This creates a powerful system for writing generic code that is both flexible and type-safe.</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 24 --&gt;</p>
 <pre><code># Simple subtype constraint
 Process(Value:t where t:subtype(comparable)):void =
     if (Value = Value):  # We know it supports equality
         Print(&quot;Value equals itself&quot;)</code></pre>
 <p>Using the same type in multiple constraints is not yet supported, when implemented, it will allow to write code such as:</p>
-<p>&lt;!--versetest assert_semantic_error(3588, 3588, 3503, 3503, 3506, 3532): printable := interface: PrintIt():void F(In:t where t:subtype(comparable), t:subtype(printable)):t = Print(&quot;Processing: {In}&quot;) In &lt;# --&gt; &lt;!-- 25 --&gt;</p>
 <pre><code># Multiple constraints on the same type
 F(In:t where t:subtype(comparable), t:subtype(printable)):t = # Not supported
     Print(&quot;Processing: {In}&quot;)
     In</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Where clauses become more powerful when working with multiple type parameters:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 26 --&gt;</p>
 <pre><code># Independent constraints on different parameters
 Combine(A:t1, B:t2 where t1:type, t2:type):tuple(t1, t2) =
     (A, B)
@@ -410,7 +550,6 @@ Combine(A:t1, B:t2 where t1:type, t2:type):tuple(t1, t2) =
 Convert(From:t1, Converter:type{_(:t1):t2} where t1:type, t2:type):t2 =
     Converter(From)</code></pre>
 <p>Where clauses can express sophisticated relationships between types:</p>
-<p>&lt;!--versetest Contains(Arr:[]t, Item:t where t:type)&lt;decides&gt;&lt;computes&gt;:logic = false --&gt; &lt;!-- 27 --&gt;</p>
 <pre><code># Constraint that ensures compatible types for an operation
 Merge(Container1:[]t, Container2:[]t where t:subtype(comparable)):[]t =
     var Result:[]t = Container1
@@ -422,27 +561,71 @@ Merge(Container1:[]t, Container2:[]t where t:subtype(comparable)):[]t =
 ApplyTwice(F:type{_(:t):t}, Value:t where t:type):t =
     F(F(Value))</code></pre>
 <p>Where clauses enable sophisticated generic programming patterns:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 28 --&gt;</p>
 <pre><code>MapFunction(F:type{_(:a):b}, Container:[]a where a:type, b:type):[]b =
     for (Element : Container):
         F(Element)</code></pre></div>
   </details>
 </section><section class="section" id="s8-refinement-types">
-  <div class="annotation">
-    <h3>中文批注：Refinement Types</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Refinement Types”展开。可把它先理解为“细化类型”。阅读时先抓住这些英文关键词：While、clauses、constrain、parameters、generic。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where</span><span class="chip">positive_int</span><span class="chip">zero_to_one_float</span><span class="chip">-</span><span class="chip">is</span><span class="chip">or</span><span class="chip">,</span><span class="chip">, or</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Refinement Types</summary>
+  <article class="cn-read">
+    <h2>细化类型 <small>Refinement Types</small></h2>
+    <p>虽然 <code>where</code> 子句约束泛型代码中的类型参数，但**细化类型**使用 <code>where</code> 来约束类型可以保存的*值*。这将创建仅接受满足特定条件的值的子类型，从而启用类型系统强制执行的特定于域的约束。</p>
+<p>一个自然的问题是：当你可以钳位时，为什么会在超出范围的值上失败？答案是钳位会默默地传播错误的值，这对于某些领域（UI 不透明度）来说是可以接受的，但在其他领域是危险的。在精确值很重要的算法中——位操作、散列、Unicode 代码点操作、坐标系数学——默默地限制超出范围的值会产生非常难以追踪的错误结果。细化类型使约束变得明确，并强制调用者处理违规行为，从源头捕获错误而不是让它们传播。</p>
+<p>实际上，<code>positive_int</code> 或 <code>zero_to_one_float</code> 等类型别名使细化类型可以方便地在代码库中重用，而无需每次都重复约束表达式。</p>
+<p>细化类型使用值谓词定义受约束的子类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Percentages: floats between 0.0 and 1.0
+# percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
+
+# Valid assignments
+Opacity:percent = 0.5
+Alpha:percent = 1.0
+
+# Invalid: out of range (runtime check fails)
+# BadPercent:percent = 1.5  # Fails at assignment</code></pre></figure>
+<p>**语法结构：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TypeName := type{_Variable:BaseType where Constraint1, Constraint2, ...}</code></pre></figure>
+<ul><li><code>_Variable</code> 是被约束值的占位符</li><li><code>BaseType</code> 是 <code>int</code> 或 <code>float</code></li><li>约束是使用 <code>&lt;=</code>、<code>&lt;</code>、<code>&gt;=</code> 或 <code>&gt;</code> 的比较表达式</li></ul>
+<p>整数细化将 int 值限制在特定范围内：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Age between 0 and 120
+age := type{_X:int where 0 &lt;= _X, _X &lt;= 120}
+
+ValidAge:age = 25
+# InvalidAge:age = 150  # Fails constraint
+
+# Positive integers
+positive_int := type{_X:int where _X &gt; 0}
+
+Count:positive_int = 42
+# Zero:positive_int = 0  # Fails: not positive
+
+# Range with single bound
+small_int := type{_X:int where _X &lt; 100}</code></pre></figure>
+<p>浮点细化使用 IEEE 754 语义处理连续范围：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Unit interval [0.0, 1.0]
+normalized := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
+
+# Positive floats
+positive := type{_X:float where _X &gt; 0.0}
+
+# Temperature in Celsius above absolute zero
+celsius := type{_X:float where _X &gt;= -273.15}</code></pre></figure>
+<p>有限浮点数（不包括无穷大）：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Finite values only (no ±Inf)
+finite := type{_X:float where -Inf &lt; _X, _X &lt; Inf}
+
+# Maximum and minimum finite IEEE 754 doubles
+MaxFinite:finite = 1.7976931348623157e+308
+MinFinite:finite = -1.7976931348623157e+308
+
+# Invalid: infinities excluded
+# Infinite:finite = Inf  # Fails constraint</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Refinement Types</summary>
     <div class="md"><h2>Refinement Types</h2>
 <p>While <code>where</code> clauses constrain type parameters in generic code, <strong>refinement types</strong> use <code>where</code> to constrain the <em>values</em> a type can hold. This creates subtypes that only accept values satisfying specific conditions, enabling domain-specific constraints enforced by the type system.</p>
 <p>A natural question is: why fail on out-of-range values when you could just clamp? The answer is that clamping silently propagates wrong values, which is acceptable for some domains (UI opacity) but dangerous in others. In algorithms where exact values matter — bit manipulation, hashing, Unicode code point operations, coordinate system math — silently clamping an out-of-range value produces incorrect results that are extremely hard to track down. Refinement types make the constraint explicit and force the caller to handle violations, catching bugs at their source rather than letting them propagate.</p>
 <p>In practice, type aliases like <code>positive_int</code> or <code>zero_to_one_float</code> make refinement types convenient to reuse across a codebase without repeating the constraint expression each time.</p>
 <p>A refinement type defines a constrained subtype using value predicates:</p>
-<p>&lt;!--versetest percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0} --&gt; &lt;!-- 29 --&gt;</p>
 <pre><code># Percentages: floats between 0.0 and 1.0
 # percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
 
@@ -453,15 +636,9 @@ Alpha:percent = 1.0
 # Invalid: out of range (runtime check fails)
 # BadPercent:percent = 1.5  # Fails at assignment</code></pre>
 <p><strong>Syntax structure:</strong></p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 30 --&gt;</p>
 <pre><code>TypeName := type{_Variable:BaseType where Constraint1, Constraint2, ...}</code></pre>
-<ul>
-<li><code>_Variable</code> is a placeholder for the value being constrained</li>
-<li><code>BaseType</code> is <code>int</code> or <code>float</code></li>
-<li>Constraints are comparison expressions using <code>&lt;=</code>, <code>&lt;</code>, <code>&gt;=</code>, or <code>&gt;</code></li>
-</ul>
+<ul><li><code>_Variable</code> is a placeholder for the value being constrained</li><li><code>BaseType</code> is <code>int</code> or <code>float</code></li><li>Constraints are comparison expressions using <code>&lt;=</code>, <code>&lt;</code>, <code>&gt;=</code>, or <code>&gt;</code></li></ul>
 <p>Integer refinements restrict int values to specific ranges:</p>
-<p>&lt;!--versetest age := type{_X:int where 0 &lt;= _X, _X &lt;= 120} ValidAge:age = 25 positive_int := type{_X:int where _X &gt; 0} Count:positive_int = 42 small_int := type{_X:int where _X &lt; 100} &lt;# --&gt; &lt;!-- 31 --&gt;</p>
 <pre><code># Age between 0 and 120
 age := type{_X:int where 0 &lt;= _X, _X &lt;= 120}
 
@@ -476,9 +653,7 @@ Count:positive_int = 42
 
 # Range with single bound
 small_int := type{_X:int where _X &lt; 100}</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Float refinements handle continuous ranges with IEEE 754 semantics:</p>
-<p>&lt;!--versetest normalized := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0} positive := type{_X:float where _X &gt; 0.0} celsius := type{_X:float where _X &gt;= -273.15} &lt;# --&gt; &lt;!-- 32 --&gt;</p>
 <pre><code># Unit interval [0.0, 1.0]
 normalized := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
 
@@ -487,9 +662,7 @@ positive := type{_X:float where _X &gt; 0.0}
 
 # Temperature in Celsius above absolute zero
 celsius := type{_X:float where _X &gt;= -273.15}</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Finite Floats (Excluding Infinity):</p>
-<p>&lt;!--versetest finite := type{_X:float where -Inf &lt; _X, _X &lt; Inf} assert: MaxFinite:finite = 1.7976931348623157e+308 MinFinite:finite = -1.7976931348623157e+308 &lt;# --&gt; &lt;!-- 33 --&gt;</p>
 <pre><code># Finite values only (no ±Inf)
 finite := type{_X:float where -Inf &lt; _X, _X &lt; Inf}
 
@@ -498,25 +671,45 @@ MaxFinite:finite = 1.7976931348623157e+308
 MinFinite:finite = -1.7976931348623157e+308
 
 # Invalid: infinities excluded
-# Infinite:finite = Inf  # Fails constraint</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+# Infinite:finite = Inf  # Fails constraint</code></pre></div>
   </details>
 </section><section class="section" id="s9-ieee-754-edge-cases">
-  <div class="annotation">
-    <h3>中文批注：IEEE 754 Edge Cases</h3>
-    <div class="rows">
-      <div><p>这一节围绕“IEEE 754 Edge Cases”展开。阅读时先抓住这些英文关键词：Negative、Positive、Zero、IEEE、distinguishes。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">+0.0</span><span class="chip">-0.0</span><span class="chip">&lt;!-- #&gt; --&gt;
+  <article class="cn-read">
+    <h2>IEEE 754 边缘情况 <small>IEEE 754 Edge Cases</small></h2>
+    <p>**负零和正零：**</p>
+<p>IEEE 754 区分 <code>+0.0</code> 和 <code>-0.0</code>。在Verse中，零就是零，没有正负之分。</p>
+<p>当任何表达式的计算结果为零时，该符号将被丢弃：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Integer Zero (type{0})
+Value1 := -0
+Value2 := +0
 
-The decimal</span><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：IEEE 754 Edge Cases</summary>
+Value1 = Value2 # Succeeds
+-0 = +0         # Succeeds
+
+# Float Zero (type{0.0})
+Value3 := -0.0
+Value4 := +0.0
+
+Value3 = Value4 # Succeeds
+-0.0 = +0.0     # Succeeds</code></pre></figure>
+<p>**浮点精度：**</p>
+<p>约束遵循精确的 IEEE 754 表示：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Values strictly less than 0.1
+small_float := type{_X:float where _X &lt; 0.1}
+
+# Valid: largest float before 0.1
+Tiny:small_float = 0.09999999999999999167332731531132594682276248931884765625
+
+# Invalid: 0.1&#x27;s actual representation is slightly above 0.1
+# NotSmall:small_float = 0.1000000000000000055511151231257827021181583404541015625</code></pre></figure>
+<p>十进制的<code>0.1</code>无法用二进制浮点数精确表示，因此实际存储的值略高于数学上的0.1。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：IEEE 754 Edge Cases</summary>
     <div class="md"><h3>IEEE 754 Edge Cases</h3>
 <p><strong>Negative and Positive Zero:</strong></p>
 <p>IEEE 754 distinguishes between <code>+0.0</code> and <code>-0.0</code>. In verse Zero is just Zero, with no distinction between positve or negative.</p>
-<p>&lt;!--versetest--&gt; When any expression evaluates to Zero, the sign is discarded: &lt;!-- 34 --&gt;</p>
+<p>When any expression evaluates to Zero, the sign is discarded:</p>
 <pre><code># Integer Zero (type{0})
 Value1 := -0
 Value2 := +0
@@ -532,7 +725,6 @@ Value3 = Value4 # Succeeds
 -0.0 = +0.0     # Succeeds</code></pre>
 <p><strong>Floating-Point Precision:</strong></p>
 <p>Constraints respect exact IEEE 754 representations:</p>
-<p>&lt;!--versetest small_float := type{_X:float where _X &lt; 0.1} assert: Tiny:small_float = 0.09999999999999999167332731531132594682276248931884765625 &lt;# --&gt; &lt;!-- 36 --&gt;</p>
 <pre><code># Values strictly less than 0.1
 small_float := type{_X:float where _X &lt; 0.1}
 
@@ -541,26 +733,48 @@ Tiny:small_float = 0.09999999999999999167332731531132594682276248931884765625
 
 # Invalid: 0.1&#x27;s actual representation is slightly above 0.1
 # NotSmall:small_float = 0.1000000000000000055511151231257827021181583404541015625</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The decimal <code>0.1</code> cannot be represented exactly in binary floating-point, so the actual stored value is slightly above the mathematical 0.1.</p></div>
   </details>
 </section><section class="section" id="s10-constraint-expression-restrictions">
-  <div class="annotation">
-    <h3>中文批注：Constraint Expression Restrictions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Constraint Expression Restrictions”展开。阅读时先抓住这些英文关键词：Refinement、constraints、have、strict、limitations。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Since</span><span class="chip">1.0</span><span class="chip">3.14</span><span class="chip">-2.5</span><span class="chip">1.7976931348623157e+308</span><span class="chip">0</span><span class="chip">42</span><span class="chip">-100</span><span class="chip">Inf</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Constraint Expression Restrictions</summary>
+  <article class="cn-read">
+    <h2>约束表达式限制 <small>Constraint Expression Restrictions</small></h2>
+    <p>细化类型约束对允许的表达式有严格的限制：</p>
+<p>**仅文字值：** 约束必须使用文字数字，而不是变量或表达式：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: literal float
+bounded := type{_X:float where _X &lt; 100.0}
+
+# Invalid: cannot use variables
+Limit:float = 100.0
+bad_type := type{_X:float where _X &lt; Limit}  # ERROR
+
+# Invalid: cannot use function calls
+GetMax():float = 100.0
+bad_type := type{_X:float where _X &lt; GetMax()}  # ERROR
+
+# Invalid: cannot use qualified names
+Config := module{Max:float = 100.0}
+bad_type := type{_X:float where _X &lt; (Config:)Max}  # ERROR</code></pre></figure>
+<p>这确保了约束在编译时是静态已知的。</p>
+<p>**浮点类型所需的浮点文字：** 约束浮点时，边界必须是浮点文字（带小数点）：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: integer literal in float constraint
+# bad_float := type{_X:float where _X &lt;= 142}  # ERROR 3502
+
+# Valid: float literal
+good_float := type{_X:float where _X &lt;= 142.0}</code></pre></figure>
+<p>**不允许 NaN：** 约束中不能出现数字：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: NaN in constraint
+# nan_type := type{_X:float where _X &lt;= NaN}      # ERROR 3502
+# nan_type := type{_X:float where NaN &lt;= _X}      # ERROR 3502
+# nan_type := type{_X:float where 0.0/0.0 &lt;= _X}  # ERROR 3502</code></pre></figure>
+<p>由于 <code>NaN</code> 比较始终为 false，因此此类约束毫无意义。</p>
+<p>**允许的文字形式：**</p>
+<ul><li>浮点文字：<code>1.0</code>、<code>3.14</code>、<code>-2.5</code>、<code>1.7976931348623157e+308</code></li><li>整数文字：<code>0</code>、<code>42</code>、<code>-100</code>（用于 int 精化）</li><li>特殊浮点值：<code>Inf</code>、<code>-Inf</code></li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Constraint Expression Restrictions</summary>
     <div class="md"><h3>Constraint Expression Restrictions</h3>
 <p>Refinement type constraints have strict limitations on what expressions are allowed:</p>
 <p><strong>Only Literal Values:</strong> Constraints must use literal numbers, not variables or expressions:</p>
-<p>&lt;!--versetest bounded := type{_X:float where _X &lt; 100.0}</p>
-<p>assert_semantic_error(3502): Limit:float = 100.0 bad_type := type{_X:float where _X &lt; Limit}</p>
-<p>assert_semantic_error(3512, 3502): GetMax():float = 100.0 bad_type := type{_X:float where _X &lt; GetMax()}</p>
-<p>assert_semantic_error(3506, 3502): Config := module{Max:float = 100.0} bad_type := type{_X:float where _X &lt; (Config:)Max} &lt;# --&gt; &lt;!-- 37 --&gt;</p>
 <pre><code># Valid: literal float
 bounded := type{_X:float where _X &lt; 100.0}
 
@@ -575,46 +789,45 @@ bad_type := type{_X:float where _X &lt; GetMax()}  # ERROR
 # Invalid: cannot use qualified names
 Config := module{Max:float = 100.0}
 bad_type := type{_X:float where _X &lt; (Config:)Max}  # ERROR</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>This ensures constraints are statically known at compile time.</p>
 <p><strong>Float Literals Required for Float Types:</strong> When constraining floats, bounds must be float literals (with decimal point):</p>
-<p>&lt;!--versetest good_float := type{_X:float where _X &lt;= 142.0}</p>
-<p>assert: 1 &lt;# --&gt; &lt;!-- 38 --&gt;</p>
 <pre><code># Invalid: integer literal in float constraint
 # bad_float := type{_X:float where _X &lt;= 142}  # ERROR 3502
 
 # Valid: float literal
 good_float := type{_X:float where _X &lt;= 142.0}</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p><strong>NaN Not Allowed:</strong> Not a Number cannot appear in constraints:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 39 --&gt;</p>
 <pre><code># Invalid: NaN in constraint
 # nan_type := type{_X:float where _X &lt;= NaN}      # ERROR 3502
 # nan_type := type{_X:float where NaN &lt;= _X}      # ERROR 3502
 # nan_type := type{_X:float where 0.0/0.0 &lt;= _X}  # ERROR 3502</code></pre>
 <p>Since <code>NaN</code> comparisons are always false, such constraints would be meaningless.</p>
 <p><strong>Allowed Literal Forms:</strong></p>
-<ul>
-<li>Float literals: <code>1.0</code>, <code>3.14</code>, <code>-2.5</code>, <code>1.7976931348623157e+308</code></li>
-<li>Integer literals: <code>0</code>, <code>42</code>, <code>-100</code> (for int refinements)</li>
-<li>Special float values: <code>Inf</code>, <code>-Inf</code></li>
-</ul></div>
+<ul><li>Float literals: <code>1.0</code>, <code>3.14</code>, <code>-2.5</code>, <code>1.7976931348623157e+308</code></li><li>Integer literals: <code>0</code>, <code>42</code>, <code>-100</code> (for int refinements)</li><li>Special float values: <code>Inf</code>, <code>-Inf</code></li></ul></div>
   </details>
 </section><section class="section" id="s11-fallible-casts">
-  <div class="annotation">
-    <h3>中文批注：Fallible Casts</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Fallible Casts”展开。阅读时先抓住这些英文关键词：Refinement、types、checked、assignment、through。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!-- #&gt; --&gt;
+  <article class="cn-read">
+    <h2>易犯错误的演员阵容 <small>Fallible Casts</small></h2>
+    <p>细化类型在分配时和通过易错的强制类型转换进行检查：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
 
-The cast</span><span class="chip">returns</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">where</span><span class="chip">public</span><span class="chip">computes</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Fallible Casts</summary>
+# Direct assignment (compile-time known)
+Valid:percent = 0.5  # OK
+
+# Runtime check with fallible cast
+UserInput:float = GetInputFromUser()
+if (Value := percent[UserInput]):
+    # UserInput was in [0.0, 1.0]
+    ProcessPercent(Value)
+else:
+    # Out of range
+    ShowError()</code></pre></figure>
+<p>如果值满足约束，则强制转换 <code>percent[UserInput]</code> 成功返回 <code>percent</code>，否则返回失败。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Fallible Casts</summary>
     <div class="md"><h3>Fallible Casts</h3>
 <p>Refinement types are checked at assignment and through fallible casts:</p>
-<p>&lt;!--versetest--&gt; &lt;!--versetest percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0} GetInputFromUser&lt;public&gt;()&lt;computes&gt;:float = 50.0 ProcessPercent&lt;public&gt;(P:percent):void = {} ShowError&lt;public&gt;(Msg:string):void = {} assert: Valid:percent = 0.5 UserInput:float = GetInputFromUser() if (Value := percent[UserInput]): ProcessPercent(Value) else: ShowError() &lt;# --&gt; &lt;!-- 40 --&gt;</p>
 <pre><code>percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
 
 # Direct assignment (compile-time known)
@@ -628,22 +841,38 @@ if (Value := percent[UserInput]):
 else:
     # Out of range
     ShowError()</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The cast <code>percent[UserInput]</code> returns <code>percent</code> succeeding if the value satisfies the constraint, or failing otherwise.</p></div>
   </details>
 </section><section class="section" id="s12-examples">
-  <div class="annotation">
-    <h3>中文批注：Examples</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Examples”展开。阅读时先抓住这些英文关键词：Refinement、types、work、parameter、return。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Examples</summary>
+  <article class="cn-read">
+    <h2>示例 <small>Examples</small></h2>
+    <p>细化类型用作参数和返回类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>finite := type{_X:float where -Inf &lt; _X, _X &lt; Inf}
+
+# Parameter with constraint
+Half(X:finite):float = X / 2.0
+
+Half(100.0)  # Returns 50.0
+Half(1.0)    # Returns 0.5
+
+# Cannot pass infinity
+# Half(Inf)  # ERROR 3509: Inf not in finite</code></pre></figure>
+<p>**强制与否定：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
+negative_percent := type{_X:float where _X &lt;= 0.0, _X &gt;= -1.0}
+
+MakePercent():percent = 0.5
+
+# Negation preserves constraint compatibility
+NegValue:negative_percent = -MakePercent()  # -0.5 valid
+
+# Multiple negations
+NegValue2:negative_percent = ---0.7  # Triple negation = -0.7</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Examples</summary>
     <div class="md"><h3>Examples</h3>
 <p>Refinement types work as parameter and return types:</p>
-<p>&lt;!--versetest finite := type{_X:float where -Inf &lt; _X, _X &lt; Inf} Half(X:finite):float = X / 2.0 assert: Half(100.0) Half(1.0) &lt;# --&gt; &lt;!-- 41 --&gt;</p>
 <pre><code>finite := type{_X:float where -Inf &lt; _X, _X &lt; Inf}
 
 # Parameter with constraint
@@ -654,10 +883,7 @@ Half(1.0)    # Returns 0.5
 
 # Cannot pass infinity
 # Half(Inf)  # ERROR 3509: Inf not in finite</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p><strong>Coercion and Negation:</strong></p>
-<p>&lt;!--versetest percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0} negative_percent := type{_X:float where _X &lt;= 0.0, _X &gt;= -1.0}</p>
-<p>assert: MakePercent():percent = 0.5 NegValue:negative_percent = -MakePercent() NegValue2:negative_percent = ---0.7 &lt;# --&gt; &lt;!-- 42 --&gt;</p>
 <pre><code>percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
 negative_percent := type{_X:float where _X &lt;= 0.0, _X &gt;= -1.0}
 
@@ -667,22 +893,36 @@ MakePercent():percent = 0.5
 NegValue:negative_percent = -MakePercent()  # -0.5 valid
 
 # Multiple negations
-NegValue2:negative_percent = ---0.7  # Triple negation = -0.7</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+NegValue2:negative_percent = ---0.7  # Triple negation = -0.7</code></pre></div>
   </details>
 </section><section class="section" id="s13-overloading-restrictions">
-  <div class="annotation">
-    <h3>中文批注：Overloading Restrictions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Overloading Restrictions”展开。阅读时先抓住这些英文关键词：Overlapping、refinement、types、cannot、used。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Overloading Restrictions</summary>
+  <article class="cn-read">
+    <h2>超载限制 <small>Overloading Restrictions</small></h2>
+    <p>重叠的细化类型不能用于函数重载——它们是不明确的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
+not_infinity := type{_X:float where Inf &gt; _X}
+
+# ERROR 3532: Cannot distinguish - percent ⊂ not_infinity
+# F(X:percent):float = 0.0
+# F(X:not_infinity):float = X
+
+# Calling F(0.5) would be ambiguous - which overload?</code></pre></figure>
+<p>但是，**不相交**细化类型可能会超载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>positive := type{_X:float where _X &gt; 0.0}
+negative := type{_X:float where _X &lt; 0.0}
+
+# Valid: ranges don&#x27;t overlap (zero excluded from both)
+F(X:positive):float = X
+F(X:negative):float = X + 1.0
+
+F(1.0)   # Returns 1.0 (positive overload)
+F(-1.0)  # Returns 0.0 (negative overload)
+# F(0.0)  # Would fail - neither overload matches</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Overloading Restrictions</summary>
     <div class="md"><h3>Overloading Restrictions</h3>
 <p>Overlapping refinement types cannot be used for function overloading—they&#x27;re ambiguous:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0} not_infinity := type{_X:float where Inf &gt; _X} F(X:percent):float = 0.0 F(X:not_infinity):float = X &lt;# --&gt; &lt;!-- 43 --&gt;</p>
 <pre><code>percent := type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}
 not_infinity := type{_X:float where Inf &gt; _X}
 
@@ -691,8 +931,7 @@ not_infinity := type{_X:float where Inf &gt; _X}
 # F(X:not_infinity):float = X
 
 # Calling F(0.5) would be ambiguous - which overload?</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
-<p>However, <strong>disjoint</strong> refinement types can overload: &lt;!--versetest positive := type{_X:float where _X &gt; 0.0} negative := type{_X:float where _X &lt; 0.0} F(X:positive):float = X F(X:negative):float = X + 1.0 assert: F(1.0)=1.0 F(-1.0)=0.0 &lt;# --&gt; &lt;!-- 44 --&gt;</p>
+<p>However, <strong>disjoint</strong> refinement types can overload:</p>
 <pre><code>positive := type{_X:float where _X &gt; 0.0}
 negative := type{_X:float where _X &lt; 0.0}
 
@@ -702,35 +941,55 @@ F(X:negative):float = X + 1.0
 
 F(1.0)   # Returns 1.0 (positive overload)
 F(-1.0)  # Returns 0.0 (negative overload)
-# F(0.0)  # Would fail - neither overload matches</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+# F(0.0)  # Would fail - neither overload matches</code></pre></div>
   </details>
 </section><section class="section" id="s14-comparable-and-equality">
-  <div class="annotation">
-    <h3>中文批注：Comparable and Equality</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Comparable and Equality”展开。阅读时先抓住这些英文关键词：comparable、represents、special、subset、types。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">comparable</span><span class="chip">int</span><span class="chip">float</span><span class="chip">rational</span><span class="chip">logic</span><span class="chip">char</span><span class="chip">char32</span><span class="chip">=</span><span class="chip">&lt;&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Comparable and Equality</summary>
+  <article class="cn-read">
+    <h2>可比性和平等性 <small>Comparable and Equality</small></h2>
+    <p><code>comparable</code> 类型表示支持相等比较的特殊类型子集。并非所有类型都可以比较相等性 - 这是一个经过深思熟虑的设计选择，可以防止无意义的比较并确保相等具有明确定义的语义。</p>
+<p>如果一个类型的值可以进行有意义的相等性测试，则该类型是可比较的。基本标量类型都是可比较的：<code>int</code>、<code>float</code>、<code>rational</code>、<code>logic</code>、<code>char</code> 和 <code>char32</code>。如果化合物类型的所有组件都具有可比性，则它们具有可比性。这意味着整数数组是可比较的，浮点数和字符串的元组是可比较的，并且具有可比较键和值的映射是可比较的。</p>
+<p>相等运算符 <code>=</code> 和 <code>&lt;&gt;</code> 根据可比较类型定义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>operator&#x27;=&#x27;(X:t, Y:t where t:subtype(comparable))&lt;decides&gt;:t
+operator&#x27;&lt;&gt;&#x27;(X:t, Y:t where t:subtype(comparable))&lt;decides&gt;:t</code></pre></figure>
+<p>签名要求两个操作数都是可比较的子类型，并且返回类型是它们类型的最小上限。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>0 = 0        # Succeeds - both are int
+0.0 = 0.0    # Succeeds - both are float
+0 = 0.0      # Fails - there is no implicit conversion from int to float</code></pre></figure>
+<p>下面是一个示例，重点介绍了如何计算 <code>=</code> 的返回类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>I:int=1
+R:rational=1/3
+X:rational= (I=R)  # Compiles and fails at runtime
+
+I:int=1
+S:string=&quot;hi&quot;
+Y:comparable= (I=S)  # Compiles and fails at runtime</code></pre></figure>
+<p>对于变量 <code>X</code>，其类型可以是 <code>rational</code> 或 <code>comparable</code>。对于变量<code>Y</code>，<code>int</code>和<code>string</code>之间唯一的共同类型是<code>comparable</code>。</p>
+<p>类需要特殊处理以实现可比性。默认情况下，类实例是不可比较的，因为没有通用的方法来定义用户定义类型的相等性。但是，您可以使用 <code>unique</code> 说明符使类具有可比性：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class&lt;unique&gt;:
+    ID:int
+    Name:string
+
+Player1 := entity{ID := 1, Name := &quot;Alice&quot;}
+Player2 := entity{ID := 1, Name := &quot;Alice&quot;}
+Player3 := Player1
+
+Player1 = Player2  # Fails - different instances
+Player1 = Player3  # Succeeds - same instance</code></pre></figure>
+<p>使用 <code>unique</code> 说明符，实例仅与自身相等（身份相等），而不与具有相同字段值的其他实例相等（结构相等）。这为类相等提供了清晰的、可预测的语义。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Comparable and Equality</summary>
     <div class="md"><h2>Comparable and Equality</h2>
 <p>The <code>comparable</code> type represents a special subset of types that support equality comparison. Not all types can be compared for equality - this is a deliberate design choice that prevents meaningless comparisons and ensures that equality has well-defined semantics.</p>
 <p>A type is comparable if its values can be meaningfully tested for equality. The basic scalar types are all comparable: <code>int</code>, <code>float</code>, <code>rational</code>, <code>logic</code>, <code>char</code>, and <code>char32</code>. Compound types are comparable if all their components are comparable. This means arrays of integers are comparable, tuples of floats and strings are comparable, and maps with comparable keys and values are comparable.</p>
 <p>The equality operators <code>=</code> and <code>&lt;&gt;</code> are defined in terms of the comparable type:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 45 --&gt;</p>
 <pre><code>operator&#x27;=&#x27;(X:t, Y:t where t:subtype(comparable))&lt;decides&gt;:t
 operator&#x27;&lt;&gt;&#x27;(X:t, Y:t where t:subtype(comparable))&lt;decides&gt;:t</code></pre>
 <p>The signatures require that both operands be subtypes of comparable and the return type is the least upper bound of their types.</p>
-<p>&lt;!--versetest assert: 0 = 0 0.0 = 0.0</p>
-<p>&lt;# --&gt; &lt;!-- 46 --&gt;</p>
 <pre><code>0 = 0        # Succeeds - both are int
 0.0 = 0.0    # Succeeds - both are float
 0 = 0.0      # Fails - there is no implicit conversion from int to float</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Here is an example that highlights how the return type of <code>=</code> is computed:</p>
-<p>&lt;!--46b --&gt;</p>
 <pre><code>I:int=1
 R:rational=1/3
 X:rational= (I=R)  # Compiles and fails at runtime
@@ -740,9 +999,6 @@ S:string=&quot;hi&quot;
 Y:comparable= (I=S)  # Compiles and fails at runtime</code></pre>
 <p>In the case of variable <code>X</code>, its type can be either <code>rational</code> or <code>comparable</code>. For variable <code>Y</code>, the only common type between <code>int</code> and <code>string</code> is <code>comparable</code>.</p>
 <p>Classes require special handling for comparability. By default, class instances are not comparable because there&#x27;s no universal way to define equality for user-defined types. However, you can make a class comparable using the <code>unique</code> specifier:</p>
-<p>&lt;!--versetest entity := class&lt;unique&gt;: ID:int Name:string</p>
-<p>F()&lt;decides&gt;:void={ Player1 := entity{ID := 1, Name := &quot;Alice&quot;} Player2 := entity{ID := 1, Name := &quot;Alice&quot;} Player3 := Player1</p>
-<p>Player1 = Player2  # Fails - different instances Player1 = Player3  # Succeeds - same instance }&lt;# --&gt; &lt;!-- 47 --&gt;</p>
 <pre><code>entity := class&lt;unique&gt;:
     ID:int
     Name:string
@@ -753,45 +1009,48 @@ Player3 := Player1
 
 Player1 = Player2  # Fails - different instances
 Player1 = Player3  # Succeeds - same instance</code></pre>
-<p>&lt;!--versetest #&gt; --&gt;</p>
 <p>With the <code>unique</code> specifier, instances are only equal to themselves (identity equality), not to other instances with the same field values (structural equality). This provides a clear, predictable semantics for class equality.</p></div>
   </details>
 </section><section class="section" id="s15-comparable-as-a-generic-constraint">
-  <div class="annotation">
-    <h3>中文批注：Comparable as a Generic Constraint</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Comparable as a Generic Constraint”展开。阅读时先抓住这些英文关键词：comparable、commonly、used、constraint、generic。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">comparable</span><span class="chip">&lt;decides&gt;</span><span class="chip">where</span><span class="chip">decides</span><span class="chip">for</span><span class="chip">array</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Comparable as a Generic Constraint</summary>
+  <article class="cn-read">
+    <h2>作为通用约束进行比较 <small>Comparable as a Generic Constraint</small></h2>
+    <p><code>comparable</code> 类型通常用作泛型函数中的约束，以确保相等测试等操作可用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Find(Items:[]t, Target:t where t:subtype(comparable))&lt;decides&gt;:int =
+    Results := for (Index-&gt;Item:Items, Item = Target):
+        Index
+    Results[0]
+
+# Works with any comparable type
+Position := Find[array{&quot;apple&quot;, &quot;banana&quot;, &quot;cherry&quot;}, &quot;banana&quot;]  # Succeeds and returns 1</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Comparable as a Generic Constraint</summary>
     <div class="md"><h3>Comparable as a Generic Constraint</h3>
 <p>The <code>comparable</code> type is commonly used as a constraint in generic functions to ensure operations like equality testing are available:</p>
-<p>&lt;!--versetest Find(Items:[]t, Target:t where t:subtype(comparable))&lt;decides&gt;:int = Results := for (Index-&gt;Item:Items, Item = Target): Index Results[0]</p>
-<p>assert: # Works with any comparable type Position := Find[array{&quot;apple&quot;, &quot;banana&quot;, &quot;cherry&quot;}, &quot;banana&quot;]  # Succeeds and returns 1 Position = 1 &lt;# --&gt; &lt;!-- 48 --&gt;</p>
 <pre><code>Find(Items:[]t, Target:t where t:subtype(comparable))&lt;decides&gt;:int =
     Results := for (Index-&gt;Item:Items, Item = Target):
         Index
     Results[0]
 
 # Works with any comparable type
-Position := Find[array{&quot;apple&quot;, &quot;banana&quot;, &quot;cherry&quot;}, &quot;banana&quot;]  # Succeeds and returns 1</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+Position := Find[array{&quot;apple&quot;, &quot;banana&quot;, &quot;cherry&quot;}, &quot;banana&quot;]  # Succeeds and returns 1</code></pre></div>
   </details>
 </section><section class="section" id="s16-array-tuple-comparison">
-  <div class="annotation">
-    <h3>中文批注：Array-Tuple Comparison</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Array-Tuple Comparison”展开。阅读时先抓住这些英文关键词：notable、feature、equality、system、arrays。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">array</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Array-Tuple Comparison</summary>
+  <article class="cn-read">
+    <h2>数组元组比较 <small>Array-Tuple Comparison</small></h2>
+    <p>Verse 相等系统的一个显着特征是可比较元素的数组和元组可以相互比较：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Arrays can equal tuples
+array{1, 2, 3} = (1, 2, 3)       # Succeeds
+(4, 5, 6) = array{4, 5, 6}       # Succeeds - bidirectional
+
+# Inequality also works
+array{1, 2, 3} &lt;&gt; (1, 2, 4)      # Succeeds - different values</code></pre></figure>
+<p>这种比较在结构上有效 - 序列必须具有相同的长度并且相应的元素必须相等。此功能允许期望数组接受元组的函数，从而提高灵活性。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Array-Tuple Comparison</summary>
     <div class="md"><h3>Array-Tuple Comparison</h3>
 <p>A notable feature of Verse&#x27;s equality system is that arrays and tuples of comparable elements can be compared with each other:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 49 --&gt;</p>
 <pre><code># Arrays can equal tuples
 array{1, 2, 3} = (1, 2, 3)       # Succeeds
 (4, 5, 6) = array{4, 5, 6}       # Succeeds - bidirectional
@@ -801,19 +1060,27 @@ array{1, 2, 3} &lt;&gt; (1, 2, 4)      # Succeeds - different values</code></pre
 <p>This comparison works structurally - the sequences must have the same length and corresponding elements must be equal. This feature allows functions expecting arrays to accept tuples, increasing flexibility.</p></div>
   </details>
 </section><section class="section" id="s17-overload-distinctness-with-comparable">
-  <div class="annotation">
-    <h3>中文批注：Overload Distinctness with Comparable</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Overload Distinctness with Comparable”展开。阅读时先抓住这些英文关键词：cannot、create、overloads、one、parameter。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">comparable</span><span class="chip">&lt;unique&gt;</span><span class="chip">where</span><span class="chip">class</span><span class="chip">unique</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Overload Distinctness with Comparable</summary>
+  <article class="cn-read">
+    <h2>具有可比性的重载区别 <small>Overload Distinctness with Comparable</small></h2>
+    <p>您不能创建其中一个参数是特定可比较类型而另一个参数是通用 <code>comparable</code> 类型的重载，因为这会产生歧义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Not allowed - ambiguous overloads
+F(X:int):void = {}
+F(X:comparable):void = {}  # ERROR: int is already comparable
+
+# Not allowed with unique classes either
+unique_class := class&lt;unique&gt;{}
+G(X:unique_class):void = {}
+G(X:comparable):void = {}  # ERROR: unique_class is comparable</code></pre></figure>
+<p>但是，您可以使用不可比较的类型进行重载：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># This is allowed
+regular_class := class{}  # Not comparable
+H(X:regular_class):void = {}
+H(X:comparable):void = {}  # OK: no ambiguity</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Overload Distinctness with Comparable</summary>
     <div class="md"><h3>Overload Distinctness with Comparable</h3>
 <p>You cannot create overloads where one parameter is a specific comparable type and another is the general <code>comparable</code> type, as this creates ambiguity:</p>
-<p>&lt;!--versetest assert_semantic_error(3532): F(X:int):void = {} F(X:comparable):void = {}</p>
-<p>assert_semantic_error(3532): unique_class := class&lt;unique&gt;{} G(X:unique_class):void = {} G(X:comparable):void = {} &lt;# --&gt; &lt;!-- 50 --&gt;</p>
 <pre><code># Not allowed - ambiguous overloads
 F(X:int):void = {}
 F(X:comparable):void = {}  # ERROR: int is already comparable
@@ -822,27 +1089,32 @@ F(X:comparable):void = {}  # ERROR: int is already comparable
 unique_class := class&lt;unique&gt;{}
 G(X:unique_class):void = {}
 G(X:comparable):void = {}  # ERROR: unique_class is comparable</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>However, you can overload with non-comparable types:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 51 --&gt;</p>
 <pre><code># This is allowed
 regular_class := class{}  # Not comparable
 H(X:regular_class):void = {}
 H(X:comparable):void = {}  # OK: no ambiguity</code></pre></div>
   </details>
 </section><section class="section" id="s18-dynamic-comparable-values">
-  <div class="annotation">
-    <h3>中文批注：Dynamic Comparable Values</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Dynamic Comparable Values”展开。阅读时先抓住这些英文关键词：working、heterogeneous、collections、may、need。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">comparable</span><span class="chip">array</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Dynamic Comparable Values</summary>
+  <article class="cn-read">
+    <h2>动态可比值 <small>Dynamic Comparable Values</small></h2>
+    <p>使用异构集合时，您可能需要显式地将可比值装入 <code>comparable</code> 类型。这些装箱值保持其相等语义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AsComparable(X:comparable):comparable = X
+
+# Boxed values compare correctly with both boxed and unboxed
+array{AsComparable(1)} = array{1}              # Succeeds
+array{AsComparable(1)} = array{AsComparable(1)} # Succeeds
+array{AsComparable(1)} &lt;&gt; array{2}             # Succeeds
+
+# With direct upcasting:
+comparable(15) = comparable(15)     # Succeeds
+comparable(&quot;Hello&quot;) = &quot;Hello&quot;       # Succeeds</code></pre></figure>
+<p>这允许您通过将所有可比较类型装箱到 <code>comparable</code> 来创建混合不同可比较类型的集合。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Dynamic Comparable Values</summary>
     <div class="md"><h3>Dynamic Comparable Values</h3>
 <p>When working with heterogeneous collections, you may need to box comparable values into the <code>comparable</code> type explicitly. These boxed values maintain their equality semantics:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 52 --&gt;</p>
 <pre><code>AsComparable(X:comparable):comparable = X
 
 # Boxed values compare correctly with both boxed and unboxed
@@ -856,59 +1128,103 @@ comparable(&quot;Hello&quot;) = &quot;Hello&quot;       # Succeeds</code></pre>
 <p>This allows you to create collections that mix different comparable types by boxing them all to <code>comparable</code>.</p></div>
   </details>
 </section><section class="section" id="s19-map-keys-and-comparable">
-  <div class="annotation">
-    <h3>中文批注：Map Keys and Comparable</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Map Keys and Comparable”展开。阅读时先抓住这些英文关键词：Map、keys、must、comparable、types。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">int</span><span class="chip">float</span><span class="chip">rational</span><span class="chip">char</span><span class="chip">char32</span><span class="chip">string</span><span class="chip">&lt;unique&gt;</span><span class="chip">?t</span><span class="chip">t</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Map Keys and Comparable</summary>
+  <article class="cn-read">
+    <h2>map键和类似键 <small>Map Keys and Comparable</small></h2>
+    <p>映射键必须是可比较的类型。大多数可比较的类型都可以用作映射键，包括：</p>
+<ul><li>所有数字类型：<code>int</code>、<code>float</code>、<code>rational</code></li><li>字符类型：<code>char</code>、<code>char32</code></li><li>文本：<code>string</code></li><li>枚举</li><li><code>&lt;unique&gt;</code> 类</li><li>类似类型的选项：<code>?t</code>，其中 <code>t</code> 是可比较的</li><li>可比较类型的数组：<code>[]t</code>，其中 <code>t</code> 可比较</li><li>可比较类型的元组</li><li>具有可比键和值的映射：<code>[k]v</code></li><li>具有可比字段的结构</li></ul>
+<p>请注意，虽然 <code>float</code> 可以用作映射键，但浮点特殊值具有特定的相等语义（有关 <code>NaN</code> 和零处理的详细信息，请参阅 [Map 文档](02_primitives.md#floats)）。</p>
+<p>目前还没有办法通过编写自定义比较方法来使常规类具有可比性。只有 <code>&lt;unique&gt;</code> 说明符通过身份相等来启用类可比较性。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Map Keys and Comparable</summary>
     <div class="md"><h3>Map Keys and Comparable</h3>
 <p>Map keys must be comparable types. Most comparable types can be used as map keys, including:</p>
-<ul>
-<li>All numeric types: <code>int</code>, <code>float</code>, <code>rational</code></li>
-<li>Character types: <code>char</code>, <code>char32</code></li>
-<li>Text: <code>string</code></li>
-<li>Enumerations</li>
-<li><code>&lt;unique&gt;</code> classes</li>
-<li>Optionals of comparable types: <code>?t</code> where <code>t</code> is comparable</li>
-<li>Arrays of comparable types: <code>[]t</code> where <code>t</code> is comparable</li>
-<li>Tuples of comparable types</li>
-<li>Maps with comparable keys and values: <code>[k]v</code></li>
-<li>Structs with comparable fields</li>
-</ul>
+<ul><li>All numeric types: <code>int</code>, <code>float</code>, <code>rational</code></li><li>Character types: <code>char</code>, <code>char32</code></li><li>Text: <code>string</code></li><li>Enumerations</li><li><code>&lt;unique&gt;</code> classes</li><li>Optionals of comparable types: <code>?t</code> where <code>t</code> is comparable</li><li>Arrays of comparable types: <code>[]t</code> where <code>t</code> is comparable</li><li>Tuples of comparable types</li><li>Maps with comparable keys and values: <code>[k]v</code></li><li>Structs with comparable fields</li></ul>
 <p>Note that while <code>float</code> can be used as a map key, floating-point special values have specific equality semantics (see <a href="../02_primitives/index.html#floats">Map documentation</a> for details on <code>NaN</code> and zero handling).</p>
 <p>There is currently no way to make a regular class comparable by writing a custom comparison method. Only the <code>&lt;unique&gt;</code> specifier enables class comparability through identity equality.</p></div>
   </details>
 </section><section class="section" id="s20-type-hierarchies">
-  <div class="annotation">
-    <h3>中文批注：Type Hierarchies</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Type Hierarchies”展开。阅读时先抓住这些英文关键词：system、forms、lattice、rather、than。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Type Hierarchies</summary>
+  <article class="cn-read">
+    <h2>类型层次结构 <small>Type Hierarchies</small></h2>
+    <p>类型系统形成一个格子而不是一个简单的树。这意味着类型可以有多个超类型，尽管多重继承目前仅限于接口。了解这些关系有助于您设计灵活、可重用的代码。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Type Hierarchies</summary>
     <div class="md"><h2>Type Hierarchies</h2>
 <p>The type system forms a lattice rather than a simple tree. This means types can have multiple supertypes, though multiple inheritance is currently limited to interfaces. Understanding these relationships helps you design flexible, reusable code.</p></div>
   </details>
 </section><section class="section" id="s21-understanding-void">
-  <div class="annotation">
-    <h3>中文批注：Understanding void</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Understanding void”展开。阅读时先抓住这些英文关键词：Unlike、any、erases、information、void。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">any</span><span class="chip">void</span><span class="chip">Despite being typed as</span><span class="chip">Functions with</span><span class="chip">Class fields can be typed as</span><span class="chip">In function types,</span><span class="chip">However,</span><span class="chip">&lt;transacts&gt;</span><span class="chip">transacts</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Understanding void</summary>
+  <article class="cn-read">
+    <h2>理解无效 <small>Understanding void</small></h2>
+    <p>与擦除类型信息的 <code>any</code> 不同，<code>void</code> 用作“丢弃”类型，表明值的特定类型并不重要。</p>
+<p>返回类型为 <code>void</code> 的函数可以返回任何值，然后该值会被类型系统丢弃：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>LogEvent(Message:string)&lt;transacts&gt;:void =
+    WriteToFile(Message)
+    42                   # Returns int, but typed as void
+
+F():void = 1             # Valid - returns int, typed as void
+F()                      # Result is void</code></pre></figure>
+<p>尽管类型为 <code>void</code>，这些函数仍然会生成其计算值 - 这些值根本无法通过类型系统访问。这确保了即使返回值被丢弃也会发生副作用和计算：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MakePair(X:string, Y:string):void = (X, Y)
+
+# Function computes the pair even though return type is void
+MakePair(&quot;hello&quot;, &quot;world&quot;)  # Still creates (&quot;hello&quot;, &quot;world&quot;)</code></pre></figure>
+<p>具有 <code>void</code> 参数的函数接受任何参数类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Discard(X:void):int = 42
+
+Discard(0)               # int → void 
+Discard(1.5)             # float → void 
+Discard(&quot;test&quot;)          # string → void </code></pre></figure>
+<p>类字段可以键入为 <code>void</code>，接受任何初始化值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>config := class:
+    Setting:void = array{1, 2}  # Default with array</code></pre></figure>
+<p>在函数类型中，<code>void</code> 参与方差：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>IntIdentity(X:int):int = X
+
+# Contravariant return: supertype in return position
+F:int-&gt;void = IntIdentity  # int-&gt;int → int-&gt;void ✓
+# void is supertype of int, so this works
+
+AcceptVoid(X:void):int = 19
+
+# Contravariant parameter: supertype in parameter position
+G:int-&gt;int = AcceptVoid    # void-&gt;int → int-&gt;int ✓
+# Can use function accepting void where function accepting int expected</code></pre></figure>
+<p>但是，参数位置中的 <code>void</code> 不允许以其他方式转换：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>IntFunction(X:int):int = X
+# F:void-&gt;int = IntFunction  # ERROR
+# Cannot convert int parameter to void parameter in function type</code></pre></figure>
+<p>**void vs false**：<code>false</code> 类型是没有值的空/底部类型（无人居住类型）。它与 <code>void</code> 相反：</p>
+<ul><li>**<code>void</code>**：通用超类型 - 所有类型都是 void 的子类型，包含所有值</li><li>**<code>false</code>**：底部类型 - 所有类型的子类型，包含零值</li></ul>
+<p>在通用超类型（<code>any</code>、<code>void</code>）和底层类型（<code>false</code>）之间，类型形成自然分组。数字类型（<code>int</code>、<code>float</code>、<code>rational</code>）共享常见的算术运算，但不形成单个层次结构 - 它们是兄弟姐妹，而不是祖先和后代。每个容器类型（数组、映射、元组、选项）都有自己基于其元素类型的子类型规则。</p>
+<p>了解方差对于使用通用容器至关重要。数组和选项的元素类型是协变的 - 如果 A 是 B 的子类型，则 <code>[]A</code> 是 <code>[]B</code> 的子类型，<code>?A</code> 是 <code>?B</code> 的子类型。这允许自然代码，例如：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessNumbers(Nums:[]rational):void =
+    for (N : Nums):
+        Print(&quot;{RationalPrinter(N)}&quot;)
+
+IntArray:[]int = array{1, 2, 3}
+ProcessNumbers(IntArray)  # Works due to covariance</code></pre></figure>
+<p>函数表现出更复杂的方差。它们的参数类型是逆变的，返回类型是协变的。如果 T2 是 T1（逆变）的子类型并且 R1 是 R2（协方差）的子类型，则函数类型 <code>(T1)-&gt;R1</code> 是 <code>(T2)-&gt;R2</code> 的子类型。这确保函数子类型保持类型安全：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>function_type1 := type{_(:any):int}
+function_type2 := type{_(:int):any}
+
+# function_type1 is a subtype of function_type2
+# It accepts more general input (any vs int) - contravariance
+# And returns more specific output (int vs any) - covariance
+
+# Demonstrate: a function matching type1 can be used where type2 is expected
+ConcreteFunc(Input:any):int = 42
+
+UseFunction(F:function_type2, Value:int):void =
+    Result:any = F(Value)
+
+UseFunction(ConcreteFunc, 5)  # Works: function_type1 &lt;: function_type2</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Understanding void</summary>
     <div class="md"><h3>Understanding void</h3>
 <p>Unlike <code>any</code>, which erases type information, <code>void</code> serves as a &quot;discard&quot; type indicating that a value&#x27;s specific type doesn&#x27;t matter.</p>
 <p>Functions with <code>void</code> return type can return any value, which is then discarded by the type system:</p>
-<p>&lt;!--versetest WriteToFile(:string)&lt;transacts&gt;:void = {} --&gt; &lt;!-- 77 --&gt;</p>
 <pre><code>LogEvent(Message:string)&lt;transacts&gt;:void =
     WriteToFile(Message)
     42                   # Returns int, but typed as void
@@ -916,24 +1232,20 @@ comparable(&quot;Hello&quot;) = &quot;Hello&quot;       # Succeeds</code></pre>
 F():void = 1             # Valid - returns int, typed as void
 F()                      # Result is void</code></pre>
 <p>Despite being typed as <code>void</code>, these functions still produce their computed values—the values are simply not accessible through the type system. This ensures side effects and computations occur even when the return value is discarded:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 78 --&gt;</p>
 <pre><code>MakePair(X:string, Y:string):void = (X, Y)
 
 # Function computes the pair even though return type is void
 MakePair(&quot;hello&quot;, &quot;world&quot;)  # Still creates (&quot;hello&quot;, &quot;world&quot;)</code></pre>
 <p>Functions with <code>void</code> parameters accept any argument type:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 79 --&gt;</p>
 <pre><code>Discard(X:void):int = 42
 
 Discard(0)               # int → void 
 Discard(1.5)             # float → void 
 Discard(&quot;test&quot;)          # string → void </code></pre>
 <p>Class fields can be typed as <code>void</code>, accepting any initialization value:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 80 --&gt;</p>
 <pre><code>config := class:
     Setting:void = array{1, 2}  # Default with array</code></pre>
 <p>In function types, <code>void</code> participates in variance:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 81 --&gt;</p>
 <pre><code>IntIdentity(X:int):int = X
 
 # Contravariant return: supertype in return position
@@ -946,34 +1258,13 @@ AcceptVoid(X:void):int = 19
 G:int-&gt;int = AcceptVoid    # void-&gt;int → int-&gt;int ✓
 # Can use function accepting void where function accepting int expected</code></pre>
 <p>However, <code>void</code> in parameter position does NOT allow conversion the other way:</p>
-<p>&lt;!--versetest</p></div>
-  </details>
-</section><section class="section" id="s22-test-that-this-conversion-is-not-allowed">
-  <div class="annotation">
-    <h3>中文批注：Test that this conversion is not allowed</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Test that this conversion is not allowed”展开。阅读时先抓住这些英文关键词：void、false、empty/bottom、uninhabited、opposite。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!-- #&gt;--&gt;
-
-**void vs false**: The</span><span class="chip">void</span><span class="chip">false</span><span class="chip">any</span><span class="chip">int</span><span class="chip">float</span><span class="chip">rational</span><span class="chip">[]A</span><span class="chip">[]B</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Test that this conversion is not allowed</summary>
-    <div class="md"><h1>Test that this conversion is not allowed</h1>
-<p>assert_semantic_error(3509): IntFunction(X:int):int = X F:void-&gt;int = IntFunction  # ERROR: Cannot convert int-&gt;int to void-&gt;int &lt;# --&gt; &lt;!-- 82 --&gt;</p>
 <pre><code>IntFunction(X:int):int = X
 # F:void-&gt;int = IntFunction  # ERROR
 # Cannot convert int parameter to void parameter in function type</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>void vs false</strong>: The <code>false</code> type is the empty/bottom type (uninhabited type) with no values. It&#x27;s the opposite of <code>void</code>:</p>
-<ul>
-<li><strong><code>void</code></strong>: Universal supertype - all types are subtypes of void, contains all values</li>
-<li><strong><code>false</code></strong>: Bottom type - subtype of all types, contains zero values</li>
-</ul>
+<ul><li><strong><code>void</code></strong>: Universal supertype - all types are subtypes of void, contains all values</li><li><strong><code>false</code></strong>: Bottom type - subtype of all types, contains zero values</li></ul>
 <p>Between the universal supertypes (<code>any</code>, <code>void</code>) and the bottom type (<code>false</code>), types form natural groupings. The numeric types (<code>int</code>, <code>float</code>, <code>rational</code>) share common arithmetic operations but don&#x27;t form a single hierarchy - they&#x27;re siblings rather than ancestors and descendants. The container types (arrays, maps, tuples, options) each have their own subtyping rules based on their element types.</p>
 <p>Understanding variance is crucial for working with generic containers. Arrays and options are covariant in their element type - if A is a subtype of B, then <code>[]A</code> is a subtype of <code>[]B</code> and <code>?A</code> is a subtype of <code>?B</code>. This allows natural code like:</p>
-<p>&lt;!--versetest RationalPrinter(X:rational):string=&quot;&quot; --&gt; &lt;!-- 89 --&gt;</p>
 <pre><code>ProcessNumbers(Nums:[]rational):void =
     for (N : Nums):
         Print(&quot;{RationalPrinter(N)}&quot;)
@@ -981,33 +1272,6 @@ G:int-&gt;int = AcceptVoid    # void-&gt;int → int-&gt;int ✓
 IntArray:[]int = array{1, 2, 3}
 ProcessNumbers(IntArray)  # Works due to covariance</code></pre>
 <p>Functions exhibit more complex variance. They&#x27;re contravariant in their parameter types and covariant in their return types. A function type <code>(T1)-&gt;R1</code> is a subtype of <code>(T2)-&gt;R2</code> if T2 is a subtype of T1 (contravariance) and R1 is a subtype of R2 (covariance). This ensures that function subtyping preserves type safety:</p>
-<p>&lt;!--versetest function_type1 := type{_(:any):int} function_type2 := type{_(:int):any}</p></div>
-  </details>
-</section><section class="section" id="s23-concrete-function-that-matches-functiontype1">
-  <div class="annotation">
-    <h3>中文批注：Concrete function that matches functiontype1</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Concrete function that matches functiontype1”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Concrete function that matches functiontype1</summary>
-    <div class="md"><h1>Concrete function that matches function_type1</h1>
-<p>ConcreteFunc(Input:any):int = 42</p></div>
-  </details>
-</section><section class="section" id="s24-function-that-takes-functiontype2-and-uses-it">
-  <div class="annotation">
-    <h3>中文批注：Function that takes functiontype2 and uses it</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Function that takes functiontype2 and uses it”展开。阅读时先抓住这些英文关键词：UseFunction、F:function、type2、Value:int、void。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Function that takes functiontype2 and uses it</summary>
-    <div class="md"><h1>Function that takes function_type2 and uses it</h1>
-<p>UseFunction(F:function_type2, Value:int):void = Result:any = F(Value)  # Call with int, get any TestSubtyping():void = UseFunction(ConcreteFunc, 5) &lt;# --&gt; &lt;!-- 90 --&gt;</p>
 <pre><code>function_type1 := type{_(:any):int}
 function_type2 := type{_(:int):any}
 
@@ -1021,62 +1285,66 @@ ConcreteFunc(Input:any):int = 42
 UseFunction(F:function_type2, Value:int):void =
     Result:any = F(Value)
 
-UseFunction(ConcreteFunc, 5)  # Works: function_type1 &lt;: function_type2</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p></div>
+UseFunction(ConcreteFunc, 5)  # Works: function_type1 &lt;: function_type2</code></pre></div>
   </details>
-</section><section class="section" id="s25-type-aliases">
-  <div class="annotation">
-    <h3>中文批注：Type Aliases</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Type Aliases”展开。阅读时先抓住这些英文关键词：aliases、allow、create、alternative、names。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">using</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Type Aliases</summary>
+</section><section class="section" id="s22-type-aliases">
+  <article class="cn-read">
+    <h2>类型别名 <small>Type Aliases</small></h2>
+    <p>类型别名允许您为类型创建替代名称，使复杂类型签名更具可读性和可维护性。它们对于函数类型、参数类型和常用类型组合特别有价值。</p>
+<p>类型别名是在模块范围内使用简单的赋值语法创建的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># At module scope
+entity:=struct{}
+
+# Simple type aliases
+coordinate := tuple(float, float, float)
+entity_map := [string]entity
+player_id := int
+
+# Function type aliases
+update_handler := type{_(:float):void}
+validator := int -&gt; logic
+transformer := type{_(:string):int}</code></pre></figure>
+<p>类型别名仅在编译时使用 - 它们不会产生运行时开销，纯粹是为了程序员的方便和代码的清晰度。</p>
+<p>**类型别名是替代名称，而不是新类型。** 它们不会创建像某些语言中的 <code>newtype</code> 那样的不同类型。别名和原始类型的值是完全可以互换的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Assume
+# player_id := int
+# game_id := int
+
+ProcessPlayer(ID:player_id):void = {}
+ProcessGame(ID:game_id):void = {}
+
+PID:player_id = 42
+GID:game_id = 42
+
+# These all work - aliases are just names
+ProcessPlayer(PID)      # OK
+ProcessPlayer(GID)      # OK - game_id is also int
+ProcessPlayer(42)       # OK - int literal works too
+ProcessGame(PID)        # OK - player_id is also int</code></pre></figure>
+<p>类型别名可以具有控制其跨模块可见性的访问说明符：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Public alias - accessible from other modules
+PublicAlias&lt;public&gt; := int
+
+# Internal alias - only accessible within defining module
+InternalAlias&lt;internal&gt; := string
+
+# Protected/private also work
+ProtectedAlias&lt;protected&gt; := float  # only in classes and interfaces</code></pre></figure>
+<p>**类型别名不能比它们别名的类型更公开：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>private_class := class{}      # No specifier = internal scope
+
+# INVALID: Public alias to internal type
+# PublicToPrivate&lt;public&gt; := private_class
+
+# VALID: Same or less visibility
+InternalToInternal&lt;internal&gt; := private_class
+InternalAlias := private_class  # Defaults to internal</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Type Aliases</summary>
     <div class="md"><h2>Type Aliases</h2>
 <p>Type aliases allow you to create alternative names for types, making complex type signatures more readable and maintainable. They&#x27;re particularly valuable for function types, parametric types, and frequently-used type combinations.</p>
 <p>A type alias is created using simple assignment syntax at module scope:</p>
-<p>&lt;!--versetest</p></div>
-  </details>
-</section><section class="section" id="s26-at-module-scope">
-  <div class="annotation">
-    <h3>中文批注：At module scope</h3>
-    <div class="rows">
-      <div><p>这一节围绕“At module scope”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">module</span><span class="chip">struct</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：At module scope</summary>
-    <div class="md"><h1>At module scope</h1>
-<p>entity:=struct{}</p></div>
-  </details>
-</section><section class="section" id="s27-simple-type-aliases">
-  <div class="annotation">
-    <h3>中文批注：Simple type aliases</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Simple type aliases”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Simple type aliases</summary>
-    <div class="md"><h1>Simple type aliases</h1>
-<p>coordinate := tuple(float, float, float) entity_map := [string]entity player_id := int</p></div>
-  </details>
-</section><section class="section" id="s28-function-type-aliases">
-  <div class="annotation">
-    <h3>中文批注：Function type aliases</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Function type aliases”展开。阅读时先抓住这些英文关键词：aliases、compile-time、only、they、create。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">newtype</span><span class="chip">module</span><span class="chip">struct</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Function type aliases</summary>
-    <div class="md"><h1>Function type aliases</h1>
-<p>update_handler := type{_(:float):void} validator := int -&gt; logic transformer := type{_(:string):int} &lt;# --&gt; &lt;!-- 91 --&gt;</p>
 <pre><code># At module scope
 entity:=struct{}
 
@@ -1089,10 +1357,8 @@ player_id := int
 update_handler := type{_(:float):void}
 validator := int -&gt; logic
 transformer := type{_(:string):int}</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Type aliases are compile-time only - they create no runtime overhead and are purely for programmer convenience and code clarity.</p>
 <p><strong>Type aliases are alternative names, not new types.</strong> They don&#x27;t create distinct types like <code>newtype</code> in some languages. Values of the alias and the original type are completely interchangeable:</p>
-<p>&lt;!--versetest player_id := int game_id := int --&gt; &lt;!-- 92 --&gt;</p>
 <pre><code># Assume
 # player_id := int
 # game_id := int
@@ -1109,46 +1375,6 @@ ProcessPlayer(GID)      # OK - game_id is also int
 ProcessPlayer(42)       # OK - int literal works too
 ProcessGame(PID)        # OK - player_id is also int</code></pre>
 <p>Type aliases can have access specifiers that control their visibility across modules:</p>
-<p>&lt;!--versetest</p></div>
-  </details>
-</section><section class="section" id="s29-public-alias-accessible-from-other-modules">
-  <div class="annotation">
-    <h3>中文批注：Public alias - accessible from other modules</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Public alias - accessible from other modules”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">public</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Public alias - accessible from other modules</summary>
-    <div class="md"><h1>Public alias - accessible from other modules</h1>
-<p>PublicAlias&lt;public&gt; := int</p></div>
-  </details>
-</section><section class="section" id="s30-internal-alias-only-accessible-within-defining-module">
-  <div class="annotation">
-    <h3>中文批注：Internal alias - only accessible within defining module</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Internal alias - only accessible within defining module”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;internal&gt;</span><span class="chip">module</span><span class="chip">internal</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Internal alias - only accessible within defining module</summary>
-    <div class="md"><h1>Internal alias - only accessible within defining module</h1>
-<p>InternalAlias&lt;internal&gt; := string</p></div>
-  </details>
-</section><section class="section" id="s31-note-protected-private-are-for-classes-and-interfaces-not-type-aliases">
-  <div class="annotation">
-    <h3>中文批注：Note: Protected/private are for classes and interfaces, not type aliases at module scope</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Note: Protected/private are for classes and interfaces, not type aliases at module scope”展开。阅读时先抓住这些英文关键词：aliases、cannot、more、public、than。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">&lt;internal&gt;</span><span class="chip">&lt;protected&gt;</span><span class="chip">private</span><span class="chip">for</span><span class="chip">module</span><span class="chip">public</span><span class="chip">internal</span><span class="chip">protected</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Note: Protected/private are for classes and interfaces, not type aliases at module scope</summary>
-    <div class="md"><h1>Note: Protected/private are for classes and interfaces, not type aliases at module scope</h1>
-<p>&lt;# --&gt; &lt;!-- 93 --&gt;</p>
 <pre><code># Public alias - accessible from other modules
 PublicAlias&lt;public&gt; := int
 
@@ -1157,23 +1383,7 @@ InternalAlias&lt;internal&gt; := string
 
 # Protected/private also work
 ProtectedAlias&lt;protected&gt; := float  # only in classes and interfaces</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p><strong>Type aliases cannot be more public than the types they alias:</strong></p>
-<p>&lt;!--versetest private_class := class{}</p>
-<p>InternalToInternal&lt;internal&gt; := private_class InternalAlias := private_class  # Defaults to internal</p></div>
-  </details>
-</section><section class="section" id="s32-test-that-public-alias-to-internal-type-produces-error">
-  <div class="annotation">
-    <h3>中文批注：Test that public alias to internal type produces error</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Test that public alias to internal type produces error”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">&lt;internal&gt;</span><span class="chip">public</span><span class="chip">internal</span><span class="chip">module</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Test that public alias to internal type produces error</summary>
-    <div class="md"><h1>Test that public alias to internal type produces error</h1>
-<p>assert_semantic_error(3593): M&lt;public&gt; := module: internal_class := class{} PublicToInternal&lt;public&gt; := internal_class &lt;# --&gt; &lt;!-- 94 --&gt;</p>
 <pre><code>private_class := class{}      # No specifier = internal scope
 
 # INVALID: Public alias to internal type
@@ -1181,63 +1391,119 @@ ProtectedAlias&lt;protected&gt; := float  # only in classes and interfaces</code
 
 # VALID: Same or less visibility
 InternalToInternal&lt;internal&gt; := private_class
-InternalAlias := private_class  # Defaults to internal</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+InternalAlias := private_class  # Defaults to internal</code></pre></div>
   </details>
-</section><section class="section" id="s33-requirement">
-  <div class="annotation">
-    <h3>中文批注：Requirement</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Requirement”展开。阅读时先抓住这些英文关键词：aliases、only、defined、module、scope。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">module</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Requirement</summary>
+</section><section class="section" id="s23-requirement">
+  <article class="cn-read">
+    <h2>要求 <small>Requirement</small></h2>
+    <ul><li>**类型别名只能在模块范围内定义。**它们不能</li></ul>
+<p>在类、函数或任何嵌套范围内定义。此限制可确保类型别名具有一致的可见性并防止依赖于范围的类型解释。</p>
+<ul><li>类型别名必须在使用之前定义。向前</li></ul>
+<p>不允许引用。</p>
+<ul><li>类型别名不是一流的值，不能这样使用。</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Requirement</summary>
     <div class="md"><h3>Requirement</h3>
-<ul>
-<li><strong>Type aliases can only be defined at module scope.</strong> They cannot be</li>
+<ul><li><strong>Type aliases can only be defined at module scope.</strong> They cannot be</li></ul>
 <p>defined inside classes, functions, or any nested scope. This restriction ensures type aliases have consistent visibility and prevents scope-dependent type interpretations.</p>
-</ul>
-<ul>
-<li>Type aliases must be defined <strong>before</strong> they are used. Forward</li>
+<ul><li>Type aliases must be defined <strong>before</strong> they are used. Forward</li></ul>
 <p>references are not allowed.</p>
-</ul>
-<ul>
-<li>Type aliases are not first-class values and cannot be used as such.</li>
-</ul></div>
+<ul><li>Type aliases are not first-class values and cannot be used as such.</li></ul></div>
   </details>
-</section><section class="section" id="s34-metatypes">
-  <div class="annotation">
-    <h3>中文批注：Metatypes</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Metatypes”展开。阅读时先抓住这些英文关键词：provides、advanced、constructors、allow、work。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">subtype</span><span class="chip">concrete_subtype</span><span class="chip">castable_subtype</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Metatypes</summary>
+</section><section class="section" id="s24-metatypes">
+  <article class="cn-read">
+    <h2>元类型 <small>Metatypes</small></h2>
+    <p>Verse 提供了高级类型构造函数，允许您将类型用作值，从而为运行时多态性和泛型实例化提供强大的模式。这些元类型（<code>subtype</code>、<code>concrete_subtype</code> 和 <code>castable_subtype</code>）弥补了编译时类型安全性和运行时灵活性之间的差距。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Metatypes</summary>
     <div class="md"><h2>Metatypes</h2>
 <p>Verse provides advanced type constructors that allow you to work with types as values, enabling powerful patterns for runtime polymorphism and generic instantiation. These metatypes—<code>subtype</code>, <code>concrete_subtype</code>, and <code>castable_subtype</code>—bridge the gap between compile-time type safety and runtime flexibility.</p></div>
   </details>
-</section><section class="section" id="s35-subtype">
-  <div class="annotation">
-    <h3>中文批注：subtype</h3>
-    <div class="rows">
-      <div><p>这一节围绕“subtype”展开。阅读时先抓住这些英文关键词：subtype、constructor、represents、runtime、subtypes。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">subtype(T)</span><span class="chip">T</span><span class="chip">concrete_subtype</span><span class="chip">castable_subtype</span><span class="chip">&lt;!-- #&gt;--&gt;
+</section><section class="section" id="s25-subtype">
+  <article class="cn-read">
+    <h2>亚型 <small>subtype</small></h2>
+    <p><code>subtype(T)</code> 类型构造函数表示作为 <code>T</code> 子类型的运行时类型值。与专门用于类和接口的 <code>concrete_subtype</code> 和 <code>castable_subtype</code> 不同，<code>subtype(T)</code> 可与 Verse 中的 **任何类型** 配合使用，包括基元、枚举、集合和函数类型。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>animal := class {}
+dog := class(animal) {}
 
-The key capability of</span><span class="chip">This universality makes</span><span class="chip">subtype</span><span class="chip">subtype(T) &lt;: subtype(U)</span><span class="chip">T &lt;: U</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：subtype</summary>
+# Example of using subtype as a field type
+var AnimalType:subtype(animal)  # Can hold animal, dog, or any subtype of animal
+
+# Assign class types
+F0():void = set AnimalType = animal
+F1():void = set AnimalType = dog  # dog is subtype of animal
+
+# Accept as parameter
+F3(ClassArg:subtype(animal)):void = set AnimalType = ClassArg</code></pre></figure>
+<p><code>subtype(T)</code> 的关键功能是在运行时保存类型值，同时通过子类型关系维护类型安全。</p>
+<p>与其他元类型不同，<code>subtype(T)</code> 接受任何类型作为其参数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Primitives
+IntType:subtype(int) = int
+LogicType:subtype(logic) = logic
+FloatType:subtype(float) = float
+
+# Enums
+EnumType:subtype(my_enum) = my_enum
+
+# Classes and interfaces
+ClassType:subtype(my_class) = my_class
+InterfaceType:subtype(my_interface) = my_interface
+
+# Note: Collection types and function types in subtype() currently have issues:
+# ArrayType:subtype([]int) = []int  # Error: cannot be defined
+# OptionType:subtype(?string) = ?string  # Error: cannot be defined
+# FuncType:subtype(type{_():void}) = type{_():void}  # Error: cannot be defined</code></pre></figure>
+<p>这种通用性使得 <code>subtype(T)</code> 成为最灵活的元类型，适合任何需要存储或传递类型值的场景。</p>
+<p>**子类型关系：**</p>
+<p>当且仅当 <code>T &lt;: U</code> 时，<code>subtype</code> 构造函数保留子类型关系：<code>subtype(T) &lt;: subtype(U)</code>。这意味着您可以将更具体的子类型分配给不太具体的子类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>super_class := class{}
+sub_class := class(super_class) {}
+
+# Covariance: sub_class &lt;: super_class
+SubtypeVar:subtype(sub_class) = sub_class
+SupertypeVar:subtype(super_class) = SubtypeVar  # Valid
+
+# Reverse fails - super_class is not &lt;: sub_class
+# SubtypeVar2:subtype(sub_class) = super_class</code></pre></figure>
+<p>这也适用于接口：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>super_interface := interface{}
+sub_interface := interface(super_interface) {}
+
+class_impl := class(sub_interface) {}
+
+# Covariance through interface hierarchy
+SpecificType:subtype(sub_interface) = class_impl
+GeneralType:subtype(super_interface) = SpecificType  # Valid</code></pre></figure>
+<p>**与接口一起使用：**</p>
+<p>当使用接口时，<code>subtype(T)</code> 可以保存任何实现该接口的类：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>printable := interface:
+    PrintIt():void
+
+document := class(printable):
+    PrintIt&lt;override&gt;():void = {}
+
+# Can hold any type implementing printable
+DocumentType:subtype(printable) = document</code></pre></figure>
+<p>**与<code>type</code>的关系：**</p>
+<p><code>subtype(T)</code> 和 <code>castable_subtype(T)</code> 都是 <code>type</code> 的子类型，这意味着它们可以在需要 <code>type</code> 的地方使用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>c := class:
+    f(C:subtype(c)):type = return(C)  # Valid: subtype(c) &lt;: type
+
+t := interface {}
+g(x:subtype(t)):type = x  # Valid: subtype(t) &lt;: type</code></pre></figure>
+<p>**限制：**</p>
+<p>虽然 <code>subtype(T)</code> 很灵活，但它有重要的限制：</p>
+<ol><li>**不能用作值：** <code>subtype(T)</code> 是类型构造函数，而不是</li></ol>
+<p>价值。您不能使用 <code>subtype(T)</code> 本身作为值。</p>
+<ol><li>**恰好一个参数：** <code>subtype</code> 只需要一个类型参数。</li><li>**不能与属性一起使用：** <code>subtype</code> 不能与</li></ol>
+<p>从 <code>attribute</code> 继承的类。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：subtype</summary>
     <div class="md"><h3>subtype</h3>
 <p>The <code>subtype(T)</code> type constructor represents runtime type values that are subtypes of <code>T</code>. Unlike <code>concrete_subtype</code> and <code>castable_subtype</code>, which are specialized for classes and interfaces, <code>subtype(T)</code> works with <strong>any type</strong> in Verse, including primitives, enums, collections, and function types.</p>
-<p>&lt;!--versetest animal := class&lt;computes&gt; {} dog := class&lt;computes&gt;(animal) {}</p>
-<p>registry := class&lt;computes&gt;&lt;allocates&gt;: var AnimalType:subtype(animal) = animal</p>
-<p># Assign class types F0()&lt;transacts&gt;:void = set AnimalType = animal F1()&lt;transacts&gt;:void = set AnimalType = dog</p>
-<p># Accept as parameter F3(ClassArg:subtype(animal))&lt;transacts&gt;:void = set AnimalType = ClassArg &lt;# --&gt; &lt;!-- 100 --&gt;</p>
 <pre><code>animal := class {}
 dog := class(animal) {}
 
@@ -1250,10 +1516,8 @@ F1():void = set AnimalType = dog  # dog is subtype of animal
 
 # Accept as parameter
 F3(ClassArg:subtype(animal)):void = set AnimalType = ClassArg</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>The key capability of <code>subtype(T)</code> is holding type values at runtime while maintaining type safety through the subtype relationship.</p>
 <p>Unlike the other metatypes, <code>subtype(T)</code> accepts any type as its parameter:</p>
-<p>&lt;!--versetest my_enum := enum { A, B, C } my_class := class {} my_interface := interface {} --&gt; &lt;!-- 101 --&gt;</p>
 <pre><code># Primitives
 IntType:subtype(int) = int
 LogicType:subtype(logic) = logic
@@ -1273,7 +1537,6 @@ InterfaceType:subtype(my_interface) = my_interface
 <p>This universality makes <code>subtype(T)</code> the most flexible of the metatypes, suitable for any scenario where you need to store or pass type values.</p>
 <p><strong>Subtyping Relationship:</strong></p>
 <p>The <code>subtype</code> constructor preserves the subtyping relationship: <code>subtype(T) &lt;: subtype(U)</code> if and only if <code>T &lt;: U</code>. This means you can assign a more specific subtype to a less specific one:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 102 --&gt;</p>
 <pre><code>super_class := class{}
 sub_class := class(super_class) {}
 
@@ -1284,7 +1547,6 @@ SupertypeVar:subtype(super_class) = SubtypeVar  # Valid
 # Reverse fails - super_class is not &lt;: sub_class
 # SubtypeVar2:subtype(sub_class) = super_class</code></pre>
 <p>This also applies to interfaces:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 103 --&gt;</p>
 <pre><code>super_interface := interface{}
 sub_interface := interface(super_interface) {}
 
@@ -1295,7 +1557,6 @@ SpecificType:subtype(sub_interface) = class_impl
 GeneralType:subtype(super_interface) = SpecificType  # Valid</code></pre>
 <p><strong>Using with Interfaces:</strong></p>
 <p>When working with interfaces, <code>subtype(T)</code> can hold any class that implements the interface:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 104 --&gt;</p>
 <pre><code>printable := interface:
     PrintIt():void
 
@@ -1306,7 +1567,6 @@ document := class(printable):
 DocumentType:subtype(printable) = document</code></pre>
 <p><strong>Relationship to <code>type</code>:</strong></p>
 <p>Both <code>subtype(T)</code> and <code>castable_subtype(T)</code> are subtypes of <code>type</code>, meaning they can be used where <code>type</code> is expected:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 105 --&gt;</p>
 <pre><code>c := class:
     f(C:subtype(c)):type = return(C)  # Valid: subtype(c) &lt;: type
 
@@ -1314,27 +1574,73 @@ t := interface {}
 g(x:subtype(t)):type = x  # Valid: subtype(t) &lt;: type</code></pre>
 <p><strong>Restrictions:</strong></p>
 <p>While <code>subtype(T)</code> is flexible, it has important restrictions:</p>
-<ol>
-<li><strong>Cannot use as value:</strong> <code>subtype(T)</code> is a type constructor, not a</li>
+<ol><li><strong>Cannot use as value:</strong> <code>subtype(T)</code> is a type constructor, not a</li></ol>
 <p>value. You cannot use <code>subtype(T)</code> itself as a value.</p>
-<li><strong>Exactly one argument:</strong> <code>subtype</code> requires exactly one type argument.</li>
-<li><strong>Cannot use with attributes:</strong> <code>subtype</code> cannot be used with</li>
-<p>classes that inherit from <code>attribute</code>.</p>
-</ol></div>
+<ol><li><strong>Exactly one argument:</strong> <code>subtype</code> requires exactly one type argument.</li><li><strong>Cannot use with attributes:</strong> <code>subtype</code> cannot be used with</li></ol>
+<p>classes that inherit from <code>attribute</code>.</p></div>
   </details>
-</section><section class="section" id="s36-concretesubtype">
-  <div class="annotation">
-    <h3>中文批注：concretesubtype</h3>
-    <div class="rows">
-      <div><p>这一节围绕“concretesubtype”展开。阅读时先抓住这些英文关键词：concrete、subtype、constructor、creates、represents。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">concrete_subtype(t)</span><span class="chip">t</span><span class="chip">&lt;concrete&gt;</span><span class="chip">The key feature of</span><span class="chip">EntityType{}</span><span class="chip">concrete_subtype</span><span class="chip">When you have a</span><span class="chip">&lt;abstract&gt;</span><span class="chip">&lt;override&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：concretesubtype</summary>
+</section><section class="section" id="s26-concretesubtype">
+  <article class="cn-read">
+    <h2>具体子类型 <small>concretesubtype</small></h2>
+    <p><code>concrete_subtype(t)</code> 类型构造函数创建一个表示 <code>t</code> 的具体（可实例化）子类的类型。具体类是可以直接实例化的类，它具有 <code>&lt;concrete&gt;</code> 说明符并为所有字段提供默认值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Abstract base class
+entity := class&lt;abstract&gt;:
+    Name:string
+    GetDescription():string
+
+# Concrete implementations
+player := class&lt;concrete&gt;(entity):
+    Name&lt;override&gt;:string = &quot;Player&quot;
+    GetDescription&lt;override&gt;():string = &quot;A player character&quot;
+
+enemy := class&lt;concrete&gt;(entity):
+    Name&lt;override&gt;:string = &quot;Enemy&quot;
+    GetDescription&lt;override&gt;():string = &quot;An enemy creature&quot;
+
+# Class that stores a type and can instantiate it
+spawner := class:
+    EntityType:concrete_subtype(entity)
+
+    Spawn():entity =
+        # Instantiate using the stored type
+        EntityType{}
+
+# Use it
+# NewEntity := spawner{EntityType := player}.Spawn()</code></pre></figure>
+<p><code>concrete_subtype</code> 的关键特性是它确保存储的类型可以被实例化。如果没有这个约束，您就无法安全地调用 <code>EntityType{}</code>，因为抽象类无法实例化。</p>
+<p>仅当类型是类或接口类型时，才可以与 <code>concrete_subtype</code> 一起使用。此外，分配的实际类型值必须是一个具体类 - 用 <code>&lt;concrete&gt;</code> 标记并且所有字段都具有默认值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: concrete class with all defaults
+config := class&lt;concrete&gt;:
+    MaxPlayers:int = 8
+    TimeLimit:float = 300.0
+
+ConfigType:concrete_subtype(config) = config  # Valid
+
+# Invalid: abstract class cannot be concrete_subtype
+abstract_base := class&lt;abstract&gt;:
+    Value:int
+
+# This would be an error:
+# BaseType:concrete_subtype(abstract_base) = abstract_base</code></pre></figure>
+<p>当您有 <code>concrete_subtype</code> 时，您可以使用空原型 <code>{}</code> 实例化它，但不能提供字段初始值设定项 - 具体类必须提供所有必要的默认值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity_base := class&lt;abstract&gt;:
+    Health:int
+
+warrior := class&lt;concrete&gt;(entity_base):
+    Health&lt;override&gt;:int = 100
+
+EntityType:concrete_subtype(entity_base) = warrior
+
+# Valid: empty archetype uses defaults
+# Instance := EntityType{}
+
+# Invalid: cannot initialize fields through metatype
+# Instance := EntityType{Health := 150}</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：concretesubtype</summary>
     <div class="md"><h3>concrete_subtype</h3>
 <p>The <code>concrete_subtype(t)</code> type constructor creates a type that represents concrete (instantiable) subclasses of <code>t</code>. A concrete class is one that can be instantiated directly—it has the <code>&lt;concrete&gt;</code> specifier and provides default values for all fields:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 110 --&gt;</p>
 <pre><code># Abstract base class
 entity := class&lt;abstract&gt;:
     Name:string
@@ -1362,7 +1668,6 @@ spawner := class:
 <p>The key feature of <code>concrete_subtype</code> is that it ensures the stored type can be instantiated. Without this constraint, you couldn&#x27;t safely call <code>EntityType{}</code> because abstract classes cannot be instantiated.</p>
 <h4>Requirements</h4>
 <p>A type can be used with <code>concrete_subtype</code> only if it&#x27;s a class or interface type. Additionally, the actual type value assigned must be a concrete class—one marked with <code>&lt;concrete&gt;</code> and having all fields with defaults:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 111 --&gt;</p>
 <pre><code># Valid: concrete class with all defaults
 config := class&lt;concrete&gt;:
     MaxPlayers:int = 8
@@ -1377,7 +1682,6 @@ abstract_base := class&lt;abstract&gt;:
 # This would be an error:
 # BaseType:concrete_subtype(abstract_base) = abstract_base</code></pre>
 <p>When you have a <code>concrete_subtype</code>, you can instantiate it with the empty archetype <code>{}</code>, but you cannot provide field initializers—the concrete class must provide all necessary defaults:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 112 --&gt;</p>
 <pre><code>entity_base := class&lt;abstract&gt;:
     Health:int
 
@@ -1392,19 +1696,31 @@ EntityType:concrete_subtype(entity_base) = warrior
 # Invalid: cannot initialize fields through metatype
 # Instance := EntityType{Health := 150}</code></pre></div>
   </details>
-</section><section class="section" id="s37-castablesubtype">
-  <div class="annotation">
-    <h3>中文批注：castablesubtype</h3>
-    <div class="rows">
-      <div><p>这一节围绕“castablesubtype”展开。阅读时先抓住这些英文关键词：castable、subtype、constructor、represents、types。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">castable_subtype(t)</span><span class="chip">t</span><span class="chip">&lt;castable&gt;</span><span class="chip">&lt;abstract&gt;</span><span class="chip">castable</span><span class="chip">for</span><span class="chip">class</span><span class="chip">abstract</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：castablesubtype</summary>
+</section><section class="section" id="s27-castablesubtype">
+  <article class="cn-read">
+    <h2>可浇铸子类型 <small>castablesubtype</small></h2>
+    <p><code>castable_subtype(t)</code> 类型构造函数表示属于 <code>t</code> 子类型并用 <code>&lt;castable&gt;</code> 说明符标记的类型。这使得运行时类型查询和动态转换成为可能，这对于组件系统和多态层次结构至关重要：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Castable base class
+component := class&lt;abstract&gt;&lt;castable&gt;:
+    Owner:entity
+
+# Castable subtypes
+physics_component := class&lt;castable&gt;(component):
+    Velocity:vector3
+
+render_component := class&lt;castable&gt;(component):
+    Material:string
+
+# Function accepting castable subtype
+ProcessComponent(CompType:castable_subtype(component), Comp:component):void =
+    # Can use CompType to perform type-safe casts
+    if (Specific := CompType[Comp]):
+        # Comp is now known to be of type CompType</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：castablesubtype</summary>
     <div class="md"><h3>castable_subtype</h3>
 <p>The <code>castable_subtype(t)</code> type constructor represents types that are subtypes of <code>t</code> and marked with the <code>&lt;castable&gt;</code> specifier. This enables runtime type queries and dynamic casting, which is essential for component systems and polymorphic hierarchies:</p>
-<p>&lt;!--versetest entity:=class{} vector3:=class{} --&gt; &lt;!-- 113 --&gt;</p>
 <pre><code># Castable base class
 component := class&lt;abstract&gt;&lt;castable&gt;:
     Owner:entity
@@ -1422,20 +1738,106 @@ ProcessComponent(CompType:castable_subtype(component), Comp:component):void =
     if (Specific := CompType[Comp]):
         # Comp is now known to be of type CompType</code></pre></div>
   </details>
-</section><section class="section" id="s38-finalsuper-and-type-queries">
-  <div class="annotation">
-    <h3>中文批注：finalsuper and Type Queries</h3>
-    <div class="rows">
-      <div><p>这一节围绕“finalsuper and Type Queries”展开。阅读时先抓住这些英文关键词：castable、subtype、works、final、super。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">castable_subtype</span><span class="chip">&lt;final_super&gt;</span><span class="chip">GetCastableFinalSuperClass</span><span class="chip">By marking</span><span class="chip">as</span><span class="chip">rigid_body</span><span class="chip">soft_body</span><span class="chip">physics_component</span><span class="chip">Both return a</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：finalsuper and Type Queries</summary>
+</section><section class="section" id="s28-finalsuper-and-type-queries">
+  <article class="cn-read">
+    <h2>Finalsuper 和类型查询 <small>finalsuper and Type Queries</small></h2>
+    <p><code>castable_subtype</code> 与 <code>&lt;final_super&gt;</code> 说明符和 <code>GetCastableFinalSuperClass</code> 函数配合使用，以实现复杂的运行时类型查询。这种组合为组件系统和多态体系结构提供了强大的机制。</p>
+<p><code>&lt;final_super&gt;</code> 说明符将类标记为继承层次结构中的稳定锚点。这些“最终超级类”充当相关类型家族的规范代表：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;castable&gt;:
+    Owner:entity
+
+# Stable anchor for the physics component family
+physics_component := class&lt;final_super&gt;(component):
+    Velocity:vector3
+
+# Specific implementations inherit from the anchor
+rigid_body := class(physics_component):
+    Mass:float
+
+soft_body := class(physics_component):
+    SpringConstant:float</code></pre></figure>
+<p>通过将 <code>physics_component</code> 标记为 <code>&lt;final_super&gt;</code>，您可以将其声明为所有物理相关组件的规范代表。尽管 <code>rigid_body</code> 和 <code>soft_body</code> 是不同的类型，但它们都属于锚定于 <code>physics_component</code> 的“physical_component family”。</p>
+<p><code>GetCastableFinalSuperClass</code> 函数查询类型层次结构以查找基类型和派生类型之间的 <code>&lt;final_super&gt;</code> 类。存在两种变体：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Takes an instance
+GetCastableFinalSuperClass(BaseType, instance)&lt;decides&gt;:castable_subtype(BaseType)
+
+# Takes a type
+GetCastableFinalSuperClassFromType(BaseType, Type)&lt;decides&gt;:castable_subtype(BaseType)</code></pre></figure>
+<p>两者都返回一个 <code>castable_subtype</code> ，表示最不具体的 <code>&lt;final_super&gt;</code> 类：</p>
+<ol><li>直接继承自指定的基类型</li><li>位于实例/类型的继承链中</li></ol>
+<p>如果不存在适当的 <code>&lt;final_super&gt;</code> 类，则该函数将失败。</p>
+<p>考虑这个层次结构：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;castable&gt;:
+    ID:int
+
+# Direct final_super subclass of component
+physics_component := class&lt;final_super&gt;(component):
+    Velocity:vector3
+
+# Descendants of physics_component
+rigid_body := class(physics_component):
+    Mass:float
+
+character_body := class(rigid_body):
+    Health:int</code></pre></figure>
+<p>查询结果：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># All instances in the physics_component family return physics_component
+Body := character_body{ID:=1, Velocity:=vector3{}, Mass:=10.0, Health:=100}
+
+if (Family := GetCastableFinalSuperClass[component, Body]):
+    # Family = physics_component (the final_super anchor)
+    # Even though Body is character_body, the family anchor is physics_component</code></pre></figure>
+<p>该函数沿着继承链从 <code>character_body</code> → <code>rigid_body</code> → <code>physics_component</code> 向上“走”，并在 <code>physics_component</code> 处停止，因为：</p>
+<ol><li>它有 <code>&lt;final_super&gt;</code></li><li>它直接继承自查询的基数（<code>component</code>）</li></ol>
+<p>**查询何时成功和失败？**</p>
+<p>**成功时：**</p>
+<ul><li><code>&lt;final_super&gt;</code> 类直接继承自基类型</li><li>实例/类型继承自 <code>&lt;final_super&gt;</code> 类</li></ul>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class&lt;castable&gt;:
+    Value:int
+
+anchor := class&lt;final_super&gt;(base):
+    Extra:string
+
+derived := class(anchor):
+    More:string
+
+# Valid: anchor is final_super of base, derived inherits from anchor
+GetCastableFinalSuperClass[base, derived{}]  # Returns anchor
+GetCastableFinalSuperClass[base, anchor{}]   # Returns anchor</code></pre></figure>
+<p>**失败时：**</p>
+<ul><li>基类和实例之间不存在 <code>&lt;final_super&gt;</code> 类</li><li>查询的类型本身就是实例类型（不能同级查询）</li><li>实例不是基类的子类型</li></ul>
+<p>您可以在不同级别拥有多个 <code>&lt;final_super&gt;</code> 类。该函数返回直接从查询的基类继承的函数：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class&lt;castable&gt;:
+    ID:int
+
+first_anchor := class&lt;final_super&gt;(base):
+    Category:string
+
+second_anchor := class&lt;final_super&gt;(first_anchor):
+    Subcategory:string
+
+leaf := class(second_anchor):
+    Specific:string
+
+# Query from base returns first_anchor
+GetCastableFinalSuperClass[base, leaf{}]  # Returns first_anchor
+
+# Query from first_anchor returns second_anchor
+GetCastableFinalSuperClass[first_anchor, leaf{}]  # Returns second_anchor</code></pre></figure>
+<p>这种分层方法允许分层分类，其中不同级别代表类型系列的不同粒度。</p>
+<p>基于类型的变体工作原理相同，但采用类型而不是实例：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Same behavior, different syntax
+TypeFamily := GetCastableFinalSuperClassFromType[component, rigid_body]
+InstanceFamily := GetCastableFinalSuperClass[component, rigid_body{}]
+
+# Both return the same castable_subtype</code></pre></figure>
+<p>当直接使用类型值而不是实例时，这非常有用。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：finalsuper and Type Queries</summary>
     <div class="md"><h3>final_super and Type Queries</h3>
 <p>The <code>castable_subtype</code> works with the <code>&lt;final_super&gt;</code> specifier and <code>GetCastableFinalSuperClass</code> function to enable sophisticated runtime type queries. This combination provides a powerful mechanism for component systems and polymorphic architectures.</p>
 <p>The <code>&lt;final_super&gt;</code> specifier marks classes as stable anchor points in inheritance hierarchies. These &quot;final super classes&quot; act as canonical representatives for families of related types:</p>
-<p>&lt;!--versetest entity:=class{} vector3:=class{} --&gt; &lt;!-- 114 --&gt;</p>
 <pre><code>component := class&lt;castable&gt;:
     Owner:entity
 
@@ -1452,20 +1854,15 @@ soft_body := class(physics_component):
 <p>By marking <code>physics_component</code> as <code>&lt;final_super&gt;</code>, you declare it as the canonical representative for all physics-related components. Even though <code>rigid_body</code> and <code>soft_body</code> are distinct types, they both belong to the &quot;physics_component family&quot; anchored at <code>physics_component</code>.</p>
 <h4>GetCastableFinalSuperClass</h4>
 <p>The <code>GetCastableFinalSuperClass</code> function queries the type hierarchy to find the <code>&lt;final_super&gt;</code> class between a base type and a derived type. Two variants exist:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 115 --&gt;</p>
 <pre><code># Takes an instance
 GetCastableFinalSuperClass(BaseType, instance)&lt;decides&gt;:castable_subtype(BaseType)
 
 # Takes a type
 GetCastableFinalSuperClassFromType(BaseType, Type)&lt;decides&gt;:castable_subtype(BaseType)</code></pre>
 <p>Both return a <code>castable_subtype</code> representing the least specific <code>&lt;final_super&gt;</code> class that:</p>
-<ol>
-<li>Directly inherits from the specified base type</li>
-<li>Is in the inheritance chain of the instance/type</li>
-</ol>
+<ol><li>Directly inherits from the specified base type</li><li>Is in the inheritance chain of the instance/type</li></ol>
 <p>The function fails if no appropriate <code>&lt;final_super&gt;</code> class exists.</p>
 <p>Consider this hierarchy:</p>
-<p>&lt;!--versetest vector3:=class{} --&gt; &lt;!-- 116 --&gt;</p>
 <pre><code>component := class&lt;castable&gt;:
     ID:int
 
@@ -1480,7 +1877,6 @@ rigid_body := class(physics_component):
 character_body := class(rigid_body):
     Health:int</code></pre>
 <p>Query results:</p>
-<p>&lt;!--versetest entity:=class{} vector3:=class{} component:=class{} character_body:=class(component){ID :int, Velocity :vector3, Mass :float, Health :int} --&gt; &lt;!-- 117 --&gt;</p>
 <pre><code># All instances in the physics_component family return physics_component
 Body := character_body{ID:=1, Velocity:=vector3{}, Mass:=10.0, Health:=100}
 
@@ -1488,34 +1884,10 @@ if (Family := GetCastableFinalSuperClass[component, Body]):
     # Family = physics_component (the final_super anchor)
     # Even though Body is character_body, the family anchor is physics_component</code></pre>
 <p>The function &quot;walks up&quot; the inheritance chain from <code>character_body</code> → <code>rigid_body</code> → <code>physics_component</code> and stops at <code>physics_component</code> because:</p>
-<ol>
-<li>It has <code>&lt;final_super&gt;</code></li>
-<li>It directly inherits from the queried base (<code>component</code>)</li>
-</ol>
+<ol><li>It has <code>&lt;final_super&gt;</code></li><li>It directly inherits from the queried base (<code>component</code>)</li></ol>
 <p><strong>When Queries Succeed and Fail?</strong></p>
 <p><strong>Succeeds when:</strong></p>
-<ul>
-<li>A <code>&lt;final_super&gt;</code> class directly inherits from the base type</li>
-<li>The instance/type inherits from that <code>&lt;final_super&gt;</code> class</li>
-</ul>
-<p>&lt;!--versetest base := class&lt;castable&gt;: Value:int=1 anchor := class&lt;final_super&gt;(base): Extra:string=&quot;&quot; derived := class(anchor){ More:string=&quot;&quot; }</p></div>
-  </details>
-</section><section class="section" id="s39-test-that-the-calls-succeed-don-t-fail">
-  <div class="annotation">
-    <h3>中文批注：Test that the calls succeed (don&#x27;t fail)</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Test that the calls succeed (don&#x27;t fail)”展开。阅读时先抓住这些英文关键词：anchor、class&lt;final、super、base、Extra:string。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!-- #&gt;--&gt;
-
-**Fails when:**
-
-- No</span><span class="chip">&lt;final_super&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;castable&gt;</span><span class="chip">decides</span><span class="chip">if</span><span class="chip">class</span><span class="chip">castable</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Test that the calls succeed (don&#x27;t fail)</summary>
-    <div class="md"><h1>Test that the calls succeed (don&#x27;t fail)</h1>
-<p>TestQueries()&lt;decides&gt;:void = if: Result1 := GetCastableFinalSuperClass[base, derived{}]  # Returns anchor Result2 := GetCastableFinalSuperClass[base, anchor{}]   # Returns anchor then: void &lt;# --&gt; &lt;!-- 118 --&gt;</p>
+<ul><li>A <code>&lt;final_super&gt;</code> class directly inherits from the base type</li><li>The instance/type inherits from that <code>&lt;final_super&gt;</code> class</li></ul>
 <pre><code>base := class&lt;castable&gt;:
     Value:int
 
@@ -1528,29 +1900,10 @@ derived := class(anchor):
 # Valid: anchor is final_super of base, derived inherits from anchor
 GetCastableFinalSuperClass[base, derived{}]  # Returns anchor
 GetCastableFinalSuperClass[base, anchor{}]   # Returns anchor</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p><strong>Fails when:</strong></p>
-<ul>
-<li>No <code>&lt;final_super&gt;</code> class exists between base and instance</li>
-<li>The queried type itself is the instance type (cannot query from same level)</li>
-<li>Instance is not a subtype of the base</li>
-</ul>
+<ul><li>No <code>&lt;final_super&gt;</code> class exists between base and instance</li><li>The queried type itself is the instance type (cannot query from same level)</li><li>Instance is not a subtype of the base</li></ul>
 <h4>Multiple Final Supers</h4>
 <p>You can have multiple <code>&lt;final_super&gt;</code> classes at different levels. The function returns the one directly inheriting from the queried base:</p>
-<p>&lt;!--versetest base := class&lt;castable&gt;: ID:int=1 first_anchor := class&lt;final_super&gt;(base): Category:string=&quot;&quot; second_anchor := class&lt;final_super&gt;(first_anchor): Subcategory:string=&quot;&quot; leaf := class(second_anchor){ Specific:string=&quot;&quot; }</p></div>
-  </details>
-</section><section class="section" id="s40-test-that-the-calls-succeed">
-  <div class="annotation">
-    <h3>中文批注：Test that the calls succeed</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Test that the calls succeed”展开。阅读时先抓住这些英文关键词：first、anchor、class&lt;final、super、base。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;castable&gt;</span><span class="chip">&lt;final_super&gt;</span><span class="chip">decides</span><span class="chip">if</span><span class="chip">class</span><span class="chip">castable</span><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Test that the calls succeed</summary>
-    <div class="md"><h1>Test that the calls succeed</h1>
-<p>TestQueries()&lt;decides&gt;:void = if: Result1 := GetCastableFinalSuperClass[base, leaf{}]  # Returns first_anchor Result2 := GetCastableFinalSuperClass[first_anchor, leaf{}]  # Returns second_anchor then: void &lt;# --&gt; &lt;!-- 120 --&gt;</p>
 <pre><code>base := class&lt;castable&gt;:
     ID:int
 
@@ -1568,54 +1921,47 @@ GetCastableFinalSuperClass[base, leaf{}]  # Returns first_anchor
 
 # Query from first_anchor returns second_anchor
 GetCastableFinalSuperClass[first_anchor, leaf{}]  # Returns second_anchor</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>This layered approach allows hierarchical categorization where different levels represent different granularities of type families.</p>
 <h4>GetCastableFinalSuperClassFromType</h4>
 <p>The type-based variant works identically but takes a type instead of instance:</p>
-<p>&lt;!--versetest component:=class&lt;castable&gt;{} physics_component := class&lt;final_super&gt;(component){} rigid_body := class(physics_component){}</p></div>
-  </details>
-</section><section class="section" id="s41-test-both-functions-work">
-  <div class="annotation">
-    <h3>中文批注：Test both functions work</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Test both functions work”展开。阅读时先抓住这些英文关键词：useful、working、directly、rather、than。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">decides</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Test both functions work</summary>
-    <div class="md"><h1>Test both functions work</h1>
-<p>TestBothVariants()&lt;decides&gt;:void = if: TypeFamily := GetCastableFinalSuperClassFromType[component, rigid_body] InstanceFamily := GetCastableFinalSuperClass[component, rigid_body{}] then: void &lt;# --&gt; &lt;!-- 123 --&gt;</p>
 <pre><code># Same behavior, different syntax
 TypeFamily := GetCastableFinalSuperClassFromType[component, rigid_body]
 InstanceFamily := GetCastableFinalSuperClass[component, rigid_body{}]
 
 # Both return the same castable_subtype</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>This is useful when working with type values directly rather than instances.</p></div>
   </details>
-</section><section class="section" id="s42-castableconcretesubtype">
-  <div class="annotation">
-    <h3>中文批注：castableconcretesubtype</h3>
-    <div class="rows">
-      <div><p>这一节围绕“castableconcretesubtype”展开。阅读时先抓住这些英文关键词：castable、concrete、subtype、constructor、combines。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">castable_concrete_subtype(t)</span><span class="chip">castable_subtype</span><span class="chip">concrete_subtype</span><span class="chip">t</span><span class="chip">&lt;castable&gt;</span><span class="chip">&lt;concrete&gt;</span><span class="chip">&lt;abstract&gt;</span><span class="chip">castable</span><span class="chip">concrete</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：castableconcretesubtype</summary>
+</section><section class="section" id="s29-castableconcretesubtype">
+  <article class="cn-read">
+    <h2>浇注混凝土子类型 <small>castableconcretesubtype</small></h2>
+    <p><code>castable_concrete_subtype(t)</code> 类型构造函数结合了 <code>castable_subtype</code> 和 <code>concrete_subtype</code> 的要求，表示以下类型：</p>
+<ul><li><code>t</code> 的子类型</li><li>标记为<code>&lt;castable&gt;</code>（启用运行时类型查询）</li><li>标记为<code>&lt;concrete&gt;</code>（启用实例化）</li></ul>
+<p>当您需要确保类型参数既可转换又具体时，这非常有用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class{}
+
+component := class&lt;abstract&gt;:
+    Owner:entity
+
+physics_component := class&lt;castable&gt;&lt;concrete&gt;(component):
+    Velocity:float = 0.0
+
+# Function that requires both &lt;castable&gt; and &lt;concrete&gt;
+CreateAndCast(CompType:castable_concrete_subtype(component)):component =
+    # Can instantiate because CompType is &lt;concrete&gt;
+    Instance := CompType{}
+    # Can cast because CompType is &lt;castable&gt;
+    if (Specific := CompType[Instance]):
+        Specific
+    else:
+        Instance</code></pre></figure>
+<p>#></p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：castableconcretesubtype</summary>
     <div class="md"><h3>castable_concrete_subtype</h3>
 <p>The <code>castable_concrete_subtype(t)</code> type constructor combines the requirements of both <code>castable_subtype</code> and <code>concrete_subtype</code>, representing types that are:</p>
-<ul>
-<li>Subtypes of <code>t</code></li>
-<li>Marked with <code>&lt;castable&gt;</code> (enabling runtime type queries)</li>
-<li>Marked with <code>&lt;concrete&gt;</code> (enabling instantiation)</li>
-</ul>
+<ul><li>Subtypes of <code>t</code></li><li>Marked with <code>&lt;castable&gt;</code> (enabling runtime type queries)</li><li>Marked with <code>&lt;concrete&gt;</code> (enabling instantiation)</li></ul>
 <p>This is useful when you need to ensure that type parameters are both castable and concrete:</p>
-<p>&lt;!--versetest entity := class{}</p>
-<p>component := class&lt;abstract&gt;: Owner:entity</p>
-<p>physics_component := class&lt;castable&gt;&lt;concrete&gt;(component): Velocity:float = 0.0</p>
-<p>assert: # Must be both castable (for type queries) and concrete (for instantiation) CreateAndCast(CompType:castable_concrete_subtype(component)):component = # Can instantiate because it&#x27;s concrete Instance := CompType{} # Can cast because it&#x27;s castable if (Specific := CompType[Instance]): Specific else: Instance &lt;# --&gt; &lt;!-- 138 --&gt;</p>
 <pre><code>entity := class{}
 
 component := class&lt;abstract&gt;:
@@ -1633,18 +1979,144 @@ CreateAndCast(CompType:castable_concrete_subtype(component)):component =
         Specific
     else:
         Instance</code></pre>
-<p>&lt;!-- ERROR: Line 23: Script Error 3100: vErr:S04: Block comment beginning at &quot;&lt;#&quot; never ends --&gt; #&gt;</p></div>
+<p>#&gt;</p></div>
   </details>
-</section><section class="section" id="s43-classifiablesubset">
-  <div class="annotation">
-    <h3>中文批注：classifiablesubset</h3>
-    <div class="rows">
-      <div><p>这一节围绕“classifiablesubset”展开。阅读时先抓住这些英文关键词：Building、concept、runtime、queries、introduced。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">castable_subtype</span><span class="chip">classifiable_subset</span><span class="chip">classifiable_subset(t)</span><span class="chip">t</span><span class="chip">&lt;castable&gt;</span><span class="chip">classifiable_subset_var(t)</span><span class="chip">Read()</span><span class="chip">Write()</span><span class="chip">classifiable_subset_key(t)</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：classifiablesubset</summary>
+</section><section class="section" id="s30-classifiablesubset">
+  <article class="cn-read">
+    <h2>可分类子集 <small>classifiablesubset</small></h2>
+    <p>Verse 基于 <code>castable_subtype</code> 引入的运行时类型查询概念构建，提供了 <code>classifiable_subset</code> — 一种用于维护运行时类型集的复杂机制。其中 <code>castable_subtype</code> 表示单个类型值，<code>classifiable_subset</code> 表示类型的集合，跟踪系统中存在哪些类并支持基于类型层次结构的查询。</p>
+<p>此功能对于基于组件的体系结构特别有价值，在这种体系结构中，您需要跟踪实体拥有哪些组件类型、查询特定功能或基于类型兼容性过滤操作。 <code>classifiable_subset</code> 提供了类型安全、层次结构感知的运行时类型注册表，而不是维护单独的布尔标志或类型标记。</p>
+<p>三种相关类型共同提供不可变和可变类型集：</p>
+<p>**<code>classifiable_subset(t)</code>** 表示一组不可变的运行时类型，其中 <code>t</code> 必须是 <code>&lt;castable&gt;</code> 基类型。一旦创建，该集就无法修改，使其适用于配置、功能描述或类型集应保持稳定的任何场景。</p>
+<p>**<code>classifiable_subset_var(t)</code>** 提供了带有 <code>Read()</code> 和 <code>Write()</code> 操作的可变变体，支持在程序执行期间更改的动态类型集。这对于运行时系统至关重要，其中组件类型随着实体的发展而添加或删除。</p>
+<p>**<code>classifiable_subset_key(t)</code>** 表示将特定实例添加到可变集时用于识别特定实例的键。这些键允许稍后删除特定实例，支持注册类型的生命周期管理。</p>
+<p>与普通类不同，<code>classifiable_subset</code> 类型不能直接实例化。您必须使用构造函数 <code>MakeClassifiableSubset()</code> 和 <code>MakeClassifiableSubsetVar()</code>：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Immutable set, initially empty
+EmptySet:classifiable_subset(component) = MakeClassifiableSubset()
+
+# Immutable set with initial instances
+InitialSet:classifiable_subset(component) =
+    MakeClassifiableSubset(array{physics_component{}, render_component{}})
+
+# Mutable set
+DynamicSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()</code></pre></figure>
+<p>基本类型 <code>t</code> 必须是 <code>&lt;castable&gt;</code>，确保可以进行运行时类型查询。此限制在编译时强制执行：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ComponentSet:classifiable_subset(component) = MakeClassifiableSubset()
+
+# Invalid: non-castable types cannot be used
+regular_class := class:
+    Value:int
+
+# This would be an error:
+# BadSet:classifiable_subset(regular_class) = MakeClassifiableSubset()</code></pre></figure>
+<p>您无法对这些类型进行子类化或通过普通构造语法创建实例。这确保所有集合都使用正确的内部表示来进行有效的类型查询。</p>
+<p><code>classifiable_subset</code> 的关键见解是它跟踪运行时类型，而不是单个实例。当您将实例添加到集合中时，系统会记录该实例的实际运行时类型。更重要的是，类型查询尊重继承层次结构：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Add a rigid body instance
+Set:classifiable_subset(component) =
+    MakeClassifiableSubset(array{rigid_body_component{}})
+
+# Query results respect hierarchy
+Set.Contains[component]             # true - rigid_body is a component
+Set.Contains[physics_component]     # true - rigid_body is a physics_component
+Set.Contains[rigid_body_component]  # true - directly present</code></pre></figure>
+<p>这种层次结构意识使得 <code>classifiable_subset</code> 与一组简单的类型标签有根本的不同。 <code>Contains</code> 操作询问“该集合是否包含任何属于 T 的类型？”而不是“这个集合是否恰好包含 T？”。</p>
+<p>添加不同类型的实例时，将单独跟踪每个不同的运行时类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Add multiple different types
+TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
+Key1 := TheSet.Add(physics_component{})
+Key2 := TheSet.Add(render_component{})
+Key3 := TheSet.Add(audio_component{})
+
+TheSet.Contains[component]          # succeeds - all three are components
+TheSet.Contains[physics_component]  # succeeds - physics_component present
+TheSet.Contains[render_component]   # succeeds - render_component present</code></pre></figure>
+<p>该集合会记住添加的每个不同类型。当您通过其键删除实例时，仅当该特定类型是该类型的最后一个实例时才会删除该特定类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Add multiple instances of same type
+TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
+Key1 := TheSet.Add(physics_component{})
+Key2 := TheSet.Add(physics_component{})
+
+TheSet.Contains[physics_component]  # succeeds
+
+TheSet.Remove[Key1]
+TheSet.Contains[physics_component]  # still succeeds - Key2 remains
+
+TheSet.Remove[Key2]
+# TheSet.Contains[physics_component]  # fail - last instance removed</code></pre></figure>
+<p><code>classifiable_subset</code> 类型提供了多种用于查询和操作类型集的操作：</p>
+<p>**包含** 检查集合中的任何类型是否匹配或是查询类型的子类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TheSet:classifiable_subset(component) =
+    MakeClassifiableSubset(array{physics_component{}})
+
+if (TheSet.Contains[component]):
+    # Physics component is present (and is a component)
+
+if (TheSet.Contains[render_component]):
+    # No render component present</code></pre></figure>
+<p>**ContainsAll** 验证数组中的所有类型是否都存在于集合中：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TheSet:classifiable_subset(component) =
+    MakeClassifiableSubset(array{physics_component{}})
+
+if (TheSet.ContainsAll[array{physics_component, render_component}]):
+    # Both physics and render components are present</code></pre></figure>
+<p>**ContainsAny** 检查数组中是否至少存在一种类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (TheSet.ContainsAny[array{physics_component, audio_component}]):
+    # Either physics or audio component (or both) is present</code></pre></figure>
+<p>**添加**（仅限可变集）添加一个实例并返回一个键以供以后删除：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
+Key := TheSet.Add(physics_component{})
+# Can later remove using Key</code></pre></figure>
+<p>**删除**（仅限可变集）通过其键删除先前添加的实例：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
+
+Key := TheSet.Add(physics_component{})
+
+if (TheSet.Remove[Key]):
+    # Successfully removed
+else:
+    # Key was not present (already removed or never added)</code></pre></figure>
+<p>**FilterByType** 创建一个新集，仅包含与指定类型兼容（可分配给指定类型或从指定类型分配）的类型：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TheSet:classifiable_subset(component) = MakeClassifiableSubset(array{
+    physics_component{}, render_component{}, audio_component{}})
+
+# Filter to physics-related types
+PhysicsSet := TheSet.FilterByType(physics_component)
+PhysicsSet.Contains[physics_component]  # true
+PhysicsSet.Contains[render_component]   # false - unrelated sibling
+PhysicsSet.Contains[component]          # true - base type compatible</code></pre></figure>
+<p>过滤尊重类型层次结构中的向上和向下兼容性，保留可以分配给过滤器类型或从过滤器类型分配的类型。</p>
+<p>**Union** 使用 <code>+</code> 运算符组合两个集合：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Set1:classifiable_subset(component) =
+    MakeClassifiableSubset(array{physics_component{}})
+Set2:classifiable_subset(component) =
+    MakeClassifiableSubset(array{render_component{}})
+
+Combined := Set1 + Set2
+Combined.Contains[physics_component]  # true
+Combined.Contains[render_component]   # true</code></pre></figure>
+<p>对于可变集，读/写操作启用复制和更新：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Set1:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
+Set1.Add(physics_component{})
+
+Set2:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
+Set2.Write(Set1.Read())  # Copy Set1&#x27;s contents to Set2</code></pre></figure>
+<p><code>classifiable_subset</code> 使用的几个重要约束：</p>
+<p>基本类型必须是 <code>&lt;castable&gt;</code> 才能启用运行时类型查询。此要求确保可以有效地执行类型检查。</p>
+<p>除非通过指定的构造函数，否则不能对 <code>classifiable_subset</code> 类型进行子类化或创建实例。此限制保留了正确类型跟踪所需的内部不变量。</p>
+<p>一组中的键不能与另一组一起使用 - 它们绑定到添加元素的特定组实例。</p>
+<p>不同操作之间的类型参数必须一致。您不能将 <code>physics_component</code> 添加到 <code>classifiable_subset(render_component)</code>，即使两者都继承自 <code>component</code>：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>render_set:classifiable_subset(render_component) = MakeClassifiableSubset()
+physics_comp:physics_component = physics_component{}
+
+# This would be a type error - physics_component is not a render_component
+# render_set.Add(physics_comp)</code></pre></figure>
+<p>可变集需要仔细的生命周期管理。当删除相应的实例时，密钥将变得无效，并且尝试删除已删除的密钥会触发失败。</p>
+<p>性能特征对于大型字体集很重要。虽然 <code>Contains</code> 查询由于内部表示而非常高效，但像 <code>FilterByType</code> 这样的操作可能需要检查集合中的每种类型。</p>
+<p>使用 <code>classifiable_subset</code> 设计系统时，请考虑不可变集或可变集是否更适合您的需求。不可变集提供了更强的保证并且可以很好地进行配置，而可变集则支持组件类型频繁变化的动态系统。</p>
+<p>层次结构感知语义意味着添加派生类型可以使基类型查询成功。这通常是可取的，但需要注意——如果您只想精确的类型匹配，<code>classifiable_subset</code> 可能不是正确的工具。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：classifiablesubset</summary>
     <div class="md"><h3>classifiable_subset</h3>
 <p>Building on the concept of runtime type queries introduced by <code>castable_subtype</code>, Verse provides <code>classifiable_subset</code>—a sophisticated mechanism for maintaining sets of runtime types. Where <code>castable_subtype</code> represents a single type value, <code>classifiable_subset</code> represents a collection of types, tracking which classes are present in a system and supporting queries based on type hierarchies.</p>
 <p>This feature is particularly valuable for component-based architectures, where you need to track which component types an entity possesses, query for specific capabilities, or filter operations based on type compatibility. Rather than maintaining separate boolean flags or type tags, <code>classifiable_subset</code> provides a type-safe, hierarchy-aware registry of runtime types.</p>
@@ -1653,7 +2125,6 @@ CreateAndCast(CompType:castable_concrete_subtype(component)):component =
 <p><strong><code>classifiable_subset_var(t)</code></strong> provides a mutable variant with <code>Read()</code> and <code>Write()</code> operations, enabling dynamic type sets that change during program execution. This is essential for runtime systems where component types are added or removed as entities evolve.</p>
 <p><strong><code>classifiable_subset_key(t)</code></strong> represents keys used to identify specific instances when adding them to a mutable set. These keys enable removal of specific instances later, supporting lifecycle management of registered types.</p>
 <p>Unlike ordinary classes, <code>classifiable_subset</code> types cannot be directly instantiated. You must use the constructor functions <code>MakeClassifiableSubset()</code> and <code>MakeClassifiableSubsetVar()</code>:</p>
-<p>&lt;!--versetest component:=class&lt;castable&gt;{} physics_component := class&lt;final_super&gt;(component){} rigid_body := class(physics_component){} render_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 124 --&gt;</p>
 <pre><code># Immutable set, initially empty
 EmptySet:classifiable_subset(component) = MakeClassifiableSubset()
 
@@ -1664,8 +2135,6 @@ InitialSet:classifiable_subset(component) =
 # Mutable set
 DynamicSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()</code></pre>
 <p>The base type <code>t</code> must be <code>&lt;castable&gt;</code>, ensuring runtime type queries are possible. This restriction is enforced at compile time:</p>
-<p>&lt;!--versetest component:=class&lt;computes&gt;&lt;castable&gt;{} f()&lt;reads&gt;:void = ComponentSet:classifiable_subset(component) = MakeClassifiableSubset()</p>
-<p>&lt;# --&gt; &lt;!-- 1215 --&gt;</p>
 <pre><code>ComponentSet:classifiable_subset(component) = MakeClassifiableSubset()
 
 # Invalid: non-castable types cannot be used
@@ -1674,12 +2143,9 @@ regular_class := class:
 
 # This would be an error:
 # BadSet:classifiable_subset(regular_class) = MakeClassifiableSubset()</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>You cannot subclass these types or create instances through ordinary construction syntax. This ensures that all sets use the proper internal representation for efficient type queries.</p>
 <h4>Type Hierarchy Semantics</h4>
 <p>The crucial insight of <code>classifiable_subset</code> is that it tracks runtime types, not individual instances. When you add an instance to the set, the system records that instance&#x27;s actual runtime type. More importantly, type queries respect the inheritance hierarchy:</p>
-<p>&lt;!--versetest entity:=class{} vector3:=class{} component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component): Velocity:vector3=vector3{}</p>
-<p>rigid_body_component := class&lt;castable&gt;(physics_component): Mass:float=0.0 --&gt; &lt;!-- 126 --&gt;</p>
 <pre><code># Add a rigid body instance
 Set:classifiable_subset(component) =
     MakeClassifiableSubset(array{rigid_body_component{}})
@@ -1690,7 +2156,6 @@ Set.Contains[physics_component]     # true - rigid_body is a physics_component
 Set.Contains[rigid_body_component]  # true - directly present</code></pre>
 <p>This hierarchy awareness makes <code>classifiable_subset</code> fundamentally different from a simple set of type tags. The <code>Contains</code> operation asks &quot;does this set contain any type that is-a T?&quot; rather than &quot;does this set contain exactly T?&quot;.</p>
 <p>When you add instances of different types, each distinct runtime type is tracked separately:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} rigid_body_component := class&lt;castable&gt;(physics_component){ } render_component := class&lt;castable&gt;(component){} audio_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 127 --&gt;</p>
 <pre><code># Add multiple different types
 TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
 Key1 := TheSet.Add(physics_component{})
@@ -1701,7 +2166,6 @@ TheSet.Contains[component]          # succeeds - all three are components
 TheSet.Contains[physics_component]  # succeeds - physics_component present
 TheSet.Contains[render_component]   # succeeds - render_component present</code></pre>
 <p>The set remembers each distinct type that was added. When you remove an instance by its key, that specific type is removed only if it was the last instance of that type:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} rigid_body_component := class&lt;castable&gt;(physics_component){ } --&gt; &lt;!-- 128 --&gt;</p>
 <pre><code># Add multiple instances of same type
 TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
 Key1 := TheSet.Add(physics_component{})
@@ -1717,7 +2181,6 @@ TheSet.Remove[Key2]
 <h4>Core Operations</h4>
 <p>The <code>classifiable_subset</code> types provide several operations for querying and manipulating type sets:</p>
 <p><strong>Contains</strong> checks whether any type in the set matches or is a subtype of the queried type:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 129 --&gt;</p>
 <pre><code>TheSet:classifiable_subset(component) =
     MakeClassifiableSubset(array{physics_component{}})
 
@@ -1727,23 +2190,19 @@ if (TheSet.Contains[component]):
 if (TheSet.Contains[render_component]):
     # No render component present</code></pre>
 <p><strong>ContainsAll</strong> verifies that all types in an array are present in the set:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 130 --&gt;</p>
 <pre><code>TheSet:classifiable_subset(component) =
     MakeClassifiableSubset(array{physics_component{}})
 
 if (TheSet.ContainsAll[array{physics_component, render_component}]):
     # Both physics and render components are present</code></pre>
 <p><strong>ContainsAny</strong> checks whether at least one type from an array is present:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 131 --&gt;</p>
 <pre><code>if (TheSet.ContainsAny[array{physics_component, audio_component}]):
     # Either physics or audio component (or both) is present</code></pre>
 <p><strong>Add</strong> (mutable sets only) adds an instance and returns a key for later removal:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{ Name:string = &quot;Component&quot;} physics_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 132 --&gt;</p>
 <pre><code>TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
 Key := TheSet.Add(physics_component{})
 # Can later remove using Key</code></pre>
 <p><strong>Remove</strong> (mutable sets only) removes a previously added instance by its key:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 133 --&gt;</p>
 <pre><code>TheSet:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
 
 Key := TheSet.Add(physics_component{})
@@ -1753,21 +2212,6 @@ if (TheSet.Remove[Key]):
 else:
     # Key was not present (already removed or never added)</code></pre>
 <p><strong>FilterByType</strong> creates a new set containing only types that are compatible (assignable to or from) the specified type:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){} audio_component := class&lt;castable&gt;(component){}</p></div>
-  </details>
-</section><section class="section" id="s44-test-filterbytype">
-  <div class="annotation">
-    <h3>中文批注：Test FilterByType</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Test FilterByType”展开。阅读时先抓住这些英文关键词：filtering、respects、both、upward、downward。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">+</span><span class="chip">classifiable_subset</span><span class="chip">&lt;castable&gt;</span><span class="chip">physics_component</span><span class="chip">classifiable_subset(render_component)</span><span class="chip">component</span><span class="chip">Contains</span><span class="chip">FilterByType</span><span class="chip">&lt;decides&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Test FilterByType</summary>
-    <div class="md"><h1>Test FilterByType</h1>
-<p>TestFilterByType()&lt;decides&gt;:void = TheSet:classifiable_subset(component) = MakeClassifiableSubset(array{ physics_component{}, render_component{}, audio_component{}})</p>
-<p># Filter to physics-related types PhysicsSet := TheSet.FilterByType(physics_component) if: PhysicsSet.Contains[physics_component]  # true not PhysicsSet.Contains[render_component]   # false - unrelated sibling PhysicsSet.Contains[component]          # true - base type compatible then: void &lt;# --&gt; &lt;!-- 134 --&gt;</p>
 <pre><code>TheSet:classifiable_subset(component) = MakeClassifiableSubset(array{
     physics_component{}, render_component{}, audio_component{}})
 
@@ -1776,10 +2220,8 @@ PhysicsSet := TheSet.FilterByType(physics_component)
 PhysicsSet.Contains[physics_component]  # true
 PhysicsSet.Contains[render_component]   # false - unrelated sibling
 PhysicsSet.Contains[component]          # true - base type compatible</code></pre>
-<p>&lt;!-- #&gt;--&gt;</p>
 <p>The filtering respects both upward and downward compatibility in the type hierarchy, keeping types that could be assigned to or from the filter type.</p>
 <p><strong>Union</strong> combines two sets using the <code>+</code> operator:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){} audio_component := class&lt;castable&gt;(component){} entity := class{} --&gt; &lt;!-- 135 --&gt;</p>
 <pre><code>Set1:classifiable_subset(component) =
     MakeClassifiableSubset(array{physics_component{}})
 Set2:classifiable_subset(component) =
@@ -1789,7 +2231,6 @@ Combined := Set1 + Set2
 Combined.Contains[physics_component]  # true
 Combined.Contains[render_component]   # true</code></pre>
 <p>For mutable sets, the Read/Write operations enable copying and updating:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){} audio_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 136 --&gt;</p>
 <pre><code>Set1:classifiable_subset_var(component) = MakeClassifiableSubsetVar()
 Set1.Add(physics_component{})
 
@@ -1801,7 +2242,6 @@ Set2.Write(Set1.Read())  # Copy Set1&#x27;s contents to Set2</code></pre>
 <p>You cannot subclass <code>classifiable_subset</code> types or create instances except through the designated constructor functions. This restriction maintains internal invariants required for correct type tracking.</p>
 <p>Keys from one set cannot be used with a different set—they&#x27;re bound to the specific set instance where the element was added.</p>
 <p>The type parameter must be consistent across operations. You cannot add a <code>physics_component</code> to a <code>classifiable_subset(render_component)</code> even if both inherit from <code>component</code>:</p>
-<p>&lt;!--versetest component := class&lt;castable&gt;{} physics_component := class&lt;castable&gt;(component){} render_component := class&lt;castable&gt;(component){} audio_component := class&lt;castable&gt;(component){} --&gt; &lt;!-- 137 --&gt;</p>
 <pre><code>render_set:classifiable_subset(render_component) = MakeClassifiableSubset()
 physics_comp:physics_component = physics_component{}
 
@@ -1812,6 +2252,4 @@ physics_comp:physics_component = physics_component{}
 <p>When designing systems with <code>classifiable_subset</code>, consider whether immutable or mutable sets better fit your needs. Immutable sets provide stronger guarantees and work well for configuration, while mutable sets support dynamic systems where component types change frequently.</p>
 <p>The hierarchy-aware semantics mean that adding a derived type makes queries for base types succeed. This is usually desirable but requires awareness—if you only want exact type matches, <code>classifiable_subset</code> may not be the right tool.</p></div>
   </details>
-</section>
-<nav class="footer-nav"><div><a href="../10_classes_interfaces/index.html">上一页：类与接口</a></div><div><a href="../12_access/index.html">下一页：访问控制与元数据</a></div></nav>
-</main></div></body></html>
+</section><nav class="footer-nav"><div><a href="../10_classes_interfaces/index.html">上一页：类与接口</a></div><div><a href="../12_access/index.html">下一页：访问控制与元数据</a></div></nav></main></div></body></html>

@@ -1,15 +1,6 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>模块与路径 - Book of Verse 中文批注版</title>
-<link rel="stylesheet" href="../assets/styles.css">
-<script src="../assets/reader.js"></script>
-</head>
-<body>
-<div class="layout">
-<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>模块与路径 - Book of Verse 中文阅读稿</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/reader.js"></script></head>
+<body><div class="layout"><aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文阅读稿 · 原文折叠 · 代码保留</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -26,26 +17,25 @@
 <a href="../13_effects/index.html"><span>Effects</span><br><small>效果系统</small></a>
 <a href="../14_concurrency/index.html"><span>Concurrency</span><br><small>并发</small></a>
 <a href="../15_live_variables/index.html"><span>Live Variables</span><br><small>实时变量</small></a>
-<a class="active" href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
+<a class=active href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
-<main class="main">
-<div class="crumb">Modules and Paths / <a href="https://verselang.github.io/book/16_modules/">原文页面</a></div>
-<section class="hero"><h1>模块与路径</h1><p class="lead">本页讲模块、路径、using、qualified names 和发布命名空间。</p><div class="meta"><span class="pill">源文件：16_modules.md</span><span class="pill">批注段落：33</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>这一页读什么</h2><p>Verse 的路径式模块系统用于全局唯一命名和长期兼容。</p><h3>注意点</h3><ul class="list"><li>模块不是一等值。</li><li>模块顶层数据必须显式类型。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-modules">Modules</a></li><li class="lvl2"><a href="#s1-paths">Paths</a></li><li class="lvl2"><a href="#s2-creating-modules">Creating Modules</a></li><li class="lvl3"><a href="#s3-restrictions">Restrictions</a></li><li class="lvl2"><a href="#s4-importing-modules">Importing Modules</a></li><li class="lvl3"><a href="#s5-import-resolution">Import Resolution</a></li><li class="lvl3"><a href="#s6-local-and-relative-imports">Local and Relative Imports</a></li><li class="lvl3"><a href="#s7-nested-imports">Nested Imports</a></li><li class="lvl3"><a href="#s8-module-aliases-with-import">Module Aliases with import</a></li><li class="lvl3"><a href="#s9-scope-and-visibility">Scope and Visibility</a></li><li class="lvl3"><a href="#s10-import-conflicts">Import Conflicts</a></li><li class="lvl3"><a href="#s11-qualified-names">Qualified Names</a></li><li class="lvl2"><a href="#s12-module-scoped-variables">Module-Scoped Variables</a></li><li class="lvl2"><a href="#s13-metaverse-and-publishing">Metaverse and Publishing</a></li><li class="lvl2"><a href="#s14-local-qualifiers">Local Qualifiers</a></li><li class="lvl2"><a href="#s15-automatic-qualification">Automatic Qualification</a></li><li class="lvl3"><a href="#s16-example">Example</a></li><li class="lvl3"><a href="#s17-qualification-with-using">Qualification with Using</a></li><li class="lvl3"><a href="#s18-when-it-matters">When It Matters</a></li><li class="lvl3"><a href="#s19-explicit-qualification">Explicit Qualification</a></li><li class="lvl2"><a href="#s20-local-scope-using">Local Scope Using</a></li><li class="lvl3"><a href="#s21-with-local-variables">With Local Variables</a></li><li class="lvl3"><a href="#s22-block-scoping">Block Scoping</a></li><li class="lvl3"><a href="#s23-order">Order</a></li><li class="lvl3"><a href="#s24-conflict-resolution">Conflict Resolution</a></li><li class="lvl3"><a href="#s25-mutable-member">Mutable Member</a></li><li class="lvl2"><a href="#s26-troubleshooting">Troubleshooting</a></li><li class="lvl3"><a href="#s27-module-not-found-errors">Module Not Found Errors</a></li><li class="lvl3"><a href="#s28-access-denied-errors">Access Denied Errors</a></li><li class="lvl3"><a href="#s29-circular-dependency-errors">Circular Dependency Errors</a></li><li class="lvl3"><a href="#s30-name-collision-errors">Name Collision Errors</a></li><li class="lvl3"><a href="#s31-persistence-issues">Persistence Issues</a></li><li class="lvl3"><a href="#s32-local-qualifier-conflicts">Local Qualifier Conflicts</a></li></ol></article></section>
-<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
+<div class="crumb">Modules and Paths / <a href="https://verselang.github.io/book/16_modules/">原文页面</a></div><section class="hero"><h1>模块与路径</h1><p class="lead">模块页，讲路径、模块、using、qualified names 和发布命名空间。</p><div class="meta"><span class="pill">源文件：16_modules.md</span><span class="pill">中文段落：33</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-modules">模块 / Modules</a></li><li class="lvl2"><a href="#s1-paths">Paths</a></li><li class="lvl2"><a href="#s2-creating-modules">Creating Modules</a></li><li class="lvl3"><a href="#s3-restrictions">Restrictions</a></li><li class="lvl2"><a href="#s4-importing-modules">Importing Modules</a></li><li class="lvl3"><a href="#s5-import-resolution">Import Resolution</a></li><li class="lvl3"><a href="#s6-local-and-relative-imports">Local and Relative Imports</a></li><li class="lvl3"><a href="#s7-nested-imports">Nested Imports</a></li><li class="lvl3"><a href="#s8-module-aliases-with-import">Module Aliases with import</a></li><li class="lvl3"><a href="#s9-scope-and-visibility">Scope and Visibility</a></li><li class="lvl3"><a href="#s10-import-conflicts">Import Conflicts</a></li><li class="lvl3"><a href="#s11-qualified-names">Qualified Names</a></li><li class="lvl2"><a href="#s12-module-scoped-variables">Module-Scoped Variables</a></li><li class="lvl2"><a href="#s13-metaverse-and-publishing">Metaverse and Publishing</a></li><li class="lvl2"><a href="#s14-local-qualifiers">Local Qualifiers</a></li><li class="lvl2"><a href="#s15-automatic-qualification">Automatic Qualification</a></li><li class="lvl3"><a href="#s16-example">Example</a></li><li class="lvl3"><a href="#s17-qualification-with-using">Qualification with Using</a></li><li class="lvl3"><a href="#s18-when-it-matters">When It Matters</a></li><li class="lvl3"><a href="#s19-explicit-qualification">Explicit Qualification</a></li><li class="lvl2"><a href="#s20-local-scope-using">Local Scope Using</a></li><li class="lvl3"><a href="#s21-with-local-variables">With Local Variables</a></li><li class="lvl3"><a href="#s22-block-scoping">Block Scoping</a></li><li class="lvl3"><a href="#s23-order">Order</a></li><li class="lvl3"><a href="#s24-conflict-resolution">Conflict Resolution</a></li><li class="lvl3"><a href="#s25-mutable-member">Mutable Member</a></li><li class="lvl2"><a href="#s26-troubleshooting">Troubleshooting</a></li><li class="lvl3"><a href="#s27-module-not-found-errors">Module Not Found Errors</a></li><li class="lvl3"><a href="#s28-access-denied-errors">Access Denied Errors</a></li><li class="lvl3"><a href="#s29-circular-dependency-errors">Circular Dependency Errors</a></li><li class="lvl3"><a href="#s30-name-collision-errors">Name Collision Errors</a></li><li class="lvl3"><a href="#s31-persistence-issues">Persistence Issues</a></li><li class="lvl3"><a href="#s32-local-qualifier-conflicts">Local Qualifier Conflicts</a></li></ol></article></section>
+<div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-modules">
-  <div class="annotation">
-    <h3>中文批注：Modules</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Modules”展开。阅读时先抓住这些英文关键词：Modules、paths、fundamental、concepts、code。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">.verse</span><span class="chip">player.verse</span><span class="chip">inventory.verse</span><span class="chip">equipment.verse</span><span class="chip">PlayerSystems</span><span class="chip">for</span><span class="chip">module</span><span class="chip">where</span><span class="chip">unique</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Modules</summary>
+  <article class="cn-read">
+    <h2>模块 <small>Modules</small></h2>
+    <p>模块和路径是代码组织、命名空间管理以及跨项目共享和重用代码的能力的基本概念。将模块视为将相关功能组合在一起的容器，类似于其他编程语言中的包，但对版本控制和兼容性有更强的保证。</p>
+<p>在游戏开发的背景下，模块允许您将游戏逻辑的不同方面分成可管理、可重用的部分。例如，您可能有一个用于玩家库存管理的模块，另一个用于战斗机制的模块，还有另一个用于 UI 交互的模块。每个模块都封装了自己的功能，同时仅向代码的其他部分公开必要的接口。</p>
+<p>该模块系统旨在支持持久、共享的 Metaverse 愿景，其中代码可以发布一次，任何人在任何地方都可以使用，并且即使原作者更新和改进它，它也将继续工作。这是通过严格的向后兼容性规则和全局命名空间系统来实现的，该系统确保每一段已发布的代码都具有唯一的永久地址。</p>
+<p>每个模块都与项目的文件系统结构有着内在的联系。当您在 Verse 项目中创建文件夹时，该文件夹会自动成为模块。模块的名称只是文件夹的名称，使文件组织和代码组织之间的关系完全透明。</p>
+<p>同一文件夹中的所有 <code>.verse</code> 文件都被视为该模块的一部分，并共享相同的命名空间。这意味着，如果您有三个文件 - <code>player.verse</code>、<code>inventory.verse</code> 和 <code>equipment.verse</code> - 全部位于名为 <code>PlayerSystems</code> 的文件夹中，则它们都对 <code>PlayerSystems</code> 模块有贡献，并且可以引用彼此的定义，而无需任何 import 语句。这种自动分组可以轻松地将大型模块拆分到多个文件中，以便更好地组织，同时保持模块的逻辑统一性。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Modules</summary>
     <div class="md"><h1>Modules</h1>
 <p>Modules and paths are fundamental concepts for code organization, namespace management, and the ability to share and reuse code across projects. Think of modules as containers that group related functionality together, similar to packages in other programming languages, but with stronger guarantees about versioning and compatibility.</p>
 <p>In the context of game development, modules allow you to separate different aspects of your game logic into manageable, reusable pieces. For example, you might have one module for player inventory management, another for combat mechanics, and yet another for UI interactions. Each module encapsulates its own functionality while exposing only the necessary interfaces to other parts of your code.</p>
@@ -54,81 +44,90 @@
 <p>All <code>.verse</code> files within the same folder are considered part of that module and share the same namespace. This means that if you have three files - <code>player.verse</code>, <code>inventory.verse</code>, and <code>equipment.verse</code> - all in a folder called <code>PlayerSystems</code>, they all contribute to the <code>PlayerSystems</code> module and can reference each other&#x27;s definitions without any import statements. This automatic grouping makes it easy to split large modules across multiple files for better organization while maintaining the logical unity of the module.</p></div>
   </details>
 </section><section class="section" id="s1-paths">
-  <div class="annotation">
-    <h3>中文批注：Paths</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Paths”展开。可把它先理解为“路径”。阅读时先抓住这些英文关键词：Paths、addressing、system、makes、vision。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">/</span><span class="chip">/domain/path/to/module</span><span class="chip">Fortnite.com</span><span class="chip">Verse.org</span><span class="chip">/YourGame.com/UI/</span><span class="chip">/Verse.org/Verse</span><span class="chip">/Verse.org/Random</span><span class="chip">/Verse.org/Simulation</span><span class="chip">/Fortnite.com/Devices</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Paths</summary>
+  <article class="cn-read">
+    <h2>路径 <small>Paths</small></h2>
+    <p>路径是寻址系统，使 Verse 的共享、持久 Metaverse 愿景成为可能。正如互联网上的每个网站都有一个唯一的 URL 一样，每个模块都有一个在全球范围内标识它的唯一路径。此路径系统不仅仅是一个命名约定 - 它是 Verse 如何管理代码分发、版本控制和依赖项的基本部分。</p>
+<p>路径在概念上借鉴了网络域，并根据编程语言的需要进行了调整。路径以正斜杠 <code>/</code> 开头，通常包括一个类似域的标识符，后跟一个或多个路径段。这创建了一个人类可读且全局唯一的分层命名空间。</p>
+<p><code>/domain/path/to/module</code> 格式有几个重要用途：</p>
+<ul><li>**持久且唯一的标识**：模块发布后</li></ul>
+<p>在某条特定的路径上，该路径永远属于它。没有其他模块可以声明相同的路径，从而确保依赖项始终解析为正确的代码。</p>
+<ul><li>**所有权和权限**：路径的域部分（例如</li></ul>
+<p><code>Fortnite.com</code> 或 <code>Verse.org</code>) 指示谁拥有并维护该模块。这有助于开发人员了解他们所使用的代码的来源和可信度。</p>
+<ul><li>**可发现性**：因为路径遵循可预测的模式，</li></ul>
+<p>开发人员通常可以猜测或轻松找到他们需要的模块。文档和工具也可以利用这种结构来提供更好的发现体验。</p>
+<ul><li>**层级组织**：路径结构天然支持</li></ul>
+<p>将相关模块组织在一起。例如，所有与 UI 相关的模块可能位于 <code>/YourGame.com/UI/</code> 下，使它们作为一个整体易于查找和理解。</p>
+<p>Epic Games 提供了几个常用的标准模块：</p>
+<ul><li><code>/Verse.org/Verse</code> - 核心语言特性和标准库函数</li><li><code>/Verse.org/Random</code> - 随机数生成实用程序</li><li><code>/Verse.org/Simulation</code> - 仿真和计时实用程序</li><li><code>/Fortnite.com/Devices</code> - 与 Fortnite Creative 设备集成</li><li><code>/UnrealEngine.com/Temporary/Diagnostics</code> - 调试和诊断工具</li><li><code>/UnrealEngine.com/Temporary/SpatialMath</code> - 3D 数学和空间运算</li></ul>
+<p>在某些路径中使用“临时”表示这些模块是临时的，可能会在 Verse 的未来版本中重新组织。此命名约定有助于设定对 API 稳定性的期望。</p>
+<p>当您创建自己的模块时，它们可以存在于路径层次结构的各个级别：</p>
+<ul><li><code>/YourGame/</code> - 游戏的顶级模块</li><li><code>/YourGame/Player/</code> - 播放器相关功能</li><li><code>/YourGame/Player/Inventory/</code> - 特定库存管理</li><li><code>/pizlonator@fn.com/NightDeath/</code> - 个人或实验模块</li></ul>
+<p>包含类似电子邮件的标识符（例如 <code>pizlonator@fn.com</code>）的能力允许个人开发人员声明自己的命名空间，而无需拥有域。这使模块系统民主化，同时仍然保持唯一性保证。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Paths</summary>
     <div class="md"><h2>Paths</h2>
 <p>Paths are the addressing system that makes Verse&#x27;s vision of a shared, persistent Metaverse possible. Just as every website on the internet has a unique URL, every module has a unique path that identifies it globally. This path system is more than just a naming convention - it&#x27;s a fundamental part of how Verse manages code distribution, versioning, and dependencies.</p>
 <p>Paths borrow conceptually from web domains with adaptations for the needs of a programming language. A path starts with a forward slash <code>/</code> and typically includes a domain-like identifier followed by one or more path segments. This creates a hierarchical namespace that is both human-readable and globally unique.</p>
 <p>The format <code>/domain/path/to/module</code> serves several important purposes:</p>
-<ul>
-<li><strong>Persistent and unique identification</strong>: Once a module is published</li>
+<ul><li><strong>Persistent and unique identification</strong>: Once a module is published</li></ul>
 <p>at a particular path, that path belongs to it forever. No other module can ever claim the same path, ensuring that dependencies always resolve to the correct code.</p>
-</ul>
-<ul>
-<li><strong>Ownership and authority</strong>: The domain portion of the path (like</li>
+<ul><li><strong>Ownership and authority</strong>: The domain portion of the path (like</li></ul>
 <p><code>Fortnite.com</code> or <code>Verse.org</code>) indicates who owns and maintains the module. This helps developers understand the source and trustworthiness of the code they&#x27;re using.</p>
-</ul>
-<ul>
-<li><strong>Discoverability</strong>: Because paths follow a predictable pattern,</li>
+<ul><li><strong>Discoverability</strong>: Because paths follow a predictable pattern,</li></ul>
 <p>developers can often guess or easily find the modules they need. Documentation and tooling can also leverage this structure to provide better discovery experiences.</p>
-</ul>
-<ul>
-<li><strong>Hierarchical organization</strong>: The path structure naturally supports</li>
+<ul><li><strong>Hierarchical organization</strong>: The path structure naturally supports</li></ul>
 <p>organizing related modules together. For example, all UI-related modules might live under <code>/YourGame.com/UI/</code>, making them easy to find and understand as a group.</p>
-</ul>
 <p>Epic Games provides several standard modules that are commonly used:</p>
-<ul>
-<li><code>/Verse.org/Verse</code> - Core language features and standard library functions</li>
-<li><code>/Verse.org/Random</code> - Random number generation utilities</li>
-<li><code>/Verse.org/Simulation</code> - Simulation and timing utilities</li>
-<li><code>/Fortnite.com/Devices</code> - Integration with Fortnite Creative devices</li>
-<li><code>/UnrealEngine.com/Temporary/Diagnostics</code> - Debugging and diagnostic tools</li>
-<li><code>/UnrealEngine.com/Temporary/SpatialMath</code> - 3D math and spatial operations</li>
-</ul>
+<ul><li><code>/Verse.org/Verse</code> - Core language features and standard library functions</li><li><code>/Verse.org/Random</code> - Random number generation utilities</li><li><code>/Verse.org/Simulation</code> - Simulation and timing utilities</li><li><code>/Fortnite.com/Devices</code> - Integration with Fortnite Creative devices</li><li><code>/UnrealEngine.com/Temporary/Diagnostics</code> - Debugging and diagnostic tools</li><li><code>/UnrealEngine.com/Temporary/SpatialMath</code> - 3D math and spatial operations</li></ul>
 <p>The use of &quot;Temporary&quot; in some paths indicates that these modules are provisional and may be reorganized in future versions of Verse. This naming convention helps set expectations about the stability of the API.</p>
 <p>When you create your own modules, they can exist at various levels of the path hierarchy:</p>
-<ul>
-<li><code>/YourGame/</code> - Top-level module for your game</li>
-<li><code>/YourGame/Player/</code> - Player-related functionality</li>
-<li><code>/YourGame/Player/Inventory/</code> - Specific inventory management</li>
-<li><code>/pizlonator@fn.com/NightDeath/</code> - Personal or experimental modules</li>
-</ul>
+<ul><li><code>/YourGame/</code> - Top-level module for your game</li><li><code>/YourGame/Player/</code> - Player-related functionality</li><li><code>/YourGame/Player/Inventory/</code> - Specific inventory management</li><li><code>/pizlonator@fn.com/NightDeath/</code> - Personal or experimental modules</li></ul>
 <p>The ability to include email-like identifiers (such as <code>pizlonator@fn.com</code>) allows individual developers to claim their own namespace without needing to own a domain. This democratizes the module system while still maintaining uniqueness guarantees.</p></div>
   </details>
 </section><section class="section" id="s2-creating-modules">
-  <div class="annotation">
-    <h3>中文批注：Creating Modules</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Creating Modules”展开。可把它先理解为“创建模块”。阅读时先抓住这些英文关键词：module、contain、Constants、variables、Functions。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">.verse</span><span class="chip">&lt;!-- #&gt; --&gt;
+  <article class="cn-read">
+    <h2>创建模块 <small>Creating Modules</small></h2>
+    <p>一个模块可以包含：</p>
+<ul><li>常量和变量</li><li>功能</li><li>类、接口和结构</li><li>枚举</li><li>其他模块定义</li><li>类型定义</li></ul>
+<p>当您在 Verse 项目中创建子文件夹时，会自动为该文件夹创建一个模块。文件结构直接映射到模块层次结构。</p>
+<p>您可以使用以下语法在 <code>.verse</code> 文件中创建模块：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Colon syntax
+module1 := module:
+    # Module contents here
+    MyConstant&lt;public&gt;:int = 42
 
-The file structure</span><span class="chip">&lt;public&gt;</span><span class="chip">module</span><span class="chip">for</span><span class="chip">using</span><span class="chip">public</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Creating Modules</summary>
+    MyClass&lt;public&gt; := class:
+        Value:int = 0
+
+# Bracket syntax (also supported)
+module2 := module
+{
+    # Module contents here
+    AnotherConstant&lt;public&gt;:string = &quot;Hello&quot;
+}</code></pre></figure>
+<p>模块可以包含其他模块，从而创建层次结构：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>BaseModule&lt;public&gt; := module:
+    submodule&lt;public&gt; := module:
+        submodule_class&lt;public&gt; := class:
+            Value:int = 100
+
+    module_class&lt;public&gt; := class:
+        Name:string = &quot;&quot;</code></pre></figure>
+<p>文件结构 <code>ModuleFolder/BaseModule</code> 相当于：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ModuleFolder := module:
+    BaseModule := module:
+        Submodule := module:
+            submodule_class := class:
+                # Class definition</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Creating Modules</summary>
     <div class="md"><h2>Creating Modules</h2>
 <p>A module can contain:</p>
-<ul>
-<li>Constants and variables</li>
-<li>Functions</li>
-<li>Classes, interfaces, and structs</li>
-<li>Enums</li>
-<li>Other module definitions</li>
-<li>Type definitions</li>
-</ul>
+<ul><li>Constants and variables</li><li>Functions</li><li>Classes, interfaces, and structs</li><li>Enums</li><li>Other module definitions</li><li>Type definitions</li></ul>
 <p>When you create a subfolder in a Verse project, a module is automatically created for that folder. The file structure directly maps to the module hierarchy.</p>
 <p>You can create modules within a <code>.verse</code> file using the following syntax:</p>
-<p>&lt;!--versetest m := module{ module1 := module: MyConstant&lt;public&gt;:int = 42</p>
-<p>MyClass&lt;public&gt; := class: Value:int = 0</p>
-<p>module2 := module { AnotherConstant&lt;public&gt;:string = &quot;Hello&quot; } } &lt;# --&gt; &lt;!-- 01 --&gt;</p>
 <pre><code># Colon syntax
 module1 := module:
     # Module contents here
@@ -143,10 +142,7 @@ module2 := module
     # Module contents here
     AnotherConstant&lt;public&gt;:string = &quot;Hello&quot;
 }</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Modules can contain other modules, creating a hierarchy:</p>
-<p>&lt;!--versetest m := module{ BaseModule&lt;public&gt; := module: submodule&lt;public&gt; := module: submodule_class&lt;public&gt; := class: Value:int = 100</p>
-<p>module_class&lt;public&gt; := class: Name:string = &quot;&quot; } &lt;# --&gt; &lt;!-- 02 --&gt;</p>
 <pre><code>BaseModule&lt;public&gt; := module:
     submodule&lt;public&gt; := module:
         submodule_class&lt;public&gt; := class:
@@ -154,31 +150,116 @@ module2 := module
 
     module_class&lt;public&gt; := class:
         Name:string = &quot;&quot;</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The file structure <code>ModuleFolder/BaseModule</code> is equivalent to:</p>
-<p>&lt;!--versetest m := module{ ModuleFolder := module: BaseModule := module: Submodule := module: submodule_class := class: Value:int = 0 } &lt;# --&gt; &lt;!-- 03 --&gt;</p>
 <pre><code>ModuleFolder := module:
     BaseModule := module:
         Submodule := module:
             submodule_class := class:
-                # Class definition</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+                # Class definition</code></pre></div>
   </details>
 </section><section class="section" id="s3-restrictions">
-  <div class="annotation">
-    <h3>中文批注：Restrictions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Restrictions”展开。阅读时先抓住这些英文关键词：Module、bodies、have、strict、requirements。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">:=</span><span class="chip">MyModule</span><span class="chip">There is no</span><span class="chip">&lt;public&gt;</span><span class="chip">module</span><span class="chip">class</span><span class="chip">interface</span><span class="chip">struct</span><span class="chip">enum</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Restrictions</summary>
+  <article class="cn-read">
+    <h2>限制 <small>Restrictions</small></h2>
+    <p>模块主体对其可以包含的内容有严格的要求。了解这些限制有助于避免定义模块时的常见错误。</p>
+<p>**模块只能包含定义：**</p>
+<p>模块主体只能包含定义语句——将名称绑定到值的声明。您不能包含任意表达式或可执行语句：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: All definitions
+Config := module:
+    MaxValue:int = 100
+    DefaultName:string = &quot;Player&quot;
+
+    CalculateScore(Base:int):int = Base * 10
+
+    player_class := class:
+        Name:string
+
+# Invalid: Contains non-definition expressions
+BadModule := module:
+    MaxValue:int = 100
+    1 + 2  # ERROR 3560: Not a definition
+
+# Invalid: Contains function call
+BadModule2 := module:
+    InitFunction():void = {}
+    InitFunction()  # ERROR 3585: Cannot call function in module body</code></pre></figure>
+<p>该限制确保模块初始化是确定性的，并且在加载模块时不会执行任意代码。</p>
+<p>**所需的类型注释：**</p>
+<p>模块范围内的所有数据定义必须显式指定其类型。不允许单独使用 <code>:=</code> 进行类型推断：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: Missing type annotation
+BadModule := module:
+    Value := 42  # ERROR 3547: Must specify type domain
+
+# Valid: Explicit type annotation
+GoodModule := module:
+    Value:int = 42  # OK: Type explicitly specified</code></pre></figure>
+<p>这一要求使模块接口变得明确，并有助于单独编译和模块演化。</p>
+<p>**有效模块内容：**</p>
+<p>模块可以包含以下类别的定义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Utilities := module:
+    # Constants with explicit types
+    Version:int = 1
+    AppName:string = &quot;MyApp&quot;
+
+    # Functions
+    Calculate(X:int):int = X * 2
+
+    # Classes, interfaces, structs
+    data_class := class:
+        Value:int
+
+    data_interface := interface:
+        GetValue():int
+
+    data_struct := struct:
+        X:float
+        Y:float
+
+    # Enums
+    status := enum:
+        Active
+        Inactive
+
+    # Nested modules
+    Nested := module:
+        NestedFunction():void = {}
+
+    # Type aliases
+    coordinate := tuple(float, float)
+
+    # Refinement types
+    positive_int := type{X:int where X &gt; 0}</code></pre></figure>
+<p>与函数、类或数据值不同，模块不是 Verse 中的一等公民。您不能将模块视为可以在运行时存储、传递或操作的值。</p>
+<p>**无法将模块分配给变量：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MyModule := module:
+    Value&lt;public&gt;:int = 42
+
+# Invalid: Cannot treat module as value
+M:MyModule = MyModule  # ERROR </code></pre></figure>
+<p>模块在编译时纯粹作为命名空间和组织结构存在。模块标识符 <code>MyModule</code> 只能在特定上下文中使用。</p>
+<p>**无法将模块作为参数传递：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MyModule := module:
+    X&lt;public&gt;:int = 1
+
+# Invalid: Cannot pass module as parameter
+ProcessModule(M:module):void = {}  # ERROR
+ProcessModule(MyModule)  # ERROR</code></pre></figure>
+<p>没有可在函数签名中使用的 <code>module</code> 类型。</p>
+<p>**无法创建模块集合：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ModuleA := module:
+    Value:int = 1
+
+ModuleB := module:
+    Value:int = 2
+
+# Invalid: Cannot create tuple or array of modules
+Modules := (ModuleA, ModuleB)  # ERROR</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Restrictions</summary>
     <div class="md"><h3>Restrictions</h3>
 <p>Module bodies have strict requirements about what they can contain. Understanding these restrictions helps avoid common errors when defining modules.</p>
 <p><strong>Modules Can Only Contain Definitions:</strong></p>
 <p>A module body can only contain definition statements—declarations that bind names to values. You cannot include arbitrary expressions or executable statements:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 04 --&gt;</p>
 <pre><code># Valid: All definitions
 Config := module:
     MaxValue:int = 100
@@ -201,7 +282,6 @@ BadModule2 := module:
 <p>The restriction ensures that module initialization is deterministic and doesn&#x27;t execute arbitrary code when the module is loaded.</p>
 <p><strong>Type Annotations Required:</strong></p>
 <p>All data definitions at module scope must explicitly specify their type. Type inference with <code>:=</code> alone is not allowed:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 05 --&gt;</p>
 <pre><code># Invalid: Missing type annotation
 BadModule := module:
     Value := 42  # ERROR 3547: Must specify type domain
@@ -212,15 +292,6 @@ GoodModule := module:
 <p>This requirement makes module interfaces explicit and helps with separate compilation and module evolution.</p>
 <p><strong>Valid Module Contents:</strong></p>
 <p>Modules can contain these categories of definitions:</p>
-<p>&lt;!--versetest m := module{ Utilities := module: Version:int = 1 AppName:string = &quot;MyApp&quot;</p>
-<p>Calculate(X:int):int = X * 2</p>
-<p>data_class := class: Value:int</p>
-<p>data_interface := interface: GetValue():int</p>
-<p>data_struct := struct: X:float Y:float</p>
-<p>status := enum: Active Inactive</p>
-<p>Nested := module: NestedFunction():void = {}</p>
-<p>coordinate := tuple(float, float)</p>
-<p>positive_int := type{X:int where X &gt; 0} } &lt;# --&gt; &lt;!-- 06 --&gt;</p>
 <pre><code>Utilities := module:
     # Constants with explicit types
     Version:int = 1
@@ -254,10 +325,8 @@ GoodModule := module:
 
     # Refinement types
     positive_int := type{X:int where X &gt; 0}</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Unlike functions, classes, or data values, modules are not first-class citizens in Verse. You cannot treat modules as values that can be stored, passed, or manipulated at runtime.</p>
 <p><strong>Cannot Assign Modules to Variables:</strong></p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 07 --&gt;</p>
 <pre><code>MyModule := module:
     Value&lt;public&gt;:int = 42
 
@@ -265,7 +334,6 @@ GoodModule := module:
 M:MyModule = MyModule  # ERROR </code></pre>
 <p>Modules exist purely as namespaces and organizational constructs at compile time. The module identifier <code>MyModule</code> can only be used in specific contexts.</p>
 <p><strong>Cannot Pass Modules as Arguments:</strong></p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 08 --&gt;</p>
 <pre><code>MyModule := module:
     X&lt;public&gt;:int = 1
 
@@ -274,7 +342,6 @@ ProcessModule(M:module):void = {}  # ERROR
 ProcessModule(MyModule)  # ERROR</code></pre>
 <p>There is no <code>module</code> type that can be used in function signatures.</p>
 <p><strong>Cannot Create Collections of Modules:</strong></p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 09 --&gt;</p>
 <pre><code>ModuleA := module:
     Value:int = 1
 
@@ -285,20 +352,58 @@ ModuleB := module:
 Modules := (ModuleA, ModuleB)  # ERROR</code></pre></div>
   </details>
 </section><section class="section" id="s4-importing-modules">
-  <div class="annotation">
-    <h3>中文批注：Importing Modules</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Importing Modules”展开。可把它先理解为“导入模块”。阅读时先抓住这些英文关键词：import、system、designed、explicit、predictable。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">Module</span><span class="chip">&lt;public&gt;</span><span class="chip">for</span><span class="chip">module</span><span class="chip">public</span><span class="chip">if</span><span class="chip">class</span><span class="chip">struct</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Importing Modules</summary>
+  <article class="cn-read">
+    <h2>导入模块 <small>Importing Modules</small></h2>
+    <p>导入系统的设计是明确且可预测的。与某些自动导入常用模块或搜索多个位置的依赖项的语言不同，Verse 要求您显式声明要使用的每个外部模块。这种明确性有助于防止命名冲突并使依赖关系清晰。</p>
+<p><code>using</code> 语句是将模块导入 Verse 代码的主要机制。它通常放置在文件的顶部、任何其他代码定义之前，并使指定模块的内容在当前范围内可用。</p>
+<p>基本语法很简单 - 关键字 <code>using</code> 后跟花括号中的模块路径：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>using { /Verse.org/Random }
+using { /Fortnite.com/Devices }
+using { /Verse.org/Simulation }
+using { /UnrealEngine.com/Temporary/Diagnostics }</code></pre></figure>
+<p>当您导入模块时，其所有公共成员都将在您的代码中可用。但是，您仍然需要使用模块名称来限定它们，除非名称明确。此资格要求有助于保持代码清晰度，并防止在多个模块定义相似名称时意外使用错误的定义。</p>
+<p>**使用是一个语句，而不是一个表达式：**</p>
+<p><code>using</code> 指令是语句级声明，必须出现在代码的顶层。您不能将其用作表达式或将其嵌入到其他表达式中：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: using in expression context
+# f():void = using{MyModule}  # ERROR 3669
+
+# Invalid: using in conditional
+# if (using{MyModule}, Condition?):
+#     DoSomething()  # ERROR 3669
+
+# Invalid: using in class/struct/interface body
+# my_class := class:
+#     using{MyModule}  # ERROR 3537
+#     Field:int
+
+# Invalid: using module path in function body
+# ProcessData():void =
+#     using{/MyProject/UtilityModule}  # ERROR 3669
+#     Calculate()</code></pre></figure>
+<p>模块 <code>using</code> 语句必须出现在文件或模块级别，而不是嵌套在其他构造中。这可确保导入在声明的整个范围内可见且一致。</p>
+<p>虽然函数体中不允许使用路径导入模块，但 Verse 确实支持带有局部变量和参数的 **局部作用域 <code>using</code>**。有关详细信息，请参阅下面的[本地作用域使用](#local-scope-using)。</p>
+<p>**使用放置有效：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># At file level (most common)
+using { /Verse.org/Random }
+using { /Verse.org/Simulation }
+
+ProcessData():void =
+    # Use imported functions
+    Value := GetRandomFloat(0.0, 1.0)
+
+# Within module definition
+Utilities := module:
+    using { /Verse.org/Random }
+
+    GenerateId&lt;public&gt;():int =
+        GetRandomInt(1, 1000000)</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Importing Modules</summary>
     <div class="md"><h2>Importing Modules</h2>
 <p>The import system is designed to be explicit and predictable. Unlike some languages that automatically import commonly used modules or search multiple locations for dependencies, Verse requires you to explicitly declare every external module you want to use. This explicitness helps prevent naming conflicts and makes dependencies clear.</p>
 <p>The <code>using</code> statement is the primary mechanism for importing modules into your Verse code. It usually is placed at the top of your file, before any other code definitions, and makes the contents of the specified module available in your current scope.</p>
 <p>The basic syntax is straightforward - the keyword <code>using</code> followed by the module path in curly braces:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code>using { /Verse.org/Random }
 using { /Fortnite.com/Devices }
 using { /Verse.org/Simulation }
@@ -306,7 +411,6 @@ using { /UnrealEngine.com/Temporary/Diagnostics }</code></pre>
 <p>When you import a module, all its public members become available in your code. However, you still need to qualify them with the module name unless the names are unambiguous. This qualification requirement helps maintain code clarity and prevents accidental use of the wrong definition when multiple modules define similar names.</p>
 <p><strong>Using is a Statement, Not an Expression:</strong></p>
 <p>The <code>using</code> directive is a statement-level declaration that must appear at the top level of your code. You cannot use it as an expression or embed it in other expressions:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 11 --&gt;</p>
 <pre><code># Invalid: using in expression context
 # f():void = using{MyModule}  # ERROR 3669
 
@@ -326,7 +430,6 @@ using { /UnrealEngine.com/Temporary/Diagnostics }</code></pre>
 <p>Module <code>using</code> statements must appear at the file or module level, not nested within other constructs. This ensures that imports are visible and consistent throughout the scope where they&#x27;re declared.</p>
 <p>While module imports with paths are not allowed in function bodies, Verse does support <strong>local scope <code>using</code></strong> with local variables and parameters. See <a href="#local-scope-using">Local Scope Using</a> below for details.</p>
 <p><strong>Valid using placement:</strong></p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 12 --&gt;</p>
 <pre><code># At file level (most common)
 using { /Verse.org/Random }
 using { /Verse.org/Simulation }
@@ -343,37 +446,40 @@ Utilities := module:
         GetRandomInt(1, 1000000)</code></pre></div>
   </details>
 </section><section class="section" id="s5-import-resolution">
-  <div class="annotation">
-    <h3>中文批注：Import Resolution</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Import Resolution”展开。阅读时先抓住这些英文关键词：encounters、statement、follows、specific、resolution。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">/</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Import Resolution</summary>
+  <article class="cn-read">
+    <h2>导入分辨率 <small>Import Resolution</small></h2>
+    <p>当 Verse 遇到 <code>using</code> 语句时，它遵循特定的解析过程：</p>
+<ol><li>**绝对路径**（以 <code>/</code> 开头）从全局模块注册表解析</li><li>**相对路径**（不带前导 <code>/</code>）相对于当前模块的位置进行解析</li><li>**嵌套模块**可以通过其父模块访问</li></ol>
+<p>此解析过程发生在编译时，这意味着在编译代码时所有导入都必须是可解析的。 Verse 中没有运行时模块加载或动态导入。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Import Resolution</summary>
     <div class="md"><h3>Import Resolution</h3>
 <p>When Verse encounters a <code>using</code> statement, it follows a specific resolution process:</p>
-<ol>
-<li><strong>Absolute paths</strong> (starting with <code>/</code>) are resolved from the global module registry</li>
-<li><strong>Relative paths</strong> (without leading <code>/</code>) are resolved relative to the current module&#x27;s location</li>
-<li><strong>Nested modules</strong> can be accessed through their parent modules</li>
-</ol>
+<ol><li><strong>Absolute paths</strong> (starting with <code>/</code>) are resolved from the global module registry</li><li><strong>Relative paths</strong> (without leading <code>/</code>) are resolved relative to the current module&#x27;s location</li><li><strong>Nested modules</strong> can be accessed through their parent modules</li></ol>
 <p>This resolution process happens at compile time, meaning that all imports must be resolvable when your code is compiled. There&#x27;s no runtime module loading or dynamic imports in Verse.</p></div>
   </details>
 </section><section class="section" id="s6-local-and-relative-imports">
-  <div class="annotation">
-    <h3>中文批注：Local and Relative Imports</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Local and Relative Imports”展开。阅读时先抓住这些英文关键词：modules、within、own、project、have。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Local and Relative Imports</summary>
+  <article class="cn-read">
+    <h2>本地和相关进口 <small>Local and Relative Imports</small></h2>
+    <p>对于您自己项目中的模块，您可以灵活地引用它们：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Absolute import from your project root
+using { /MyGameProject/Systems/Combat }
+
+# Import from a sibling folder
+using { ../UI/MainMenu }
+
+# Import from the same directory
+using { PlayerController }
+
+# Import from a subdirectory
+using { Subsystems/WeaponSystem }</code></pre></figure>
+<p>绝对导入和相对导入之间的选择通常取决于您的项目结构以及您是否计划重新组织模块。绝对导入在重构时更加稳定，而相对导入可以使模块组更加可移植。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Local and Relative Imports</summary>
     <div class="md"><h3>Local and Relative Imports</h3>
 <p>For modules within your own project, you have flexibility in how you reference them:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 13 --&gt;</p>
 <pre><code># Absolute import from your project root
 using { /MyGameProject/Systems/Combat }
 
@@ -388,20 +494,29 @@ using { Subsystems/WeaponSystem }</code></pre>
 <p>The choice between absolute and relative imports often depends on your project structure and whether you plan to reorganize your modules. Absolute imports are more stable when refactoring, while relative imports can make module groups more portable.</p></div>
   </details>
 </section><section class="section" id="s7-nested-imports">
-  <div class="annotation">
-    <h3>中文批注：Nested Imports</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Nested Imports”展开。阅读时先抓住这些英文关键词：Nested、modules、present、special、considerations。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">for</span><span class="chip">module</span><span class="chip">public</span><span class="chip">using</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Nested Imports</summary>
+  <article class="cn-read">
+    <h2>嵌套导入 <small>Nested Imports</small></h2>
+    <p>嵌套模块在导入时需要特别注意。导入模块的顺序很重要，并且有多种有效的方法：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Method 1: Import parent first, then child
+using { GameSystems }
+using { Inventory }  # Assumes Inventory is nested in GameSystems
+
+# Method 2: Direct path to nested module
+using { GameSystems.Inventory }
+
+# Method 3: Import parent and access child through qualification
+using { GameSystems }
+# Later in code: GameSystems.Inventory.Item
+
+# IMPORTANT: This order causes an error
+# using { Inventory }      # Error: Inventory not found
+# using { GameSystems }   # Too late, Inventory import already failed</code></pre></figure>
+<p>存在导入顺序限制，因为 Verse 按顺序解析导入。当您直接导入嵌套模块时，Verse 需要首先了解其父模块。这就是为什么在子项之前导入父项总是有效的，而相反的顺序则失败。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Nested Imports</summary>
     <div class="md"><h3>Nested Imports</h3>
 <p>Nested modules present special considerations for importing. The order in which you import modules matters, and there are multiple valid approaches:</p>
-<p>&lt;!--versetest GameSystems := module: Inventory&lt;public&gt; := module{} m:=module{ using { GameSystems } using { Inventory }</p>
-<p>using { GameSystems.Inventory }</p>
-<p>using { GameSystems } } &lt;# --&gt; &lt;!-- 14 --&gt;</p>
 <pre><code># Method 1: Import parent first, then child
 using { GameSystems }
 using { Inventory }  # Assumes Inventory is nested in GameSystems
@@ -416,22 +531,35 @@ using { GameSystems }
 # IMPORTANT: This order causes an error
 # using { Inventory }      # Error: Inventory not found
 # using { GameSystems }   # Too late, Inventory import already failed</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The restriction on import order exists because Verse resolves imports sequentially. When you import a nested module directly, Verse needs to know about its parent module first. This is why importing the parent before the child always works, while the reverse order fails.</p></div>
   </details>
 </section><section class="section" id="s8-module-aliases-with-import">
-  <div class="annotation">
-    <h3>中文批注：Module Aliases with import</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Module Aliases with import”展开。阅读时先抓住这些英文关键词：import、expression、creates、local、alias。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">import</span><span class="chip">using</span><span class="chip">Module aliases created with</span><span class="chip">can also be combined with</span><span class="chip">Note that</span><span class="chip">for</span><span class="chip">module</span><span class="chip">public</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Module Aliases with import</summary>
+  <article class="cn-read">
+    <h2>带有 import 的模块别名 <small>Module Aliases with import</small></h2>
+    <p><code>import</code> 表达式为模块创建本地别名，将其路径绑定到名称。与 <code>using</code> 将模块的公共成员直接带入作用域不同，<code>import</code> 允许您通过带有点符号的别名来访问它们：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># using: members available directly
+using { /MyProject/Utilities }
+Result := HelperFunction()  # HelperFunction is in scope
+
+# import: members accessed through alias
+Utils := import(/MyProject/Utilities)
+Result := Utils.HelperFunction()  # accessed via alias</code></pre></figure>
+<p>当您想要避免名称冲突，或者需要在代码中明确定义的来源时，这非常有用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Physics := import(/MyProject/Systems/Physics)
+Graphics := import(/MyProject/Systems/Graphics)
+
+# Clear which Transform is being used
+PhysicsTransform := Physics.Transform{}
+GraphicsTransform := Graphics.Transform{}</code></pre></figure>
+<p>使用 <code>import</code> 创建的模块别名在同一模块内的所有代码片段中都是可见的。 <code>import</code> 还可以与 <code>using</code> 组合使用，为模块指定别名并将其成员纳入范围：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Graphics := import(/MyProject/Systems/Graphics)
+using { Graphics }  # now Graphics members are also directly available</code></pre></figure>
+<p>请注意，<code>import</code> 仅适用于模块路径。尝试导入解析为类或其他非模块定义的路径是错误的。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Module Aliases with import</summary>
     <div class="md"><h3>Module Aliases with import</h3>
 <p>The <code>import</code> expression creates a local alias for a module, binding its path to a name. Unlike <code>using</code>, which brings a module&#x27;s public members directly into scope, <code>import</code> lets you access them through the alias with dot notation:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 14b --&gt;</p>
 <pre><code># using: members available directly
 using { /MyProject/Utilities }
 Result := HelperFunction()  # HelperFunction is in scope
@@ -440,7 +568,6 @@ Result := HelperFunction()  # HelperFunction is in scope
 Utils := import(/MyProject/Utilities)
 Result := Utils.HelperFunction()  # accessed via alias</code></pre>
 <p>This is useful when you want to avoid name collisions, or when you need to make the origin of a definition explicit in your code:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 14c --&gt;</p>
 <pre><code>Physics := import(/MyProject/Systems/Physics)
 Graphics := import(/MyProject/Systems/Graphics)
 
@@ -448,25 +575,27 @@ Graphics := import(/MyProject/Systems/Graphics)
 PhysicsTransform := Physics.Transform{}
 GraphicsTransform := Graphics.Transform{}</code></pre>
 <p>Module aliases created with <code>import</code> are visible across all snippets within the same module. An <code>import</code> can also be combined with <code>using</code> to both alias a module and bring its members into scope:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 14d --&gt;</p>
 <pre><code>Graphics := import(/MyProject/Systems/Graphics)
 using { Graphics }  # now Graphics members are also directly available</code></pre>
 <p>Note that <code>import</code> only works with module paths. Attempting to import a path that resolves to a class or other non-module definition is an error.</p></div>
   </details>
 </section><section class="section" id="s9-scope-and-visibility">
-  <div class="annotation">
-    <h3>中文批注：Scope and Visibility</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Scope and Visibility”展开。阅读时先抓住这些英文关键词：Imports、have、file、scope、they。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">.verse</span><span class="chip">module</span><span class="chip">for</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Scope and Visibility</summary>
+  <article class="cn-read">
+    <h2>范围和可见性 <small>Scope and Visibility</small></h2>
+    <p>导入具有文件范围 - 它们仅影响它们出现的文件。如果同一模块中有多个 <code>.verse</code> 文件，则每个文件都需要自己的外部模块导入语句。但是，同一模块中的文件可以看到彼此的定义而无需导入：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># File: player_module/health.verse
+health_component := class:
+    CurrentHealth:float = 100.0
+
+# File: player_module/armor.verse
+# No import needed for health_component since it&#x27;s in the same module
+armor_component := class:
+    HealthComp:health_component = health_component{}</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Scope and Visibility</summary>
     <div class="md"><h3>Scope and Visibility</h3>
 <p>Imports have file scope - they only affect the file in which they appear. If you have multiple <code>.verse</code> files in the same module, each file needs its own import statements for external modules. However, files within the same module can see each other&#x27;s definitions without imports:</p>
-<p>&lt;!--versetest m := module{ health_component := class: CurrentHealth:float = 100.0</p>
-<p>armor_component := class: HealthComp:health_component = health_component{} } &lt;# --&gt; &lt;!-- 15 --&gt;</p>
 <pre><code># File: player_module/health.verse
 health_component := class:
     CurrentHealth:float = 100.0
@@ -474,22 +603,25 @@ health_component := class:
 # File: player_module/armor.verse
 # No import needed for health_component since it&#x27;s in the same module
 armor_component := class:
-    HealthComp:health_component = health_component{}</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+    HealthComp:health_component = health_component{}</code></pre></div>
   </details>
 </section><section class="section" id="s10-import-conflicts">
-  <div class="annotation">
-    <h3>中文批注：Import Conflicts</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Import Conflicts”展开。阅读时先抓住这些英文关键词：two、imported、modules、define、members。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Import Conflicts</summary>
+  <article class="cn-read">
+    <h2>导入冲突 <small>Import Conflicts</small></h2>
+    <p>当两个导入的模块定义同名成员时，需要消除歧义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>using { /GameA/Combat }
+using { /GameB/Combat }
+
+# Both modules might define CalculateDamage
+# You must use qualified names:
+DamageA := Combat.CalculateDamage(10.0)  # Error: ambiguous
+DamageA := (/GameA/Combat:)CalculateDamage(10.0)  # OK: fully qualified
+DamageB := (/GameB/Combat:)CalculateDamage(10.0)  # OK: fully qualified</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Import Conflicts</summary>
     <div class="md"><h3>Import Conflicts</h3>
 <p>When two imported modules define members with the same name, you need to disambiguate:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 16 --&gt;</p>
 <pre><code>using { /GameA/Combat }
 using { /GameB/Combat }
 
@@ -500,24 +632,31 @@ DamageA := (/GameA/Combat:)CalculateDamage(10.0)  # OK: fully qualified
 DamageB := (/GameB/Combat:)CalculateDamage(10.0)  # OK: fully qualified</code></pre></div>
   </details>
 </section><section class="section" id="s11-qualified-names">
-  <div class="annotation">
-    <h3>中文批注：Qualified Names</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Qualified Names”展开。阅读时先抓住这些英文关键词：After、importing、refer、module、contents。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">item</span><span class="chip">The qualified access expression</span><span class="chip">&lt;public&gt;</span><span class="chip">module</span><span class="chip">using</span><span class="chip">for</span><span class="chip">public</span><span class="chip">class</span><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Qualified Names</summary>
+  <article class="cn-read">
+    <h2>合格名称 <small>Qualified Names</small></h2>
+    <p>导入后，您可以使用限定名称引用模块内容。 Verse 提供两种形式的限定：大多数情况下的标准点表示法，以及用于消歧的特殊限定访问语法。</p>
+<p>当您需要消除不同模块中具有相同名称的标识符之间的歧义时，或者当您想要显式指定标识符的范围时，请使用带括号和冒号的限定访问表达式：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Qualified access syntax: (qualifier:)identifier
+
+using { CombatModule }
+using { MagicModule }
+
+ProcessDamage():void =
+    # Both modules define CalculateDamage
+    PhysicalDamage := (CombatModule:)CalculateDamage(100.0)
+    MagicalDamage := (MagicModule:)CalculateDamage(100.0)
+
+    # Explicitly qualify local vs module identifiers
+    LocalItem := item{Name := &quot;Sword&quot;}  # Local definition
+    ModuleItem := (InventoryModule:)item{Name := &quot;Shield&quot;}  # From module</code></pre></figure>
+<p>限定访问表达式 <code>(module:)identifier</code> 在以下几种情况下特别有用：</p>
+<ol><li>**解决命名冲突**：当多个导入的模块导出相同的标识符时</li><li>**显式作用域**：当您想要清楚标识符来自哪个模块以提高可读性时</li><li>**访问隐藏名称**：当本地定义隐藏模块成员时</li><li>**通用编程**：使用可能计算限定符的参数类型时</li></ol>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Qualified Names</summary>
     <div class="md"><h3>Qualified Names</h3>
 <p>After importing, you can refer to module contents using qualified names. Verse provides two forms of qualification: standard dot notation for most cases, and special qualified access syntax for disambiguation.</p>
 <p>When you need to disambiguate between identifiers with the same name from different modules, or when you want to explicitly specify the scope of an identifier, use a qualified access expression using parentheses and a colon:</p>
-<p>&lt;!-- BUG? Or bad error message?</p>
-<p>m := module{ item&lt;public&gt; := class{} }</p>
-<p>x := module{ item := class{} F():void = A := (local:)item{} B := (m:)item{} }</p>
-<p>LogVerseBuild: Error: C:/VerseBook/Book/verse/16_modules/17.versetest(8,10, 8,22): Script Error 3506: Unknown identifier <code>item</code>. Did you mean any of: InventoryModule.item item LogVerseBuild: Error: C:/VerseBook/Book/verse/16_modules/17.versetest(9,10, 9,33): Script Error 3506: Unknown identifier <code>item</code>. Did you mean any of: InventoryModule.item</p>
-<p>--&gt;</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 17 --&gt;</p>
 <pre><code># Qualified access syntax: (qualifier:)identifier
 
 using { CombatModule }
@@ -532,42 +671,44 @@ ProcessDamage():void =
     LocalItem := item{Name := &quot;Sword&quot;}  # Local definition
     ModuleItem := (InventoryModule:)item{Name := &quot;Shield&quot;}  # From module</code></pre>
 <p>The qualified access expression <code>(module:)identifier</code> is particularly useful in several scenarios:</p>
-<ol>
-<li><strong>Resolving naming conflicts</strong>: When multiple imported modules export the same identifier</li>
-<li><strong>Explicit scoping</strong>: When you want to make it clear which module an identifier comes from for readability</li>
-<li><strong>Accessing shadowed names</strong>: When a local definition shadows a module member</li>
-<li><strong>Generic programming</strong>: When working with parametric types where the qualifier might be computed</li>
-</ol></div>
+<ol><li><strong>Resolving naming conflicts</strong>: When multiple imported modules export the same identifier</li><li><strong>Explicit scoping</strong>: When you want to make it clear which module an identifier comes from for readability</li><li><strong>Accessing shadowed names</strong>: When a local definition shadows a module member</li><li><strong>Generic programming</strong>: When working with parametric types where the qualifier might be computed</li></ol></div>
   </details>
 </section><section class="section" id="s12-module-scoped-variables">
-  <div class="annotation">
-    <h3>中文批注：Module-Scoped Variables</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Module-Scoped Variables”展开。可把它先理解为“模块级变量”。阅读时先抓住这些英文关键词：Variables、defined、module、scope、global。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">var X:int = 0</span><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;allocates&gt;</span><span class="chip">weak_map</span><span class="chip">weak_map(session, t)</span><span class="chip">Use</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;persistent&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Module-Scoped Variables</summary>
+  <article class="cn-read">
+    <h2>模块范围的变量 <small>Module-Scoped Variables</small></h2>
+    <p>在模块范围内定义的变量对于该变量在范围内的任何游戏实例都是全局的。</p>
+<p>对模块范围定义的限制：</p>
+<ul><li>模块范围内不允许直接声明简单类型（如 <code>var X:int = 0</code>）</li><li>具有 <code>&lt;allocates&gt;</code> 的 <code>&lt;unique&gt;</code> 类的实例可以在模块范围内创建，只要它们的构造实际上不分配可变内存</li><li>对于持久可变状态，请使用 <code>weak_map</code> 和适当的密钥类型（见下文）</li></ul>
+<p>使用 <code>weak_map(session, t)</code> 作为在游戏会话期间持续存在的变量：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var GlobalCounter:weak_map(session, int) = map{}
+
+IncrementCounter()&lt;transacts&gt;:void =
+    CurrentValue := if (Value := GlobalCounter[GetSession()]) then Value + 1 else 0
+    if (set GlobalCounter[GetSession()] = CurrentValue) {}</code></pre></figure>
+<p>使用 <code>weak_map(player, t)</code> 来获取跨游戏会话持续存在的数据：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var PlayerSaveData:weak_map(player, player_data) = map{}
+
+player_data := class&lt;final&gt;&lt;persistable&gt;:
+    Level:int = 1
+    Experience:int = 0
+    UnlockedItems:[]string = array{}
+
+SavePlayerProgress(Player:player, NewData:player_data)&lt;decides&gt;:void =
+    set PlayerSaveData[Player] = NewData</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Module-Scoped Variables</summary>
     <div class="md"><h2>Module-Scoped Variables</h2>
 <p>Variables defined at module scope are global to any game instance where the variable is in scope.</p>
 <p>Restrictions on module-scoped definitions:</p>
-<ul>
-<li>Direct <code>var</code> declarations of simple types (like <code>var X:int = 0</code>) are not allowed at module scope</li>
-<li>Instances of <code>&lt;unique&gt;</code> classes with <code>&lt;allocates&gt;</code> can be created at module scope, as long as their construction doesn&#x27;t actually allocate mutable memory</li>
-<li>For persistent mutable state, use <code>weak_map</code> with appropriate key types (see below)</li>
-</ul>
+<ul><li>Direct <code>var</code> declarations of simple types (like <code>var X:int = 0</code>) are not allowed at module scope</li><li>Instances of <code>&lt;unique&gt;</code> classes with <code>&lt;allocates&gt;</code> can be created at module scope, as long as their construction doesn&#x27;t actually allocate mutable memory</li><li>For persistent mutable state, use <code>weak_map</code> with appropriate key types (see below)</li></ul>
 <p>Use <code>weak_map(session, t)</code> for variables that persist for the duration of a game session:</p>
-<p>&lt;!--versetest session := class&lt;unique&gt;{} GetSession()&lt;transacts&gt;:session = session{} --&gt; &lt;!-- 20 --&gt;</p>
 <pre><code>var GlobalCounter:weak_map(session, int) = map{}
 
 IncrementCounter()&lt;transacts&gt;:void =
     CurrentValue := if (Value := GlobalCounter[GetSession()]) then Value + 1 else 0
     if (set GlobalCounter[GetSession()] = CurrentValue) {}</code></pre>
 <p>Use <code>weak_map(player, t)</code> for data that persists across game sessions:</p>
-<p>&lt;!--versetest player := class&lt;unique&gt;&lt;persistent&gt;&lt;module_scoped_var_weak_map_key&gt;{} var PlayerSaveData:weak_map(player, player_data) = map{}</p>
-<p>player_data := class&lt;final&gt;&lt;persistable&gt;: Level:int = 1 Experience:int = 0 UnlockedItems:[]string = array{}</p>
-<p>SavePlayerProgress(Player:player, NewData:player_data)&lt;decides&gt;:void = set PlayerSaveData[Player] = NewData &lt;# --&gt; &lt;!-- 21 --&gt;</p>
 <pre><code>var PlayerSaveData:weak_map(player, player_data) = map{}
 
 player_data := class&lt;final&gt;&lt;persistable&gt;:
@@ -576,23 +717,33 @@ player_data := class&lt;final&gt;&lt;persistable&gt;:
     UnlockedItems:[]string = array{}
 
 SavePlayerProgress(Player:player, NewData:player_data)&lt;decides&gt;:void =
-    set PlayerSaveData[Player] = NewData</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+    set PlayerSaveData[Player] = NewData</code></pre></div>
   </details>
 </section><section class="section" id="s13-metaverse-and-publishing">
-  <div class="annotation">
-    <h3>中文批注：Metaverse and Publishing</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Metaverse and Publishing”展开。可把它先理解为“元宇宙与发布”。阅读时先抓住这些英文关键词：publish、module、Metaverse、path、becomes。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">module</span><span class="chip">public</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Metaverse and Publishing</summary>
+  <article class="cn-read">
+    <h2>元界与出版 <small>Metaverse and Publishing</small></h2>
+    <p>当您将模块发布到 Metaverse 时，模块路径将变得全局可访问，其公共成员将成为模块 API 的一部分，从那时起，模块必须保持向后兼容性。</p>
+<p>下面的例子展示了进化是如何运作的：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Initial publication
+Thing&lt;public&gt;:rational = 1/3
+
+# Valid updates:
+# - Change the value (not the type)
+Thing&lt;public&gt;:rational = 10/3
+
+# - Make the type more specific (subtype)
+Thing&lt;public&gt;:int = 20  # nat is a subtype of int
+
+# Invalid updates (would be rejected):
+# - Remove the member
+# - Change to incompatible type
+# Thing&lt;public&gt;:string = &quot;hello&quot;  # Would fail</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Metaverse and Publishing</summary>
     <div class="md"><h2>Metaverse and Publishing</h2>
 <p>When you publish a module to the Metaverse, the module path becomes globally accessible, its public members become part of the module&#x27;s API, and from that point the module must maintain backward compatibility.</p>
 <p>The following example of shows how evolution works:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 22 --&gt;</p>
 <pre><code># Initial publication
 Thing&lt;public&gt;:rational = 1/3
 
@@ -609,22 +760,70 @@ Thing&lt;public&gt;:int = 20  # nat is a subtype of int
 # Thing&lt;public&gt;:string = &quot;hello&quot;  # Would fail</code></pre></div>
   </details>
 </section><section class="section" id="s14-local-qualifiers">
-  <div class="annotation">
-    <h3>中文批注：Local Qualifiers</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Local Qualifiers”展开。阅读时先抓住这些英文关键词：local、qualifier、disambiguate、identifiers、within。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">(local:)</span><span class="chip">&lt;!-- #&gt; --&gt;
+  <article class="cn-read">
+    <h2>本地预选赛 <small>Local Qualifiers</small></h2>
+    <p><code>(local:)</code> 限定符可以消除函数内标识符的歧义。这对于演进兼容性至关重要 - 当外部模块在代码发布后添加新的公共定义时，<code>(local:)</code> 确保您的本地定义优先。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># External module adds ShadowX after your code published
+ExternalModule&lt;public&gt; := module:
+    ShadowX&lt;public&gt;:int = 10  # Added later!
 
-The</span><span class="chip">The</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">for</span><span class="chip">public</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Local Qualifiers</summary>
+MyModule := module:
+    using{ExternalModule}
+
+    # Without (local:) - shadowing conflict
+    # Foo():float =
+    #     ShadowX:float = 0.0  # Error: conflicts with ExternalModule.ShadowX
+    #     ShadowX
+
+    # With (local:) - clear disambiguation
+    Foo():float =
+        (local:)ShadowX:float = 0.0  # Local variable
+        (local:)ShadowX              # Returns 0.0, not 10</code></pre></figure>
+<p><code>(local:)</code> 限定符可以在以下上下文中使用：</p>
+<p>**功能参数：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessValue((local:)Value:int):int =
+    (local:)Value + 1</code></pre></figure>
+<p>**函数体数据定义：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Compute():int =
+    (local:)Result:int = 42
+    (local:)Result</code></pre></figure>
+<p>**对于循环变量：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SumValues():int =
+    var Total:int = 0
+    for ((local:)I := 0..10):
+        set Total += (local:)I
+    Total</code></pre></figure>
+<p>**如果条件：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CheckValue():float =
+    if (X := GetValue[], (local:)X &gt; 5.0):
+        (local:)X
+    else:
+        0.0</code></pre></figure>
+<p>**块范围：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ComputeInBlock():int =
+    block:
+        (local:)Temp:int = 10
+        (local:)Temp * 2</code></pre></figure>
+<p>**类块：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>my_class := class:
+    var Value&lt;public&gt;:int = 0
+    block:
+        (local:)Value:int = 42
+        set (my_class:)Value = (local:)Value</code></pre></figure>
+<p><code>(local:)</code> 限定符 **不能** 在这些上下文中使用：</p>
+<p>**嵌套范围限制：**</p>
+<p>目前，您**不能**在嵌套块中重新定义 <code>(local:)</code> 限定标识符：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Error: cannot redefine local identifier
+F((local:)X:int):int =
+    block:
+        (local:)X:float = 5.5  # Error: X already defined in function
+    (local:)X</code></pre></figure>
+<p>此限制可能会在未来版本中取消，以支持更复杂的范围模式。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Local Qualifiers</summary>
     <div class="md"><h2>Local Qualifiers</h2>
 <p>The <code>(local:)</code> qualifier can disambiguate identifiers within functions. This is critical for evolution compatibility—when external modules add new public definitions after your code is published, <code>(local:)</code> ensures your local definitions take precedence.</p>
-<p>&lt;!--versetest m := module{ ExternalModule&lt;public&gt; := module: ShadowX&lt;public&gt;:int = 10</p>
-<p>MyModule := module: using{ExternalModule}</p>
-<p>Foo():float = (local:)ShadowX:float = 0.0 (local:)ShadowX } &lt;# --&gt; &lt;!-- 23 --&gt;</p>
 <pre><code># External module adds ShadowX after your code published
 ExternalModule&lt;public&gt; := module:
     ShadowX&lt;public&gt;:int = 10  # Added later!
@@ -641,43 +840,32 @@ MyModule := module:
     Foo():float =
         (local:)ShadowX:float = 0.0  # Local variable
         (local:)ShadowX              # Returns 0.0, not 10</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The <code>(local:)</code> qualifier can be used in these contexts:</p>
 <p><strong>Function parameters:</strong></p>
-<p>&lt;!--versetest m := module{ ProcessValue((local:)Value:int):int = (local:)Value + 1 } &lt;# --&gt; &lt;!-- 24 --&gt;</p>
 <pre><code>ProcessValue((local:)Value:int):int =
     (local:)Value + 1</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p><strong>Function body data definitions:</strong></p>
-<p>&lt;!--versetest m := module{ Compute():int = (local:)Result:int = 42 (local:)Result } &lt;# --&gt; &lt;!-- 25 --&gt;</p>
 <pre><code>Compute():int =
     (local:)Result:int = 42
     (local:)Result</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p><strong>For loop variables:</strong></p>
-<p>&lt;!--versetest m := module{ SumValues():int = var Total:int = 0 for ((local:)I := 0..10): set Total += (local:)I Total } &lt;# --&gt; &lt;!-- 26 --&gt;</p>
 <pre><code>SumValues():int =
     var Total:int = 0
     for ((local:)I := 0..10):
         set Total += (local:)I
     Total</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p><strong>If conditions:</strong></p>
-<p>&lt;!--versetest GetValue&lt;public&gt;()&lt;computes&gt;&lt;decides&gt;:float = 10.0 --&gt; &lt;!-- 27 --&gt;</p>
 <pre><code>CheckValue():float =
     if (X := GetValue[], (local:)X &gt; 5.0):
         (local:)X
     else:
         0.0</code></pre>
 <p><strong>Block scopes:</strong></p>
-<p>&lt;!--versetest m := module{ ComputeInBlock():int = block: (local:)Temp:int = 10 (local:)Temp * 2 } &lt;# --&gt; &lt;!-- 28 --&gt;</p>
 <pre><code>ComputeInBlock():int =
     block:
         (local:)Temp:int = 10
         (local:)Temp * 2</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p><strong>Class blocks:</strong></p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 29 --&gt;</p>
 <pre><code>my_class := class:
     var Value&lt;public&gt;:int = 0
     block:
@@ -686,7 +874,6 @@ MyModule := module:
 <p>The <code>(local:)</code> qualifier <strong>cannot</strong> be used in these contexts:</p>
 <p><strong>Nested Scope Limitation:</strong></p>
 <p>Currently, you <strong>cannot</strong> redefine a <code>(local:)</code> qualified identifier in nested blocks:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># Error: cannot redefine local identifier
 F((local:)X:int):int =
     block:
@@ -695,33 +882,76 @@ F((local:)X:int):int =
 <p>This limitation may be lifted in future versions to support more complex scoping patterns.</p></div>
   </details>
 </section><section class="section" id="s15-automatic-qualification">
-  <div class="annotation">
-    <h3>中文批注：Automatic Qualification</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Automatic Qualification”展开。阅读时先抓住这些英文关键词：warning、Unreleased、Feature、Automatic、qualification。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">int</span><span class="chip">string</span><span class="chip">(local:)</span><span class="chip">The package path</span><span class="chip">becomes the qualifier for</span><span class="chip">,
-while the parameter</span><span class="chip">gets the special</span><span class="chip">qualifier, and the
-built-in type</span><span class="chip">Notice how</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Automatic Qualification</summary>
+  <article class="cn-read">
+    <h2>自动获得资格 <small>Automatic Qualification</small></h2>
+    <p>!!!警告“未发布的功能”自动资格尚未完全实施。本节记录了当前不可用的计划功能。在正式发布之前，不应依赖此处描述的行为，特别是有关编译器如何转换已发布代码中的标识符的行为。</p>
+<p>当您编写 Verse 代码时，为了清晰和可读性，您可以使用简单的、非限定的标识符。然而，Verse 编译器将在内部将所有标识符转换为完全限定的形式，明确指定其范围和来源。这一过程称为“自动限定”，将确保每个标识符都是明确的，并且可以精确地解析为一个定义。</p>
+<p>了解自动限定将帮助您了解 Verse 将如何解析名称、为什么会发生某些错误，以及即使在具有许多模块和重叠名称的复杂代码库中，模块系统也将如何保持正确性。</p>
+<p>编译器将限定几类标识符：</p>
+<ol><li>**顶级定义** - 包范围内的函数、变量、类、模块</li><li>**类型引用** - 所有类型，包括 <code>int</code> 和 <code>string</code> 等内置类型</li><li>**函数参数** - 本地参数获取 <code>(local:)</code> 限定符</li><li>**类和接口成员** - 方法、字段、嵌套在复合类型中</li><li>**模块成员** - 模块内的公共和内部定义</li><li>**嵌套范围** - 嵌套模块、类和函数内的引用</li></ol>
+<p>Verse 使用多种模式根据标识符的范围来限定标识符：</p>
+<p>**包级限定**：包根部的定义使用包路径进行限定：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># What you write:
+Function(X:int):int = X
+
+# How the compiler sees it:
+(/YourPackage:)Function((local:)X:(/Verse.org/Verse:)int):(/Verse.org/Verse:)int = (local:)X</code></pre></figure>
+<p>包路径 <code>/YourPackage</code> 成为 <code>Function</code> 的限定符，而参数 <code>X</code> 获得特殊的 <code>(local:)</code> 限定符，内置类型 <code>int</code> 使用其标准库路径 <code>/Verse.org/Verse</code> 进行限定。</p>
+<p>**局部作用域限定**：函数参数和局部变量用 <code>(local:)</code> 标记：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># What you write:
+ProcessValue(Input:int, Multiplier:int):int =
+    Input * Multiplier
+
+# How the compiler sees it:
+(/YourPackage:)ProcessValue((local:)Input:(/Verse.org/Verse:)int, (local:)Multiplier:(/Verse.org/Verse:)int):(/Verse.org/Verse:)int =
+    (local:)Input * (local:)Multiplier</code></pre></figure>
+<p>**嵌套范围限定**：类、接口或模块中的成员通过其容器的路径进行限定：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># What you write:
+player_class := class:
+    Health:float = 100.0
+
+    TakeDamage(Amount:float):void =
+        set Health = Health - Amount
+
+# How the compiler sees it:
+(/YourPackage:)player_class := class:
+    (/YourPackage/player_class:)Health:(/Verse.org/Verse:)float = 100.0
+
+    (/YourPackage/player_class:)TakeDamage((local:)Amount:(/Verse.org/Verse:)float):(/Verse.org/Verse:)void =
+        set (/YourPackage/player_class:)Health = (/YourPackage/player_class:)Health - (local:)Amount</code></pre></figure>
+<p>请注意 <code>Health</code> 和 <code>TakeDamage</code> 如何用 <code>/YourPackage/player_class</code> 进行限定以表明它们是该类的成员。</p>
+<p>**模块成员资格**：模块内的定义通过模块路径进行限定：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># What you write:
+Config := module:
+    MaxPlayers&lt;public&gt;:int = 100
+
+    GetPlayerLimit&lt;public&gt;():int = MaxPlayers
+
+# How the compiler sees it:
+(/YourPackage:)Config := module:
+    (/YourPackage/config:)MaxPlayers&lt;public&gt;:(/Verse.org/Verse:)int = 100
+
+    (/YourPackage/config:)GetPlayerLimit&lt;public&gt;():(/Verse.org/Verse:)int =
+        (/YourPackage/config:)MaxPlayers</code></pre></figure>
+<p>所有内置类型都符合其标准库路径。这使得这些类型的来源变得明确，并保持与用户定义类型的一致性：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Common built-in types and their full qualifications:
+int       → (/Verse.org/Verse:)int
+float     → (/Verse.org/Verse:)float
+string    → (/Verse.org/Verse:)string
+logic     → (/Verse.org/Verse:)logic
+message   → (/Verse.org/Verse:)message</code></pre></figure>
+<p>当您编写 <code>X:int</code> 时，编译器会将其扩展为 <code>X:(/Verse.org/Verse:)int</code>，从而使类型的来源明确。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Automatic Qualification</summary>
     <div class="md"><h2>Automatic Qualification</h2>
-<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>Automatic qualification has not yet been fully implemented. This section documents planned functionality that is not currently available. The behavior described here, particularly regarding how the compiler transforms identifiers in published code, should not be relied upon until officially released.</p></div>
+<p>!!! warning &quot;Unreleased Feature&quot; Automatic qualification has not yet been fully implemented. This section documents planned functionality that is not currently available. The behavior described here, particularly regarding how the compiler transforms identifiers in published code, should not be relied upon until officially released.</p>
 <p>When you write Verse code, you use simple, unqualified identifiers for clarity and readability. However, the Verse compiler will internally transform all identifiers into fully-qualified forms that explicitly specify their scope and origin. This process, called <strong>automatic qualification</strong>, will ensure that every identifier is unambiguous and can be resolved to exactly one definition.</p>
 <p>Understanding automatic qualification will help you understand how Verse will resolve names, why certain errors occur, and how the module system will maintain correctness even in complex codebases with many modules and overlapping names.</p>
 <p>The compiler will qualify several categories of identifiers:</p>
-<ol>
-<li><strong>Top-level definitions</strong> - Functions, variables, classes, modules at package scope</li>
-<li><strong>Type references</strong> - All types, including built-in types like <code>int</code> and <code>string</code></li>
-<li><strong>Function parameters</strong> - Local parameters get the <code>(local:)</code> qualifier</li>
-<li><strong>Class and interface members</strong> - Methods, fields, nested within composite types</li>
-<li><strong>Module members</strong> - Public and internal definitions within modules</li>
-<li><strong>Nested scopes</strong> - References within nested modules, classes, and functions</li>
-</ol>
+<ol><li><strong>Top-level definitions</strong> - Functions, variables, classes, modules at package scope</li><li><strong>Type references</strong> - All types, including built-in types like <code>int</code> and <code>string</code></li><li><strong>Function parameters</strong> - Local parameters get the <code>(local:)</code> qualifier</li><li><strong>Class and interface members</strong> - Methods, fields, nested within composite types</li><li><strong>Module members</strong> - Public and internal definitions within modules</li><li><strong>Nested scopes</strong> - References within nested modules, classes, and functions</li></ol>
 <p>Verse uses several patterns to qualify identifiers based on their scope:</p>
 <p><strong>Package-level qualification</strong>: Definitions at the root of a package are qualified with the package path:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># What you write:
 Function(X:int):int = X
 
@@ -729,7 +959,6 @@ Function(X:int):int = X
 (/YourPackage:)Function((local:)X:(/Verse.org/Verse:)int):(/Verse.org/Verse:)int = (local:)X</code></pre>
 <p>The package path <code>/YourPackage</code> becomes the qualifier for <code>Function</code>, while the parameter <code>X</code> gets the special <code>(local:)</code> qualifier, and the built-in type <code>int</code> is qualified with its standard library path <code>/Verse.org/Verse</code>.</p>
 <p><strong>Local scope qualification</strong>: Function parameters and local variables are marked with <code>(local:)</code>:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># What you write:
 ProcessValue(Input:int, Multiplier:int):int =
     Input * Multiplier
@@ -738,7 +967,6 @@ ProcessValue(Input:int, Multiplier:int):int =
 (/YourPackage:)ProcessValue((local:)Input:(/Verse.org/Verse:)int, (local:)Multiplier:(/Verse.org/Verse:)int):(/Verse.org/Verse:)int =
     (local:)Input * (local:)Multiplier</code></pre>
 <p><strong>Nested scope qualification</strong>: Members within classes, interfaces, or modules get qualified with their container&#x27;s path:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># What you write:
 player_class := class:
     Health:float = 100.0
@@ -754,7 +982,6 @@ player_class := class:
         set (/YourPackage/player_class:)Health = (/YourPackage/player_class:)Health - (local:)Amount</code></pre>
 <p>Notice how <code>Health</code> and <code>TakeDamage</code> are qualified with <code>/YourPackage/player_class</code> to indicate they&#x27;re members of the class.</p>
 <p><strong>Module member qualification</strong>: Definitions within modules are qualified with the module path:</p>
-<p>&lt;!--MoCompile--&gt;</p>
 <pre><code># What you write:
 Config := module:
     MaxPlayers&lt;public&gt;:int = 100
@@ -768,7 +995,6 @@ Config := module:
     (/YourPackage/config:)GetPlayerLimit&lt;public&gt;():(/Verse.org/Verse:)int =
         (/YourPackage/config:)MaxPlayers</code></pre>
 <p>All built-in types are qualified with their standard library paths. This makes it explicit where these types come from and maintains consistency with user-defined types:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># Common built-in types and their full qualifications:
 int       → (/Verse.org/Verse:)int
 float     → (/Verse.org/Verse:)float
@@ -778,20 +1004,41 @@ message   → (/Verse.org/Verse:)message</code></pre>
 <p>When you write <code>X:int</code>, the compiler expands it to <code>X:(/Verse.org/Verse:)int</code>, making the type&#x27;s origin explicit.</p></div>
   </details>
 </section><section class="section" id="s16-example">
-  <div class="annotation">
-    <h3>中文批注：Example</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Example”展开。阅读时先抓住这些英文关键词：Here、more、realistic、showing、how。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Notice how:
+  <article class="cn-read">
+    <h2>例子 <small>Example</small></h2>
+    <p>这是一个更现实的示例，展示了资格如何在多个范围内发挥作用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># What you write:
+GameSystem := module:
+    BaseValue:int = 42
 
-- The parameter</span><span class="chip">is</span><span class="chip">-</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Example</summary>
+    Calculator := module:
+        Multiplier:int = 2
+
+        Calculate(Input:int):int =
+            Input * Multiplier + BaseValue
+
+# How the compiler will see it (when implemented):
+(/YourGame:)GameSystem := module:
+    (/YourGame/GameSystem:)BaseValue:(/Verse.org/Verse:)int = 42
+
+    (/YourGame/GameSystem:)Calculator := module:
+        (/YourGame/GameSystem/Calculator:)Multiplier:(/Verse.org/Verse:)int = 2
+
+        (/YourGame/GameSystem/Calculator:)Calculate((local:)Input:(/Verse.org/Verse:)int):(/Verse.org/Verse:)int =
+            (local:)Input * (/YourGame/GameSystem/Calculator:)Multiplier + (/YourGame/GameSystem:)BaseValue</code></pre></figure>
+<p>注意如何：</p>
+<ul><li>参数<code>Input</code>为<code>(local:)</code></li><li><code>Multiplier</code> 通过其包含的模块路径进行限定</li><li><code>BaseValue</code> 符合外部模块路径</li><li>所有类型引用均通过 Verse 标准库路径进行限定</li></ul>
+<p>**有关影子的重要说明**：自动资格仅适用于已发布的代码，不适用于您的源代码。 Verse 目前执行严格的反阴影规则，以防止混淆并保持代码清晰度。例如，以下代码**无法**编译：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># This does NOT compile - shadowing is not allowed
+Thing := module:
+    Thing := module:  # ERROR: Cannot shadow outer Thing
+        Potato := module{}</code></pre></figure>
+<p>即使使用自动限定，嵌套定义也不能隐藏具有相同名称的外部定义。如果您想故意隐藏某些内容，则必须使用显式限定符来明确您的意图。这种严格的方法有助于防止错误并使代码演进更安全。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Example</summary>
     <div class="md"><h3>Example</h3>
 <p>Here&#x27;s a more realistic example showing how qualification would work across multiple scopes:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># What you write:
 GameSystem := module:
     BaseValue:int = 42
@@ -812,14 +1059,8 @@ GameSystem := module:
         (/YourGame/GameSystem/Calculator:)Calculate((local:)Input:(/Verse.org/Verse:)int):(/Verse.org/Verse:)int =
             (local:)Input * (/YourGame/GameSystem/Calculator:)Multiplier + (/YourGame/GameSystem:)BaseValue</code></pre>
 <p>Notice how:</p>
-<ul>
-<li>The parameter <code>Input</code> is <code>(local:)</code></li>
-<li><code>Multiplier</code> is qualified with its containing module path</li>
-<li><code>BaseValue</code> is qualified with the outer module path</li>
-<li>All type references are qualified with the Verse standard library path</li>
-</ul>
+<ul><li>The parameter <code>Input</code> is <code>(local:)</code></li><li><code>Multiplier</code> is qualified with its containing module path</li><li><code>BaseValue</code> is qualified with the outer module path</li><li>All type references are qualified with the Verse standard library path</li></ul>
 <p><strong>Important Note on Shadowing</strong>: Automatic qualification will only apply to published code, not your source code. Verse currently enforces strict anti-shadowing rules to prevent confusion and maintain code clarity. For example, this code does <strong>not</strong> compile:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># This does NOT compile - shadowing is not allowed
 Thing := module:
     Thing := module:  # ERROR: Cannot shadow outer Thing
@@ -827,18 +1068,26 @@ Thing := module:
 <p>Even with automatic qualification, nested definitions cannot shadow outer definitions with the same name. If you want to intentionally shadow something, you must use explicit qualifiers to make your intent clear. This strict approach helps prevent bugs and makes code evolution safer.</p></div>
   </details>
 </section><section class="section" id="s17-qualification-with-using">
-  <div class="annotation">
-    <h3>中文批注：Qualification with Using</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Qualification with Using”展开。阅读时先抓住这些英文关键词：import、modules、compiler、still、qualifies。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">The compiler resolves</span><span class="chip">to</span><span class="chip">based on the</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Qualification with Using</summary>
+  <article class="cn-read">
+    <h2>使用资格 <small>Qualification with Using</small></h2>
+    <p>当您使用 <code>using</code> 导入模块时，编译器仍然限定所有标识符，但它可以将非限定名称解析为导入的模块：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># What you write:
+using { /Verse.org/Random }
+
+GenerateRandomValue():float =
+    GetRandomFloat(0.0, 1.0)
+
+# How the compiler sees it:
+using { /Verse.org/Random }
+
+(/YourGame:)GenerateRandomValue():(/Verse.org/Verse:)float =
+    (/Verse.org/Random:)GetRandomFloat(0.0, 1.0)</code></pre></figure>
+<p>编译器根据<code>using</code>语句将<code>GetRandomFloat</code>解析为<code>(/Verse.org/Random:)GetRandomFloat</code>。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Qualification with Using</summary>
     <div class="md"><h3>Qualification with Using</h3>
 <p>When you import modules with <code>using</code>, the compiler still qualifies all identifiers, but it can resolve unqualified names to the imported modules:</p>
-<p>&lt;!-- NoCompile--&gt;</p>
 <pre><code># What you write:
 using { /Verse.org/Random }
 
@@ -853,19 +1102,34 @@ using { /Verse.org/Random }
 <p>The compiler resolves <code>GetRandomFloat</code> to <code>(/Verse.org/Random:)GetRandomFloat</code> based on the <code>using</code> statement.</p></div>
   </details>
 </section><section class="section" id="s18-when-it-matters">
-  <div class="annotation">
-    <h3>中文批注：When It Matters</h3>
-    <div class="rows">
-      <div><p>这一节围绕“When It Matters”展开。阅读时先抓住这些英文关键词：Once、implemented、rarely、need、think。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Calculate</span><span class="chip">(/ModuleA:)Calculate</span><span class="chip">(/ModuleB:)Calculate</span><span class="chip">from</span><span class="chip">and</span><span class="chip">using</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：When It Matters</summary>
+  <article class="cn-read">
+    <h2>当重要的时候 <small>When It Matters</small></h2>
+    <p>一旦实现，您将很少需要在正常开发过程中考虑自动或手动限定，因为编译器将透明地处理它。然而，理解它在几种情况下会有所帮助：</p>
+<p>**调试名称解析错误**：当编译器报告不明确或无法解析的标识符时，了解限定可以帮助您了解原因：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>using { /ModuleA }
+using { /ModuleB }
+
+# Both modules define Calculate
+Result := Calculate(10)  # ERROR: Ambiguous - could be either module</code></pre></figure>
+<p>发生该错误的原因是编译器无法自动限定 <code>Calculate</code> - 它可能是 <code>(/ModuleA:)Calculate</code> 或 <code>(/ModuleB:)Calculate</code>。</p>
+<p>**隐藏冲突**：当局部变量与模块成员同名时：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MyModule := module:
+    Value:int = 100
+
+    Process(Value:int):int =
+        # Without explicit qualification, this is ambiguous
+        Value + Value  # Which Value? Module or parameter?</code></pre></figure>
+<p>编译器需要限定来区分 <code>(/MyModule:)Value</code> 和 <code>(local:)Value</code>。</p>
+<p>**理解错误消息**：编译器错误消息有时会显示限定名称以精确识别涉及哪个定义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Error: Cannot assign (/Verse.org/Verse:)string to (/Verse.org/Verse:)int at line 42</code></pre></figure>
+<p>这清楚地表明错误涉及内置的 <code>string</code> 和 <code>int</code> 类型，而不是具有相同名称的用户定义类型。</p>
+<p>**使用生成或反射的代码**：生成 Verse 代码或分析代码结构的工具使用限定形式，因此理解它有助于使用此类工具。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：When It Matters</summary>
     <div class="md"><h3>When It Matters</h3>
 <p>Once implemented, you will rarely need to think about automatic or manual qualification during normal development, as the compiler will handle it transparently. However, understanding it will help in several situations:</p>
 <p><strong>Debugging name resolution errors</strong>: When the compiler reports ambiguous or unresolved identifiers, understanding qualification helps you see why:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code>using { /ModuleA }
 using { /ModuleB }
 
@@ -873,7 +1137,6 @@ using { /ModuleB }
 Result := Calculate(10)  # ERROR: Ambiguous - could be either module</code></pre>
 <p>The error occurs because the compiler cannot automatically qualify <code>Calculate</code> - it could be either <code>(/ModuleA:)Calculate</code> or <code>(/ModuleB:)Calculate</code>.</p>
 <p><strong>Shadowing conflicts</strong>: When a local variable has the same name as a module member:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code>MyModule := module:
     Value:int = 100
 
@@ -887,18 +1150,25 @@ Result := Calculate(10)  # ERROR: Ambiguous - could be either module</code></pre
 <p><strong>Working with generated or reflected code</strong>: Tools that generate Verse code or analyze code structure work with the qualified form, so understanding it helps when working with such tools.</p></div>
   </details>
 </section><section class="section" id="s19-explicit-qualification">
-  <div class="annotation">
-    <h3>中文批注：Explicit Qualification</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Explicit Qualification”展开。阅读时先抓住这些英文关键词：While、compiler、automatically、qualifies、identifiers。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">(qualifier:)identifier</span><span class="chip">int</span><span class="chip">using</span><span class="chip">module</span><span class="chip">for</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Explicit Qualification</summary>
+  <article class="cn-read">
+    <h2>明确的资格 <small>Explicit Qualification</small></h2>
+    <p>虽然编译器自动限定标识符，但您还可以使用限定访问语法 <code>(qualifier:)identifier</code> 显式限定它们。当您想要覆盖自动解析或明确您的意图时，这非常有用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GameSystem := module:
+    Value:int = 100
+
+    # Explicitly qualify to avoid any ambiguity
+    GetValue():int = (GameSystem:)Value
+
+    # Use local qualifier for parameters
+    SetValue((local:)Value:int):void =
+        set (GameSystem:)Value = (local:)Value</code></pre></figure>
+<p>在以下情况下，明确的资格特别有价值：</p>
+<ul><li>解决导入模块之间的命名冲突</li><li>使代码更加自文档化</li><li>覆盖阴影行为</li><li>使用动态或计算限定符</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Explicit Qualification</summary>
     <div class="md"><h3>Explicit Qualification</h3>
 <p>While the compiler automatically qualifies identifiers, you can also explicitly qualify them using the qualified access syntax <code>(qualifier:)identifier</code>. This is useful when you want to override automatic resolution or make your intent explicit:</p>
-<p>&lt;!-- 45 FAILURE Line 11: Verse compiler error V3509: The assignment&#x27;s left hand expression type <code>int</code> cannot be assigned to --&gt;</p>
 <pre><code>GameSystem := module:
     Value:int = 100
 
@@ -909,32 +1179,38 @@ Result := Calculate(10)  # ERROR: Ambiguous - could be either module</code></pre
     SetValue((local:)Value:int):void =
         set (GameSystem:)Value = (local:)Value</code></pre>
 <p>Explicit qualification is particularly valuable when:</p>
-<ul>
-<li>Resolving naming conflicts between imported modules</li>
-<li>Making code more self-documenting</li>
-<li>Overriding shadowing behavior</li>
-<li>Working with dynamic or computed qualifiers</li>
-</ul></div>
+<ul><li>Resolving naming conflicts between imported modules</li><li>Making code more self-documenting</li><li>Overriding shadowing behavior</li><li>Working with dynamic or computed qualifiers</li></ul></div>
   </details>
 </section><section class="section" id="s20-local-scope-using">
-  <div class="annotation">
-    <h3>中文批注：Local Scope Using</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Local Scope Using”展开。阅读时先抓住这些英文关键词：While、module-level、imports、modules、paths。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">&lt;!-- #&gt; --&gt;
+  <article class="cn-read">
+    <h2>本地范围使用 <small>Local Scope Using</small></h2>
+    <p>虽然模块级 <code>using</code> 通过路径导入模块，但 Verse 还支持函数体内的**本地作用域 <code>using</code>**，以支持从本地变量和参数进行成员访问推断。当处理具有许多成员访问权限的对象时，此功能使代码更加清晰。</p>
+<p>局部作用域 <code>using</code> 采用局部变量或参数标识符（不是模块路径），并使其成员无需显式限定即可访问：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
+    Name:string = &quot;Entity&quot;
+    var Health:int = 100
 
-The</span><span class="chip">expression makes all members of</span><span class="chip">accessible without the</span><span class="chip">module</span><span class="chip">class</span><span class="chip">var</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Local Scope Using</summary>
+    UpdateHealth(Amount:int):void =
+        set Health = Health + Amount
+
+ProcessEntity(E:entity):void =
+    # Explicit member access
+    Print(E.Name)
+    E.UpdateHealth(-10)
+    Print(&quot;{E.Health}&quot;)
+
+    # With local using - inferred member access
+    using{E}
+    Print(Name)         # Inferred as: E.Name
+    UpdateHealth(-10)   # Inferred as: E.UpdateHealth(-10)
+    Print(&quot;{Health}&quot;)       # Inferred as: E.Health</code></pre></figure>
+<p><code>using{E}</code> 表达式使得 <code>E</code> 的所有成员都可以在当前范围内访问，无需 <code>E.</code> 前缀。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Local Scope Using</summary>
     <div class="md"><h2>Local Scope Using</h2>
 <p>While module-level <code>using</code> imports modules by their paths, Verse also supports <strong>local scope <code>using</code></strong> within function bodies to enable member access inference from local variables and parameters. This feature makes code cleaner when working with objects that have many member accesses.</p>
 <p>Local scope <code>using</code> takes a local variable or parameter identifier (not a module path) and makes its members accessible without explicit qualification:</p>
-<p>&lt;!--versetest m := module{ entity := class: Name:string = &quot;Entity&quot; var Health:int = 100</p>
-<p>UpdateHealth(Amount:int):void = set Health = Health + Amount</p>
-<p>ProcessEntity(E:entity):void = Print(E.Name) E.UpdateHealth(-10) Print(&quot;{E.Health}&quot;)</p>
-<p>using{E} Print(Name) UpdateHealth(-10) Print(&quot;{Health}&quot;) } &lt;# --&gt; &lt;!-- 46 --&gt;</p>
 <pre><code>entity := class:
     Name:string = &quot;Entity&quot;
     var Health:int = 100
@@ -953,22 +1229,28 @@ ProcessEntity(E:entity):void =
     Print(Name)         # Inferred as: E.Name
     UpdateHealth(-10)   # Inferred as: E.UpdateHealth(-10)
     Print(&quot;{Health}&quot;)       # Inferred as: E.Health</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The <code>using{E}</code> expression makes all members of <code>E</code> accessible without the <code>E.</code> prefix within the current scope.</p></div>
   </details>
 </section><section class="section" id="s21-with-local-variables">
-  <div class="annotation">
-    <h3>中文批注：With Local Variables</h3>
-    <div class="rows">
-      <div><p>这一节围绕“With Local Variables”展开。阅读时先抓住这些英文关键词：Local、works、variables、defined、same。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">class</span><span class="chip">var</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：With Local Variables</summary>
+  <article class="cn-read">
+    <h2>使用局部变量 <small>With Local Variables</small></h2>
+    <p>本地 <code>using</code> 与同一函数中定义的变量一起使用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CreateAndProcess():void =
+    Player := player{Name := &quot;Alice&quot;, Score := 100}
+
+    # Without using
+    Print(Player.Name)
+    set Player.Score = Player.Score + 50
+
+    # With using
+    using{Player}
+    Print(Name)         # Inferred as: Player.Name
+    set Score = Score + 50  # Inferred as: Player.Score</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：With Local Variables</summary>
     <div class="md"><h3>With Local Variables</h3>
 <p>Local <code>using</code> works with variables defined in the same function:</p>
-<p>&lt;!--versetest player := class: var Name:string = &quot;&quot; var Score:int = 0 --&gt; &lt;!-- 47 --&gt;</p>
 <pre><code>CreateAndProcess():void =
     Player := player{Name := &quot;Alice&quot;, Score := 100}
 
@@ -982,19 +1264,36 @@ ProcessEntity(E:entity):void =
     set Score = Score + 50  # Inferred as: Player.Score</code></pre></div>
   </details>
 </section><section class="section" id="s22-block-scoping">
-  <div class="annotation">
-    <h3>中文批注：Block Scoping</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Block Scoping”展开。阅读时先抓住这些英文关键词：scope、limited、block、appears、any。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">&lt;public&gt;</span><span class="chip">where</span><span class="chip">class</span><span class="chip">public</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Block Scoping</summary>
+  <article class="cn-read">
+    <h2>块作用域 <small>Block Scoping</small></h2>
+    <p><code>using</code> 范围仅限于它出现的块和任何嵌套块：</p>
+<p>**在同一块中使用：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessData():void =
+    block:
+        Data := data_record{}
+        using{Data}
+        UpdateField(Value)  # Inferred as: Data.UpdateField(Data.Value)
+    # Data members no longer accessible here</code></pre></figure>
+<p>**从外部块使用：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessData():void =
+    Data := data_record{}
+    block:
+        using{Data}  # Can use variable from outer scope
+        UpdateField(Value)  # Works - Data in scope</code></pre></figure>
+<p>**嵌套块继承：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessData():void =
+    Data := data_record{}
+    using{Data}  # Applies to this block and nested blocks
+
+    block:
+        # Inner block inherits outer using
+        UpdateField(Value)  # Still infers Data.UpdateField(Data.Value)</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Block Scoping</summary>
     <div class="md"><h3>Block Scoping</h3>
 <p>The <code>using</code> scope is limited to the block where it appears and any nested blocks:</p>
 <p><strong>Using in same block:</strong></p>
-<p>&lt;!--versetest data_record := class: Value:int = 0 UpdateField&lt;public&gt;(V:int):void = {} --&gt; &lt;!-- 48 --&gt;</p>
 <pre><code>ProcessData():void =
     block:
         Data := data_record{}
@@ -1002,14 +1301,12 @@ ProcessEntity(E:entity):void =
         UpdateField(Value)  # Inferred as: Data.UpdateField(Data.Value)
     # Data members no longer accessible here</code></pre>
 <p><strong>Using from outer block:</strong></p>
-<p>&lt;!--versetest data_record := class: Value:int = 0 UpdateField&lt;public&gt;(V:int):void = {} --&gt; &lt;!-- 49 --&gt;</p>
 <pre><code>ProcessData():void =
     Data := data_record{}
     block:
         using{Data}  # Can use variable from outer scope
         UpdateField(Value)  # Works - Data in scope</code></pre>
 <p><strong>Nested block inheritance:</strong></p>
-<p>&lt;!--versetest data_record := class: Value:int = 0 UpdateField&lt;public&gt;(V:int):void = {} --&gt; &lt;!-- 50 --&gt;</p>
 <pre><code>ProcessData():void =
     Data := data_record{}
     using{Data}  # Applies to this block and nested blocks
@@ -1019,18 +1316,27 @@ ProcessEntity(E:entity):void =
         UpdateField(Value)  # Still infers Data.UpdateField(Data.Value)</code></pre></div>
   </details>
 </section><section class="section" id="s23-order">
-  <div class="annotation">
-    <h3>中文批注：Order</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Order”展开。阅读时先抓住这些英文关键词：Member、inference、only、works、after。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">The</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Order</summary>
+  <article class="cn-read">
+    <h2>命令 <small>Order</small></h2>
+    <p>成员推断仅在遇到 <code>using</code> 表达式之后才有效：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot infer before using
+ProcessData(Data:data_record):void =
+    UpdateField()  # ERROR - before using
+    using{Data}
+    UpdateField()  # OK - after using
+
+# ERROR: Using scope doesn&#x27;t extend backward
+ProcessData(Data:data_record):void =
+    block:
+        using{Data}
+        UpdateField()  # OK - within using scope
+    UpdateField()  # ERROR - after using scope ended</code></pre></figure>
+<p><code>using</code> 语句充当声明点 - 推理不具有追溯力。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Order</summary>
     <div class="md"><h3>Order</h3>
 <p>Member inference only works <strong>after</strong> the <code>using</code> expression is encountered:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code># ERROR: Cannot infer before using
 ProcessData(Data:data_record):void =
     UpdateField()  # ERROR - before using
@@ -1046,22 +1352,43 @@ ProcessData(Data:data_record):void =
 <p>The <code>using</code> statement acts as a declaration point - inference is not retroactive.</p></div>
   </details>
 </section><section class="section" id="s24-conflict-resolution">
-  <div class="annotation">
-    <h3>中文批注：Conflict Resolution</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Conflict Resolution”展开。阅读时先抓住这些英文关键词：have、multiple、expressions、same、scope。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">module</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Conflict Resolution</summary>
+  <article class="cn-read">
+    <h2>冲突解决 <small>Conflict Resolution</small></h2>
+    <p>您可以在同一范围内拥有多个 <code>using</code> 表达式，但必须显式限定冲突的成员名称：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player_stats := class:
+    Health:int = 100
+    Mana:int = 50
+    GetInfo():string = &quot;Player&quot;
+
+enemy_stats := class:
+    Health:int = 80
+    Armor:int = 20
+    GetInfo():string = &quot;Enemy&quot;
+
+ProcessCombat(Player:player_stats, Enemy:enemy_stats):void =
+    using{Player}
+    Print(GetInfo())  # Player.GetInfo()
+    Print(&quot;{Mana}&quot;)       # Player.Mana (no conflict)
+
+    using{Enemy}
+    # Now both are in scope
+    Print(&quot;{Armor}&quot;)      # Enemy.Armor (no conflict with Player)
+
+    # ERROR: Conflicts must be qualified
+    # Print(Health)   # Ambiguous - both have Health
+    # Print(GetInfo())  # Ambiguous - both have GetInfo
+
+    # Must qualify conflicting members
+    Print(&quot;{Player.Health}&quot;)
+    Print(&quot;{Enemy.Health}&quot;)
+    Print(Player.GetInfo())
+    Print(Enemy.GetInfo())</code></pre></figure>
+<p>当成员存在于多个 <code>using</code> 上下文中时，您必须显式限定以消除歧义。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Conflict Resolution</summary>
     <div class="md"><h3>Conflict Resolution</h3>
 <p>You can have multiple <code>using</code> expressions in the same scope, but conflicting member names must be explicitly qualified:</p>
-<p>&lt;!--versetest m := module{ player_stats := class: Health:int = 100 Mana:int = 50 GetInfo():string = &quot;Player&quot;</p>
-<p>enemy_stats := class: Health:int = 80 Armor:int = 20 GetInfo():string = &quot;Enemy&quot;</p>
-<p>ProcessCombat(Player:player_stats, Enemy:enemy_stats):void = using{Player} Print(GetInfo()) Print(&quot;{Mana}&quot;)</p>
-<p>using{Enemy} Print(&quot;{Armor}&quot;)</p>
-<p>Print(&quot;{Player.Health}&quot;) Print(&quot;{Enemy.Health}&quot;) Print(Player.GetInfo()) Print(Enemy.GetInfo()) } &lt;# --&gt; &lt;!-- 52 --&gt;</p>
 <pre><code>player_stats := class:
     Health:int = 100
     Mana:int = 50
@@ -1090,24 +1417,27 @@ ProcessCombat(Player:player_stats, Enemy:enemy_stats):void =
     Print(&quot;{Enemy.Health}&quot;)
     Print(Player.GetInfo())
     Print(Enemy.GetInfo())</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>When members exist in multiple <code>using</code> contexts, you must explicitly qualify to disambiguate.</p></div>
   </details>
 </section><section class="section" id="s25-mutable-member">
-  <div class="annotation">
-    <h3>中文批注：Mutable Member</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Mutable Member”展开。阅读时先抓住这些英文关键词：Local、works、mutable、fields、through。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">set</span><span class="chip">module</span><span class="chip">class</span><span class="chip">var</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Mutable Member</summary>
+  <article class="cn-read">
+    <h2>可变成员 <small>Mutable Member</small></h2>
+    <p>本地 <code>using</code> 通过 <code>set</code> 关键字与可变字段一起使用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>config := class:
+    var Volume:float = 1.0
+    var Quality:int = 2
+
+UpdateSettings(Settings:config):void =
+    using{Settings}
+
+    # Mutable field access
+    set Volume = 0.8     # Inferred as: set Settings.Volume = 0.8
+    set Quality = 3      # Inferred as: set Settings.Quality = 3</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Mutable Member</summary>
     <div class="md"><h3>Mutable Member</h3>
 <p>Local <code>using</code> works with mutable fields through the <code>set</code> keyword:</p>
-<p>&lt;!--versetest m := module{ config := class: var Volume:float = 1.0 var Quality:int = 2</p>
-<p>UpdateSettings(Settings:config):void = using{Settings}</p>
-<p>set Volume = 0.8 set Quality = 3 } &lt;# --&gt; &lt;!-- 53 --&gt;</p>
 <pre><code>config := class:
     var Volume:float = 1.0
     var Quality:int = 2
@@ -1117,75 +1447,90 @@ UpdateSettings(Settings:config):void =
 
     # Mutable field access
     set Volume = 0.8     # Inferred as: set Settings.Volume = 0.8
-    set Quality = 3      # Inferred as: set Settings.Quality = 3</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+    set Quality = 3      # Inferred as: set Settings.Quality = 3</code></pre></div>
   </details>
 </section><section class="section" id="s26-troubleshooting">
-  <div class="annotation">
-    <h3>中文批注：Troubleshooting</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Troubleshooting”展开。阅读时先抓住这些英文关键词：working、modules、may、encounter、various。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Troubleshooting</summary>
+  <article class="cn-read">
+    <h2>故障排除 <small>Troubleshooting</small></h2>
+    <p>使用模块时，您可能会遇到各种问题。了解这些常见问题及其解决方案将帮助您更有效地调试与模块相关的错误。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Troubleshooting</summary>
     <div class="md"><h2>Troubleshooting</h2>
 <p>When working with modules, you may encounter various issues. Understanding these common problems and their solutions will help you debug module-related errors more efficiently.</p></div>
   </details>
 </section><section class="section" id="s27-module-not-found-errors">
-  <div class="annotation">
-    <h3>中文批注：Module Not Found Errors</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Module Not Found Errors”展开。阅读时先抓住这些英文关键词：Problem、compiler、reports、module、cannot。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">PlayerSystems</span><span class="chip">module</span><span class="chip">case</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Module Not Found Errors</summary>
+  <article class="cn-read">
+    <h2>找不到模块错误 <small>Module Not Found Errors</small></h2>
+    <p>**问题**：当您尝试导入模块时，编译器报告找不到该模块。</p>
+<p>**常见原因和解决方案**：</p>
+<ol><li>**路径不正确**：仔细检查 <code>using</code> 语句中的模块路径。请记住，路径区分大小写。</li></ol>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Wrong: different case
+using { /verse.org/random }  # Error: module not found
+
+# Correct: proper case
+using { /Verse.org/Random }  # Works</code></pre></figure>
+<ol><li>**缺少父模块导入**：导入嵌套模块时，确保先导入父模块。</li></ol>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Wrong: child before parent
+using { Inventory }  # Error if Inventory is nested
+
+# Correct: parent first
+using { GameSystems }
+using { Inventory }</code></pre></figure>
+<ol><li>**文件位置不匹配**：确保您的文件结构与模块结构匹配。如果您有一个名为 <code>PlayerSystems</code> 的文件夹，则该文件夹中的所有文件都是 <code>PlayerSystems</code> 模块的一部分。</li></ol>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Module Not Found Errors</summary>
     <div class="md"><h3>Module Not Found Errors</h3>
 <p><strong>Problem</strong>: The compiler reports that a module cannot be found when you try to import it.</p>
 <p><strong>Common Causes and Solutions</strong>:</p>
-<ol>
-<li><strong>Incorrect path</strong>: Double-check the module path in your <code>using</code> statement. Remember that paths are case-sensitive.</li>
-</ol>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 54 --&gt;</p>
+<ol><li><strong>Incorrect path</strong>: Double-check the module path in your <code>using</code> statement. Remember that paths are case-sensitive.</li></ol>
 <pre><code># Wrong: different case
 using { /verse.org/random }  # Error: module not found
 
 # Correct: proper case
 using { /Verse.org/Random }  # Works</code></pre>
-<ol>
-<li><strong>Missing parent module import</strong>: When importing nested modules, ensure the parent is imported first.</li>
-</ol>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 55 --&gt;</p>
+<ol><li><strong>Missing parent module import</strong>: When importing nested modules, ensure the parent is imported first.</li></ol>
 <pre><code># Wrong: child before parent
 using { Inventory }  # Error if Inventory is nested
 
 # Correct: parent first
 using { GameSystems }
 using { Inventory }</code></pre>
-<ol>
-<li><strong>File location mismatch</strong>: Ensure your file structure matches your module structure. If you have a folder named <code>PlayerSystems</code>, all files in that folder are part of the <code>PlayerSystems</code> module.</li>
-</ol></div>
+<ol><li><strong>File location mismatch</strong>: Ensure your file structure matches your module structure. If you have a folder named <code>PlayerSystems</code>, all files in that folder are part of the <code>PlayerSystems</code> module.</li></ol></div>
   </details>
 </section><section class="section" id="s28-access-denied-errors">
-  <div class="annotation">
-    <h3>中文批注：Access Denied Errors</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Access Denied Errors”展开。阅读时先抓住这些英文关键词：Problem、access、member、imported、module。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">&lt;private&gt;</span><span class="chip">&lt;protected&gt;</span><span class="chip">module</span><span class="chip">public</span><span class="chip">internal</span><span class="chip">using</span><span class="chip">private</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Access Denied Errors</summary>
+  <article class="cn-read">
+    <h2>访问被拒绝错误 <small>Access Denied Errors</small></h2>
+    <p>**问题**：您无法访问导入模块的成员。</p>
+<p>**常见原因和解决方案**：</p>
+<ol><li>**缺少访问说明符**：默认情况下，没有 <code>&lt;public&gt;</code> 说明符的成员是内部成员。</li></ol>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># In ModuleA
+SecretValue:int = 42  # Internal by default
+PublicValue&lt;public&gt;:int = 100  # Explicitly public
+
+# In another module
+using { ModuleA }
+X := ModuleA.SecretValue  # Error: not accessible
+Y := ModuleA.PublicValue  # Works</code></pre></figure>
+<ol><li>**受保护或私有成员**：这些成员在其定义范围之外不可访问。</li></ol>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># In a class
+class_a := class:
+    PrivateField&lt;private&gt;:int = 10
+    ProtectedField&lt;protected&gt;:int = 20
+    PublicField&lt;public&gt;:int = 30
+
+# Outside the class
+Obj := class_a{}
+X := Obj.PrivateField  # Error: private
+Y := Obj.PublicField   # Works</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Access Denied Errors</summary>
     <div class="md"><h3>Access Denied Errors</h3>
 <p><strong>Problem</strong>: You can&#x27;t access a member of an imported module.</p>
 <p><strong>Common Causes and Solutions</strong>:</p>
-<ol>
-<li><strong>Missing access specifier</strong>: Members without the <code>&lt;public&gt;</code> specifier are internal by default.</li>
-</ol>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 56 --&gt;</p>
+<ol><li><strong>Missing access specifier</strong>: Members without the <code>&lt;public&gt;</code> specifier are internal by default.</li></ol>
 <pre><code># In ModuleA
 SecretValue:int = 42  # Internal by default
 PublicValue&lt;public&gt;:int = 100  # Explicitly public
@@ -1194,10 +1539,7 @@ PublicValue&lt;public&gt;:int = 100  # Explicitly public
 using { ModuleA }
 X := ModuleA.SecretValue  # Error: not accessible
 Y := ModuleA.PublicValue  # Works</code></pre>
-<ol>
-<li><strong>Protected or private members</strong>: These are not accessible outside their defining scope.</li>
-</ol>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 57 --&gt;</p>
+<ol><li><strong>Protected or private members</strong>: These are not accessible outside their defining scope.</li></ol>
 <pre><code># In a class
 class_a := class:
     PrivateField&lt;private&gt;:int = 10
@@ -1210,38 +1552,39 @@ X := Obj.PrivateField  # Error: private
 Y := Obj.PublicField   # Works</code></pre></div>
   </details>
 </section><section class="section" id="s29-circular-dependency-errors">
-  <div class="annotation">
-    <h3>中文批注：Circular Dependency Errors</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Circular Dependency Errors”展开。阅读时先抓住这些英文关键词：Problem、Two、modules、try、import。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Circular Dependency Errors</summary>
+  <article class="cn-read">
+    <h2>循环依赖错误 <small>Circular Dependency Errors</small></h2>
+    <p>**问题**：两个模块尝试相互导入，从而创建循环依赖关系。</p>
+<p>**解决方案**：重构代码以避免循环依赖：</p>
+<ol><li>**提取公共代码**：将共享定义移动到两者都可以导入的第三个模块。</li><li>**使用接口**：在单独的模块中定义接口以打破依赖循环。</li><li>**重新考虑架构**：循环依赖通常表明需要重新思考的设计问题。</li></ol>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Circular Dependency Errors</summary>
     <div class="md"><h3>Circular Dependency Errors</h3>
 <p><strong>Problem</strong>: Two modules try to import each other, creating a circular dependency.</p>
 <p><strong>Solution</strong>: Restructure your code to avoid circular dependencies:</p>
-<ol>
-<li><strong>Extract common code</strong>: Move shared definitions to a third module that both can import.</li>
-<li><strong>Use interfaces</strong>: Define interfaces in a separate module to break the dependency cycle.</li>
-<li><strong>Reconsider architecture</strong>: Circular dependencies often indicate a design issue that needs rethinking.</li>
-</ol></div>
+<ol><li><strong>Extract common code</strong>: Move shared definitions to a third module that both can import.</li><li><strong>Use interfaces</strong>: Define interfaces in a separate module to break the dependency cycle.</li><li><strong>Reconsider architecture</strong>: Circular dependencies often indicate a design issue that needs rethinking.</li></ol></div>
   </details>
 </section><section class="section" id="s30-name-collision-errors">
-  <div class="annotation">
-    <h3>中文批注：Name Collision Errors</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Name Collision Errors”展开。阅读时先抓住这些英文关键词：Problem、Two、imported、modules、define。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Name Collision Errors</summary>
+  <article class="cn-read">
+    <h2>名称冲突错误 <small>Name Collision Errors</small></h2>
+    <p>**问题**：两个导入的模块定义了具有相同名称的成员。</p>
+<p>**解决方案**：使用完全限定名称来消除歧义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>using { /GameA/Combat }
+using { /GameB/Combat }
+
+# Ambiguous
+Damage := CalculateDamage(10.0)  # Error: which CalculateDamage?
+
+# Explicit
+DamageA := /GameA/Combat.CalculateDamage(10.0)  # Clear
+DamageB := /GameB/Combat.CalculateDamage(10.0)  # Clear</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Name Collision Errors</summary>
     <div class="md"><h3>Name Collision Errors</h3>
 <p><strong>Problem</strong>: Two imported modules define members with the same name.</p>
 <p><strong>Solution</strong>: Use fully qualified names to disambiguate:</p>
-<p>&lt;!--NoCompile--&gt;</p>
 <pre><code>using { /GameA/Combat }
 using { /GameB/Combat }
 
@@ -1253,46 +1596,39 @@ DamageA := /GameA/Combat.CalculateDamage(10.0)  # Clear
 DamageB := /GameB/Combat.CalculateDamage(10.0)  # Clear</code></pre></div>
   </details>
 </section><section class="section" id="s31-persistence-issues">
-  <div class="annotation">
-    <h3>中文批注：Persistence Issues</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Persistence Issues”展开。阅读时先抓住这些英文关键词：Problem、Module-scoped、variables、aren、persisting。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">weak_map(player, t)</span><span class="chip">&lt;persistable&gt;</span><span class="chip">using</span><span class="chip">weak_map</span><span class="chip">for</span><span class="chip">persistable</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Persistence Issues</summary>
+  <article class="cn-read">
+    <h2>持久性问题 <small>Persistence Issues</small></h2>
+    <p>**问题**：模块范围的变量没有按预期持续存在。</p>
+<p>**常见原因和解决方案**：</p>
+<ol><li>**使用了错误的类型**：确保您使用 <code>weak_map(player, t)</code> 来实现玩家持久性。</li><li>**类型不可持久**：检查您的自定义类型是否具有 <code>&lt;persistable&gt;</code> 说明符。</li><li>**初始化时机**：确保您在游戏生命周期中的正确时间初始化持久数据。</li></ol>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Persistence Issues</summary>
     <div class="md"><h3>Persistence Issues</h3>
 <p><strong>Problem</strong>: Module-scoped variables aren&#x27;t persisting as expected.</p>
 <p><strong>Common Causes and Solutions</strong>:</p>
-<ol>
-<li><strong>Wrong type used</strong>: Ensure you&#x27;re using <code>weak_map(player, t)</code> for player persistence.</li>
-<li><strong>Type not persistable</strong>: Check that your custom types have the <code>&lt;persistable&gt;</code> specifier.</li>
-<li><strong>Initialization timing</strong>: Make sure you&#x27;re initializing persistent data at the right time in the game lifecycle.</li>
-</ol></div>
+<ol><li><strong>Wrong type used</strong>: Ensure you&#x27;re using <code>weak_map(player, t)</code> for player persistence.</li><li><strong>Type not persistable</strong>: Check that your custom types have the <code>&lt;persistable&gt;</code> specifier.</li><li><strong>Initialization timing</strong>: Make sure you&#x27;re initializing persistent data at the right time in the game lifecycle.</li></ol></div>
   </details>
 </section><section class="section" id="s32-local-qualifier-conflicts">
-  <div class="annotation">
-    <h3>中文批注：Local Qualifier Conflicts</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Local Qualifier Conflicts”展开。阅读时先抓住这些英文关键词：Problem、Shadowing、errors、local、identifiers。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">(local:)</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Local Qualifier Conflicts</summary>
+  <article class="cn-read">
+    <h2>本地限定符冲突 <small>Local Qualifier Conflicts</small></h2>
+    <p>**问题**：本地标识符与模块成员冲突时出现隐藏错误。</p>
+<p>**解决方案**：使用 <code>(local:)</code> 限定符来消除歧义：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ModuleX := module:
+    Value:int = 10
+
+    ProcessValue((local:)Value:int):int =
+        (ModuleX:)Value + (local:)Value  # Clear distinction</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Local Qualifier Conflicts</summary>
     <div class="md"><h3>Local Qualifier Conflicts</h3>
 <p><strong>Problem</strong>: Shadowing errors when local identifiers conflict with module members.</p>
 <p><strong>Solution</strong>: Use the <code>(local:)</code> qualifier to disambiguate:</p>
-<p>&lt;!--versetest m := module{ ModuleX := module: Value:int = 10</p>
-<p>ProcessValue((local:)Value:int):int = (ModuleX:)Value + (local:)Value } &lt;# --&gt; &lt;!-- 59 --&gt;</p>
 <pre><code>ModuleX := module:
     Value:int = 10
 
     ProcessValue((local:)Value:int):int =
-        (ModuleX:)Value + (local:)Value  # Clear distinction</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+        (ModuleX:)Value + (local:)Value  # Clear distinction</code></pre></div>
   </details>
-</section>
-<nav class="footer-nav"><div><a href="../15_live_variables/index.html">上一页：实时变量</a></div><div><a href="../17_persistable/index.html">下一页：可持久化类型</a></div></nav>
-</main></div></body></html>
+</section><nav class="footer-nav"><div><a href="../15_live_variables/index.html">上一页：实时变量</a></div><div><a href="../17_persistable/index.html">下一页：可持久化类型</a></div></nav></main></div></body></html>

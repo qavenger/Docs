@@ -1,15 +1,6 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>代码演化 - Book of Verse 中文批注版</title>
-<link rel="stylesheet" href="../assets/styles.css">
-<script src="../assets/reader.js"></script>
-</head>
-<body>
-<div class="layout">
-<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>代码演化 - Book of Verse 中文阅读稿</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/reader.js"></script></head>
+<body><div class="layout"><aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文阅读稿 · 原文折叠 · 代码保留</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -28,57 +19,52 @@
 <a href="../15_live_variables/index.html"><span>Live Variables</span><br><small>实时变量</small></a>
 <a href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
-<a class="active" href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
+<a class=active href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
-<main class="main">
-<div class="crumb">Code Evolution / <a href="https://verselang.github.io/book/18_evolution/">原文页面</a></div>
-<section class="hero"><h1>代码演化</h1><p class="lead">本页讲发布后的 API 和数据结构如何保持向后兼容。</p><div class="meta"><span class="pill">源文件：18_evolution.md</span><span class="pill">批注段落：16</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>这一页读什么</h2><p>Verse 面向长期存续代码，公开定义、effects、类型和持久化 schema 都是承诺。</p><h3>注意点</h3><ul class="list"><li>删除公开定义、扩大 effects、改变 persistable schema 都很危险。</li><li>open enum 要在一开始规划。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-verse-code-evolution-and-compatibility">Verse Code Evolution and Compatibility</a></li><li class="lvl2"><a href="#s1-the-nature-of-code-publication">The Nature of Code Publication</a></li><li class="lvl2"><a href="#s2-the-architecture-of-backward-compatibility">The Architecture of Backward Compatibility</a></li><li class="lvl2"><a href="#s3-managing-breaking-changes">Managing Breaking Changes</a></li><li class="lvl2"><a href="#s4-catalog-of-compatibility-rules">Catalog of Compatibility Rules</a></li><li class="lvl3"><a href="#s5-definitions">Definitions</a></li><li class="lvl3"><a href="#s6-enums">Enums</a></li><li class="lvl3"><a href="#s7-classes-and-inheritance">Classes and Inheritance</a></li><li class="lvl3"><a href="#s8-structs">Structs</a></li><li class="lvl3"><a href="#s9-fields-and-data-members">Fields and Data Members</a></li><li class="lvl3"><a href="#s10-functions-and-methods">Functions and Methods</a></li><li class="lvl3"><a href="#s11-access-specifiers">Access Specifiers</a></li><li class="lvl3"><a href="#s12-persistable-types">Persistable Types</a></li><li class="lvl3"><a href="#s13-parametric-types">Parametric Types</a></li><li class="lvl3"><a href="#s14-summary">Summary</a></li><li class="lvl2"><a href="#s15-design-philosophy-for-longevity">Design Philosophy for Longevity</a></li></ol></article></section>
-<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
+<div class="crumb">Code Evolution / <a href="https://verselang.github.io/book/18_evolution/">原文页面</a></div><section class="hero"><h1>代码演化</h1><p class="lead">代码演化页，讲发布后 API、effects、类型和持久化 schema 的兼容规则。</p><div class="meta"><span class="pill">源文件：18_evolution.md</span><span class="pill">中文段落：16</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-verse-code-evolution-and-compatibility">Verse Code Evolution and Compatibility</a></li><li class="lvl2"><a href="#s1-the-nature-of-code-publication">The Nature of Code Publication</a></li><li class="lvl2"><a href="#s2-the-architecture-of-backward-compatibility">The Architecture of Backward Compatibility</a></li><li class="lvl2"><a href="#s3-managing-breaking-changes">Managing Breaking Changes</a></li><li class="lvl2"><a href="#s4-catalog-of-compatibility-rules">Catalog of Compatibility Rules</a></li><li class="lvl3"><a href="#s5-definitions">Definitions</a></li><li class="lvl3"><a href="#s6-enums">Enums</a></li><li class="lvl3"><a href="#s7-classes-and-inheritance">Classes and Inheritance</a></li><li class="lvl3"><a href="#s8-structs">Structs</a></li><li class="lvl3"><a href="#s9-fields-and-data-members">Fields and Data Members</a></li><li class="lvl3"><a href="#s10-functions-and-methods">Functions and Methods</a></li><li class="lvl3"><a href="#s11-access-specifiers">访问说明符 / Access Specifiers</a></li><li class="lvl3"><a href="#s12-persistable-types">可持久化类型 / Persistable Types</a></li><li class="lvl3"><a href="#s13-parametric-types">Parametric Types</a></li><li class="lvl3"><a href="#s14-summary">Summary</a></li><li class="lvl2"><a href="#s15-design-philosophy-for-longevity">Design Philosophy for Longevity</a></li></ol></article></section>
+<div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-verse-code-evolution-and-compatibility">
-  <div class="annotation">
-    <h3>中文批注：Verse Code Evolution and Compatibility</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Verse Code Evolution and Compatibility”展开。阅读时先抓住这些英文关键词：takes、unique、approach、code、evolution。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">unique</span><span class="chip">for</span><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Verse Code Evolution and Compatibility</summary>
+  <article class="cn-read">
+    <h2>节句代码的演变和兼容性 <small>Verse Code Evolution and Compatibility</small></h2>
+    <p>Verse 采用独特的代码演化方法，其设计的雄心勃勃的目标是创建可以在数十年甚至数百年中保持功能和价值的软件。这一愿景源于 Verse 作为持久性全球metaverse的编程语言的角色，其中代码必须在广阔的时间尺度上共存、发展并保持兼容性。</p>
+<p>Verse 的核心包含塑造代码演变方式的三个基本原则：避免植根于其他语言过去工件的面向未来的设计、代码持久性和兼容性至关重要的元节优先方法以及在编译时捕获运行时问题的强大静态验证。这些原则为一种可以成长和适应的语言奠定了基础，同时保持全球持久代码库所需的稳定性。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Verse Code Evolution and Compatibility</summary>
     <div class="md"><h1>Verse Code Evolution and Compatibility</h1>
 <p>Verse takes a unique approach to code evolution, designed with the ambitious goal of creating software that could remain functional and valuable for decades or even centuries. This vision stems from Verse&#x27;s role as the programming language for a persistent, global metaverse where code must coexist, evolve, and maintain compatibility across vast timescales.</p>
 <p>At its core, Verse embraces three fundamental principles that shape how code evolves: future-proof design that avoids being rooted in past artifacts of other languages, a metaverse-first approach where code persistence and compatibility are critical, and strong static verification that catches runtime problems at compile time. These principles create a foundation for a language that can grow and adapt while maintaining the stability required for a global, persistent codebase.</p></div>
   </details>
 </section><section class="section" id="s1-the-nature-of-code-publication">
-  <div class="annotation">
-    <h3>中文批注：The Nature of Code Publication</h3>
-    <div class="rows">
-      <div><p>这一节围绕“The Nature of Code Publication”展开。可把它先理解为“代码发布的性质”。阅读时先抓住这些英文关键词：developers、publish、code、metaverse、they。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">verse
-Thing&lt;public&gt;:int = 777</span><span class="chip">Thing</span><span class="chip">&lt;castable&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">public</span><span class="chip">class</span><span class="chip">interface</span><span class="chip">castable</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：The Nature of Code Publication</summary>
+  <article class="cn-read">
+    <h2>代码发布的性质 <small>The Nature of Code Publication</small></h2>
+    <p>当开发人员将代码发布到 Verse Metaverse 时，他们会与该代码的所有未来用户签订社会契约。这个契约不仅仅是一个约定——它是由语言本身强制执行的。考虑一下当您发布一个简单值时会发生什么：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Thing&lt;public&gt;:int = 777</code></pre></figure>
+<p>这个看似简单的宣言却蕴含着深远的意义。通过将 <code>Thing</code> 标记为公开，您就做出了无限期延续到未来的承诺。用户可以依赖 <code>Thing</code> 始终存在并且始终是一个整数。虽然您保留更改其实际值的自由，但 <code>Thing</code> 的存在和类型将成为虚拟宇宙景观中的永久固定装置。</p>
+<p>这种持久性超越了简单的值，涵盖了已发布代码的整个结构。持久结构一旦发布到孤岛，就会成为无法更改的不可变模式。封闭枚举永远保持封闭状态，发布后无法接受新值。当类或接口被标记为 <code>&lt;castable&gt;</code> 属性时，该决定变得不可逆转，因为更改它可能会引入破坏现有代码的不安全转换行为。</p>
+<p>发布模型区分两种环境：实时虚拟宇宙和岛屿。在设想的实时元节中，发布尝试更改不可变变量值的更新不会产生任何效果 - 该变量已经存在及其原始值。然而，在当前基于岛屿的实现中，岛屿的新实例将采用更新后的值，提供实用的迁移路径，同时保持概念一致性。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：The Nature of Code Publication</summary>
     <div class="md"><h2>The Nature of Code Publication</h2>
 <p>When developers publish code to the Verse metaverse, they enter into a social contract with all future users of that code. This contract is more than just a convention—it&#x27;s enforced by the language itself. Consider what happens when you publish a simple value:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 01 --&gt;</p>
 <pre><code>Thing&lt;public&gt;:int = 777</code></pre>
 <p>This seemingly straightforward declaration carries profound implications. By marking <code>Thing</code> as public, you&#x27;re making a commitment that extends indefinitely into the future. Users can depend on <code>Thing</code> always existing and always being an integer. While you retain the freedom to change its actual value, the existence and type of <code>Thing</code> become permanent fixtures in the metaverse&#x27;s landscape.</p>
 <p>This permanence extends beyond simple values to encompass the entire structure of published code. Persistable structs, once published to an island, become immutable schemas that cannot be altered. Closed enums remain closed forever, unable to accept new values after publication. When a class or interface is marked with the <code>&lt;castable&gt;</code> attribute, that decision becomes irreversible, as changing it could introduce unsafe casting behaviors that break existing code.</p>
 <p>The publication model distinguishes between two contexts: the live metaverse and islands. In the envisioned live metaverse, publishing an update that attempts to change an immutable variable&#x27;s value has no effect—the variable already exists with its original value. However, in the current island-based implementation, new instances of an island will adopt the updated value, providing a practical migration path while maintaining conceptual consistency.</p></div>
   </details>
 </section><section class="section" id="s2-the-architecture-of-backward-compatibility">
-  <div class="annotation">
-    <h3>中文批注：The Architecture of Backward Compatibility</h3>
-    <div class="rows">
-      <div><p>这一节围绕“The Architecture of Backward Compatibility”展开。阅读时先抓住这些英文关键词：Backward、compatibility、goes、beyond、simple。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">rational</span><span class="chip">int</span><span class="chip">&lt;final_super&gt;</span><span class="chip">reads</span><span class="chip">computes</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：The Architecture of Backward Compatibility</summary>
+  <article class="cn-read">
+    <h2>向后兼容的架构 <small>The Architecture of Backward Compatibility</small></h2>
+    <p>Verse 中的向后兼容性不仅仅是简单的语法保留，它还包含有关代码行为方式的语义保证。该语言通过多种机制强制执行这些保证，这些机制协同工作以创建强大的兼容性框架。</p>
+<p>功能效果体现了这种方法。当发布具有特定效果（例如 <code>&lt;reads&gt;</code>）的函数时，表明它可以读取可变堆数据，这将成为其合同的一部分。该函数的未来版本可能会产生更少的影响（从 <code>&lt;reads&gt;</code> 演进到 <code>&lt;computes&gt;</code>），但绝不会更多。此限制可确保取决于函数效果配置文件的代码继续正常工作，因为函数只会变得更纯净，而绝不会更少。</p>
+<p>类型进化遵循类似的原则。随着时间的推移，类型可能会变得更加具体，例如从 <code>rational</code> 更改为 <code>int</code>，因为这代表了一种细化而不是根本性变化。尽管可以添加新字段，但结构必须维护所有现有字段。标有 <code>&lt;final_super&gt;</code> 的类永久提交其继承层次结构，确保依赖于特定继承关系的代码保持有效。</p>
+<p>这些规则的执行发生在发布时，而不仅仅是在编译时。 Verse 主动阻止开发人员发布违反兼容性保证的更新，将其他系统中可能出现的运行时故障转变为发布时错误，必须在部署代码之前解决这些错误。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：The Architecture of Backward Compatibility</summary>
     <div class="md"><h2>The Architecture of Backward Compatibility</h2>
 <p>Backward compatibility in Verse goes beyond simple syntactic preservation—it encompasses semantic guarantees about how code behaves. The language enforces these guarantees through multiple mechanisms that work together to create a robust compatibility framework.</p>
 <p>Function effects exemplify this approach. When a function is published with specific effects like <code>&lt;reads&gt;</code>, indicating it may read mutable heap data, this becomes part of its contract. Future versions of the function can have fewer effects—evolving from <code>&lt;reads&gt;</code> to <code>&lt;computes&gt;</code>—but never more. This restriction ensures that code depending on the function&#x27;s effect profile continues to work correctly, as the function only becomes more pure, never less.</p>
@@ -86,15 +72,15 @@ Thing&lt;public&gt;:int = 777</span><span class="chip">Thing</span><span class="
 <p>The enforcement of these rules happens at publication time, not just at compile time. Verse actively prevents developers from publishing updates that would violate compatibility guarantees, turning what might be runtime failures in other systems into publication-time errors that must be resolved before code can be deployed.</p></div>
   </details>
 </section><section class="section" id="s3-managing-breaking-changes">
-  <div class="annotation">
-    <h3>中文批注：Managing Breaking Changes</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Managing Breaking Changes”展开。可把它先理解为“管理破坏性变更”。阅读时先抓住这些英文关键词：Despite、strong、emphasis、compatibility、recognizes。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">option</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Managing Breaking Changes</summary>
+  <article class="cn-read">
+    <h2>管理重大变更 <small>Managing Breaking Changes</small></h2>
+    <p>尽管非常强调兼容性，但 Verse 认识到偶尔需要进行一些重大更改。该语言提供了两种管理此类更改的机制：用于逐步迁移的弃用系统和用于重大重大更改的特权。</p>
+<p>弃用系统作为一个多阶段过程运行，为开发人员提供了充足的时间来适应。当代码模式被弃用时，它们首先生成警告而不是错误。保存代码时会出现这些警告，提醒开发人员注意未来版本中不支持的做法。代码继续编译和运行，允许项目在制定迁移计划的同时运行。只有当开发人员明确升级到新的语言版本时，弃用才会成为错误，即使如此，保留旧版本的选项也提供了逃生通道。</p>
+<p>版本 1 引入了几个重要的弃用内容来说明此过程。禁止集合表达式中的失败，以前允许警告，现在需要显式处理可失败表达式。混合分隔符语法会创建隐式块和令人困惑的范围规则，现在必须使用一致的分隔。本地限定符的引入提供了一种消除标识符歧义的新工具，同时不推荐使用“local”作为常规标识符名称。</p>
+<p>对于真正的特殊情况，Epic Games 和其他潜在的未来权威机构保留“超能力”，可以在正常兼容性框架之外进行突破性更改。这些权力包括删除已发布实体、以非向后兼容方式更改类型以及出于法律或安全原因重写模块的能力。这些功能承认，成为元节命名空间的好管理者有时需要违反通常的兼容性规则，尽管这种行为应该很少见，并且有令人信服的理由证明是合理的。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Managing Breaking Changes</summary>
     <div class="md"><h2>Managing Breaking Changes</h2>
 <p>Despite the strong emphasis on compatibility, Verse recognizes that some breaking changes are occasionally necessary. The language provides two mechanisms for managing such changes: a deprecation system for gradual migration and special privileges for essential breaking changes.</p>
 <p>The deprecation system operates as a multi-phase process that gives developers ample time to adapt. When code patterns become deprecated, they first generate warnings rather than errors. These warnings appear when saving code, alerting developers to practices that won&#x27;t be supported in future versions. The code continues to compile and run, allowing projects to function while migration plans are developed. Only when developers explicitly upgrade to a new language version do deprecations become errors, and even then, the option to remain on older versions provides an escape hatch.</p>
@@ -102,44 +88,42 @@ Thing&lt;public&gt;:int = 777</span><span class="chip">Thing</span><span class="
 <p>For truly exceptional circumstances, Epic Games and potentially other future authorities retain &quot;superpowers&quot; to make breaking changes outside the normal compatibility framework. These powers include the ability to delete published entities, change types in non-backward-compatible ways, and rewrite modules for legal or safety reasons. These capabilities acknowledge that being good stewards of the metaverse namespace sometimes requires violating the usual compatibility rules, though such actions should remain rare and justified by compelling reasons.</p></div>
   </details>
 </section><section class="section" id="s4-catalog-of-compatibility-rules">
-  <div class="annotation">
-    <h3>中文批注：Catalog of Compatibility Rules</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Catalog of Compatibility Rules”展开。可把它先理解为“兼容性规则目录”。阅读时先抓住这些英文关键词：publish、code、many、aspects、definitions。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">final</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Catalog of Compatibility Rules</summary>
+  <article class="cn-read">
+    <h2>兼容性规则目录 <small>Catalog of Compatibility Rules</small></h2>
+    <p>当您在 Verse 中发布代码时，定义的许多方面都会成为永久的承诺。准确理解什么可以改变、什么不能改变对于设计可以优雅发展的 API 至关重要。该目录记录了 Verse 禁止的更改以及为确保向后兼容性而允许的更改。</p>
+<p>这些规则遵循一个一般原则：通常允许使类型更具体（缩小范围）、添加新功能或放宽限制的更改，而通常禁止使类型更通用（扩大）、删除功能或施加新限制的更改。然而，最终/非实例成员和非最终实例成员之间的规则差异很大，后者有更严格的要求。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Catalog of Compatibility Rules</summary>
     <div class="md"><h2>Catalog of Compatibility Rules</h2>
 <p>When you publish code in Verse, many aspects of your definitions become permanent commitments. Understanding exactly what can and cannot change is essential for designing APIs that can evolve gracefully. This catalog documents both the changes that Verse prohibits and the changes it allows to ensure backward compatibility.</p>
 <p>The rules follow a general principle: changes that make types more specific (narrowing), add new capabilities, or relax restrictions are often allowed, while changes that make types more general (widening), remove capabilities, or impose new restrictions are typically forbidden. However, the rules vary significantly between final/non-instance members and non-final instance members, with the latter having much stricter requirements.</p></div>
   </details>
 </section><section class="section" id="s5-definitions">
-  <div class="annotation">
-    <h3>中文批注：Definitions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Definitions”展开。阅读时先抓住这些英文关键词：Cannot、remove、public、definitions、Once。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">public</span><span class="chip">class</span><span class="chip">struct</span><span class="chip">interface</span><span class="chip">enum</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Definitions</summary>
+  <article class="cn-read">
+    <h2>定义 <small>Definitions</small></h2>
+    <p>**无法删除公共定义。** 公共变量、函数、类或其他定义发布后，它必须保持可用。删除它会破坏依赖它的任何代码。</p>
+<p>**无法更改定义的类型。** 类不能成为结构、接口、枚举或函数。函数不能成为类或类型别名。这些根本性的变化改变了代码与定义的交互方式。</p>
+<p>**无法重命名定义。** 重命名相当于删除加添加，这会破坏现有引用。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Definitions</summary>
     <div class="md"><h3>Definitions</h3>
 <p><strong>Cannot remove public definitions.</strong> Once a public variable, function, class, or other definition is published, it must remain available. Removing it would break any code that depends on it.</p>
 <p><strong>Cannot change the kind of a definition.</strong> A class cannot become a struct, interface, enum, or function. A function cannot become a class or type alias. These fundamental changes alter how code interacts with your definitions.</p>
 <p><strong>Cannot rename definitions.</strong> Renaming is equivalent to deletion plus addition, which breaks existing references.</p></div>
   </details>
 </section><section class="section" id="s6-enums">
-  <div class="annotation">
-    <h3>中文批注：Enums</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Enums”展开。可把它先理解为“枚举”。阅读时先抓住这些英文关键词：Cannot、add、remove、enumerators、closed。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">set</span><span class="chip">enum</span><span class="chip">public</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Enums</summary>
+  <article class="cn-read">
+    <h2>枚举 <small>Enums</small></h2>
+    <p>**无法在封闭枚举中添加或删除枚举器。**封闭枚举（默认）永远提交一组固定的值。代码可以在没有通配符的情况下彻底匹配所有情况，因此添加情况会破坏此类匹配。</p>
+<p>**封闭枚举无法变为开放。** 发布为封闭的枚举无法变为开放。这会影响是否可以进行穷举匹配。</p>
+<p>**无法对枚举器重新排序。** 枚举值的顺序是公共合约的一部分。</p>
+<p>**无法重命名枚举数。** 每个枚举数名称都是永久标识符。</p>
+<p>**开放枚举可以添加新的枚举器。**这是枚举的唯一演化路径——开放枚举用详尽匹配的保证换取了增长的能力。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Enums</summary>
     <div class="md"><h3>Enums</h3>
 <p><strong>Cannot add or remove enumerators from closed enums.</strong> Closed enums (the default) commit to a fixed set of values forever. Code can exhaustively match all cases without a wildcard, so adding cases would break such matches.</p>
 <p><strong>Closed enums cannot become open.</strong> An enum published as closed cannot become open. This affects whether exhaustive matching is possible.</p>
@@ -148,346 +132,273 @@ Thing&lt;public&gt;:int = 777</span><span class="chip">Thing</span><span class="
 <p><strong>Open enums can add new enumerators.</strong> This is the sole evolution path for enums—open enums trade the guarantee of exhaustive matching for the ability to grow.</p></div>
   </details>
 </section><section class="section" id="s7-classes-and-inheritance">
-  <div class="annotation">
-    <h3>中文批注：Classes and Inheritance</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Classes and Inheritance”展开。阅读时先抓住这些英文关键词：Class、Finality、make、non-final、class。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;final&gt;</span><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;castable&gt;</span><span class="chip">&lt;final_super&gt;</span><span class="chip">GetCastableFinalSuperClass</span><span class="chip">final</span><span class="chip">class</span><span class="chip">unique</span><span class="chip">abstract</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Classes and Inheritance</summary>
+  <article class="cn-read">
+    <h2>类和继承 <small>Classes and Inheritance</small></h2>
+    <p>**课程结束：**</p>
+<ul><li>**可以使非最终类成为最终类。** 添加 <code>&lt;final&gt;</code> 说明符可以防止将来的继承，这是一个增强保证的安全添加。</li><li>**无法使最终类成为非最终类。** 一旦类被标记为 <code>&lt;final&gt;</code>，删除此限制将允许出现意外的子类，从而可能会破坏现有代码中的假设。</li></ul>
+<p>**类别唯一性：**</p>
+<ul><li>**可以使非唯一的类变得唯一。** 添加 <code>&lt;unique&gt;</code> 说明符可启用基于身份的相等性，这不会破坏现有代码。</li><li>**无法使唯一类变得不唯一。** 删除 <code>&lt;unique&gt;</code> 会将相等语义从标识更改为未定义，从而破坏依赖于标识比较的代码。</li></ul>
+<p>**类抽象性：**</p>
+<ul><li>**可以使抽象类变得非抽象。**允许实例化以前的抽象类是一种安全的功能扩展。</li><li>**无法使非抽象类抽象。** 防止先前具体类的实例化会破坏创建实例的代码。</li></ul>
+<p>**类具体性：**</p>
+<ul><li>**可以使非具体的最终类具体化。**允许最终类的默认实例化是安全的，因为不存在受影响的子类。</li><li>**在其他情况下无法更改具体性。** 将具体类设置为非具体类或更改非最终类的具体性可能会破坏实例化代码或子类行为。</li></ul>
+<p>**继承变更：**</p>
+<ul><li>**可以向非抽象类添加继承。** 添加父类或接口可以扩展功能，而不会破坏现有功能。</li><li>**无法删除或更改非抽象类的继承。** 删除父级会破坏依赖于继承关系的代码。</li><li>**无法添加、删除或更改抽象类的继承。** 抽象类层次结构必须保持固定，以防止冲突并维护子类型关系。</li><li>**无法添加、删除或更改接口上的继承。**出于同样的原因，接口层次结构必须保持稳定。</li></ul>
+<p>**特殊属性：**</p>
+<ul><li>**无法添加或删除 <code>&lt;castable&gt;</code> 属性。** 运行时类型检查取决于此属性。在发布后添加它会启用以前不安全的强制转换，而删除它会破坏现有的强制转换。</li><li>**添加后无法删除 <code>&lt;final_super&gt;</code>。** 标记为 <code>&lt;final_super&gt;</code> 的派生类型必须继续从同一父级继承，以维护 <code>GetCastableFinalSuperClass</code> 所依赖的类型层次结构。</li><li>**具有 <code>&lt;final_super&gt;</code> 的派生类型必须保持从同一父级派生。**更改父类型会破坏运行时类型查询。</li></ul>
+<p>**特殊转换：**</p>
+<ul><li>**可以将不继承的最终类更改为结构体。**这是一种安全的转换，因为两者都是类似值的，并且该类不能有子类。</li><li>**可能会将没有类继承的抽象类更改为接口。**此转换保持相同的约定，但尚未完全实现（在测试中标记为 TODO）。</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Classes and Inheritance</summary>
     <div class="md"><h3>Classes and Inheritance</h3>
 <p><strong>Class Finality:</strong></p>
-<ul>
-<li><strong>Can make non-final class final.</strong> Adding the <code>&lt;final&gt;</code> specifier prevents future inheritance, which is a safe addition that strengthens guarantees.</li>
-<li><strong>Cannot make final class non-final.</strong> Once a class is marked <code>&lt;final&gt;</code>, removing this restriction would allow unexpected subclasses that could break assumptions in existing code.</li>
-</ul>
+<ul><li><strong>Can make non-final class final.</strong> Adding the <code>&lt;final&gt;</code> specifier prevents future inheritance, which is a safe addition that strengthens guarantees.</li><li><strong>Cannot make final class non-final.</strong> Once a class is marked <code>&lt;final&gt;</code>, removing this restriction would allow unexpected subclasses that could break assumptions in existing code.</li></ul>
 <p><strong>Class Uniqueness:</strong></p>
-<ul>
-<li><strong>Can make non-unique class unique.</strong> Adding the <code>&lt;unique&gt;</code> specifier enables identity-based equality, which doesn&#x27;t break existing code.</li>
-<li><strong>Cannot make unique class non-unique.</strong> Removing <code>&lt;unique&gt;</code> would change the equality semantics from identity to undefined, breaking code that relies on identity comparison.</li>
-</ul>
+<ul><li><strong>Can make non-unique class unique.</strong> Adding the <code>&lt;unique&gt;</code> specifier enables identity-based equality, which doesn&#x27;t break existing code.</li><li><strong>Cannot make unique class non-unique.</strong> Removing <code>&lt;unique&gt;</code> would change the equality semantics from identity to undefined, breaking code that relies on identity comparison.</li></ul>
 <p><strong>Class Abstractness:</strong></p>
-<ul>
-<li><strong>Can make abstract class non-abstract.</strong> Allowing instantiation of a previously abstract class is a safe expansion of capabilities.</li>
-<li><strong>Cannot make non-abstract class abstract.</strong> Preventing instantiation of a previously concrete class breaks code that creates instances.</li>
-</ul>
+<ul><li><strong>Can make abstract class non-abstract.</strong> Allowing instantiation of a previously abstract class is a safe expansion of capabilities.</li><li><strong>Cannot make non-abstract class abstract.</strong> Preventing instantiation of a previously concrete class breaks code that creates instances.</li></ul>
 <p><strong>Class Concreteness:</strong></p>
-<ul>
-<li><strong>Can make non-concrete final class concrete.</strong> Allowing default instantiation of a final class is safe since no subclasses exist to be affected.</li>
-<li><strong>Cannot change concreteness in other cases.</strong> Making concrete classes non-concrete or changing concreteness of non-final classes could break instantiation code or subclass behavior.</li>
-</ul>
+<ul><li><strong>Can make non-concrete final class concrete.</strong> Allowing default instantiation of a final class is safe since no subclasses exist to be affected.</li><li><strong>Cannot change concreteness in other cases.</strong> Making concrete classes non-concrete or changing concreteness of non-final classes could break instantiation code or subclass behavior.</li></ul>
 <p><strong>Inheritance Changes:</strong></p>
-<ul>
-<li><strong>Can add inheritance to non-abstract classes.</strong> Adding a parent class or interface extends capabilities without breaking existing functionality.</li>
-<li><strong>Cannot remove or change inheritance from non-abstract classes.</strong> Removing a parent breaks code that depends on the inheritance relationship.</li>
-<li><strong>Cannot add, remove, or change inheritance on abstract classes.</strong> Abstract class hierarchies must remain fixed to prevent conflicts and maintain subtype relationships.</li>
-<li><strong>Cannot add, remove, or change inheritance on interfaces.</strong> Interface hierarchies must remain stable for the same reasons.</li>
-</ul>
+<ul><li><strong>Can add inheritance to non-abstract classes.</strong> Adding a parent class or interface extends capabilities without breaking existing functionality.</li><li><strong>Cannot remove or change inheritance from non-abstract classes.</strong> Removing a parent breaks code that depends on the inheritance relationship.</li><li><strong>Cannot add, remove, or change inheritance on abstract classes.</strong> Abstract class hierarchies must remain fixed to prevent conflicts and maintain subtype relationships.</li><li><strong>Cannot add, remove, or change inheritance on interfaces.</strong> Interface hierarchies must remain stable for the same reasons.</li></ul>
 <p><strong>Special Attributes:</strong></p>
-<ul>
-<li><strong>Cannot add or remove the <code>&lt;castable&gt;</code> attribute.</strong> Runtime type checks depend on this property. Adding it after publication would enable casts that weren&#x27;t previously safe, while removing it would break existing casts.</li>
-<li><strong>Cannot remove <code>&lt;final_super&gt;</code> once added.</strong> Derived types marked with <code>&lt;final_super&gt;</code> must continue inheriting from the same parent to maintain the type hierarchy that <code>GetCastableFinalSuperClass</code> depends on.</li>
-<li><strong>Derived types with <code>&lt;final_super&gt;</code> must remain derived from the same parent.</strong> Changing the parent type would break runtime type queries.</li>
-</ul>
+<ul><li><strong>Cannot add or remove the <code>&lt;castable&gt;</code> attribute.</strong> Runtime type checks depend on this property. Adding it after publication would enable casts that weren&#x27;t previously safe, while removing it would break existing casts.</li><li><strong>Cannot remove <code>&lt;final_super&gt;</code> once added.</strong> Derived types marked with <code>&lt;final_super&gt;</code> must continue inheriting from the same parent to maintain the type hierarchy that <code>GetCastableFinalSuperClass</code> depends on.</li><li><strong>Derived types with <code>&lt;final_super&gt;</code> must remain derived from the same parent.</strong> Changing the parent type would break runtime type queries.</li></ul>
 <p><strong>Special Transformations:</strong></p>
-<ul>
-<li><strong>Can change final class with no inheritance to struct.</strong> This is a safe transformation since both are value-like and the class cannot have subclasses.</li>
-<li><strong>Can potentially change abstract class with no class inheritance to interface.</strong> This transformation maintains the same contract but is not yet fully implemented (marked as TODO in tests).</li>
-</ul></div>
+<ul><li><strong>Can change final class with no inheritance to struct.</strong> This is a safe transformation since both are value-like and the class cannot have subclasses.</li><li><strong>Can potentially change abstract class with no class inheritance to interface.</strong> This transformation maintains the same contract but is not yet fully implemented (marked as TODO in tests).</li></ul></div>
   </details>
 </section><section class="section" id="s8-structs">
-  <div class="annotation">
-    <h3>中文批注：Structs</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Structs”展开。可把它先理解为“结构体”。阅读时先抓住这些英文关键词：Cannot、add、any、fields、structs。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">class</span><span class="chip">struct</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Structs</summary>
+  <article class="cn-read">
+    <h2>结构体 <small>Structs</small></h2>
+    <p>**无法向结构添加任何字段。**结构是具有固定内存布局的不可变值类型。添加字段会更改此布局并破坏二进制兼容性。</p>
+<p>**不能在类和结构之间进行更改。**这些是具有不同语义的根本不同的类型 - 类是引用，结构是值。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Structs</summary>
     <div class="md"><h3>Structs</h3>
 <p><strong>Cannot add any fields to structs.</strong> Structs are immutable value types with a fixed memory layout. Adding fields would change this layout and break binary compatibility.</p>
 <p><strong>Cannot change between class and struct.</strong> These are fundamentally different types with different semantics—classes are references, structs are values.</p></div>
   </details>
 </section><section class="section" id="s9-fields-and-data-members">
-  <div class="annotation">
-    <h3>中文批注：Fields and Data Members</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Fields and Data Members”展开。阅读时先抓住这些英文关键词：Adding、Fields、add、fields、default。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">any</span><span class="chip">int</span><span class="chip">for</span><span class="chip">final</span><span class="chip">where</span><span class="chip">class</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Fields and Data Members</summary>
+  <article class="cn-read">
+    <h2>字段和数据成员 <small>Fields and Data Members</small></h2>
+    <p>**添加字段：**</p>
+<ul><li>**可以将具有默认值的字段添加到类中。**具有默认值的新字段不会破坏现有的构造代码，因为默认值是自动使用的。</li><li>**无法将没有默认值的字段添加到类中。** 构造实例的现有代码将会中断，因为它不为新字段提供值。</li><li>**无法向结构添加任何字段。**结构具有固定的内存布局，添加字段会破坏二进制兼容性。</li></ul>
+<p>**删除字段：**</p>
+<ul><li>**无法从类或结构中删除字段。** 所有已发布的字段必须保持可用，因为代码可能会引用它们。</li></ul>
+<p>**字段可变性：**</p>
+<ul><li>**可以将最终实例字段更改为非最终实例字段。**允许以前禁止的突变是一种安全的功能扩展。</li><li>**无法将非最终实例字段更改为最终字段。** 一旦代码依赖于能够改变字段，使其不可变就会破坏该代码。</li></ul>
+<p>**字段类型更改：**</p>
+<p>对于**最终或非实例数据**（无法覆盖的字段）：</p>
+<ul><li>**可以缩小类型（使其更具体）。**例如，从 <code>any</code> 更改为 <code>int</code> 加强了对该字段所保存的值的保证。</li><li>**无法扩大类型（使其更通用）。** 例如，从 <code>int</code> 更改为 <code>any</code> 违反了调用者可以读取特定类型的保证。</li></ul>
+<p>对于**非最终实例数据**（可以在子类中覆盖的字段）：</p>
+<ul><li>**无法缩小或扩大类型。** 这些必须保持其确切类型，以防止破坏子类或调用代码中的覆盖。</li></ul>
+<p>**默认初始化器：**</p>
+<ul><li>**可以向类字段添加默认初始值设定项。**这使得构造更容易，而不会破坏现有代码。</li><li>**无法从类字段中删除默认初始值设定项。** 删除默认值会破坏依赖它的构造代码。</li></ul>
+<p>**覆盖：**</p>
+<ul><li>**可以向字段添加覆盖。** 允许在子类中提供更具体的实现。</li><li>**如果覆盖没有缩小类型，则可以删除它。**如果覆盖保持相同的类型，则删除它是安全的。</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Fields and Data Members</summary>
     <div class="md"><h3>Fields and Data Members</h3>
 <p><strong>Adding Fields:</strong></p>
-<ul>
-<li><strong>Can add fields with default values to classes.</strong> New fields with defaults don&#x27;t break existing construction code since the defaults are used automatically.</li>
-<li><strong>Cannot add fields without default values to classes.</strong> Existing code that constructs instances would break since it doesn&#x27;t provide values for the new fields.</li>
-<li><strong>Cannot add any fields to structs.</strong> Structs have fixed memory layout and adding fields breaks binary compatibility.</li>
-</ul>
+<ul><li><strong>Can add fields with default values to classes.</strong> New fields with defaults don&#x27;t break existing construction code since the defaults are used automatically.</li><li><strong>Cannot add fields without default values to classes.</strong> Existing code that constructs instances would break since it doesn&#x27;t provide values for the new fields.</li><li><strong>Cannot add any fields to structs.</strong> Structs have fixed memory layout and adding fields breaks binary compatibility.</li></ul>
 <p><strong>Removing Fields:</strong></p>
-<ul>
-<li><strong>Cannot remove fields from classes or structs.</strong> All published fields must remain available since code may reference them.</li>
-</ul>
+<ul><li><strong>Cannot remove fields from classes or structs.</strong> All published fields must remain available since code may reference them.</li></ul>
 <p><strong>Field Mutability:</strong></p>
-<ul>
-<li><strong>Can change final instance field to non-final.</strong> Allowing mutation where it was previously prohibited is a safe expansion of capabilities.</li>
-<li><strong>Cannot change non-final instance field to final.</strong> Once code depends on being able to mutate a field, making it immutable breaks that code.</li>
-</ul>
+<ul><li><strong>Can change final instance field to non-final.</strong> Allowing mutation where it was previously prohibited is a safe expansion of capabilities.</li><li><strong>Cannot change non-final instance field to final.</strong> Once code depends on being able to mutate a field, making it immutable breaks that code.</li></ul>
 <p><strong>Field Type Changes:</strong></p>
 <p>For <strong>final or non-instance data</strong> (fields that can&#x27;t be overridden):</p>
-<ul>
-<li><strong>Can narrow the type (make more specific).</strong> For example, changing from <code>any</code> to <code>int</code> strengthens the guarantee about what values the field holds.</li>
-<li><strong>Cannot widen the type (make more general).</strong> For example, changing from <code>int</code> to <code>any</code> violates the guarantee that callers could read a specific type.</li>
-</ul>
+<ul><li><strong>Can narrow the type (make more specific).</strong> For example, changing from <code>any</code> to <code>int</code> strengthens the guarantee about what values the field holds.</li><li><strong>Cannot widen the type (make more general).</strong> For example, changing from <code>int</code> to <code>any</code> violates the guarantee that callers could read a specific type.</li></ul>
 <p>For <strong>non-final instance data</strong> (fields that can be overridden in subclasses):</p>
-<ul>
-<li><strong>Cannot narrow or widen the type.</strong> These must maintain their exact type to prevent breaking overrides in subclasses or calling code.</li>
-</ul>
+<ul><li><strong>Cannot narrow or widen the type.</strong> These must maintain their exact type to prevent breaking overrides in subclasses or calling code.</li></ul>
 <p><strong>Default Initializers:</strong></p>
-<ul>
-<li><strong>Can add a default initializer to a class field.</strong> This makes construction easier without breaking existing code.</li>
-<li><strong>Cannot remove a default initializer from a class field.</strong> Removing a default breaks construction code that relied on it.</li>
-</ul>
+<ul><li><strong>Can add a default initializer to a class field.</strong> This makes construction easier without breaking existing code.</li><li><strong>Cannot remove a default initializer from a class field.</strong> Removing a default breaks construction code that relied on it.</li></ul>
 <p><strong>Overrides:</strong></p>
-<ul>
-<li><strong>Can add an override to a field.</strong> Providing a more specific implementation in a subclass is allowed.</li>
-<li><strong>Can remove an override if it didn&#x27;t narrow the type.</strong> If the override maintained the same type, removing it is safe.</li>
-</ul></div>
+<ul><li><strong>Can add an override to a field.</strong> Providing a more specific implementation in a subclass is allowed.</li><li><strong>Can remove an override if it didn&#x27;t narrow the type.</strong> If the override maintained the same type, removing it is safe.</li></ul></div>
   </details>
 </section><section class="section" id="s10-functions-and-methods">
-  <div class="annotation">
-    <h3>中文批注：Functions and Methods</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Functions and Methods”展开。阅读时先抓住这些英文关键词：Function、signature、changes、follow、different。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">any</span><span class="chip">int</span><span class="chip">t:subtype(comparable)</span><span class="chip">t:type</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">NonReadsFunction() = NonReadsFunction()</span><span class="chip">final</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Functions and Methods</summary>
+  <article class="cn-read">
+    <h2>函数和方法 <small>Functions and Methods</small></h2>
+    <p>函数签名更改遵循不同的规则，具体取决于函数是 **final/non-instance**（无法重写）还是 **non-final 实例方法**（可以重写）。这些规则反映了类型安全的基本原则：函数可以在接受的内容（逆变）方面变得更加灵活，在返回的内容（协变）方面变得更加具体，但前提是不涉及重写。</p>
+<p>**过载管理：**</p>
+<ul><li>**无法删除函数重载。** 每个已发布的函数签名必须保持可用，因为代码可能会调用它。</li><li>**函数重载通过签名进行匹配。** 在检查兼容性时，会比较具有相同参数的函数，以确保兼容的类型和效果。</li></ul>
+<p>**返回类型（协方差）：**</p>
+<p>对于 **final 或非实例函数**（模块函数、静态方法、final 方法）：</p>
+<ul><li>**可以缩小返回类型（使其更具体）。**从 <code>any</code> 更改为 <code>int</code> 意味着该函数现在保证更具体的返回值，这对调用者来说始终是安全的。</li><li>**无法扩大返回类型（使其更通用）。** 从 <code>int</code> 更改为 <code>any</code> 意味着该函数可能返回不同的类型，从而破坏需要整数的代码。</li></ul>
+<p>对于**非最终实例方法**（可重写方法）：</p>
+<ul><li>**无法缩小或扩大返回类型。** 这些必须保持其确切的返回类型以确保子类覆盖保持兼容。</li></ul>
+<p>**参数类型（逆变）：**</p>
+<p>对于**最终或非实例函数**：</p>
+<ul><li>**可以扩大参数类型（使其更通用）。** 从 <code>int</code> 更改为 <code>any</code> 意味着该函数接受更多输入，这永远不会破坏现有的整数调用。</li><li>**无法缩小参数类型（使其更具体）。** 从 <code>any</code> 更改为 <code>int</code> 意味着该函数拒绝一些以前有效的参数。</li><li>**可以放宽类型参数约束。**从 <code>t:subtype(comparable)</code> 更改为 <code>t:type</code> 允许更多类型参数。</li><li>**无法加强类型参数约束。**相反的更改会限制有效类型参数。</li></ul>
+<p>对于**非最终实例方法**：</p>
+<ul><li>**不能缩小或扩大参数类型。** 这些必须保持其确切的参数类型，以确保子类覆盖和调用保持兼容。</li></ul>
+<p>**可选参数：**</p>
+<ul><li>**可以添加具有默认值的可选命名参数。**这不会破坏现有调用，因为参数是可选的。</li><li>**可以更改可选参数的默认值。** 新调用者获得新的默认值，而现有编译代码继续使用其编译时使用的值。</li></ul>
+<p>**效果（协方差）：**</p>
+<p>对于**最终或非实例函数**：</p>
+<ul><li>**可以缩小效果（减少）。**从 <code>&lt;transacts&gt;</code> 更改为 <code>&lt;reads&gt;</code> 到 <code>&lt;computes&gt;</code> 使函数更加纯净，这始终是安全的，因为期望更多效果的代码可以处理更少的效果。</li><li>**无法扩大效果（增加）。** 从 <code>&lt;computes&gt;</code> 更改为 <code>&lt;reads&gt;</code> 违反了该函数效果有限的约定。</li></ul>
+<p>对于**非最终实例方法**：</p>
+<ul><li>**无法缩小或扩大效果。** 这些必须保持其准确的效果，以确保覆盖正确工作。</li></ul>
+<p>**可调用表单之间的转换：**</p>
+<ul><li>**无法在普通函数和构造函数之间进行转换。** 这些是根本不同的可调用实体，具有不同的调用约定。</li><li>**无法在函数和参数类型之间进行转换。**函数不能成为类型参数，反之亦然。</li></ul>
+<p>**函数体：**</p>
+<ul><li>**无法更改透明函数的主体。** 调用者的验证可能依赖于透明函数的函数主体，因此更改可能会破坏调用者。</li><li>**如果没有 <code>&lt;reads&gt;</code> 效果，则无法更改不透明函数的主体。** 没有 <code>&lt;reads&gt;</code> 的函数可保证引用透明度 - 相同的输入始终产生相同的输出。尽管主体对调用者不可见，但编译器无法验证修改后的主体是否为所有输入保留了此映射，因此它保守地禁止主体更改以确保 <code>NonReadsFunction() = NonReadsFunction()</code> 跨版本保持。</li><li>**可以更改具有 <code>&lt;reads&gt;</code> 效果的不透明函数体。** 可以通过 <code>&lt;reads&gt;</code> 效果观察代码演变。</li></ul>
+<p>**理解方差：**</p>
+<p>这些规则中的不对称性反映了类型理论中的**方差**：</p>
+<ul><li>**参数是逆变的**：接受更通用的类型（加宽）是安全的</li><li>**返回是协变的**：返回更具体的类型（缩小范围）是安全的</li><li>**效果是协变的**：影响较少是安全的</li></ul>
+<p>这些规则仅适用于最终/非实例函数，因为可重写方法必须维护精确的签名以保留里氏替换原则——无论调用基方法，任何子类重写都必须是可调用的。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Functions and Methods</summary>
     <div class="md"><h3>Functions and Methods</h3>
 <p>Function signature changes follow different rules depending on whether the function is <strong>final/non-instance</strong> (can&#x27;t be overridden) or a <strong>non-final instance method</strong> (can be overridden). The rules reflect fundamental principles of type safety: functions can become more flexible about what they accept (contravariance) and more specific about what they return (covariance), but only when overriding isn&#x27;t involved.</p>
 <p><strong>Overload Management:</strong></p>
-<ul>
-<li><strong>Cannot remove function overloads.</strong> Each published function signature must remain available since code may call it.</li>
-<li><strong>Function overloads are matched by signature.</strong> When checking compatibility, functions with the same parameters are compared to ensure compatible types and effects.</li>
-</ul>
+<ul><li><strong>Cannot remove function overloads.</strong> Each published function signature must remain available since code may call it.</li><li><strong>Function overloads are matched by signature.</strong> When checking compatibility, functions with the same parameters are compared to ensure compatible types and effects.</li></ul>
 <p><strong>Return Types (Covariance):</strong></p>
 <p>For <strong>final or non-instance functions</strong> (module functions, static methods, final methods):</p>
-<ul>
-<li><strong>Can narrow the return type (make more specific).</strong> Changing from <code>any</code> to <code>int</code> means the function now guarantees a more specific return value, which is always safe for callers.</li>
-<li><strong>Cannot widen the return type (make more general).</strong> Changing from <code>int</code> to <code>any</code> means the function might return different types, breaking code that expects an integer.</li>
-</ul>
+<ul><li><strong>Can narrow the return type (make more specific).</strong> Changing from <code>any</code> to <code>int</code> means the function now guarantees a more specific return value, which is always safe for callers.</li><li><strong>Cannot widen the return type (make more general).</strong> Changing from <code>int</code> to <code>any</code> means the function might return different types, breaking code that expects an integer.</li></ul>
 <p>For <strong>non-final instance methods</strong> (overridable methods):</p>
-<ul>
-<li><strong>Cannot narrow or widen the return type.</strong> These must maintain their exact return type to ensure subclass overrides remain compatible.</li>
-</ul>
+<ul><li><strong>Cannot narrow or widen the return type.</strong> These must maintain their exact return type to ensure subclass overrides remain compatible.</li></ul>
 <p><strong>Parameter Types (Contravariance):</strong></p>
 <p>For <strong>final or non-instance functions</strong>:</p>
-<ul>
-<li><strong>Can widen parameter types (make more general).</strong> Changing from <code>int</code> to <code>any</code> means the function accepts more inputs, which never breaks existing calls with integers.</li>
-<li><strong>Cannot narrow parameter types (make more specific).</strong> Changing from <code>any</code> to <code>int</code> means the function rejects some previously valid arguments.</li>
-<li><strong>Can relax type parameter constraints.</strong> Changing from <code>t:subtype(comparable)</code> to <code>t:type</code> allows more type arguments.</li>
-<li><strong>Cannot strengthen type parameter constraints.</strong> The reverse change restricts valid type arguments.</li>
-</ul>
+<ul><li><strong>Can widen parameter types (make more general).</strong> Changing from <code>int</code> to <code>any</code> means the function accepts more inputs, which never breaks existing calls with integers.</li><li><strong>Cannot narrow parameter types (make more specific).</strong> Changing from <code>any</code> to <code>int</code> means the function rejects some previously valid arguments.</li><li><strong>Can relax type parameter constraints.</strong> Changing from <code>t:subtype(comparable)</code> to <code>t:type</code> allows more type arguments.</li><li><strong>Cannot strengthen type parameter constraints.</strong> The reverse change restricts valid type arguments.</li></ul>
 <p>For <strong>non-final instance methods</strong>:</p>
-<ul>
-<li><strong>Cannot narrow or widen parameter types.</strong> These must maintain their exact parameter types to ensure subclass overrides and calls remain compatible.</li>
-</ul>
+<ul><li><strong>Cannot narrow or widen parameter types.</strong> These must maintain their exact parameter types to ensure subclass overrides and calls remain compatible.</li></ul>
 <p><strong>Optional Parameters:</strong></p>
-<ul>
-<li><strong>Can add optional named parameters with defaults.</strong> This doesn&#x27;t break existing calls since the parameters are optional.</li>
-<li><strong>Can change default values of optional parameters.</strong> New callers get the new defaults while existing compiled code continues using the values it was compiled with.</li>
-</ul>
+<ul><li><strong>Can add optional named parameters with defaults.</strong> This doesn&#x27;t break existing calls since the parameters are optional.</li><li><strong>Can change default values of optional parameters.</strong> New callers get the new defaults while existing compiled code continues using the values it was compiled with.</li></ul>
 <p><strong>Effects (Covariance):</strong></p>
 <p>For <strong>final or non-instance functions</strong>:</p>
-<ul>
-<li><strong>Can narrow effects (reduce).</strong> Changing from <code>&lt;transacts&gt;</code> to <code>&lt;reads&gt;</code> to <code>&lt;computes&gt;</code> makes the function more pure, which is always safe since code expecting more effects can handle fewer.</li>
-<li><strong>Cannot widen effects (increase).</strong> Changing from <code>&lt;computes&gt;</code> to <code>&lt;reads&gt;</code> violates the contract that the function has limited effects.</li>
-</ul>
+<ul><li><strong>Can narrow effects (reduce).</strong> Changing from <code>&lt;transacts&gt;</code> to <code>&lt;reads&gt;</code> to <code>&lt;computes&gt;</code> makes the function more pure, which is always safe since code expecting more effects can handle fewer.</li><li><strong>Cannot widen effects (increase).</strong> Changing from <code>&lt;computes&gt;</code> to <code>&lt;reads&gt;</code> violates the contract that the function has limited effects.</li></ul>
 <p>For <strong>non-final instance methods</strong>:</p>
-<ul>
-<li><strong>Cannot narrow or widen effects.</strong> These must maintain their exact effects to ensure overrides work correctly.</li>
-</ul>
+<ul><li><strong>Cannot narrow or widen effects.</strong> These must maintain their exact effects to ensure overrides work correctly.</li></ul>
 <p><strong>Conversions Between Callable Forms:</strong></p>
-<ul>
-<li><strong>Cannot convert between normal functions and constructors.</strong> These are fundamentally different callable entities with different calling conventions.</li>
-<li><strong>Cannot convert between functions and parametric types.</strong> A function cannot become a type parameter or vice versa.</li>
-</ul>
+<ul><li><strong>Cannot convert between normal functions and constructors.</strong> These are fundamentally different callable entities with different calling conventions.</li><li><strong>Cannot convert between functions and parametric types.</strong> A function cannot become a type parameter or vice versa.</li></ul>
 <p><strong>Function body:</strong></p>
-<ul>
-<li><strong>Cannot change the body of transparent functions.</strong> Verification of callers might depend on the function body of transparent functions, so changes could break callers.</li>
-<li><strong>Cannot change the body of opaque functions without the <code>&lt;reads&gt;</code> effect.</strong> A function without <code>&lt;reads&gt;</code> guarantees referential transparency — the same inputs always produce the same outputs. Although the body is not visible to callers, the compiler cannot verify that a modified body preserves this mapping for all inputs, so it conservatively forbids body changes to ensure that <code>NonReadsFunction() = NonReadsFunction()</code> holds across versions.</li>
-<li><strong>Can change the body of opaque functions that have the <code>&lt;reads&gt;</code> effect.</strong> Code evolution can be observed by the <code>&lt;reads&gt;</code> effect.</li>
-</ul>
+<ul><li><strong>Cannot change the body of transparent functions.</strong> Verification of callers might depend on the function body of transparent functions, so changes could break callers.</li><li><strong>Cannot change the body of opaque functions without the <code>&lt;reads&gt;</code> effect.</strong> A function without <code>&lt;reads&gt;</code> guarantees referential transparency — the same inputs always produce the same outputs. Although the body is not visible to callers, the compiler cannot verify that a modified body preserves this mapping for all inputs, so it conservatively forbids body changes to ensure that <code>NonReadsFunction() = NonReadsFunction()</code> holds across versions.</li><li><strong>Can change the body of opaque functions that have the <code>&lt;reads&gt;</code> effect.</strong> Code evolution can be observed by the <code>&lt;reads&gt;</code> effect.</li></ul>
 <p><strong>Understanding Variance:</strong></p>
 <p>The asymmetry in these rules reflects <strong>variance</strong> in type theory:</p>
-<ul>
-<li><strong>Parameters are contravariant</strong>: Accepting more general types (widening) is safe</li>
-<li><strong>Returns are covariant</strong>: Returning more specific types (narrowing) is safe</li>
-<li><strong>Effects are covariant</strong>: Having fewer effects is safe</li>
-</ul>
+<ul><li><strong>Parameters are contravariant</strong>: Accepting more general types (widening) is safe</li><li><strong>Returns are covariant</strong>: Returning more specific types (narrowing) is safe</li><li><strong>Effects are covariant</strong>: Having fewer effects is safe</li></ul>
 <p>These rules only apply to final/non-instance functions because overridable methods must maintain exact signatures to preserve the Liskov Substitution Principle—any subclass override must be callable wherever the base method is called.</p></div>
   </details>
 </section><section class="section" id="s11-access-specifiers">
-  <div class="annotation">
-    <h3>中文批注：Access Specifiers</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Access Specifiers”展开。阅读时先抓住这些英文关键词：Increasing、Accessibility、Allowed、increase、accessibility。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">private</span><span class="chip">public</span><span class="chip">protected</span><span class="chip">internal</span><span class="chip">using</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Access Specifiers</summary>
+  <article class="cn-read">
+    <h2>访问说明符 <small>Access Specifiers</small></h2>
+    <p>**增加可访问性（允许）：**</p>
+<ul><li>**可以提高定义的可访问性。** 将私有定义公开或保护为公开，可以在不破坏现有代码的情况下扩展访问范围。</li><li>**可以使构造函数更易于访问。**允许更多代码构造实例是一种安全的功能扩展。</li></ul>
+<p>**降低可访问性（禁止）：**</p>
+<ul><li>**无法降低定义的可访问性。** 将公共定义设置为受保护、内部或私有会破坏所有使用它的外部代码。将受保护的定义设置为私有会破坏子类访问。</li><li>**不能降低构造函数的可访问性。** 公共的类构造函数不能变为私有或受保护。</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Access Specifiers</summary>
     <div class="md"><h3>Access Specifiers</h3>
 <p><strong>Increasing Accessibility (Allowed):</strong></p>
-<ul>
-<li><strong>Can increase accessibility of definitions.</strong> Making a private definition public, or protected to public, expands access without breaking existing code.</li>
-<li><strong>Can make constructors more accessible.</strong> Allowing more code to construct instances is a safe capability expansion.</li>
-</ul>
+<ul><li><strong>Can increase accessibility of definitions.</strong> Making a private definition public, or protected to public, expands access without breaking existing code.</li><li><strong>Can make constructors more accessible.</strong> Allowing more code to construct instances is a safe capability expansion.</li></ul>
 <p><strong>Reducing Accessibility (Forbidden):</strong></p>
-<ul>
-<li><strong>Cannot reduce accessibility of definitions.</strong> Making a public definition protected, internal, or private breaks all external code using it. Making a protected definition private breaks subclass access.</li>
-<li><strong>Cannot make constructors less accessible.</strong> A class constructor that was public cannot become private or protected.</li>
-</ul></div>
+<ul><li><strong>Cannot reduce accessibility of definitions.</strong> Making a public definition protected, internal, or private breaks all external code using it. Making a protected definition private breaks subclass access.</li><li><strong>Cannot make constructors less accessible.</strong> A class constructor that was public cannot become private or protected.</li></ul></div>
   </details>
 </section><section class="section" id="s12-persistable-types">
-  <div class="annotation">
-    <h3>中文批注：Persistable Types</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Persistable Types”展开。阅读时先抓住这些英文关键词：Persistable、types、require、stricter、compatibility。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;persistable&gt;</span><span class="chip">var</span><span class="chip">persistable</span><span class="chip">using</span><span class="chip">for</span><span class="chip">set</span><span class="chip">module</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Persistable Types</summary>
+  <article class="cn-read">
+    <h2>可持久化类型 <small>Persistable Types</small></h2>
+    <p>持久类型需要更严格的兼容性规则，因为它们定义了必须保持无限期可加载的已保存玩家数据的格式。对持久类型的更改可能会损坏或丢失已保存的数据。</p>
+<p>**持久属性更改：**</p>
+<ul><li>**发布后无法添加 <code>&lt;persistable&gt;</code> 属性。** 使类型可持久化会更改其序列化行为并施加新的限制。</li><li>**无法删除 <code>&lt;persistable&gt;</code> 属性。** 保存的数据取决于这些类型的持久格式。</li></ul>
+<p>**持久化类字段：**</p>
+<ul><li>**可以将具有默认值的字段添加到可持久类。** 没有新字段的已保存数据将使用默认值成功加载。</li><li>**无法将没有默认值的字段添加到可持久类。**旧保存的数据不会有这些字段的值。</li><li>**无法从持久类中删除任何字段。** 保存的数据可能包含这些字段值并且必须能够加载它们。</li></ul>
+<p>**持久结构字段：**</p>
+<ul><li>**无法将任何字段添加到持久结构。**结构具有固定布局，并且保存的数据需要精确的结构。</li><li>**无法从持久结构中删除任何字段。**已保存数据中的所有字段都必须可加载。</li></ul>
+<p>**持久枚举更改：**</p>
+<p>对于**封闭的持久枚举**：</p>
+<ul><li>**无法添加枚举数。** Case 语句可能会穷举所有值，并且保存的数据反序列化依赖于固定集。</li><li>**无法删除枚举器。** 保存的数据可能包含已删除的值，从而使其无法加载。</li></ul>
+<p>对于 **开放持久枚举**：</p>
+<ul><li>**可以添加新的枚举器。** 开放枚举旨在增长，并且持久性系统处理未知值。</li><li>**无法删除枚举器。** 保存的数据可能仍引用已删除的值。</li></ul>
+<p>**类型生命周期：**</p>
+<ul><li>**可以添加新的持久类型。** 始终允许发布新的数据持久类型。</li><li>**一旦发布就无法删除持久类型。**它们必须保持可用于反序列化旧保存的数据。</li><li>**无法更改持久类型的结构。** 字段类型、继承关系和其他结构更改会破坏反序列化。</li></ul>
+<p>**模块/类型别名：**</p>
+<ul><li>**可以将模块或类型别名添加到可持久类型。**这提供了引用现有类型而不更改它们的其他方法。</li><li>**可以删除可持久类型的模块或类型别名。**删除别名不会影响基础类型的持久性。</li><li>**模块别名必须引用相同的路径。**更改目标会破坏使用别名的所有代码。</li><li>**类型别名必须引用相同的类型。** 更改别名类型会破坏使用别名的所有代码。</li></ul>
+<p>**不可持久的更改：**</p>
+<ul><li>**可以自由添加或删除非持久类型。** 不带 <code>&lt;persistable&gt;</code> 的类型不会影响保存的数据，可以根据需要添加或删除。</li></ul>
+<p>**持久变量：**</p>
+<p>Verse 支持跨会话维护值的持久变量（模块范围内的 <code>var</code> 声明）：</p>
+<ul><li>**可以添加新的持久变量。**新变量使用其默认值进行初始化。</li><li>**无法删除持久变量。** Metaverse 期望这些变量持久存在。</li><li>**无法更改持久变量类型。** 保存的值必须与预期类型匹配。</li><li>**非持久变量可以自由更改。** 局部变量或实例变量不持久并且可以修改。</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Persistable Types</summary>
     <div class="md"><h3>Persistable Types</h3>
 <p>Persistable types require stricter compatibility rules because they define the format of saved player data that must remain loadable indefinitely. Changes to persistable types risk corrupting or losing saved data.</p>
 <p><strong>Persistable Attribute Changes:</strong></p>
-<ul>
-<li><strong>Cannot add the <code>&lt;persistable&gt;</code> attribute after publication.</strong> Making a type persistable changes its serialization behavior and imposes new restrictions.</li>
-<li><strong>Cannot remove the <code>&lt;persistable&gt;</code> attribute.</strong> Saved data depends on the persistence format of these types.</li>
-</ul>
+<ul><li><strong>Cannot add the <code>&lt;persistable&gt;</code> attribute after publication.</strong> Making a type persistable changes its serialization behavior and imposes new restrictions.</li><li><strong>Cannot remove the <code>&lt;persistable&gt;</code> attribute.</strong> Saved data depends on the persistence format of these types.</li></ul>
 <p><strong>Persistable Class Fields:</strong></p>
-<ul>
-<li><strong>Can add fields with default values to persistable classes.</strong> Saved data without the new field will load successfully using the default.</li>
-<li><strong>Cannot add fields without defaults to persistable classes.</strong> Old saved data wouldn&#x27;t have values for these fields.</li>
-<li><strong>Cannot remove any fields from persistable classes.</strong> Saved data may contain these field values and must be able to load them.</li>
-</ul>
+<ul><li><strong>Can add fields with default values to persistable classes.</strong> Saved data without the new field will load successfully using the default.</li><li><strong>Cannot add fields without defaults to persistable classes.</strong> Old saved data wouldn&#x27;t have values for these fields.</li><li><strong>Cannot remove any fields from persistable classes.</strong> Saved data may contain these field values and must be able to load them.</li></ul>
 <p><strong>Persistable Struct Fields:</strong></p>
-<ul>
-<li><strong>Cannot add any fields to persistable structs.</strong> Structs have fixed layouts and saved data expects the exact structure.</li>
-<li><strong>Cannot remove any fields from persistable structs.</strong> All fields in saved data must be loadable.</li>
-</ul>
+<ul><li><strong>Cannot add any fields to persistable structs.</strong> Structs have fixed layouts and saved data expects the exact structure.</li><li><strong>Cannot remove any fields from persistable structs.</strong> All fields in saved data must be loadable.</li></ul>
 <p><strong>Persistable Enum Changes:</strong></p>
 <p>For <strong>closed persistable enums</strong>:</p>
-<ul>
-<li><strong>Cannot add enumerators.</strong> Case statements may exhaustively match all values, and saved data deserialization depends on the fixed set.</li>
-<li><strong>Cannot remove enumerators.</strong> Saved data may contain removed values, making it unloadable.</li>
-</ul>
+<ul><li><strong>Cannot add enumerators.</strong> Case statements may exhaustively match all values, and saved data deserialization depends on the fixed set.</li><li><strong>Cannot remove enumerators.</strong> Saved data may contain removed values, making it unloadable.</li></ul>
 <p>For <strong>open persistable enums</strong>:</p>
-<ul>
-<li><strong>Can add new enumerators.</strong> Open enums are designed to grow, and the persistence system handles unknown values.</li>
-<li><strong>Cannot remove enumerators.</strong> Saved data may still reference removed values.</li>
-</ul>
+<ul><li><strong>Can add new enumerators.</strong> Open enums are designed to grow, and the persistence system handles unknown values.</li><li><strong>Cannot remove enumerators.</strong> Saved data may still reference removed values.</li></ul>
 <p><strong>Type Lifecycle:</strong></p>
-<ul>
-<li><strong>Can add new persistable types.</strong> Publishing new types for data persistence is always allowed.</li>
-<li><strong>Cannot remove persistable types once published.</strong> They must remain available to deserialize old saved data.</li>
-<li><strong>Cannot change the structure of persistable types.</strong> Field types, inheritance relationships, and other structural changes break deserialization.</li>
-</ul>
+<ul><li><strong>Can add new persistable types.</strong> Publishing new types for data persistence is always allowed.</li><li><strong>Cannot remove persistable types once published.</strong> They must remain available to deserialize old saved data.</li><li><strong>Cannot change the structure of persistable types.</strong> Field types, inheritance relationships, and other structural changes break deserialization.</li></ul>
 <p><strong>Module/Type Aliases:</strong></p>
-<ul>
-<li><strong>Can add module or type aliases to persistable types.</strong> This provides additional ways to reference existing types without changing them.</li>
-<li><strong>Can remove module or type aliases to persistable types.</strong> Removing an alias doesn&#x27;t affect the underlying type&#x27;s persistence.</li>
-<li><strong>Module aliases must reference the same path.</strong> Changing the target breaks all code using the alias.</li>
-<li><strong>Type aliases must reference the same type.</strong> Changing the aliased type breaks all code using the alias.</li>
-</ul>
+<ul><li><strong>Can add module or type aliases to persistable types.</strong> This provides additional ways to reference existing types without changing them.</li><li><strong>Can remove module or type aliases to persistable types.</strong> Removing an alias doesn&#x27;t affect the underlying type&#x27;s persistence.</li><li><strong>Module aliases must reference the same path.</strong> Changing the target breaks all code using the alias.</li><li><strong>Type aliases must reference the same type.</strong> Changing the aliased type breaks all code using the alias.</li></ul>
 <p><strong>Non-Persistable Changes:</strong></p>
-<ul>
-<li><strong>Can freely add or remove non-persistable types.</strong> Types without <code>&lt;persistable&gt;</code> don&#x27;t affect saved data and can be added or removed as needed.</li>
-</ul>
+<ul><li><strong>Can freely add or remove non-persistable types.</strong> Types without <code>&lt;persistable&gt;</code> don&#x27;t affect saved data and can be added or removed as needed.</li></ul>
 <p><strong>Persistent Variables:</strong></p>
 <p>Verse supports persistent variables (<code>var</code> declarations in module scope) that maintain values across sessions:</p>
-<ul>
-<li><strong>Can add new persistent variables.</strong> New variables are initialized with their default values.</li>
-<li><strong>Cannot remove persistent variables.</strong> The metaverse expects these variables to exist persistently.</li>
-<li><strong>Cannot change persistent variable types.</strong> Saved values must match the expected type.</li>
-<li><strong>Non-persistent variables can be freely changed.</strong> Local or instance variables don&#x27;t persist and can be modified.</li>
-</ul></div>
+<ul><li><strong>Can add new persistent variables.</strong> New variables are initialized with their default values.</li><li><strong>Cannot remove persistent variables.</strong> The metaverse expects these variables to exist persistently.</li><li><strong>Cannot change persistent variable types.</strong> Saved values must match the expected type.</li><li><strong>Non-persistent variables can be freely changed.</strong> Local or instance variables don&#x27;t persist and can be modified.</li></ul></div>
   </details>
 </section><section class="section" id="s13-parametric-types">
-  <div class="annotation">
-    <h3>中文批注：Parametric Types</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Parametric Types”展开。阅读时先抓住这些英文关键词：Parametric、types、generic、parameters、have。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">t:subtype(comparable)</span><span class="chip">t:type</span><span class="chip">using</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Parametric Types</summary>
+  <article class="cn-read">
+    <h2>参数类型 <small>Parametric Types</small></h2>
+    <p>参数类型（带有类型参数的泛型类型）还有其他兼容性注意事项：</p>
+<p>**类型参数约束：**</p>
+<ul><li>**可以扩大参数类型域中的类型参数约束。**使约束更加宽松（例如，从 <code>t:subtype(comparable)</code> 到 <code>t:type</code>）允许更多类型参数。</li><li>**无法缩小类型参数约束。** 限制有效类型参数会破坏使用参数类型的现有代码。</li><li>**在检查参数类型内的函数时，类型参数被视为严格的。**这确保了通用上下文中的类型安全。</li></ul>
+<p>**参数与非参数：**</p>
+<ul><li>**无法在参数形式和非参数形式之间进行转换。** 参数类型不能丢失其类型参数，而常规类型不能获得它们。</li><li>**无法在函数和参数类型之间进行转换。**这些是根本不同的构造。</li></ul>
+<p>**方差：**</p>
+<ul><li>**方差是从使用中推断出来的，而不是声明的。**类型参数的使用方式（在输入位置、输出位置或两者中）决定了它们的方差。</li><li>**无法更改推断的方差。** 一旦发布类型参数的使用模式，它就会建立必须维护的方差契约。</li></ul>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Parametric Types</summary>
     <div class="md"><h3>Parametric Types</h3>
 <p>Parametric types (generic types with type parameters) have additional compatibility considerations:</p>
 <p><strong>Type Parameter Constraints:</strong></p>
-<ul>
-<li><strong>Can widen type parameter constraints in parametric type domains.</strong> Making constraints more permissive (e.g., from <code>t:subtype(comparable)</code> to <code>t:type</code>) allows more type arguments.</li>
-<li><strong>Cannot narrow type parameter constraints.</strong> Restricting valid type arguments breaks existing code using the parametric type.</li>
-<li><strong>Type parameters are treated as rigid when checking functions inside parametric types.</strong> This ensures type safety within the generic context.</li>
-</ul>
+<ul><li><strong>Can widen type parameter constraints in parametric type domains.</strong> Making constraints more permissive (e.g., from <code>t:subtype(comparable)</code> to <code>t:type</code>) allows more type arguments.</li><li><strong>Cannot narrow type parameter constraints.</strong> Restricting valid type arguments breaks existing code using the parametric type.</li><li><strong>Type parameters are treated as rigid when checking functions inside parametric types.</strong> This ensures type safety within the generic context.</li></ul>
 <p><strong>Parametric vs Non-Parametric:</strong></p>
-<ul>
-<li><strong>Cannot convert between parametric and non-parametric forms.</strong> A parametric type cannot lose its type parameters, and a regular type cannot gain them.</li>
-<li><strong>Cannot convert between functions and parametric types.</strong> These are fundamentally different constructs.</li>
-</ul>
+<ul><li><strong>Cannot convert between parametric and non-parametric forms.</strong> A parametric type cannot lose its type parameters, and a regular type cannot gain them.</li><li><strong>Cannot convert between functions and parametric types.</strong> These are fundamentally different constructs.</li></ul>
 <p><strong>Variance:</strong></p>
-<ul>
-<li><strong>Variance is inferred from usage, not declared.</strong> How type parameters are used (in input positions, output positions, or both) determines their variance.</li>
-<li><strong>Cannot change inferred variance.</strong> Once a type parameter&#x27;s usage pattern is published, it establishes a variance contract that must be maintained.</li>
-</ul></div>
+<ul><li><strong>Variance is inferred from usage, not declared.</strong> How type parameters are used (in input positions, output positions, or both) determines their variance.</li><li><strong>Cannot change inferred variance.</strong> Once a type parameter&#x27;s usage pattern is published, it establishes a variance contract that must be maintained.</li></ul></div>
   </details>
 </section><section class="section" id="s14-summary">
-  <div class="annotation">
-    <h3>中文批注：Summary</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Summary”展开。阅读时先抓住这些英文关键词：catalog、represents、core、compatibility、guarantees。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">public</span><span class="chip">final</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Summary</summary>
+  <article class="cn-read">
+    <h2>概括 <small>Summary</small></h2>
+    <p>该目录代表了 Verse 强制执行的核心兼容性保证。虽然这些限制可能看起来很广泛，但它们确保已发布的代码仍然是 Metaverse 生态系统的稳定基础。</p>
+<p>要记住的关键原则：</p>
+<ol><li>**添加通常是安全的**：新的可选字段、新的重载、开放枚举中的新枚举器</li><li>**通常禁止删除**：删除公共定义会破坏依赖代码</li><li>**缩小范围通常是安全的**：更具体的返回类型，更少的影响</li><li>**加宽是选择性安全的**：更通用的参数类型（逆变）</li><li>**最终/非实例成员更加灵活**：他们可以进化类型和效果</li><li>**非最终实例成员是严格的**：它们必须保持准确的签名</li><li>**持久化类型是最严格的**：保存的数据施加永久约束</li></ol>
+<p>在这些限制下工作的关键是深思熟虑的初始设计——从一开始就选择正确的可见性、最终性、效果和类型属性。在做出这些不可逆转的决定时，请考虑未来的演变需求。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Summary</summary>
     <div class="md"><h3>Summary</h3>
 <p>This catalog represents the core compatibility guarantees that Verse enforces. While these restrictions may seem extensive, they ensure that published code remains a stable foundation for the metaverse ecosystem.</p>
 <p>Key principles to remember:</p>
-<ol>
-<li><strong>Additions are usually safe</strong>: New optional fields, new overloads, new enumerators in open enums</li>
-<li><strong>Removals are usually forbidden</strong>: Removing public definitions breaks dependent code</li>
-<li><strong>Narrowing is often safe</strong>: More specific return types, fewer effects</li>
-<li><strong>Widening is selectively safe</strong>: More general parameter types (contravariance)</li>
-<li><strong>Final/non-instance members are more flexible</strong>: They can evolve types and effects</li>
-<li><strong>Non-final instance members are rigid</strong>: They must maintain exact signatures</li>
-<li><strong>Persistable types are strictest</strong>: Saved data imposes permanent constraints</li>
-</ol>
+<ol><li><strong>Additions are usually safe</strong>: New optional fields, new overloads, new enumerators in open enums</li><li><strong>Removals are usually forbidden</strong>: Removing public definitions breaks dependent code</li><li><strong>Narrowing is often safe</strong>: More specific return types, fewer effects</li><li><strong>Widening is selectively safe</strong>: More general parameter types (contravariance)</li><li><strong>Final/non-instance members are more flexible</strong>: They can evolve types and effects</li><li><strong>Non-final instance members are rigid</strong>: They must maintain exact signatures</li><li><strong>Persistable types are strictest</strong>: Saved data imposes permanent constraints</li></ol>
 <p>The key to working within these constraints is thoughtful initial design—choosing the right visibility, finality, effects, and type properties from the start. Consider future evolution needs when making these irreversible decisions.</p></div>
   </details>
 </section><section class="section" id="s15-design-philosophy-for-longevity">
-  <div class="annotation">
-    <h3>中文批注：Design Philosophy for Longevity</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Design Philosophy for Longevity”展开。阅读时先抓住这些英文关键词：Creating、code、remains、viable、across。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">for</span><span class="chip">persistable</span><span class="chip">reads</span><span class="chip">computes</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Design Philosophy for Longevity</summary>
+  <article class="cn-read">
+    <h2>长寿的设计理念 <small>Design Philosophy for Longevity</small></h2>
+    <p>创建在较长时间范围内仍然可行的代码需要采用不同的软件设计方法。开发人员必须超越眼前的功能，考虑他们的代码将如何发展并与未来系统交互。这种前瞻性的方法影响着开发的各个方面，从最初的设计到持续的维护。</p>
+<p>当使用持久类型时，模式规划变得至关重要。由于这些内容在发布后无法更改，因此开发人员不仅必须仔细考虑当前的需求，还要仔细考虑未来潜在的需求。这可能意味着包含并非立即必需的可选字段，或者在未来可能进行扩展时选择开放枚举而不是封闭枚举。做出错误决策的成本（被锁定在不灵活的模式中）会鼓励彻底的前期设计。</p>
+<p>效果规范提供了一个有趣的权衡。虽然 Verse 允许并且有时鼓励过度指定效果，将函数标记为具有当前未使用的效果，但这为将来的实现更改提供了灵活性。标记为 <code>&lt;reads&gt;</code> 的函数稍后可以优化为 <code>&lt;computes&gt;</code> 而不会破坏兼容性，但反之则不然。这种不对称性鼓励保守的效果声明，为未来的修改留出空间。</p>
+<p>开放式和封闭式结构之间的选择代表了另一个长期决策。开放枚举允许在发布后添加新值，以防止详尽的模式匹配为代价提供可扩展性。封闭枚举提供了相反的权衡。了解何时灵活性或完整性更有价值需要考虑代码不仅在今天，而且在未来几年将如何使用。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Design Philosophy for Longevity</summary>
     <div class="md"><h2>Design Philosophy for Longevity</h2>
 <p>Creating code that remains viable across extended timescales requires a different approach to software design. Developers must think beyond immediate functionality to consider how their code will evolve and interact with future systems. This forward-thinking approach influences every aspect of development, from initial design to ongoing maintenance.</p>
 <p>Schema planning becomes critical when working with persistable types. Since these cannot be changed after publication, developers must carefully consider not just current requirements but potential future needs. This might mean including optional fields that aren&#x27;t immediately necessary or choosing open enums over closed ones when future expansion seems likely. The cost of getting these decisions wrong—being locked into inflexible schemas—encourages thorough upfront design.</p>
 <p>Effect specification offers an interesting trade-off. While Verse allows and sometimes encourages over-specification of effects, marking a function as having effects it doesn&#x27;t currently use, this provides flexibility for future implementation changes. A function marked as <code>&lt;reads&gt;</code> can later be optimized to <code>&lt;computes&gt;</code> without breaking compatibility, but the reverse isn&#x27;t true. This asymmetry encourages conservative effect declarations that leave room for future modifications.</p>
 <p>The choice between open and closed constructs represents another long-term decision. Open enums allow new values to be added after publication, providing extensibility at the cost of preventing exhaustive pattern matching. Closed enums offer the opposite trade-off. Understanding when flexibility or completeness is more valuable requires thinking about how the code will be used not just today, but years into the future.</p></div>
   </details>
-</section>
-<nav class="footer-nav"><div><a href="../17_persistable/index.html">上一页：可持久化类型</a></div><div><a href="../VerseSyntaxValidation/index.html">下一页：语法高亮验证样例</a></div></nav>
-</main></div></body></html>
+</section><nav class="footer-nav"><div><a href="../17_persistable/index.html">上一页：可持久化类型</a></div><div><a href="../VerseSyntaxValidation/index.html">下一页：语法高亮验证样例</a></div></nav></main></div></body></html>

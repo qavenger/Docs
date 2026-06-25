@@ -1,21 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>可变性 - Book of Verse 中文批注版</title>
-<link rel="stylesheet" href="../assets/styles.css">
-<script src="../assets/reader.js"></script>
-</head>
-<body>
-<div class="layout">
-<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>可变性 - Book of Verse 中文阅读稿</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/reader.js"></script></head>
+<body><div class="layout"><aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文阅读稿 · 原文折叠 · 代码保留</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
 <a href="../03_containers/index.html"><span>Containers types</span><br><small>容器类型</small></a>
 <a href="../04_operators/index.html"><span>Operators</span><br><small>运算符</small></a>
-<a class="active" href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
+<a class=active href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
 <a href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
 <a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
 <a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
@@ -30,40 +21,67 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
-<main class="main">
-<div class="crumb">Mutability / <a href="https://verselang.github.io/book/05_mutability/">原文页面</a></div>
-<section class="hero"><h1>可变性</h1><p class="lead">本页说明默认不可变如何与 var/set、struct 值语义、class 引用语义结合。</p><div class="meta"><span class="pill">源文件：05_mutability.md</span><span class="pill">批注段落：21</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>这一页读什么</h2><p>写 gameplay 状态时，很多 bug 来自误判“变量可变”和“对象字段可变”的区别。</p><h3>注意点</h3><ul class="list"><li>var 局部声明不能用 :=。</li><li>tuple 不能改单个元素，只能整体替换。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-mutability">Mutability</a></li><li class="lvl2"><a href="#s1-the-pure-foundation">The Pure Foundation</a></li><li class="lvl2"><a href="#s2-introducing-mutation">Introducing Mutation</a></li><li class="lvl3"><a href="#s3-requirements-for-var-declarations">Requirements for var Declarations</a></li><li class="lvl3"><a href="#s4-var-declarations-as-expressions">var Declarations as Expressions</a></li><li class="lvl3"><a href="#s5-set-with-block-expressions">set with Block Expressions</a></li><li class="lvl3"><a href="#s6-scope-and-redeclaration-restrictions">Scope and Redeclaration Restrictions</a></li><li class="lvl2"><a href="#s7-deep-vs-shallow-mutability">Deep vs Shallow Mutability</a></li><li class="lvl3"><a href="#s8-struct-mutability-deep-and-structural">Struct Mutability: Deep and Structural</a></li><li class="lvl3"><a href="#s9-class-mutability-reference-semantics">Class Mutability: Reference Semantics</a></li><li class="lvl3"><a href="#s10-collection-mutability-arrays-and-maps">Collection Mutability: Arrays and Maps</a></li><li class="lvl3"><a href="#s11-arrays-of-structs-independent-copies">Arrays of Structs: Independent Copies</a></li><li class="lvl3"><a href="#s12-arrays-of-classes-shared-references">Arrays of Classes: Shared References</a></li><li class="lvl3"><a href="#s13-compound-assignment-operators">Compound Assignment Operators</a></li><li class="lvl3"><a href="#s14-tuple-mutability-replacement-only">Tuple Mutability: Replacement Only</a></li><li class="lvl3"><a href="#s15-map-ordering-and-mutation">Map Ordering and Mutation</a></li><li class="lvl2"><a href="#s16-critical-mutability-restrictions">Critical Mutability Restrictions</a></li><li class="lvl3"><a href="#s17-cannot-mutate-immutable-class-fields">Cannot Mutate Immutable Class Fields</a></li><li class="lvl3"><a href="#s18-only-computes-structs-allow-field-mutation">Only &lt;computes&gt; Structs Allow Field Mutation</a></li><li class="lvl3"><a href="#s19-cannot-mutate-through-immutable-class-fields">Cannot Mutate Through Immutable Class Fields</a></li><li class="lvl2"><a href="#s20-identity-and-uniqueness">Identity and Uniqueness</a></li></ol></article></section>
-<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
+<div class="crumb">Mutability / <a href="https://verselang.github.io/book/05_mutability/">原文页面</a></div><section class="hero"><h1>可变性</h1><p class="lead">可变性页，解释默认不可变、var/set、值语义、引用语义和容器更新。</p><div class="meta"><span class="pill">源文件：05_mutability.md</span><span class="pill">中文段落：21</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-mutability">可变性 / Mutability</a></li><li class="lvl2"><a href="#s1-the-pure-foundation">The Pure Foundation</a></li><li class="lvl2"><a href="#s2-introducing-mutation">Introducing Mutation</a></li><li class="lvl3"><a href="#s3-requirements-for-var-declarations">Requirements for var Declarations</a></li><li class="lvl3"><a href="#s4-var-declarations-as-expressions">var Declarations as Expressions</a></li><li class="lvl3"><a href="#s5-set-with-block-expressions">set with Block Expressions</a></li><li class="lvl3"><a href="#s6-scope-and-redeclaration-restrictions">Scope and Redeclaration Restrictions</a></li><li class="lvl2"><a href="#s7-deep-vs-shallow-mutability">Deep vs Shallow Mutability</a></li><li class="lvl3"><a href="#s8-struct-mutability-deep-and-structural">Struct Mutability: Deep and Structural</a></li><li class="lvl3"><a href="#s9-class-mutability-reference-semantics">Class Mutability: Reference Semantics</a></li><li class="lvl3"><a href="#s10-collection-mutability-arrays-and-maps">Collection Mutability: Arrays and Maps</a></li><li class="lvl3"><a href="#s11-arrays-of-structs-independent-copies">Arrays of Structs: Independent Copies</a></li><li class="lvl3"><a href="#s12-arrays-of-classes-shared-references">Arrays of Classes: Shared References</a></li><li class="lvl3"><a href="#s13-compound-assignment-operators">Compound Assignment Operators</a></li><li class="lvl3"><a href="#s14-tuple-mutability-replacement-only">Tuple Mutability: Replacement Only</a></li><li class="lvl3"><a href="#s15-map-ordering-and-mutation">Map Ordering and Mutation</a></li><li class="lvl2"><a href="#s16-critical-mutability-restrictions">Critical Mutability Restrictions</a></li><li class="lvl3"><a href="#s17-cannot-mutate-immutable-class-fields">Cannot Mutate Immutable Class Fields</a></li><li class="lvl3"><a href="#s18-only-computes-structs-allow-field-mutation">Only &lt;computes&gt; Structs Allow Field Mutation</a></li><li class="lvl3"><a href="#s19-cannot-mutate-through-immutable-class-fields">Cannot Mutate Through Immutable Class Fields</a></li><li class="lvl2"><a href="#s20-identity-and-uniqueness">Identity and Uniqueness</a></li></ol></article></section>
+<div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-mutability">
-  <div class="annotation">
-    <h3>中文批注：Mutability</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Mutability”展开。可把它先理解为“可变性”。阅读时先抓住这些英文关键词：Immutability、default、create、stays、forever。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Mutability</summary>
+  <article class="cn-read">
+    <h2>可变性 <small>Mutability</small></h2>
+    <p>不变性是 Verse 中的默认设置。当您创造价值时，它会永远保持该价值——不变、可预测且可以安全共享。这一基本原则使程序更容易推理，消除了整个类别的错误，并实现了强大的优化。但游戏是一个动态世界，状态不断变化：生命值下降、分数增加、库存变化。 Verse 包含这两种范式，默认提供不变性，同时在需要时提供受控的显式突变。</p>
+<p>Verse 中不可变数据和可变数据之间的区别不仅仅是值是否可以更改。它从根本上影响数据如何流经程序、函数之间如何共享值以及编译器如何推理代码。理解这种区别对于编写高效、正确的 Verse 程序至关重要。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Mutability</summary>
     <div class="md"><h1>Mutability</h1>
 <p>Immutability is the default in Verse. When you create a value, it stays that value forever — unchanging, predictable, and safe to share. This foundational principle makes programs easier to reason about, eliminates entire categories of bugs, and enables powerful optimizations. But games are dynamic worlds where state constantly evolves: health decreases, scores increase, inventories change. Verse embraces both paradigms, providing immutability by default while offering controlled, explicit mutation when you need it.</p>
 <p>The distinction between immutable and mutable data in Verse goes deeper than just whether values can change. It fundamentally affects how data flows through your program, how values are shared between functions, and how the compiler reasons about your code. Understanding this distinction is crucial for writing efficient, correct Verse programs.</p></div>
   </details>
 </section><section class="section" id="s1-the-pure-foundation">
-  <div class="annotation">
-    <h3>中文批注：The Pure Foundation</h3>
-    <div class="rows">
-      <div><p>这一节围绕“The Pure Foundation”展开。可把它先理解为“纯计算基础”。阅读时先抓住这些英文关键词：pure、fragment、computation、happens、without。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">struct</span><span class="chip">reads</span><span class="chip">computes</span><span class="chip">if</span><span class="chip">using</span><span class="chip">class</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：The Pure Foundation</summary>
+  <article class="cn-read">
+    <h2>纯净基金会 <small>The Pure Foundation</small></h2>
+    <p>在 Verse 的纯片段中，计算的发生没有副作用。值被创建但从未被修改。函数将输入转换为输出，而无需更改任何内容。这不是限制——它是使代码可预测和可组合的强大基础。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Immutable values and structures
+point := struct&lt;computes&gt;:
+    X:float = 0.0
+    Y:float = 0.0
+
+# These values are eternal - Origin will always be (0, 0)
+Origin := point{}
+UnitX := point{X := 1.0}
+UnitY := point{Y := 1.0}
+
+Distance(P1:point, P2:point)&lt;reads&gt;:float =
+    DX := P2.X - P1.X
+    DY := P2.Y - P1.Y
+    Sqrt(DX * DX + DY * DY)</code></pre></figure>
+<p>在这个纯粹的世界里，平等意味着结构平等——如果两个价值具有相同的形式和内容，那么它们就是平等的。对于原始类型和结构，这会自动发生。对于具有超出其内容的同一性的类来说，平等需要更仔细的考虑。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Recursive data structures using classes
+linked_list := class:
+    Value:int = 0
+    Next:?linked_list = false
+
+    # Custom equality check for structural comparison
+    Equals(Other:linked_list)&lt;computes&gt;&lt;decides&gt;:void =
+        Self.Value = Other.Value
+        # Both have no next, or both have next and those are equal
+        if (Self.Next?):
+            Tmp := Self.Next?
+            OtherNext := Other.Next?
+            Tmp.Equals[OtherNext]
+        else:
+            not Other.Next?
+
+List1 := linked_list{Value := 1, Next := option{linked_list{Value := 2}}}
+List2 := linked_list{Value := 1, Next := option{linked_list{Value := 2}}}
+
+List1.Equals[List2] # This succeeds</code></pre></figure>
+<p>纯计算构成了 Verse 中函数式编程的支柱。它是可预测的、可测试的和可并行的。当一个函数被标记为 <code>&lt;computes&gt;</code> 时，您知道它总是会为相同的输入产生相同的输出，没有隐藏的依赖关系或令人惊讶的行为。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：The Pure Foundation</summary>
     <div class="md"><h2>The Pure Foundation</h2>
 <p>In Verse&#x27;s pure fragment, computation happens without side effects. Values are created but never modified. Functions transform inputs into outputs without changing anything along the way. This isn&#x27;t a limitation — it&#x27;s a powerful foundation that makes code predictable and composable.</p>
-<p>&lt;!--versetest point := struct{X:float, Y:float} Distance(P1:point, P2:point)&lt;reads&gt;:float = DX := P2.X - P1.X DY := P2.Y - P1.Y Sqrt(DX <em> DX + DY </em> DY)</p>
-<p>assert: Origin := point{X:=0.0, Y:=0.0} UnitX := point{X := 1.0, Y:=0.0} UnitY := point{X:=0.0, Y := 1.0} &lt;# --&gt; &lt;!-- 01 --&gt;</p>
 <pre><code># Immutable values and structures
 point := struct&lt;computes&gt;:
     X:float = 0.0
@@ -78,9 +96,7 @@ Distance(P1:point, P2:point)&lt;reads&gt;:float =
     DX := P2.X - P1.X
     DY := P2.Y - P1.Y
     Sqrt(DX * DX + DY * DY)</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>In this pure world, equality means structural equality — two values are equal if they have the same shape and content. For primitive types and structs, this happens automatically. For classes, which have identity beyond their content, equality requires more careful consideration.</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 02 --&gt;</p>
 <pre><code># Recursive data structures using classes
 linked_list := class:
     Value:int = 0
@@ -104,18 +120,19 @@ List1.Equals[List2] # This succeeds</code></pre>
 <p>Pure computation forms the backbone of functional programming in Verse. It&#x27;s predictable, testable, and parallelizable. When a function is marked <code>&lt;computes&gt;</code>, you know it will always produce the same output for the same input, with no hidden dependencies or surprising behaviors.</p></div>
   </details>
 </section><section class="section" id="s2-introducing-mutation">
-  <div class="annotation">
-    <h3>中文批注：Introducing Mutation</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Introducing Mutation”展开。可把它先理解为“引入可变性”。阅读时先抓住这些英文关键词：Mutation、enters、through、two、keywords。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">set</span><span class="chip">Every use of</span><span class="chip">and</span><span class="chip">variable requires the</span><span class="chip">effect. Using</span><span class="chip">requires both</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;writes&gt;</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Introducing Mutation</summary>
+  <article class="cn-read">
+    <h2>突变介绍 <small>Introducing Mutation</small></h2>
+    <p>变异通过两个关键字进入：<code>var</code>和<code>set</code>。 <code>var</code> 注释声明变量可以重新分配。 <code>set</code> 关键字执行该重新分配。它们共同提供了具有清晰可见性的受控突变。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Score:int = 100   # Immutable variable - cannot be reassigned
+                  # Mutable variable - can be reassigned 
+var Health:float = 100.0       # type annotation is required
+set Health = 75.0              # Allowed</code></pre></figure>
+<p><code>var</code> 和 <code>set</code> 的每次使用都会对效果产生影响。从 <code>var</code> 变量读取需要 <code>&lt;reads&gt;</code> 效果。使用 <code>set</code> 需要 <code>&lt;reads&gt;</code> 和 <code>&lt;writes&gt;</code> 效果。这不是官僚主义——而是透明度。这些效果使突变在函数签名中可见，因此调用者知道函数何时可能观察或修改状态。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Introducing Mutation</summary>
     <div class="md"><h2>Introducing Mutation</h2>
 <p>Mutation enters through two keywords: <code>var</code> and <code>set</code>. The <code>var</code> annotation declares that a variable can be reassigned. The <code>set</code> keyword performs that reassignment. Together, they provide controlled mutation with clear visibility.</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 03 --&gt;</p>
 <pre><code>Score:int = 100   # Immutable variable - cannot be reassigned
                   # Mutable variable - can be reassigned 
 var Health:float = 100.0       # type annotation is required
@@ -123,19 +140,32 @@ set Health = 75.0              # Allowed</code></pre>
 <p>Every use of <code>var</code> and <code>set</code> has implications for effects. Reading from a <code>var</code> variable requires the <code>&lt;reads&gt;</code> effect. Using <code>set</code> requires both <code>&lt;reads&gt;</code> and <code>&lt;writes&gt;</code> effects. This isn&#x27;t bureaucracy — it&#x27;s transparency. The effects make mutation visible in function signatures, so callers know when functions might observe or modify state.</p></div>
   </details>
 </section><section class="section" id="s3-requirements-for-var-declarations">
-  <div class="annotation">
-    <h3>中文批注：Requirements for var Declarations</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Requirements for var Declarations”展开。阅读时先抓住这些英文关键词：Mutable、variable、declarations、have、strict。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">The type inference syntax</span><span class="chip">cannot be used with</span><span class="chip">for</span><span class="chip">var</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Requirements for var Declarations</summary>
+  <article class="cn-read">
+    <h2>var 声明的要求 <small>Requirements for var Declarations</small></h2>
+    <p>可变变量声明有严格的要求，可以防止常见错误：</p>
+<p>**必须提供显式类型：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid - explicit type
+var X:int = 0
+
+# Invalid - cannot use := syntax with var
+# var X := 0  # Error</code></pre></figure>
+<p>类型推断语法 <code>:=</code> 不能与 <code>var</code> 一起使用。您必须显式声明类型。</p>
+<p>**必须提供初始值（在本地范围内）：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid - initialized
+var Health:float = 100.0
+
+# Invalid - no initial value in local scope
+# var Score:int  # Error</code></pre></figure>
+<p>在局部作用域（函数、控制流块）中，每个 <code>var</code> 声明都需要一个初始值。但是，在类或接口中声明可变字段时，可以省略初始值并在实例化期间提供初始值（有关详细信息，请参阅“类和接口”一章）。</p>
+<p>**不能完全无类型：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid - neither type nor value
+# var X  </code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Requirements for var Declarations</summary>
     <div class="md"><h3>Requirements for var Declarations</h3>
 <p>Mutable variable declarations have strict requirements that prevent common errors:</p>
 <p><strong>Must provide explicit type:</strong></p>
-<p>&lt;!--versetest--&gt; &lt;!-- 04 --&gt;</p>
 <pre><code># Valid - explicit type
 var X:int = 0
 
@@ -143,7 +173,6 @@ var X:int = 0
 # var X := 0  # Error</code></pre>
 <p>The type inference syntax <code>:=</code> cannot be used with <code>var</code>. You must explicitly declare the type.</p>
 <p><strong>Must provide initial value (in local scope):</strong></p>
-<p>&lt;!--versetest--&gt; &lt;!-- 05 --&gt;</p>
 <pre><code># Valid - initialized
 var Health:float = 100.0
 
@@ -151,48 +180,66 @@ var Health:float = 100.0
 # var Score:int  # Error</code></pre>
 <p>In local scopes (functions, control flow blocks), every <code>var</code> declaration requires an initial value. However, when declaring mutable fields in classes or interfaces, the initial value can be omitted and provided during instantiation (see the Classes and Interfaces chapter for details).</p>
 <p><strong>Cannot be completely untyped:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3502): F():void= var X &lt;# --&gt; &lt;!-- 06 --&gt;</p>
 <pre><code># Invalid - neither type nor value
-# var X  </code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+# var X  </code></pre></div>
   </details>
 </section><section class="section" id="s4-var-declarations-as-expressions">
-  <div class="annotation">
-    <h3>中文批注：var Declarations as Expressions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“var Declarations as Expressions”展开。阅读时先抓住这些英文关键词：Variable、declarations、var、used、expressions。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">However,</span><span class="chip">declarations **cannot be the target of</span><span class="chip">&lt;!-- #&gt; --&gt;
-
-Since</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：var Declarations as Expressions</summary>
+  <article class="cn-read">
+    <h2>var 声明作为表达式 <small>var Declarations as Expressions</small></h2>
+    <p>使用 <code>var</code> 的变量声明可以用作表达式，计算其初始值：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>X := (var Y:int = 42)  # X = 42, Y declared and mutable
+X = 42</code></pre></figure>
+<p>但是，<code>var</code> 声明**不能是 <code>set</code>** 的目标：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid - var declarations evaluate to values, not variables
+# set (var Z:int = 0) = 1  # Error: cannot use set on a value</code></pre></figure>
+<p>由于 <code>var</code> 声明将其初始值作为表达式结果返回，因此您不能对其使用 <code>set</code> - <code>set</code> 需要可变变量，而不是值。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：var Declarations as Expressions</summary>
     <div class="md"><h3>var Declarations as Expressions</h3>
 <p>Variable declarations with <code>var</code> can be used as expressions, evaluating to their initial value:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 07 --&gt;</p>
 <pre><code>X := (var Y:int = 42)  # X = 42, Y declared and mutable
 X = 42</code></pre>
 <p>However, <code>var</code> declarations <strong>cannot be the target of <code>set</code></strong>:</p>
-<p>&lt;!--versetest assert_semantic_error(3509): F():void= set (var Z:int = 0) = 1 &lt;# --&gt; &lt;!-- 08 --&gt;</p>
 <pre><code># Invalid - var declarations evaluate to values, not variables
 # set (var Z:int = 0) = 1  # Error: cannot use set on a value</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>Since <code>var</code> declarations return their initial value as an expression result, you cannot use <code>set</code> on them - <code>set</code> requires a mutable variable, not a value.</p></div>
   </details>
 </section><section class="section" id="s5-set-with-block-expressions">
-  <div class="annotation">
-    <h3>中文批注：set with Block Expressions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“set with Block Expressions”展开。阅读时先抓住这些英文关键词：set、statement、use、block、expressions。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">set</span><span class="chip">var</span><span class="chip">array</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：set with Block Expressions</summary>
+  <article class="cn-read">
+    <h2>使用块表达式设置 <small>set with Block Expressions</small></h2>
+    <p><code>set</code> 语句可以使用块表达式，这允许复杂的计算和副作用：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var X:int = 0
+var Y:int = 1
+
+set X = block:
+    set Y = X      # Side effect: Y becomes 0
+    2              # Block result: X becomes 2
+
+X = 2 and Y = 0</code></pre></figure>
+<p>当新值需要中间计算或在分配期间需要多个副作用时，此模式非常有用。</p>
+<p>**重要提示：** <code>set</code> 的左侧在块执行之前进行评估，块的返回值就是被分配的值。在某些情况下，这可能会导致令人困惑的行为：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Confusing: Setting the same variable inside the block
+var X:int = 0
+set X = block:
+    set X = 5  # X temporarily becomes 5
+    2          # But X will be set to 2 (the block result)
+X = 2          # The inner set was overwritten!
+
+# Confusing: Modifying index variables used in array access
+var Xs:[]int = array{10, 20, 30}
+var Index:int = 1
+set Xs[Index] = block:
+    set Index = 2  # Index changes, but doesn&#x27;t affect which element is set
+    99
+Xs[1] = 99         # Element at original Index (1) was modified, not Xs[2]
+Index = 2          # Index is now 2, but too late to affect the assignment</code></pre></figure>
+<p>为了避免混淆，最好避免修改目标变量或块内目标表达式中使用的任何变量。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：set with Block Expressions</summary>
     <div class="md"><h3>set with Block Expressions</h3>
 <p>The <code>set</code> statement can use block expressions, which allows complex computations and side effects:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 09 --&gt;</p>
 <pre><code>var X:int = 0
 var Y:int = 1
 
@@ -203,7 +250,6 @@ set X = block:
 X = 2 and Y = 0</code></pre>
 <p>This pattern is useful when the new value requires intermediate computations or when you need multiple side effects during assignment.</p>
 <p><strong>Important:</strong> The left-hand side of <code>set</code> is evaluated before the block executes, and the block&#x27;s return value is what gets assigned. This can lead to confusing behavior in certain cases:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 10 --&gt;</p>
 <pre><code># Confusing: Setting the same variable inside the block
 var X:int = 0
 set X = block:
@@ -222,27 +268,47 @@ Index = 2          # Index is now 2, but too late to affect the assignment</code
 <p>To avoid confusion, it&#x27;s best to avoid modifying the target variable or any variables used in the target expression inside the block.</p></div>
   </details>
 </section><section class="section" id="s6-scope-and-redeclaration-restrictions">
-  <div class="annotation">
-    <h3>中文批注：Scope and Redeclaration Restrictions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Scope and Redeclaration Restrictions”展开。阅读时先抓住这些英文关键词：Variable、Shadowing、does、not、allow。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">:=</span><span class="chip">InitialHealth</span><span class="chip">CurrentHealth</span><span class="chip">Use</span><span class="chip">&lt;!-- #&gt; --&gt;
+  <article class="cn-read">
+    <h2>范围和重新声明限制 <small>Scope and Redeclaration Restrictions</small></h2>
+    <p>**无变量阴影：**</p>
+<p>Verse 不允许变量阴影。一旦声明了标识符，您就无法在同一作用域或任何嵌套作用域中的任何位置使用 <code>:=</code> 重新声明它。这比许多允许内部作用域隐藏外部作用域变量的语言更具限制性。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var X:int = 0
 
-The</span><span class="chip">var</span><span class="chip">if</span><span class="chip">for</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Scope and Redeclaration Restrictions</summary>
+# Invalid - X already exists in current scope
+# X := 1  # Error</code></pre></figure>
+<p>与许多语言不同，即使在嵌套块中也不能隐藏变量：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var A:int = 1
+
+if (SomeCondition?):
+    # Invalid - A already declared in outer scope
+    # A := 2  # Error: cannot shadow A
+
+block:
+    # Also invalid - cannot shadow here either
+    # var A:int = 2  # Error: ambiguous identifier</code></pre></figure>
+<p>如果您需要具有相似用途的多个标识符，请使用描述性名称（例如，<code>InitialHealth</code>、<code>CurrentHealth</code>）或使用限定名称来创建单独的范围（有关限定名称和消歧的详细信息，请参阅[模块和路径](16_modules.md)一章）。</p>
+<p>**无法使用赋值语法重新声明：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var A:int = 1
+var B:int = 2
+
+# Invalid - looks like assignment but A already exists
+# A := B  # ERROR</code></pre></figure>
+<p>使用 <code>set A = B</code> 来分配给现有的可变变量。</p>
+<p>**不能嵌套 var 声明：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid
+# var (var X):int = 0  # ERROR 3549</code></pre></figure>
+<p><code>var</code> 关键字不能嵌套在其自身内。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Scope and Redeclaration Restrictions</summary>
     <div class="md"><h3>Scope and Redeclaration Restrictions</h3>
 <p><strong>No Variable Shadowing:</strong></p>
 <p>Verse does not allow variable shadowing. Once an identifier is declared, you cannot redeclare it with <code>:=</code> anywhere in the same scope or any nested scope. This is more restrictive than many languages that allow inner scopes to shadow outer scope variables.</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 11 --&gt;</p>
 <pre><code>var X:int = 0
 
 # Invalid - X already exists in current scope
 # X := 1  # Error</code></pre>
 <p>Unlike many languages, you cannot shadow variables even in nested blocks:</p>
-<p>&lt;!--versetest SomeCondition:logic=false --&gt; &lt;!-- 12 --&gt;</p>
 <pre><code>var A:int = 1
 
 if (SomeCondition?):
@@ -254,7 +320,6 @@ block:
     # var A:int = 2  # Error: ambiguous identifier</code></pre>
 <p>If you need multiple identifiers with similar purposes, use descriptive names (e.g., <code>InitialHealth</code>, <code>CurrentHealth</code>) or use qualified names to create separate scopes (see the <a href="../16_modules/index.html">Modules and Paths</a> chapter for details on qualified names and disambiguation).</p>
 <p><strong>Cannot redeclare with assignment syntax:</strong></p>
-<p>&lt;!--versetest--&gt; &lt;!-- 13 --&gt;</p>
 <pre><code>var A:int = 1
 var B:int = 2
 
@@ -262,39 +327,50 @@ var B:int = 2
 # A := B  # ERROR</code></pre>
 <p>Use <code>set A = B</code> instead to assign to existing mutable variables.</p>
 <p><strong>Cannot nest var declarations:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3549): var (var X):int = 0 &lt;# --&gt; &lt;!-- 14 --&gt;</p>
 <pre><code># Invalid
 # var (var X):int = 0  # ERROR 3549</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The <code>var</code> keyword cannot be nested within itself.</p></div>
   </details>
 </section><section class="section" id="s7-deep-vs-shallow-mutability">
-  <div class="annotation">
-    <h3>中文批注：Deep vs Shallow Mutability</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Deep vs Shallow Mutability”展开。可把它先理解为“深/浅可变性”。阅读时先抓住这些英文关键词：approach、mutability、differs、significantly、between。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Deep vs Shallow Mutability</summary>
+  <article class="cn-read">
+    <h2>深可变性与浅可变性 <small>Deep vs Shallow Mutability</small></h2>
+    <p>Verse 的可变性方法在结构和类之间存在显着差异，反映了它们在语言中的不同角色。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Deep vs Shallow Mutability</summary>
     <div class="md"><h2>Deep vs Shallow Mutability</h2>
 <p>Verse&#x27;s approach to mutability differs significantly between structs and classes, reflecting their different roles in the language.</p></div>
   </details>
 </section><section class="section" id="s8-struct-mutability-deep-and-structural">
-  <div class="annotation">
-    <h3>中文批注：Struct Mutability: Deep and Structural</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Struct Mutability: Deep and Structural”展开。阅读时先抓住这些英文关键词：declare、struct、variable、var、declaring。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">&lt;computes&gt;</span><span class="chip">struct</span><span class="chip">computes</span><span class="chip">array</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Struct Mutability: Deep and Structural</summary>
+  <article class="cn-read">
+    <h2>结构可变性：深层和结构性 <small>Struct Mutability: Deep and Structural</small></h2>
+    <p>当您使用 <code>var</code> 声明结构变量时，您将整个结构声明为可变的 - 变量本身及其所有嵌套字段，递归地。这种深度可变性意味着您可以修改结构树的任何部分。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player_stats := struct&lt;computes&gt;:
+    Level:int = 1
+    Position:point = point{}
+    Inventory:[]string = array{}
+
+# Immutable struct variable - nothing can change
+Stats1:player_stats = player_stats{}
+# set Stats1.Level = 2  # ERROR: Cannot modify immutable struct
+
+# Mutable struct variable - everything can change
+var Stats2:player_stats = player_stats{}
+set Stats2.Level = 2  # OK
+set Stats2.Position.X = 100.0  # OK - nested fields are mutable
+set Stats2.Inventory = Stats2.Inventory + array{&quot;Sword&quot;}  # OK</code></pre></figure>
+<p>当您将一个结构变量分配给另一个结构变量时，Verse 会执行深层复制。这两个变量变得独立，每个变量都有自己的数据副本。其中一项的更改不会影响另一项。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Original:player_stats = player_stats{Level := 5}
+var Copy:player_stats = Original
+
+set Copy.Level = 10
+Original.Level = 5   # unchanged, they&#x27;re independent copies</code></pre></figure>
+<p>这种深度复制语义扩展到所有值类型：结构、数组、映射和元组。当您将结构传递给函数时，该函数会收到自己的副本。当您将结构存储在容器中时，容器会保存一个副本。这可以防止混叠，并使结构突变的推理局部化且可预测。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Struct Mutability: Deep and Structural</summary>
     <div class="md"><h3>Struct Mutability: Deep and Structural</h3>
 <p>When you declare a struct variable with <code>var</code>, you&#x27;re declaring the entire structure as mutable — the variable itself and all its nested fields, recursively. This deep mutability means you can modify any part of the structure tree.</p>
-<p>&lt;!--versetest point:=struct&lt;computes&gt;{X:float, Y:float} player_stats := struct&lt;computes&gt;: Level:int = 1 Position:point = point{X:=0.0, Y:=0.0} Inventory:[]string = array{}</p>
-<p>assert: Stats1:player_stats = player_stats{} var Stats2:player_stats = player_stats{} set Stats2.Level = 2 Stats2.Level = 2 set Stats2.Position.X = 100.0 Stats2.Position.X = 100.0 set Stats2.Inventory = Stats2.Inventory + array{&quot;Sword&quot;} Stats2.Inventory = array{&quot;Sword&quot;} &lt;# --&gt; &lt;!-- 15 --&gt;</p>
 <pre><code>player_stats := struct&lt;computes&gt;:
     Level:int = 1
     Position:point = point{}
@@ -309,10 +385,7 @@ var Stats2:player_stats = player_stats{}
 set Stats2.Level = 2  # OK
 set Stats2.Position.X = 100.0  # OK - nested fields are mutable
 set Stats2.Inventory = Stats2.Inventory + array{&quot;Sword&quot;}  # OK</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>When you assign one struct variable to another, Verse performs a deep copy. The two variables become independent, each with their own copy of the data. Changes to one don&#x27;t affect the other.</p>
-<p>&lt;!--versetest point:=struct&lt;computes&gt;{} player_stats := struct&lt;computes&gt;: Level:int = 1 Position:point = point{} Inventory:[]string = array{}</p>
-<p>--&gt; &lt;!-- 16 --&gt;</p>
 <pre><code>var Original:player_stats = player_stats{Level := 5}
 var Copy:player_stats = Original
 
@@ -321,19 +394,40 @@ Original.Level = 5   # unchanged, they&#x27;re independent copies</code></pre>
 <p>This deep-copy semantics extends to all value types: structs, arrays, maps, and tuples. When you pass a struct to a function, the function receives its own copy. When you store a struct in a container, the container holds a copy. This prevents aliasing and makes reasoning about struct mutations local and predictable.</p></div>
   </details>
 </section><section class="section" id="s9-class-mutability-reference-semantics">
-  <div class="annotation">
-    <h3>中文批注：Class Mutability: Reference Semantics</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Class Mutability: Reference Semantics”展开。阅读时先抓住这些英文关键词：Classes、behave、differently、They、have。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">&lt;computes&gt;</span><span class="chip">class</span><span class="chip">set</span><span class="chip">for</span><span class="chip">if</span><span class="chip">struct</span><span class="chip">computes</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Class Mutability: Reference Semantics</summary>
+  <article class="cn-read">
+    <h2>类可变性：参考语义 <small>Class Mutability: Reference Semantics</small></h2>
+    <p>类的行为不同。它们具有引用语义——当您分配一个类实例时，您将共享对同一对象的引用，而不是创建副本。类变量上的 <code>var</code> 注释仅影响该变量是否可以重新分配以引用不同的对象。它不影响对象字段的可变性。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game_character := class:
+    Name:string = &quot;Hero&quot;
+    var Health:float = 100.0  # This field is always mutable
+    MaxHealth:float = 100.0   # This field is always immutable
+
+# Immutable variable, but mutable fields can still change
+Player1:game_character = game_character{}
+# set Player1 = game_character{}  # ERROR: Cannot reassign non-var variable
+set Player1.Health = 50.0  # OK: Health field is mutable
+
+# Mutable variable allows reassignment
+var Player2:game_character = Player1  # Same object
+set Player2 = game_character{Name := &quot;Villain&quot;}  # OK: Can reassign
+set Player2.Health = 75.0  # OK: Modifies the new object
+
+# Player1 and the original Player2 reference were the same object
+# After reassignment, Player2 references a different object</code></pre></figure>
+<p>关键见解：对于类，字段可变性是在类定义时确定的，而不是在变量声明时确定的。无论您如何访问它，<code>var</code> 字段始终是可变的。非 <code>var</code> 字段始终是不可变的，即使通过 <code>var</code> 变量访问也是如此。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>container := class:
+    ImmutableData:point= point{}  # Always immutable
+    var MutableData:int = 0       # Always mutable
+
+# Even through an immutable variable, mutable fields can change
+Box:container = container{}
+set Box.MutableData = 42         # Allowed
+# set Box.ImmutableData = Point{X := 1.0}  # ERROR: Field is immutable</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Class Mutability: Reference Semantics</summary>
     <div class="md"><h3>Class Mutability: Reference Semantics</h3>
 <p>Classes behave differently. They have reference semantics — when you assign a class instance, you&#x27;re sharing a reference to the same object, not creating a copy. The <code>var</code> annotation on a class variable only affects whether that variable can be reassigned to reference a different object. It doesn&#x27;t affect the mutability of the object&#x27;s fields.</p>
-<p>&lt;!--versetest game_character := class: Name:string = &quot;Hero&quot; var Health:float = 100.0 MaxHealth:float = 100.0</p>
-<p>assert: Player1:game_character = game_character{} set Player1.Health = 50.0 Player1.Health = 50.0 var Player2:game_character = Player1 set Player2 = game_character{Name := &quot;Villain&quot;} Player2.Name = &quot;Villain&quot; set Player2.Health = 75.0 Player2.Health = 75.0 &lt;# --&gt; &lt;!-- 17 --&gt;</p>
 <pre><code>game_character := class:
     Name:string = &quot;Hero&quot;
     var Health:float = 100.0  # This field is always mutable
@@ -351,9 +445,7 @@ set Player2.Health = 75.0  # OK: Modifies the new object
 
 # Player1 and the original Player2 reference were the same object
 # After reassignment, Player2 references a different object</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The key insight: for classes, field mutability is determined at class definition time, not at variable declaration time. A <code>var</code> field is always mutable, regardless of how you access it. A non-<code>var</code> field is always immutable, even if accessed through a <code>var</code> variable.</p>
-<p>&lt;!--versetest point:=struct&lt;computes&gt;{X:float} container := class: ImmutableData:point= point{X:=1.0} var MutableData:int = 0 assert: Box:container = container{} set Box.MutableData = 42 Box.MutableData = 42 &lt;# --&gt; &lt;!-- 18 --&gt;</p>
 <pre><code>container := class:
     ImmutableData:point= point{}  # Always immutable
     var MutableData:int = 0       # Always mutable
@@ -361,24 +453,148 @@ set Player2.Health = 75.0  # OK: Modifies the new object
 # Even through an immutable variable, mutable fields can change
 Box:container = container{}
 set Box.MutableData = 42         # Allowed
-# set Box.ImmutableData = Point{X := 1.0}  # ERROR: Field is immutable</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p></div>
+# set Box.ImmutableData = Point{X := 1.0}  # ERROR: Field is immutable</code></pre></div>
   </details>
 </section><section class="section" id="s10-collection-mutability-arrays-and-maps">
-  <div class="annotation">
-    <h3>中文批注：Collection Mutability: Arrays and Maps</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Collection Mutability: Arrays and Maps”展开。阅读时先抓住这些英文关键词：Arrays、maps、follow、struct、semantics。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">set</span><span class="chip">All nested levels should exist to use</span><span class="chip">The map constructed from a</span><span class="chip">struct</span><span class="chip">var</span><span class="chip">array</span><span class="chip">map</span><span class="chip">if</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Collection Mutability: Arrays and Maps</summary>
+  <article class="cn-read">
+    <h2>集合可变性：数组和映射 <small>Collection Mutability: Arrays and Maps</small></h2>
+    <p>数组和映射遵循结构语义——它们是值，而不是引用。当您复制集合时，您会获得一个独立的副本。一个副本的突变不会影响另一个副本。</p>
+<p>可变数组允许元素替换：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Nums:[]int = array{0, 1}
+Nums[0] = 0
+Nums[1] = 1
+
+set Nums[0] = 42
+Nums[0] = 42
+Nums[1] = 1  # Unchanged
+
+set Nums[1] = 666
+Nums[0] = 42
+Nums[1] = 666</code></pre></figure>
+<p>您不能添加超出数组当前长度的元素：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var A:[]int = array{0}
+not (set A[1] = 1)  # Fails - index out of bounds
+# Must use concatenation: set A = A + array{1}</code></pre></figure>
+<p>可变映射允许更新现有键和添加新键：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Scores:[int]int = map{0 =&gt; 1, 1 =&gt; 2}
+set Scores[1] = 42
+Scores[1] = 42
+
+# Adding new keys
+set Scores[2] = 100
+Scores[2] = 100
+
+# Map with string keys
+var Config:[string]int = map{&quot;volume&quot; =&gt; 50}
+set Config[&quot;brightness&quot;] = 75</code></pre></figure>
+<p>查找不存在的键不会添加它：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>M:[int]int := map{}
+not (M[0] = 0)  # Key doesn&#x27;t exist, comparison fails
+# M is still empty - lookup didn&#x27;t add the key</code></pre></figure>
+<p>**从map中删除键：**</p>
+<p>Verse 没有直接对map进行“删除”或“移除”操作。要删除键，请创建一个新映射，通过迭代原始映射来排除不需要的键：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Scores:[string]int = map{&quot;Alice&quot; =&gt; 100, &quot;Bob&quot; =&gt; 85, &quot;Charlie&quot; =&gt; 92}
+
+# Remove &quot;Bob&quot; by creating a new map without that key
+var NewScores:[string]int = map{}
+for (Name-&gt;Score:Scores):
+    if (Name &lt;&gt; &quot;Bob&quot;):
+        set NewScores[Name] = Score
+
+set Scores = NewScores
+
+# Scores now only contains Alice and Charlie
+Scores[&quot;Alice&quot;] = 100
+Scores[&quot;Charlie&quot;] = 92</code></pre></figure>
+<p>该模式可以包装在辅助函数中以实现可重用性。有关 <code>for</code> 循环的更多详细信息，请参阅 [控制流](07_control.md) 章节。</p>
+<p>集合可以嵌套，<code>set</code> 通过多个级别工作：</p>
+<p>**数组映射：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Data:[int][]int = map{}
+set Data[666] = array{42}
+Data[666] = array{42}
+
+# Mutate nested array element
+set Data[666][0] = 1234
+Data = map{666 =&gt; array{1234}}
+Data[666] = array{1234}</code></pre></figure>
+<p>**map数组：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Grid:[][int]int = array{map{}}
+
+# Replace entire map at index
+set Grid[0] = map{42 =&gt; 666}
+Grid[0] = map{42 =&gt; 666}
+Grid[0][42] = 666
+
+# Add new key to nested map
+set Grid[0][1234] = 4321
+Grid[0] = map{42 =&gt; 666, 1234 =&gt; 4321}
+Grid[0][42] = 666
+Grid[0][1234] = 4321
+
+# Update existing key in nested map
+set Grid[0][42] = 1122
+Grid[0][42] = 1122</code></pre></figure>
+<p>**数组的数组：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Matrix:[][]int = array{array{1234}}
+set Matrix[0][0] = 42
+Matrix = array{array{42}}
+Matrix[0] = array{42}
+Matrix[0][0] = 42
+
+# Replace inner array
+set Matrix[0] = array{666}
+Matrix[0] = array{666}
+Matrix[0][0] = 666</code></pre></figure>
+<p>所有嵌套级别都应该存在才能使用 <code>set</code>，如果任何更高级别不存在，则整个集合将失败。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Grid:[string][]int = map{&quot;apples&quot;=&gt;array{1,2,3,4}}
+
+set Grid[&quot;bananas&quot;] = array{}  # OK - no nesting, just adds new key
+set Grid[&quot;apples&quot;][2] = 7      # OK - changes nested array element &quot;3&quot; to &quot;7&quot;
+
+# This would fail: set Grid[&quot;oranges&quot;][0] = 10
+# Error: &quot;oranges&quot; key doesn&#x27;t exist, so Grid[&quot;oranges&quot;] fails</code></pre></figure>
+<p>从可变集合中提取值会创建一个独立的副本：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var X:[][int]int = array{map{42 =&gt; 1122, 1234 =&gt; 4321}}
+
+# Y gets a copy of the map, not a reference
+Y := X[0]
+Y = map{42 =&gt; 1122, 1234 =&gt; 4321}
+
+# Mutating X doesn&#x27;t affect Y
+set X[0][0] = 111
+X[0] = map{42 =&gt; 1122, 1234 =&gt; 4321, 0 =&gt; 111}
+Y = map{42 =&gt; 1122, 1234 =&gt; 4321}  # Unchanged
+
+# Replacing entire element doesn&#x27;t affect Y
+set X[0] = map{42 =&gt; 4242}
+X[0] = map{42 =&gt; 4242}
+Y = map{42 =&gt; 1122, 1234 =&gt; 4321}  # Still unchanged</code></pre></figure>
+<p>这与类引用语义不同——集合复制，类共享。</p>
+<p>当集合包含具有可变字段的类或结构时，您可以通过集合进行变异：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>C := my_class{}
+set C.X[0] = 4266642
+C.X[0] = 4266642</code></pre></figure>
+<p>**将值映射到可变成员：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var M:[int]my_class = map{0 =&gt; my_class{}}
+M[0].X = 0
+
+# Mutate class field through map
+set M[0].X = 30
+M[0].X = 30</code></pre></figure>
+<p>从 <code>var</code> 构造的映射不跟踪源变量的更改：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var I:int = 42
+M:[int]int = map{0 =&gt; I}
+M[0] = 42
+
+set I = 0
+M[0] = 42  # Still 42! Map has a copy of the value</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Collection Mutability: Arrays and Maps</summary>
     <div class="md"><h3>Collection Mutability: Arrays and Maps</h3>
 <p>Arrays and maps follow struct semantics—they are values, not references. When you copy a collection, you get an independent copy. Mutations to one copy don&#x27;t affect the other.</p>
 <h4>Basic Array Mutation</h4>
 <p>Mutable arrays allow element replacement:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 19 --&gt;</p>
 <pre><code>var Nums:[]int = array{0, 1}
 Nums[0] = 0
 Nums[1] = 1
@@ -391,13 +607,11 @@ set Nums[1] = 666
 Nums[0] = 42
 Nums[1] = 666</code></pre>
 <p>You cannot add elements beyond the array&#x27;s current length:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 20 --&gt;</p>
 <pre><code>var A:[]int = array{0}
 not (set A[1] = 1)  # Fails - index out of bounds
 # Must use concatenation: set A = A + array{1}</code></pre>
 <h4>Basic Map Mutation</h4>
 <p>Mutable maps allow both updating existing keys and adding new keys:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 21 --&gt;</p>
 <pre><code>var Scores:[int]int = map{0 =&gt; 1, 1 =&gt; 2}
 set Scores[1] = 42
 Scores[1] = 42
@@ -410,13 +624,11 @@ Scores[2] = 100
 var Config:[string]int = map{&quot;volume&quot; =&gt; 50}
 set Config[&quot;brightness&quot;] = 75</code></pre>
 <p>Looking up a non-existent key doesn&#x27;t add it:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 22 --&gt;</p>
 <pre><code>M:[int]int := map{}
 not (M[0] = 0)  # Key doesn&#x27;t exist, comparison fails
 # M is still empty - lookup didn&#x27;t add the key</code></pre>
 <p><strong>Deleting keys from maps:</strong></p>
 <p>Verse does not have a direct &quot;delete&quot; or &quot;remove&quot; operation for maps. To remove keys, create a new map that excludes the unwanted keys by iterating over the original map:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 23 --&gt;</p>
 <pre><code>var Scores:[string]int = map{&quot;Alice&quot; =&gt; 100, &quot;Bob&quot; =&gt; 85, &quot;Charlie&quot; =&gt; 92}
 
 # Remove &quot;Bob&quot; by creating a new map without that key
@@ -434,7 +646,6 @@ Scores[&quot;Charlie&quot;] = 92</code></pre>
 <h4>Nested Collection Mutation</h4>
 <p>Collections can be nested, and <code>set</code> works through multiple levels:</p>
 <p><strong>Map of arrays:</strong></p>
-<p>&lt;!--versetest--&gt; &lt;!-- 24 --&gt;</p>
 <pre><code>var Data:[int][]int = map{}
 set Data[666] = array{42}
 Data[666] = array{42}
@@ -444,7 +655,6 @@ set Data[666][0] = 1234
 Data = map{666 =&gt; array{1234}}
 Data[666] = array{1234}</code></pre>
 <p><strong>Array of maps:</strong></p>
-<p>&lt;!--versetest--&gt; &lt;!-- 25 --&gt;</p>
 <pre><code>var Grid:[][int]int = array{map{}}
 
 # Replace entire map at index
@@ -462,7 +672,6 @@ Grid[0][1234] = 4321
 set Grid[0][42] = 1122
 Grid[0][42] = 1122</code></pre>
 <p><strong>Array of arrays:</strong></p>
-<p>&lt;!--versetest--&gt; &lt;!-- 26 --&gt;</p>
 <pre><code>var Matrix:[][]int = array{array{1234}}
 set Matrix[0][0] = 42
 Matrix = array{array{42}}
@@ -474,7 +683,6 @@ set Matrix[0] = array{666}
 Matrix[0] = array{666}
 Matrix[0][0] = 666</code></pre>
 <p>All nested levels should exist to use <code>set</code>, if any of the higher levels don&#x27;t exist, the entire set will fail.</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 27 --&gt;</p>
 <pre><code>var Grid:[string][]int = map{&quot;apples&quot;=&gt;array{1,2,3,4}}
 
 set Grid[&quot;bananas&quot;] = array{}  # OK - no nesting, just adds new key
@@ -484,7 +692,6 @@ set Grid[&quot;apples&quot;][2] = 7      # OK - changes nested array element &qu
 # Error: &quot;oranges&quot; key doesn&#x27;t exist, so Grid[&quot;oranges&quot;] fails</code></pre>
 <h4>Value Semantics for Collections</h4>
 <p>Extracting a value from a mutable collection creates an independent copy:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 28 --&gt;</p>
 <pre><code>var X:[][int]int = array{map{42 =&gt; 1122, 1234 =&gt; 4321}}
 
 # Y gets a copy of the map, not a reference
@@ -503,12 +710,10 @@ Y = map{42 =&gt; 1122, 1234 =&gt; 4321}  # Still unchanged</code></pre>
 <p>This is different from class reference semantics—collections copy, classes share.</p>
 <h4>Collections with Mutable Values</h4>
 <p>When collections contain classes or structs with mutable fields, you can mutate through the collection:</p>
-<p>&lt;!--versetest my_class := class: var X:[]int = array{0} --&gt; &lt;!-- 29 --&gt;</p>
 <pre><code>C := my_class{}
 set C.X[0] = 4266642
 C.X[0] = 4266642</code></pre>
 <p><strong>Map values with mutable members:</strong></p>
-<p>&lt;!--versetest my_class := class{  var X:int = 0 } --&gt; &lt;!-- 30 --&gt;</p>
 <pre><code>var M:[int]my_class = map{0 =&gt; my_class{}}
 M[0].X = 0
 
@@ -516,7 +721,6 @@ M[0].X = 0
 set M[0].X = 30
 M[0].X = 30</code></pre>
 <p>The map constructed from a <code>var</code> doesn&#x27;t track changes to the source variable:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 31 --&gt;</p>
 <pre><code>var I:int = 42
 M:[int]int = map{0 =&gt; I}
 M[0] = 42
@@ -525,18 +729,27 @@ set I = 0
 M[0] = 42  # Still 42! Map has a copy of the value</code></pre></div>
   </details>
 </section><section class="section" id="s11-arrays-of-structs-independent-copies">
-  <div class="annotation">
-    <h3>中文批注：Arrays of Structs: Independent Copies</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Arrays of Structs: Independent Copies”展开。阅读时先抓住这些英文关键词：store、structs、array、each、element。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;computes&gt;</span><span class="chip">array</span><span class="chip">struct</span><span class="chip">computes</span><span class="chip">var</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Arrays of Structs: Independent Copies</summary>
+  <article class="cn-read">
+    <h2>结构数组：独立副本 <small>Arrays of Structs: Independent Copies</small></h2>
+    <p>当您将结构存储在数组中时，每个元素都是一个独立的副本：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>S := my_struct{I := 88}
+var A : []my_struct = array{S, S}
+
+# All three have the value 88, but are independent
+S.I = 88
+A[0].I = 88
+A[1].I = 88
+
+# Mutating one doesn&#x27;t affect the others
+set A[0].I = 99
+S.I = 88     # Unchanged
+A[0].I = 99  # Changed
+A[1].I = 88  # Unchanged</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Arrays of Structs: Independent Copies</summary>
     <div class="md"><h3>Arrays of Structs: Independent Copies</h3>
 <p>When you store structs in an array, each element is an independent copy:</p>
-<p>&lt;!--versetest my_struct := struct&lt;computes&gt;: I:int = 10 --&gt; &lt;!-- 32 --&gt;</p>
 <pre><code>S := my_struct{I := 88}
 var A : []my_struct = array{S, S}
 
@@ -552,18 +765,39 @@ A[0].I = 99  # Changed
 A[1].I = 88  # Unchanged</code></pre></div>
   </details>
 </section><section class="section" id="s12-arrays-of-classes-shared-references">
-  <div class="annotation">
-    <h3>中文批注：Arrays of Classes: Shared References</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Arrays of Classes: Shared References”展开。阅读时先抓住这些英文关键词：Arrays、classes、behave、very、differently。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">class</span><span class="chip">var</span><span class="chip">array</span><span class="chip">set</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Arrays of Classes: Shared References</summary>
+  <article class="cn-read">
+    <h2>类数组：共享引用 <small>Arrays of Classes: Shared References</small></h2>
+    <p>类数组的行为非常不同——对同一对象的所有引用都共享突变：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>C := my_class{}
+var A:[]my_class = array{C, C, C}
+
+# All three array elements reference the same object
+A[0].I = 20
+A[1].I = 20
+A[2].I = 20
+
+# Mutating through one affects all references
+set A[0].I = 30
+A[0].I = 30
+A[1].I = 30  # Changed!
+A[2].I = 30  # Changed!
+
+set A[1].I = 40
+A[0].I = 40  # All three see the change
+A[1].I = 40
+A[2].I = 40
+
+# Replacing an element breaks the sharing for that element
+set A[1] = my_class{}
+A[0].I = 40  # Still references original
+A[1].I = 20  # New object with default value
+A[2].I = 40  # Still references original</code></pre></figure>
+<p>这是一个关键的区别：**集合中的结构是副本，集合中的类是共享引用**。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Arrays of Classes: Shared References</summary>
     <div class="md"><h3>Arrays of Classes: Shared References</h3>
 <p>Arrays of classes behave very differently—all references to the same object share mutations:</p>
-<p>&lt;!--versetest my_class := class: var I:int = 20 --&gt; &lt;!-- 33 --&gt;</p>
 <pre><code>C := my_class{}
 var A:[]my_class = array{C, C, C}
 
@@ -591,22 +825,68 @@ A[2].I = 40  # Still references original</code></pre>
 <p>This is a critical distinction: <strong>structs in collections are copies, classes in collections are shared references</strong>.</p></div>
   </details>
 </section><section class="section" id="s13-compound-assignment-operators">
-  <div class="annotation">
-    <h3>中文批注：Compound Assignment Operators</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Compound Assignment Operators”展开。阅读时先抓住这些英文关键词：supports、compound、assignment、operators、combine。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Available compound operators:
+  <article class="cn-read">
+    <h2>复合赋值运算符 <small>Compound Assignment Operators</small></h2>
+    <p>Verse 支持将算术与变异相结合的复合赋值运算符：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var S:my_struct = my_struct{}
 
--</span><span class="chip">- Subtraction assignment (int, float)
--</span><span class="chip">- Multiplication assignment (int, float)
--</span><span class="chip">Array concatenation with</span><span class="chip">set</span><span class="chip">&lt;computes&gt;</span><span class="chip">struct</span><span class="chip">computes</span><span class="chip">var</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Compound Assignment Operators</summary>
+set S.A += 10
+S.A = 20
+
+set S.A -= 3
+S.A = 17
+
+set S.A *= 4
+S.A = 68</code></pre></figure>
+<p>可用的复合运算符：</p>
+<ul><li><code>set += </code> - 加法赋值（int、float、string、array）</li><li><code>set -= </code> - 减法赋值（int、float）</li><li><code>set *= </code> - 乘法赋值（int、float）</li><li><code>set /= </code> - 除法分配（仅限浮点数）</li></ul>
+<p>**重要**：<code>set /=</code> 不适用于整数，因为整数除法是失败的。</p>
+<p>复合作业适用于常规作业的任何地方：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Score:int = 100
+set Score += 50
+set Score *= 2
+
+var Data:[]int = array{1, 2, 3}
+set Data += array{4, 5}  # Array concatenation
+Data = array{1, 2, 3, 4, 5}
+
+var Nums:[][]int = array{array{1}}
+set Nums[0][0] *= 42
+Nums[0][0] = 42</code></pre></figure>
+<p>与 <code>+=</code> 的数组串联适用于结构字段、嵌套字段和集合值，就像常规 <code>set</code> 一样：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>my_struct := struct&lt;computes&gt;:
+    X:[]int = array{}
+
+my_nested := struct&lt;computes&gt;:
+    Inner:my_struct = my_struct{}
+
+# Append to a struct field
+var S:my_struct = my_struct{}
+set S.X += array{1, 2, 3}
+S.X = array{1, 2, 3}
+
+# Append to a nested struct field
+var N:my_nested = my_nested{}
+set N.Inner.X += array{10, 20}
+N.Inner.X = array{10, 20}
+
+# Append to a map value
+var M:[int][]int = map{}
+set M[42] = array{}
+set M[42] += array{1}
+set M[42] += array{2}
+M[42] = array{1, 2}
+
+# Append to a nested array value
+var A:[][]int = array{array{}}
+set A[0] += array{1}
+set A[0] += array{2}
+A[0] = array{1, 2}</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Compound Assignment Operators</summary>
     <div class="md"><h3>Compound Assignment Operators</h3>
 <p>Verse supports compound assignment operators that combine arithmetic with mutation:</p>
-<p>&lt;!--versetest my_struct:= struct&lt;computes&gt;: A:int = 10 --&gt; &lt;!-- 34 --&gt;</p>
 <pre><code>var S:my_struct = my_struct{}
 
 set S.A += 10
@@ -618,15 +898,9 @@ S.A = 17
 set S.A *= 4
 S.A = 68</code></pre>
 <p>Available compound operators:</p>
-<ul>
-<li><code>set += </code> - Addition assignment (int, float, string, array)</li>
-<li><code>set -= </code> - Subtraction assignment (int, float)</li>
-<li><code>set *= </code> - Multiplication assignment (int, float)</li>
-<li><code>set /= </code> - Division assignment (float only)</li>
-</ul>
+<ul><li><code>set += </code> - Addition assignment (int, float, string, array)</li><li><code>set -= </code> - Subtraction assignment (int, float)</li><li><code>set *= </code> - Multiplication assignment (int, float)</li><li><code>set /= </code> - Division assignment (float only)</li></ul>
 <p><strong>Important</strong>: <code>set /=</code> doesn&#x27;t work with integers because integer division is failable.</p>
 <p>Compound assignments work anywhere regular assignment does:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 35 --&gt;</p>
 <pre><code>var Score:int = 100
 set Score += 50
 set Score *= 2
@@ -639,7 +913,6 @@ var Nums:[][]int = array{array{1}}
 set Nums[0][0] *= 42
 Nums[0][0] = 42</code></pre>
 <p>Array concatenation with <code>+=</code> works on struct fields, nested fields, and collection values, just like regular <code>set</code> does:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 35b --&gt;</p>
 <pre><code>my_struct := struct&lt;computes&gt;:
     X:[]int = array{}
 
@@ -670,18 +943,26 @@ set A[0] += array{2}
 A[0] = array{1, 2}</code></pre></div>
   </details>
 </section><section class="section" id="s14-tuple-mutability-replacement-only">
-  <div class="annotation">
-    <h3>中文批注：Tuple Mutability: Replacement Only</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Tuple Mutability: Replacement Only”展开。阅读时先抓住这些英文关键词：Tuples、replaced、entirely、but、individual。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;transacts&gt;</span><span class="chip">var</span><span class="chip">set</span><span class="chip">transacts</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Tuple Mutability: Replacement Only</summary>
+  <article class="cn-read">
+    <h2>元组可变性：仅替换 <small>Tuple Mutability: Replacement Only</small></h2>
+    <p>元组可以完全替换，但单个元素不能改变：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var T0:tuple(int, int) = (10, 20)
+T0(0) = 10
+T0(1) = 20
+
+# Can replace entire tuple
+set T0 = (30, 40)
+T0(0) = 30
+T0(1) = 40</code></pre></figure>
+<p>**不能改变元素：**</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var T0:tuple(int, int) = (50, 60)
+set T0(0) = 70  # ERROR: Cannot mutate tuple elements</code></pre></figure>
+<p>即使元组是可变的，此限制也适用。您必须替换整个元组才能更改其内容。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Tuple Mutability: Replacement Only</summary>
     <div class="md"><h3>Tuple Mutability: Replacement Only</h3>
 <p>Tuples can be replaced entirely but individual elements cannot be mutated:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 36 --&gt;</p>
 <pre><code>var T0:tuple(int, int) = (10, 20)
 T0(0) = 10
 T0(1) = 20
@@ -691,26 +972,52 @@ set T0 = (30, 40)
 T0(0) = 30
 T0(1) = 40</code></pre>
 <p><strong>Cannot mutate elements:</strong></p>
-<p>&lt;!--versetest assert_semantic_error(3509): TestTupleMutation()&lt;transacts&gt;:void = var T0:tuple(int, int) = (50, 60) set T0(0) = 70 &lt;# --&gt; &lt;!-- 37 --&gt;</p>
 <pre><code>var T0:tuple(int, int) = (50, 60)
 set T0(0) = 70  # ERROR: Cannot mutate tuple elements</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>This restriction applies even when the tuple is mutable. You must replace the entire tuple to change its contents.</p></div>
   </details>
 </section><section class="section" id="s15-map-ordering-and-mutation">
-  <div class="annotation">
-    <h3>中文批注：Map Ordering and Mutation</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Map Ordering and Mutation”展开。阅读时先抓住这些英文关键词：Maps、preserve、insertion、order、maintained。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">map</span><span class="chip">set</span><span class="chip">array</span><span class="chip">for</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Map Ordering and Mutation</summary>
+  <article class="cn-read">
+    <h2>map排序和变异 <small>Map Ordering and Mutation</small></h2>
+    <p>映射保留**插入顺序**，并且该顺序通过突变来维持：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var M:[int]int = map{2 =&gt; 2}
+
+set M[1] = 1  # Appends to end
+set M[0] = 0  # Appends to end
+
+# Iteration order is insertion order: 2, 1, 0
+Keys := array{2, 1, 0}
+var Index:int = 0
+for (Key-&gt;Value : M):
+    Keys[Index] = Key
+    set Index += 1
+
+M = map{2 =&gt; 2, 1 =&gt; 1, 0 =&gt; 0}</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var M:[string]int = map{&quot;a&quot; =&gt; 3, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}
+
+# Mutating value keeps key position
+set M[&quot;a&quot;] = 0
+M = map{&quot;a&quot; =&gt; 0, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}  # Same order
+
+# Another update
+set M[&quot;c&quot;] = 0
+set M[&quot;a&quot;] = 2
+M = map{&quot;a&quot; =&gt; 2, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 0}  # Still same order</code></pre></figure>
+<p>映射相等性考虑键/值**和顺序**：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var M:[string]int = map{&quot;a&quot; =&gt; 3, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}
+set M[&quot;a&quot;] = 0
+
+# Same keys and values, same order = equal
+M = map{&quot;a&quot; =&gt; 0, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}
+
+# Same keys and values, different order = not equal
+M &lt;&gt; map{&quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2, &quot;a&quot; =&gt; 0}</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Map Ordering and Mutation</summary>
     <div class="md"><h3>Map Ordering and Mutation</h3>
 <p>Maps preserve <strong>insertion order</strong>, and this order is maintained through mutations:</p>
 <h4>New Keys Append to End</h4>
-<p>&lt;!--versetest--&gt; &lt;!-- 38 --&gt;</p>
 <pre><code>var M:[int]int = map{2 =&gt; 2}
 
 set M[1] = 1  # Appends to end
@@ -725,7 +1032,6 @@ for (Key-&gt;Value : M):
 
 M = map{2 =&gt; 2, 1 =&gt; 1, 0 =&gt; 0}</code></pre>
 <h4>Updating Existing Keys Preserves Position</h4>
-<p>&lt;!--versetest--&gt; &lt;!-- 39 --&gt;</p>
 <pre><code>var M:[string]int = map{&quot;a&quot; =&gt; 3, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}
 
 # Mutating value keeps key position
@@ -738,7 +1044,6 @@ set M[&quot;a&quot;] = 2
 M = map{&quot;a&quot; =&gt; 2, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 0}  # Still same order</code></pre>
 <h4>Order Matters for Equality</h4>
 <p>Map equality considers both keys/values <strong>and order</strong>:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 40 --&gt;</p>
 <pre><code>var M:[string]int = map{&quot;a&quot; =&gt; 3, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}
 set M[&quot;a&quot;] = 0
 
@@ -749,54 +1054,61 @@ M = map{&quot;a&quot; =&gt; 0, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}
 M &lt;&gt; map{&quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2, &quot;a&quot; =&gt; 0}</code></pre></div>
   </details>
 </section><section class="section" id="s16-critical-mutability-restrictions">
-  <div class="annotation">
-    <h3>中文批注：Critical Mutability Restrictions</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Critical Mutability Restrictions”展开。阅读时先抓住这些英文关键词：imposes、several、important、restrictions、how。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">where</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Critical Mutability Restrictions</summary>
+  <article class="cn-read">
+    <h2>关键的可变性限制 <small>Critical Mutability Restrictions</small></h2>
+    <p>Verse 对突变发生的地点和方式施加了几个重要的限制。这些并不是任意的——它们可以防止不健全的行为并维护类型安全。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Critical Mutability Restrictions</summary>
     <div class="md"><h2>Critical Mutability Restrictions</h2>
 <p>Verse imposes several important restrictions on where and how mutation can occur. These aren&#x27;t arbitrary—they prevent unsound behaviors and maintain type safety.</p></div>
   </details>
 </section><section class="section" id="s17-cannot-mutate-immutable-class-fields">
-  <div class="annotation">
-    <h3>中文批注：Cannot Mutate Immutable Class Fields</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Cannot Mutate Immutable Class Fields”展开。阅读时先抓住这些英文关键词：Classes、might、contain、unique、pointers。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">&lt;transacts&gt;</span><span class="chip">unique</span><span class="chip">class</span><span class="chip">transacts</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Cannot Mutate Immutable Class Fields</summary>
+  <article class="cn-read">
+    <h2>无法改变不可变类字段 <small>Cannot Mutate Immutable Class Fields</small></h2>
+    <p>类可能包含唯一的指针或其他无法安全克隆的资源。因此，您不能改变类实例的不可变字段：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>classX := class:
+    X:int = 20  # Immutable field
+
+C:= classX{}
+C.X = 20
+set C.X = 30  # Error: Cannot mutate immutable class field</code></pre></figure>
+<p>即使类实例本身是可变的，此限制也适用。只有类的 <code>var</code> 字段可以被改变。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Cannot Mutate Immutable Class Fields</summary>
     <div class="md"><h3>Cannot Mutate Immutable Class Fields</h3>
 <p>Classes might contain unique pointers or other resources that cannot be safely cloned. Therefore, you cannot mutate immutable fields of a class instance:</p>
-<p>&lt;!--versetest assert_semantic_error(3509): classX := class: AI:int = 20</p>
-<p>F()&lt;transacts&gt;:void= CX:classX = classX{} set CX.AI = 30 &lt;# --&gt; &lt;!-- 41 --&gt;</p>
 <pre><code>classX := class:
     X:int = 20  # Immutable field
 
 C:= classX{}
 C.X = 20
 set C.X = 30  # Error: Cannot mutate immutable class field</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>This restriction applies even when the class instance itself is mutable. Only <code>var</code> fields of classes can be mutated.</p></div>
   </details>
 </section><section class="section" id="s18-only-computes-structs-allow-field-mutation">
-  <div class="annotation">
-    <h3>中文批注：Only &lt;computes&gt; Structs Allow Field Mutation</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Only &lt;computes&gt; Structs Allow Field Mutation”展开。阅读时先抓住这些英文关键词：Only、structs、marked、computes、pure。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;computes&gt;</span><span class="chip">M</span><span class="chip">computes</span><span class="chip">struct</span><span class="chip">var</span><span class="chip">set</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Only &lt;computes&gt; Structs Allow Field Mutation</summary>
+  <article class="cn-read">
+    <h2>仅 &lt;code&gt;&amp;lt;computes&amp;gt;&lt;/code&gt; 结构允许字段突变 <small>Only &lt;computes&gt; Structs Allow Field Mutation</small></h2>
+    <p>只有标记为 <code>&lt;computes&gt;</code>（纯结构）的结构才允许通过变量进行字段突变：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># OK: &lt;computes&gt; struct allows field mutation
+my_mutable_struct := struct&lt;computes&gt;{M:int = 0, J:float = 3.0}
+
+var S:my_mutable_struct = my_mutable_struct{}
+
+Old := S # makes a copy of the struct
+
+set S.M = 1 # makes a copy of the struct, but updates `M` in the process
+
+S.M = 1 # Succeeds
+not (Old = S) # Structs do not pass as references</code></pre></figure>
+<p>构造新结构时，会为其分配更新的值并复制其他字段。如果有其他地方引用旧结构，它们将不会有更新的值（与类不同）</p>
+<p>此限制确保只有可预测的、无影响的结构才能发生突变。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Only &lt;computes&gt; Structs Allow Field Mutation</summary>
     <div class="md"><h3>Only &lt;computes&gt; Structs Allow Field Mutation</h3>
 <p>Only structs marked <code>&lt;computes&gt;</code> (pure structs) allow field mutation through a variable:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 42 --&gt;</p>
 <pre><code># OK: &lt;computes&gt; struct allows field mutation
 my_mutable_struct := struct&lt;computes&gt;{M:int = 0, J:float = 3.0}
 
@@ -812,21 +1124,31 @@ not (Old = S) # Structs do not pass as references</code></pre>
 <p>This restriction ensures that only predictable, effect-free structs can be mutated.</p></div>
   </details>
 </section><section class="section" id="s19-cannot-mutate-through-immutable-class-fields">
-  <div class="annotation">
-    <h3>中文批注：Cannot Mutate Through Immutable Class Fields</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Cannot Mutate Through Immutable Class Fields”展开。阅读时先抓住这些英文关键词：mutating、nested、structures、cannot、mutate。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">&lt;!-- #&gt; --&gt;
+  <article class="cn-read">
+    <h2>无法通过不可变类字段进行变异 <small>Cannot Mutate Through Immutable Class Fields</small></h2>
+    <p>改变嵌套结构时，不能通过类的不可变字段（未使用 <code>var</code> 声明的字段）进行改变：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>struct0 := struct&lt;computes&gt;{A:int = 10}
+struct1 := struct&lt;computes&gt;{S0:struct0 = struct0{}}
+class0 := class{CI:struct1 = struct1{}}  # Class with immutable field CI
+struct2 := struct&lt;computes&gt;{C0:class0 = class0{}}
+struct3 := struct&lt;computes&gt;{S2:struct2 = struct2{}}
 
-The error occurs because</span><span class="chip">is an immutable field (not declared with</span><span class="chip">). **However**, you CAN mutate through</span><span class="chip">The array itself must be declared</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">class</span><span class="chip">struct</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Cannot Mutate Through Immutable Class Fields</summary>
+var S3:[]struct3 = array{struct3{}, struct3{}}
+set S3[1].S2.C0.CI.S0.A = 7  # ERROR: Cannot mutate through immutable field CI</code></pre></figure>
+<p>发生该错误的原因是 <code>CI</code> 是不可变字段（未使用 <code>var</code> 声明）。 **但是**，您可以通过突变路径中类的 <code>var</code> 字段进行突变。</p>
+<p>即使使用可变索引，也无法更改不可变数组：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var I:int = 2  # Mutable index
+A:[]int = array{5, 6, 7}  # Immutable array
+set A[I] = 2  # ERROR: A is not var - mutability of I doesn&#x27;t matter</code></pre></figure>
+<p>数组本身必须声明为 <code>var</code> 以允许元素突变：</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>I:int = 2
+var A:[]int = array{5, 6, 7}
+set A[I] = 2  # OK: A is var</code></pre></figure>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Cannot Mutate Through Immutable Class Fields</summary>
     <div class="md"><h3>Cannot Mutate Through Immutable Class Fields</h3>
 <p>When mutating nested structures, you cannot mutate through an immutable field of a class (a field not declared with <code>var</code>):</p>
-<p>&lt;!--versetest assert_semantic_error(3509): inner_struct := struct&lt;computes&gt;{Value:int = 0} immutable_class := class: Field:inner_struct = inner_struct{} outer_struct := struct&lt;computes&gt;: C:immutable_class</p>
-<p>F()&lt;transacts&gt;:void= var S:outer_struct = outer_struct{C := immutable_class{}} set S.C.Field.Value = 10 &lt;# --&gt; &lt;!-- 43 --&gt;</p>
 <pre><code>struct0 := struct&lt;computes&gt;{A:int = 10}
 struct1 := struct&lt;computes&gt;{S0:struct0 = struct0{}}
 class0 := class{CI:struct1 = struct1{}}  # Class with immutable field CI
@@ -835,32 +1157,38 @@ struct3 := struct&lt;computes&gt;{S2:struct2 = struct2{}}
 
 var S3:[]struct3 = array{struct3{}, struct3{}}
 set S3[1].S2.C0.CI.S0.A = 7  # ERROR: Cannot mutate through immutable field CI</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>The error occurs because <code>CI</code> is an immutable field (not declared with <code>var</code>). <strong>However</strong>, you CAN mutate through <code>var</code> fields of a class in the mutation path.</p>
 <p>Even with a mutable index, you cannot mutate an immutable array:</p>
-<p>&lt;!--NoCompile--&gt; &lt;!-- 44 --&gt;</p>
 <pre><code>var I:int = 2  # Mutable index
 A:[]int = array{5, 6, 7}  # Immutable array
 set A[I] = 2  # ERROR: A is not var - mutability of I doesn&#x27;t matter</code></pre>
 <p>The array itself must be declared <code>var</code> to allow element mutation:</p>
-<p>&lt;!--versetest--&gt; &lt;!-- 45 --&gt;</p>
 <pre><code>I:int = 2
 var A:[]int = array{5, 6, 7}
 set A[I] = 2  # OK: A is var</code></pre></div>
   </details>
 </section><section class="section" id="s20-identity-and-uniqueness">
-  <div class="annotation">
-    <h3>中文批注：Identity and Uniqueness</h3>
-    <div class="rows">
-      <div><p>这一节围绕“Identity and Uniqueness”展开。阅读时先抓住这些英文关键词：unique、specifier、gives、classes、identity-based。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
-      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;unique&gt;</span><span class="chip">unique</span><span class="chip">for</span><span class="chip">if</span><span class="chip">class</span><span class="chip">var</span></div></div>
-    </div>
-  </div>
-  <details class="original" open>
-    <summary>原文：Identity and Uniqueness</summary>
+  <article class="cn-read">
+    <h2>身份和独特性 <small>Identity and Uniqueness</small></h2>
+    <p><code>&lt;unique&gt;</code> 说明符赋予类基于身份的平等性。如果没有它，根本无法比较类的相等性（您需要编写自定义比较方法）。有了它，相等就意味着同一性——只有当两个引用引用完全相同的对象时，它们才是相等的。</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>unique_item := class&lt;unique&gt;:
+    var Count:int = 0
+
+Item1:unique_item = unique_item{}
+Item2:unique_item = Item1  # Same object
+Item3:unique_item = unique_item{}  # Different object
+
+if (Item1 = Item2):
+    Print(&quot;Same object&quot;)  # This prints
+
+if (Item1 = Item3):
+    Print(&quot;Same object&quot;)  # This doesn&#x27;t print - different objects</code></pre></figure>
+<p>这种基于身份的平等对于需要不同身份的游戏对象至关重要，即使它们的数据相同。两个怪物可能具有相同的属性，但它们仍然是不同的怪物。</p>
+  </article>
+  <details class="original">
+    <summary>展开英文原文：Identity and Uniqueness</summary>
     <div class="md"><h2>Identity and Uniqueness</h2>
 <p>The <code>&lt;unique&gt;</code> specifier gives classes identity-based equality. Without it, classes can&#x27;t be compared for equality at all (you&#x27;d need to write custom comparison methods). With it, equality means identity — two references are equal only if they refer to the exact same object.</p>
-<p>&lt;!--versetest unique_item := class&lt;unique&gt;: var Count:int = 0 assert: Item1:unique_item = unique_item{} Item2:unique_item = Item1 Item3:unique_item = unique_item{} Item1 = Item2 not (Item1 = Item3) &lt;# --&gt; &lt;!-- 46 --&gt;</p>
 <pre><code>unique_item := class&lt;unique&gt;:
     var Count:int = 0
 
@@ -873,9 +1201,6 @@ if (Item1 = Item2):
 
 if (Item1 = Item3):
     Print(&quot;Same object&quot;)  # This doesn&#x27;t print - different objects</code></pre>
-<p>&lt;!-- #&gt; --&gt;</p>
 <p>This identity-based equality is crucial for game objects that need distinct identities even when their data is identical. Two monsters might have the same stats, but they&#x27;re still different monsters.</p></div>
   </details>
-</section>
-<nav class="footer-nav"><div><a href="../04_operators/index.html">上一页：运算符</a></div><div><a href="../06_functions/index.html">下一页：函数</a></div></nav>
-</main></div></body></html>
+</section><nav class="footer-nav"><div><a href="../04_operators/index.html">上一页：运算符</a></div><div><a href="../06_functions/index.html">下一页：函数</a></div></nav></main></div></body></html>
