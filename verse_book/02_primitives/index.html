@@ -40,10 +40,10 @@
 </section><section class="section" id="s1-intrinsics">
   <article class="cn-read">
     <h2>内建原语 <small>Intrinsics</small></h2>
-    <p>*内在函数*是由运行时直接提供的内置操作，无法在纯 Verse 代码中实现。这些函数接受特殊的编译器处理，并构成许多语言功能的基础。内部函数很特殊，因为它们：</p>
-<ul><li>**由运行时实现**：用 C++ 或其他本机代码编写，而不是 Verse</li><li>**无法在 Verse 中复制**：需要访问运行时内部或低级操作</li><li>**接收编译器识别**：编译器了解它们并可能优化它们的使用</li></ul>
+    <p><em>内在函数</em>是由运行时直接提供的内置操作，无法在纯 Verse 代码中实现。这些函数接受特殊的编译器处理，并构成许多语言功能的基础。内部函数很特殊，因为它们：</p>
+<ul><li><strong>由运行时实现</strong>：用 C++ 或其他本机代码编写，而不是 Verse</li><li><strong>无法在 Verse 中复制</strong>：需要访问运行时内部或低级操作</li><li><strong>接收编译器识别</strong>：编译器了解它们并可能优化它们的使用</li></ul>
 <p>示例包括数学运算（如 <code>Abs()</code>）、集合方法（如 <code>Find()</code>）以及类型转换（如 <code>ToString()</code>）。</p>
-<p>大多数内在函数*不能被引用为一等值*。这意味着您可以直接调用它们，但不能将它们存储在变量中或将它们作为函数参数传递：</p>
+<p>大多数内在函数<em>不能被引用为一等值</em>。这意味着您可以直接调用它们，但不能将它们存储在变量中或将它们作为函数参数传递：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Result := Abs(-42)  # Returns 42
 
 # Invalid: Cannot reference without calling
@@ -70,7 +70,7 @@
 </section><section class="section" id="s2-integers">
   <article class="cn-read">
     <h2>整数 <small>Integers</small></h2>
-    <p><code>int</code> 类型表示整数、非小数值。 <code>int</code> 可以包含正数、负数或零。在运行时，整数是任意精度的，并且可以增长到超出任何固定大小。但是，整数*文字*必须在 64 位有符号范围内（<code>-9,223,372,036,854,775,808</code> 到 <code>9,223,372,036,854,775,807</code>），并且超过 64 位的整数支持有限（例如，不能用于字符串插值或持久化）。</p>
+    <p><code>int</code> 类型表示整数、非小数值。 <code>int</code> 可以包含正数、负数或零。在运行时，整数是任意精度的，并且可以增长到超出任何固定大小。但是，整数<em>文字</em>必须在 64 位有符号范围内（<code>-9,223,372,036,854,775,808</code> 到 <code>9,223,372,036,854,775,807</code>），并且超过 64 位的整数支持有限（例如，不能用于字符串插值或持久化）。</p>
 <p>您可以在代码中包含 <code>int</code> 值作为文字。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>A :int= -42                    # civilian size
 #B := 42424242424242424242424242424242424242424242424242 # scary numbers...
@@ -118,7 +118,7 @@ set C *= 2                                 # like saying, set C = C * 2</code></
     <h2>有理数 <small>Rationals</small></h2>
     <p><code>rational</code> 类型将精确分数表示为整数之比。与 <code>int</code> 或 <code>float</code> 不同，您不能直接编写 <code>rational</code> 文字 - 有理数是使用 <code>/</code> 运算符通过整数除法创建的。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>X := 7 / 3    # X has type rational, representing exactly 7÷3</code></pre></figure>
-<p>有理数提供*精确的算术*，而不会损失浮点数的精度，这使得它们非常适合需要精确分数计算的游戏逻辑（资源分配、回合制系统、概率计算）。</p>
+<p>有理数提供<em>精确的算术</em>，而不会损失浮点数的精度，这使得它们非常适合需要精确分数计算的游戏逻辑（资源分配、回合制系统、概率计算）。</p>
 <p>用 <code>/</code> 进行整数除法会产生一个有理值。除以零失败：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Half := 5 / 2           # rational: exactly 5/2
 Third := 10 / 3         # rational: exactly 10/3
@@ -136,13 +136,13 @@ if (not (1 / 0)):
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(1 / -3) = (-1 / 3)     # true: negative moves to numerator
 (-1 / -3) = (1 / 3)     # true: double negative becomes positive</code></pre></figure>
 <p>这种规范形式简化了相等性检查并确保行为一致。</p>
-<p>一个重要的属性：*<code>int</code> 是 <code>rational</code>* 的子类型。这意味着可以在需要有理数的地方使用任何整数：</p>
+<p>一个重要的属性：<em><code>int</code> 是 <code>rational</code></em> 的子类型。这意味着可以在需要有理数的地方使用任何整数：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessRational(X:rational):rational = X
 
 # Can pass integers directly
 ProcessRational(5) = 5/1     # 5 is implicitly 5/1 (rational)
 ProcessRational(0) = 0/1     # 0 is implicitly 0/1 (rational)</code></pre></figure>
-<p>然而，你*不能*返回一个需要int的有理数——这将是一个缩小转换：</p>
+<p>然而，你<em>不能</em>返回一个需要int的有理数——这将是一个缩小转换：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>BadFunction(X:rational):int = X  # Error</code></pre></figure>
 <p>整数有理数等于它们的整数等价物：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(2 / 1) = 2             # true
@@ -151,7 +151,7 @@ ProcessRational(0) = 0/1     # 0 is implicitly 0/1 (rational)</code></pre></figu
 (9 / 3) = 3             # true: 9/3 reduces to 3/1, equals 3</code></pre></figure>
 <p>这使得计算中整数和有理值能够无缝混合。</p>
 <p>有两个函数将有理数转换为整数：</p>
-<ul><li>**<code>Floor</code>** — 向负无穷大舍入（在数轴上向下）</li><li>**<code>Ceil</code>** — 向正无穷大舍入（在数轴上）</li></ul>
+<ul><li><strong><code>Floor</code></strong> — 向负无穷大舍入（在数轴上向下）</li><li><strong><code>Ceil</code></strong> — 向正无穷大舍入（在数轴上）</li></ul>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Positive rationals
 Floor(5 / 2)= 2         # 2.5 → 2 (down)
 Ceil(5 / 2) = 3         # 2.5 → 3 (up)
@@ -167,7 +167,7 @@ Ceil(5 / -2) = -2       # Same as (-5)/2
 # Both negative
 Floor((-5) / -2) = 2    # 2.5 → 2
 Ceil((-5) / -2) = 3     # 2.5 → 3</code></pre></figure>
-<p><code>Floor</code> 向负无穷大舍入，*而不是*向零舍入。这符合数学约定，但与截断不同。当参数为有理数时，<code>Floor</code> 不会失败，但如果传递 <code>float</code>，则它是 <code>decides</code> 函数。</p>
+<p><code>Floor</code> 向负无穷大舍入，<em>而不是</em>向零舍入。这符合数学约定，但与截断不同。当参数为有理数时，<code>Floor</code> 不会失败，但如果传递 <code>float</code>，则它是 <code>decides</code> 函数。</p>
 <p>有理数可用作参数和返回类型：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function returning rational
 Half(X:int)&lt;computes&gt;&lt;decides&gt;:rational = X / 2
@@ -922,7 +922,7 @@ not GotIt?                                        # and this fails too</code></p
 </section><section class="section" id="s7-characters-and-strings">
   <article class="cn-read">
     <h2>字符和字符串 <small>Characters and Strings</small></h2>
-    <p>文本以字符和字符串的形式表示。 <code>char</code> 是单个 **UTF-8 代码单元**（不是完整的 Unicode 代码点）。因此，字符串是一个字符数组，写为 <code>[]char</code>。为了方便起见，为 <code>[]char</code> 提供了类型别名 <code>string</code>：</p>
+    <p>文本以字符和字符串的形式表示。 <code>char</code> 是单个 <strong>UTF-8 代码单元</strong>（不是完整的 Unicode 代码点）。因此，字符串是一个字符数组，写为 <code>[]char</code>。为了方便起见，为 <code>[]char</code> 提供了类型别名 <code>string</code>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MyName :string = &quot;Joseph&quot;
 MyAlterEgo := &quot;José&quot;</code></pre></figure>
 <p>使用 UTF-8 作为字符编码方案。每个 UTF-8 代码单元是一个字节。 Unicode 代码点可能需要一到四个代码单元。值较低的代码点使用较少的字节，而值较高的代码点则需要更多的字节。</p>
@@ -933,7 +933,7 @@ MyAlterEgo := &quot;José&quot;</code></pre></figure>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TheLetterJ := MyName[0]     # succeeds
 TheLetterJ = &#x27;J&#x27;            # succeeds
 # MyName[100]               # fails</code></pre></figure>
-<p>字符串的长度是它包含的 UTF-8 代码单元的数量，通过 <code>.Length</code> 访问。请注意，这*与 Unicode 字符数不同*：</p>
+<p>字符串的长度是它包含的 UTF-8 代码单元的数量，通过 <code>.Length</code> 访问。请注意，这<em>与 Unicode 字符数不同</em>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>&quot;José&quot;.Length = 5           # succeeds; 5 UTF-8 code units
 &quot;Jose&quot;.Length = 4           # succeeds; 4 UTF-8 code units</code></pre></figure>
 <p>因为 <code>string</code> 只是 <code>[]char</code>，所以声明为 <code>var</code> 的字符串可以发生变化：</p>
@@ -957,15 +957,16 @@ F :char32 = 0u00E9                  # ok; same as &#x27;é&#x27;</code></pre></f
 <p>十六进制表示法：</p>
 <ul><li><code>0oXX</code> 对于 <code>char</code>：两个十六进制数字（0o00 到 0off）</li><li><code>0uXXXXX</code> 对于 <code>char32</code>：最多 6 个十六进制数字（0u00000 到 0u10ffff）</li></ul>
 <p>与某些语言不同，Verse 不允许字符和整数之间的隐式转换。</p>
-<p>**字符转义序列**适用于字符和字符串文字：</p>
-<p>|逃亡|意义|代码点 | |--------|---------|------------| | ZXQ代码0ZXQ |选项卡| U+0009 | | ZXQ代码1ZXQ |换行 | U+000A | | <code>\r</code> |回车| U+000D | | <code>\&quot;</code> |双引号 | U+0022 | | <code>\&#x27;</code> |单引号 | U+0027 | | ZXQ代码5ZXQ |反斜杠| U+005C | | ZXQ代码6ZXQ |左大括号 | U+007B | | ZXQ代码7ZXQ |右大括号 | U+007D | | <code>\&lt;</code> |小于| U+003C | | <code>\&gt;</code> |大于| U+003E | | ZXQ代码10ZXQ | & 符号| U+0026 | | <code>\#</code> |哈希值/磅 | U+0023 | | <code>\~</code> |波形符| U+007E |</p>
+<p><strong>字符转义序列</strong>适用于字符和字符串文字：</p>
+<table><thead><tr><th>转义</th><th>意义</th><th>代码点</th></tr></thead><tbody><tr><td><code>	</code></td><td>选项卡</td><td>U+0009</td></tr><tr><td><code>
+</code></td><td>换行符</td><td>U+000A</td></tr><tr><td><code></code></td><td>回车符</td><td>U+000D</td></tr><tr><td><code>\&quot;</code></td><td>双引号</td><td>U+0022</td></tr><tr><td><code>\&#x27;</code></td><td>单引号</td><td>U+0027</td></tr><tr><td><code>\</code></td><td>反斜杠</td><td>U+005C</td></tr><tr><td><code>\{</code></td><td>左大括号</td><td>U+007B</td></tr><tr><td><code>\}</code></td><td>右大括号</td><td>U+007D</td></tr><tr><td><code>\&lt;</code></td><td>少于</td><td>U+003C</td></tr><tr><td><code>\&gt;</code></td><td>大于</td><td>U+003E</td></tr><tr><td><code>\&amp;</code></td><td>和符号</td><td>U+0026</td></tr><tr><td><code>\#</code></td><td>哈希/磅</td><td>U+0023</td></tr><tr><td><code>\~</code></td><td>波形符</td><td>U+007E</td></tr></tbody></table>
 <p>示例：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Tab := &#x27;\t&#x27;
 Newline := &#x27;\n&#x27;
 Quote := &#x27;\&quot;&#x27;
 Brace := &#x27;\{&#x27;</code></pre></figure>
 <p>可以使用可失败运算符 <code>=</code>（相等）和 <code>&lt;&gt;</code>（不等）来比较字符串。比较是按代码点完成的，并且区分大小写。平等取决于确切的代码单元序列，而不是视觉外观。 Unicode 允许同一抽象字符有多种编码。例如，<code>&quot;é&quot;</code> 可能显示为单个代码点 <code>{0u00E9}</code>，或显示为两个代码点序列 <code>&quot;e&quot;</code> (<code>{0u0065}</code>) 加上组合重音 (<code>{0u0301}</code>)。这两个字符串看起来相同，但在 Verse 中并不相等。</p>
-<p>检查玩家是否选择了正确的项目：</p>
+<p>检查玩家是否选择了右结合项目：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ExpectedItemInternalName :string = &quot;RedPotion&quot;
 SelectedItemInternalName :string = &quot;BluePotion&quot;
 
@@ -1048,7 +1049,7 @@ F :char32 = 0u00E9                  # ok; same as &#x27;é&#x27;</code></pre>
 <ul><li><code>0oXX</code> for <code>char</code>: two hex digits (0o00 to 0off)</li><li><code>0uXXXXX</code> for <code>char32</code>: up to six hex digits (0u00000 to 0u10ffff)</li></ul>
 <p>Unlike some languages, Verse does not allow implicit conversion between characters and integers.</p>
 <p><strong>Character escape sequences</strong> work in both character and string literals:</p>
-<p>| Escape | Meaning | Codepoint | |--------|---------|-----------| | <code>\t</code> | Tab | U+0009 | | <code>\n</code> | Newline | U+000A | | <code>\r</code> | Carriage return | U+000D | | <code>\&quot;</code> | Double quote | U+0022 | | <code>\&#x27;</code> | Single quote | U+0027 | | <code>\\</code> | Backslash | U+005C | | <code>\{</code> | Left brace | U+007B | | <code>\}</code> | Right brace | U+007D | | <code>\&lt;</code> | Less than | U+003C | | <code>\&gt;</code> | Greater than | U+003E | | <code>\&amp;</code> | Ampersand | U+0026 | | <code>\#</code> | Hash/pound | U+0023 | | <code>\~</code> | Tilde | U+007E |</p>
+<table><thead><tr><th>Escape</th><th>Meaning</th><th>Codepoint</th></tr></thead><tbody><tr><td><code>\t</code></td><td>Tab</td><td>U+0009</td></tr><tr><td><code>\n</code></td><td>Newline</td><td>U+000A</td></tr><tr><td><code>\r</code></td><td>Carriage return</td><td>U+000D</td></tr><tr><td><code>\&quot;</code></td><td>Double quote</td><td>U+0022</td></tr><tr><td><code>\&#x27;</code></td><td>Single quote</td><td>U+0027</td></tr><tr><td><code>\\</code></td><td>Backslash</td><td>U+005C</td></tr><tr><td><code>\{</code></td><td>Left brace</td><td>U+007B</td></tr><tr><td><code>\}</code></td><td>Right brace</td><td>U+007D</td></tr><tr><td><code>\&lt;</code></td><td>Less than</td><td>U+003C</td></tr><tr><td><code>\&gt;</code></td><td>Greater than</td><td>U+003E</td></tr><tr><td><code>\&amp;</code></td><td>Ampersand</td><td>U+0026</td></tr><tr><td><code>\#</code></td><td>Hash/pound</td><td>U+0023</td></tr><tr><td><code>\~</code></td><td>Tilde</td><td>U+007E</td></tr></tbody></table>
 <p>Examples:</p>
 <pre><code>Tab := &#x27;\t&#x27;
 Newline := &#x27;\n&#x27;
@@ -1158,7 +1159,7 @@ DiagnosticText := ToDiagnostic(SomeValue)</code></pre>
 </section><section class="section" id="s10-type-type">
   <article class="cn-read">
     <h2>类型 类型 <small>Type type</small></h2>
-    <p><code>type</code> 类型是一个*元类型* - 其值本身就是类型的类型。每个 Verse 类型都可以用作 <code>type</code> 类型的值。这可以通过参数函数实现强大的泛型编程，其中类型是可以传递和约束的参数。</p>
+    <p><code>type</code> 类型是一个<em>元类型</em> - 其值本身就是类型的类型。每个 Verse 类型都可以用作 <code>type</code> 类型的值。这可以通过参数函数实现强大的泛型编程，其中类型是可以传递和约束的参数。</p>
 <p>您可以创建保存类型值的变量和参数：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Variable holding a type value
 IntType:type = int
@@ -1246,7 +1247,7 @@ TypeLiteralValue:type = type{_(:int):string}</code></pre>
 </section><section class="section" id="s11-type-parameters">
   <article class="cn-read">
     <h2>类型参数 <small>Type Parameters</small></h2>
-    <p><code>type</code> 最常见的用途是在 **where 子句** 中创建参数（通用）函数：</p>
+    <p><code>type</code> 最常见的用途是在 <strong>where 子句</strong> 中创建参数（通用）函数：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Identity function - works with any type
 Identity(X:t where t:type):t = X
 
@@ -1298,7 +1299,7 @@ TypeRegistry:[string]type = map{
     &quot;Text&quot; =&gt; string,
     &quot;Flag&quot; =&gt; logic
 }</code></pre></figure>
-<p>**在函数之间传递类型：**</p>
+<p><strong>在函数之间传递类型：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Helper function that takes a type parameter
 CreateArray(ElementType:type, Size:int):[]ElementType =
     # This pattern works in some contexts
@@ -1419,13 +1420,13 @@ RequiresExactType(X:t, Y:u where t:type, u:subtype(t)):t =
   <article class="cn-read">
     <h2>局限性 <small>Limitations</small></h2>
     <p>虽然 <code>type</code> 可实现强大的抽象，但也存在一些限制：</p>
-<p>**一般不能构造任意类型：**</p>
+<p><strong>一般不能构造任意类型：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Cannot do this - no way to construct a value of arbitrary type t
 MakeValue(T:type):T = ???  # What would this return for T=int? T=string?</code></pre></figure>
-<p>**无法在运行时检查类型结构：**</p>
+<p><strong>无法在运行时检查类型结构：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Cannot do this - no runtime type introspection
 GetFieldNames(T:type):string = ???</code></pre></figure>
-<p>**类型参数必须是推断的或显式的：**</p>
+<p><strong>类型参数必须是推断的或显式的：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Type parameter must be determinable from usage
 Identity(X:t where t:type):t = X
 
@@ -1458,7 +1459,7 @@ MakeDefault(where t:type):t = ???</code></pre></div>
 </section><section class="section" id="s16-any">
   <article class="cn-read">
     <h2>任何 <small>Any</small></h2>
-    <p><code>any</code> 类型是*所有类型的超类型*。该语言中的每种类型都是 <code>any</code> 的子类型。因此，<code>any</code> 本身支持的操作非常少：<code>any</code> 提供的任何功能也必须由所有其他类型实现。实际上，直接使用 <code>any</code> 类型的值几乎无能为力。尽管如此，理解类型仍然很重要，因为在处理混合不同类型值的代码时，或者当类型检查器没有更精确的类型可以分配时，有时会出现这种情况。</p>
+    <p><code>any</code> 类型是<em>所有类型的超类型</em>。该语言中的每种类型都是 <code>any</code> 的子类型。因此，<code>any</code> 本身支持的操作非常少：<code>any</code> 提供的任何功能也必须由所有其他类型实现。实际上，直接使用 <code>any</code> 类型的值几乎无能为力。尽管如此，理解类型仍然很重要，因为在处理混合不同类型值的代码时，或者当类型检查器没有更精确的类型可以分配时，有时会出现这种情况。</p>
 <p><code>any</code> 出现的一种方式是组合不共享更具体的超类型的值。例如：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Main(Arg : int) : void =
     X := if (Arg &gt; 0) then:
@@ -1469,7 +1470,7 @@ MakeDefault(where t:type):t = ???</code></pre></div>
 <p><code>any</code> 更有用的作用是作为语法上需要但实际未使用的参数类型。当实现需要特定方法签名的接口时，可能会出现这种模式。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FirstInt(X:int, :any) : int = X</code></pre></figure>
 <p>这里，第二个参数被忽略。因为它可以是任何类型的任何值，所以它的类型为 <code>any</code>。</p>
-<p>在更通用的代码中，可以使用*参数类型*来表达相同的想法，使函数灵活但仍然精确：</p>
+<p>在更通用的代码中，可以使用<em>参数类型</em>来表达相同的想法，使函数灵活但仍然精确：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>First(X:t, :any where t:type) : t = X</code></pre></figure>
 <p>此版本适用于任何类型 <code>t</code>，返回 <code>t</code> 类型的值，同时丢弃 <code>any</code> 类型的未使用参数。</p>
   </article>

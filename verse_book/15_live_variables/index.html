@@ -44,13 +44,13 @@
 </section><section class="section" id="s1-live-expressions">
   <article class="cn-read">
     <h2>现场表达 <small>Live Expressions</small></h2>
-    <p>*实时表达式*在变量和保护之间建立动态关系。一旦建立，只要任何守卫的依赖项发生变化，目标就会自动重新评估，从而保持变量同步。</p>
+    <p><em>实时表达式</em>在变量和保护之间建立动态关系。一旦建立，只要任何守卫的依赖项发生变化，目标就会自动重新评估，从而保持变量同步。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var X:int = 0
 var Y:int = 0
 set live X = Y+1  # X now tracks Y
 set Y = 5         # X automatically becomes 6</code></pre></figure>
 <p>在上面，<code>set live X = Y+1</code> 是一个实时表达式，目标是先前声明的变量 <code>X</code>，防护是依赖于变量 <code>Y</code> 的表达式 <code>Y+1</code>。</p>
-<p>live variable通过自动依赖跟踪扩展了可变变量（请参阅 [Mutability](05_mutability.md)）：跟踪保护表达式求值期间读取的任何变量。当这些变量中的任何一个发生更改时，都会重新评估防护，并且目标变量会自动更新。</p>
+<p>live variable通过自动依赖性跟踪扩展可变变量（请参阅<a href="../05_mutability/index.html">可变性</a>）：跟踪保护表达式求值期间读取的任何变量。当这些变量中的任何一个发生更改时，都会重新评估防护，并且目标变量会自动更新。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Live Expressions</summary>
@@ -148,10 +148,10 @@ var X : Multiply
 set X = 10        # X gets 20
 set Mult = 1      # X gets 10</code></pre></figure>
 <p>在此示例中，<code>Multiply</code> 具有双重角色：它既是变量 <code>X</code> 的函数，又是变量 <code>X</code> 的类型。</p>
-<p>**作为类型：** 当您声明 <code>var X : Multiply</code> 时，会发生以下情况：</p>
+<p><strong>作为类型：</strong> 当您声明 <code>var X : Multiply</code> 时，会发生以下情况：</p>
 <ul><li><code>X</code>的存储类型变为<code>int</code>（函数的返回类型）</li><li>分配给 <code>X</code> 的值必须是 <code>int</code>（函数的参数类型）</li><li>每次赋值都经过函数：<code>set X = 10</code> 调用 <code>Multiply(10)</code> 并存储结果</li></ul>
-<p>**作为实时表达式：** 由于 <code>Multiply</code> 具有 <code>&lt;reads&gt;</code> 效果（它读取可变变量 <code>Mult</code>），因此变量声明成为以 <code>Multiply</code> 作为其保护的实时表达式。这会产生两种值变化的方式：</p>
-<ol><li>**直接赋值：** <code>set X = 10</code> 通过<code>Multiply</code>过滤值，存储20</li><li>**依赖更新：** <code>set Mult = 1</code> 触发重新计算，将 <code>X</code> 更新为 10</li></ol>
+<p><strong>作为实时表达式：</strong> 由于 <code>Multiply</code> 具有 <code>&lt;reads&gt;</code> 效果（它读取可变变量 <code>Mult</code>），因此变量声明成为以 <code>Multiply</code> 作为其保护的实时表达式。这会产生两种值变化的方式：</p>
+<ol><li><strong>直接赋值：</strong> <code>set X = 10</code> 通过<code>Multiply</code>过滤值，存储20</li><li><strong>依赖更新：</strong> <code>set Mult = 1</code> 触发重新计算，将 <code>X</code> 更新为 10</li></ol>
 <p>这种模式优雅地将转换（每次写入都被过滤）与反应性（依赖项的更改触发更新）结合起来。</p>
   </article>
   <details class="original">
@@ -197,13 +197,13 @@ set Clamp.Upper = 60 # BaseHealth = 120, Health = 60 (reclamped)</code></pre></f
 <p>当您写入 <code>Health</code> 时，会发生两件事：</p>
 <ol><li>原始值存储在<code>BaseHealth</code>中</li><li>该值通过<code>Clamp.Evaluate</code>传递，结果存储在<code>Health</code>中</li></ol>
 <p>因为 <code>Clamp.Evaluate</code> 具有 <code>&lt;reads&gt;</code> 效果（它读取可变变量 <code>Lower</code> 和 <code>Upper</code>），所以这成为实时表达式。当约束改变时，<code>Health</code>会自动从<code>BaseHealth</code>重新计算。</p>
-<p>**它是如何运作的**</p>
+<p><strong>它是如何运作的</strong></p>
 <p>声明 <code>var BaseHealth-&gt;Health: Clamp.Evaluate = 50</code> 创建一个实时表达式，其中：</p>
 <ul><li><code>BaseHealth</code> 存储原始输入值（从外部角度只读）</li><li><code>Health</code> 存储钳位值（读写）</li><li><code>Clamp.Evaluate</code>是具有<code>&lt;reads&gt;</code>效果的变换函数</li></ul>
 <p>对象 <code>Clamp</code> 是类 <code>clamp</code> 的实例，具有可变边界 <code>Lower</code> 和 <code>Upper</code>。因为 <code>Evaluate</code> 读取这些可变变量，所以对它们的更改会触发重新计算：</p>
 <ul><li><code>set Health=75</code> — 值不变地传递，因此 <code>BaseHealth</code> 和 <code>Health</code> 都变为 75</li><li><code>set Health=120</code> — 超过 <code>Upper</code>，因此 <code>BaseHealth</code> 变为 120，但 <code>Health</code> 变为 100</li><li><code>set Clamp.Upper=60</code> — 约束发生变化，触发重新计算：<code>Health</code> 更新为 60，而 <code>BaseHealth</code> 仍为 120</li></ul>
 <p>使用 <code>Clamp.Evaluate</code> 等实例方法允许在同一上下文中使用多个独立的钳位，每个钳位都有自己的动态边界。</p>
-<p>**访问控制**</p>
+<p><strong>访问控制</strong></p>
 <p>输入和输出变量的范围可以通过添加访问说明符来独立控制：例如 <code>var In&lt;private&gt;-&gt;Out&lt;public&gt;:t</code> 将基值设为私有，同时将受约束的值公开。</p>
   </article>
   <details class="original">
@@ -297,8 +297,8 @@ set X = 1  # Error! Cyclic evaluation</code></pre></div>
   <article class="cn-read">
     <h2>跟踪依赖关系 <small>Tracking Dependencies</small></h2>
     <p>live variable在运行时动态跟踪依赖关系，而不是从源代码静态跟踪依赖关系。仅当在求值期间实际读取变量时，变量才成为依赖项，而不仅仅是当它出现在保护表达式中时：</p>
-<ol><li>*运行时跟踪：*依赖关系由每次评估期间实际访问的变量决定</li><li>*传递跟踪：* 依赖项包括在被调用函数中读取的变量</li><li>*动态变化：*依赖集可以从一个评估更改为下一个评估</li></ol>
-<p>考虑这个例子：</p>
+<ol><li><em>运行时跟踪：</em>依赖关系由每次评估期间实际访问的变量决定</li><li><em>传递跟踪：</em> 依赖项包括在被调用函数中读取的变量</li><li><em>动态变化：</em>依赖集可以从一个评估更改为下一个评估</li></ol>
+<p>考虑这个示例：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var X:int = 1
 var Y:int = 2
 var Z:int = 3
@@ -310,7 +310,7 @@ var live W:int = SomeFun(Z)   # W is 1, Dependencies: {Z, X}
 set Z = 0                     # W is 2, Dependencies: {Z, Y}</code></pre></figure>
 <p>最初，<code>SomeFun(Z)</code> 读取 <code>Z</code>（值为 3）并评估 <code>then</code> 分支，读取 <code>X</code>，生成具有依赖项 <code>{Z, X}</code> 的 <code>W=1</code>。</p>
 <p>在 <code>set Z=0</code> 之后，对 <code>Z</code> 的更改会触发重新评估。现在，<code>SomeFun(Z)</code> 读取 <code>Z</code>（为 0）并评估 <code>else</code> 分支，读取 <code>Y</code>。这会导致 <code>W=2</code> 具有新的依赖项 <code>{Z, Y}</code>。</p>
-<p>请注意，仅当执行路径更改时，<code>Y</code> 才成为依赖项。如果随后修改 <code>X</code>，<code>W</code> 将*不会*更新，因为 <code>X</code> 不再位于依赖项集中。这种动态跟踪确保live variable仅对实际影响其当前值的变化做出反应。</p>
+<p>请注意，仅当执行路径更改时，<code>Y</code> 才成为依赖项。如果随后修改 <code>X</code>，<code>W</code> 将<em>不会</em>更新，因为 <code>X</code> 不再位于依赖项集中。这种动态跟踪确保live variable仅对实际影响其当前值的变化做出反应。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Tracking Dependencies</summary>
@@ -379,12 +379,12 @@ set Y = 15      # X remains 20 (no longer tracking Y)</code></pre>
     # Suspend until X changes from OldX (0)
     await{X &lt;&gt; OldX}
     Print(&quot;X changed to: {X}&quot;)</code></pre></figure>
-<p>立即计算目标表达式。如果失败，任务将暂停。 Verse 跟踪评估期间读取的变量。每当这些变量发生变化时，防护就会重新评估。如果成功，则立即恢复执行。</p>
+<p>立即计算目标表达式。如果失败，赋值将暂停。 Verse 跟踪评估期间读取的变量。每当这些变量发生变化时，防护就会重新评估。如果成功，则立即恢复执行。</p>
 <p>实际含义是，您可以编写自然表达“等待此条件”的代码，而无需手动管理事件处理程序或回调注册。代码在等待点挂起，并在条件成立时恢复。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Wait for a specific condition
 await{X.Contents &gt; 10}
 set Y.Contents = X.Contents * 2</code></pre></figure>
-<p>保护表达式必须具有效果 <code>&lt;reads&gt;&lt;computes&gt;&lt;decides&gt;</code>（请参阅 [效果](13_effects.md)）——它可以读取和计算，但不能写入。这确保了重新评估不会产生副作用。 <code>await</code> 的主体也不能包含 <code>branch</code> 表达式，因为 <code>branch</code> 需要 <code>&lt;suspends&gt;</code> 上下文，并且防护必须保持无副作用。</p>
+<p>保护表达式必须具有效果 <code>&lt;reads&gt;&lt;computes&gt;&lt;decides&gt;</code>（请参阅<a href="../13_effects/index.html">效果</a>）——它可以读取和计算，但不能写入。这确保了重新评估不会产生副作用。 <code>await</code> 的主体也不能包含 <code>branch</code> 表达式，因为 <code>branch</code> 需要 <code>&lt;suspends&gt;</code> 上下文，并且防护必须保持无副作用。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：The await Expression</summary>
@@ -408,7 +408,7 @@ set Y.Contents = X.Contents * 2</code></pre>
 </section><section class="section" id="s10-the-upon-expression">
   <article class="cn-read">
     <h2>上面的表达 <small>The upon Expression</small></h2>
-    <p><code>upon</code> 表达式提供一次性反应行为：当条件成立时，执行某些代码一次。与恢复当前任务的 <code>await</code> 不同，<code>upon</code> 创建一个在触发时运行的新并发任务。</p>
+    <p><code>upon</code> 表达式提供一次性反应行为：当条件成立时，执行某些代码一次。与恢复当前赋值的 <code>await</code> 不同，<code>upon</code> 创建一个在触发时运行的新并发赋值。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Health:int = 100
 var IsDead:logic = false
 
@@ -419,9 +419,9 @@ upon(Health &lt;= 0):
 set Health = 50  # Nothing happens
 set Health = 0   # Triggers: prints &quot;Player died!&quot;
 set Health = -10 # Nothing happens (already triggered once)</code></pre></figure>
-<p><code>upon</code> 表达式立即计算其防护并记录读取的变量。然后它生成一个 <code>task(t)</code>，其中 <code>t</code> 是主体的结果类型，表示待处理的反应行为。当依赖关系发生变化时，守卫会被重新评估。如果成功，主体会在新的并发任务中执行一次，然后完成。</p>
+<p><code>upon</code> 表达式立即计算其防护并记录读取的变量。然后它生成一个 <code>task(t)</code>，其中 <code>t</code> 是主体的结果类型，表示待处理的反应行为。当依赖关系发生变化时，守卫会被重新评估。如果成功，主体会在新的并发赋值中执行一次，然后完成。</p>
 <p>这种一次性行为使 <code>upon</code> 非常适合状态转换和事件通知。当超过阈值时、当资源变得可用时、当计时器到期时——这些场景自然映射到 <code>upon</code> 的“条件变为真时触发一次”语义。</p>
-<p>主体必须具有 <code>&lt;transacts&gt;</code> 效果（请参阅[效果](13_effects.md)），允许其读取和写入变量（包括其他live variable），并保证执行相对于通知而言是原子的。</p>
+<p>主体必须具有 <code>&lt;transacts&gt;</code> 效果（请参阅<a href="../13_effects/index.html">效果</a>），允许其读取和写入变量（包括其他live variable），并保证执行相对于通知而言是原子的。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：The upon Expression</summary>
@@ -517,7 +517,7 @@ Task := upon(X &gt; 5):
 
 Task.Cancel()  # Cancels the reactive behavior
 set X = 10     # Y remains 0</code></pre></figure>
-<p>取消任务会立即删除所有依赖项跟踪并阻止关联代码运行。这提供了对反应行为生命周期的细粒度控制，允许您根据游戏状态或用户操作启用和禁用观察。</p>
+<p>取消赋值会立即删除所有依赖项跟踪并阻止关联代码运行。这提供了对反应行为生命周期的细粒度控制，允许您根据游戏状态或用户操作启用和禁用观察。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Cancellation</summary>
@@ -558,7 +558,7 @@ Print(&quot;After batch&quot;)
 # -&quot;Inside batch&quot;
 # -&quot;X Changed to 7!&quot;
 # -&quot;After batch&quot;</code></pre></figure>
-<p>在 <code>batch</code> 块内，变量更新会立即发生，但等待任务和反应式构造的通知会延迟。当批处理完成时，所有待处理的通知按照触发器发生的顺序触发，但观察者看到的是最终的一致状态而不是中间值。</p>
+<p>在 <code>batch</code> 块内，变量更新会立即发生，但等待赋值和反应式构造的通知会延迟。当批处理完成时，所有待处理的通知按照触发器发生的顺序触发，但观察者看到的是最终的一致状态而不是中间值。</p>
 <p>如果同一通知出现两次，则仅发送第一个通知。</p>
 <p>批处理表达式嵌套：通知会延迟，直到所有封闭的批处理完成为止。这种可组合性确保无论您的代码嵌套有多深，都可以保证相关变量的原子更新。</p>
 <p>批处理的主体不得具有 <code>&lt;suspends&gt;</code> 效果 - 所有操作必须立即完成。这确保了批处理块具有明确定义的边界，并且不会因暂停更新而使系统处于不一致的状态。</p>
@@ -751,11 +751,11 @@ set PrimaryValue = 15
 </section><section class="section" id="s20-modifier-stack-under-consideration">
   <article class="cn-read">
     <h2>修改器堆栈（正在考虑中） <small>Modifier Stack (Under Consideration)</small></h2>
-    <p>**modifier_stack的设计尚未最终确定；此处提供的材料可能会发生变化。**</p>
+    <p><strong>modifier_stack的设计尚未最终确定；此处提供的材料可能会发生变化。</strong></p>
 <p>游戏开发通常需要对单个值应用多个修饰符。例如，玩家的生命值可能需要限制在有效范围内，通过生命药水暂时增强，并在依赖关系发生变化时自动重新计算。</p>
 <p><code>modifier_stack</code> 模式提供了一个使用live variable和函数类型的可组合解决方案，允许有序转换在任何修饰符的依赖项发生变化时自动更新。</p>
 <p>修改器堆栈由三个组件组成：</p>
-<ol><li>**<code>modifier_iterface(t)</code>** - 用于转换 <code>t</code> 类型值的修饰符的接口</li><li>**<code>modifier_stack(t)</code>** - 排序和组合修饰符的容器</li><li>**live variable** - 使用 <code>modifier_stack.Evaluate</code> 作为自动反应的类型</li></ol>
+<ol><li><strong><code>modifier_iterface(t)</code></strong> - 用于转换 <code>t</code> 类型值的修饰符的接口</li><li><strong><code>modifier_stack(t)</code></strong> - 排序和组合修饰符的容器</li><li><strong>live variable</strong> - 使用 <code>modifier_stack.Evaluate</code> 作为自动反应的类型</li></ol>
 <p>当您分配给具有修饰符堆栈类型的live variable时，该值按位置顺序流经每个修饰符，并存储最终结果。由于 <code>modifier_stack.Evaluate</code> 具有 <code>&lt;reads&gt;</code> 效果，因此对任何修饰符的依赖项的更改（或添加/删除修饰符）都会触发自动重新计算。</p>
 <p>公共API如下：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>modifier_iterface(t : type) := interface:
@@ -800,7 +800,7 @@ var Health : HealthStack.Evaluate = 5.0  # 5.0 * 2.0 = 10.0 (then clamped to [1.
 set Potion.Value = 3.0                   # 5.0 * 3.0 = 15.0 (clamped to 12.0)
 RevokePotion.Cancel()                    # 5.0 (no potion, just clamp to [1.0, 12.0])</code></pre></figure>
 <p>值按位置顺序流经修饰符：</p>
-<ol><li>**初始：** 5.0 → 药水 (×2.0) → 10.0 → 钳子 → 10.0</li><li>**更改<code>Potion.Value</code>后：** 5.0 → 药水(×3.0) → 15.0 → 钳子 → 12.0</li><li>**去除药水后：** 5.0 → 夹具 → 5.0</li></ol>
+<ol><li><strong>初始：</strong> 5.0 → 药水 (×2.0) → 10.0 → 钳子 → 10.0</li><li><strong>更改<code>Potion.Value</code>后：</strong> 5.0 → 药水(×3.0) → 15.0 → 钳子 → 12.0</li><li><strong>去除药水后：</strong> 5.0 → 夹具 → 5.0</li></ol>
 <p>有计划通过编译器强制执行：每个修饰符实例只能添加到一个堆栈中，并且每个堆栈实例可以与一个变量关联。这将启用未来的功能，其中修改器堆栈维护特定于其关联的live variable的状态。</p>
   </article>
   <details class="original">
@@ -861,17 +861,17 @@ RevokePotion.Cancel()                    # 5.0 (no potion, just clamp to [1.0, 1
 </section><section class="section" id="s21-common-errors">
   <article class="cn-read">
     <h2>常见错误 <small>Common Errors</small></h2>
-    <p>**不必要的实时声明**</p>
+    <p><strong>不必要的实时声明</strong></p>
 <p>定义没有可更改依赖项的live variable是不必要的且具有误导性：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var live X:int = 10    # X is 10 and will never change
 set live X = 20        # X is 20 and will never change</code></pre></figure>
 <p>在这两种情况下，<code>X</code> 不会自动更新，因此程序在没有 <code>live</code> 关键字的情况下表现相同。 <code>live</code> 注释错误地暗示了不存在的反应行为。</p>
-<p>**缺少可变依赖项**</p>
+<p><strong>缺少可变依赖项</strong></p>
 <p>同样，仅依赖于不可变值的live variable永远不会更新：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>X:int = 10
 var live Y = X+1    # Y is 11 and will never change</code></pre></figure>
 <p>由于 <code>X</code> 是不可变的，因此 <code>Y</code> 没有可变的依赖关系，并且将永远保持为 11。 <code>live</code> 声明是没有意义的。</p>
-<p>**函数作为类型的混乱**</p>
+<p><strong>函数作为类型的混乱</strong></p>
 <p>当尝试通过函数类型使变量生效时，会发生一个微妙的错误：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Mult:int = 10
 
@@ -883,12 +883,12 @@ var X:Multiply(Mult) = 10    # X = 100
 
 set Mult = 20                 # X is still 100 (not live!)</code></pre></figure>
 <p>这段代码是错误的。程序员可能认为 <code>Multiply(Mult)</code> 将使 <code>X</code> 生效，因为该表达式具有 <code>&lt;reads&gt;</code> 效果（它读取 <code>Mult</code>）并返回函数类型 <code>int-&gt;int</code>。</p>
-<p>**错误：**对于要通过其类型生存的变量，*返回的函数本身*必须具有 <code>&lt;reads&gt;</code> 效果，而不是生成该函数的表达式。</p>
+<p><strong>错误：</strong>对于要通过其类型生存的变量，<em>返回的函数本身</em>必须具有 <code>&lt;reads&gt;</code> 效果，而不是生成该函数的表达式。</p>
 <p>要了解原因，请考虑以下等效转换：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MFun = Multiply(Mult)
 var X:MFun = 10</code></pre></figure>
 <p>现在很明显，<code>X</code> 尚未生效 - <code>MFun</code> 只是一个类型为 <code>int-&gt;int</code> 的函数值，并且该函数不具有 <code>&lt;reads&gt;</code> 效果。</p>
-<p>**正确的做法：** 使用直接用作类型的函数具有 <code>&lt;reads&gt;</code> 效果的模式：</p>
+<p><strong>右结合做法：</strong> 使用直接用作类型的函数具有 <code>&lt;reads&gt;</code> 效果的模式：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Mult:int = 10
 
 Multiply(Arg:int)&lt;reads&gt;:int = Arg * Mult

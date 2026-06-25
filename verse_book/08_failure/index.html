@@ -102,7 +102,7 @@ true?   # Always succeeds - the query of true</code></pre>
 <p>!!!注意“未发布的功能”<code>first</code> 尚未发布。以下记录了当前不可用的计划功能。</p>
 <p>与 <code>for</code> 类似，<code>first</code> 表达式为域子句创建失败上下文：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PowerfulWeapon := option. first(Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50). Item</code></pre></figure>
-<p>与 <code>for</code> 不同，如果没有成功的迭代，<code>first</code> 本身就会失败，因此必须在失败上下文中使用。在上面的例子中，<code>option</code>用于处理<code>first</code>的故障。</p>
+<p>与 <code>for</code> 不同，如果没有成功的迭代，<code>first</code> 本身就会失败，因此必须在失败上下文中使用。在上面的示例中，<code>option</code>用于处理<code>first</code>的故障。</p>
 <p>标有 <code>&lt;decides&gt;</code> 的函数为其整个主体创建失败上下文：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindBestWeapon(Inventory:[]item)&lt;decides&gt;:item =
     var BestWeapon:?item = false
@@ -148,7 +148,7 @@ true?   # Always succeeds - the query of true</code></pre>
 </section><section class="section" id="s3-speculative-execution">
   <article class="cn-read">
     <h2>推测执行 <small>Speculative Execution</small></h2>
-    <p>当您在失败上下文中执行代码时，对可变变量的更改是临时的，只有在整个上下文成功时它们才会成为永久性的。在失败上下文中修改状态的函数必须使用 <code>&lt;transacts&gt;</code> 或 <code>&lt;writes&gt;</code> 效果说明符（请参阅 [效果](13_effects.md)）：</p>
+    <p>当您在失败上下文中执行代码时，对可变变量的更改是临时的，只有在整个上下文成功时它们才会成为永久性的。在失败上下文中修改状态的函数必须使用 <code>&lt;transacts&gt;</code> 或 <code>&lt;writes&gt;</code> 效果说明符（请参阅<a href="../13_effects/index.html">效果</a>）：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>m:=module:
     buyer := class:
         var PlayerGold:int
@@ -275,7 +275,7 @@ GetIfGreaterThan(X:int, Threshold:int)&lt;decides&gt;:int =
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Result := option{RiskyComputation[]} # option{value} if computation succeeds
                                      # otherwise false</code></pre></figure>
 <p>这种双向转换使选项和故障可以互换，使您可以为您的特定用例选择最合适的表示形式。</p>
-<p>选项类型 <code>?T</code> 表示可能存在也可能不存在的值。问号出现在类型*之前*，而不是之后：</p>
+<p>选项类型 <code>?T</code> 表示可能存在也可能不存在的值。问号出现在类型<em>之前</em>，而不是之后：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidSyntax:?int = option{42}      # Correct</code></pre></figure>
 <p><code>?</code> 前缀适用于任何类型：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybeNumber:?int = option{42}
@@ -285,7 +285,7 @@ MaybePlayer:?player = option{player{}}</code></pre></figure>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Filled:?int = option{42}
 Empty:?int  = false
 Result:?int = option{RiskyComputation[]}  # false if computation fails</code></pre></figure>
-<p>空选项和 <code>false</code> 是等价的——空选项*是* <code>false</code>：</p>
+<p>空选项和 <code>false</code> 是等价的——空选项<em>是</em> <code>false</code>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>EmptyOption:?int = false
 EmptyOption = false  # This comparison succeeds</code></pre></figure>
 <p>Verse 具有丰富而灵活的语法，有时也会导致微妙的错误。逗号产生 <code>option</code> 中的元组，而分号计算所有值但仅保留最后一个值：</p>
@@ -548,13 +548,13 @@ if (Opt? = Regular):
     <h2>选项失败 <small>Failure with Optionals</small></h2>
     <p>将决定函数与可选返回类型相结合，创建一个具有多层故障的系统。这种模式可以简洁地表达复杂的条件，同时保持清晰度。</p>
 <p>一个函数可能会在两个层面上失败：</p>
-<ul><li>*函数级故障*：使用 <code>&lt;decides&gt;</code> 整个函数失败</li><li>*值级失败*：函数成功但返回空选项</li></ul>
+<ul><li><em>函数级故障</em>：使用 <code>&lt;decides&gt;</code> 整个函数失败</li><li><em>值级失败</em>：函数成功但返回空选项</li></ul>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindEligiblePlayer(Name:string)&lt;decides&gt;:?player =
     Name &lt;&gt; &quot;&quot;           # Layer 1: Fail if name is empty
     Player := LookupPlayer[Name]  # Layer 1: Fail if player not found
     option{IsActive[Player]}      # Layer 2: Empty option if player inactive</code></pre></figure>
 <p>该函数有三种可能的结果：</p>
-<ul><li>*功能失败*：名称为空或未找到玩家</li><li>*功能成功，选项为空*：找到玩家但不活动</li><li>*功能成功并填充选项*：玩家已找到并处于活动状态</li></ul>
+<ul><li><em>功能失败</em>：名称为空或未找到玩家</li><li><em>功能成功，选项为空</em>：找到玩家但不活动</li><li><em>功能成功并填充选项</em>：玩家已找到并处于活动状态</li></ul>
 <p>调用此函数演示了分层故障：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function-level failure
 Result1 := FindEligiblePlayer[&quot;&quot;]  # Fails, Result1 never assigned
@@ -712,8 +712,8 @@ TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
     AddItem(PlayerA, ItemB)
     AddItem(PlayerB, ItemA)
     ValidateTrade[PlayerA, PlayerB]</code></pre></figure>
-<p>要么整个​​事务成功，要么什么都没有改变。</p>
-<p>**可选索引**</p>
+<p>要么整个事务成功，要么什么都没有改变。</p>
+<p><strong>可选索引</strong></p>
 <p>使用可选容器时，您可以使用将可选检查与元素访问相结合的专用查询语法来访问其内容。可选元组支持通过查询运算符直接访问元素：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybePair:?tuple(int, string) = option{(42, &quot;answer&quot;)}
 
@@ -728,7 +728,7 @@ if (SecondValue := MaybePair?(1)):
     Print(&quot;Second: {SecondValue}&quot;)</code></pre></figure>
 <p>同时语法<code>Option?(index)</code>：</p>
 <ul><li>查询选项是否非空</li><li>访问给定索引处的元组元素</li><li>如果两者都成功则绑定元素值</li></ul>
-<p>**组合和调用链**</p>
+<p><strong>组合和调用链</strong></p>
 <p>决定函数自然地组合，允许从简单、可重用的部分构建复杂的操作。当一个决定函数调用另一个决定函数时，失败会自动传播。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidatePositive(X:int)&lt;decides&gt;:int =
     X &gt; 0
@@ -737,7 +737,7 @@ Double(X:int)&lt;decides&gt;:int =
     Validated := ValidatePositive[X]  # Fails if X ≤ 0
     Validated * 2</code></pre></figure>
 <p>如果 <code>ValidatePositive</code> 失败，<code>Double</code> 立即失败。经过验证的价值在链条中流动。</p>
-<p>**保留失败上下文：**</p>
+<p><strong>保留失败上下文：</strong></p>
 <p>当在非决定上下文中调用决定函数时，必须显式处理失败：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># This won&#x27;t compile - ProcessPlayer doesn&#x27;t have &lt;decides&gt;
 # BadProcessPlayer(Name:string):void =
@@ -830,7 +830,7 @@ ProcessPlayerWithOr(Name:string):void =
 </section><section class="section" id="s15-runtime-errors">
   <article class="cn-read">
     <h2>运行时错误 <small>Runtime Errors</small></h2>
-    <p>虽然失败 (<code>&lt;decides&gt;</code>) 表示具有事务回滚的正常控制流，但*运行时错误*表示终止执行的不可恢复条件。运行时错误在调用堆栈中向上传播，绕过正常的故障处理，并且无法在 Verse 代码中捕获或恢复。</p>
+    <p>虽然失败 (<code>&lt;decides&gt;</code>) 表示具有事务回滚的正常控制流，但<em>运行时错误</em>表示终止执行的不可恢复条件。运行时错误在调用堆栈中向上传播，绕过正常的故障处理，并且无法在 Verse 代码中捕获或恢复。</p>
 <p><code>Err()</code> 函数显式触发运行时错误，并带有可选消息：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInput(Value:int):int =
     if (Value &lt; 0):
@@ -857,7 +857,7 @@ TopFunction():void =
 # Execution order: A, B, C, then terminates
 # Output: &quot;ABC&quot;</code></pre></figure>
 <p>运行时错误立即传播，绕过调用链中的所有后续代码。</p>
-<p>运行时错误通过异步操作传播，终止生成的任务：</p>
+<p>运行时错误通过异步操作传播，终止生成的赋值：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AsyncOperation()&lt;suspends&gt;:int =
     Log(&quot;Start&quot;)
     WaitTicks(1)
@@ -869,7 +869,7 @@ KickOff()&lt;suspends&gt;:void=
     # Error propagates out of spawned task
     spawn{ AsyncOperation() }
 </code></pre></figure>
-<p>当生成的任务遇到运行时错误时，该特定任务将终止。运行时错误不会自动传播到生成上下文。</p>
+<p>当生成的赋值遇到运行时错误时，该特定赋值将终止。运行时错误不会自动传播到生成上下文。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Runtime Errors</summary>

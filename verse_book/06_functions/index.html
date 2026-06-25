@@ -150,16 +150,16 @@ Process(42)                                        # Calls first overload
 Process(42, ?Option := &quot;test&quot;)                     # Calls second overload
 Process(42, ?Option1 := &quot;test&quot;, ?Option2 := true)  # Calls third overload</code></pre></figure>
 <p>编译器选择与提供的参数匹配的重载。命名参数使重载解析更加精确，因为名称必须完全匹配。</p>
-<p>命名参数具有与位置参数不同的“重载独特性”特定规则。如果可以使用相同的参数调用两个函数签名，则它们被视为**不明确**（无法重载）。</p>
-<p>**顺序对于命名参数来说并不重要：**命名参数按名称匹配，而不是位置匹配，因此重新排序不会产生区别：</p>
+<p>命名参数具有与位置参数不同的“重载独特性”特定规则。如果可以使用相同的参数调用两个函数签名，则它们被视为<strong>不明确</strong>（无法重载）。</p>
+<p><strong>顺序对于命名参数来说并不重要：</strong>命名参数按名称匹配，而不是位置匹配，因此重新排序不会产生区别：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Not distinct - same parameters, different order
 F(?Y:int, ?X:int):int = X + Y
 F(?X:int, ?Y:int):int = X - Y  # ERROR</code></pre></figure>
-<p>**默认值不会产生独特性：**如果参数名称相同，默认值的存在或不存在并不会使签名不同：</p>
+<p><strong>默认值不会产生独特性：</strong>如果参数名称相同，默认值的存在或不存在并不会使签名不同：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Same parameter name with/without default
 F(?X:int=42):int = X
 F(?X:int):int = X  # ERROR</code></pre></figure>
-<p>**全默认规则：** 如果两个重载中的所有参数都有默认值，则签名不明确，因为两者都可以在不带参数的情况下调用：</p>
+<p><strong>全默认规则：</strong> 如果两个重载中的所有参数都有默认值，则签名不明确，因为两者都可以在不带参数的情况下调用：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR Both can be called as F()
 # F(?X:int=42):int = X
 # F(?Y:int=42):int = Y         # ERROR
@@ -167,23 +167,23 @@ F(?X:int):int = X  # ERROR</code></pre></figure>
 # ERROR Both callable with no args
 # F(?X:int=42):int = X
 # F(?X:float=3.14):float = X  # ERROR</code></pre></figure>
-<p>**不同的参数名称是不同的：** 具有不同命名参数名称的函数可以重载：</p>
+<p><strong>不同的参数名称是不同的：</strong> 具有不同命名参数名称的函数可以重载：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Different names
 F(?X:int):int = X
 F(?Y:int):int = Y  # OK - distinct parameter names</code></pre></figure>
-<p>**命名参数与位置参数是不同的：** 命名参数与位置参数不同，即使名称和类型相同：</p>
+<p><strong>命名参数与位置参数是不同的：</strong> 命名参数与位置参数不同，即使名称和类型相同：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Named vs positional
 F(?X:int):int = X
 F(X:int):int = X  # OK</code></pre></figure>
-<p>**至少一个必需参数必须不同：** 如果一组必需（无默认）命名参数不同，则重载是不同的：</p>
+<p><strong>至少一个必需参数必须不同：</strong> 如果一组必需（无默认）命名参数不同，则重载是不同的：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: First requires ?Y, second doesn&#x27;t
 F(?Y:int, ?X:int=42):int = X
 F(?X:int):int = X  # OK - different required parameter set</code></pre></figure>
-<p>**位置参数创建独特性：**不同的位置参数类型使签名不同，即使命名参数相同：</p>
+<p><strong>位置参数创建独特性：</strong>不同的位置参数类型使签名不同，即使命名参数相同：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Different positional parameter types
 F(Arg:float, ?X:int):int = X
 F(Arg:int, ?X:int):int = X  # OK</code></pre></figure>
-<p>**调用的超集：** 如果一个签名可以处理另一个签名可以处理的所有调用，那么它们是模糊的：</p>
+<p><strong>调用的超集：</strong> 如果一个签名可以处理另一个签名可以处理的所有调用，那么它们是模糊的：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR 3532: First can handle all calls to second
 # F(?Y:int=42, ?X:int=42):int = X
 # F(?X:int):int = X  # ERROR - can call first as F(?X := 10)</code></pre></figure>
@@ -499,11 +499,11 @@ Configure(5, ())  # Returns 35
   <article class="cn-read">
     <h2>展平和反展平 <small>Flattening and Unflattening</small></h2>
     <p>Verse 在函数调用站点提供元组和多个参数之间的自动转换，从而无需显式打包或解包即可实现灵活的调用约定。</p>
-<p>*扁平化：*可以使用单个元组调用需要多个参数的函数。下面，元组 <code>Args</code> 自动解包到 <code>Add</code> 函数的参数中：</p>
+<p><em>扁平化：</em>可以使用单个元组调用需要多个参数的函数。下面，元组 <code>Args</code> 自动解包到 <code>Add</code> 函数的参数中：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Add(X:int, Y:int):int= X + Y
 Args:= (3, 5)
 Add(Args)       # Returns 8 - tuple automatically flattened</code></pre></figure>
-<p>*取消扁平化：*可以使用扁平化参数调用需要单个元组参数的函数。调用 <code>F</code> 的各个参数会自动打包到元组参数中：</p>
+<p><em>取消扁平化：</em>可以使用扁平化参数调用需要单个元组参数的函数。调用 <code>F</code> 的各个参数会自动打包到元组参数中：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F(P:tuple(int, int)):int = P(0) + P(1)
 
 F(3, 5)  # Returns 8 - args automatically packed into tuple</code></pre></figure>
@@ -512,7 +512,7 @@ F(3, 5)  # Returns 8 - args automatically packed into tuple</code></pre></figure
 
 F(())   # Explicit empty tuple
 F()     # No arguments - automatically creates empty tuple</code></pre></figure>
-<p>**重载限制：** 由于自动展平和反展平，您无法定义不明确的重载。如果定义 <code>F(P:tuple(int, int))</code>，则不能同时定义 <code>F(X:int, Y:int)</code>，因为调用 <code>F(3, 5)</code> 可能与任一签名匹配。同样，<code>F(P:tuple(int, int))</code> 和 <code>F(Xs:[]int)</code> 也没有区别，因为也可以使用相同的语法调用数组。</p>
+<p><strong>重载限制：</strong> 由于自动展平和反展平，您无法定义不明确的重载。如果定义 <code>F(P:tuple(int, int))</code>，则不能同时定义 <code>F(X:int, Y:int)</code>，因为调用 <code>F(3, 5)</code> 可能与任一签名匹配。同样，<code>F(P:tuple(int, int))</code> 和 <code>F(Xs:[]int)</code> 也没有区别，因为也可以使用相同的语法调用数组。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Flattening and Unflattening</summary>
@@ -537,8 +537,7 @@ F()     # No arguments - automatically creates empty tuple</code></pre>
   <article class="cn-read">
     <h2>评估顺序 <small>Evaluation Order</small></h2>
     <p>参数按特定顺序进行评估，以保持可预测的行为：</p>
-<ol><li>*位置参数*：调用中从左到右</li><li>*命名参数*：从左到右在调用中遇到</li><li>*默认值*：省略的参数填写，从左到右</li></ol>
-<p>按参数顺序</p>
+<ol><li><em>位置参数</em>：调用中从左到右</li><li><em>命名参数</em>：从左到右在调用中遇到</li><li><em>默认值</em>：省略的参数填写，按参数顺序从左到右</li></ol>
 <p>如果命名参数以与参数不同的顺序出现，编译器将使用临时变量来保留您指定的计算顺序：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Process(A:int, ?B:int, ?C:int, ?D:int):string =
     &quot;{A}, {B}, {C}, {D}&quot;
@@ -554,8 +553,7 @@ Process(1, ?D := 4, ?B := 2, ?C := 3)
     <summary>展开英文原文：Evaluation Order</summary>
     <div class="md"><h3>Evaluation Order</h3>
 <p>Arguments are evaluated in a specific order to maintain predictable behavior:</p>
-<ol><li><em>Positional arguments</em>: Left to right in the call</li><li><em>Named arguments</em>: Left to right as encountered in the call</li><li><em>Default values</em>: Filled in for omitted parameters, left to right</li></ol>
-<p>in parameter order</p>
+<ol><li><em>Positional arguments</em>: Left to right in the call</li><li><em>Named arguments</em>: Left to right as encountered in the call</li><li><em>Default values</em>: Filled in for omitted parameters, left to right in parameter order</li></ol>
 <p>If named arguments appear in a different order than parameters, the compiler uses temporary variables to preserve the evaluation order you specified:</p>
 <pre><code>Process(A:int, ?B:int, ?C:int, ?D:int):string =
     &quot;{A}, {B}, {C}, {D}&quot;
@@ -724,7 +722,7 @@ true.Format()    # Returns &quot;logic:true&quot;</code></pre>
 </section><section class="section" id="s8-rules">
   <article class="cn-read">
     <h2>规则 <small>Rules</small></h2>
-    <p>**必须调用**：扩展方法不能在不调用它们的情况下被引用为第一类值：</p>
+    <p><strong>必须调用</strong>：扩展方法不能在不调用它们的情况下被引用为第一类值：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>(N:int).Double():int = N * 2
 
 # Valid: calling the method
@@ -732,14 +730,14 @@ X := 5.Double()
 
 # Invalid: referencing without calling
 # F := 5.Double  # ERROR</code></pre></figure>
-<p>**与类方法冲突：**扩展方法不能与直接在类或接口中定义的方法具有相同的签名：</p>
+<p><strong>与类方法冲突：</strong>扩展方法不能与直接在类或接口中定义的方法具有相同的签名：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player := class:
     Health():int = 100
 
 # Invalid: Conflicts with class method
 # (P:player).Health():int = 50  # ERROR</code></pre></figure>
 <p>这可以防止歧义并确保类方法始终优先。</p>
-<p>**范围和可见性：** 扩展方法的范围与常规函数类似。它们仅在定义或导入的地方可见：</p>
+<p><strong>范围和可见性：</strong> 扩展方法的范围与常规函数类似。它们仅在定义或导入的地方可见：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># In module A
 Utils := module:
     (S:string).Reverse&lt;public&gt;():string =
@@ -749,7 +747,7 @@ Utils := module:
 using { Utils }
 
 &quot;Hello&quot;.Reverse()  # Available after importing</code></pre></figure>
-<p>**类范围内的扩展方法：** 扩展方法可以在类内部定义并访问类成员：</p>
+<p><strong>类范围内的扩展方法：</strong> 扩展方法可以在类内部定义并访问类成员：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game_manager := class:
     Multiplier:int = 10
 
@@ -762,7 +760,7 @@ using { Utils }
 GM := game_manager{}
 GM.ProcessScore(5)  # Returns 50</code></pre></figure>
 <p>这将创建一个词法闭包，其中扩展方法可以引用封闭类的成员。</p>
-<p>**元组参数转换：** 当扩展方法有多个参数时，您可以传递一个元组来一次提供所有参数：</p>
+<p><strong>元组参数转换：</strong> 当扩展方法有多个参数时，您可以传递一个元组来一次提供所有参数：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>point := class&lt;computes&gt;{ X:int; Y:int }
 
 (P:point).Translate(DX:int, DY:int)&lt;allocates&gt;:point =
@@ -840,11 +838,9 @@ NewPoint := Origin.Translate(Delta)  # Tuple expands to two arguments</code></pr
 </section><section class="section" id="s10-types-variance-and-effects">
   <article class="cn-read">
     <h2>类型、差异和影响 <small>Types, Variance and Effects</small></h2>
-    <p>函数类型遵循基于*方差*的特定子类型规则：</p>
-<ul><li>*参数是逆变的*：接受更通用的函数</li></ul>
-<p>类型可以替代接受特定类型的类型。</p>
-<ul><li>*返回是协变的*：返回更具体类型的函数</li></ul>
-<p>可以替代一种返回的通用类型。</p>
+    <p>函数类型遵循基于<em>方差</em>的特定子类型规则：</p>
+<ul><li><em>参数是逆变的</em>：接受更通用类型的函数可以替代接受特定类型的函数。</li></ul>
+<ul><li><em>返回是协变的</em>：返回更具体类型的函数可以替代返回通用类型的函数。</li></ul>
 <p>考虑以下三个类：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>animal := class:
     Name:string
@@ -878,7 +874,7 @@ set ProcessDog1 = DogToAnimal  # ERROR: incompatible assignment
 
 ProcessDog2 := AnimalToDog  # Inferred as type{_(:animal):dog}
 set ProcessDog2 = WorkingDogToDog  # ERROR: incompatible assignment</code></pre></figure>
-<p>效果是函数类型的一部分。当需要具有更多效果的函数时，可以使用效果较少的函数 - 效果是**协变**（效果较少=子类型）：</p>
+<p>效果是函数类型的一部分。当需要具有更多效果的函数时，可以使用效果较少的函数 - 效果是<strong>协变</strong>（效果较少=子类型）：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>UsePure(Pure)                    # OK
 UseTransactional(Transactional)  # OK
 UseSuspendable(Suspendable)      # OK
@@ -905,10 +901,8 @@ G().Value  # Can access base members</code></pre></figure>
     <summary>展开英文原文：Types, Variance and Effects</summary>
     <div class="md"><h3>Types, Variance and Effects</h3>
 <p>Function types follow specific subtyping rules based on <em>variance</em>:</p>
-<ul><li><em>Parameters are contravariant</em>: A function accepting more general</li></ul>
-<p>types can substitute for one accepting specific types.</p>
-<ul><li><em>Returns are covariant</em>: A function returning more specific types</li></ul>
-<p>can substitute for one returning general types.</p>
+<ul><li><em>Parameters are contravariant</em>: A function accepting more general types can substitute for one accepting specific types.</li></ul>
+<ul><li><em>Returns are covariant</em>: A function returning more specific types can substitute for one returning general types.</li></ul>
 <p>Consider the following three classes:</p>
 <pre><code>animal := class:
     Name:string
@@ -986,12 +980,12 @@ Process(F:type{_(:int):int}, Value:int):int =
 # Nested function to pass
 Double(X:int):int = X * 2
 Process(Double, 5)  # Returns 10</code></pre></figure>
-<p><code>type{}</code> 构造*声明函数类型签名*：</p>
+<p><code>type{}</code> 构造<em>声明函数类型签名</em>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Type definitions for function signatures
 ValidType1 := type{_():int}
 ValidType2 := type{_(:string, :int):float}
 ValidType3 := type{_()&lt;transacts&gt;&lt;decides&gt;:void}</code></pre></figure>
-<p>在 <code>type{}</code> 中，函数声明必须具有返回类型，但*不能具有函数体*。</p>
+<p>在 <code>type{}</code> 中，函数声明必须具有返回类型，但<em>不能具有函数体</em>。</p>
 <p>函数类型在类中用作字段类型：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Assume:
 # calculator := class:
@@ -1126,7 +1120,7 @@ SumFunctions(array{GetZero, GetOne, GetTwo})  # Returns 3</code></pre></div>
 </section><section class="section" id="s12-examples">
   <article class="cn-read">
     <h2>示例 <small>Examples</small></h2>
-    <p>**映射-过滤-减少**：</p>
+    <p><strong>映射-过滤-减少</strong>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Generic map
 Map(Items:[]t, F(:t)&lt;transacts&gt;:u where t:type, u:type)&lt;transacts&gt;:[]u =
     for (Item:Items):
@@ -1155,7 +1149,7 @@ AddTo(Acc:int, X:int)&lt;computes&gt;:int = Acc + X
 Squared := Map(Values, Square)
 Evens := Filter(Values, IsEven)
 Sum := Fold(Values, 0, AddTo)</code></pre></figure>
-<p>**功能组成**：</p>
+<p><strong>功能组成</strong>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Compose(F(:b):c, G(:a):b where a:type, b:type, c:type):type{_(:a):c} =
     # Return a nested function that composes F and G
     Composed(X:a):c = F(G(X))
@@ -1167,7 +1161,7 @@ Double(X:int):int = X * 2
 # Compose: first doubles, then adds 1
 DoubleThenIncrement := Compose(Add1, Double)
 DoubleThenIncrement(5)  # Returns 11 (5*2 + 1)</code></pre></figure>
-<p>**部分应用**：</p>
+<p><strong>部分应用</strong>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Partial(F(:a, :b):c, X:a where a:type, b:type, c:type):type{_(:b):c} =
     # Return a nested function with X captured
     PartialFunc(Y:b):c = F(X, Y)
@@ -1375,9 +1369,7 @@ GetValue()        # Returns 2</code></pre>
   <article class="cn-read">
     <h2>限制 <small>Restrictions</small></h2>
     <p>嵌套函数有几个与顶级函数不同的重要限制：</p>
-<ul><li>嵌套函数**不能**具有访问说明符，例如 <code>&lt;public&gt;</code>、</li></ul>
-<p><code>&lt;internal&gt;</code> 或 <code>&lt;private&gt;</code>：</p>
-<ul><li>嵌套函数对于其封闭函数始终是私有的。</li><li>您不能在函数内部定义类（嵌套或其他方式）：</li></ul>
+<ul><li>嵌套函数<strong>不能</strong>具有 <code>&lt;public&gt;</code>、<code>&lt;internal&gt;</code> 或 <code>&lt;private&gt;</code> 等访问说明符：</li><li>嵌套函数对于其封闭函数始终是私有的。</li><li>您不能在函数内部定义类（嵌套或其他方式）：</li></ul>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot define classes in local scope
 F():void =
     my_class := class {}  # ERROR
@@ -1387,8 +1379,7 @@ my_class := class {}
 
 F():void =
     Instance := my_class{}  # OK - can use class</code></pre></figure>
-<ul><li>嵌套函数不能引用变量或其他嵌套函数</li></ul>
-<p>稍后在同一作用域中定义的函数（这也意味着不允许相互递归嵌套函数）：</p>
+<ul><li>嵌套函数不能引用变量或稍后在同一范围内定义的其他嵌套函数（这也意味着不允许相互递归嵌套函数）：</li></ul>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR 3506: G used before defined
 F():void =
     X := G()     # ERROR: G not yet defined
@@ -1398,7 +1389,7 @@ F():void =
 F():void =
     G():int = 42
     X := G()     # OK: G is defined</code></pre></figure>
-<ul><li>调用父类方法的 <code>(super:)</code> 语法**不能**用于嵌套函数：</li></ul>
+<ul><li>调用父类方法的 <code>(super:)</code> 语法<strong>不能</strong>用于嵌套函数：</li></ul>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR 3612: super not allowed in nested function
 base_class := class:
     F(X:int):int = X
@@ -1420,9 +1411,7 @@ derived_class := class(base_class):
     <summary>展开英文原文：Restrictions</summary>
     <div class="md"><h3>Restrictions</h3>
 <p>Nested functions have several important restrictions that distinguish them from top-level functions:</p>
-<ul><li>Nested functions <strong>cannot</strong> have access specifiers like <code>&lt;public&gt;</code>,</li></ul>
-<p><code>&lt;internal&gt;</code>, or <code>&lt;private&gt;</code>:</p>
-<ul><li>Nested functions are always private to their enclosing function.</li><li>You cannot define classes inside functions (nested or otherwise):</li></ul>
+<ul><li>Nested functions <strong>cannot</strong> have access specifiers like <code>&lt;public&gt;</code>, <code>&lt;internal&gt;</code>, or <code>&lt;private&gt;</code>:</li><li>Nested functions are always private to their enclosing function.</li><li>You cannot define classes inside functions (nested or otherwise):</li></ul>
 <pre><code># ERROR: Cannot define classes in local scope
 F():void =
     my_class := class {}  # ERROR
@@ -1432,8 +1421,7 @@ my_class := class {}
 
 F():void =
     Instance := my_class{}  # OK - can use class</code></pre>
-<ul><li>Nested functions cannot reference variables or other nested</li></ul>
-<p>functions defined later in the same scope (this also means mutually recursive nested functions are not allowed):</p>
+<ul><li>Nested functions cannot reference variables or other nested functions defined later in the same scope (this also means mutually recursive nested functions are not allowed):</li></ul>
 <pre><code># ERROR 3506: G used before defined
 F():void =
     X := G()     # ERROR: G not yet defined
@@ -1489,7 +1477,7 @@ NestedMap:[int][]string = map{1 =&gt; array{&quot;a&quot;, &quot;b&quot;}}
 Result3 := Identity(NestedMap)  # Result3: [int][]string</code></pre></figure>
 <p>这与使用 <code>any</code> 根本不同，后者会擦除类型信息。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FunctionName(Parameters where TypeParameter:Constraint, ...):ReturnType = Body</code></pre></figure>
-<ul><li>*类型参数*出现在 <code>where</code> 子句中</li><li>*约束*指定要求（例如，<code>type</code>、<code>subtype(comparable)</code>）</li><li>*多个类型参数*在 <code>where</code> 子句中以逗号分隔</li></ul>
+<ul><li><em>类型参数</em>出现在 <code>where</code> 子句中</li><li><em>约束</em>指定要求（例如，<code>type</code>、<code>subtype(comparable)</code>）</li><li><em>多个类型参数</em>在 <code>where</code> 子句中以逗号分隔</li></ul>
 <p>Verse 会自动从您传递的参数推断类型参数，在大多数情况下无需显式类型注释：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function with two type parameters
 Pair(X:t, Y:u where t:type, u:type):tuple(t, u) = (X, Y)
@@ -1641,7 +1629,7 @@ Convert(Base:t, Derived:u where t:type, u:subtype(t)):t = Base
   </details>
 </section><section class="section" id="s18-member-access">
   <article class="cn-read">
-    <h2>会员访问 <small>Member Access</small></h2>
+    <h2>成员访问 <small>Member Access</small></h2>
     <p>使用子类型约束时，您可以访问基类型上存在的成员：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
     Name:string = &quot;Entity&quot;
@@ -1695,11 +1683,11 @@ CheckStatus(E:t where t:subtype(entity)):string =
   <article class="cn-read">
     <h2>极性和方差 <small>Polarity and Variance</small></h2>
     <p>类型参数必须根据方差规则一致地使用。当函数用作值或作为参数传递时，这可以确保类型安全。</p>
-<p>**协变位置**（对于返回类型是安全的）：</p>
+<p><strong>协变位置</strong>（对于返回类型是安全的）：</p>
 <ul><li>函数返回类型</li><li>元组/数组元素类型（作为返回）</li><li>映射键类型（作为返回）</li><li>映射值类型（作为返回）</li></ul>
-<p>**逆变位置**（对于参数类型是安全的）：</p>
+<p><strong>逆变位置</strong>（对于参数类型是安全的）：</p>
 <ul><li>函数参数类型</li></ul>
-<p>**极性检查：** Verse 验证类型参数仅出现在与其预期用途兼容的位置：</p>
+<p><strong>极性检查：</strong> Verse 验证类型参数仅出现在与其预期用途兼容的位置：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: t appears covariantly (return type)
 GetValue(X:t where t:type):t = X
 
@@ -1708,12 +1696,12 @@ Consume(X:t where t:type):void = {}
 
 # Valid: t appears in both positions (through function parameter and return)
 Apply(F:type{_(:t):t}, X:t where t:type):t = F(X)</code></pre></figure>
-<p>**不变类型会导致错误：**</p>
+<p><strong>不变类型会导致错误：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot return type that&#x27;s invariant in t
 c(t:type) := class{var X:t}  # Mutable field makes c invariant in t
 MakeContainer(X:t where t:type):c(t) = c(t){X := X}</code></pre></figure>
 <p>发生错误的原因是 <code>c(t)</code> 包含 <code>t</code> 类型的可变字段，使其保持不变 - 既不是协变也不是逆变。从参数函数返回此类类型是不安全的。</p>
-<p>**映射极性：** 映射在键和值上都是协变的：</p>
+<p><strong>映射极性：</strong> 映射在键和值上都是协变的：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: covariant key and value
 ProcessMap(M:[t]u where t:subtype(comparable), u:type):[t]u = M</code></pre></figure>
   </article>
@@ -1746,7 +1734,7 @@ ProcessMap(M:[t]u where t:subtype(comparable), u:type):[t]u = M</code></pre></di
 </section><section class="section" id="s20-overloading-2">
   <article class="cn-read">
     <h2>超载 <small>Overloading</small></h2>
-    <p>函数重载允许您定义多个具有相同名称但参数类型不同的函数。编译器根据调用站点提供的参数类型选择正确的版本。</p>
+    <p>函数重载允许您定义多个具有相同名称但参数类型不同的函数。编译器根据调用站点提供的参数类型选择右结合版本。</p>
 <p>定义多个名称相同但参数类型不同的函数：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Overload by parameter type
 Process(Value:int):string = &quot;Integer: {Value}&quot;
@@ -1803,13 +1791,13 @@ g:void = f</code></pre>
   <article class="cn-read">
     <h2>效果 <small>Effects</small></h2>
     <p>您可以重载具有不同效果的函数，但前提是参数类型也不同：</p>
-<p>**有效：不同类型，不同效果：**</p>
+<p><strong>有效：不同类型，不同效果：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Process(x:float):float = x
 Process(x:int)&lt;transacts&gt;&lt;decides&gt;:int = x = 1
 
 Process(3.0)   # Returns 3.0 (non-failable)
 Process[1]     # Returns option{1} (failable)</code></pre></figure>
-<p>**无效：相同类型，不同效果：**</p>
+<p><strong>无效：相同类型，不同效果：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Same parameter type
 f(x:int):void = {}
 f(x:int)&lt;transacts&gt;&lt;decides&gt;:void = {}  # ERROR</code></pre></figure>
@@ -1845,7 +1833,7 @@ c1 := class(c0):
 c1{}.f(5)     # OK - inherited int overload
 c1{}.f(5.0)   # OK - new float overload</code></pre></figure>
 <p>当子类定义与父方法共享名称的方法时，它必须：</p>
-<ol><li>提供**不同的参数类型**（不同于所有父重载）</li><li>**使用 <code>&lt;override&gt;</code> 精确覆盖一个**父重载</li></ol>
+<ol><li>提供<strong>不同的参数类型</strong>（不同于所有父重载）</li><li><strong>使用 <code>&lt;override&gt;</code> 精确覆盖一个</strong>父重载</li></ol>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Parent class with overloads
 e := class:
      func(C:c):c = C
@@ -1914,12 +1902,12 @@ entity := class(formatter):
 </section><section class="section" id="s25-restrictions-2">
   <article class="cn-read">
     <h2>限制 <small>Restrictions</small></h2>
-    <p>**不能用非函数重载函数：**</p>
+    <p><strong>不能用非函数重载函数：</strong></p>
 <p>名称不能同时是函数和非函数值：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot overload with variable
 # f:int = 0
 # f():void = {}</code></pre></figure>
-<p>**底层类型无法解决重载：**</p>
+<p><strong>底层类型无法解决重载：</strong></p>
 <p>底部类型（来自没有值的 <code>return</code>）不能用于重载决策：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot determine which overload
 F(X:int):int = X
@@ -1962,7 +1950,7 @@ f(1.0)
 
 # Call suspending with spawn
 spawn{f(1)}</code></pre></figure>
-<p>**无法在没有生成的情况下调用暂停重载：**</p>
+<p><strong>无法在没有生成的情况下调用暂停重载：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: suspends version needs spawn context
 f(x:int):void = {}
 f(x:float)&lt;suspends&gt;:void = {}
@@ -2005,88 +1993,88 @@ Transform(X:string):string = &quot;S:{X}&quot;
 Result1 := Transform(42)        # Calls int version
 Result2 := Transform(3.14)      # Calls float version
 Result3 := Transform(&quot;Hello&quot;)   # Calls string version</code></pre></figure>
-<p>然而，重载具有基于**类型独特性**的严格限制。仅当没有可能的值可以匹配这两种类型时，两种类型才被视为“不同”以用于重载目的。此限制可防止歧义并确保函数调用始终可以在编译时明确解析。</p>
+<p>然而，重载具有基于<strong>类型独特性</strong>的严格限制。仅当没有可能的值可以匹配这两种类型时，两种类型才被视为“不同”以用于重载目的。此限制可防止歧义并确保函数调用始终可以在编译时明确解析。</p>
 <p>Verse 使用精确的规则来确定两个参数类型是否足够不同以允许重载。了解这些规则对于设计清晰的 API 至关重要。</p>
-<p>以下类型对**不不同**，不能用于重载函数：</p>
-<p>**1.可选和逻辑。** <code>?t</code> 和 <code>logic</code> 并不不同，因为这两种类型都包含 <code>false</code> 作为值，当 <code>false</code> 作为参数传递时会产生重载歧义：</p>
+<p>以下类型对<strong>不不同</strong>，不能用于重载函数：</p>
+<p><strong>1.可选和逻辑。</strong> <code>?t</code> 和 <code>logic</code> 并不不同，因为这两种类型都包含 <code>false</code> 作为值，当 <code>false</code> 作为参数传递时会产生重载歧义：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
 F(:?any):void = {}
 F(:logic):void = {}</code></pre></figure>
 <p>请注意，<code>?t</code> 和 <code>logic</code> 不是等效类型 - <code>logic</code> 包含 <code>true</code> 和 <code>false</code>，而 <code>?t</code> 包含 <code>false</code> 和 <code>option{false}</code> 等选项值。但是，它们共享的 <code>false</code> 值意味着编译器无法区分它们以进行重载解析。</p>
-<p>**2.数组和映射。** 数组 <code>[]t</code> 和映射 <code>[k]t</code> 并不不同：</p>
+<p><strong>2.数组和映射。</strong> 数组 <code>[]t</code> 和映射 <code>[k]t</code> 并不不同：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
 F(:[]int):void = {}
 F(:[string]int):void = {}</code></pre></figure>
-<p>**3.函数和映射。** 函数类型和映射没有区别：</p>
+<p><strong>3.函数和映射。</strong> 函数类型和映射没有区别：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
 F(:[string]int):void = {}
 F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {}</code></pre></figure>
-<p>**4.函数和数组。** 函数类型和数组并不不同，因为重载函数可以同时匹配两者：</p>
+<p><strong>4.函数和数组。</strong> 函数类型和数组并不不同，因为重载函数可以同时匹配两者：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
 F(:[]int):void = {}
 F(G(:string)&lt;transacts&gt;&lt;decides&gt;:int):void = {}</code></pre></figure>
-<p>**5.接口和类。** 接口和任何类永远不会不同，即使该类没有实现该接口，因为该类的子类型可能：</p>
+<p><strong>5.接口和类。</strong> 接口和任何类永远不会不同，即使该类没有实现该接口，因为该类的子类型可能：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>i := interface{}
 t := class{}
 
 # ERROR: Not distinct (subtype of t might implement i)
 f(:i):void = {}
 f(:t):void = {}</code></pre></figure>
-<p>**6。具有不同效果的功能。** 功能并不能仅根据效果来区分。更改或删除效果不会造成明显的过载：</p>
+<p><strong>6。具有不同效果的功能。</strong> 功能并不能仅根据效果来区分。更改或删除效果不会造成明显的过载：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
 b := class{}
 
 # ERROR: Not distinct
 F(G(:a)&lt;transacts&gt;&lt;decides&gt;:b):void = {}
 F(G(:a):b):void = {}</code></pre></figure>
-<p>**7.具有不同签名的函数。** 由于函数重载，具有不同参数或返回类型的函数并不不同：</p>
+<p><strong>7.具有不同签名的函数。</strong> 由于函数重载，具有不同参数或返回类型的函数并不不同：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
 F(G(:b):b):void = {}
 F(G(:a):b):void = {}</code></pre></figure>
-<p>**8. void as Top Type。** <code>void</code> 被视为等同于顶级类型（接受 <code>any</code>），因此它与任何其他类型没有区别：</p>
+<p><strong>8. void as Top Type。</strong> <code>void</code> 被视为等同于顶级类型（接受 <code>any</code>），因此它与任何其他类型没有区别：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Not distinct
 F(:int):void = {}
 F(:void):void = {}</code></pre></figure>
-<p>**9.子类型关系。** 具有子类型关系的类并不不同：</p>
+<p><strong>9.子类型关系。</strong> 具有子类型关系的类并不不同：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
 b := class(a){}
 
 # ERROR: Not distinct
 F(:a):void = {}
 F(:b):void = {}</code></pre></figure>
-<p>**10.元组独特性规则。** 元组具有复杂的独特性规则：</p>
-<p>**空元组和空数组没有区别：**</p>
+<p><strong>10.元组独特性规则。</strong> 元组具有复杂的独特性规则：</p>
+<p><strong>空元组和空数组没有区别：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
 
 # ERROR: Not distinct
 F(:tuple(), :a):void = {}
 F(:[]a, :a):void = {}</code></pre></figure>
-<p>**仅当元组元素类型完全不同时，元组和数组才是不同的：**</p>
+<p><strong>仅当元组元素类型完全不同时，元组和数组才是不同的：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
 b := class(a){}
 
 # ERROR: Not distinct (b is subtype of a)
 F(:tuple(a, b), :a):void = {}
 F(:[]a, :a):void = {}</code></pre></figure>
-<p>**带有 <code>int</code> 键的元组和映射并不不同：**</p>
+<p><strong>带有 <code>int</code> 键的元组和映射并不不同：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
 
 # ERROR: Not distinct
 F(:tuple(a), :a):void = {}
 F(:[int]a, :a):void = {}</code></pre></figure>
-<p>**具有非 <code>int</code> 键的元组和映射是不同的：**</p>
+<p><strong>具有非 <code>int</code> 键的元组和映射是不同的：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
 
 # Valid: Distinct types
 F(:tuple(a), :a):void = {}
 F(:[logic]a, :a):void = {}  # OK</code></pre></figure>
-<p>**单例元组和 <code>int</code> 的可选元组没有区别：**</p>
+<p><strong>单例元组和 <code>int</code> 的可选元组没有区别：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>a := class{}
 
 # ERROR: Not distinct
 F(:tuple(int), :a):void = {}
 F(:?int, :a):void = {}</code></pre></figure>
-<p>**单例元组和非 <code>int</code> 的可选元组是不同的：**</p>
+<p><strong>单例元组和非 <code>int</code> 的可选元组是不同的：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Distinct types
 F(:tuple(a), :a):void = {}
 F(:?a, :a):void = {}  # OK</code></pre></figure>
@@ -2200,7 +2188,7 @@ F(:?a, :a):void = {}  # OK</code></pre></div>
 <p>没有 <code>&lt;reads&gt;</code> 效果的函数灵活性较差。考虑这个函数：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F2&lt;public&gt;(X:int)&lt;computes&gt;:int = X + 1</code></pre></figure>
 <p>由于它具有 <code>&lt;computes&gt;</code> 效果说明符，因此它不具有 <code>&lt;reads&gt;</code> 效果。在给定版本中，这保证了引用透明性：对于相同的参数，函数将始终返回相同的结果。 Across versions, this creates a stronger constraint: since the compiler cannot verify that a modified body preserves the same input-output mapping for all possible arguments, it conservatively forbids any body changes.因此，在未来版本中更改主体以返回 <code>X + 2</code> 将因向后不兼容而被拒绝。</p>
-<p>诸如 <code>F1</code> 和 <code>F2</code> 之类的函数有时被称为“不透明”，因为返回类型抽象了函数的主体。 Verse 的未来版本将支持*透明*功能：</p>
+<p>诸如 <code>F1</code> 和 <code>F2</code> 之类的函数有时被称为“不透明”，因为返回类型抽象了函数的主体。 Verse 的未来版本将支持<em>透明</em>功能：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>F2&lt;public&gt;(X:int) := X + 1</code></pre></figure>
 <p>透明函数不声明其返回类型，而是从函数体推断函数的类型。这意味着一个非常不同的承诺：永远保证函数体在模块代码的整个生命周期中保持完全相同。</p>
   </article>

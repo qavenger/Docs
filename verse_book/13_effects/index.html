@@ -49,7 +49,7 @@
     Print(CurrentGreeting)</code></pre></figure>
 <p><code>&lt;transacts&gt;</code> 效果立即告诉您该函数修改可变状态。您无需阅读实现即可知道调用 <code>GreetPlayer()</code> 会更改程序内存中的某些内容。效果是关于行为的承诺，由编译器检查和强制执行。</p>
 <p>效果通过函数调用自然地组合。如果函数 A 调用函数 B，并且 B 具有某些效果，则 A 必须至少声明那些相同的效果（我们将探讨一些例外情况）。这种传播确保效果无法通过中间函数隐藏或洗白——操作的真实本质在调用堆栈的每个级别始终可见。</p>
-<p>**为什么效果很重要**</p>
+<p><strong>为什么效果很重要</strong></p>
 <p>使效果显式有助于人类理解和编译器优化。对于开发人员来说，效果就像不会说谎的文档。当您调试值意外更改的原因时，您可以跟踪调用链，仅查看具有 <code>&lt;writes&gt;</code> 的函数。当您尝试了解函数可能失败的原因时，您可以查找 <code>&lt;decides&gt;</code>。这不是猜测——它是由类型系统保证的。</p>
 <p>对于编译器来说，显式效果可以实现强大的优化和安全保证。标记为 <code>&lt;computes&gt;</code> 的纯函数可以被记忆，它们的结果可以被缓存，因为它们总是为相同的输入返回相同的输出。没有 <code>&lt;writes&gt;</code> 的函数可以安全地并行执行，无需加锁。没有 <code>&lt;decides&gt;</code> 的函数可以在没有失败处理的情况下调用。</p>
 <p>效果系统还强制执行架构决策。想要确保您的数学库保持纯净吗？将其函数标记为<code>&lt;computes&gt;</code>。构建一个必须在玩家机器上运行的预测客户端系统？使用 <code>&lt;predicts&gt;</code> 确保不会潜入仅服务器操作。这些不仅仅是约定 - 它们是编译器强制的保证。</p>
@@ -74,10 +74,10 @@
     <h2>效果系列和说明符 <small>Effect Families and Specifiers</small></h2>
     <p>Verse 将效果组织成系列，每个系列跟踪计算的特定方面。每个系列都包含基本效果，效果说明符声明函数可以执行哪些效果。</p>
 <p>这六个效应系列是：</p>
-<ul><li>**基数**：函数是否以及如何返回</li><li>**堆**：访问可变内存</li><li>**暂停**：函数是否可以暂停执行</li><li>**发散**：函数是否可以永远运行</li><li>**预测**：函数运行的位置</li><li>**内部**：保留供内部使用</li></ul>
+<ul><li><strong>基数</strong>：函数是否以及如何返回</li><li><strong>堆</strong>：访问可变内存</li><li><strong>暂停</strong>：函数是否可以暂停执行</li><li><strong>发散</strong>：函数是否可以永远运行</li><li><strong>预测</strong>：函数运行的位置</li><li><strong>内部</strong>：保留供内部使用</li></ul>
 <p>有些效果没有说明符，而有些说明符则暗示多种效果。例如，<code>&lt;transacts&gt;</code> 意味着 <code>reads</code>、<code>writes</code> 和 <code>allocates</code>，属于 Heap 系列。</p>
-<p>效果说明符可以进一步分为*独占*说明符（<code>&lt;converges&gt;</code>、<code>&lt;computes&gt;</code>、<code>&lt;transacts&gt;</code>）和*附加*说明符（<code>&lt;suspends&gt;</code>、<code>&lt;decides&gt;</code>、<code>&lt;reads&gt;</code>、<code>&lt;writes&gt;</code>、<code>&lt;allocates&gt;</code>）。一个函数最多可以有一个独占说明符，但可以组合多个附加说明符。例如，<code>&lt;computes&gt;&lt;decides&gt;</code> 是有效的（纯计算可能会失败），但 <code>&lt;computes&gt;&lt;transacts&gt;</code> 是错误的（不能有两个互斥的效果）。</p>
-<p>|基本效果|效果说明符|效果系列|说明符隐含的效果|笔记| | -----| ----------- | -------- | -----| ---- | | **成功** | |基数 | | *无说明符；必须成功* | | **失败** | |基数 | | *无说明符；可能会失败* | | | ZXQ代码0ZXQ |基数 | ZXQ代码1ZXQ | *不能与<code>&lt;suspends&gt;</code>结合使用* | | **阅读** | <code>&lt;reads&gt;</code> |堆| <code>{reads}</code> | *允许读取可变状态* | | **写** | ZXQ代码5ZXQ |堆| ZXQ代码6ZXQ | *允许写入可变状态* | | **分配**| ZXQ代码7ZXQ |堆| <code>{allocates}</code> | *允许分配可变内存* | | | <code>&lt;transacts&gt;</code> |堆| ZXQ代码10ZXQ | *独家的;默认* | | | <code>&lt;computes&gt;</code> |堆| <code>{}</code> | *独家的;纯计算* | | **暂停** | <code>&lt;suspends&gt;</code> |暂停| <code>{suspends}</code> | *不能与<code>&lt;decides&gt;</code>结合使用* | | **分歧** | |分歧| <code>{diverges}</code> | *无说明符；可能会永远运行* | | | <code>&lt;converges&gt;</code> |分歧| <code>{}</code> | *独家的;本机函数、抽象方法、类型签名* | | **规定** | |预测| <code>{dictates}</code> | *无说明符；服务器权限* | | | <code>&lt;predicts&gt;</code> |预测| <code>{}</code> | *允许客户预测* | | **无回滚** | |内部| <code>{no_rollback}</code> | *将被弃用；禁止事务* |</p>
+<p>效果说明符可以进一步分为<em>独占</em>说明符（<code>&lt;converges&gt;</code>、<code>&lt;computes&gt;</code>、<code>&lt;transacts&gt;</code>）和<em>附加</em>说明符（<code>&lt;suspends&gt;</code>、<code>&lt;decides&gt;</code>、<code>&lt;reads&gt;</code>、<code>&lt;writes&gt;</code>、<code>&lt;allocates&gt;</code>）。一个函数最多可以有一个独占说明符，但可以组合多个附加说明符。例如，<code>&lt;computes&gt;&lt;decides&gt;</code> 是有效的（纯计算可能会失败），但 <code>&lt;computes&gt;&lt;transacts&gt;</code> 是错误的（不能有两个互斥的效果）。</p>
+<table><thead><tr><th>基本效应</th><th>效果说明符</th><th>效应系列</th><th>说明符隐含的效果</th><th>笔记</th></tr></thead><tbody><tr><td><strong>成功</strong></td><td></td><td>基数</td><td></td><td><em>无说明符；必须成功</em></td></tr><tr><td><strong>失败</strong></td><td></td><td>基数</td><td></td><td><em>无说明符；可能会失败</em></td></tr><tr><td></td><td><code>&lt;decides&gt;</code></td><td>基数</td><td><code>{succeeds, fails}</code></td><td><em>不能与<code>&lt;suspends&gt;</code>结合使用</em></td></tr><tr><td><strong>阅读</strong></td><td><code>&lt;reads&gt;</code></td><td>堆</td><td><code>{reads}</code></td><td><em>允许读取可变状态</em></td></tr><tr><td><strong>写</strong></td><td><code>&lt;writes&gt;</code></td><td>堆</td><td><code>{writes}</code></td><td><em>允许写入可变状态</em></td></tr><tr><td><strong>分配</strong></td><td><code>&lt;allocates&gt;</code></td><td>堆</td><td><code>{allocates}</code></td><td><em>允许分配可变内存</em></td></tr><tr><td></td><td><code>&lt;transacts&gt;</code></td><td>堆</td><td><code>{reads, writes, allocates}</code></td><td><em>独家的;默认</em></td></tr><tr><td></td><td><code>&lt;computes&gt;</code></td><td>堆</td><td><code>{}</code></td><td><em>独家的;纯计算</em></td></tr><tr><td><strong>暂停</strong></td><td><code>&lt;suspends&gt;</code></td><td>暂停</td><td><code>{suspends}</code></td><td><em>不能与<code>&lt;decides&gt;</code>结合使用</em></td></tr><tr><td><strong>分歧</strong></td><td></td><td>分歧</td><td><code>{diverges}</code></td><td><em>无说明符；可能会永远运行</em></td></tr><tr><td></td><td><code>&lt;converges&gt;</code></td><td>分歧</td><td><code>{}</code></td><td><em>独家的;本机函数、抽象方法、类型签名</em></td></tr><tr><td><strong>规定</strong></td><td></td><td>预言</td><td><code>{dictates}</code></td><td><em>无说明符；服务器权限</em></td></tr><tr><td></td><td><code>&lt;predicts&gt;</code></td><td>预言</td><td><code>{}</code></td><td><em>允许客户预测</em></td></tr><tr><td><strong>无回滚</strong></td><td></td><td>内部的</td><td><code>{no_rollback}</code></td><td><em>将被弃用；禁止事务</em></td></tr></tbody></table>
 <p>以下限制有效：</p>
 <ul><li><code>&lt;suspends&gt;</code> 和 <code>&lt;decides&gt;</code> 不能组合在同一函数上，</li><li><code>&lt;converges&gt;</code> 仅允许用于 <code>&lt;native&gt;</code> 函数、抽象方法和类型签名，</li><li>重复的说明符（例如，<code>&lt;computes&gt;&lt;computes&gt;</code>）是错误。</li></ul>
   </article>
@@ -89,7 +89,7 @@
 <ul><li><strong>Cardinality</strong>: Whether and how a function returns</li><li><strong>Heap</strong>: Access to mutable memory</li><li><strong>Suspension</strong>: Whether a function may suspend execution</li><li><strong>Divergence</strong>: Whether a function may run forever</li><li><strong>Prediction</strong>: Where a function runs</li><li><strong>Internal</strong>: Reserved for internal use</li></ul>
 <p>Some effects have no specifier, while some specifiers imply multiple effects. For instance, <code>&lt;transacts&gt;</code> implies <code>reads</code>, <code>writes</code> and <code>allocates</code>, and belongs to the Heap family.</p>
 <p>Effect specifiers can be further divided into <em>exclusive</em> specifiers (<code>&lt;converges&gt;</code>, <code>&lt;computes&gt;</code>, <code>&lt;transacts&gt;</code>) and <em>additive</em> specifiers (<code>&lt;suspends&gt;</code>, <code>&lt;decides&gt;</code>, <code>&lt;reads&gt;</code>, <code>&lt;writes&gt;</code>, <code>&lt;allocates&gt;</code>). A function may have at most one exclusive specifier but can combine multiple additive ones. For example, <code>&lt;computes&gt;&lt;decides&gt;</code> is valid (pure computation that may fail), but <code>&lt;computes&gt;&lt;transacts&gt;</code> is an error (cannot have two exclusive effects).</p>
-<p>|Fundamental Effect|Effect Specifier|Effect Family|Effects implied by Specifier | Notes | | -----        | -----------    | -------     | ----- | ---- | | <strong>succeeds</strong> |                | Cardinality |                  | <em>No specifier; Must Succeed</em> | | <strong>fails</strong>    |                | Cardinality |                  | <em>No specifier; Can Fail</em> | |              | <code>&lt;decides&gt;</code>    | Cardinality | <code>{succeeds, fails}</code> | <em>Cannot combine with <code>&lt;suspends&gt;</code></em> | | <strong>reads</strong>    | <code>&lt;reads&gt;</code>      | Heap        | <code>{reads}</code>        | <em>Allows reading mutable states</em> | | <strong>writes</strong>   | <code>&lt;writes&gt;</code>     | Heap        | <code>{writes}</code>       | <em>Allows writing mutable states</em> | | <strong>allocates</strong>| <code>&lt;allocates&gt;</code>  | Heap        | <code>{allocates}</code>    | <em>Allows allocation of mutable memory</em> | |              | <code>&lt;transacts&gt;</code>  | Heap        | <code>{reads, writes, allocates}</code> | <em>Exclusive; default</em> | |              | <code>&lt;computes&gt;</code>   | Heap        | <code>{}</code>             | <em>Exclusive; Pure computation</em> | | <strong>suspends</strong> | <code>&lt;suspends&gt;</code>   | Suspension  | <code>{suspends}</code>     | <em>Cannot combine with <code>&lt;decides&gt;</code></em> | | <strong>diverges</strong> |                | Divergence  | <code>{diverges}</code>     | <em>No specifier; May run forever</em> | |              | <code>&lt;converges&gt;</code>  | Divergence  | <code>{}</code>             | <em>Exclusive; Native functions, abstract methods, type signatures</em> | | <strong>dictates</strong> |                | Prediction  | <code>{dictates}</code>     | <em>No specifier; Server Authority</em> | |              | <code>&lt;predicts&gt;</code>   | Prediction  | <code>{}</code>             | <em>Allows Client Prediction</em> | | <strong>no_rollback</strong> |             | Internal    | <code>{no_rollback}</code>  | <em>To be deprecated; Transactions disallowed</em> |</p>
+<table><thead><tr><th>Fundamental Effect</th><th>Effect Specifier</th><th>Effect Family</th><th>Effects implied by Specifier</th><th>Notes</th></tr></thead><tbody><tr><td><strong>succeeds</strong></td><td></td><td>Cardinality</td><td></td><td><em>No specifier; Must Succeed</em></td></tr><tr><td><strong>fails</strong></td><td></td><td>Cardinality</td><td></td><td><em>No specifier; Can Fail</em></td></tr><tr><td></td><td><code>&lt;decides&gt;</code></td><td>Cardinality</td><td><code>{succeeds, fails}</code></td><td><em>Cannot combine with <code>&lt;suspends&gt;</code></em></td></tr><tr><td><strong>reads</strong></td><td><code>&lt;reads&gt;</code></td><td>Heap</td><td><code>{reads}</code></td><td><em>Allows reading mutable states</em></td></tr><tr><td><strong>writes</strong></td><td><code>&lt;writes&gt;</code></td><td>Heap</td><td><code>{writes}</code></td><td><em>Allows writing mutable states</em></td></tr><tr><td><strong>allocates</strong></td><td><code>&lt;allocates&gt;</code></td><td>Heap</td><td><code>{allocates}</code></td><td><em>Allows allocation of mutable memory</em></td></tr><tr><td></td><td><code>&lt;transacts&gt;</code></td><td>Heap</td><td><code>{reads, writes, allocates}</code></td><td><em>Exclusive; default</em></td></tr><tr><td></td><td><code>&lt;computes&gt;</code></td><td>Heap</td><td><code>{}</code></td><td><em>Exclusive; Pure computation</em></td></tr><tr><td><strong>suspends</strong></td><td><code>&lt;suspends&gt;</code></td><td>Suspension</td><td><code>{suspends}</code></td><td><em>Cannot combine with <code>&lt;decides&gt;</code></em></td></tr><tr><td><strong>diverges</strong></td><td></td><td>Divergence</td><td><code>{diverges}</code></td><td><em>No specifier; May run forever</em></td></tr><tr><td></td><td><code>&lt;converges&gt;</code></td><td>Divergence</td><td><code>{}</code></td><td><em>Exclusive; Native functions, abstract methods, type signatures</em></td></tr><tr><td><strong>dictates</strong></td><td></td><td>Prediction</td><td><code>{dictates}</code></td><td><em>No specifier; Server Authority</em></td></tr><tr><td></td><td><code>&lt;predicts&gt;</code></td><td>Prediction</td><td><code>{}</code></td><td><em>Allows Client Prediction</em></td></tr><tr><td><strong>no_rollback</strong></td><td></td><td>Internal</td><td><code>{no_rollback}</code></td><td><em>To be deprecated; Transactions disallowed</em></td></tr></tbody></table>
 <p>The following restrictions are in effect:</p>
 <ul><li><code>&lt;suspends&gt;</code> and <code>&lt;decides&gt;</code> cannot be combined on the same function,</li><li><code>&lt;converges&gt;</code> is only allowed on <code>&lt;native&gt;</code> functions, abstract methods, and type signatures,</li><li>duplicate specifiers (e.g., <code>&lt;computes&gt;&lt;computes&gt;</code>) are errors.</li></ul></div>
   </details>
@@ -98,13 +98,13 @@
     <h2>效果如何构成 <small>How Effects Compose</small></h2>
     <p>将效果说明符视为位向量中的设置位：每个基本效果一位。在没有任何注解的情况下，<code>GameUpdate</code>这样的函数具有以下效果：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GameUpdate():void = ...  # No explicit effects specified</code></pre></figure>
-<p>|规定|暂停|读 |写道|分配 |成功 |失败| | :---: | :---: | :---: | :---: | :---: | :---: | :---: | | ✔️ | ❌ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |</p>
+<table><thead><tr><th>规定</th><th>暂停</th><th>读</th><th>写</th><th>分配</th><th>成功</th><th>失败</th></tr></thead><tbody><tr><td>✔️</td><td>❌</td><td>✔️</td><td>✔️</td><td>✔️</td><td>✔️</td><td>❌</td></tr></tbody></table>
 <p>这意味着它具有效果 <code>dictates</code>、<code>reads</code>、<code>writes</code>、<code>allocates</code> 和 <code>succeeds</code>。这几乎就像编写 <code>&lt;dictates&gt;&lt;transacts&gt;</code> 一样，只是我们缺少一种方法来表明该函数不会失败。</p>
 <p>顺便说一句：<code>fails</code> 和 <code>succeeds</code> 缺少说明符可以用以下事实来解释：像 <code>&lt;fails&gt;</code> 这样的说明符意味着函数总是失败，从不返回值，并且不能产生可观察到的副作用（它们将因失败而被撤销）。 <code>succeeds</code> 效果是隐式的。</p>
 <p>对函数进行注释仅影响该说明符族中的位。例如，带有 <code>&lt;reads&gt;</code> 和 <code>&lt;predicts&gt;</code> 说明符的函数 <code>CheckPlayerStatus</code>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CheckPlayerStatus()&lt;reads&gt;&lt;predicts&gt;:string = ...</code></pre></figure>
 <p>有以下效果：</p>
-<p>|规定|暂停|读 |写道|分配 |成功 |失败| | :---: | :---: | :---: | :---: | :---: | :---: | :---: | | ❌ | ❌ | ✔️ | ❌ | ❌ | ✔️ | ❌ |</p>
+<table><thead><tr><th>规定</th><th>暂停</th><th>读</th><th>写</th><th>分配</th><th>成功</th><th>失败</th></tr></thead><tbody><tr><td>❌</td><td>❌</td><td>✔️</td><td>❌</td><td>❌</td><td>✔️</td><td>❌</td></tr></tbody></table>
 <p>指定<code>&lt;reads&gt;</code>将清除<code>writes</code>和<code>allocates</code>位，指定<code>&lt;predicts&gt;</code>将清除<code>dictates</code>位，其他一切不变。</p>
   </article>
   <details class="original">
@@ -112,13 +112,13 @@
     <div class="md"><h2>How Effects Compose</h2>
 <p>Think of effect specifiers as setting bits in a bit vector: one bit per fundamental effect. Without any annotation, a function such as <code>GameUpdate</code> has the following effects:</p>
 <pre><code>GameUpdate():void = ...  # No explicit effects specified</code></pre>
-<p>| dictates | suspends | reads | writes | allocates | succeeds | fails | | :---:    | :---:    | :---: | :---:  | :---:     | :---:    | :---: | | ✔️       | ❌      | ✔️    | ✔️    | ✔️        | ✔️      | ❌    |</p>
+<table><thead><tr><th>dictates</th><th>suspends</th><th>reads</th><th>writes</th><th>allocates</th><th>succeeds</th><th>fails</th></tr></thead><tbody><tr><td>✔️</td><td>❌</td><td>✔️</td><td>✔️</td><td>✔️</td><td>✔️</td><td>❌</td></tr></tbody></table>
 <p>This means it has effects <code>dictates</code>, <code>reads</code>, <code>writes</code>, <code>allocates</code> and <code>succeeds</code>. It&#x27;s almost like writing <code>&lt;dictates&gt;&lt;transacts&gt;</code> except we lack a way to say the function cannot fail.</p>
 <p>As an aside: the absence of specifiers for <code>fails</code> and <code>succeeds</code> can be explained by the fact that a specifier like <code>&lt;fails&gt;</code> means the function always fails, never returns a value, and cannot have observable side effects (they would be undone by failure).  The <code>succeeds</code> effect is implicit.</p>
 <p>Annotating a function only affects the bits in that specifier&#x27;s family. For example, function <code>CheckPlayerStatus</code> with the <code>&lt;reads&gt;</code> and <code>&lt;predicts&gt;</code> specifier:</p>
 <pre><code>CheckPlayerStatus()&lt;reads&gt;&lt;predicts&gt;:string = ...</code></pre>
 <p>has the following effects:</p>
-<p>| dictates | suspends | reads | writes | allocates | succeeds | fails | | :---: | :---: | :---: | :---: | :---: | :---: | :---: | | ❌ | ❌ | ✔️ | ❌ | ❌ | ✔️ | ❌ |</p>
+<table><thead><tr><th>dictates</th><th>suspends</th><th>reads</th><th>writes</th><th>allocates</th><th>succeeds</th><th>fails</th></tr></thead><tbody><tr><td>❌</td><td>❌</td><td>✔️</td><td>❌</td><td>❌</td><td>✔️</td><td>❌</td></tr></tbody></table>
 <p>Specifying <code>&lt;reads&gt;</code> clears the <code>writes</code> and <code>allocates</code> bits, and <code>&lt;predicts&gt;</code> clears the <code>dictates</code> bit, everything else is unchanged.</p></div>
   </details>
 </section><section class="section" id="s4-effect-families-in-detail">
@@ -237,7 +237,7 @@ CreateEntity(Pos:vector3)&lt;allocates&gt;:game_entity =
     Sleep(1.0)
     ShowRewardsScreen()</code></pre></figure>
 <p><code>suspends</code> 效应具有病毒性——任何调用挂起函数的函数本身都必须标记为 <code>&lt;suspends&gt;</code>。这可确保您始终知道哪些功能可能需要时间才能完成。</p>
-<p>虽然 <code>&lt;suspends&gt;</code> 和 <code>&lt;decides&gt;</code> 不能在同一函数上组合，但它们对于如何跨函数调用进行交互有特定的规则。 <code>&lt;suspends&gt;</code> 函数可以调用 <code>&lt;decides&gt;</code> 函数，但*仅在失败上下文中*使用方括号 <code>[]</code> 语法 - 这确保故障在本地处理，并且不会作为故障影响传播：</p>
+<p>虽然 <code>&lt;suspends&gt;</code> 和 <code>&lt;decides&gt;</code> 不能在同一函数上组合，但它们对于如何跨函数调用进行交互有特定的规则。 <code>&lt;suspends&gt;</code> 函数可以调用 <code>&lt;decides&gt;</code> 函数，但<em>仅在失败上下文中</em>使用方括号 <code>[]</code> 语法 - 这确保故障在本地处理，并且不会作为故障影响传播：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInput(Value:int)&lt;decides&gt;&lt;computes&gt;:void =
     Value &gt; 0
     Value &lt; 100
@@ -251,7 +251,7 @@ ProcessAsync(Value:int)&lt;suspends&gt;:void =
 # Invalid: calling decides function outside failure context
 # ProcessAsync(Value:int)&lt;suspends&gt;:void =
 #     ValidateInput(Value)  # ERROR: must use [] syntax</code></pre></figure>
-<p><code>&lt;suspends&gt;</code> 函数可以调用另一个 <code>&lt;suspends&gt;</code> 函数，但*不得使用失败处理语法*，如 <code>?</code>：</p>
+<p><code>&lt;suspends&gt;</code> 函数可以调用另一个 <code>&lt;suspends&gt;</code> 函数，但<em>不得使用失败处理语法</em>，如 <code>?</code>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AsyncOp()&lt;suspends&gt;:?int = false
 
 CallAsync()&lt;suspends&gt;:void =
@@ -301,8 +301,9 @@ CallAsync()&lt;suspends&gt;:void =
 </section><section class="section" id="s8-internal-effects">
   <article class="cn-read">
     <h2>内部效应 <small>Internal effects</small></h2>
-    <p>**[预发布]**：<code>&lt;no_rollback&gt;</code> 效果已弃用。</p>
-<p>!!!注意“未发布的功能” <code>&lt;predicts&gt;</code> 效果尚未发布。</p>
+    <p><strong>[预发布]</strong>：<code>&lt;no_rollback&gt;</code> 效果已弃用。</p>
+<p>!!!注意“未发布的功能”</p>
+<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>The `&lt;predicts&gt;` effect is not yet released.</code></pre></figure>
 <p>预测系列确定代码在客户端-服务器架构中运行的位置。默认情况下，函数具有 <code>dictates</code> 效果，这意味着它们在服务器上权威运行。 <code>&lt;predicts&gt;</code> 说明符允许函数在客户端上预测性地运行以提高响应能力，服务器稍后验证并可能纠正结果。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>HandleJumpInput()&lt;predicts&gt;:void =
     # Runs immediately on the client for responsiveness
@@ -322,7 +323,8 @@ CallAsync()&lt;suspends&gt;:void =
     <div class="md"><h3>Internal effects</h3>
 <p><strong>[Pre-release]</strong>: The <code>&lt;no_rollback&gt;</code> effect is deprecated.</p>
 <h4>Prediction effects</h4>
-<p>!!! note &quot;Unreleased Feature&quot; The <code>&lt;predicts&gt;</code> effect is not yet released.</p>
+<p>!!! note &quot;Unreleased Feature&quot;</p>
+<pre><code>The `&lt;predicts&gt;` effect is not yet released.</code></pre>
 <p>The prediction family determines where code runs in a client-server architecture. By default, functions have the <code>dictates</code> effect, meaning they run authoritatively on the server. The <code>&lt;predicts&gt;</code> specifier allows functions to run predictively on clients for responsiveness, with the server later validating and potentially correcting the results.</p>
 <pre><code>HandleJumpInput()&lt;predicts&gt;:void =
     # Runs immediately on the client for responsiveness
@@ -408,7 +410,7 @@ ProcessResource()&lt;suspends&gt;:void =
   <article class="cn-read">
     <h2>子类型和类型兼容性 <small>Subtyping and Type Compatibility</small></h2>
     <p>效果注释在函数类型之间创建子类型关系。在将函数存储在变量中、将它们作为参数传递或在不同的实现之间进行选择时，了解效果如何与类型兼容性交互至关重要。</p>
-<p>当需要具有**更多效果**的函数时，可以使用**更少效果**的函数。这就是效果子类型——执行较少操作的函数与允许执行更多操作的上下文兼容：</p>
+<p>当需要具有<strong>更多效果</strong>的函数时，可以使用<strong>更少效果</strong>的函数。这就是效果子类型——执行较少操作的函数与允许执行更多操作的上下文兼容：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Pure function with only computes
 PureAdd(X:int)&lt;computes&gt;:int = X + 1
 
@@ -431,7 +433,7 @@ F3:type{_(:int)&lt;reads&gt;:int} = Compute
 # All valid - Compute does less than what&#x27;s allowed</code></pre></figure>
 <p>在决定子类型时，效果具有以下影响：</p>
 <ul><li><code>&lt;computes&gt;</code> 是 <code>&lt;reads&gt;</code>、<code>&lt;transacts&gt;</code> 以及与 <code>&lt;decides&gt;</code> 的任意组合的子类型</li><li><code>&lt;reads&gt;</code> 是 <code>&lt;transacts&gt;</code> 的子类型</li><li>不带 <code>&lt;decides&gt;</code> 的函数是带 <code>&lt;decides&gt;</code> 的函数的子类型</li><li>不带 <code>&lt;suspends&gt;</code> 的函数是带 <code>&lt;suspends&gt;</code> 的函数的子类型（兼容时）</li></ul>
-<p>虽然您可以通过子类型添加效果，但您**无法删除**函数实际具有的效果：</p>
+<p>虽然您可以通过子类型添加效果，但您<strong>无法删除</strong>函数实际具有的效果：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Validate(X:int)&lt;computes&gt;&lt;decides&gt;:int =
     X &gt; 0
     X
@@ -451,7 +453,7 @@ Increment(C:counter)&lt;transacts&gt;:int =
 # F:type{_(:counter)&lt;computes&gt;:int} = Increment
 # The function writes state, type doesn&#x27;t permit it</code></pre></figure>
 <p>此限制确保类型安全 - 类型签名是关于函数可能执行的效果的承诺，并且实际函数必须遵守该承诺。</p>
-<p>当您在具有不同效果的函数之间进行条件选择时，生成的表达式具有所有可能效果的并集。这是*效果连接*——编译器保守地假设结果可能会执行任何分支可以执行的任何效果：</p>
+<p>当您在具有不同效果的函数之间进行条件选择时，生成的表达式具有所有可能效果的并集。这是<em>效果连接</em>——编译器保守地假设结果可能会执行任何分支可以执行的任何效果：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Functions with different effects
 PureFunction(X:int)&lt;computes&gt;:int = X + 1
 FailableFunction(X:int)&lt;computes&gt;&lt;decides&gt;:int =
@@ -535,7 +537,7 @@ ComposeFlexible(
 ComposeFlexible(PureFunction, PureFunction)
 ComposeFlexible(PureFunction, FailableFunction)</code></pre></figure>
 <p>下表总结了效果和类型的相互作用：</p>
-<p>|场景 |有效的？ |说明| |----------|--------|-------------| |将 <code>&lt;computes&gt;</code> 分配给 <code>&lt;computes&gt;&lt;decides&gt;</code> 类型 | ✓ |通过子类型添加效果 | |将 <code>&lt;computes&gt;</code> 分配给 <code>&lt;transacts&gt;</code> 类型 | ✓ |纯粹是事务的子类型 | |将 <code>&lt;reads&gt;</code> 分配给 <code>&lt;transacts&gt;</code> 类型 | ✓ |读取是事务性的子类型 | |将 <code>&lt;computes&gt;&lt;decides&gt;</code> 分配给 <code>&lt;computes&gt;</code> 类型 | ✗ |无法删除 <code>&lt;decides&gt;</code> | |将 <code>&lt;transacts&gt;</code> 赋值给 <code>&lt;computes&gt;</code> 类型 | ✗ |无法消除堆效应 | |在 <code>&lt;computes&gt;</code> 和 <code>&lt;decides&gt;</code> 之间选择 |结果：<code>&lt;computes&gt;&lt;decides&gt;</code> |效果加盟| |在 <code>&lt;reads&gt;</code> 和 <code>&lt;transacts&gt;</code> 之间选择 |结果：<code>&lt;transacts&gt;</code> |效果加盟|</p>
+<table><thead><tr><th>设想</th><th>有效的？</th><th>解释</th></tr></thead><tbody><tr><td>将 <code>&lt;computes&gt;</code> 分配给 <code>&lt;computes&gt;&lt;decides&gt;</code> 类型</td><td>✓</td><td>通过子类型添加效果</td></tr><tr><td>将 <code>&lt;computes&gt;</code> 分配给 <code>&lt;transacts&gt;</code> 类型</td><td>✓</td><td>纯粹是事务的子类型</td></tr><tr><td>将 <code>&lt;reads&gt;</code> 分配给 <code>&lt;transacts&gt;</code> 类型</td><td>✓</td><td>读取是事务性的子类型</td></tr><tr><td>将 <code>&lt;computes&gt;&lt;decides&gt;</code> 分配给 <code>&lt;computes&gt;</code> 类型</td><td>✗</td><td>无法删除 <code>&lt;decides&gt;</code></td></tr><tr><td>将 <code>&lt;transacts&gt;</code> 分配给 <code>&lt;computes&gt;</code> 类型</td><td>✗</td><td>无法消除堆效应</td></tr><tr><td>在 <code>&lt;computes&gt;</code> 和 <code>&lt;decides&gt;</code> 之间选择</td><td>结果：<code>&lt;computes&gt;&lt;decides&gt;</code></td><td>效果连接</td></tr><tr><td>在 <code>&lt;reads&gt;</code> 和 <code>&lt;transacts&gt;</code> 之间选择</td><td>结果：<code>&lt;transacts&gt;</code></td><td>效果连接</td></tr></tbody></table>
 <p>这些规则确保效果注释仍然是值得信赖的契约——函数可以做的比声明的少（子类型），但绝不会多，并且条件选择保守地考虑了所有可能性（连接）。</p>
   </article>
   <details class="original">
@@ -669,7 +671,7 @@ ComposeFlexible(
 ComposeFlexible(PureFunction, PureFunction)
 ComposeFlexible(PureFunction, FailableFunction)</code></pre>
 <p>The following table summarize the interaction of effects and types:</p>
-<p>| Scenario | Valid? | Explanation | |----------|--------|-------------| | Assign <code>&lt;computes&gt;</code> to <code>&lt;computes&gt;&lt;decides&gt;</code> type | ✓ | Adding effects via subtyping | | Assign <code>&lt;computes&gt;</code> to <code>&lt;transacts&gt;</code> type | ✓ | Pure is subtype of transactional | | Assign <code>&lt;reads&gt;</code> to <code>&lt;transacts&gt;</code> type | ✓  | Reads is subtype of transactional | | Assign <code>&lt;computes&gt;&lt;decides&gt;</code> to <code>&lt;computes&gt;</code> type | ✗  | Cannot remove <code>&lt;decides&gt;</code> | | Assign <code>&lt;transacts&gt;</code> to <code>&lt;computes&gt;</code> type | ✗  | Cannot remove heap effects | | Select between <code>&lt;computes&gt;</code> and <code>&lt;decides&gt;</code> | Result: <code>&lt;computes&gt;&lt;decides&gt;</code> | Effect joining | | Select between <code>&lt;reads&gt;</code> and <code>&lt;transacts&gt;</code> | Result: <code>&lt;transacts&gt;</code> | Effect joining |</p>
+<table><thead><tr><th>Scenario</th><th>Valid?</th><th>Explanation</th></tr></thead><tbody><tr><td>Assign <code>&lt;computes&gt;</code> to <code>&lt;computes&gt;&lt;decides&gt;</code> type</td><td>✓</td><td>Adding effects via subtyping</td></tr><tr><td>Assign <code>&lt;computes&gt;</code> to <code>&lt;transacts&gt;</code> type</td><td>✓</td><td>Pure is subtype of transactional</td></tr><tr><td>Assign <code>&lt;reads&gt;</code> to <code>&lt;transacts&gt;</code> type</td><td>✓</td><td>Reads is subtype of transactional</td></tr><tr><td>Assign <code>&lt;computes&gt;&lt;decides&gt;</code> to <code>&lt;computes&gt;</code> type</td><td>✗</td><td>Cannot remove <code>&lt;decides&gt;</code></td></tr><tr><td>Assign <code>&lt;transacts&gt;</code> to <code>&lt;computes&gt;</code> type</td><td>✗</td><td>Cannot remove heap effects</td></tr><tr><td>Select between <code>&lt;computes&gt;</code> and <code>&lt;decides&gt;</code></td><td>Result: <code>&lt;computes&gt;&lt;decides&gt;</code></td><td>Effect joining</td></tr><tr><td>Select between <code>&lt;reads&gt;</code> and <code>&lt;transacts&gt;</code></td><td>Result: <code>&lt;transacts&gt;</code></td><td>Effect joining</td></tr></tbody></table>
 <p>These rules ensure that effect annotations remain trustworthy contracts—functions can do less than declared (subtyping), but never more, and conditional selection conservatively accounts for all possibilities (joining).</p></div>
   </details>
 </section><section class="section" id="s11-effects-on-data-types">
@@ -686,7 +688,7 @@ vector3 := struct&lt;computes&gt;:
 monster := class&lt;unique&gt;&lt;allocates&gt;:
     Name:string
     var Health:float = 100.0</code></pre></figure>
-<p>类、接口和结构**不能**用 <code>&lt;suspends&gt;</code> 或 <code>&lt;decides&gt;</code> 标记：</p>
+<p>类、接口和结构<strong>不能</strong>用 <code>&lt;suspends&gt;</code> 或 <code>&lt;decides&gt;</code> 标记：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid effect specifiers for classes/interfaces/structs:
 valid_class := class&lt;computes&gt;{}
 valid_interface := interface&lt;computes&gt;{}
@@ -696,7 +698,7 @@ valid_struct := struct&lt;transacts&gt;{}
 # invalid_class := class&lt;suspends&gt;{}      # ERROR
 # invalid_interface := interface&lt;decides&gt;{}  # ERROR
 # invalid_struct := struct&lt;decides&gt;{}     # ERROR</code></pre></figure>
-<p>此限制适用于类/结构**声明**本身 - 原型构造函数 <code>my_class{...}</code> 不能失败或挂起。但是，**构造函数**可以使用 <code>&lt;decides&gt;</code>：</p>
+<p>此限制适用于类/结构<strong>声明</strong>本身 - 原型构造函数 <code>my_class{...}</code> 不能失败或挂起。但是，<strong>构造函数</strong>可以使用 <code>&lt;decides&gt;</code>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># The class declaration cannot be &lt;decides&gt;
 my_class := class:
     Value:int
@@ -864,7 +866,7 @@ GetDefaultWeapon&lt;public&gt;()&lt;reads&gt;:weapon =
   <article class="cn-read">
     <h2>向后兼容性 <small>Backwards Compatibility</small></h2>
     <p>函数的效果是向后兼容性检查的一部分。当更新属于已发布 API 一部分的函数时，新版本可以具有“更少的位”，但不能更多。因此，以前版本中标记为 <code>&lt;reads&gt;</code> 的函数无法更改为 <code>&lt;transacts&gt;</code>，但可以细化为 <code>&lt;computes&gt;</code>。</p>
-<p>效果将副作用从隐藏的陷阱转变为可见的、可验证的合同。通过使隐式显式化，Verse 可以帮助您编写更加可预测、可维护且正确的代码。效果系统不是一种负担——它是一个工具，可以帮助您清楚地表达您的意图，并让编译器验证您的实现是否符合该意图。</p>
+<p>效果将副作用从隐藏的陷阱转变为可见的、可验证的合同。通过使隐式显式化，Verse 可以帮助您编写更加可预测、可维护且右结合代码。效果系统不是一种负担——它是一个工具，可以帮助您清楚地表达您的意图，并让编译器验证您的实现是否符合该意图。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Backwards Compatibility</summary>

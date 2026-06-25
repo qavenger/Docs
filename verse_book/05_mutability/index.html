@@ -29,7 +29,7 @@
   <article class="cn-read">
     <h2>可变性 <small>Mutability</small></h2>
     <p>不变性是 Verse 中的默认设置。当您创造价值时，它会永远保持该价值——不变、可预测且可以安全共享。这一基本原则使程序更容易推理，消除了整个类别的错误，并实现了强大的优化。但游戏是一个动态世界，状态不断变化：生命值下降、分数增加、库存变化。 Verse 包含这两种范式，默认提供不变性，同时在需要时提供受控的显式突变。</p>
-<p>Verse 中不可变数据和可变数据之间的区别不仅仅是值是否可以更改。它从根本上影响数据如何流经程序、函数之间如何共享值以及编译器如何推理代码。理解这种区别对于编写高效、正确的 Verse 程序至关重要。</p>
+<p>Verse 中不可变数据和可变数据之间的区别不仅仅是值是否可以更改。它从根本上影响数据如何流经程序、函数之间如何共享值以及编译器如何推理代码。理解这种区别对于编写高效、右结合 Verse 程序至关重要。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Mutability</summary>
@@ -143,21 +143,21 @@ set Health = 75.0              # Allowed</code></pre>
   <article class="cn-read">
     <h2>var 声明的要求 <small>Requirements for var Declarations</small></h2>
     <p>可变变量声明有严格的要求，可以防止常见错误：</p>
-<p>**必须提供显式类型：**</p>
+<p><strong>必须提供显式类型：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid - explicit type
 var X:int = 0
 
 # Invalid - cannot use := syntax with var
 # var X := 0  # Error</code></pre></figure>
 <p>类型推断语法 <code>:=</code> 不能与 <code>var</code> 一起使用。您必须显式声明类型。</p>
-<p>**必须提供初始值（在本地范围内）：**</p>
+<p><strong>必须提供初始值（在本地范围内）：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid - initialized
 var Health:float = 100.0
 
 # Invalid - no initial value in local scope
 # var Score:int  # Error</code></pre></figure>
 <p>在局部作用域（函数、控制流块）中，每个 <code>var</code> 声明都需要一个初始值。但是，在类或接口中声明可变字段时，可以省略初始值并在实例化期间提供初始值（有关详细信息，请参阅“类和接口”一章）。</p>
-<p>**不能完全无类型：**</p>
+<p><strong>不能完全无类型：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid - neither type nor value
 # var X  </code></pre></figure>
   </article>
@@ -189,7 +189,7 @@ var Health:float = 100.0
     <p>使用 <code>var</code> 的变量声明可以用作表达式，计算其初始值：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>X := (var Y:int = 42)  # X = 42, Y declared and mutable
 X = 42</code></pre></figure>
-<p>但是，<code>var</code> 声明**不能是 <code>set</code>** 的目标：</p>
+<p>但是，<code>var</code> 声明<strong>不能是 <code>set</code></strong> 的目标：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid - var declarations evaluate to values, not variables
 # set (var Z:int = 0) = 1  # Error: cannot use set on a value</code></pre></figure>
 <p>由于 <code>var</code> 声明将其初始值作为表达式结果返回，因此您不能对其使用 <code>set</code> - <code>set</code> 需要可变变量，而不是值。</p>
@@ -218,7 +218,7 @@ set X = block:
 
 X = 2 and Y = 0</code></pre></figure>
 <p>当新值需要中间计算或在分配期间需要多个副作用时，此模式非常有用。</p>
-<p>**重要提示：** <code>set</code> 的左侧在块执行之前进行评估，块的返回值就是被分配的值。在某些情况下，这可能会导致令人困惑的行为：</p>
+<p><strong>重要提示：</strong> <code>set</code> 的左侧在块执行之前进行评估，块的返回值就是被分配的值。在某些情况下，这可能会导致令人困惑的行为：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Confusing: Setting the same variable inside the block
 var X:int = 0
 set X = block:
@@ -270,7 +270,7 @@ Index = 2          # Index is now 2, but too late to affect the assignment</code
 </section><section class="section" id="s6-scope-and-redeclaration-restrictions">
   <article class="cn-read">
     <h2>范围和重新声明限制 <small>Scope and Redeclaration Restrictions</small></h2>
-    <p>**无变量阴影：**</p>
+    <p><strong>无变量阴影：</strong></p>
 <p>Verse 不允许变量阴影。一旦声明了标识符，您就无法在同一作用域或任何嵌套作用域中的任何位置使用 <code>:=</code> 重新声明它。这比许多允许内部作用域隐藏外部作用域变量的语言更具限制性。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var X:int = 0
 
@@ -286,15 +286,15 @@ if (SomeCondition?):
 block:
     # Also invalid - cannot shadow here either
     # var A:int = 2  # Error: ambiguous identifier</code></pre></figure>
-<p>如果您需要具有相似用途的多个标识符，请使用描述性名称（例如，<code>InitialHealth</code>、<code>CurrentHealth</code>）或使用限定名称来创建单独的范围（有关限定名称和消歧的详细信息，请参阅[模块和路径](16_modules.md)一章）。</p>
-<p>**无法使用赋值语法重新声明：**</p>
+<p>如果您需要具有相似用途的多个标识符，请使用描述性名称（例如，<code>InitialHealth</code>、<code>CurrentHealth</code>）或使用限定名称来创建单独的范围（有关限定名称和消歧的详细信息，请参阅<a href="../16_modules/index.html">模块和路径</a>一章）。</p>
+<p><strong>无法使用赋值语法重新声明：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var A:int = 1
 var B:int = 2
 
 # Invalid - looks like assignment but A already exists
 # A := B  # ERROR</code></pre></figure>
 <p>使用 <code>set A = B</code> 来分配给现有的可变变量。</p>
-<p>**不能嵌套 var 声明：**</p>
+<p><strong>不能嵌套 var 声明：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid
 # var (var X):int = 0  # ERROR 3549</code></pre></figure>
 <p><code>var</code> 关键字不能嵌套在其自身内。</p>
@@ -491,7 +491,7 @@ set Config[&quot;brightness&quot;] = 75</code></pre></figure>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>M:[int]int := map{}
 not (M[0] = 0)  # Key doesn&#x27;t exist, comparison fails
 # M is still empty - lookup didn&#x27;t add the key</code></pre></figure>
-<p>**从map中删除键：**</p>
+<p><strong>从map中删除键：</strong></p>
 <p>Verse 没有直接对map进行“删除”或“移除”操作。要删除键，请创建一个新映射，通过迭代原始映射来排除不需要的键：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Scores:[string]int = map{&quot;Alice&quot; =&gt; 100, &quot;Bob&quot; =&gt; 85, &quot;Charlie&quot; =&gt; 92}
 
@@ -506,9 +506,9 @@ set Scores = NewScores
 # Scores now only contains Alice and Charlie
 Scores[&quot;Alice&quot;] = 100
 Scores[&quot;Charlie&quot;] = 92</code></pre></figure>
-<p>该模式可以包装在辅助函数中以实现可重用性。有关 <code>for</code> 循环的更多详细信息，请参阅 [控制流](07_control.md) 章节。</p>
+<p>该模式可以包装在辅助函数中以实现可重用性。有关 <code>for</code> 循环的更多详细信息，请参阅<a href="../07_control/index.html">控制流</a>一章。</p>
 <p>集合可以嵌套，<code>set</code> 通过多个级别工作：</p>
-<p>**数组映射：**</p>
+<p><strong>数组映射：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Data:[int][]int = map{}
 set Data[666] = array{42}
 Data[666] = array{42}
@@ -517,7 +517,7 @@ Data[666] = array{42}
 set Data[666][0] = 1234
 Data = map{666 =&gt; array{1234}}
 Data[666] = array{1234}</code></pre></figure>
-<p>**map数组：**</p>
+<p><strong>map数组：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Grid:[][int]int = array{map{}}
 
 # Replace entire map at index
@@ -534,7 +534,7 @@ Grid[0][1234] = 4321
 # Update existing key in nested map
 set Grid[0][42] = 1122
 Grid[0][42] = 1122</code></pre></figure>
-<p>**数组的数组：**</p>
+<p><strong>数组的数组：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Matrix:[][]int = array{array{1234}}
 set Matrix[0][0] = 42
 Matrix = array{array{42}}
@@ -574,7 +574,7 @@ Y = map{42 =&gt; 1122, 1234 =&gt; 4321}  # Still unchanged</code></pre></figure>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>C := my_class{}
 set C.X[0] = 4266642
 C.X[0] = 4266642</code></pre></figure>
-<p>**将值映射到可变成员：**</p>
+<p><strong>将值映射到可变成员：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var M:[int]my_class = map{0 =&gt; my_class{}}
 M[0].X = 0
 
@@ -792,7 +792,7 @@ set A[1] = my_class{}
 A[0].I = 40  # Still references original
 A[1].I = 20  # New object with default value
 A[2].I = 40  # Still references original</code></pre></figure>
-<p>这是一个关键的区别：**集合中的结构是副本，集合中的类是共享引用**。</p>
+<p>这是一个关键的区别：<strong>集合中的结构是副本，集合中的类是共享引用</strong>。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Arrays of Classes: Shared References</summary>
@@ -840,7 +840,7 @@ set S.A *= 4
 S.A = 68</code></pre></figure>
 <p>可用的复合运算符：</p>
 <ul><li><code>set += </code> - 加法赋值（int、float、string、array）</li><li><code>set -= </code> - 减法赋值（int、float）</li><li><code>set *= </code> - 乘法赋值（int、float）</li><li><code>set /= </code> - 除法分配（仅限浮点数）</li></ul>
-<p>**重要**：<code>set /=</code> 不适用于整数，因为整数除法是失败的。</p>
+<p><strong>重要</strong>：<code>set /=</code> 不适用于整数，因为整数除法是失败的。</p>
 <p>复合作业适用于常规作业的任何地方：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Score:int = 100
 set Score += 50
@@ -954,7 +954,7 @@ T0(1) = 20
 set T0 = (30, 40)
 T0(0) = 30
 T0(1) = 40</code></pre></figure>
-<p>**不能改变元素：**</p>
+<p><strong>不能改变元素：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var T0:tuple(int, int) = (50, 60)
 set T0(0) = 70  # ERROR: Cannot mutate tuple elements</code></pre></figure>
 <p>即使元组是可变的，此限制也适用。您必须替换整个元组才能更改其内容。</p>
@@ -979,7 +979,7 @@ set T0(0) = 70  # ERROR: Cannot mutate tuple elements</code></pre>
 </section><section class="section" id="s15-map-ordering-and-mutation">
   <article class="cn-read">
     <h2>map排序和变异 <small>Map Ordering and Mutation</small></h2>
-    <p>映射保留**插入顺序**，并且该顺序通过突变来维持：</p>
+    <p>映射保留<strong>插入顺序</strong>，并且该顺序通过突变来维持：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var M:[int]int = map{2 =&gt; 2}
 
 set M[1] = 1  # Appends to end
@@ -1003,7 +1003,7 @@ M = map{&quot;a&quot; =&gt; 0, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}  # 
 set M[&quot;c&quot;] = 0
 set M[&quot;a&quot;] = 2
 M = map{&quot;a&quot; =&gt; 2, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 0}  # Still same order</code></pre></figure>
-<p>映射相等性考虑键/值**和顺序**：</p>
+<p>映射相等性考虑键/值<strong>和顺序</strong>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var M:[string]int = map{&quot;a&quot; =&gt; 3, &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2}
 set M[&quot;a&quot;] = 0
 
@@ -1135,7 +1135,7 @@ struct3 := struct&lt;computes&gt;{S2:struct2 = struct2{}}
 
 var S3:[]struct3 = array{struct3{}, struct3{}}
 set S3[1].S2.C0.CI.S0.A = 7  # ERROR: Cannot mutate through immutable field CI</code></pre></figure>
-<p>发生该错误的原因是 <code>CI</code> 是不可变字段（未使用 <code>var</code> 声明）。 **但是**，您可以通过突变路径中类的 <code>var</code> 字段进行突变。</p>
+<p>发生该错误的原因是 <code>CI</code> 是不可变字段（未使用 <code>var</code> 声明）。 <strong>但是</strong>，您可以通过突变路径中类的 <code>var</code> 字段进行突变。</p>
 <p>即使使用可变索引，也无法更改不可变数组：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var I:int = 2  # Mutable index
 A:[]int = array{5, 6, 7}  # Immutable array

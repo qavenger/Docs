@@ -112,7 +112,7 @@ F():void=
 </section><section class="section" id="s2-if-expressions">
   <article class="cn-read">
     <h2>if 表达式 <small>If Expressions</small></h2>
-    <p><code>if</code> 表达式使用成功和失败来驱动决策（详细信息请参阅 [Failure](08_failure.md)）。当条件中的表达式成功时，相应的分支执行：</p>
+    <p><code>if</code> 表达式使用成功和失败来驱动决策（有关详细信息，请参阅<a href="../08_failure/index.html">失败</a>）。当条件中的表达式成功时，相应的分支执行：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>HandlePlayerAction(Player:player, Action:string):void =
     if (Action = &quot;jump&quot;, Player.CanJump[]):
         Player.Jump()
@@ -145,7 +145,7 @@ if (1 + 1):  # Compile error - no fallible expression
 if (FirstItem := Items[0]):
     Process(FirstItem)</code></pre></figure>
 <p>空条件也是不允许的——每个 <code>if</code> 都必须测试一些东西。</p>
-<p>如果条件中的任何表达式失败，控制流将继续到 <code>else</code> 分支（如果存在）。评估条件时执行的任何效果都会自动回滚（有关详细信息，请参阅[失败](08_failure.md#speculative-execution)）：</p>
+<p>如果条件中的任何表达式失败，控制流将继续到 <code>else</code> 分支（如果存在）。评估条件时执行的任何效果都会自动回滚（有关详细信息，请参阅<a href="../08_failure/index.html#speculative-execution">失败</a>）：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Counter:int = 0
 
 if:
@@ -262,9 +262,9 @@ Result:any = if (UseNumber?) then 42 else &quot;text&quot;</code></pre>
 GetWeaponDamage(&quot;sword&quot;) = 50.0</code></pre></figure>
 <p>当您有要匹配的离散值时，使用 <code>case</code> 表达式，使您的意图比一系列 <code>if-else</code> 条件更清晰。</p>
 <p>Case 表达式适用于支持直接值比较的特定类型：</p>
-<ul><li>**原语**：<code>int</code>、<code>logic</code>、<code>char</code></li><li>**字符串**：<code>string</code></li><li>**枚举**：开放枚举和封闭枚举</li><li>**细化类型**：具有约束的自定义类型</li></ul>
+<ul><li><strong>原语</strong>：<code>int</code>、<code>logic</code>、<code>char</code></li><li><strong>字符串</strong>：<code>string</code></li><li><strong>枚举</strong>：开放枚举和封闭枚举</li><li><strong>细化类型</strong>：具有约束的自定义类型</li></ul>
 <p>由于实现限制，它们不适用于 <code>float</code>、对象和元组。</p>
-<p>**使用枚举进行详尽性检查。** <code>case</code> 和 <code>enum</code> 进行详尽性检查。对于所有值都已知的封闭枚举，编译器会验证您是否已处理所有情况：</p>
+<p><strong>使用枚举进行详尽性检查。</strong> <code>case</code> 和 <code>enum</code> 进行详尽性检查。对于所有值都已知的封闭枚举，编译器会验证您是否已处理所有情况：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Exhaustive - no wildcard needed
 GetVector(Dir:direction):tuple(int, int) =
     case (Dir):
@@ -350,7 +350,7 @@ GetPrimaryDirection2(Dir:direction)&lt;decides&gt;:string =
         set C = C+1
     C</code></pre></figure>
 <p>这演示了底层类型：<code>break</code> 与 if 表达式中的 <code>int</code>（来自 <code>2*B</code>）统一。赋值 <code>set B = ...</code> 使用 if 表达式的值，表明 <code>break</code> 在任何类型上下文中都是兼容的。</p>
-<p>**循环返回值：** 循环表达式本身会生成 <code>true</code> 类型（顶级类型）的值，无论其主体中出现什么表达式。这个返回值在实践中很少有用——循环通常因其副作用而被使用。</p>
+<p><strong>循环返回值：</strong> 循环表达式本身会生成 <code>true</code> 类型（顶级类型）的值，无论其主体中出现什么表达式。这个返回值在实践中很少有用——循环通常因其副作用而被使用。</p>
 <p>当 <code>break</code> 出现在嵌套循环中时，它仅退出最内层的封闭循环：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Outer:int = 0
 loop:
@@ -428,13 +428,13 @@ Result = array{20.0, 200.0}</code></pre></figure>
 <p>还有另一种替代语法：用于简单操作的单行点语法：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Single-line dot style
 for (V : Values). DoSomething(V)</code></pre></figure>
-<p>**索引和值对：**</p>
+<p><strong>索引和值对：</strong></p>
 <p>迭代数组或映射时，您可以使用对语法 <code>Index -&gt; Value</code> 或 <code>Key -&gt; Value</code> 访问索引/键和值：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PrintRoster(Players:[]player):void =
     for (Index -&gt; Player : Players):
         Print(&quot;Player {Index}: {Player.Name}&quot;)</code></pre></figure>
 <p>该索引从零开始，符合 Verse 的数组索引约定。</p>
-<p>**在 For 子句中定义变量：**</p>
+<p><strong>在 For 子句中定义变量：</strong></p>
 <p>for 循环允许您定义可在后续过滤器或循环体中使用的中间变量：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Define Y based on X
 Doubled := for (X := 1..5, Y := X * 2):
@@ -444,7 +444,7 @@ Doubled := for (X := 1..5, Y := X * 2):
 SafeDivision := for (X := -3..3, X &lt;&gt; 0, Y := Floor[10.0 / (X*1.0)]):
     Y  # Skips X=0, returns array{-3, -5, -10, 10, 5, 3}</code></pre></figure>
 <p>这些中间变量的范围仅限于迭代，并且可以引用同一子句中较早的变量。</p>
-<p>**多重过滤器：**</p>
+<p><strong>多重过滤器：</strong></p>
 <p>您可以使用逗号分隔或分号分隔的表达式链接多个过滤条件。每个过滤器都必须是可失败的，如果有任何失败，则跳过该迭代：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Multiple independent filters
 Filtered := for (X := 1..10, X &lt;&gt; 3, X &lt;&gt; 7):
@@ -454,7 +454,7 @@ Filtered := for (X := 1..10, X &lt;&gt; 3, X &lt;&gt; 7):
 Complex := for (X := 1..5, X &lt;&gt; 2, Y := X * 2, Y &lt; 10):
     Y  # Only includes values where X≠2 and Y&lt;10</code></pre></figure>
 <p>每个过滤条件按顺序进行评估，并且仅当所有条件都成功时才继续迭代。</p>
-<p>**迭代map：**</p>
+<p><strong>迭代map：</strong></p>
 <p>可以通过两种方式迭代映射：仅值，或使用对语法的键值对：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Iterate over values only
 Scores:[int]int = map{1 =&gt; 100, 2 =&gt; 200, 3 =&gt; 150}
@@ -466,20 +466,20 @@ PlayerScores:[string]int = map{&quot;Alice&quot; =&gt; 100, &quot;Bob&quot; =&gt
 for (PlayerName -&gt; Score : PlayerScores):
     Print(&quot;{PlayerName} scored {Score}&quot;)</code></pre></figure>
 <p>映射保留插入顺序，因此迭代顺序与将键添加到映射的顺序匹配。</p>
-<p>**字符串迭代：**</p>
+<p><strong>字符串迭代：</strong></p>
 <p>字符串可以逐字符迭代：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CountVowels(Text:string):int =
     var Count:int = 0
     for (Char : Text, Char = &#x27;a&#x27; or Char = &#x27;e&#x27; or Char = &#x27;i&#x27; or Char = &#x27;o&#x27; or Char = &#x27;u&#x27;):
         set Count += 1
     Count</code></pre></figure>
-<p>**嵌套迭代（笛卡尔积）：**</p>
+<p><strong>嵌套迭代（笛卡尔积）：</strong></p>
 <p>多个迭代源创建嵌套循环，生成笛卡尔积：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PrintGrid():void =
     for (X := 1..3, Y := 1..3):
         Print(&quot;({X}, {Y})&quot;)
     # Produces: (1,1), (1,2), (1,3), (2,1), (2,2), (2,3), (3,1), (3,2), (3,3)</code></pre></figure>
-<p>**过滤失败：**</p>
+<p><strong>过滤失败：</strong></p>
 <p>Verse 的 <code>for</code> 表达式在利用失败上下文时特别强大，因为它们可以自然地过滤：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetHighScorers(Players:[]player):[]player =
     for (Player : Players, Score := GetScore(Player), Score &gt; 1000):
@@ -489,16 +489,16 @@ for (PlayerName -&gt; Score : PlayerScores):
 AffordableItems(Items:[]item, Budget:float):[]float =
     for (Item : Items, Item.Price &lt;= Budget):
         Item.Price * 1.1  # Apply 10% markup</code></pre></figure>
-<p>**作为表达式：**</p>
+<p><strong>作为表达式：</strong></p>
 <p>与其他控制流结构一样，<code>for</code> 是一个表达式。当主体产生值时，<code>for</code> 将它们收集到一个数组中：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Collect player names
 GetNames(Players:[]player):[]string =
     for (Player : Players):
         Player.Name  # Each iteration produces a string</code></pre></figure>
 <p>这使得 <code>for</code> 成为无需显式累加器变量即可转换集合的强大工具。</p>
-<p>**打破 For 循环：**</p>
-<p><code>break</code> 语句无法提前退出 <code>for</code> 循环。如果您只需要迭代中的第一个匹配结果，请使用 <code>first</code> 而不是 <code>for</code>（请参阅下面的 [第一个表达式](#first-expressions)）。</p>
-<p>**继续注意：**</p>
+<p><strong>打破 For 循环：</strong></p>
+<p><code>break</code> 语句无法提前退出 <code>for</code> 循环。如果您只需要迭代中的第一个匹配结果，请使用 <code>first</code> 而不是 <code>for</code>（请参阅下面的<a href="#first-expressions">第一个表达式</a>）。</p>
+<p><strong>继续注意：</strong></p>
 <p>与许多语言不同，Verse 目前不支持使用 <code>continue</code> 语句跳到下一个迭代。相反，使用条件逻辑或基于故障的过滤来实现类似的结果：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Instead of continue, use conditional blocks
 ProcessItems(Items:[]item):void =
@@ -511,7 +511,7 @@ ProcessItems(Items:[]item):void =
 ProcessValidItems(Items:[]item):void =
     for (Item : Items, Item.IsValid?):
         ProcessItem(Item)  # Only valid items reach here</code></pre></figure>
-<p>**范围迭代。** 范围运算符 <code>..</code> 提供整数序列上的数字迭代。范围两端均包含在内：</p>
+<p><strong>范围迭代。</strong> 范围运算符 <code>..</code> 提供整数序列上的数字迭代。范围两端均包含在内：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Iterates: 1, 2, 3, 4, 5 (both bounds included)
 for (I := 1..5):
     Print(&quot;Count: {I}&quot;)
@@ -525,7 +525,7 @@ for (I := 5..1):
     Print(&quot;Never executes&quot;)  # Loop body never runs</code></pre></figure>
 <p><code>..</code> 运算符始终包含在内。没有独占范围语法。</p>
 <p>范围边界按特定顺序进行评估，并且副作用的发生是可预测的：</p>
-<ol><li>**首先评估左边界**，然后评估右边界</li><li>**始终评估两个边界**，即使范围为空</li><li>**副作用按顺序发生**，无论是否发生迭代</li></ol>
+<ol><li><strong>首先评估左结合界</strong>，然后评估右边界</li><li><strong>始终评估两个边界</strong>，即使范围为空</li><li><strong>副作用按顺序发生</strong>，无论是否发生迭代</li></ol>
 <p>虽然您无法将范围存储为值，但您可以使用 for 表达式创建数组：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># This works because for produces an array, not because ranges are storable
 DoubledNumbers:[]int = for (I := 1..5){ I * 2 }
@@ -534,16 +534,12 @@ DoubledNumbers:[]int = for (I := 1..5){ I * 2 }
 for (N : DoubledNumbers):
     Print(&quot;{N}&quot;)</code></pre></figure>
 <p>该范围仅在 for 表达式求值期间存在；结果数组就是存储的内容。</p>
-<p>**限制。** for 循环有几个重要的限制：</p>
-<ol><li>**迭代源必须是可迭代的：**仅限范围（<code>1..10</code>），</li></ol>
-<p>数组、映射和字符串可以迭代。</p>
-<ol><li>**过滤器必须是可失败的：** 过滤器条件必须包含 at</li></ol>
-<p>至少有一个表达式可能会失败。</p>
-<ol><li>**无法重新定义迭代变量：**您无法重新定义</li></ol>
-<p>同一子句中的迭代变量。</p>
-<ol><li>**无法定义可变变量：** 使用 <code>var</code> 来声明</li></ol>
-<p>for 子句中不允许使用变量。</p>
-<p>范围运算符 <code>..</code> 具有严格的限制，使其与其他可迭代类型区分开来。范围*不是一流的值* - 它们是迭代地将范围中的每个整数生成为单独值的表达式。范围不能在您可能期望它们工作的某些上下文中使用：</p>
+<p><strong>限制。</strong> for 循环有几个重要的限制：</p>
+<ol><li><strong>迭代源必须是可迭代的：</strong>只能迭代范围（<code>1..10</code>）、数组、映射和字符串。</li></ol>
+<ol><li><strong>过滤器必须是可失败的：</strong> 过滤条件必须包含至少一个可能失败的表达式。</li></ol>
+<ol><li><strong>无法重新定义迭代变量：</strong> 您不能在同一子句中重新定义迭代变量。</li></ol>
+<ol><li><strong>不能定义可变变量：</strong> 不允许在 for 子句中使用 <code>var</code> 声明变量。</li></ol>
+<p>范围运算符 <code>..</code> 具有严格的限制，使其与其他可迭代类型区分开来。范围<em>不是一流的值</em> - 它们是迭代地将范围中的每个整数生成为单独值的表达式。范围不能在您可能期望它们工作的某些上下文中使用：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot store range in variable
 MyRange := 1..10
 for (I := MyRange):
@@ -696,14 +692,10 @@ for (N : DoubledNumbers):
     Print(&quot;{N}&quot;)</code></pre>
 <p>The range exists only during the for expression evaluation; the resulting array is what gets stored.</p>
 <p><strong>Restrictions.</strong> The for loop has several important restrictions:</p>
-<ol><li><strong>Iteration source must be iterable:</strong> Only ranges (<code>1..10</code>),</li></ol>
-<p>arrays, maps, and strings can be iterated.</p>
-<ol><li><strong>Filters must be failable:</strong> Filter conditions must contain at</li></ol>
-<p>least one expression that can fail.</p>
-<ol><li><strong>Cannot redefine iteration variables:</strong> You cannot redefine the</li></ol>
-<p>iteration variable in the same clause.</p>
-<ol><li><strong>Cannot define mutable variables:</strong> Using <code>var</code> to declare</li></ol>
-<p>variables in the for clause is not allowed.</p>
+<ol><li><strong>Iteration source must be iterable:</strong> Only ranges (<code>1..10</code>), arrays, maps, and strings can be iterated.</li></ol>
+<ol><li><strong>Filters must be failable:</strong> Filter conditions must contain at least one expression that can fail.</li></ol>
+<ol><li><strong>Cannot redefine iteration variables:</strong> You cannot redefine the iteration variable in the same clause.</li></ol>
+<ol><li><strong>Cannot define mutable variables:</strong> Using <code>var</code> to declare variables in the for clause is not allowed.</li></ol>
 <p>The range operator <code>..</code> has strict limitations that distinguish it from other iterable types. Ranges are <em>not first-class values</em>—they are expressions that iteratively yield each integer in the range as a separate value. Ranges cannot be used in some contexts where you might expect them to work:</p>
 <pre><code># ERROR: Cannot store range in variable
 MyRange := 1..10
@@ -729,7 +721,7 @@ Length := (1..10).Length</code></pre>
   <article class="cn-read">
     <h2>第一个表达 <small>First Expressions</small></h2>
     <p>!!!注意“未发布的功能”<code>first</code> 表达式尚未发布。本节记录了当前不可用的计划功能。</p>
-<p><code>first</code> 表达式与 <code>for</code> 类似，但它不是评估域子句的每次迭代的主体，而是仅评估成功的域子句的**第一个**迭代。它不像 <code>for</code> 那样生成数组，而是生成该单次迭代的主体值。如果没有迭代到达主体，则 <code>first</code> 失败 - 因此它需要 <code>&lt;decides&gt;</code> 上下文。</p>
+<p><code>first</code> 表达式与 <code>for</code> 类似，但它不是评估域子句的每次迭代的主体，而是仅评估成功的域子句的<strong>第一个</strong>迭代。它不像 <code>for</code> 那样生成数组，而是生成该单次迭代的主体值。如果没有迭代到达主体，则 <code>first</code> 失败 - 因此它需要 <code>&lt;decides&gt;</code> 上下文。</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Find the first player with a score above the threshold
 FindTopScorer(Players:[]player, Threshold:int)&lt;decides&gt;:player =
     first (Player : Players; GetScore[Player] &gt; Threshold):
@@ -751,10 +743,10 @@ first(X : Collection; Predicate[X]). Process(X)</code></pre></figure>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Find the index of an element using index -&gt; value binding
 IndexOf(Arr:[]int, Target:int)&lt;decides&gt;:int =
     first(I -&gt; V : Arr, V = Target). I</code></pre></figure>
-<p>请注意，<code>first</code> 生成 **body** 表达式的值，而不是迭代变量。这使得搜索一件事并产生另一件事成为可能——例如，通过匹配值来查找索引。</p>
-<p>**首先与对于：**</p>
-<p>| | ZXQ代码0ZXQ | ZXQ代码1ZXQ | |-|--------|---------| |产量 |所有结果的数组 |仅第一个结果 | |没有匹配 |空数组 | **失败**（需要 <code>&lt;decides&gt;</code>） | |停止 |经过所有迭代 |第一次迭代后 |</p>
-<p>**常见模式：**</p>
+<p>请注意，<code>first</code> 生成 <strong>body</strong> 表达式的值，而不是迭代变量。这使得搜索一件事并产生另一件事成为可能——例如，通过匹配值来查找索引。</p>
+<p><strong>首先与对于：</strong></p>
+<table><thead><tr><th></th><th><code>for</code></th><th><code>first</code></th></tr></thead><tbody><tr><td>产生值</td><td>所有结果的数组</td><td>仅第一个结果</td></tr><tr><td>没有匹配时</td><td>空数组</td><td><strong>失败</strong>（需要 <code>&lt;decides&gt;</code>）</td></tr><tr><td>停止条件</td><td>经过所有迭代</td><td>第一次迭代后</td></tr></tbody></table>
+<p><strong>常见模式：</strong></p>
 <p>由于 <code>first</code> 需要 <code>&lt;decides&gt;</code>，因此一种常见的使用方法是将其包装在 <code>if</code> 或 <code>option</code> 中以处理未找到匹配的情况：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Find with fallback using if
 FindOrDefault(Arr:[]int, Target:int):int =
@@ -797,7 +789,7 @@ IndexOf(Arr:[]int, Target:int)&lt;decides&gt;:int =
     first(I -&gt; V : Arr, V = Target). I</code></pre>
 <p>Note that <code>first</code> yields the value of the <strong>body</strong> expression, not the iteration variable. This is what makes it possible to search for one thing and yield another — for example, finding an index by matching a value.</p>
 <p><strong>First vs For:</strong></p>
-<p>| | <code>for</code> | <code>first</code> | |-|-------|---------| | Yields | Array of all results | First result only | | On no match | Empty array | <strong>Fails</strong> (requires <code>&lt;decides&gt;</code>) | | Stops | After all iterations | After the first iteration |</p>
+<table><thead><tr><th></th><th><code>for</code></th><th><code>first</code></th></tr></thead><tbody><tr><td>Yields</td><td>Array of all results</td><td>First result only</td></tr><tr><td>On no match</td><td>Empty array</td><td><strong>Fails</strong> (requires <code>&lt;decides&gt;</code>)</td></tr><tr><td>Stops</td><td>After all iterations</td><td>After the first iteration</td></tr></tbody></table>
 <p><strong>Common Patterns:</strong></p>
 <p>Since <code>first</code> requires <code>&lt;decides&gt;</code>, a common way to use it is to wrap it in an <code>if</code> or an <code>option</code> to handle the case where no match is found:</p>
 <pre><code># Find with fallback using if
@@ -907,31 +899,8 @@ GetDiscount(Price:float):float =
   <article class="cn-read">
     <h2>延期报表 <small>Defer Statements</small></h2>
     <p><code>defer</code> 语句安排代码在封闭范围退出时运行。这使得它对于关闭文件、释放资源或日志记录等清理操作非常有价值。</p>
-<p>Defer 是**基于范围**，而不是基于功能。 <code>defer</code> 块在离开直接包含它的作用域时执行，包括：</p>
-<ul><li>**函数体** — 在函数返回时运行</li><li>**<code>for</code> 循环** — <code>for</code> 主体在其自己的中运行每次迭代</li></ul>
-<p>范围; <code>for</code> 域还引入了词法范围</p>
-<ul><li>**<code>loop</code> 块的每次迭代** — 在每个块的末尾运行</li></ul>
-<p>迭代（包括在 <code>break</code> 上）</p>
-<ul><li>**<code>if</code>/<code>then</code>/<code>else</code> 子句** — 在离开所选分支时运行</li><li>**<code>block</code> 范围** — 离开区块时运行</li><li>**<code>not</code> 表达式** — <code>not e</code> 在新的词法范围中计算 <code>e</code></li><li>**<code>or</code> 表达式** — <code>e0 or e1</code> 在新的词法中计算 <code>e0</code></li></ul>
-<p>范围</p>
-<ul><li>**<code>and</code> 表达式** — <code>e0 and e1</code> 计算整个表达式</li></ul>
-<p>在新的词汇范围内</p>
-<ul><li>**<code>option</code> 和 <code>logic</code> 表达式** — <code>option{e}</code> 和 <code>logic{e}</code></li></ul>
-<p>在新的词法范围中评估 <code>e</code></p>
-<ul><li>**<code>case</code> 表达式** — <code>case(e0){e1=&gt;e2, e3=&gt;e4}</code> 创建一个</li></ul>
-<p>整个 <code>case</code> 的词法范围，然后是每个结果表达式（<code>e2</code>、<code>e4</code>）</p>
-<ul><li>**原型实例化** - <code>my_class{...}</code> 引入了词法</li></ul>
-<p>身体范围</p>
-<ul><li>**<code>defer</code> 自身块** — 嵌套延迟在外部延迟运行时运行</li></ul>
-<p>推迟完成</p>
-<ul><li>**结构化并发宏** (<code>race</code>、<code>rush</code>、<code>branch</code>) —</li></ul>
-<p>每个臂都在自己的词法范围内运行</p>
-<ul><li>**<code>spawn</code>、<code>await</code> 和 <code>batch</code> 表达式** — <code>spawn{e}</code>，</li></ul>
-<p><code>await{e}</code> 和 <code>batch{e}</code> 在新的词法范围中评估 <code>e</code></p>
-<ul><li>**<code>live</code> 绑定** — <code>live Name : e0 = e1</code> 创建一个新的词法</li></ul>
-<p><code>e1</code> 的范围</p>
-<ul><li>**取消并发作用域** — 在取消期间运行</li></ul>
-<p>展开（请参阅[并发](14_concurrency.md#cleanup-and-resource-management)）</p>
+<p>Defer 是<strong>基于范围</strong>，而不是基于功能。 <code>defer</code> 块在离开直接包含它的作用域时执行，包括：</p>
+<ul><li><strong>函数体</strong> — 在函数返回时运行</li><li><strong><code>for</code> 循环</strong> — <code>for</code> 主体在其自己的范围内运行每次迭代； <code>for</code> 域还引入了词法范围</li><li><strong><code>loop</code> 块的每次迭代</strong> — 在每次迭代结束时运行（包括在 <code>break</code> 上）</li><li><strong><code>if</code>/<code>then</code>/<code>else</code> 子句</strong> — 在离开所选分支时运行</li><li><strong><code>block</code> 范围</strong> — 离开区块时运行</li><li><strong><code>not</code> 表达式</strong> — <code>not e</code> 在新的词法范围中计算 <code>e</code></li><li><strong><code>or</code> 表达式</strong> — <code>e0 or e1</code> 在新的词法范围中计算 <code>e0</code></li><li><strong><code>and</code> 表达式</strong> — <code>e0 and e1</code> 在新的词法范围内计算整个表达式</li><li><strong><code>option</code> 和 <code>logic</code> 表达式</strong> — <code>option{e}</code> 和 <code>logic{e}</code> 在新的词法范围中计算 <code>e</code></li><li><strong><code>case</code> 表达式</strong> — <code>case(e0){e1=&gt;e2, e3=&gt;e4}</code> 为整个 <code>case</code> 创建词法范围，然后为每个结果表达式（<code>e2</code>、<code>e4</code>）创建词法范围</li><li><strong>原型实例化</strong> - <code>my_class{...}</code> 引入了主体的词法范围</li><li><strong><code>defer</code> 自行阻塞</strong> — 嵌套延迟在外部延迟完成时运行</li><li><strong>结构化并发宏</strong>（<code>race</code>、<code>rush</code>、<code>branch</code>）——每个分支在自己的词法范围内运行</li><li><strong><code>spawn</code>、<code>await</code> 和 <code>batch</code> 表达式</strong> — <code>spawn{e}</code>、<code>await{e}</code> 和 <code>batch{e}</code> 在新的词法范围中计算 <code>e</code></li><li><strong><code>live</code> 绑定</strong> — <code>live Name : e0 = e1</code> 为 <code>e1</code> 创建新的词法范围</li><li><strong>取消的并发作用域</strong> — 在取消展开期间运行（请参阅<a href="../14_concurrency/index.html#cleanup-and-resource-management">并发</a>）</li></ul>
 <p>这是一个基本示例：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessFile(FileName:string)&lt;transacts&gt;&lt;decides&gt;:void =
     File := OpenFile(FileName)?
@@ -953,7 +922,7 @@ GetDiscount(Price:float):float =
             return  # defer executes after return being called
 
     # defer executes before leaving the function scope on success</code></pre></figure>
-<p>这是一个微妙但关键的点：如果函数由于推测执行而失败，则延迟代码**不会**执行。这是因为失败会触发回滚，从而撤消所有影响，包括延迟块的调度：</p>
+<p>这是一个微妙但关键的点：如果函数由于推测执行而失败，则延迟代码<strong>不会</strong>执行。这是因为失败会触发回滚，从而撤消所有影响，包括延迟块的调度：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ExampleWithFailure()&lt;transacts&gt;&lt;decides&gt;:void =
     ResourceId := AcquireResource[]
     defer:
@@ -963,7 +932,7 @@ GetDiscount(Price:float):float =
     # defer does NOT run - entire scope was speculative and rolled back</code></pre></figure>
 <p>当 <code>RiskyOperation</code> 失败时，整个函数也会失败，并且推测执行会撤消所有内容，包括延迟注册。资源清理永远不会发生，因为资源获取本身已回滚。</p>
 <p>此行为可确保一致性：如果函数失败，就好像它从未运行过，包括计划的任何清理代码。</p>
-<p>**执行顺序：**</p>
+<p><strong>执行顺序：</strong></p>
 <p>当同一作用域中存在多个 <code>defer</code> 时，它们以与定义相反的顺序执行（后进先出），模仿基于堆栈的嵌套资源清理：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>DatabaseTransaction()&lt;transacts&gt;&lt;decides&gt;:void =
     DbId := OpenDatabase()
@@ -976,7 +945,7 @@ GetDiscount(Price:float):float =
 
     DoWork[]  # Work happens with both resources active
     # Defers execute: CommitTransaction, then CloseDatabase</code></pre></figure>
-<p>**延迟和异步取消：**</p>
+<p><strong>延迟和异步取消：</strong></p>
 <p>当异步操作被取消时，例如当 <code>race</code> 完成或 <code>spawn</code> 被中断时，也会执行延迟代码：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessWithTimeout()&lt;suspends&gt;&lt;transacts&gt;:void =
     race:
@@ -991,7 +960,7 @@ GetDiscount(Price:float):float =
             Sleep(10.0)  # Timeout
     # If timeout wins, first block is cancelled and defer runs</code></pre></figure>
 <p>这确保即使并发控制中断您的代码时也会进行清理。</p>
-<p>**嵌套延迟：**</p>
+<p><strong>嵌套延迟：</strong></p>
 <p>Defer 语句可以嵌套在其他 defer 块中，创建一系列清理操作：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessWithCleanup():void =
     Log(&quot;A&quot;)
@@ -1003,7 +972,7 @@ GetDiscount(Price:float):float =
     Log(&quot;D&quot;)
     # Output: A D B C inner</code></pre></figure>
 <p>每个嵌套级别的执行顺序都遵循 LIFO 原则 - 内部延迟在外部延迟的代码之后执行，保持类似堆栈的清理顺序。</p>
-<p>**控制流中的延迟：**</p>
+<p><strong>控制流中的延迟：</strong></p>
 <p>延迟在所有控制流结构中都能正常工作：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessLoop():void =
     for (I := 0..2):
@@ -1023,47 +992,20 @@ ProcessWithIf(Condition:logic):void =
             Log(&quot;Else cleanup&quot;)
         Log(&quot;Else body&quot;)</code></pre></figure>
 <p>每个控制流路径独立执行自己的延迟。</p>
-<p>**Defer 限制。** defer 语句具有重要的限制，以确保可预测的行为：</p>
-<ol><li>**不能为空：** Defer 块必须至少包含一个</li></ol>
-<p>表达：</p>
-<ol><li>**不能用作表达式：** Defer 不能用于位置</li></ol>
-<p>其中预期值。</p>
-<ol><li>**不能跨越边界：** Defer块不能包含<code>return</code>，</li></ol>
-<p><code>break</code>，或其他将退出延迟范围的控制流。</p>
-<ol><li>**不能失败：** defer 块中的表达式不能失败。</li></ol>
-<ol><li>**不能直接挂起：** Defer块不能包含挂起</li></ol>
-<p>表达式，但它们可以使用 <code>spawn</code> 进行即发即忘异步操作。</p>
-<p>有关 <code>defer</code> 如何与异步取消和并发构造（如 <code>race</code> 和 <code>spawn</code>）交互，请参阅[清理和资源管理](14_concurrency.md#cleanup-and-resource-management)。</p>
+<p><strong>Defer 限制。</strong> defer 语句具有重要的限制，以确保可预测的行为：</p>
+<ol><li><strong>不能为空：</strong> Defer 块必须至少包含一个表达式：</li></ol>
+<ol><li><strong>不能用作表达式：</strong> Defer 不能用在需要值的位置。</li></ol>
+<ol><li><strong>不能跨越边界：</strong> Defer 块不能包含 <code>return</code>、<code>break</code> 或其他会退出 defer 范围的控制流。</li></ol>
+<ol><li><strong>不能失败：</strong> defer 块中的表达式不能失败。</li></ol>
+<ol><li><strong>不能直接挂起：</strong> Defer 块不能包含挂起表达式，但它们可以使用 <code>spawn</code> 进行即发即忘异步操作。</li></ol>
+<p>有关 <code>defer</code> 如何与异步取消和并发构造（如 <code>race</code> 和 <code>spawn</code>）交互，请参阅<a href="../14_concurrency/index.html#cleanup-and-resource-management">清理和资源管理</a>。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Defer Statements</summary>
     <div class="md"><h2>Defer Statements</h2>
 <p>The <code>defer</code> statement schedules code to run when the enclosing scope exits. This makes it invaluable for cleanup operations like closing files, releasing resources, or logging.</p>
 <p>Defer is <strong>scope-based</strong>, not function-based. A <code>defer</code> block executes when leaving the scope that directly contains it, including:</p>
-<ul><li><strong>Function bodies</strong> — runs when the function returns</li><li><strong><code>for</code> loops</strong> — the <code>for</code> body runs each iteration in its own</li></ul>
-<p>scope; the <code>for</code> domain also introduces a lexical scope</p>
-<ul><li><strong>Each iteration of <code>loop</code> blocks</strong> — runs at the end of each</li></ul>
-<p>iteration (including on <code>break</code>)</p>
-<ul><li><strong><code>if</code>/<code>then</code>/<code>else</code> clauses</strong> — runs when leaving the chosen branch</li><li><strong><code>block</code> scopes</strong> — runs when leaving the block</li><li><strong><code>not</code> expressions</strong> — <code>not e</code> evaluates <code>e</code> in a new lexical scope</li><li><strong><code>or</code> expressions</strong> — <code>e0 or e1</code> evaluates <code>e0</code> in a new lexical</li></ul>
-<p>scope</p>
-<ul><li><strong><code>and</code> expressions</strong> — <code>e0 and e1</code> evaluates the entire expression</li></ul>
-<p>in a new lexical scope</p>
-<ul><li><strong><code>option</code> and <code>logic</code> expressions</strong> — <code>option{e}</code> and <code>logic{e}</code></li></ul>
-<p>evaluate <code>e</code> in a new lexical scope</p>
-<ul><li><strong><code>case</code> expressions</strong> — <code>case(e0){e1=&gt;e2, e3=&gt;e4}</code> creates a</li></ul>
-<p>lexical scope for the whole <code>case</code>, and then for each result expression (<code>e2</code>, <code>e4</code>)</p>
-<ul><li><strong>Archetype instantiation</strong> — <code>my_class{...}</code> introduces a lexical</li></ul>
-<p>scope for the body</p>
-<ul><li><strong><code>defer</code> blocks themselves</strong> — nested defers run when the outer</li></ul>
-<p>defer completes</p>
-<ul><li><strong>Structured concurrency macros</strong> (<code>race</code>, <code>rush</code>, <code>branch</code>) —</li></ul>
-<p>each arm runs in its own lexical scope</p>
-<ul><li><strong><code>spawn</code>, <code>await</code>, and <code>batch</code> expressions</strong> — <code>spawn{e}</code>,</li></ul>
-<p><code>await{e}</code>, and <code>batch{e}</code> evaluate <code>e</code> in a new lexical scope</p>
-<ul><li><strong><code>live</code> bindings</strong> — <code>live Name : e0 = e1</code> creates a new lexical</li></ul>
-<p>scope for <code>e1</code></p>
-<ul><li><strong>Cancelled concurrent scopes</strong> — runs during cancellation</li></ul>
-<p>unwinding (see <a href="../14_concurrency/index.html#cleanup-and-resource-management">Concurrency</a>)</p>
+<ul><li><strong>Function bodies</strong> — runs when the function returns</li><li><strong><code>for</code> loops</strong> — the <code>for</code> body runs each iteration in its own scope; the <code>for</code> domain also introduces a lexical scope</li><li><strong>Each iteration of <code>loop</code> blocks</strong> — runs at the end of each iteration (including on <code>break</code>)</li><li><strong><code>if</code>/<code>then</code>/<code>else</code> clauses</strong> — runs when leaving the chosen branch</li><li><strong><code>block</code> scopes</strong> — runs when leaving the block</li><li><strong><code>not</code> expressions</strong> — <code>not e</code> evaluates <code>e</code> in a new lexical scope</li><li><strong><code>or</code> expressions</strong> — <code>e0 or e1</code> evaluates <code>e0</code> in a new lexical scope</li><li><strong><code>and</code> expressions</strong> — <code>e0 and e1</code> evaluates the entire expression in a new lexical scope</li><li><strong><code>option</code> and <code>logic</code> expressions</strong> — <code>option{e}</code> and <code>logic{e}</code> evaluate <code>e</code> in a new lexical scope</li><li><strong><code>case</code> expressions</strong> — <code>case(e0){e1=&gt;e2, e3=&gt;e4}</code> creates a lexical scope for the whole <code>case</code>, and then for each result expression (<code>e2</code>, <code>e4</code>)</li><li><strong>Archetype instantiation</strong> — <code>my_class{...}</code> introduces a lexical scope for the body</li><li><strong><code>defer</code> blocks themselves</strong> — nested defers run when the outer defer completes</li><li><strong>Structured concurrency macros</strong> (<code>race</code>, <code>rush</code>, <code>branch</code>) — each arm runs in its own lexical scope</li><li><strong><code>spawn</code>, <code>await</code>, and <code>batch</code> expressions</strong> — <code>spawn{e}</code>, <code>await{e}</code>, and <code>batch{e}</code> evaluate <code>e</code> in a new lexical scope</li><li><strong><code>live</code> bindings</strong> — <code>live Name : e0 = e1</code> creates a new lexical scope for <code>e1</code></li><li><strong>Cancelled concurrent scopes</strong> — runs during cancellation unwinding (see <a href="../14_concurrency/index.html#cleanup-and-resource-management">Concurrency</a>)</li></ul>
 <p>Here is a basic example:</p>
 <pre><code>ProcessFile(FileName:string)&lt;transacts&gt;&lt;decides&gt;:void =
     File := OpenFile(FileName)?
@@ -1156,15 +1098,11 @@ ProcessWithIf(Condition:logic):void =
         Log(&quot;Else body&quot;)</code></pre>
 <p>Each control flow path executes its own defers independently.</p>
 <p><strong>Defer Restrictions.</strong> The defer statement has important restrictions to ensure predictable behavior:</p>
-<ol><li><strong>Cannot be empty:</strong> Defer blocks must contain at least one</li></ol>
-<p>expression:</p>
-<ol><li><strong>Cannot be used as expression:</strong> Defer cannot be used in positions</li></ol>
-<p>where a value is expected.</p>
-<ol><li><strong>Cannot cross boundaries:</strong> Defer blocks cannot contain <code>return</code>,</li></ol>
-<p><code>break</code>, or other control flow that would exit the defer&#x27;s scope.</p>
+<ol><li><strong>Cannot be empty:</strong> Defer blocks must contain at least one expression:</li></ol>
+<ol><li><strong>Cannot be used as expression:</strong> Defer cannot be used in positions where a value is expected.</li></ol>
+<ol><li><strong>Cannot cross boundaries:</strong> Defer blocks cannot contain <code>return</code>, <code>break</code>, or other control flow that would exit the defer&#x27;s scope.</li></ol>
 <ol><li><strong>Cannot fail:</strong> Expressions in defer blocks cannot fail.</li></ol>
-<ol><li><strong>Cannot suspend directly:</strong> Defer blocks cannot contain suspend</li></ol>
-<p>expressions, but they can use <code>spawn</code> for fire-and-forget async operations.</p>
+<ol><li><strong>Cannot suspend directly:</strong> Defer blocks cannot contain suspend expressions, but they can use <code>spawn</code> for fire-and-forget async operations.</li></ol>
 <p>For how <code>defer</code> interacts with async cancellation and concurrency constructs like <code>race</code> and <code>spawn</code>, see <a href="../14_concurrency/index.html#cleanup-and-resource-management">Cleanup and Resource Management</a>.</p></div>
   </details>
 </section><section class="section" id="s9-profiling">

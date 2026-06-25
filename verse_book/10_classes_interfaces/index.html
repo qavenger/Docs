@@ -59,7 +59,7 @@ MyModule := module:
     var Health : int = 100
     var Level : int = 1
     MaxHealth : int = 100</code></pre></figure>
-<p>这个类定义建立了几个重要的概念。没有 <code>var</code> 修饰符的字段在构造后是不可变的 - 一旦您创建了具有特定名称的角色，该名称就无法更改。标有 <code>var</code> 的字段是可变的，可以在创建对象后进行修改（有关 <code>var</code> 和 <code>set</code> 的详细信息，请参阅 [Mutability](05_mutability.md)）。默认值提供了合理的起点，使对象构造更加方便，同时确保对象以有效状态启动。</p>
+<p>这个类定义建立了几个重要的概念。没有 <code>var</code> 修饰符的字段在构造后是不可变的 - 一旦您创建了具有特定名称的角色，该名称就无法更改。标有 <code>var</code> 的字段是可变的，可以在创建对象后进行修改（有关 <code>var</code> 和 <code>set</code> 的详细信息，请参阅<a href="../05_mutability/index.html">可变性</a>）。默认值提供了合理的起点，使对象构造更加方便，同时确保对象以有效状态启动。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Classes</summary>
@@ -194,8 +194,8 @@ valid_class := class:
 
 # Instance := multi_step_init{}
 # Instance.Step1 = 10, Step2 = 15, Step3 = 30</code></pre></figure>
-<p>**具有继承的执行顺序：** 当一个类继承另一个类时，Verse VM 按照子类在超类之前的顺序执行块，而 BP VM 使用超类在子类之前的顺序。对于可移植代码，请避免依赖于跨继承层次结构的块的执行顺序。</p>
-<p>**为什么是块而不是构造函数？** 块子句可以访问 <code>Self</code> 和类的所有字段，而构造函数不能访问 <code>Self</code>。这使得块成为需要引用正在构造的对象的初始化逻辑的自然位置 - 例如向全局系统注册 <code>Self</code> 或计算来自多个字段的派生值。</p>
+<p><strong>具有继承的执行顺序：</strong> 当一个类继承另一个类时，Verse VM 按照子类在超类之前的顺序执行块，而 BP VM 使用超类在子类之前的顺序。对于可移植代码，请避免依赖于跨继承层次结构的块的执行顺序。</p>
+<p><strong>为什么是块而不是构造函数？</strong> 块子句可以访问 <code>Self</code> 和类的所有字段，而构造函数不能访问 <code>Self</code>。这使得块成为需要引用正在构造的对象的初始化逻辑的自然位置 - 例如向全局系统注册 <code>Self</code> 或计算来自多个字段的派生值。</p>
 <p>此外，字段默认值不能使用发散调用——可能无法完成的调用。这意味着你不能写：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR V3582: Divergent calls cannot be used to define data-members
 bar := class:
@@ -206,9 +206,8 @@ bar := class:
 
     block:
         set Foo = MakeFoo()  # Block can call divergent functions</code></pre></figure>
-<p>**块条款的约束：**</p>
-<ul><li>块不能包含失败（<code>&lt;decides&gt;</code>）操作</li><li>块无法调用挂起 (<code>&lt;suspends&gt;</code>) 函数</li><li>块可以使用 <code>defer</code> 语句，该语句在块退出时执行</li><li>块子句只允许在类中使用，不允许在接口中使用，</li></ul>
-<p>结构体或模块</p>
+<p><strong>块条款的约束：</strong></p>
+<ul><li>块不能包含失败（<code>&lt;decides&gt;</code>）操作</li><li>块无法调用挂起 (<code>&lt;suspends&gt;</code>) 函数</li><li>块可以使用 <code>defer</code> 语句，该语句在块退出时执行</li><li>块子句仅允许在类中使用，不允许在接口、结构或模块中使用</li></ul>
 <p>块子句对于以下情况特别有用：</p>
 <ul><li>记录对象创建</li><li>在初始化期间计算派生值</li><li>向全局系统注册对象</li><li>执行需要 <code>Self</code> 或发散调用的初始化</li></ul>
   </article>
@@ -256,8 +255,7 @@ bar := class:
     block:
         set Foo = MakeFoo()  # Block can call divergent functions</code></pre>
 <p><strong>Constraints on block clauses:</strong></p>
-<ul><li>Blocks cannot contain failure (<code>&lt;decides&gt;</code>) operations</li><li>Blocks cannot call suspending (<code>&lt;suspends&gt;</code>) functions</li><li>Blocks can use <code>defer</code> statements, which execute when the block exits</li><li>Block clauses are only allowed in classes, not in interfaces,</li></ul>
-<p>structs, or modules</p>
+<ul><li>Blocks cannot contain failure (<code>&lt;decides&gt;</code>) operations</li><li>Blocks cannot call suspending (<code>&lt;suspends&gt;</code>) functions</li><li>Blocks can use <code>defer</code> statements, which execute when the block exits</li><li>Block clauses are only allowed in classes, not in interfaces, structs, or modules</li></ul>
 <p>Block clauses are particularly useful for:</p>
 <ul><li>Logging object creation</li><li>Computing derived values during initialization</li><li>Registering objects with global systems</li><li>Performing initialization that requires <code>Self</code> or divergent calls</li></ul></div>
   </details>
@@ -382,9 +380,8 @@ player := class(character):  # player inherits from character
     AddScore(Points : int) : void =
         set Score += Points</code></pre></figure>
 <p>继承创建一个类型层次结构，其中 <code>player</code> 也是 <code>character</code>，<code>character</code> 也是 <code>entity</code>。这意味着您可以在任何需要 <code>character</code> 或 <code>entity</code> 的地方使用 <code>player</code> 对象，从而实现多态行为。</p>
-<p>**继承的重要限制：**</p>
-<ol><li>**仅限单类继承：** 一个类最多可以继承自</li></ol>
-<p>另一个类，尽管它可以实现多个接口。不支持多类继承：</p>
+<p><strong>继承的重要限制：</strong></p>
+<ol><li><strong>仅单类继承：</strong> 一个类最多可以从另一个类继承，尽管它可以实现多个接口。不支持多类继承：</li></ol>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base1 := class:
     Value1:int
 
@@ -405,16 +402,14 @@ derived := class&lt;abstract&gt;(base1, interface1, interface2):
 
 # Invalid: cannot inherit from multiple classes
 # invalid := class(base1, base2):  # ERROR</code></pre></figure>
-<ol><li>**数据成员没有阴影：**子类不能声明字段</li></ol>
-<p>与其超类中的字段同名。这可以防止歧义并确保明确的数据所有权：</p>
+<ol><li><strong>数据成员没有阴影：</strong> 子类不能声明与其超类中的字段同名的字段。这可以防止歧义并确保明确的数据所有权：</li></ol>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class:
     Value:int
 
 # Invalid: cannot shadow parent&#x27;s field
 # derived := class(base):
 #     Value:int  # ERROR: shadowing base.Value</code></pre></figure>
-<ol><li>**没有方法签名更改：** 当重写方法时，您必须</li></ol>
-<p>使用完全相同的签名。更改参数类型或返回类型会产生隐藏错误：</p>
+<ol><li><strong>没有方法签名更改：</strong> 重写方法时，必须使用完全相同的签名。更改参数类型或返回类型会产生隐藏错误：</li></ol>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class:
     Compute():int = 42
 
@@ -451,8 +446,7 @@ player := class(character):  # player inherits from character
         set Score += Points</code></pre>
 <p>Inheritance creates a type hierarchy where a <code>player</code> is also a <code>character</code>, and a <code>character</code> is also an <code>entity</code>. This means you can use a <code>player</code> object anywhere a <code>character</code> or <code>entity</code> is expected, enabling polymorphic behavior.</p>
 <p><strong>Important constraints on inheritance:</strong></p>
-<ol><li><strong>Single class inheritance only:</strong> A class can inherit from at most</li></ol>
-<p>one other class, though it can implement multiple interfaces. Multiple class inheritance is not supported:</p>
+<ol><li><strong>Single class inheritance only:</strong> A class can inherit from at most one other class, though it can implement multiple interfaces. Multiple class inheritance is not supported:</li></ol>
 <pre><code>base1 := class:
     Value1:int
 
@@ -473,16 +467,14 @@ derived := class&lt;abstract&gt;(base1, interface1, interface2):
 
 # Invalid: cannot inherit from multiple classes
 # invalid := class(base1, base2):  # ERROR</code></pre>
-<ol><li><strong>No shadowing of data members:</strong> Subclasses cannot declare fields</li></ol>
-<p>with the same name as fields in their superclass. This prevents ambiguity and ensures clear data ownership:</p>
+<ol><li><strong>No shadowing of data members:</strong> Subclasses cannot declare fields with the same name as fields in their superclass. This prevents ambiguity and ensures clear data ownership:</li></ol>
 <pre><code>base := class:
     Value:int
 
 # Invalid: cannot shadow parent&#x27;s field
 # derived := class(base):
 #     Value:int  # ERROR: shadowing base.Value</code></pre>
-<ol><li><strong>No method signature changes:</strong> When overriding a method, you must</li></ol>
-<p>use the exact same signature. Changing parameter types or return types creates a shadowing error:</p>
+<ol><li><strong>No method signature changes:</strong> When overriding a method, you must use the exact same signature. Changing parameter types or return types creates a shadowing error:</li></ol>
 <pre><code>base := class:
     Compute():int = 42
 
@@ -528,7 +520,7 @@ derived := class(base):
 # Derived implementation
 </code></pre></figure>
 <p><code>(super:)</code> 语法显式调用当前方法的父类版本。当您只需要调用父方法时，这比使用 <code>super{...}</code> 构造父实例更干净、更高效。</p>
-<p>**基本用法：**</p>
+<p><strong>基本用法：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
     Position:vector3
 
@@ -544,7 +536,7 @@ character := class(entity):
         (super:)Move(Delta)
         # Add character-specific behavior
         set Stamina -= 1.0</code></pre></figure>
-<p>**带有效果说明符：**</p>
+<p><strong>带有效果说明符：</strong></p>
 <p><code>(super:)</code> 语法与所有效果说明符无缝协作：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>async_base := class:
     Process()&lt;suspends&gt;:void =
@@ -569,7 +561,7 @@ transactional_derived := class(transactional_base):
     Update&lt;override&gt;()&lt;transacts&gt;:void =
         (super:)Update()
         set Counter += 1</code></pre></figure>
-<p>**通过父方法进行虚拟调度：**</p>
+<p><strong>通过父方法进行虚拟调度：</strong></p>
 <p>当父方法调用其他方法时，虚拟调度仍然根据实际对象类型应用。这意味着即使通过 <code>(super:)</code> 调用，<code>Self</code> 也会绑定到派生实例：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class:
     # Virtual method that can be overridden
@@ -590,7 +582,7 @@ derived := class(base):
 
 # derived{}.ComputeDouble()  # Returns 40, not 20</code></pre></figure>
 <p>在此示例中，即使 <code>ComputeDouble</code> 调用父实现，父实现内的 <code>GetValue()</code> 调用也使用虚拟调度并调用派生版本。</p>
-<p>**使用重载方法：**</p>
+<p><strong>使用重载方法：</strong></p>
 <p><code>(super:)</code> 语法与重载方法一起使用，调用相同重载的父版本：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class:
     Process(X:int):void =
@@ -607,7 +599,7 @@ derived := class(base):
     Process&lt;override&gt;(S:string):void =
         (super:)Process(S)  # Calls parent&#x27;s string overload
         Print(&quot;Derived string: {S}&quot;)</code></pre></figure>
-<p>**返回类型协方差：**</p>
+<p><strong>返回类型协方差：</strong></p>
 <p>当使用 <code>(super:)</code> 重写方法时，返回类型可以是父级返回类型的子类型（协变返回类型）：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base_type := class:
     Name:string
@@ -784,7 +776,7 @@ turret := class(entity):
         if (V:= Mod[Rotation, 360]):
             set Rotation = V
         ScanForTargets()</code></pre></figure>
-<p>覆盖机制确保根据对象的实际类型而不是保存该对象的变量的类型来调用正确的方法实现。这是面向对象编程中多态行为的基础。</p>
+<p>覆盖机制确保根据对象的实际类型而不是保存该对象的变量的类型来调用右结合方法实现。这是面向对象编程中多态行为的基础。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Method Overriding</summary>
@@ -815,12 +807,7 @@ turret := class(entity):
   <article class="cn-read">
     <h2>构造函数 <small>Constructor Functions</small></h2>
     <p>类没有像其他面向对象语言中那样的传统构造函数方法。相反，Verse 提供了三种对象构造方法，每种方法适合不同的需求：</p>
-<ul><li>**原型表达式** — 直接字段初始化以实现简单</li></ul>
-<p>案例。简单明了，不需要额外的定义。</p>
-<ul><li>**块子句** — 运行的类主体中的初始化代码</li></ul>
-<p>在每一个建筑上。可以访问 <code>Self</code> 和所有字段，使其成为注册对象、计算派生值或调用不能出现在字段默认值中的发散函数的理想选择。</p>
-<ul><li>**构造函数** - 用 <code>&lt;constructor&gt;</code> 注释，这些</li></ul>
-<p>是一流的函数，可以验证输入、委托给其他构造函数（包括父类构造函数）、重载以及作为值传递。它们是最强大的选项，对于子类构造函数需要初始化超类字段的继承层次结构至关重要。</p>
+<ul><li><strong>原型表达式</strong> — 简单情况下的直接字段初始化。简单明了，不需要额外的定义。</li><li><strong>块子句</strong> — 类主体中在每个构造上运行的初始化代码。可以访问 <code>Self</code> 和所有字段，使其成为注册对象、计算派生值或调用不能出现在字段默认值中的发散函数的理想选择。</li><li><strong>构造函数</strong> - 用 <code>&lt;constructor&gt;</code> 注释，这些是一流的函数，可以验证输入、委托给其他构造函数（包括父类构造函数）、重载并作为值传递。它们是最强大的选项，对于子类构造函数需要初始化超类字段的继承层次结构至关重要。</li></ul>
 <p>这些方法组成：构造函数返回一个原型表达式，该表达式可以包含 <code>let</code> 和 <code>block</code> 子句，并且类主体还可以有自己的 <code>block</code> 子句，无论使用哪个构造函数，这些子句都会执行。</p>
 <p>对于只需要设置字段值的简单情况，可以直接使用原型表达式：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player := class:
@@ -837,7 +824,7 @@ turret := class(entity):
     Health := InLevel * 100</code></pre></figure>
 <p>这是调用此构造函数的示例：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Hero := MakePlayer(&quot;Aldric&quot;, 5) # Call constructor function </code></pre></figure>
-<p>构造函数是返回类实例的常规函数​​，但 <code>&lt;constructor&gt;</code> 注释启用了特殊功能，例如委托给其他构造函数。从普通代码调用构造函数时，仅使用函数名称 - <code>&lt;constructor&gt;</code> 注释仅出现在定义中。</p>
+<p>构造函数是返回类实例的常规函数，但 <code>&lt;constructor&gt;</code> 注释启用了特殊功能，例如委托给其他构造函数。从普通代码调用构造函数时，仅使用函数名称 - <code>&lt;constructor&gt;</code> 注释仅出现在定义中。</p>
 <p>构造函数可以产生控制其行为的效果。常见效果包括 <code>&lt;computes&gt;</code>、<code>&lt;allocates&gt;</code> 和 <code>&lt;transacts&gt;</code>。一个特别有用的效果是 <code>&lt;decides&gt;</code>，它允许构造函数在不满足前提条件时失败：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MakeValidPlayer&lt;constructor&gt;(InName:string, InLevel:int)&lt;transacts&gt;&lt;decides&gt; := 
     player:
@@ -860,12 +847,7 @@ else:
     <summary>展开英文原文：Constructor Functions</summary>
     <div class="md"><h3>Constructor Functions</h3>
 <p>Classes don&#x27;t have traditional constructor methods like you might find in other object-oriented languages. Instead, Verse provides three approaches to object construction, each suited to different needs:</p>
-<ul><li><strong>Archetype expressions</strong> — direct field initialization for simple</li></ul>
-<p>cases. Straightforward and requires no extra definitions.</p>
-<ul><li><strong>Block clauses</strong> — initialization code in the class body that runs</li></ul>
-<p>on every construction. Has access to <code>Self</code> and all fields, making it ideal for registering the object, computing derived values, or calling divergent functions that can&#x27;t appear in field defaults.</p>
-<ul><li><strong>Constructor functions</strong> — annotated with <code>&lt;constructor&gt;</code>, these</li></ul>
-<p>are first-class functions that can validate inputs, delegate to other constructors (including parent class constructors), be overloaded, and be passed around as values. They are the most powerful option and essential for inheritance hierarchies where subclass constructors need to initialize superclass fields.</p>
+<ul><li><strong>Archetype expressions</strong> — direct field initialization for simple cases. Straightforward and requires no extra definitions.</li><li><strong>Block clauses</strong> — initialization code in the class body that runs on every construction. Has access to <code>Self</code> and all fields, making it ideal for registering the object, computing derived values, or calling divergent functions that can&#x27;t appear in field defaults.</li><li><strong>Constructor functions</strong> — annotated with <code>&lt;constructor&gt;</code>, these are first-class functions that can validate inputs, delegate to other constructors (including parent class constructors), be overloaded, and be passed around as values. They are the most powerful option and essential for inheritance hierarchies where subclass constructors need to initialize superclass fields.</li></ul>
 <p>These approaches compose: a constructor function returns an archetype expression, which can contain <code>let</code> and <code>block</code> clauses, and the class body can also have its own <code>block</code> clauses that execute regardless of which constructor was used.</p>
 <p>For simple cases where you just need to set field values, use archetype expressions directly:</p>
 <pre><code>player := class:
@@ -1057,12 +1039,7 @@ MakeNewPlayer&lt;constructor&gt;(Name:string) := player:
   <article class="cn-read">
     <h2>执行顺序 <small>Order of Execution</small></h2>
     <p>了解执行顺序对于正确初始化至关重要：</p>
-<ol><li>**原型表达式：** 字段初始值设定项按顺序执行</li></ol>
-<p>它们被写在原型中</p>
-<ol><li>**委托构造函数：**首先初始化子类字段，</li></ol>
-<p>然后父构造函数运行</p>
-<ol><li>**类主体块：**当使用直接原型构造时，</li></ol>
-<p>类定义中的块在字段初始化之前执行</p>
+<ol><li><strong>原型表达式：</strong> 字段初始值设定项按照在原型中写入的顺序执行</li><li><strong>委托构造函数：</strong> 首先初始化子类字段，然后运行父类构造函数</li><li><strong>类主体块：</strong> 使用直接原型构造时，类定义中的块在字段初始化之前执行</li></ol>
 <p>将构造函数委托给父类：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class:
     BaseValue:int
@@ -1090,12 +1067,7 @@ Instance := MakeDerived(10, 20)</code></pre></figure>
     <summary>展开英文原文：Order of Execution</summary>
     <div class="md"><h3>Order of Execution</h3>
 <p>Understanding execution order is crucial for correct initialization:</p>
-<ol><li><strong>Archetype expression:</strong> Field initializers execute in the order</li></ol>
-<p>they&#x27;re written in the archetype</p>
-<ol><li><strong>Delegating constructor:</strong> Subclass fields are initialized first,</li></ol>
-<p>then the parent constructor runs</p>
-<ol><li><strong>Class body blocks:</strong> When using direct archetype construction,</li></ol>
-<p>blocks in the class definition execute before field initialization</p>
+<ol><li><strong>Archetype expression:</strong> Field initializers execute in the order they&#x27;re written in the archetype</li><li><strong>Delegating constructor:</strong> Subclass fields are initialized first, then the parent constructor runs</li><li><strong>Class body blocks:</strong> When using direct archetype construction, blocks in the class definition execute before field initialization</li></ol>
 <p>For delegating constructors to parent classes:</p>
 <pre><code>base := class:
     BaseValue:int
@@ -1123,7 +1095,7 @@ Instance := MakeDerived(10, 20)</code></pre>
   <article class="cn-read">
     <h2>影子和资格 <small>Shadowing and Qualification</small></h2>
     <p>Verse 对名称隐藏有严格的规则，以防止歧义并保持代码清晰度。了解这些规则和限定语法对于使用继承层次结构、多个接口和嵌套模块至关重要。</p>
-<p>在大多数情况下，您**无法重新定义封闭范围中已存在的名称**。这适用于函数、变量、类、接口和模块：</p>
+<p>在大多数情况下，您<strong>无法重新定义封闭范围中已存在的名称</strong>。这适用于函数、变量、类、接口和模块：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Function at module level shadows class method
 # F(X:int):int = X + 1
 # c := class:
@@ -1150,8 +1122,8 @@ A():void = {}             # ERROR - order doesn&#x27;t matter
 
 Id():void = {}
 Id := module {}           # ERROR</code></pre></figure>
-<p>**无论定义顺序如何**都存在阴影禁止 - 外部名称是在内部范围之前还是之后定义并不重要。</p>
-<p>要在不同上下文中定义具有相同名称的方法，请使用**限定名称**和语法 <code>(ClassName:)MethodName</code>：</p>
+<p><strong>无论定义顺序如何</strong>都存在阴影禁止 - 外部名称是在内部范围之前还是之后定义并不重要。</p>
+<p>要在不同上下文中定义具有相同名称的方法，请使用<strong>限定名称</strong>和语法 <code>(ClassName:)MethodName</code>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Class with qualified method of same name
 c := class:
    (c:)F(X:int):int = X + 2
@@ -1222,7 +1194,7 @@ c{}.(c:)F(10)  # Returns 12</code></pre>
 </section><section class="section" id="s15-methods-with-same-name">
   <article class="cn-read">
     <h2>同名方法 <small>Methods with Same Name</small></h2>
-    <p>使用限定符，您可以定义与继承方法同名的*新方法*，从而在同一个类中创建多个不同的方法：</p>
+    <p>使用限定符，您可以定义与继承方法同名的<em>新方法</em>，从而在同一个类中创建多个不同的方法：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>c := class&lt;abstract&gt; { F(X:int):int }
 
 d := class(c):
@@ -1239,7 +1211,7 @@ e := class(d):
 E.(c:)F(10)  # Returns 11 (inherited from d&#x27;s override)
 E.(e:)F(10)  # Returns 12 (new method in e)</code></pre></figure>
 <p>主要区别：</p>
-<ul><li>不带限定符的 <code>F&lt;override&gt;</code>：覆盖继承的 <code>F</code></li><li><code>(e:)F</code> 不带 <code>&lt;override&gt;</code>：定义特定于 <code>e</code> 的 **新** <code>F</code></li></ul>
+<ul><li>不带限定符的 <code>F&lt;override&gt;</code>：覆盖继承的 <code>F</code></li><li><code>(e:)F</code> 不带 <code>&lt;override&gt;</code>：定义特定于 <code>e</code> 的 <strong>新</strong> <code>F</code></li></ul>
 <p>这允许一个类具有多个同名的方法，通过它们的限定符进行区分，每个方法在类层次结构中服务于不同的目的。</p>
   </article>
   <details class="original">
@@ -1326,7 +1298,7 @@ collision := class(i, j):
 Obj.(i:)B(1)  # Returns 21
 Obj.(j:)B(1)  # Returns 31</code></pre></figure>
 <p>如果没有限定符，编译器将无法确定您正在实现哪个接口的方法，从而导致错误。资格使您的意图明确。</p>
-<p>**复杂的接口层次结构：**</p>
+<p><strong>复杂的接口层次结构：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>i := interface:
     C(X:int):int
 
@@ -1499,7 +1471,7 @@ IntContainer := container(int){Value := 42}
 StringContainer := container(string){Value := &quot;hello&quot;}
 PlayerContainer := container(player){Value := player{Name := &quot;Hero&quot;, Health := 100}}</code></pre></figure>
 <p>语法 <code>container(t:type)</code> 定义一个由类型 <code>t</code> 参数化的类。在类定义中，<code>t</code> 可以在任何具体类型出现的地方使用——在字段声明、方法签名或返回类型中。</p>
-<p>**多种类型参数：**</p>
+<p><strong>多种类型参数：</strong></p>
 <p>类可以接受多个类型参数：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>pair(t:type, u:type) := class:
     First:t
@@ -1508,7 +1480,7 @@ PlayerContainer := container(player){Value := player{Name := &quot;Hero&quot;, H
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Different types for each parameter
 Coordinate := pair(int, int){First := 10, Second := 20}
 NamedValue := pair(string, float){First := &quot;score&quot;, Second := 99.5}</code></pre></figure>
-<p>**在方法中键入参数：**</p>
+<p><strong>在方法中键入参数：</strong></p>
 <p>类型参数在整个类中可用，包括在方法中：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>optional_container(t:type) := class:
     var MaybeValue:?t = false
@@ -1564,7 +1536,7 @@ NamedValue := pair(string, float){First := &quot;score&quot;, Second := 99.5}</c
 </section><section class="section" id="s21-instantiation-and-identity">
   <article class="cn-read">
     <h2>实例化和身份 <small>Instantiation and Identity</small></h2>
-    <p>当您使用特定类型参数实例化参数类时，Verse 会创建一个具体类型。至关重要的是，**具有相同类型参数的多个实例化会产生相同的类型**：</p>
+    <p>当您使用特定类型参数实例化参数类时，Verse 会创建一个具体类型。至关重要的是，<strong>具有相同类型参数的多个实例化会产生相同的类型</strong>：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>container(t:type) := class:
     Value:t
 
@@ -1581,11 +1553,9 @@ C2 := container(int){Value := 2}
 
 # Both have the same type: container(int)
 # Type checking treats them identically</code></pre></figure>
-<p>实例化过程是**确定性和记忆化的**。第一次编写 <code>container(int)</code> 时，Verse 会生成一个具体类型。 <code>container(int)</code> 的每次使用都指同一类型，而不是新副本。</p>
+<p>实例化过程是<strong>确定性和记忆化的</strong>。第一次编写 <code>container(int)</code> 时，Verse 会生成一个具体类型。 <code>container(int)</code> 的每次使用都指同一类型，而不是新副本。</p>
 <p>这对于：</p>
-<ul><li>**类型兼容性**：可以使用 <code>container(int)</code> 的两个值</li></ul>
-<p>可互换地</p>
-<ul><li>**内存效率**：不创建重复的类型定义</li><li>**语义正确性**：相同类型的参数始终意味着相同的类型</li></ul>
+<ul><li><strong>类型兼容性</strong>：<code>container(int)</code> 的两个值可以互换使用</li><li><strong>内存效率</strong>：不创建重复的类型定义</li><li><strong>语义正确性</strong>：相同类型的参数始终意味着相同的类型</li></ul>
 <p>虽然相同的类型参数总是产生相同的类型，但不同的类型参数会产生不同的、不兼容的类型：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>container(t:type) := class:
     Value:t</code></pre></figure>
@@ -1596,9 +1566,9 @@ StringContainer := container(string){Value := &quot;text&quot;}
 # These are different types and cannot be mixed
 # IntContainer = StringContainer  # Type error!</code></pre></figure>
 <p><code>container(int)</code> 和 <code>container(string)</code> 是完全不同的类型，没有子类型关系。它们碰巧共享相同的结构（均由 <code>container</code> 定义），但这并不使它们兼容。</p>
-<p>虽然参数类的不同实例化是不同的类型，但 Verse 允许基于**方差**使用某些实例化来代替其他实例化。方差决定何时可以在需要 <code>parametric_class(supertype)</code> 的地方使用 <code>parametric_class(subtype)</code>（反之亦然）。</p>
+<p>虽然参数类的不同实例化是不同的类型，但 Verse 允许基于<strong>方差</strong>使用某些实例化来代替其他实例化。方差决定何时可以在需要 <code>parametric_class(supertype)</code> 的地方使用 <code>parametric_class(subtype)</code>（反之亦然）。</p>
 <p>参数类型的差异取决于类型参数在类定义中的使用方式：</p>
-<p>当类型参数仅出现在**返回位置**（方法返回类型、正在读取的字段类型）时，参数类在该参数中是**协变**（有关方差的详细信息，请参阅 [类型](11_types.md#understanding-subtyping)）。这意味着实例化遵循与其类型参数相同的子类型方向：</p>
+<p>当类型参数仅出现在<strong>返回位置</strong>（方法返回类型、正在读取的字段类型）时，参数类在该参数中是<strong>协变</strong>（有关方差的详细信息，请参阅<a href="../11_types/index.html#understanding-subtyping">类型</a>）。这意味着实例化遵循与其类型参数相同的子类型方向：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Base class hierarchy
 entity := class:
     ID:int
@@ -1620,9 +1590,9 @@ PlayerProducer:producer(player) = producer(player){Value := player{ID := 1, Name
 EntityProducer:producer(entity) = PlayerProducer  # Valid!
 
 Result := ProcessProducer(PlayerProducer)  # Works!</code></pre></figure>
-<p>**为什么这是安全的：** 如果您希望从生产者那里获得 <code>entity</code>，则接收 <code>player</code>（它是 <code>entity</code> 的子类型）始终有效 - <code>player</code> 具有 <code>entity</code> 的所有属性。</p>
-<p>**方向：** <code>producer(player)</code> → <code>producer(entity)</code> ✓（遵循子类型方向）</p>
-<p>当类型参数仅出现在**参数位置**（正在使用的方法参数）时，参数类在该参数中是**逆变**（有关方差的详细信息，请参阅 [类型](11_types.md#understanding-subtyping)）。这意味着实例化遵循**相反的**子类型方向：</p>
+<p><strong>为什么这是安全的：</strong> 如果您希望从生产者那里获得 <code>entity</code>，则接收 <code>player</code>（它是 <code>entity</code> 的子类型）始终有效 - <code>player</code> 具有 <code>entity</code> 的所有属性。</p>
+<p><strong>方向：</strong> <code>producer(player)</code> → <code>producer(entity)</code> ✓（遵循子类型方向）</p>
+<p>当类型参数仅出现在<strong>参数位置</strong>（正在使用的方法参数）时，参数类在该参数中是<strong>逆变</strong>（有关方差的详细信息，请参阅<a href="../11_types/index.html#understanding-subtyping">类型</a>）。这意味着实例化遵循<strong>相反的</strong>子类型方向：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
     ID:int
 
@@ -1642,9 +1612,9 @@ ProcessPlayers(C:consumer(player)):void =
     C.Process(player{ID := 1, Name := &quot;Bob&quot;})
 
 ProcessPlayers(EntityConsumer)                    # Works!</code></pre></figure>
-<p>**为什么这是安全的：** 如果您有一个接受任何 <code>entity</code> 的函数，它当然可以处理更具体的 <code>player</code> 类型。 <code>consumer(entity)</code> 可以消耗 <code>consumer(player)</code> 可以消耗的任何东西，甚至更多。</p>
-<p>**方向：** <code>consumer(entity)</code> → <code>consumer(player)</code> ✓（与子类型方向相反）</p>
-<p>当类型参数出现在**参数和返回位置**时，参数类在该参数中是**不变的**。不同实例化之间不存在子类型关系：</p>
+<p><strong>为什么这是安全的：</strong> 如果您有一个接受任何 <code>entity</code> 的函数，它当然可以处理更具体的 <code>player</code> 类型。 <code>consumer(entity)</code> 可以消耗 <code>consumer(player)</code> 可以消耗的任何东西，甚至更多。</p>
+<p><strong>方向：</strong> <code>consumer(entity)</code> → <code>consumer(player)</code> ✓（与子类型方向相反）</p>
+<p>当类型参数出现在<strong>参数和返回位置</strong>时，参数类在该参数中是<strong>不变的</strong>。不同实例化之间不存在子类型关系：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
     ID:int
 
@@ -1662,9 +1632,9 @@ PlayerTransformer:transformer(player) = transformer(player){}
 # Invalid: Cannot use one where the other is expected
 # X:transformer(entity) = PlayerTransformer  # ERROR 3509
 # Y:transformer(player) = EntityTransformer  # ERROR 3509</code></pre></figure>
-<p>**为什么这是必要的：** 如果 <code>transformer(player)</code> 可以用作 <code>transformer(entity)</code>，您可以将任何 <code>entity</code> 传递给其 <code>Transform</code> 方法，该方法特别需要 <code>player</code>。这样是不安全的。</p>
-<p>**方向：** 任一方向均不允许转换</p>
-<p>当类型参数未在任何方法签名中使用（仅在私有实现细节中或根本不使用）时，参数类是**双变**。任何实例化都可以转换为任何其他实例化：</p>
+<p><strong>为什么这是必要的：</strong> 如果 <code>transformer(player)</code> 可以用作 <code>transformer(entity)</code>，您可以将任何 <code>entity</code> 传递给其 <code>Transform</code> 方法，该方法特别需要 <code>player</code>。这样是不安全的。</p>
+<p><strong>方向：</strong> 任一方向均不允许转换</p>
+<p>当类型参数未在任何方法签名中使用（仅在私有实现细节中或根本不使用）时，参数类是<strong>双变</strong>。任何实例化都可以转换为任何其他实例化：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
     ID:int
 
@@ -1682,7 +1652,7 @@ PlayerContainer:container(player) = container(player){}
 # Both directions work
 X:container(entity) = PlayerContainer  # Valid
 Y:container(player) = EntityContainer  # Also valid</code></pre></figure>
-<p>**为什么这样做：** 由于类型参数不影响可观察的行为，因此实例化是可以互换的。</p>
+<p><strong>为什么这样做：</strong> 由于类型参数不影响可观察的行为，因此实例化是可以互换的。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Instantiation and Identity</summary>
@@ -1706,9 +1676,7 @@ C2 := container(int){Value := 2}
 # Type checking treats them identically</code></pre>
 <p>The instantiation process is <strong>deterministic and memoized</strong>. The first time you write <code>container(int)</code>, Verse generates a concrete type. Every subsequent use of <code>container(int)</code> refers to that same type, not a new copy.</p>
 <p>This matters for:</p>
-<ul><li><strong>Type compatibility</strong>: Two values of <code>container(int)</code> can be used</li></ul>
-<p>interchangeably</p>
-<ul><li><strong>Memory efficiency</strong>: Not creating duplicate type definitions</li><li><strong>Semantic correctness</strong>: Same type arguments always mean the same type</li></ul>
+<ul><li><strong>Type compatibility</strong>: Two values of <code>container(int)</code> can be used interchangeably</li><li><strong>Memory efficiency</strong>: Not creating duplicate type definitions</li><li><strong>Semantic correctness</strong>: Same type arguments always mean the same type</li></ul>
 <p>While the same type arguments always produce the same type, different type arguments produce distinct, incompatible types:</p>
 <pre><code>container(t:type) := class:
     Value:t</code></pre>
@@ -1814,7 +1782,7 @@ Y:container(player) = EntityContainer  # Also valid</code></pre>
 </section><section class="section" id="s22-recursive-parametric-types">
   <article class="cn-read">
     <h2>递归参数类型 <small>Recursive Parametric Types</small></h2>
-    <p>参数类可以在其字段类型中引用自身，从而实现递归通用数据结构，例如链表、树和图。关键要求是自引用使用**相同的类型参数**——这是 Verse 允许的唯一递归形式。它之所以有效，是因为编译器可以一次性解析类型结构：<code>list_node(int)</code> 包含一个 <code>?list_node(int)</code>，其中包含一个 <code>?list_node(int)</code>，依此类推。可选的 (<code>?</code>) 提供在运行时终止递归的基本情况。</p>
+    <p>参数类可以在其字段类型中引用自身，从而实现递归通用数据结构，例如链表、树和图。关键要求是自引用使用<strong>相同的类型参数</strong>——这是 Verse 允许的唯一递归形式。它之所以有效，是因为编译器可以一次性解析类型结构：<code>list_node(int)</code> 包含一个 <code>?list_node(int)</code>，其中包含一个 <code>?list_node(int)</code>，依此类推。可选的 (<code>?</code>) 提供在运行时终止递归的基本情况。</p>
 <p>这是一个作为递归参数类构建的通用链表：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Linked list node
 list_node(t:type) := class:
@@ -1840,7 +1808,7 @@ IntList := list_node(int){
         Next := false
     }}
 }</code></pre></figure>
-<p>**不允许：直接类型别名递归**</p>
+<p><strong>不允许：直接类型别名递归</strong></p>
 <p>您不能定义直接别名为包含自身的结构类型的参数类型：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: Direct array recursion
 # t(u:type) := []t(u)  # ERROR 3502
@@ -1855,7 +1823,7 @@ IntList := list_node(int){
 # t(u:type) := u-&gt;t(u)  # ERROR 3502
 # t(u:type) := t(u)-&gt;u  # ERROR 3502</code></pre></figure>
 <p>这些失败是因为它们创建了无限的类型扩展——编译器无法确定类型的实际结构。</p>
-<p>**有效的替代方案：** 将递归引用包装在类中。例如，每个节点保存子节点列表的树是递归参数类型 - 每个 <code>nested_list(t)</code> 包含一个 <code>nested_list(t)</code> 数组：</p>
+<p><strong>有效的替代方案：</strong> 将递归引用包装在类中。例如，每个节点保存子节点列表的树是递归参数类型 - 每个 <code>nested_list(t)</code> 包含一个 <code>nested_list(t)</code> 数组：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Indirect recursion through class
 nested_list(t:type) := class:
     Items:[]nested_list(t)  # OK - wrapped in class</code></pre></figure>
@@ -1866,8 +1834,8 @@ nested_list(t:type) := class:
         nested_list(int){Items := array{}}
     }
 }</code></pre></figure>
-<p>**不允许：多态递归**</p>
-<p>当参数类型使用**不同类型参数**引用自身时，就会发生多态递归：</p>
+<p><strong>不允许：多态递归</strong></p>
+<p>当参数类型使用<strong>不同类型参数</strong>引用自身时，就会发生多态递归：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: Type parameter changes
 # my_type(t:type) := class:
 #     Next:my_type(?t)  # ERROR 3509 - ?t is different from t
@@ -1876,9 +1844,9 @@ nested_list(t:type) := class:
 # bi_list(t:type, u:type) := class:
 #     Value:t
 #     Next:?bi_list(u, t)  # ERROR 3509 - parameters swapped</code></pre></figure>
-<p>**为什么不允许这样做：** 多态递归使类型推断变得不可判定，并且可以创建无限复杂的类型。当你实例化<code>my_type(int)</code>时，它需要<code>my_type(?int)</code>，<code>my_type(?int)</code>又需要<code>my_type(??int)</code>，依此类推。</p>
-<p>**当前限制：** 虽然多态递归在某些类型系统中理论上是合理的，但 Verse 目前不支持它来保持类型检查的易处理性。</p>
-<p>**不允许：相互递归**</p>
+<p><strong>为什么不允许这样做：</strong> 多态递归使类型推断变得不可判定，并且可以创建无限复杂的类型。当你实例化<code>my_type(int)</code>时，它需要<code>my_type(?int)</code>，<code>my_type(?int)</code>又需要<code>my_type(??int)</code>，依此类推。</p>
+<p><strong>当前限制：</strong> 虽然多态递归在某些类型系统中理论上是合理的，但 Verse 目前不支持它来保持类型检查的易处理性。</p>
+<p><strong>不允许：相互递归</strong></p>
 <p>不支持多个参数类型之间的相互递归：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: Mutual recursion
 # t1(t:type) := class:
@@ -1886,8 +1854,8 @@ nested_list(t:type) := class:
 #
 # t2(t:type) := class:
 #     Next:?t1(t)  # References t1</code></pre></figure>
-<p>**为什么不允许这样做：** 与多态递归类似，相互递归使类型推断变得复杂，并且可能创建编译器难以解决的循环依赖关系。</p>
-<p>**解决方法：** 合并为单一类型：</p>
+<p><strong>为什么不允许这样做：</strong> 与多态递归类似，相互递归使类型推断变得复杂，并且可能创建编译器难以解决的循环依赖关系。</p>
+<p><strong>解决方法：</strong> 合并为单一类型：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: Single type with multiple cases
 node_type := enum:
     TypeA
@@ -1897,14 +1865,14 @@ combined_node(t:type) := class:
     Type:node_type
     Value:t
     Next:?combined_node(t)</code></pre></figure>
-<p>**不允许：继承递归**</p>
+<p><strong>不允许：继承递归</strong></p>
 <p>您不能从类型变量继承或通过参数类型创建递归继承：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Invalid: Inheriting from parametric self
 # t(u:type) := class(t(u)){}  # ERROR 3590
 
 # Invalid: Inheriting from type variable
 # inherits_from_variable(t:type) := class(t){}  # ERROR 3590</code></pre></figure>
-<p>**为什么不允许这样做：** 继承需要知道父级的结构，但通过参数递归，该结构在定义之前将是自引用的。</p>
+<p><strong>为什么不允许这样做：</strong> 继承需要知道父级的结构，但通过参数递归，该结构在定义之前将是自引用的。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Recursive Parametric Types</summary>
@@ -2181,11 +2149,11 @@ transactional_container(t:type) := class&lt;transacts&gt;:
 
 # Constructor inherits effects
 # Y:transactional_container(int) = transactional_container(int){Property := 2}</code></pre></figure>
-<p>**允许的效果：**</p>
+<p><strong>允许的效果：</strong></p>
 <ul><li><code>&lt;computes&gt;</code> - 允许非终止计算</li><li><code>&lt;transacts&gt;</code> - 参与事务</li><li><code>&lt;reads&gt;</code> - 读取可变状态</li><li><code>&lt;writes&gt;</code> - 写入可变状态</li><li><code>&lt;allocates&gt;</code> - 分配资源</li></ul>
-<p>**不允许：**</p>
-<ul><li><code>&lt;decides&gt;</code> - 可能会失败</li><li><code>&lt;suspends&gt;</code> - 可以暂停执行</li><li><code>&lt;converges&gt;</code> - <code>&lt;converges&gt;</code> 效果保证函数终止（请参阅[效果](13_effects.md) 章节）。参数类不能使用它，因为实例化参数类型可能涉及任意计算 - 编译器无法保证为所有可能的 <code>t</code> 构造 <code>my_type(t)</code> 将终止。</li></ul>
-<p>**效果传播：**</p>
+<p><strong>不允许：</strong></p>
+<ul><li><code>&lt;decides&gt;</code> - 可能会失败</li><li><code>&lt;suspends&gt;</code> - 可以暂停执行</li><li><code>&lt;converges&gt;</code> - <code>&lt;converges&gt;</code> 效果保证函数终止（请参阅<a href="../13_effects/index.html">效果</a> 章节）。参数类不能使用它，因为实例化参数类型可能涉及任意计算 - 编译器无法保证为所有可能的 <code>t</code> 构造 <code>my_type(t)</code> 将终止。</li></ul>
+<p><strong>效果传播：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Effect on parametric type propagates to constructor
 my_type(t:type) := class&lt;computes&gt;:
     Property:t
@@ -2211,7 +2179,7 @@ optional_array(t:type) := []?t
 FilterValid(Items:optional_array(int)):[]int =
     for (Item : Items; Value := Item?):
         Value</code></pre></figure>
-<p>**结构类型别名：**</p>
+<p><strong>结构类型别名：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function type aliases
 transformer(input:type, output:type) := input -&gt; output
 predicate(t:type) := t -&gt; logic
@@ -2228,7 +2196,7 @@ CheckCondition(P:predicate(int), Value:int):logic =
     P(Value)</code></pre></figure>
 <p>类型别名提高了复杂泛型类型的可读性和可维护性。</p>
 <p>除了基本的 <code>subtype</code> 约束之外，参数类型还支持特殊约束：</p>
-<p>**子类型限制：**</p>
+<p><strong>子类型限制：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Constrain to subtype of a class
 bounded_container(t:subtype(entity)) := class:
     Value:t
@@ -2240,14 +2208,14 @@ bounded_container(t:subtype(entity)) := class:
 
 # Invalid: int is not subtype of entity
 # IntContainer := bounded_container(int){}  # Type error</code></pre></figure>
-<p>**可转换子类型约束：**</p>
+<p><strong>可转换子类型约束：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Requires castable subtype
 dynamic_handler(t:castable_subtype(component)) := class:
     Handle(Item:component):void =
         if (Typed := t[Item]):
             # Typed has the specific subtype
             ProcessTyped(Typed)</code></pre></figure>
-<p>**约束传播：**</p>
+<p><strong>约束传播：</strong></p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Constraints propagate through function calls
 wrapper(t:subtype(comparable)) := class:
     Data:t
@@ -2572,27 +2540,27 @@ Handle(A:comparable, B:comparable):void = {}
 # Handle(A:unique_interface, B:unique_interface):void = {}  # ERROR - ambiguous!</code></pre></figure>
 <p>由于 <code>unique_interface</code> 是 <code>comparable</code> 的子类型，因此当使用 <code>unique_interface</code> 参数调用时，两个重载可能会匹配，从而导致编译错误。设计重载函数时，请注意 <code>&lt;unique&gt;</code> 类型参与 <code>comparable</code> 类型层次结构。</p>
 <p><code>&lt;unique&gt;</code> 说明符非常适合：</p>
-<p>**游戏实体：** 无论当前状态如何，世界上的每个实体都必须是可区分的</p>
+<p><strong>游戏实体：</strong> 无论当前状态如何，世界上的每个实体都必须是可区分的</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>#entity := class&lt;unique&gt;:
 #    var Health:int = 100
 #    var Position:vector3
 
 # Can track specific entities in collections
 var ActiveEntities:[entity]logic = map{}</code></pre></figure>
-<p>**组件接口：** 当您需要接口类型基于身份的平等时</p>
+<p><strong>组件接口：</strong> 当您需要接口类型基于身份的平等时</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>#component := interface&lt;unique&gt;:
 #    Owner:entity
 
 # Can use interface references as map keys
 var ComponentRegistry:[component]string = map{}</code></pre></figure>
-<p>**会话对象：** 身份比当前属性值更重要</p>
+<p><strong>会话对象：</strong> 身份比当前属性值更重要</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>#player_session := class&lt;unique&gt;:
 #    PlayerID:string
 #    var ConnectionTime:float
 
 # Track specific sessions
 var ActiveSessions:[player_session]connection_info = map{}</code></pre></figure>
-<p>**资源句柄：**您需要跟踪特定实例而不是等效值的地方</p>
+<p><strong>资源句柄：</strong>您需要跟踪特定实例而不是等效值的地方</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>#texture_handle := class&lt;unique&gt;:
 #    ResourceID:int
 #    FilePath:string
@@ -2804,8 +2772,8 @@ bicycle := class(vehicle):
     <h2>浇注料 <small>Castable</small></h2>
     <p><code>&lt;castable&gt;</code> 说明符支持类的运行时类型检查和安全向下转型。当类标记为 <code>&lt;castable&gt;</code> 时，您可以使用动态类型测试和强制转换来确定对象是否是该类或其子类在运行时的实例。</p>
 <p>如果没有 <code>&lt;castable&gt;</code>，Verse 的类型系统纯粹在编译时运行。 <code>&lt;castable&gt;</code> 说明符添加运行时类型信息，允许代码在执行期间检查实际对象类型并做出反应。这弥补了静态类型安全和动态多态性之间的差距。</p>
-<p>Verse 提供两种形式的类型转换：**易错转换**（可能在运行时失败）和**无错误转换**（在编译时验证）。</p>
-<p>**错误的转换**使用括号语法 <code>Type[Value]</code> 并返回可选结果。这些是运行时检查，仅当该值实际上是目标类型的实例时才会成功：</p>
+<p>Verse 提供两种形式的类型转换：<strong>易错转换</strong>（可能在运行时失败）和<strong>无错误转换</strong>（在编译时验证）。</p>
+<p><strong>错误的转换</strong>使用括号语法 <code>Type[Value]</code> 并返回可选结果。这些是运行时检查，仅当该值实际上是目标类型的实例时才会成功：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;abstract&gt;&lt;castable&gt;&lt;allocates&gt;:
     Name:string
 
@@ -2836,7 +2804,7 @@ ProcessComponent(Comp:component):void =
 # Use with failure handling
 if (Physics := GetPhysicsComponent[SomeComponent]):
     UpdatePhysics(Physics)</code></pre></figure>
-<p>**可靠的转换**使用括号语法 <code>Type(Value)</code>，并且仅当编译器可以验证转换是否安全时才有效，即当值类型是目标类型的子类型时：</p>
+<p><strong>可靠的转换</strong>使用括号语法 <code>Type(Value)</code>，并且仅当编译器可以验证转换是否安全时才有效，即当值类型是目标类型的子类型时：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base := class:
     ID:int
 
@@ -2867,7 +2835,7 @@ ProcessBase(Instance:base):void =
         Print(&quot;It&#x27;s a child: {AsChild.Name}&quot;)
     if (AsGrandchild := grandchild[Instance]):
         Print(&quot;It&#x27;s a grandchild: {AsGrandchild.Extra}&quot;)</code></pre></figure>
-<p>**重要约束：** 参数类型不能是 <code>&lt;castable&gt;</code>。 <code>&lt;castable&gt;</code> 说明符启用运行时类型检查（动态转换），但 Verse 在运行时删除类型参数 — 仅存在具体类，而不存在特定参数实例化。这意味着运行时无法区分 <code>container(int)</code> 和 <code>container(string)</code>，因此允许对参数类型进行动态转换是不合理的：</p>
+<p><strong>重要约束：</strong> 参数类型不能是 <code>&lt;castable&gt;</code>。 <code>&lt;castable&gt;</code> 说明符启用运行时类型检查（动态转换），但 Verse 在运行时删除类型参数 — 仅存在具体类，而不存在特定参数实例化。这意味着运行时无法区分 <code>container(int)</code> 和 <code>container(string)</code>，因此允许对参数类型进行动态转换是不合理的：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: non-parametric castable class
 valid_castable := class&lt;castable&gt;:
     Data:int
@@ -3021,7 +2989,7 @@ ValidFoo := foo{X := 10}
 # COMPILE ERROR: Cannot override final field Val
 # InvalidFoo := foo{Val := 10}</code></pre></figure>
 <p>此限制可确保最终字段在对象的整个生命周期中保持其保证值。具有默认值的 Final 字段充当每个实例的不可变常量。 If you need a field to be customizable during construction, don't mark it as <code>&lt;final&gt;</code>. Final 字段还必须提供默认值 - 您无法在未初始化的情况下声明 Final 字段。</p>
-<p>相关的 <code>&lt;final_super&gt;</code> 说明符**不会**阻止进一步的子类化。相反，它保证该类的所有子类将始终直接继承自它——继承链中的 <code>&lt;final_super&gt;</code> 类及其后代之间不会插入中间类。子类本身可以进一步细分：</p>
+<p>相关的 <code>&lt;final_super&gt;</code> 说明符<strong>不会</strong>阻止进一步的子类化。相反，它保证该类的所有子类将始终直接继承自它——继承链中的 <code>&lt;final_super&gt;</code> 类及其后代之间不会插入中间类。子类本身可以进一步细分：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;abstract&gt;&lt;unique&gt;&lt;castable&gt;&lt;final_super_base&gt;:
       Parent:entity
 
@@ -3031,7 +2999,7 @@ physics_component := class&lt;final_super&gt;(component):
 # Valid: further subclassing is allowed
 gravity_component := class(physics_component):
       GravityScale:float = 1.0</code></pre></figure>
-<p><code>&lt;final_super_base&gt;</code> 标记受限继承树的根。它的目的是与 ZX​​QCODE1ZXQ 一起使用，它在给定实例的层次结构中查找 <code>&lt;final_super&gt;</code> 类。这使得您需要在运行时识别组件的“类别”的组件架构：</p>
+<p><code>&lt;final_super_base&gt;</code> 标记受限继承树的根。它的目的是与 <code>GetCastableFinalSuperClass</code> 一起使用，它在给定实例的层次结构中查找 <code>&lt;final_super&gt;</code> 类。这使得您需要在运行时识别组件的“类别”的组件架构：</p>
 <figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>#            base_type&lt;castable&gt;
 #               /         \
 #  a_class&lt;final_super&gt;   w_class
@@ -3416,7 +3384,7 @@ boss := interface(combatant):
     UseSpecialAbility():void
     GetPhase():int = Phase</code></pre></figure>
 <p>实现 <code>boss</code> 的类继承整个层次结构中的所有字段和方法 - <code>boss</code>、<code>combatant</code>、<code>damageable</code> 和 <code>healable</code>。完全支持钻石继承（接口通过多个路径继承），字段正确合并，因此每个字段在实现类中仅存在一次。</p>
-<p>**重要：** 一个类不能多次直接继承同一个接口（例如，<code>class(interface1, interface1)</code> 是一个错误），但可以通过菱形继承间接继承它。这意味着即使 <code>interface2</code> 和 <code>interface3</code> 都继承自相同的基接口，<code>class(interface2, interface3)</code> 也是有效的。</p>
+<p><strong>重要：</strong> 一个类不能多次直接继承同一个接口（例如，<code>class(interface1, interface1)</code> 是一个错误），但可以通过菱形继承间接继承它。这意味着即使 <code>interface2</code> 和 <code>interface3</code> 都继承自相同的基接口，<code>class(interface2, interface3)</code> 也是有效的。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Interface Hierarchies</summary>
@@ -3468,7 +3436,7 @@ UseTrackedValue():void =
     # Uses setter - validates and updates Storage
     set Object.Value = 150</code></pre></figure>
 <p><code>external{}</code> 关键字表示该字段没有直接存储 - 所有访问都通过访问器方法进行。 This pattern is powerful for implementing property change notifications, validation, computed properties, and other scenarios requiring logic around field access.</p>
-<p>**重要：** 接口中定义的具有访问器的字段不能在实现类中重写。访问器实现由接口固定。</p>
+<p><strong>重要：</strong> 接口中定义的具有访问器的字段不能在实现类中重写。访问器实现由接口固定。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Fields with Accessors</summary>
