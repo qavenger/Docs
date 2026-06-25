@@ -137,6 +137,110 @@
       min-height: 36px;
     }
 
+    .map-section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 22px;
+    }
+
+    .map-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .map-head h2 {
+      margin: 0;
+    }
+
+    .map-hint {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .unit-map {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .unit-cluster {
+      min-height: 260px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfb;
+    }
+
+    .unit-cluster h3 {
+      margin-bottom: 10px;
+      color: #2d3a34;
+    }
+
+    .bubble-field {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: flex-start;
+    }
+
+    .unit-bubble {
+      border: 1px solid #cbd8d0;
+      border-radius: 999px;
+      padding: 8px 11px;
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 8px 18px rgba(24, 33, 29, 0.06);
+      cursor: pointer;
+      transition: transform 150ms ease, opacity 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .unit-bubble:hover,
+    .unit-bubble:focus-visible {
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .unit-bubble small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .unit-map.is-focusing .unit-bubble {
+      opacity: 0.25;
+      filter: grayscale(0.85);
+    }
+
+    .unit-map.is-focusing .unit-bubble.is-related {
+      opacity: 1;
+      filter: none;
+      border-color: rgba(23, 107, 91, 0.72);
+      background: #eef7f2;
+      box-shadow: 0 12px 28px rgba(23, 107, 91, 0.16);
+    }
+
+    .unit-map.is-focusing .unit-bubble.is-active {
+      opacity: 1;
+      filter: none;
+      color: #fff;
+      border-color: var(--accent);
+      background: var(--accent);
+      box-shadow: 0 16px 32px rgba(23, 107, 91, 0.24);
+    }
+
     .chain-chip {
       padding: 6px 10px;
       border-radius: 999px;
@@ -349,6 +453,14 @@
         grid-template-columns: 1fr;
       }
 
+      .unit-map {
+        grid-template-columns: 1fr;
+      }
+
+      .unit-cluster {
+        min-height: 0;
+      }
+
       .section-head,
       .section-body {
         padding-left: 16px;
@@ -398,6 +510,78 @@
   </aside>
 
   <main class="wrap">
+    <section class="map-section" data-domain="base mechanics electricity optics constants">
+      <div class="map-head">
+        <div>
+          <h2>单位关系泡泡图</h2>
+          <p class="map-hint">把鼠标悬停到一个泡泡上：直接相关的单位会亮起来，不相关的会变灰。点击也可以固定看上方拆解面板。</p>
+        </div>
+      </div>
+
+      <div id="unitMap" class="unit-map" aria-label="单位关系泡泡图">
+        <section class="unit-cluster">
+          <h3>基础积木</h3>
+          <div class="bubble-field">
+            <button class="unit-bubble" data-unit="m" data-related="m² m³ m/s m/s² N J W Pa kg/m³ V/m W/m² lx">m<small>长度</small></button>
+            <button class="unit-bubble" data-unit="kg" data-related="N J W Pa kg/m³ kg·m/s kg·m² kg·m²/s J/kg">kg<small>质量</small></button>
+            <button class="unit-bubble" data-unit="s" data-related="Hz m/s m/s² N J W C V Ω H eV">s<small>时间</small></button>
+            <button class="unit-bubble" data-unit="A" data-related="C V Ω S F Wb T H A/m A/m²">A<small>电流</small></button>
+            <button class="unit-bubble" data-unit="K" data-related="J/(kg·K) kB R σ">K<small>温度</small></button>
+            <button class="unit-bubble" data-unit="cd" data-related="lm lx cd/m²">cd<small>光度</small></button>
+            <button class="unit-bubble" data-unit="rad" data-related="rad/s rad/s² Hz ω">rad<small>角量</small></button>
+          </div>
+        </section>
+
+        <section class="unit-cluster">
+          <h3>力学链</h3>
+          <div class="bubble-field">
+            <button class="unit-bubble" data-unit="m/s" data-related="m s m/s² kg·m/s">m/s<small>速度</small></button>
+            <button class="unit-bubble" data-unit="m/s²" data-related="m s N g">m/s²<small>加速度</small></button>
+            <button class="unit-bubble" data-unit="N" data-related="kg m/s² Pa J N·s N·m N/m">N<small>力</small></button>
+            <button class="unit-bubble" data-unit="Pa" data-related="N m² σ Pa·s">Pa<small>压强/应力</small></button>
+            <button class="unit-bubble" data-unit="J" data-related="N·m kg·m²/s² W eV h J/kg J/(kg·K) J/m²">J<small>能量</small></button>
+            <button class="unit-bubble" data-unit="W" data-related="J/s V A W/m² W/sr lm">W<small>功率</small></button>
+            <button class="unit-bubble" data-unit="kg/m³" data-related="kg m³ ρ">kg/m³<small>密度</small></button>
+            <button class="unit-bubble" data-unit="kg·m²" data-related="kg m² kg·m²/s N·m">kg·m²<small>转动惯量</small></button>
+            <button class="unit-bubble" data-unit="N·m" data-related="N m J kg·m²/s²">N·m<small>转矩/功</small></button>
+            <button class="unit-bubble" data-unit="J/(kg·K)" data-related="J kg K kB">J/(kg·K)<small>比热容</small></button>
+          </div>
+        </section>
+
+        <section class="unit-cluster">
+          <h3>电磁链</h3>
+          <div class="bubble-field">
+            <button class="unit-bubble" data-unit="C" data-related="A s V F eV C/m² C/m³">C<small>电荷</small></button>
+            <button class="unit-bubble" data-unit="V" data-related="J C Ω F Wb V/m eV W">V<small>电压</small></button>
+            <button class="unit-bubble" data-unit="Ω" data-related="V A S Ω·m">Ω<small>电阻</small></button>
+            <button class="unit-bubble" data-unit="F" data-related="C V F/m ε0">F<small>电容</small></button>
+            <button class="unit-bubble" data-unit="Wb" data-related="V s T H Φ">Wb<small>磁通量</small></button>
+            <button class="unit-bubble" data-unit="T" data-related="Wb m² μ0">T<small>磁感应</small></button>
+            <button class="unit-bubble" data-unit="H" data-related="Wb A μ0">H<small>电感</small></button>
+            <button class="unit-bubble" data-unit="V/m" data-related="V m N/C F/m ε0">V/m<small>电场</small></button>
+            <button class="unit-bubble" data-unit="A/m²" data-related="A m² σ">A/m²<small>电流密度</small></button>
+            <button class="unit-bubble" data-unit="eV" data-related="e V J h c">eV<small>微观能量</small></button>
+          </div>
+        </section>
+
+        <section class="unit-cluster">
+          <h3>光与常数链</h3>
+          <div class="bubble-field">
+            <button class="unit-bubble" data-unit="Hz" data-related="s ν ω h J eV">Hz<small>频率</small></button>
+            <button class="unit-bubble" data-unit="λ" data-related="m Hz c h J eV">λ<small>波长</small></button>
+            <button class="unit-bubble" data-unit="h" data-related="J s Hz λ c eV ℏ">h<small>普朗克</small></button>
+            <button class="unit-bubble" data-unit="c" data-related="m/s λ Hz ε0 μ0">c<small>光速</small></button>
+            <button class="unit-bubble" data-unit="W/m²" data-related="W m² J/m² σ">W/m²<small>辐照度</small></button>
+            <button class="unit-bubble" data-unit="lm" data-related="cd sr lx W">lm<small>光通量</small></button>
+            <button class="unit-bubble" data-unit="lx" data-related="lm m² cd">lx<small>照度</small></button>
+            <button class="unit-bubble" data-unit="cd/m²" data-related="cd m² nit">cd/m²<small>亮度</small></button>
+            <button class="unit-bubble" data-unit="ε0" data-related="F/m c μ0 V/m">ε0<small>真空电容率</small></button>
+            <button class="unit-bubble" data-unit="μ0" data-related="H/m N/A² c ε0 T">μ0<small>真空磁导率</small></button>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <section data-domain="base">
       <div class="section-head">
         <h2>一、真正的基础单位</h2>
@@ -876,9 +1060,46 @@
       });
     }
 
+    function bindUnitMap() {
+      const map = document.getElementById("unitMap");
+      if (!map) return;
+
+      const bubbles = Array.from(map.querySelectorAll(".unit-bubble"));
+      const clearFocus = () => {
+        map.classList.remove("is-focusing");
+        bubbles.forEach(bubble => bubble.classList.remove("is-active", "is-related"));
+      };
+
+      const focusBubble = bubble => {
+        const unit = bubble.dataset.unit || bubble.innerText;
+        const related = new Set((bubble.dataset.related || "").split(/\s+/).filter(Boolean));
+        related.add(unit);
+
+        map.classList.add("is-focusing");
+        bubbles.forEach(other => {
+          const otherUnit = other.dataset.unit || other.innerText;
+          const otherRelated = new Set((other.dataset.related || "").split(/\s+/).filter(Boolean));
+          const connected = related.has(otherUnit) || otherRelated.has(unit);
+          other.classList.toggle("is-active", other === bubble);
+          other.classList.toggle("is-related", connected && other !== bubble);
+        });
+
+        updateInspector(unit);
+      };
+
+      bubbles.forEach(bubble => {
+        bubble.addEventListener("mouseenter", () => focusBubble(bubble));
+        bubble.addEventListener("focus", () => focusBubble(bubble));
+        bubble.addEventListener("click", () => focusBubble(bubble));
+        bubble.addEventListener("mouseleave", clearFocus);
+        bubble.addEventListener("blur", clearFocus);
+      });
+    }
+
     searchBox.addEventListener("input", applyFilters);
     domainFilter.addEventListener("change", applyFilters);
     bindInteractiveTokens();
+    bindUnitMap();
   </script>
 </body>
 </html>
