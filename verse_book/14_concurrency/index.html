@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>并发 - Book of Verse 中文提炼版</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">Book of Verse</div>
+  <div class="sub">中文提炼版 · 同源目录结构</div>
+  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
+<a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
+<a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
+<a href="../03_containers/index.html"><span>Containers types</span><br><small>容器类型</small></a>
+<a href="../04_operators/index.html"><span>Operators</span><br><small>运算符</small></a>
+<a href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
+<a href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
+<a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
+<a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
+<a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
+<a href="../10_classes_interfaces/index.html"><span>Classes &amp; Interfaces</span><br><small>类与接口</small></a>
+<a href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
+<a href="../12_access/index.html"><span>Access Specifiers</span><br><small>访问控制与元数据</small></a>
+<a href="../13_effects/index.html"><span>Effects</span><br><small>效果系统</small></a>
+<a class="active" href="../14_concurrency/index.html"><span>Concurrency</span><br><small>并发</small></a>
+<a href="../15_live_variables/index.html"><span>Live Variables</span><br><small>实时变量</small></a>
+<a href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
+<a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
+<a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
+<a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
+</aside>
+<main class="main">
+  <div class="crumb">Concurrency / <a href="https://verselang.github.io/book/14_concurrency/">原文页面</a></div>
+  <section class="hero">
+    <h1>并发</h1>
+    <p class="lead">并发页介绍 Verse 的时间流控制：即时表达式与异步表达式、<code>&lt;suspends&gt;</code>、结构化并发、spawn/task、取消、清理、计时函数和事件同步。</p>
+    <div class="meta"><span class="pill">源文件：14_concurrency.md</span><span class="pill">小节数：37</span><span class="pill">生成：2026-06-25</span></div>
+  </section>
+  <section class="grid">
+    <article class="card"><h2>核心提炼</h2><ul class="list"><li>表达式分 immediate 与 async；使用 async 能力的函数需要 <code>&lt;suspends&gt;</code>。</li><li><code>sync</code> 同时启动多个分支并等待全部完成，结果可组合。</li><li><code>race</code> 取最先完成分支并取消其他分支；<code>rush</code> 允许最先完成后继续，其他分支仍运行。</li><li><code>branch</code> 启动结构化后台工作，仍受父作用域生命周期约束。</li><li><code>spawn</code> 是非结构化并发，返回 <code>task(t)</code> 句柄，可 cancel 或 await。</li><li>task 的 <code>Await()</code> 可等待结果，已完成任务再次 await 通常立即返回缓存结果。</li><li>取消只在 suspension point 生效，长循环可通过 <code>Sleep(0.0)</code> 或 tick 让出执行。</li><li><code>defer</code> 用于清理，但不能包含 suspending 操作。</li><li><code>Sleep</code>、<code>NextTick</code>、<code>GetSecondsSinceEpoch</code> 支持时间控制和日志/分析。</li><li>事件、sticky events、subscribable events 与 awaitable/signalable 接口构成同步机制。</li></ul></article>
+    <article class="card"><h2>规则与坑点</h2><ul class="list"><li><code>sync/race/rush/branch</code> 等结构化并发通常只能在 <code>&lt;suspends&gt;</code> 函数中使用。</li><li><code>spawn</code> 需要 suspends 函数，不能直接 spawn decides 函数。</li><li>取消不是立即中断 CPU 循环，必须到达挂起点。</li><li><code>race</code> 分支返回类型会合并为共同超类型；需要识别赢家时可返回带 tag 的值。</li><li><code>defer</code> 不应直接 suspend，资源清理要保持即时。</li></ul></article>
+    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>sync: A(); B()</code></li><li><code>race: Slow(); Fast()</code></li><li><code>rush: Work(); Timeout()</code></li><li><code>spawn{AsyncWork()}</code></li><li><code>Task.Cancel()</code></li><li><code>Result := Task.Await()</code></li><li><code>Sleep(0.0)</code></li><li><code>NextTick()</code></li></ul></article>
+  </section>
+  <section>
+    <h2>原文小节结构</h2>
+    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
+    <ol class="toc"><li class="level-1">Concurrency</li><li class="level-2">Core Concepts</li><li class="level-3">Immediate vs Async Expressions</li><li class="level-3">Simulation Updates</li><li class="level-3">The suspends Effect</li><li class="level-2">Structured Concurrency</li><li class="level-3">Effect Requirements</li><li class="level-3">The sync Expression</li><li class="level-3">The race Expression</li><li class="level-3">The rush Expression</li><li class="level-3">Returning from Concurrent Arms</li><li class="level-3">The branch Expression</li><li class="level-2">Unstructured Concurrency</li><li class="level-3">The spawn Expression</li><li class="level-2">The task(t) Type</li><li class="level-3">Task.Cancel()</li><li class="level-3">Task.Await()</li><li class="level-3">Common Task Patterns</li><li class="level-3">Suspension Points and Cancellation</li><li class="level-2">Cleanup and Resource Management</li><li class="level-3">The defer: Block</li><li class="level-2">Timing Functions</li><li class="level-3">NextTick()</li><li class="level-1">Test the delay function</li><li class="level-3">Getting Current Time: GetSecondsSinceEpoch</li><li class="level-2">Events and Synchronization</li><li class="level-3">Basic Events</li><li class="level-3">Sticky Events</li><li class="level-3">Subscribable Events</li><li class="level-3">The awaitable and signalable Interfaces</li><li class="level-3">Transactional Behavior</li><li class="level-3">Event Patterns and Use Cases</li><li class="level-2">Common Patterns and Best Practices</li><li class="level-2">Limitations and Considerations</li><li class="level-3">Iteration Restrictions</li><li class="level-3">Abstraction Over Implementation</li><li class="level-3">Effect Interactions</li></ol>
+  </section>
+  <section>
+    <h2>阅读提示</h2>
+    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
+  </section>
+  <nav class="footer-nav">
+    <div><a href="../13_effects/index.html">上一页：效果系统</a></div>
+    <div><a href="../15_live_variables/index.html">下一页：实时变量</a></div>
+  </nav>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>类型系统 - Book of Verse 中文提炼版</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">Book of Verse</div>
+  <div class="sub">中文提炼版 · 同源目录结构</div>
+  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
+<a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
+<a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
+<a href="../03_containers/index.html"><span>Containers types</span><br><small>容器类型</small></a>
+<a href="../04_operators/index.html"><span>Operators</span><br><small>运算符</small></a>
+<a href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
+<a href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
+<a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
+<a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
+<a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
+<a href="../10_classes_interfaces/index.html"><span>Classes &amp; Interfaces</span><br><small>类与接口</small></a>
+<a class="active" href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
+<a href="../12_access/index.html"><span>Access Specifiers</span><br><small>访问控制与元数据</small></a>
+<a href="../13_effects/index.html"><span>Effects</span><br><small>效果系统</small></a>
+<a href="../14_concurrency/index.html"><span>Concurrency</span><br><small>并发</small></a>
+<a href="../15_live_variables/index.html"><span>Live Variables</span><br><small>实时变量</small></a>
+<a href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
+<a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
+<a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
+<a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
+</aside>
+<main class="main">
+  <div class="crumb">Type System / <a href="https://verselang.github.io/book/11_types/">原文页面</a></div>
+  <section class="hero">
+    <h1>类型系统</h1>
+    <p class="lead">类型系统页把 Verse 的类型视为一等值和约束工具，覆盖子类型、顶层/底层类型、comparable、parametric types、variance、casting、where clauses 和 refinement types。</p>
+    <div class="meta"><span class="pill">源文件：11_types.md</span><span class="pill">小节数：52</span><span class="pill">生成：2026-06-25</span></div>
+  </section>
+  <section class="grid">
+    <article class="card"><h2>核心提炼</h2><ul class="list"><li>类型本身可出现在表达式和泛型约束中，<code>type</code> 是类型的类型。</li><li><code>any</code> 是广义顶层类型，具体值可向上看作更宽类型；部分失败/不可达表达式会落到特殊底部语义。</li><li><code>comparable</code> 表示可比较值，是 map key 和 equality 的基础约束。</li><li>容器、option、tuple、function、class/interface 之间存在子类型和 variance 规则。</li><li>泛型/参数化类型用 <code>where</code> 约束类型参数，可以表达 subtype、comparable、函数类型等关系。</li><li>运行时 cast 用可失败语法，把动态值检查为更具体类型。</li><li>refinement type 用 <code>type{_X:T where 条件}</code> 表达数值范围等细化约束。</li><li>float refinement 有 IEEE 754 边界，NaN、Inf、字面量精度都会影响可接受范围。</li></ul></article>
+    <article class="card"><h2>规则与坑点</h2><ul class="list"><li>类型兼容不等同于运行时相等；尤其 class、interface、option 和容器有各自规则。</li><li>可比较约束要从元素/字段递归判断，包含不可比较字段的复合类型不能做 key 或 equality。</li><li>cast 只适用于支持的 class/interface 等类型关系，primitive 不能随意 cast。</li><li>refinement 约束表达式限制很强，通常只能用字面量和简单比较，不能调用函数或引用变量。</li><li>overload 不能依赖子类型过近的签名，编译器会判定不够 distinct。</li></ul></article>
+    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>t:type</code> 声明类型参数。</li><li><code>where t:subtype(comparable)</code> 添加约束。</li><li><code>type{_X:float where 0.0 &lt;= _X, _X &lt;= 1.0}</code> 定义百分比类型。</li><li><code>SomeType[Value]</code> 表示可失败 cast。</li><li><code>[]t</code>、<code>[k]v</code>、<code>?t</code> 是参数化类型形态。</li></ul></article>
+  </section>
+  <section>
+    <h2>原文小节结构</h2>
+    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
+    <ol class="toc"><li class="level-1">Types</li><li class="level-2">Understanding Subtyping</li><li class="level-2">Numeric and String Conversions</li><li class="level-2">Type any</li><li class="level-3">Generic Functions and Type Preservation</li><li class="level-2">Class and Interface Casting</li><li class="level-3">Dynamic Type-Based Casting</li><li class="level-2">Where Clauses</li><li class="level-2">Refinement Types</li><li class="level-3">IEEE 754 Edge Cases</li><li class="level-3">Constraint Expression Restrictions</li><li class="level-3">Fallible Casts</li><li class="level-3">Examples</li><li class="level-3">Overloading Restrictions</li><li class="level-2">Comparable and Equality</li><li class="level-3">Comparable as a Generic Constraint</li><li class="level-3">Array-Tuple Comparison</li><li class="level-3">Overload Distinctness with Comparable</li><li class="level-3">Dynamic Comparable Values</li><li class="level-3">Map Keys and Comparable</li><li class="level-2">Type Hierarchies</li><li class="level-3">Understanding void</li><li class="level-1">Test that this conversion is not allowed</li><li class="level-1">Concrete function that matches functiontype1</li><li class="level-1">Function that takes functiontype2 and uses it</li><li class="level-2">Type Aliases</li><li class="level-1">At module scope</li><li class="level-1">Simple type aliases</li><li class="level-1">Function type aliases</li><li class="level-1">Public alias - accessible from other modules</li><li class="level-1">Internal alias - only accessible within defining module</li><li class="level-1">Note: Protected/private are for classes and interfaces, not type aliases at module scope</li><li class="level-1">Test that public alias to internal type produces error</li><li class="level-3">Requirement</li><li class="level-2">Metatypes</li><li class="level-3">subtype</li><li class="level-3">concretesubtype</li><li class="level-4">Requirements</li><li class="level-3">castablesubtype</li><li class="level-3">finalsuper and Type Queries</li><li class="level-4">GetCastableFinalSuperClass</li><li class="level-1">Test that the calls succeed (don&#x27;t fail)</li><li class="level-4">Multiple Final Supers</li><li class="level-1">Test that the calls succeed</li><li class="level-4">GetCastableFinalSuperClassFromType</li><li class="level-1">Test both functions work</li><li class="level-3">castableconcretesubtype</li><li class="level-3">classifiablesubset</li><li class="level-4">Type Hierarchy Semantics</li><li class="level-4">Core Operations</li><li class="level-1">Test FilterByType</li><li class="level-4">Design Considerations</li></ol>
+  </section>
+  <section>
+    <h2>阅读提示</h2>
+    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
+  </section>
+  <nav class="footer-nav">
+    <div><a href="../10_classes_interfaces/index.html">上一页：类与接口</a></div>
+    <div><a href="../12_access/index.html">下一页：访问控制与元数据</a></div>
+  </nav>
+</main>
+</div>
+</body>
+</html>

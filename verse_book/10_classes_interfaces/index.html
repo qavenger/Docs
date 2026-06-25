@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>类与接口 - Book of Verse 中文提炼版</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">Book of Verse</div>
+  <div class="sub">中文提炼版 · 同源目录结构</div>
+  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
+<a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
+<a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
+<a href="../03_containers/index.html"><span>Containers types</span><br><small>容器类型</small></a>
+<a href="../04_operators/index.html"><span>Operators</span><br><small>运算符</small></a>
+<a href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
+<a href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
+<a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
+<a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
+<a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
+<a class="active" href="../10_classes_interfaces/index.html"><span>Classes &amp; Interfaces</span><br><small>类与接口</small></a>
+<a href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
+<a href="../12_access/index.html"><span>Access Specifiers</span><br><small>访问控制与元数据</small></a>
+<a href="../13_effects/index.html"><span>Effects</span><br><small>效果系统</small></a>
+<a href="../14_concurrency/index.html"><span>Concurrency</span><br><small>并发</small></a>
+<a href="../15_live_variables/index.html"><span>Live Variables</span><br><small>实时变量</small></a>
+<a href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
+<a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
+<a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
+<a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
+</aside>
+<main class="main">
+  <div class="crumb">Classes &amp; Interfaces / <a href="https://verselang.github.io/book/10_classes_interfaces/">原文页面</a></div>
+  <section class="hero">
+    <h1>类与接口</h1>
+    <p class="lead">类与接口页是对象模型主章，说明 class 的引用语义、字段/方法、初始化、继承、身份、可见性，以及 interface 如何表达契约。</p>
+    <div class="meta"><span class="pill">源文件：10_classes_interfaces.md</span><span class="pill">小节数：100</span><span class="pill">生成：2026-06-25</span></div>
+  </section>
+  <section class="grid">
+    <article class="card"><h2>核心提炼</h2><ul class="list"><li>class 是引用类型，适合有身份、共享状态或行为的数据。</li><li>字段可有默认值、可变性和访问控制；<code>var</code> 字段可被修改，非 <code>var</code> 字段初始化后固定。</li><li>archetype 构造允许指定字段，block/初始化逻辑可在构造时运行。</li><li><code>&lt;unique&gt;</code> class 支持身份相等，普通 class 不能直接按等号比较。</li><li>继承允许子类扩展父类，<code>Self</code> 表示当前实例，override 用于重写方法。</li><li><code>&lt;abstract&gt;</code>、<code>&lt;concrete&gt;</code>、<code>&lt;final&gt;</code>、<code>&lt;final_super&gt;</code>、<code>&lt;castable&gt;</code> 等 specifier 影响实例化、继承和运行时类型检查。</li><li>interface 定义字段/方法契约，class 可实现一个或多个接口；接口可用于抽象 API 边界。</li><li>构造器、默认值、字段初始化和方法 effects 相互约束，尤其和 <code>&lt;transacts&gt;</code>、<code>&lt;decides&gt;</code> 相关。</li></ul></article>
+    <article class="card"><h2>规则与坑点</h2><ul class="list"><li>不可变 class 变量仍可通过其 <code>var</code> 字段修改对象状态；变量不可变只是不允许改指向。</li><li>没有 <code>&lt;unique&gt;</code> 的 class 不支持身份相等，比较规则要谨慎。</li><li><code>final</code> 后不能再派生；<code>abstract</code> 不能直接实例化；<code>concrete</code> 需要可构造默认实例。</li><li>字段初始化不能随意调用有副作用或可失败函数，需满足类/构造上下文 effects。</li><li>接口要求的成员必须由实现类提供，访问级别和 effects 也要兼容。</li></ul></article>
+    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>player := class:</code> 定义类。</li><li><code>var Health:int = 100</code> 定义可变字段。</li><li><code>Method()&lt;transacts&gt;:void = ...</code> 定义方法及效果。</li><li><code>child := class(parent):</code> 表示继承。</li><li><code>interface_name := interface:</code> 定义接口。</li><li><code>MyObj := my_class{Field := Value}</code> 使用 archetype 构造。</li></ul></article>
+  </section>
+  <section>
+    <h2>原文小节结构</h2>
+    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
+    <ol class="toc"><li class="level-1">Classes and Interfaces</li><li class="level-2">Classes</li><li class="level-3">Object Construction</li><li class="level-3">Methods</li><li class="level-3">Blocks for Initialization</li><li class="level-3">Let Clauses in Archetypes</li><li class="level-3">Self</li><li class="level-3">Inheritance</li><li class="level-3">Super</li><li class="level-3">Method Overriding</li><li class="level-3">Constructor Functions</li><li class="level-3">Overloading Constructors</li><li class="level-3">Delegating Constructors</li><li class="level-1">Subclass constructor delegates to parent constructor</li><li class="level-1">Primary constructor</li><li class="level-1">Convenience constructor forwards to primary</li><li class="level-1">Primary constructor</li><li class="level-1">Convenience constructor forwards to primary</li><li class="level-3">Order of Execution</li><li class="level-2">Shadowing and Qualification</li><li class="level-3">Methods with Same Name</li><li class="level-3">(super:) Qualified</li><li class="level-3">Interface Collisions</li><li class="level-3">Nested Module Qualification</li><li class="level-3">Restrictions</li><li class="level-2">Parametric Classes</li><li class="level-1">Simple container that holds a single value</li><li class="level-3">Instantiation and Identity</li><li class="level-1">These are the same type</li><li class="level-1">All three are equal - they&#x27;re the same type</li><li class="level-4">Covariant</li><li class="level-1">Base class hierarchy</li><li class="level-1">Covariant class - type parameter only in return position</li><li class="level-1">Can use producer(player) where producer(entity) expected</li><li class="level-4">Contravariant</li><li class="level-4">Invariant</li><li class="level-1">Invariant class - type parameter in both positions</li><li class="level-1">Invariant class - type parameter in both positions</li><li class="level-4">Bivariant</li><li class="level-1">Bivariant class - type parameter not used in public interface</li><li class="level-1">Bivariant class - type parameter not used in public interface</li><li class="level-3">Recursive Parametric Types</li><li class="level-1">Linked list node</li><li class="level-1">Helper to create lists</li><li class="level-1">Sum a linked list</li><li class="level-1">Linked list node</li><li class="level-1">Helper to create lists</li><li class="level-1">Sum a linked list</li><li class="level-1">Valid: Indirect recursion through class</li><li class="level-3">Parametric Interfaces</li><li class="level-1">Generic collection interface</li><li class="level-1">Or with type parameters matching the class</li><li class="level-1">Implement with specific types</li><li class="level-1">Or with type parameters matching the class</li><li class="level-1">Covariant interface - returns t</li><li class="level-1">Specialize to a concrete type</li><li class="level-4">Multiple Type Parameters</li><li class="level-1">Implement with specific types</li><li class="level-3">Advanced Parametric Types</li><li class="level-4">Effects</li><li class="level-1">Parametric class with effects</li><li class="level-1">All instantiations inherit the effect</li><li class="level-1">Multiple effects</li><li class="level-1">This requires &lt;computes&gt; in the context</li><li class="level-4">Aliases</li><li class="level-4">Advanced Type Constraints</li><li class="level-1">Constrain to subtype of a class</li><li class="level-1">Valid: player is subtype of entity</li><li class="level-1">PlayerContainer := boundedcontainer(player){}</li><li class="level-1">Invalid: int is not subtype of entity</li><li class="level-1">IntContainer := boundedcontainer(int){}  # Type error</li><li class="level-1">Requires castable subtype</li><li class="level-1">Constraints propagate through function calls</li><li class="level-3">Access Specifiers</li><li class="level-3">Concrete</li><li class="level-3">Unique</li><li class="level-4">Interfaces</li><li class="level-1">Child interface inherits &lt;unique&gt; from parent</li><li class="level-1">Classes implementing any interface in the hierarchy become comparable</li><li class="level-4">Unique in Default Values</li><li class="level-1">Each class instantiation creates fresh unique instances in default values</li><li class="level-4">Overload Resolution</li><li class="level-1">Valid: non-unique interface doesn&#x27;t conflict with comparable</li><li class="level-1">Invalid: unique interface conflicts with comparable</li><li class="level-4">Use Cases</li><li class="level-3">Abstract</li><li class="level-3">Castable</li><li class="level-4">Castable and Inheritance</li><li class="level-4">Using castablesubtype</li><li class="level-4">Permanence of Castable</li><li class="level-3">Final</li><li class="level-3">Persistable</li><li class="level-2">Interfaces</li><li class="level-3">Implementing Interfaces</li><li class="level-3">Interface Fields</li><li class="level-3">Default Implementations</li><li class="level-3">Overriding Members</li><li class="level-3">Multiple Interfaces with Sharing</li><li class="level-3">Interface Hierarchies</li><li class="level-3">Fields with Accessors</li></ol>
+  </section>
+  <section>
+    <h2>阅读提示</h2>
+    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
+  </section>
+  <nav class="footer-nav">
+    <div><a href="../09_structs_enums/index.html">上一页：结构体与枚举</a></div>
+    <div><a href="../11_types/index.html">下一页：类型系统</a></div>
+  </nav>
+</main>
+</div>
+</body>
+</html>

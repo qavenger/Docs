@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>效果系统 - Book of Verse 中文提炼版</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">Book of Verse</div>
+  <div class="sub">中文提炼版 · 同源目录结构</div>
+  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
+<a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
+<a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
+<a href="../03_containers/index.html"><span>Containers types</span><br><small>容器类型</small></a>
+<a href="../04_operators/index.html"><span>Operators</span><br><small>运算符</small></a>
+<a href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
+<a href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
+<a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
+<a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
+<a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
+<a href="../10_classes_interfaces/index.html"><span>Classes &amp; Interfaces</span><br><small>类与接口</small></a>
+<a href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
+<a href="../12_access/index.html"><span>Access Specifiers</span><br><small>访问控制与元数据</small></a>
+<a class="active" href="../13_effects/index.html"><span>Effects</span><br><small>效果系统</small></a>
+<a href="../14_concurrency/index.html"><span>Concurrency</span><br><small>并发</small></a>
+<a href="../15_live_variables/index.html"><span>Live Variables</span><br><small>实时变量</small></a>
+<a href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
+<a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
+<a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
+<a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
+</aside>
+<main class="main">
+  <div class="crumb">Effects / <a href="https://verselang.github.io/book/13_effects/">原文页面</a></div>
+  <section class="hero">
+    <h1>效果系统</h1>
+    <p class="lead">效果系统页解释 Verse 如何用 effect specifier 描述表达式能力：是否纯计算、读写状态、分配、事务、失败、挂起或发散。</p>
+    <div class="meta"><span class="pill">源文件：13_effects.md</span><span class="pill">小节数：17</span><span class="pill">生成：2026-06-25</span></div>
+  </section>
+  <section class="grid">
+    <article class="card"><h2>核心提炼</h2><ul class="list"><li>effects 是函数类型的一部分，也是调用方能否调用该函数的能力契约。</li><li>cardinality/计算相关效果包括 <code>&lt;computes&gt;</code>、<code>&lt;converges&gt;</code>、<code>&lt;decides&gt;</code> 等。</li><li>heap 相关效果包括 <code>&lt;reads&gt;</code>、<code>&lt;writes&gt;</code>、<code>&lt;allocates&gt;</code>、<code>&lt;transacts&gt;</code>，表示读取、写入、分配和可回滚事务。</li><li>suspension 相关效果用 <code>&lt;suspends&gt;</code> 表示异步挂起能力。</li><li>内部/特殊效果包括 native、no_rollback、diverges 等，与实现和终止性相关。</li><li>多个 effects 会组合，调用链的总效果通常是所需能力的并集。</li><li>函数类型兼容允许更“少能力需求/更纯”的函数赋给允许更多效果的类型。</li><li>class/interface/struct 的 specifier 与字段初始化、block、构造器效果有约束。</li></ul></article>
+    <article class="card"><h2>规则与坑点</h2><ul class="list"><li>可失败 <code>&lt;decides&gt;</code> 函数必须在失败上下文用 <code>[]</code> 或等价方式处理。</li><li>不能把会写状态的 <code>&lt;transacts&gt;</code> 函数赋给只允许 <code>&lt;computes&gt;</code> 的函数类型。</li><li>field initializer 和 class block 的效果不能超过类型声明允许范围。</li><li>数据类型本身通常不能声明 async/failable effects；构造函数可以表达可失败或事务能力。</li><li>发布 API 的 effects 是兼容契约，未来只能朝更少副作用方向演化。</li></ul></article>
+    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>Validate(X:int)&lt;decides&gt;:int = ...</code></li><li><code>ReadState()&lt;reads&gt;:int</code></li><li><code>Update()&lt;transacts&gt;:void</code></li><li><code>Wait()&lt;suspends&gt;:void</code></li><li><code>type{_(:int)&lt;computes&gt;&lt;decides&gt;:int}</code></li></ul></article>
+  </section>
+  <section>
+    <h2>原文小节结构</h2>
+    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
+    <ol class="toc"><li class="level-1">Effects</li><li class="level-2">Understanding Effects</li><li class="level-2">Effect Families and Specifiers</li><li class="level-2">How Effects Compose</li><li class="level-2">Effect Families in Detail</li><li class="level-3">Cardinality effects</li><li class="level-3">Heap effects</li><li class="level-3">Suspension effects</li><li class="level-3">Internal effects</li><li class="level-4">Prediction effects</li><li class="level-4">Divergence effects</li><li class="level-2">Effect Composition</li><li class="level-2">Subtyping and Type Compatibility</li><li class="level-2">Effects on Data Types</li><li class="level-3">Interface Construction Effect Constraints</li><li class="level-2">Working with Effects</li><li class="level-2">Backwards Compatibility</li></ol>
+  </section>
+  <section>
+    <h2>阅读提示</h2>
+    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
+  </section>
+  <nav class="footer-nav">
+    <div><a href="../12_access/index.html">上一页：访问控制与元数据</a></div>
+    <div><a href="../14_concurrency/index.html">下一页：并发</a></div>
+  </nav>
+</main>
+</div>
+</body>
+</html>

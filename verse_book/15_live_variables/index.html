@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实时变量 - Book of Verse 中文提炼版</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">Book of Verse</div>
+  <div class="sub">中文提炼版 · 同源目录结构</div>
+  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
+<a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
+<a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
+<a href="../03_containers/index.html"><span>Containers types</span><br><small>容器类型</small></a>
+<a href="../04_operators/index.html"><span>Operators</span><br><small>运算符</small></a>
+<a href="../05_mutability/index.html"><span>Mutability</span><br><small>可变性</small></a>
+<a href="../06_functions/index.html"><span>Functions</span><br><small>函数</small></a>
+<a href="../07_control/index.html"><span>Control Flow</span><br><small>控制流</small></a>
+<a href="../08_failure/index.html"><span>Failure</span><br><small>失败系统</small></a>
+<a href="../09_structs_enums/index.html"><span>Structs &amp; Enums</span><br><small>结构体与枚举</small></a>
+<a href="../10_classes_interfaces/index.html"><span>Classes &amp; Interfaces</span><br><small>类与接口</small></a>
+<a href="../11_types/index.html"><span>Type System</span><br><small>类型系统</small></a>
+<a href="../12_access/index.html"><span>Access Specifiers</span><br><small>访问控制与元数据</small></a>
+<a href="../13_effects/index.html"><span>Effects</span><br><small>效果系统</small></a>
+<a href="../14_concurrency/index.html"><span>Concurrency</span><br><small>并发</small></a>
+<a class="active" href="../15_live_variables/index.html"><span>Live Variables</span><br><small>实时变量</small></a>
+<a href="../16_modules/index.html"><span>Modules and Paths</span><br><small>模块与路径</small></a>
+<a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
+<a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
+<a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
+</aside>
+<main class="main">
+  <div class="crumb">Live Variables / <a href="https://verselang.github.io/book/15_live_variables/">原文页面</a></div>
+  <section class="hero">
+    <h1>实时变量</h1>
+    <p class="lead">实时变量页介绍计划中的响应式编程模型：变量可依赖其他变量自动重算，<code>await</code>、<code>upon</code>、<code>when</code> 和 <code>batch</code> 建立在该机制上。该页明确标注为未发布功能。</p>
+    <div class="meta"><span class="pill">源文件：15_live_variables.md</span><span class="pill">小节数：23</span><span class="pill">生成：2026-06-25</span></div>
+  </section>
+  <section class="grid">
+    <article class="card"><h2>核心提炼</h2><ul class="list"><li>live expression 将目标变量与 guard 表达式绑定，并动态追踪 guard 实际读取的依赖。</li><li>支持 <code>var live</code>、<code>set live</code> 和不可变 <code>live</code> 派生值。</li><li>函数类型若带 <code>&lt;reads&gt;</code>，可形成输入过滤和依赖重算。</li><li>输入-输出变量保存原始输入与变换后的输出。</li><li><code>await</code> 等待条件成功，<code>upon</code> 首次成功触发一次，<code>when</code> 条件成功时持续响应。</li><li><code>batch</code> 合并多次更新，延迟通知，观察者看到最终状态。</li></ul></article>
+    <article class="card"><h2>规则与坑点</h2><ul class="list"><li>live guard 不能写状态，因为系统可能反复求值。</li><li>常规 <code>set X = ...</code> 可关闭由 guard 建立的 liveness。</li><li>循环依赖可能稳定也可能发散，设计时要避免无终止重算。</li><li>这是未发布功能，不应直接当当前 UE/UEFN 可用语法。</li></ul></article>
+    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>var live X:int = Exp</code></li><li><code>set live X = Exp</code></li><li><code>live Y:int = Exp</code></li><li><code>await{Condition}</code></li><li><code>upon(Condition): Body</code></li><li><code>when(Condition): Body</code></li><li><code>batch: ...</code></li></ul></article>
+  </section>
+  <section>
+    <h2>原文小节结构</h2>
+    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
+    <ol class="toc"><li class="level-1">Live Variables</li><li class="level-2">Live Expressions</li><li class="level-3">Declaration Forms</li><li class="level-3">Functions as Types</li><li class="level-3">Input-Output Variables</li><li class="level-3">Restricted Effects and Stability</li><li class="level-3">Tracking Dependencies</li><li class="level-3">Turning Off Liveness</li><li class="level-2">Reactive Constructs</li><li class="level-3">The await Expression</li><li class="level-3">The upon Expression</li><li class="level-3">The when Expression</li><li class="level-3">Cancellation</li><li class="level-2">The batch Expression</li><li class="level-2">Issues and Patterns</li><li class="level-3">API Design</li><li class="level-3">Failures and Liveness</li><li class="level-3">Derived Synchronization</li><li class="level-3">Conditional Reactivity</li><li class="level-3">Resource Loading</li><li class="level-3">Modifier Stack (Under Consideration)</li><li class="level-3">Common Errors</li><li class="level-2">Evolution</li></ol>
+  </section>
+  <section>
+    <h2>阅读提示</h2>
+    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
+  </section>
+  <nav class="footer-nav">
+    <div><a href="../14_concurrency/index.html">上一页：并发</a></div>
+    <div><a href="../16_modules/index.html">下一页：模块与路径</a></div>
+  </nav>
+</main>
+</div>
+</body>
+</html>
