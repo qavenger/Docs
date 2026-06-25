@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>并发 - Book of Verse 中文提炼版</title>
+<title>并发 - Book of Verse 中文批注版</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<script src="../assets/reader.js"></script>
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar">
-  <div class="brand">Book of Verse</div>
-  <div class="sub">中文提炼版 · 同源目录结构</div>
-  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -32,34 +30,1318 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
-</aside>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
 <main class="main">
-  <div class="crumb">Concurrency / <a href="https://verselang.github.io/book/14_concurrency/">原文页面</a></div>
-  <section class="hero">
-    <h1>并发</h1>
-    <p class="lead">并发页介绍 Verse 的时间流控制：即时表达式与异步表达式、<code>&lt;suspends&gt;</code>、结构化并发、spawn/task、取消、清理、计时函数和事件同步。</p>
-    <div class="meta"><span class="pill">源文件：14_concurrency.md</span><span class="pill">小节数：37</span><span class="pill">生成：2026-06-25</span></div>
-  </section>
-  <section class="grid">
-    <article class="card"><h2>核心提炼</h2><ul class="list"><li>表达式分 immediate 与 async；使用 async 能力的函数需要 <code>&lt;suspends&gt;</code>。</li><li><code>sync</code> 同时启动多个分支并等待全部完成，结果可组合。</li><li><code>race</code> 取最先完成分支并取消其他分支；<code>rush</code> 允许最先完成后继续，其他分支仍运行。</li><li><code>branch</code> 启动结构化后台工作，仍受父作用域生命周期约束。</li><li><code>spawn</code> 是非结构化并发，返回 <code>task(t)</code> 句柄，可 cancel 或 await。</li><li>task 的 <code>Await()</code> 可等待结果，已完成任务再次 await 通常立即返回缓存结果。</li><li>取消只在 suspension point 生效，长循环可通过 <code>Sleep(0.0)</code> 或 tick 让出执行。</li><li><code>defer</code> 用于清理，但不能包含 suspending 操作。</li><li><code>Sleep</code>、<code>NextTick</code>、<code>GetSecondsSinceEpoch</code> 支持时间控制和日志/分析。</li><li>事件、sticky events、subscribable events 与 awaitable/signalable 接口构成同步机制。</li></ul></article>
-    <article class="card"><h2>规则与坑点</h2><ul class="list"><li><code>sync/race/rush/branch</code> 等结构化并发通常只能在 <code>&lt;suspends&gt;</code> 函数中使用。</li><li><code>spawn</code> 需要 suspends 函数，不能直接 spawn decides 函数。</li><li>取消不是立即中断 CPU 循环，必须到达挂起点。</li><li><code>race</code> 分支返回类型会合并为共同超类型；需要识别赢家时可返回带 tag 的值。</li><li><code>defer</code> 不应直接 suspend，资源清理要保持即时。</li></ul></article>
-    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>sync: A(); B()</code></li><li><code>race: Slow(); Fast()</code></li><li><code>rush: Work(); Timeout()</code></li><li><code>spawn{AsyncWork()}</code></li><li><code>Task.Cancel()</code></li><li><code>Result := Task.Await()</code></li><li><code>Sleep(0.0)</code></li><li><code>NextTick()</code></li></ul></article>
-  </section>
-  <section>
-    <h2>原文小节结构</h2>
-    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
-    <ol class="toc"><li class="level-1">Concurrency</li><li class="level-2">Core Concepts</li><li class="level-3">Immediate vs Async Expressions</li><li class="level-3">Simulation Updates</li><li class="level-3">The suspends Effect</li><li class="level-2">Structured Concurrency</li><li class="level-3">Effect Requirements</li><li class="level-3">The sync Expression</li><li class="level-3">The race Expression</li><li class="level-3">The rush Expression</li><li class="level-3">Returning from Concurrent Arms</li><li class="level-3">The branch Expression</li><li class="level-2">Unstructured Concurrency</li><li class="level-3">The spawn Expression</li><li class="level-2">The task(t) Type</li><li class="level-3">Task.Cancel()</li><li class="level-3">Task.Await()</li><li class="level-3">Common Task Patterns</li><li class="level-3">Suspension Points and Cancellation</li><li class="level-2">Cleanup and Resource Management</li><li class="level-3">The defer: Block</li><li class="level-2">Timing Functions</li><li class="level-3">NextTick()</li><li class="level-1">Test the delay function</li><li class="level-3">Getting Current Time: GetSecondsSinceEpoch</li><li class="level-2">Events and Synchronization</li><li class="level-3">Basic Events</li><li class="level-3">Sticky Events</li><li class="level-3">Subscribable Events</li><li class="level-3">The awaitable and signalable Interfaces</li><li class="level-3">Transactional Behavior</li><li class="level-3">Event Patterns and Use Cases</li><li class="level-2">Common Patterns and Best Practices</li><li class="level-2">Limitations and Considerations</li><li class="level-3">Iteration Restrictions</li><li class="level-3">Abstraction Over Implementation</li><li class="level-3">Effect Interactions</li></ol>
-  </section>
-  <section>
-    <h2>阅读提示</h2>
-    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
-  </section>
-  <nav class="footer-nav">
-    <div><a href="../13_effects/index.html">上一页：效果系统</a></div>
-    <div><a href="../15_live_variables/index.html">下一页：实时变量</a></div>
-  </nav>
-</main>
-</div>
-</body>
-</html>
+<div class="crumb">Concurrency / <a href="https://verselang.github.io/book/14_concurrency/">原文页面</a></div>
+<section class="hero"><h1>并发</h1><p class="lead">本页讲 Verse 的协作式并发：sync/race/rush/branch/spawn/task/events/time。</p><div class="meta"><span class="pill">源文件：14_concurrency.md</span><span class="pill">批注段落：37</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>这一页读什么</h2><p>并发是语言级表达式，而不是外接库；生命周期、取消和 effects 都有明确规则。</p><h3>注意点</h3><ul class="list"><li>取消只在 suspension point 生效。</li><li>spawn 不是逃避结构化并发的万能工具。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-concurrency">Concurrency</a></li><li class="lvl2"><a href="#s1-core-concepts">Core Concepts</a></li><li class="lvl3"><a href="#s2-immediate-vs-async-expressions">Immediate vs Async Expressions</a></li><li class="lvl3"><a href="#s3-simulation-updates">Simulation Updates</a></li><li class="lvl3"><a href="#s4-the-suspends-effect">The suspends Effect</a></li><li class="lvl2"><a href="#s5-structured-concurrency">Structured Concurrency</a></li><li class="lvl3"><a href="#s6-effect-requirements">Effect Requirements</a></li><li class="lvl3"><a href="#s7-the-sync-expression">The sync Expression</a></li><li class="lvl3"><a href="#s8-the-race-expression">The race Expression</a></li><li class="lvl3"><a href="#s9-the-rush-expression">The rush Expression</a></li><li class="lvl3"><a href="#s10-returning-from-concurrent-arms">Returning from Concurrent Arms</a></li><li class="lvl3"><a href="#s11-the-branch-expression">The branch Expression</a></li><li class="lvl2"><a href="#s12-unstructured-concurrency">Unstructured Concurrency</a></li><li class="lvl3"><a href="#s13-the-spawn-expression">The spawn Expression</a></li><li class="lvl2"><a href="#s14-the-task-t-type">The task(t) Type</a></li><li class="lvl3"><a href="#s15-task-cancel">Task.Cancel()</a></li><li class="lvl3"><a href="#s16-task-await">Task.Await()</a></li><li class="lvl3"><a href="#s17-common-task-patterns">Common Task Patterns</a></li><li class="lvl3"><a href="#s18-suspension-points-and-cancellation">Suspension Points and Cancellation</a></li><li class="lvl2"><a href="#s19-cleanup-and-resource-management">Cleanup and Resource Management</a></li><li class="lvl3"><a href="#s20-the-defer-block">The defer: Block</a></li><li class="lvl2"><a href="#s21-timing-functions">Timing Functions</a></li><li class="lvl3"><a href="#s22-nexttick">NextTick()</a></li><li class="lvl1"><a href="#s23-test-the-delay-function">Test the delay function</a></li><li class="lvl3"><a href="#s24-getting-current-time-getsecondssinceepoch">Getting Current Time: GetSecondsSinceEpoch</a></li><li class="lvl2"><a href="#s25-events-and-synchronization">Events and Synchronization</a></li><li class="lvl3"><a href="#s26-basic-events">Basic Events</a></li><li class="lvl3"><a href="#s27-sticky-events">Sticky Events</a></li><li class="lvl3"><a href="#s28-subscribable-events">Subscribable Events</a></li><li class="lvl3"><a href="#s29-the-awaitable-and-signalable-interfaces">The awaitable and signalable Interfaces</a></li><li class="lvl3"><a href="#s30-transactional-behavior">Transactional Behavior</a></li><li class="lvl3"><a href="#s31-event-patterns-and-use-cases">Event Patterns and Use Cases</a></li><li class="lvl2"><a href="#s32-common-patterns-and-best-practices">Common Patterns and Best Practices</a></li><li class="lvl2"><a href="#s33-limitations-and-considerations">Limitations and Considerations</a></li><li class="lvl3"><a href="#s34-iteration-restrictions">Iteration Restrictions</a></li><li class="lvl3"><a href="#s35-abstraction-over-implementation">Abstraction Over Implementation</a></li><li class="lvl3"><a href="#s36-effect-interactions">Effect Interactions</a></li></ol></article></section>
+<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<section class="section" id="s0-concurrency">
+  <div class="annotation">
+    <h3>中文批注：Concurrency</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Concurrency”展开。可把它先理解为“并发”。阅读时先抓住这些英文关键词：Concurrency、fundamental、aspect、allowing、control。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">class</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Concurrency</summary>
+    <div class="md"><h1>Concurrency</h1>
+<p>Concurrency is a fundamental aspect of Verse, allowing you to control time flow as naturally as you control program flow. Unlike traditional programming languages that bolt on concurrency as an afterthought, Verse integrates time flow control directly into the language through dedicated expressions and effects.</p>
+<p>Game development inherently requires managing multiple simultaneous activities. Think about a typical game scene: NPCs patrol their routes while particle effects play, UI elements animate as cooldown timers count down, and background music fades between tracks. All these activities happen concurrently, overlapping in time. Verse recognizes this reality and provides first-class language constructs to express these parallel behaviors naturally.</p>
+<p>The language achieves this through a combination of structured and unstructured concurrency primitives, all built on the concept of async expressions that can suspend and resume across multiple simulation updates. This approach makes concurrent programming feel as natural as writing sequential code, while avoiding the traditional pitfalls of thread-based concurrency like data races and deadlocks.</p></div>
+  </details>
+</section><section class="section" id="s1-core-concepts">
+  <div class="annotation">
+    <h3>中文批注：Core Concepts</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Core Concepts”展开。可把它先理解为“核心概念”。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Core Concepts</summary>
+    <div class="md"><h2>Core Concepts</h2></div>
+  </details>
+</section><section class="section" id="s2-immediate-vs-async-expressions">
+  <div class="annotation">
+    <h3>中文批注：Immediate vs Async Expressions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Immediate vs Async Expressions”展开。阅读时先抓住这些英文关键词：Every、expression、falls、one、two。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">X := 5 + 3</span><span class="chip">for</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Immediate vs Async Expressions</summary>
+    <div class="md"><h3>Immediate vs Async Expressions</h3>
+<p>Every expression falls into one of two categories: immediate or async. Understanding this distinction is crucial for working with Verse&#x27;s concurrency model.</p>
+<p>Immediate expressions evaluate with no delay, completing entirely within the current simulation update or frame. These include most basic operations you&#x27;d expect to happen instantly: arithmetic calculations, variable access, simple function calls, and data structure manipulation. When you write <code>X := 5 + 3</code>, the addition happens immediately, the assignment completes instantly, and execution moves to the next statement without any possibility of interruption.</p>
+<p>Async expressions, on the other hand, have the possibility of taking time to evaluate, potentially spanning multiple simulation updates. They represent operations that inherently take time in the game world: animations playing out, timers counting down, network requests completing, or simply waiting for the next frame. An async expression might complete immediately if its conditions are already met, or it might suspend execution, allowing other code to run while it waits for the right moment to resume.</p></div>
+  </details>
+</section><section class="section" id="s3-simulation-updates">
+  <div class="annotation">
+    <h3>中文批注：Simulation Updates</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Simulation Updates”展开。阅读时先抓住这些英文关键词：simulation、update、tick、represents、one。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">suspends</span><span class="chip">where</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Simulation Updates</summary>
+    <div class="md"><h3>Simulation Updates</h3>
+<p>A simulation update (or tick) represents one step of the game&#x27;s simulation. Simulation and rendering are <strong>independent</strong> — they run at separate rates and are decoupled from each other in modern engines.</p>
+<p>Each tick processes input, updates game logic, runs physics, and advances the game state. Verse&#x27;s concurrency model lets you think in terms of logical time flow — async expressions suspend at tick boundaries and resume in future ticks when their conditions are met.</p>
+<p>Async expressions naturally align with this update cycle. When an async expression suspends, it yields control back to the game engine, which continues processing other tasks and rendering frames. The suspended expression resumes in a future update when its conditions are met, seamlessly continuing from where it left off. This cooperative model ensures that long-running operations don&#x27;t block the game&#x27;s responsiveness.</p></div>
+  </details>
+</section><section class="section" id="s4-the-suspends-effect">
+  <div class="annotation">
+    <h3>中文批注：The suspends Effect</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The suspends Effect”展开。阅读时先抓住这些英文关键词：Concurrent、operations、require、suspends、effect。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">suspends</span><span class="chip">&lt;suspends&gt;</span><span class="chip">The</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The suspends Effect</summary>
+    <div class="md"><h3>The <code>suspends</code> Effect</h3>
+<p>Concurrent operations require the <code>&lt;suspends&gt;</code> effect specifier (see <a href="../13_effects/index.html">Effects</a>). Functions marked with <code>&lt;suspends&gt;</code> can use concurrency expressions, call other suspending functions, and cooperatively yield execution:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 01 --&gt;</p>
+<pre><code># Function marked with suspends can use async expressions
+MyAsyncFunction()&lt;suspends&gt;:void =
+    Sleep(1.0)  # Pause execution
+    Print(&quot;One second later!&quot;)
+
+# Regular functions cannot use async expressions
+MyImmediateFunction():void =
+    # Sleep(1.0)  # ERROR: Cannot use Sleep without suspends
+    Print(&quot;This happens immediately&quot;)</code></pre>
+<p>The <code>&lt;suspends&gt;</code> effect propagates through the call chain—any function calling a suspending function must itself be marked <code>&lt;suspends&gt;</code>.</p></div>
+  </details>
+</section><section class="section" id="s5-structured-concurrency">
+  <div class="annotation">
+    <h3>中文批注：Structured Concurrency</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Structured Concurrency”展开。可把它先理解为“结构化并发”。阅读时先抓住这些英文关键词：Structured、concurrency、represents、one、most。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Structured Concurrency</summary>
+    <div class="md"><h2>Structured Concurrency</h2>
+<p>Structured concurrency represents one of Verse&#x27;s most elegant design decisions. Rather than spawning threads or tasks that live independently and require manual lifecycle management, structured concurrency expressions have lifespans naturally bound to their enclosing scope. When you enter a structured concurrency block, you know that all concurrent operations within it will be properly managed and cleaned up when the block exits, preventing resource leaks and making code easier to reason about.</p>
+<p>This approach mirrors how we think about sequential code. Just as a block of sequential statements has a clear beginning and end, structured concurrent operations have a defined lifetime. You can nest them, compose them, and reason about them using the same mental model you use for regular code blocks.</p></div>
+  </details>
+</section><section class="section" id="s6-effect-requirements">
+  <div class="annotation">
+    <h3>中文批注：Effect Requirements</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Effect Requirements”展开。阅读时先抓住这些英文关键词：All、structured、concurrency、expressions、sync。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">sync</span><span class="chip">race</span><span class="chip">rush</span><span class="chip">branch</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">suspends</span><span class="chip">public</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Effect Requirements</summary>
+    <div class="md"><h3>Effect Requirements</h3>
+<p>All structured concurrency expressions (<code>sync</code>, <code>race</code>, <code>rush</code>, and <code>branch</code>) require the <code>&lt;suspends&gt;</code> effect. You cannot use these constructs in immediate (non-suspending) functions:</p>
+<p>&lt;!--versetest Operation1&lt;public&gt;()&lt;suspends&gt;:void = {} Operation2&lt;public&gt;()&lt;suspends&gt;:void = {} --&gt; &lt;!-- 02 --&gt;</p>
+<pre><code># Valid: structured concurrency in suspends function
+ProcessConcurrently()&lt;suspends&gt;:void =
+    sync:
+        Operation1()
+        Operation2()
+
+# Invalid: cannot use sync without suspends
+# ProcessImmediate():void =
+#     sync:  # ERROR: sync requires suspends
+#         Operation1()</code></pre></div>
+  </details>
+</section><section class="section" id="s7-the-sync-expression">
+  <div class="annotation">
+    <h3>中文批注：The sync Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The sync Expression”展开。阅读时先抓住这些英文关键词：sync、expression、embodies、simplest、concurrent。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">sync</span><span class="chip">&lt;!-- #&gt; --&gt;
+
+Inside a</span><span class="chip">&lt;suspends&gt;</span><span class="chip">for</span><span class="chip">suspends</span><span class="chip">where</span><span class="chip">task</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The sync Expression</summary>
+    <div class="md"><h3>The sync Expression</h3>
+<p>The <code>sync</code> expression embodies the simplest concurrent pattern: doing multiple things at once and waiting for all of them to finish. When you have independent operations that can benefit from parallel execution, <code>sync</code> provides a clean way to express this parallelism while maintaining deterministic behavior.</p>
+<p>&lt;!--versetest AsyncOperation1()&lt;suspends&gt;:int=1 AsyncOperation2()&lt;suspends&gt;:int=1 AsyncOperation3()&lt;suspends&gt;:int=1 F()&lt;suspends&gt;:void={ Results := sync: AsyncOperation1() AsyncOperation2() AsyncOperation3() Print(&quot;All operations complete with results: {Results(0)} {Results(1)} {Results(2)}&quot;) } &lt;# --&gt; &lt;!-- 04 --&gt;</p>
+<pre><code># All expressions start simultaneously and must all complete
+Results := sync:
+    AsyncOperation1()  # Returns value1
+    AsyncOperation2()  # Returns value2
+    AsyncOperation3()  # Returns value3
+
+Print(&quot;All operations complete with results: {Results(0)} {Results(1)} {Results(2)}&quot;)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Inside a <code>sync</code> block, all subexpressions begin execution at essentially the same moment. The sync expression then waits patiently for every single subexpression to complete, regardless of how long each takes individually. If one operation finishes in milliseconds while another takes several seconds, sync continues waiting until that last operation completes. Only then does execution continue past the sync block.</p>
+<p>The beauty of sync lies in its predictability. You always get results from all subexpressions, always in the same order you wrote them, packaged neatly in a tuple. This makes sync perfect for scenarios where you need multiple pieces of data or need to ensure multiple systems are ready before proceeding. Loading game assets in parallel, initializing multiple subsystems simultaneously, or gathering data from multiple sources all benefit from sync&#x27;s all-or-nothing approach.</p>
+<p>Consider a more sophisticated example that demonstrates sync&#x27;s composability:</p>
+<p>&lt;!--versetest LoadTexture()&lt;suspends&gt;:void={} ApplyTexture()&lt;suspends&gt;:void={} LoadSound()&lt;suspends&gt;:void={} PlaySound()&lt;suspends&gt;:void={} LoadModel():void={} ProcessData(:int,:int,:int):void={} FetchDataA()&lt;suspends&gt;:int=1 FetchDataB()&lt;suspends&gt;:int=1 FetchDataC():int=1 F()&lt;suspends&gt;:void={ sync: block:  # Task 1 - sequential operations LoadTexture() ApplyTexture() block:  # Task 2 - parallel to task 1 LoadSound() PlaySound() LoadModel()  # Task 3 - parallel to tasks 1 and 2 ProcessData(sync: FetchDataA() FetchDataB() FetchDataC() ) } &lt;# --&gt; &lt;!-- 05 --&gt;</p>
+<pre><code># Nested blocks for complex operations
+sync:
+    block:  # Task 1 - sequential operations
+        LoadTexture()
+        ApplyTexture()
+    block:  # Task 2 - parallel to task 1
+        LoadSound()
+        PlaySound()
+    LoadModel()  # Task 3 - parallel to tasks 1 and 2
+
+# Using sync results directly as function arguments
+ProcessData(sync:
+    FetchDataA()
+    FetchDataB()
+    FetchDataC()
+)</code></pre>
+<p>&lt;!--versetest #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s8-the-race-expression">
+  <div class="annotation">
+    <h3>中文批注：The race Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The race Expression”展开。阅读时先抓住这些英文关键词：sync、embodies、cooperation、race、represents。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">sync</span><span class="chip">race</span><span class="chip">&lt;suspends&gt;</span><span class="chip">for</span><span class="chip">where</span><span class="chip">suspends</span><span class="chip">class</span><span class="chip">loop</span><span class="chip">case</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The race Expression</summary>
+    <div class="md"><h3>The race Expression</h3>
+<p>Where <code>sync</code> embodies cooperation, <code>race</code> represents competition. The race expression starts multiple async operations simultaneously, but only cares about the first one to cross the finish line. As soon as one subexpression completes, race immediately cancels all the others and continues with the winner&#x27;s result. This winner-takes-all semantics makes race perfect for timeout patterns, fallback mechanisms, and any situation where you want the fastest possible response.</p>
+<p>&lt;!--versetest SlowOperation()&lt;suspends&gt;:int=0 FastOperation()&lt;suspends&gt;   :int=0 MediumOperation()&lt;suspends&gt;   :int=0</p>
+<p>TestRace()&lt;suspends&gt;:void = # First to complete wins, others are canceled Winner := race: SlowOperation()     # Takes 5 seconds FastOperation()     # Takes 1 second - wins! MediumOperation()   # Takes 3 seconds</p>
+<p>Print(&quot;Winner result: {Winner}&quot;)  # Prints FastOperation&#x27;s result &lt;# --&gt; &lt;!-- 06 --&gt;</p>
+<pre><code># First to complete wins, others are canceled
+Winner := race:
+    SlowOperation()     # Takes 5 seconds
+    FastOperation()     # Takes 1 second - wins!
+    MediumOperation()   # Takes 3 seconds
+
+Print(&quot;Winner result: {Winner}&quot;)  # Prints FastOperation&#x27;s result</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The power of race becomes apparent when you consider real game scenarios. Imagine querying multiple servers for data, where you want to use whichever responds first. Or implementing a player action with a timeout, where either the player completes the action or time runs out. Race elegantly expresses these patterns without complex state management or manual cancellation logic.</p>
+<p>Cancellation in race is immediate and thorough. The moment a winner emerges, all losing subexpressions receive a cancellation signal and begin cleanup. This isn&#x27;t just an optimization; it&#x27;s crucial for resource management and preventing unwanted side effects from operations that are no longer needed.</p>
+<p><strong>Type handling in race:</strong></p>
+<p>The type system handles race elegantly. Since only one subexpression&#x27;s result will be returned, the result type of a race is the most specific common supertype of all the subexpressions. This ensures type safety while maintaining flexibility in what kinds of operations you can race against each other:</p>
+<p>&lt;!--versetest base_class := class: Value:int</p>
+<p>derived_a := class(base_class): Name:string = &quot;A&quot;</p>
+<p>derived_b := class(base_class): Name:string = &quot;B&quot;</p>
+<p>GetA()&lt;suspends&gt;:derived_a = derived_a{Value := 1} GetB()&lt;suspends&gt;:derived_b = derived_b{Value := 2}</p>
+<p>F()&lt;suspends&gt;:void={ Result:base_class = race: GetA() GetB() SameTypeResult:int = race: block: Sleep(1.0) 42 block: Sleep(2.0) 100 } &lt;# --&gt; &lt;!-- 07 --&gt;</p>
+<pre><code>base_class := class:
+    Value:int
+
+derived_a := class(base_class):
+    Name:string = &quot;A&quot;
+
+derived_b := class(base_class):
+    Name:string = &quot;B&quot;
+
+GetA()&lt;suspends&gt;:derived_a = derived_a{Value := 1}
+GetB()&lt;suspends&gt;:derived_b = derived_b{Value := 2}
+
+# Result type is base_class (common supertype)
+Result:base_class = race:
+    GetA()  # Returns derived_a
+    GetB()  # Returns derived_b
+# Result is base_class, can hold either derived type
+
+# If all expressions return the same type, that&#x27;s the result type
+SameTypeResult:int = race:
+    block:
+        Sleep(1.0)
+        42
+    block:
+        Sleep(2.0)
+        100
+# Result type is int</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>A pattern involves adding identifiers to determine which subexpression won:</p>
+<p>&lt;!--versetest SlowOperation()&lt;suspends&gt;:int=0 FastOperation()  &lt;suspends&gt; :int=0 InfiniteOperation()  &lt;suspends&gt; :int=0 F()&lt;suspends&gt;:void={ WinnerID := race: block: SlowOperation() 1 block: FastOperation() 2 block: loop: InfiniteOperation() 3</p>
+<p>case(WinnerID): 1 =&gt; Print(&quot;Slow operation won somehow!&quot;) 2 =&gt; Print(&quot;Fast operation won as expected&quot;) _ =&gt; Print(&quot;Impossible!&quot;) } &lt;# --&gt; &lt;!-- 08 --&gt;</p>
+<pre><code># Adding identifiers to determine which expression won
+WinnerID := race:
+    block:
+        SlowOperation()
+        1  # Return 1 if this wins
+    block:
+        FastOperation()
+        2  # Return 2 if this wins
+    block:
+        loop:
+            InfiniteOperation()
+        3  # Never returns
+
+case(WinnerID):
+    1 =&gt; Print(&quot;Slow operation won somehow!&quot;)
+    2 =&gt; Print(&quot;Fast operation won as expected&quot;)
+    _ =&gt; Print(&quot;Impossible!&quot;)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s9-the-rush-expression">
+  <div class="annotation">
+    <h3>中文批注：The rush Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The rush Expression”展开。阅读时先抓住这些英文关键词：rush、expression、occupies、unique、middle。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">rush</span><span class="chip">sync</span><span class="chip">race</span><span class="chip">loop</span><span class="chip">for</span><span class="chip">&lt;suspends&gt;</span><span class="chip">unique</span><span class="chip">where</span><span class="chip">suspends</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The rush Expression</summary>
+    <div class="md"><h3>The rush Expression</h3>
+<p>The <code>rush</code> expression occupies a unique middle ground between <code>sync</code> and <code>race</code>. Like race, it completes as soon as the first subexpression finishes. Unlike race, it doesn&#x27;t cancel the losers. This creates an interesting pattern where you can start multiple operations, proceed as soon as one provides a result, while allowing the others to continue their work in the background.</p>
+<p>&lt;!--versetest LongBackgroundTask()&lt;suspends&gt;:int=0 QuickCheck() &lt;suspends&gt;  :int=0 MediumTask() &lt;suspends&gt;  :int=0 F()&lt;suspends&gt;:void={ FirstResult := rush: LongBackgroundTask() QuickCheck() MediumTask()</p>
+<p>Print(&quot;First result: {FirstResult}&quot;) } &lt;# --&gt; &lt;!-- 09 --&gt;</p>
+<pre><code># First to complete allows continuation, others keep running
+FirstResult := rush:
+    LongBackgroundTask()   # Continues after rush completes
+    QuickCheck()          # Finishes first
+    MediumTask()          # Also continues after rush
+
+Print(&quot;First result: {FirstResult}&quot;)
+# LongBackgroundTask and MediumTask are still running!</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Rush shines in scenarios where you want to be responsive while still completing all operations eventually. Consider preloading game assets: you might start loading multiple levels simultaneously, begin gameplay as soon as the current level loads, while continuing to cache the other levels in the background. Or think about achievement checking, where you want to notify the player as soon as one achievement unlocks while continuing to check for others.</p>
+<p>The non-canceling nature of rush requires careful consideration. Those background tasks continue consuming resources and performing their operations even after rush completes. They&#x27;ll keep running until they naturally complete or until their enclosing async context ends. This makes rush powerful but also potentially dangerous if misused with operations that might never complete or that consume significant resources.</p>
+<p>There&#x27;s an important technical restriction to be aware of: rush cannot be used directly in the body of iteration expressions like <code>loop</code> or <code>for</code>. The interaction between rush&#x27;s background tasks and iteration could lead to resource accumulation. If you need rush-like behavior in a loop, wrap it in an async function and call that function from your iteration.</p></div>
+  </details>
+</section><section class="section" id="s10-returning-from-concurrent-arms">
+  <div class="annotation">
+    <h3>中文批注：Returning from Concurrent Arms</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Returning from Concurrent Arms”展开。阅读时先抓住这些英文关键词：return、statement、inside、sync、race。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">return</span><span class="chip">sync</span><span class="chip">race</span><span class="chip">rush</span><span class="chip">When</span><span class="chip">is set, arm 1 executes</span><span class="chip">inside</span><span class="chip">. This exits</span><span class="chip">entirely — the</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Returning from Concurrent Arms</summary>
+    <div class="md"><h3>Returning from Concurrent Arms</h3>
+<p>A <code>return</code> statement inside a <code>sync</code>, <code>race</code>, or <code>rush</code> arm causes the enclosing <em>function</em> to return, not just the arm. The structured concurrency expression is abandoned, defers in arms that have already started execute, and arms that have not yet started are simply skipped.</p>
+<p>&lt;!--versetest CoroUtils := module: LogEvent(Msg:string):void = {} GetEventLogString()&lt;computes&gt;:string = &quot;&quot; WaitTicks(N:int)&lt;suspends&gt;:void = {} Tick(N:int):void = {} --&gt; &lt;!-- 09b --&gt;</p>
+<pre><code>Log(Msg:string):void = CoroUtils.LogEvent(Msg)
+
+MaybeReturn(Delay:int, Value:?string)&lt;suspends&gt;:string =
+    defer { Log(&quot;a&quot;) }
+    CoroUtils.WaitTicks(Delay)
+    if (V := Value?):
+        return V         # Returns from MaybeReturn
+    Log(&quot;done&quot;)
+    &quot;no-return&quot;
+
+Wrapper(Value:?string)&lt;suspends&gt;:string =
+    defer { Log(&quot;z&quot;) }
+    R := sync:
+        block:
+            MaybeReturn(0, Value)   # Arm 1
+        block:
+            defer { Log(&quot;b&quot;) }
+            CoroUtils.WaitTicks(1)
+            Log(&quot;2&quot;)
+            2
+    &quot;{R(0)}&quot;</code></pre>
+<p>When <code>Value</code> is set, arm 1 executes <code>return V</code> inside <code>MaybeReturn</code>. This exits <code>Wrapper</code> entirely — the <code>sync</code> is abandoned, arm 2 never completes, and defers run during unwinding. When <code>Value</code> is not set, arm 1 completes normally and <code>sync</code> waits for both arms to finish.</p></div>
+  </details>
+</section><section class="section" id="s11-the-branch-expression">
+  <div class="annotation">
+    <h3>中文批注：The branch Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The branch Expression”展开。阅读时先抓住这些英文关键词：branch、expression、represents、fire-and-forget、concurrency。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">branch</span><span class="chip">spawn</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">task</span><span class="chip">computes</span><span class="chip">suspends</span><span class="chip">if</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The branch Expression</summary>
+    <div class="md"><h3>The branch Expression</h3>
+<p>The <code>branch</code> expression represents fire-and-forget concurrency within a structured context. When you encounter a branch, it immediately starts executing its body as a background task and then, without any pause or hesitation, continues with the next expression. There&#x27;s no waiting, no result collection, just a task spinning off to do its work while the main flow proceeds unimpeded.</p>
+<p>&lt;!--versetest AsyncOperation1()&lt;computes&gt;&lt;suspends&gt;:int=0 ImmediateOperation()&lt;computes&gt; :int=0 AsyncOperation2() &lt;suspends&gt;&lt;computes&gt;  :int=0 F()&lt;suspends&gt;:void={ branch: AsyncOperation1() ImmediateOperation() AsyncOperation2() } &lt;# --&gt; &lt;!-- 10 --&gt;</p>
+<pre><code>branch:
+    # This block runs independently
+    AsyncOperation1()
+    ImmediateOperation()
+    AsyncOperation2()
+
+# Execution continues immediately here
+Print(&quot;Branch started, continuing main flow&quot;)
+# Branch block is still running in background</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Branch excels at handling side effects that shouldn&#x27;t interrupt the main game flow but that are acceptable to lose if the enclosing scope ends. Think about triggering particle effects that play out over time, starting background music that fades in gradually, or pre-loading assets that might be needed soon. These operations need to happen, but there&#x27;s no reason to make the player wait for them to complete. Branch lets you express this &quot;start it and move on&quot; pattern directly.</p>
+<p>The critical semantic of branch is its <strong>cancellation behavior</strong>: a branch task is automatically canceled when execution leaves the enclosing function scope, whether that happens through normal completion, failure, or cancellation from above. This is the structured concurrency guarantee at work—branches cannot outlive their parent context, which prevents orphaned tasks from accumulating. But it also means branch is the wrong choice for work that <em>must</em> complete, like logging analytics events or saving player progress. For those tasks, use <code>spawn</code> instead, which runs independently of its creating scope.</p>
+<p>Like rush, branch faces restrictions with iteration expressions. You cannot use branch directly inside a loop or for body, as this could lead to an unbounded number of background tasks. The workaround remains the same: encapsulate the branch in an async function and call that function from your iteration.</p></div>
+  </details>
+</section><section class="section" id="s12-unstructured-concurrency">
+  <div class="annotation">
+    <h3>中文批注：Unstructured Concurrency</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Unstructured Concurrency”展开。可把它先理解为“非结构化并发”。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Unstructured Concurrency</summary>
+    <div class="md"><h2>Unstructured Concurrency</h2></div>
+  </details>
+</section><section class="section" id="s13-the-spawn-expression">
+  <div class="annotation">
+    <h3>中文批注：The spawn Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The spawn Expression”展开。阅读时先抓住这些英文关键词：While、structured、concurrency、handles、most。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">spawn</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">task(t)</span><span class="chip">t</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">task</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The spawn Expression</summary>
+    <div class="md"><h3>The spawn Expression</h3>
+<p>While structured concurrency handles most concurrent programming needs elegantly, sometimes you need to break free from the hierarchical task structure. The <code>spawn</code> expression is Verse&#x27;s single concession to unstructured concurrency, allowing you to start an async operation that lives independently of its creating scope. Think of spawn as an emergency escape hatch—powerful when needed, but not your first choice for typical concurrent patterns.</p>
+<p>&lt;!--versetest LongRunningTask()  &lt;suspends&gt; :int=0 --&gt; &lt;!-- 11 --&gt;</p>
+<pre><code># spawn returns a task(t) object you can control
+BackgroundTask:task(int) = spawn{LongRunningTask()}
+
+# Or fire-and-forget without capturing the task
+spawn{LongRunningTask()}
+Print(&quot;Spawned task continues even after this scope exits&quot;)</code></pre>
+<p>What makes spawn unique is its ability to work anywhere. Unlike all the structured concurrency expressions that require an async context, spawn works in immediate functions, class constructors, module initialization—anywhere you can write code. This universality comes with responsibility. The task you spawn becomes a free agent, continuing its work regardless of what happens to the code that created it. There&#x27;s no automatic cleanup, no parent-child relationship, just an independent task pursuing its goal.</p>
+<p>The spawned function must have the <code>&lt;suspends&gt;</code> effect. You <strong>cannot</strong> spawn functions with the <code>&lt;decides&gt;</code> effect:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 12 --&gt;</p>
+<pre><code>AsyncWork()&lt;suspends&gt;:void =
+    Sleep(1.0)
+    Print(&quot;Background work complete&quot;)
+
+FailableWork()&lt;decides&gt;:void =
+    false?  # Might fail
+
+# Valid: spawning suspends function
+spawn{AsyncWork()}
+
+# Invalid: cannot spawn decides function
+# spawn{FailableWork()}  # ERROR: spawn requires suspends, not decides</code></pre>
+<p>This restriction exists because spawned tasks run independently without a parent to handle their failure. Since <code>&lt;suspends&gt;</code> and <code>&lt;decides&gt;</code> cannot be combined on the same function, and spawn needs <code>&lt;suspends&gt;</code>, functions with <code>&lt;decides&gt;</code> cannot be spawned. If you need to spawn failable work, wrap it in a suspends function that handles the failure internally:</p>
+<p>&lt;!--versetest FailableWork&lt;public&gt;()&lt;computes&gt;&lt;decides&gt;:void = {} --&gt; &lt;!-- 13 --&gt;</p>
+<pre><code>SafeFailableWork()&lt;suspends&gt;:void =
+    if (FailableWork[]):
+        Print(&quot;Work succeeded&quot;)
+    else:
+        Print(&quot;Work failed, but handled gracefully&quot;)
+
+spawn{SafeFailableWork()}  # Valid - failure handled inside</code></pre>
+<p>Spawn finds its place in specific architectural patterns. Global background services that monitor game state throughout the entire session, cleanup tasks that must complete even if the triggering context ends, or integration points where immediate code needs to trigger async operations—these scenarios justify reaching for spawn over the structured alternatives.</p>
+<p>The contrast with branch illuminates the design philosophy. Branch gives you structured fire-and-forget concurrency, but its tasks are canceled when the enclosing scope exits. Spawn gives you tasks that outlive their creating scope—use it when the work <em>must</em> complete regardless of what happens to the code that started it. Choose branch when cancellation is acceptable; choose spawn when it isn&#x27;t.</p>
+<p><strong>Working with spawned tasks:</strong></p>
+<p>The <code>spawn</code> expression returns a <code>task(t)</code> object where <code>t</code> is the return type of the spawned function. This task object provides methods to control and query the spawned operation—you can cancel it, wait for it to complete, or check its current state. While spawn creates independent tasks that don&#x27;t require management, having access to the task object gives you the power to intervene when needed. See the &quot;The task(t) Type&quot; section below for complete details on task objects and their capabilities.</p></div>
+  </details>
+</section><section class="section" id="s14-the-task-t-type">
+  <div class="annotation">
+    <h3>中文批注：The task(t) Type</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The task(t) Type”展开。阅读时先抓住这些英文关键词：task、represents、handle、executing、async。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">task(t)</span><span class="chip">t</span><span class="chip">spawn</span><span class="chip">&lt;suspends&gt;</span><span class="chip">task</span><span class="chip">where</span><span class="chip">for</span><span class="chip">suspends</span><span class="chip">interface</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The task(t) Type</summary>
+    <div class="md"><h2>The task(t) Type</h2>
+<p>The <code>task(t)</code> type represents a handle to an executing async operation, where <code>t</code> is the return type of the operation. While Verse creates tasks automatically behind the scenes for all async expressions, only <code>spawn</code> gives you direct access to a task object that you can control and query.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 14 --&gt;</p>
+<pre><code># spawn returns task(t) where t is the return type
+BackgroundWork()&lt;suspends&gt;:int =
+    Sleep(2.0)
+    42
+
+MyTask:task(int) = spawn{BackgroundWork()}
+# MyTask is a handle to the spawned operation</code></pre>
+<p>Task objects provide a rich interface for managing async operations: you can cancel them, wait for their completion, and query their current state. This control is essential for implementing robust concurrent systems where you need to coordinate multiple independent operations.</p>
+<p>A task moves through several distinct states during its lifetime:</p>
+<p><strong>Active</strong>: The task is currently running or suspended, but has not yet finished. It&#x27;s still doing work or waiting to resume.</p>
+<p><strong>Completed</strong>: The task finished successfully and returned a result. Once completed, a task never changes state again. (Terminal state)</p>
+<p><strong>Canceled</strong>: The task was canceled before it could complete. This is a terminal state — canceled tasks cannot resume.</p>
+<p><strong>Settled</strong>: A task is settled if it has reached either the Completed or Canceled state. Settled tasks are no longer executing. (Terminal state)</p>
+<p><strong>Uninterrupted</strong>: A task is uninterrupted if it completed successfully without being canceled. This is equivalent to the Completed state. (alias)</p>
+<p><strong>Interrupted</strong>: A task is interrupted if it was canceled. This is equivalent to the Canceled state. (alias)</p></div>
+  </details>
+</section><section class="section" id="s15-task-cancel">
+  <div class="annotation">
+    <h3>中文批注：Task.Cancel()</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Task.Cancel()”展开。阅读时先抓住这些英文关键词：note、Unreleased、Feature、Cancel、method。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Cancel()</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">task</span><span class="chip">transacts</span><span class="chip">suspends</span><span class="chip">spawn</span><span class="chip">for</span><span class="chip">race</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Task.Cancel()</summary>
+    <div class="md"><h3>Task.Cancel()</h3>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>The Cancel() method has not be released at this time.</p></div>
+<p>The <code>Cancel()</code> method requests cancellation of a task. This is a safe operation that can be called on any task in any state:</p>
+<p>&lt;!--versetest BackgroundWork()&lt;transacts&gt;&lt;suspends&gt;:void={Sleep(1.0)} F()&lt;suspends&gt;:void= { LongTask:task(void) = spawn{BackgroundWork()} LongTask.Cancel() LongTask.Cancel() } &lt;# --&gt; &lt;!-- 16 --&gt;</p>
+<pre><code>LongTask:task(void) = spawn{BackgroundWork()}
+
+# Request cancellation
+LongTask.Cancel()
+
+# Safe to call multiple times
+LongTask.Cancel()  # No error
+
+# Safe to call on completed tasks (has no effect)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Cancellation is cooperative—the task doesn&#x27;t stop immediately. Instead, it receives a cancellation signal that is checked at the next suspension point. The task then unwinds gracefully, allowing cleanup code to run. See &quot;Suspension Points and Cancellation&quot; below for details on when cancellation takes effect.</p>
+<p>Calling <code>Cancel()</code> on an already completed task is safe and has no effect. This means you can cancel tasks without worrying about race conditions between completion and cancellation.</p></div>
+  </details>
+</section><section class="section" id="s16-task-await">
+  <div class="annotation">
+    <h3>中文批注：Task.Await()</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Task.Await()”展开。阅读时先抓住这些英文关键词：Await、method、suspends、calling、context。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Await()</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">suspends</span><span class="chip">task</span><span class="chip">computes</span><span class="chip">spawn</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Task.Await()</summary>
+    <div class="md"><h3>Task.Await()</h3>
+<p>The <code>Await()</code> method suspends the calling context until the task completes, then returns the task&#x27;s result:</p>
+<p>&lt;!--versetest BackgroundWork()&lt;computes&gt;&lt;suspends&gt;:int=42 F()&lt;suspends&gt;:void={ ComputeTask:task(int) = spawn{BackgroundWork()} Result:int = ComputeTask.Await() Print(&quot;Task returned: {Result}&quot;) } &lt;# --&gt; &lt;!-- 17 --&gt;</p>
+<pre><code>ComputeTask:task(int) = spawn{BackgroundWork()}
+
+# Wait for task to complete and get result
+Result:int = ComputeTask.Await()
+Print(&quot;Task returned: {Result}&quot;)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Key behaviors of Await():</strong></p>
+<ul>
+<li><strong>Blocks until completion</strong>: If the task is still running, <code>Await()</code></li>
+<p>suspends until it finishes</p>
+<li><strong>Returns immediately if complete</strong>: If the task already finished,</li>
+<p><code>Await()</code> returns the cached result instantly (Sticky)</p>
+<li><strong>Can be called multiple times</strong>: You can await the same task</li>
+<p>repeatedly, always getting the same result</p>
+<li><strong>Propagates cancellation</strong>: If the awaited task was canceled,</li>
+<p><code>Await()</code> propagates the cancellation to the caller</p>
+</ul>
+<p>&lt;!--versetest ComputeValue&lt;public&gt;()&lt;suspends&gt;:int = 42 F()&lt;suspends&gt;:void={ MyTask:task(int) = spawn{ComputeValue()} FirstResult := MyTask.Await() SecondResult := MyTask.Await() } &lt;# --&gt; &lt;!-- 18 --&gt;</p>
+<pre><code>MyTask:task(int) = spawn{ComputeValue()}
+
+# First await - waits for completion
+FirstResult := MyTask.Await()
+
+# Second await - returns cached result immediately
+SecondResult := MyTask.Await()
+
+# FirstResult = SecondResult</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s17-common-task-patterns">
+  <div class="annotation">
+    <h3>中文批注：Common Task Patterns</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Common Task Patterns”展开。阅读时先抓住这些英文关键词：Canceling、task、after、timeout、versetest。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;suspends&gt;</span><span class="chip">task</span><span class="chip">suspends</span><span class="chip">spawn</span><span class="chip">race</span><span class="chip">for</span><span class="chip">sync</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Common Task Patterns</summary>
+    <div class="md"><h3>Common Task Patterns</h3>
+<p><strong>Canceling a task after timeout:</strong></p>
+<p>&lt;!--versetest ProcessData()&lt;suspends&gt;:void={} --&gt; &lt;!-- 27 --&gt;</p>
+<pre><code>StartTask()&lt;suspends&gt;:void =
+    DataTask:task(void) = spawn{ProcessData()}
+
+    race:
+        block:
+            DataTask.Await()
+            Print(&quot;Task completed&quot;)
+        block:
+            Sleep(5.0)
+            DataTask.Cancel()
+            Print(&quot;Task timed out and was canceled&quot;)</code></pre>
+<p><strong>Waiting for multiple spawned tasks:</strong></p>
+<p>&lt;!--versetest Task1()&lt;suspends&gt;:int=1 Task2()&lt;suspends&gt;:int=2 Task3()&lt;suspends&gt;:int=3 --&gt; &lt;!-- 28 --&gt;</p>
+<pre><code>RunMultipleTasks()&lt;suspends&gt;:void =
+    T1 := spawn{Task1()}
+    T2 := spawn{Task2()}
+    T3 := spawn{Task3()}
+
+    # Wait for all to complete
+    Results := sync:
+        T1.Await()
+        T2.Await()
+        T3.Await()
+
+    Print(&quot;All tasks complete: {Results(0)}, {Results(1)}, {Results(2)}&quot;)</code></pre></div>
+  </details>
+</section><section class="section" id="s18-suspension-points-and-cancellation">
+  <div class="annotation">
+    <h3>中文批注：Suspension Points and Cancellation</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Suspension Points and Cancellation”展开。阅读时先抓住这些英文关键词：Task、cancellation、follows、cooperative、model。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Sleep(0.0)</span><span class="chip">NextTick()</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">task</span><span class="chip">where</span><span class="chip">suspends</span><span class="chip">for</span><span class="chip">public</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Suspension Points and Cancellation</summary>
+    <div class="md"><h3>Suspension Points and Cancellation</h3>
+<p>Task cancellation in Verse follows a cooperative model. Rather than forcefully terminating tasks, which could leave resources in inconsistent states, Verse sends cancellation signals that tasks check at <strong>suspension points</strong>. When a task receives a cancellation signal, it has the opportunity to clean up resources before terminating. This cooperative approach prevents data corruption while ensuring responsive cancellation.</p>
+<p>Suspension points are the specific locations where async tasks can pause and resume. These are the only places where:</p>
+<ul>
+<li>A task can be suspended to allow other tasks to run</li>
+<li>Cancellation signals are checked and processed</li>
+<li>The runtime can switch between concurrent tasks</li>
+</ul>
+<p>Common suspension points include:</p>
+<p><strong>Timing operations:</strong></p>
+<p>&lt;!--versetest F()&lt;suspends&gt;:void= Sleep(1.0) NextTick() &lt;# --&gt; &lt;!-- 30 --&gt;</p>
+<pre><code>Sleep(1.0)  # Suspends for duration, checks cancellation when resuming
+NextTick()  # Waits one simulation update, checks cancellation</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Calling suspends functions:</strong></p>
+<p>&lt;!--versetest SomeAsyncFunction&lt;public&gt;()&lt;suspends&gt;:void = {} F()&lt;suspends&gt;:void={ Result := SomeAsyncFunction() } &lt;# --&gt; &lt;!-- 32 --&gt;</p>
+<pre><code>Result := SomeAsyncFunction()  # Suspension point at the call</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Structured concurrency expressions:</strong></p>
+<p>&lt;!--versetest Op1()&lt;suspends&gt;:void = {} Op2()&lt;suspends&gt;:void = {} M()&lt;suspends&gt;:void = sync: Op1() Op2() &lt;# --&gt; &lt;!-- 33 --&gt;</p>
+<pre><code>sync:  # Suspension point when entering sync
+    Op1()
+    Op2()
+# Suspension point when sync completes</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Task operations:</strong></p>
+<p>&lt;!--versetest ComputeValue&lt;public&gt;()&lt;suspends&gt;:int = 42 F()&lt;suspends&gt;:void={ MyTask:task(int) = spawn{ComputeValue()} Result := MyTask.Await() } &lt;# --&gt; &lt;!-- 34 --&gt;</p>
+<pre><code>Result := MyTask.Await()  # Suspension point while waiting</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Important:</strong> Immediate code between suspension points runs without interruption. If you write a long computation loop without any suspension points, that task cannot be canceled until it reaches the next suspension point:</p>
+<p>&lt;!--versetest ComputeExpensiveOperation(:int):void={} --&gt; &lt;!-- 35  --&gt;</p>
+<pre><code># Cannot be canceled during the loop
+LongComputation()&lt;suspends&gt;:void =
+    for (I := 0..1000000):
+        # No suspension points - runs to completion
+        ComputeExpensiveOperation(I)
+    Sleep(0.0)  # First cancellation check happens here!
+
+# Can be canceled every iteration
+ResponsiveComputation()&lt;suspends&gt;:void =
+    for (I := 0..1000000):
+        ComputeExpensiveOperation(I)
+        Sleep(0.0)  # Cancellation checked every iteration</code></pre>
+<p>If you need to make long-running computations cancellable, insert periodic suspension points using <code>Sleep(0.0)</code> or <code>NextTick()</code>, which yield control without actual delay but allow cancellation checking.</p>
+<p>Cancellation cascades through the task hierarchy. When a parent task is canceled, all its child tasks receive cancellation signals too. This cascading behavior maintains the invariant that child tasks don&#x27;t outlive their parents in structured concurrency, preventing resource leaks and ensuring predictable cleanup. In a race expression, for example, when the winner completes, the race task sends cancellation signals to all losing subtasks, which then cascade to any tasks those losers might have created.</p></div>
+  </details>
+</section><section class="section" id="s19-cleanup-and-resource-management">
+  <div class="annotation">
+    <h3>中文批注：Cleanup and Resource Management</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Cleanup and Resource Management”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Cleanup and Resource Management</summary>
+    <div class="md"><h2>Cleanup and Resource Management</h2></div>
+  </details>
+</section><section class="section" id="s20-the-defer-block">
+  <div class="annotation">
+    <h3>中文批注：The defer: Block</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The defer: Block”展开。阅读时先抓住这些英文关键词：defer、block、provides、guaranteed、cleanup。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">defer:</span><span class="chip">defer</span><span class="chip">race</span><span class="chip">spawn</span><span class="chip">&lt;suspends&gt;</span><span class="chip">task</span><span class="chip">for</span><span class="chip">suspends</span><span class="chip">loop</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The defer: Block</summary>
+    <div class="md"><h3>The defer: Block</h3>
+<p>The <code>defer:</code> block provides guaranteed cleanup code that executes when its enclosing scope exits — whether through normal completion, failure, or cancellation. For the full description of <code>defer</code> semantics, including execution order, scope rules, and restrictions, see <a href="../07_control/index.html#defer-statements">Defer Statements</a>.</p>
+<p>This section focuses on how <code>defer</code> interacts with concurrency.</p>
+<p><strong>defer: with cancellation:</strong></p>
+<p>When a concurrent task is canceled (e.g., a losing <code>race</code> arm or a cancelled <code>spawn</code>), defer blocks execute as the stack unwinds from the cancellation point. This makes <code>defer</code> essential for resource cleanup in concurrent code:</p>
+<p>&lt;!--versetest AcquireResource():int=42 ReleaseResource(:int):void={} LongRunningTask(:int)&lt;suspends&gt;:void={loop{NextTick()}} --&gt; &lt;!-- 36 --&gt;</p>
+<pre><code>ProcessWithTimeout()&lt;suspends&gt;:void =
+    race:
+        block:
+            Resource := AcquireResource()
+            defer:
+                ReleaseResource(Resource)  # Runs when this arm is cancelled
+            LongRunningTask(Resource)
+        block:
+            Sleep(10.0)  # Timeout
+    # If timeout wins, first block is cancelled and defer runs</code></pre>
+<p>&lt;!--versetest Setup():void={} Teardown():void={} LongOperation()&lt;suspends&gt;:void={loop{NextTick()}} --&gt; &lt;!-- 42 --&gt;</p>
+<pre><code>CancellableWork()&lt;suspends&gt;:void =
+    Setup()
+
+    defer:
+        Teardown()
+        Print(&quot;Cleanup after cancellation&quot;)
+
+    # If this task is canceled, defer runs during unwinding
+    LongOperation()</code></pre>
+<p><strong>No suspending in defer:</strong></p>
+<p>defer blocks <strong>cannot</strong> contain suspending operations. This ensures cleanup happens immediately without delay:</p>
+<p>&lt;!--versetest ValidDefer()&lt;suspends&gt;:void = defer: Print(&quot;Cleanup happens immediately&quot;) Sleep(1.0) &lt;# --&gt; &lt;!-- 44 --&gt;</p>
+<pre><code># ERROR: Cannot use suspending operations in defer
+BadDefer()&lt;suspends&gt;:void =
+    defer:
+        Sleep(1.0)  # ERROR: defer blocks cannot suspend
+        NextTick()  # ERROR: defer blocks cannot suspend</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This restriction is essential — if defer blocks could suspend, cleanup could be delayed indefinitely, defeating their purpose as guaranteed finalization. However, defer blocks <em>can</em> use <code>spawn</code> for fire-and-forget async operations.</p></div>
+  </details>
+</section><section class="section" id="s21-timing-functions">
+  <div class="annotation">
+    <h3>中文批注：Timing Functions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Timing Functions”展开。可把它先理解为“时间函数”。阅读时先抓住这些英文关键词：fundamental、timing、function、suspends、execution。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!-- #&gt; --&gt;
+
+The</span><span class="chip">Sleep(0.0)</span><span class="chip">**Best practice:** Insert</span><span class="chip">&lt;suspends&gt;</span><span class="chip">suspends</span><span class="chip">for</span><span class="chip">task</span><span class="chip">loop</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Timing Functions</summary>
+    <div class="md"><h2>Timing Functions</h2>
+<p>The fundamental timing function that suspends execution for a specified duration:</p>
+<p>&lt;!--versetest M()&lt;suspends&gt;:void = Sleep(1.0)</p>
+<p>Sleep(0.0) &lt;# --&gt; &lt;!-- 46 --&gt;</p>
+<pre><code># Suspend for 1 second
+Sleep(1.0)
+
+# Suspend for one frame (smallest possible delay)
+Sleep(0.0)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The <code>Sleep(0.0)</code> pattern deserves special attention. While it doesn&#x27;t add actual delay, it serves two critical purposes:</p>
+<ol>
+<li><strong>Creates a suspension point</strong> for cancellation checking</li>
+<li><strong>Yields control</strong> to other concurrent tasks, preventing one task from monopolizing execution</li>
+</ol>
+<p>This makes <code>Sleep(0.0)</code> essential for responsive concurrent code:</p>
+<p>&lt;!--versetest ProcessFrame():void={} ExpensiveOperation(:int):void={} --&gt; &lt;!-- 47 --&gt;</p>
+<pre><code># Without Sleep(0.0) - cannot be cancelled during loop
+UnresponsiveLoop()&lt;suspends&gt;:void =
+    for (I := 0..10000):
+        ExpensiveOperation(I)
+    # Cancellation only checked after all iterations
+
+# With Sleep(0.0) - responsive to cancellation
+ResponsiveLoop()&lt;suspends&gt;:void =
+    for (I := 0..10000):
+        ExpensiveOperation(I)
+        Sleep(0.0)  # Yields and checks cancellation each iteration</code></pre>
+<p><strong>Best practice:</strong> Insert <code>Sleep(0.0)</code> in long-running loops to ensure tasks remain responsive to cancellation and share execution time fairly with other concurrent operations.</p></div>
+  </details>
+</section><section class="section" id="s22-nexttick">
+  <div class="annotation">
+    <h3>中文批注：NextTick()</h3>
+    <div class="rows">
+      <div><p>这一节围绕“NextTick()”展开。阅读时先抓住这些英文关键词：note、Unreleased、Feature、NextTick、have。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">NextTick()</span><span class="chip">Sleep(0.0)</span><span class="chip">&lt;!-- #&gt; --&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">suspends</span><span class="chip">if</span><span class="chip">for</span><span class="chip">loop</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：NextTick()</summary>
+    <div class="md"><h3>NextTick()</h3>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>NextTick() have not yet been released.</p></div>
+<p>The <code>NextTick()</code> function suspends execution until the next simulation update (tick). Unlike <code>Sleep(0.0)</code> which yields control and may resume in the same tick if no other work is pending, <code>NextTick()</code> guarantees that at least one simulation update will occur before resuming:</p>
+<p>&lt;!--versetest M()&lt;suspends&gt;:void = NextTick()</p>
+<p>NextTick() NextTick() NextTick() &lt;# --&gt; &lt;!-- 48 --&gt;</p>
+<pre><code># Wait for exactly one simulation tick
+NextTick()
+
+# Multiple ticks
+NextTick()  # Wait 1 tick
+NextTick()  # Wait another tick
+NextTick()  # Wait a third tick</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><code>NextTick()</code> is essential for game logic that needs to be synchronized with simulation updates:</p>
+<p>&lt;!--versetest ProcessGameLogic():void={} UpdatePhysics():void={} CheckCollisions():void={} PerformAction():void={}</p>
+<p>GameLoop()&lt;suspends&gt;:void = loop: ProcessGameLogic() UpdatePhysics() CheckCollisions() NextTick()</p>
+<p>DelayByTicks(TickCount:int)&lt;suspends&gt;:void = for (I := 1..TickCount): NextTick()</p></div>
+  </details>
+</section><section class="section" id="s23-test-the-delay-function">
+  <div class="annotation">
+    <h3>中文批注：Test the delay function</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Test the delay function”展开。阅读时先抓住这些英文关键词：Sleep、NextTick、Feature、Timing、May。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">NextTick()</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">suspends</span><span class="chip">loop</span><span class="chip">for</span><span class="chip">case</span><span class="chip">computes</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Test the delay function</summary>
+    <div class="md"><h1>Test the delay function</h1>
+<p>TestDelay()&lt;suspends&gt;:void = DelayByTicks(5) PerformAction() &lt;# --&gt; &lt;!-- 49 --&gt;</p>
+<pre><code># Process game logic every tick
+GameLoop()&lt;suspends&gt;:void =
+    loop:
+        ProcessGameLogic()
+        UpdatePhysics()
+        CheckCollisions()
+        NextTick()  # Wait for next simulation update
+
+# Delay action by specific number of ticks
+DelayByTicks(TickCount:int)&lt;suspends&gt;:void =
+    for (I := 1..TickCount):
+        NextTick()
+
+# Wait 5 ticks before executing action
+DelayByTicks(5)
+PerformAction()</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Sleep(0.0) vs NextTick():</strong></p>
+<p>| Feature   | Sleep(0.0)              | NextTick() | |---------  |------------             |------------| | Timing    | May resume in same tick | Always waits for next tick | | Use case  | Yield for cancellation checks | Synchronize with simulation updates | | Guarantee | Creates suspension point | Guarantees tick boundary |</p>
+<p>Both create suspension points for cancellation, but <code>NextTick()</code> provides stronger timing guarantees when you need to align with the simulation clock.</p>
+<p>&lt;!--versetest ProcessFrame()&lt;computes&gt;:logic=false --&gt; &lt;!-- 50 --&gt;</p>
+<pre><code># Common patterns
+LoopWithDelay()&lt;suspends&gt;:void =
+    loop:
+        ProcessFrame()
+        Sleep(0.033)  # ~30 FPS
+
+TickBasedLoop()&lt;suspends&gt;:void =
+    loop:
+        if (ProcessFrame()=false): 
+             break
+        NextTick()  # Once per simulation tick	</code></pre>
+<p>Timing Patterns are:</p>
+<p>&lt;!--versetest DoAction():void={} UpdateLogic()&lt;computes&gt;:void={} Float(:int)&lt;computes&gt;:float=0.0 SetPosition(:float):void={} --&gt; &lt;!-- 51 --&gt;</p>
+<pre><code># Delayed action
+PerformDelayedAction()&lt;suspends&gt;:void =
+    Sleep(2.0)  # Wait 2 seconds
+    DoAction()
+
+# Periodic execution
+PeriodicUpdate()&lt;suspends&gt;:void =
+    loop:
+        UpdateLogic()
+        Sleep(1.0)  # Update every second
+
+# Animation timing
+AnimateMovement(Start:float,End:float)&lt;suspends&gt;:void =
+    for (T := 0..10):
+        SetPosition(Lerp(Start, End, Float(T)/10.0))
+        Sleep(0.0)  # One frame</code></pre></div>
+  </details>
+</section><section class="section" id="s24-getting-current-time-getsecondssinceepoch">
+  <div class="annotation">
+    <h3>中文批注：Getting Current Time: GetSecondsSinceEpoch</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Getting Current Time: GetSecondsSinceEpoch”展开。阅读时先抓住这些英文关键词：GetSecondsSinceEpoch、function、returns、current、Unix。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">GetSecondsSinceEpoch()</span><span class="chip">/Verse.org/Verse</span><span class="chip">using { /Verse.org/Verse }</span><span class="chip">Sleep()</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Getting Current Time: GetSecondsSinceEpoch</summary>
+    <div class="md"><h3>Getting Current Time: GetSecondsSinceEpoch</h3>
+<p>The <code>GetSecondsSinceEpoch()</code> function returns the current Unix timestamp—the number of seconds elapsed since January 1, 1970, 00:00:00 UTC. This function is essential for timestamping events, measuring durations, and synchronizing with external systems that use Unix time.</p>
+<p>&lt;!--versetest LogEvent(Message:string):void = Timestamp := GetSecondsSinceEpoch() Print(&quot;[{Timestamp}] {Message}&quot;) &lt;# --&gt; &lt;!-- 52 --&gt;</p>
+<pre><code># Get current timestamp
+CurrentTime := GetSecondsSinceEpoch()
+# Returns something like 1716411409.0 (May 22, 2024)
+
+# Log an event with timestamp
+LogEvent(Message:string):void =
+    Timestamp := GetSecondsSinceEpoch()
+    Print(&quot;[{Timestamp}] {Message}&quot;)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Critical transactional behavior:</strong></p>
+<p>Within a single transaction, <code>GetSecondsSinceEpoch()</code> returns the <strong>same value</strong> every time it&#x27;s called. This ensures deterministic behavior and prevents time-related race conditions:</p>
+<p>&lt;!--versetest DoExpensiveWork()&lt;transacts&gt;:void = {} PerformDatabaseUpdates()&lt;transacts&gt;:void = {}</p>
+<p>MeasureTransactionTime()&lt;transacts&gt;:void = StartTime := GetSecondsSinceEpoch()</p>
+<p>DoExpensiveWork() PerformDatabaseUpdates()</p>
+<p>EndTime := GetSecondsSinceEpoch()</p>
+<p>Duration := EndTime - StartTime &lt;# --&gt; &lt;!-- 53 --&gt;</p>
+<pre><code>MeasureTransactionTime()&lt;transacts&gt;:void =
+    StartTime := GetSecondsSinceEpoch()
+
+    # Perform complex operations
+    DoExpensiveWork()
+    PerformDatabaseUpdates()
+
+    EndTime := GetSecondsSinceEpoch()
+
+    # StartTime = EndTime!
+    # Time is &quot;frozen&quot; within the transaction
+    Duration := EndTime - StartTime  # Always 0.0</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This transactional consistency is intentional—it prevents non-deterministic behavior where transaction retry could produce different results due to time progression. If the transaction fails and is retried, all calls to <code>GetSecondsSinceEpoch()</code> in the retried attempt will return a new consistent timestamp.</p>
+<p><strong>Use cases:</strong></p>
+<p><strong>Event logging and debugging:</strong></p>
+<p>&lt;!--versetest logger := class: var EventLog:[]tuple(float, string) = array{}</p>
+<p>Log(Message:string)&lt;transacts&gt;:void = Timestamp := GetSecondsSinceEpoch() set EventLog = EventLog + array{(Timestamp, Message)}</p>
+<p>GetRecentEvents(LastSeconds:float)&lt;transacts&gt;:[]string = Now := GetSecondsSinceEpoch() Cutoff := Now - LastSeconds for (Entry : EventLog, Entry(0) &gt;= Cutoff): Entry(1) &lt;# --&gt; &lt;!-- 55 --&gt;</p>
+<pre><code>logger := class:
+    var EventLog:[]tuple(float, string) = array{}
+
+    Log(Message:string)&lt;transacts&gt;:void =
+        Timestamp := GetSecondsSinceEpoch()
+        set EventLog = EventLog + array{(Timestamp, Message)}
+
+    GetRecentEvents(LastSeconds:float)&lt;transacts&gt;:[]string =
+        Now := GetSecondsSinceEpoch()
+        Cutoff := Now - LastSeconds
+        for ((Time, Message) : EventLog, Time &gt;= Cutoff):
+            Message</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Session tracking:</strong> &lt;!--versetest--&gt; &lt;!-- 56 --&gt;</p>
+<pre><code>player_session := class:
+    LoginTime:float
+
+MakeSession()&lt;transacts&gt;:player_session =
+    player_session{LoginTime := GetSecondsSinceEpoch()}
+
+GetSessionDuration(S:player_session)&lt;transacts&gt;:float =
+    GetSecondsSinceEpoch() - S.LoginTime</code></pre>
+<p><strong>Rate limiting:</strong></p>
+<p>&lt;!--versetest PerformAction():void={} ShowCooldownMessage():void={} rate_limiter := class: var LastAction:float = 0.0 Cooldown:float = 5.0</p>
+<p>CanAct()&lt;transacts&gt;&lt;decides&gt;:void = Now := GetSecondsSinceEpoch() TimeSinceLastAction := Now - LastAction TimeSinceLastAction &gt;= Cooldown set LastAction = Now</p>
+<p>assert: Limiter := rate_limiter{} if (Limiter.CanAct[]): PerformAction() else: ShowCooldownMessage() &lt;# --&gt; &lt;!-- 57 --&gt;</p>
+<pre><code>rate_limiter := class:
+    var LastAction:float = 0.0
+    Cooldown:float = 5.0  # 5 second cooldown
+
+    CanAct()&lt;transacts&gt;&lt;decides&gt;:void =
+        Now := GetSecondsSinceEpoch()
+        TimeSinceLastAction := Now - LastAction
+        TimeSinceLastAction &gt;= Cooldown
+        set LastAction = Now
+
+Limiter := rate_limiter{}
+
+if (Limiter.CanAct[]):
+    PerformAction()
+else:
+    ShowCooldownMessage()</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Absolute timestamps for external systems:</strong></p>
+<p>When interfacing with external systems, databases, or APIs that use Unix timestamps:</p>
+<p>&lt;!--versetest MyPlayerID:string = &quot;player123&quot; SendToAnalytics&lt;public&gt;(EventType:string, Timestamp:float, PlayerID:string):void = {} FetchServerTime():float = 1716411409.0</p>
+<p>M():void = SendToAnalytics(&quot;player_action&quot;, GetSecondsSinceEpoch(), MyPlayerID)</p>
+<p>ServerTime := FetchServerTime() LocalTime := GetSecondsSinceEpoch() ClockSkew := LocalTime - ServerTime &lt;# --&gt; &lt;!-- 58 --&gt;</p>
+<pre><code># Timestamp for external analytics
+AnalyticsEvent := map{
+    &quot;event_type&quot; =&gt; &quot;player_action&quot;,
+    &quot;timestamp&quot; =&gt; GetSecondsSinceEpoch(),
+    &quot;player_id&quot; =&gt; MyPlayerID
+}
+SendToAnalytics(AnalyticsEvent)
+
+# Comparing with server timestamps
+ServerTime := FetchServerTime()
+LocalTime := GetSecondsSinceEpoch()
+ClockSkew := LocalTime - ServerTime</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Important notes:</strong></p>
+<ul>
+<li>Returns <code>float</code> representing seconds (may have fractional parts for millisecond precision)</li>
+<li>Located in <code>/Verse.org/Verse</code> module—use <code>using { /Verse.org/Verse }</code> to access</li>
+<li>Not affected by <code>Sleep()</code> or other suspension—measures real-world time</li>
+<li>Consistent within transactions for determinism</li>
+<li>Each new transaction gets a fresh timestamp</li>
+</ul>
+<p><strong>Combining with Sleep for time-based logic:</strong></p>
+<p>&lt;!--versetest PerformAction&lt;public&gt;()&lt;suspends&gt;:void = {} --&gt; &lt;!-- 59 --&gt;</p>
+<pre><code># Wait until a specific time
+WaitUntil(TargetTime:float)&lt;suspends&gt;:void =
+    loop:
+        if (GetSecondsSinceEpoch() &gt;= TargetTime) then:
+            break
+        Sleep(0.1)  # Check every 100ms
+
+# Schedule an action for the future
+ScheduleDelayedAction(DelaySeconds:float)&lt;suspends&gt;:void =
+    TargetTime := GetSecondsSinceEpoch() + DelaySeconds
+    WaitUntil(TargetTime)
+    PerformAction()</code></pre>
+<p>Note that the transactional consistency means you cannot use <code>GetSecondsSinceEpoch()</code> to measure time within a single transaction. For measuring execution time of operations that don&#x27;t span transactions, use profiling tools or external timing mechanisms.</p></div>
+  </details>
+</section><section class="section" id="s25-events-and-synchronization">
+  <div class="annotation">
+    <h3>中文批注：Events and Synchronization</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Events and Synchronization”展开。可把它先理解为“事件与同步”。阅读时先抓住这些英文关键词：Events、provide、synchronization、primitives、coordinating。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Events and Synchronization</summary>
+    <div class="md"><h2>Events and Synchronization</h2>
+<p>Events provide synchronization primitives for coordinating between concurrent tasks. They implement producer-consumer and observer patterns, allowing tasks to signal each other and wait for specific conditions. Events bridge the gap between independent concurrent operations, enabling communication without shared mutable state.</p></div>
+  </details>
+</section><section class="section" id="s26-basic-events">
+  <div class="annotation">
+    <h3>中文批注：Basic Events</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Basic Events”展开。阅读时先抓住这些英文关键词：event、creates、communication、channel、producers。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">event(t)</span><span class="chip">&lt;!-- #&gt; --&gt;
+
+When</span><span class="chip">Signal()</span><span class="chip">sync</span><span class="chip">race</span><span class="chip">&lt;suspends&gt;</span><span class="chip">where</span><span class="chip">task</span><span class="chip">suspends</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Basic Events</summary>
+    <div class="md"><h3>Basic Events</h3>
+<p>The <code>event(t)</code> type creates a communication channel where producers signal values and consumers await them. Each signal delivers one value to each awaiting task:</p>
+<p>&lt;!--versetest ProcessValue(:int):void={} F()&lt;suspends&gt;:void={ GameEvent := event(int){}</p>
+<p>ProducerTask()&lt;suspends&gt;:void = Sleep(1.0) GameEvent.Signal(42)</p>
+<p>ConsumerTask()&lt;suspends&gt;:void = Value := GameEvent.Await() ProcessValue(Value)</p>
+<p>sync: ProducerTask() ConsumerTask() } &lt;# --&gt; &lt;!-- 60 --&gt;</p>
+<pre><code># Create an event channel for integers
+GameEvent := event(int){}
+
+# Producer: signals values to the event
+ProducerTask()&lt;suspends&gt;:void =
+    Sleep(1.0)
+    GameEvent.Signal(42)
+
+# Consumer: awaits values from the event
+ConsumerTask()&lt;suspends&gt;:void =
+    Value := GameEvent.Await()
+    ProcessValue(Value)
+
+sync:
+    ProducerTask()
+    ConsumerTask()</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>When <code>Await()</code> is called on an event, the calling task suspends until another task calls <code>Signal()</code> with a value. The signaled value is delivered to one waiting task, and execution resumes. If multiple tasks await the same event, each <code>Signal()</code> wakes exactly one awaiter—signals and awaits pair up one-to-one.</p>
+<p>This one-to-one matching makes events perfect for task coordination. Think of a player action system: the input handler signals button presses while the gameplay system awaits them. Or consider an AI pathfinding request: the game logic signals destination requests while the pathfinding system awaits and processes them.</p>
+<p>Events work naturally with structured concurrency. You can use them within <code>sync</code> blocks to coordinate parallel operations, or combine them with <code>race</code> to implement timeouts on event waiting:</p>
+<p>&lt;!--versetest F()&lt;suspends&gt;:void={ GameEvent:event(int)=event(int){} Result := race: block: Value := GameEvent.Await() option{Value} block: Sleep(5.0) false } &lt;# --&gt; &lt;!-- 61 --&gt;</p>
+<pre><code># Wait for event with timeout
+Result := race:
+    block:
+        Value := GameEvent.Await()
+        option{Value}
+    block:
+        Sleep(5.0)
+        false  # Timeout - no value received</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s27-sticky-events">
+  <div class="annotation">
+    <h3>中文批注：Sticky Events</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Sticky Events”展开。阅读时先抓住这些英文关键词：note、Unreleased、Feature、Sticky、Events。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">sticky_event(t)</span><span class="chip">where</span><span class="chip">task</span><span class="chip">if</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Sticky Events</summary>
+    <div class="md"><h3>Sticky Events</h3>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>Sticky Events have not yet been released and is not currently available.</p></div>
+<p>While basic events deliver each signal to exactly one awaiter, <code>sticky_event(t)</code> remembers the last signaled value and delivers it to all subsequent awaits until a new value is signaled:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 62 --&gt;</p>
+<pre><code>StateEvent := sticky_event(int){}
+
+# Signal once
+StateEvent.Signal(100)
+
+# Multiple awaits all receive the same value
+Value1 := StateEvent.Await()  # Gets 100
+Value2 := StateEvent.Await()  # Gets 100 again
+Value3 := StateEvent.Await()  # Still gets 100
+
+# New signal updates the sticky value
+StateEvent.Signal(200)
+Value4 := StateEvent.Await()  # Gets 200
+Value5 := StateEvent.Await()  # Also gets 200</code></pre>
+<p>Sticky events excel at representing state changes that multiple consumers need to observe. Unlike basic events where each signal disappears after one await, sticky events maintain the current state. Consider a game phase system: when the phase changes from &quot;Lobby&quot; to &quot;Playing&quot;, every system that checks the phase should see &quot;Playing&quot;, not have one system consume the signal while others miss it.</p>
+<p>The sticky behavior creates a form of eventually consistent state. If a task awaits a sticky event, it&#x27;s guaranteed to see the most recent signal, even if that signal occurred before the await. This makes sticky events ideal for configuration updates, mode switches, or any scenario where &quot;what&#x27;s the current state?&quot; matters more than &quot;what just changed?&quot;.</p></div>
+  </details>
+</section><section class="section" id="s28-subscribable-events">
+  <div class="annotation">
+    <h3>中文批注：Subscribable Events</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Subscribable Events”展开。阅读时先抓住这些英文关键词：note、Unreleased、Feature、Subscribable、Events。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">subscribable_event</span><span class="chip">Each subscription returns a</span><span class="chip">where</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Subscribable Events</summary>
+    <div class="md"><h3>Subscribable Events</h3>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>Subscribable Events have not yet been released and is not currently available.</p></div>
+<p>The <code>subscribable_event</code> type implements the observer pattern, allowing multiple handlers to react to each signal. Unlike events where awaiting tasks explicitly wait, subscribable events let you register callback functions that execute automatically when values are signaled:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 63 --&gt;</p>
+<pre><code>LogScore(:int):void={}
+UpdateUI(:int):void={}
+CheckAchievements(:int):void={}
+
+ScoreEvent := subscribable_event(int){}
+
+# Subscribe multiple handlers
+Logger := ScoreEvent.Subscribe(LogScore)
+UIUpdater := ScoreEvent.Subscribe(UpdateUI)
+AchievementChecker := ScoreEvent.Subscribe(CheckAchievements)
+
+# Signal invokes all subscribed handlers
+ScoreEvent.Signal(1000)  # Calls LogScore(1000), UpdateUI(1000), CheckAchievements(1000)
+
+# Unsubscribe to stop receiving signals
+Logger.Cancel()
+ScoreEvent.Signal(2000)  # Only calls UpdateUI and CheckAchievements</code></pre>
+<p>Each subscription returns a <code>cancelable</code> object that lets you unsubscribe by calling <code>Cancel()</code>. Once canceled, that handler stops receiving signals. This provides fine-grained control over handler lifetimes, essential for systems that come and go during gameplay.</p>
+<p>Subscribable events shine in broadcast scenarios where multiple independent systems need to react to the same occurrence. When a player scores points, the UI needs to update, the audio system needs to play a sound, the achievement system needs to check for unlocks, and the analytics system needs to log the event. With subscribable events, each system registers its handler independently, and every signal reaches all interested parties.</p></div>
+  </details>
+</section><section class="section" id="s29-the-awaitable-and-signalable-interfaces">
+  <div class="annotation">
+    <h3>中文批注：The awaitable and signalable Interfaces</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The awaitable and signalable Interfaces”展开。阅读时先抓住这些英文关键词：Events、built、two、fundamental、interfaces。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">The</span><span class="chip">awaitable</span><span class="chip">signalable</span><span class="chip">&lt;suspends&gt;</span><span class="chip">interface</span><span class="chip">suspends</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The awaitable and signalable Interfaces</summary>
+    <div class="md"><h3>The awaitable and signalable Interfaces</h3>
+<p>Events are built on two fundamental interfaces that you can use to create custom synchronization types:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 64 --&gt;</p>
+<pre><code>awaitable(t:type) := interface:
+    Await()&lt;suspends&gt;:t
+
+signalable(t:type) := interface:
+    Signal(Value:t):void</code></pre>
+<p>The <code>awaitable</code> interface represents anything that can be waited on, while <code>signalable</code> represents anything that can send signals. By separating these capabilities, Verse enables precise control over who can produce values versus who can consume them.</p>
+<p>You can pass <code>awaitable</code> parameters to functions that should only read from an event, preventing accidental signals:</p>
+<p>&lt;!--versetest ProcessValue(:int):void={} --&gt; &lt;!-- 65 --&gt;</p>
+<pre><code># This function can only await, not signal
+ConsumerFunction(Source:awaitable(int))&lt;suspends&gt;:void =
+    Value := Source.Await()
+    ProcessValue(Value)
+    # Source.Signal(123)  # ERROR: awaitable doesn&#x27;t have Signal
+
+# This function can only signal, not await
+ProducerFunction(Target:signalable(int)):void =
+    Target.Signal(42)
+    # Value := Target.Await()  # ERROR: signalable doesn&#x27;t have Await</code></pre>
+<p>This separation creates clear interfaces for producer-consumer relationships. A queue implementation might expose an <code>awaitable</code> interface to consumers for reading and a <code>signalable</code> interface to producers for writing, ensuring neither side can accidentally use the wrong operation.</p></div>
+  </details>
+</section><section class="section" id="s30-transactional-behavior">
+  <div class="annotation">
+    <h3>中文批注：Transactional Behavior</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Transactional Behavior”展开。阅读时先抓住这些英文关键词：Event、subscriptions、participate、transactional、system。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Subscribe()</span><span class="chip">Similarly,</span><span class="chip">&lt;transacts&gt;</span><span class="chip">if</span><span class="chip">class</span><span class="chip">transacts</span><span class="chip">where</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Transactional Behavior</summary>
+    <div class="md"><h3>Transactional Behavior</h3>
+<p>Event subscriptions participate in Verse&#x27;s transactional system. If a transaction containing a <code>Subscribe()</code> call fails and rolls back, the subscription never takes effect:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 66 --&gt;</p>
+<pre><code>Handler(:int):void={}
+
+MyEvent := subscribable_event(int){}
+
+# Subscription in a failing transaction
+if:
+    Sub := MyEvent.Subscribe(Handler)
+    false?  # Transaction fails and rolls back
+
+# Subscription was rolled back - handler not called
+MyEvent.Signal(100)</code></pre>
+<p>Similarly, <code>Cancel()</code> operations are transactional. If you cancel a subscription within a transaction that later fails, the subscription remains active:</p>
+<p>&lt;!--versetest subscription := class: Cancel()&lt;transacts&gt;:void = {}</p>
+<p>subscribable_event(t:type) := class: Subscribe(Handler:t-&gt;void)&lt;transacts&gt;:subscription = subscription{} Signal(Value:t)&lt;transacts&gt;:void = {} --&gt; &lt;!-- 67 --&gt;</p>
+<pre><code>Handler(:int):void={}
+
+MyEvent := subscribable_event(int){}
+Sub := MyEvent.Subscribe(Handler)
+
+# Cancel in a failing transaction
+if:
+    Sub.Cancel()
+    false?  # Transaction fails
+
+# Cancel was rolled back - subscription still active
+MyEvent.Signal(100)  # Handler still gets called</code></pre>
+<p>This transactional integration ensures that event subscriptions maintain consistency with other transactional operations. If you&#x27;re setting up a complex system where subscribing to events is part of a larger initialization that might fail, the transaction system guarantees that either all initialization succeeds or none of it does, preventing partial setups that could cause subtle bugs.</p></div>
+  </details>
+</section><section class="section" id="s31-event-patterns-and-use-cases">
+  <div class="annotation">
+    <h3>中文批注：Event Patterns and Use Cases</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Event Patterns and Use Cases”展开。阅读时先抓住这些英文关键词：Request-Response、Use、basic、events、implement。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">sync</span><span class="chip">race</span><span class="chip">rush</span><span class="chip">branch</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">class</span><span class="chip">suspends</span><span class="chip">loop</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Event Patterns and Use Cases</summary>
+    <div class="md"><h3>Event Patterns and Use Cases</h3>
+<p><strong>Request-Response:</strong> Use basic events to implement request-response patterns between systems:</p>
+<p>&lt;!--versetest FindPath(Start:int, Goal:int):void = {}</p>
+<p>pathfinding_system := class: PathRequest:event(tuple(int, int)) = event(tuple(int, int)){} PathResponse:event(int) = event(int){}</p>
+<p>PathfindingService()&lt;suspends&gt;:void = loop: Request := PathRequest.Await() Start := Request(0) Goal := Request(1) FindPath(Start, Goal) PathResponse.Signal(42)</p>
+<p>RequestPath(Start:int, Goal:int)&lt;suspends&gt;:int = PathRequest.Signal((Start, Goal)) PathResponse.Await() &lt;# --&gt; &lt;!-- 68 --&gt;</p>
+<pre><code>PathRequest := event(tuple(int, int)){}  # (start, goal)
+PathResponse := event(int){}             # path result
+
+PathfindingService()&lt;suspends&gt;:void =
+    loop:
+        (Start, Goal) := PathRequest.Await()
+        FindPath(Start, Goal)
+        PathResponse.Signal(42)
+
+RequestPath(Start:int, Goal:int)&lt;suspends&gt;:int =
+    PathRequest.Signal((Start, Goal))
+    PathResponse.Await()</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>State Broadcasting:</strong> Use sticky events for state that multiple systems need to observe:</p>
+<p>&lt;!--versetest game_phase := enum{Menu, Playing, Paused, GameOver} UIUpdate(P:game_phase)&lt;transacts&gt;:void={} AIUpdate(P:game_phase)&lt;transacts&gt;:void={} AudioUpdate(P:game_phase)&lt;transacts&gt;:void={}</p>
+<p>sticky_event(t:type) := class: var CurrentValue:?t = false Signal(Value:t)&lt;transacts&gt;:void = set CurrentValue = option{Value} Await()&lt;suspends&gt;&lt;transacts&gt;:t = loop: if (V := CurrentValue?): return V --&gt; &lt;!-- 69 --&gt;</p>
+<pre><code>PhaseChange := sticky_event(game_phase){}
+
+# Systems await current phase without missing updates
+UISystem()&lt;suspends&gt;:void =
+    loop:
+        Phase := PhaseChange.Await()
+        UIUpdate(Phase)
+
+AISystem()&lt;suspends&gt;:void =
+    loop:
+        Phase := PhaseChange.Await()
+        AIUpdate(Phase)
+
+AudioSystem()&lt;suspends&gt;:void =
+    loop:
+        Phase := PhaseChange.Await()
+        AudioUpdate(Phase)</code></pre>
+<p><strong>Multi-System Notifications:</strong> Use subscribable events when many systems need to react to the same events:</p>
+<p>&lt;!--versetest subscription := class: Cancel()&lt;transacts&gt;:void = {}</p>
+<p>subscribable_event(t:type) := class: Subscribe(Handler:t-&gt;void)&lt;transacts&gt;:subscription = subscription{} Signal(Value:t)&lt;transacts&gt;:void = {} --&gt; &lt;!-- 70 --&gt;</p>
+<pre><code>UpdateInventoryUI(:int):void={}
+PlayPickupSound(:int):void={}
+CheckCollectionAchievement(:int):void={}
+LogItemPickup(:int):void={}
+
+ItemPickedUp := subscribable_event(int){}
+
+# Each system subscribes independently
+InitializeSystems():void =
+    ItemPickedUp.Subscribe(UpdateInventoryUI)
+    ItemPickedUp.Subscribe(PlayPickupSound)
+    ItemPickedUp.Subscribe(CheckCollectionAchievement)
+    ItemPickedUp.Subscribe(LogItemPickup)
+
+# Single signal reaches all systems
+OnPlayerPickupItem(ItemID:int):void =
+    ItemPickedUp.Signal(ItemID)</code></pre>
+<p>Events complement structured concurrency by providing communication channels that outlive individual concurrent operations. While <code>sync</code>, <code>race</code>, <code>rush</code>, and <code>branch</code> organize how tasks execute relative to each other, events organize how tasks share information and coordinate their actions.</p></div>
+  </details>
+</section><section class="section" id="s32-common-patterns-and-best-practices">
+  <div class="annotation">
+    <h3>中文批注：Common Patterns and Best Practices</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Common Patterns and Best Practices”展开。阅读时先抓住这些英文关键词：Implement、operations、timeouts、race、versetest。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">race</span><span class="chip">&lt;suspends&gt;</span><span class="chip">using</span><span class="chip">suspends</span><span class="chip">sync</span><span class="chip">branch</span><span class="chip">class</span><span class="chip">for</span><span class="chip">spawn</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Common Patterns and Best Practices</summary>
+    <div class="md"><h2>Common Patterns and Best Practices</h2>
+<p>Implement operations with timeouts using <code>race</code>:</p>
+<p>&lt;!--versetest ActualOperation()&lt;suspends&gt;:void={} --&gt; &lt;!-- 71 --&gt;</p>
+<pre><code>PerformWithTimeout()&lt;suspends&gt;:logic =
+    race:
+        block:
+            ActualOperation()
+            true  # Success
+        block:
+            Sleep(5.0)  # 5 second timeout
+            false  # Timeout</code></pre>
+<p>Initialize multiple systems concurrently:</p>
+<p>&lt;!--versetest LoadAssets()&lt;suspends&gt;:void={} ConnectToServer()&lt;suspends&gt;:void={} InitializeUI()&lt;suspends&gt;:void={} PrepareAudio()&lt;suspends&gt;:void={}</p>
+<p>InitializeGame()&lt;suspends&gt;:void = sync: LoadAssets() ConnectToServer() InitializeUI() PrepareAudio() Print(&quot;Game ready!&quot;) &lt;# --&gt; &lt;!-- 72 --&gt;</p>
+<pre><code>InitializeGame()&lt;suspends&gt;:void =
+    sync:
+        LoadAssets()
+        ConnectToServer()
+        InitializeUI()
+        PrepareAudio()
+    Print(&quot;Game ready!&quot;)</code></pre>
+<p>&lt;!-- #&gt;--&gt;</p>
+<p>Start background tasks that don&#x27;t block gameplay:</p>
+<p>&lt;!--versetest MonitorPlayerStats()&lt;suspends&gt;:void={} UpdateLeaderboards()&lt;suspends&gt;:void={} ProcessAchievements()&lt;suspends&gt;:void={} --&gt; &lt;!-- 73 --&gt;</p>
+<pre><code>StartBackgroundSystems()&lt;suspends&gt;:void =
+    branch:
+        MonitorPlayerStats()
+    branch:
+        UpdateLeaderboards()
+    branch:
+        ProcessAchievements()
+    # Main game continues while background tasks run</code></pre>
+<p>Spawn entities with delays:</p>
+<p>&lt;!--versetest enemy_class := class {     Spawn()&lt;suspends&gt;:void={} } --&gt; &lt;!-- 74 --&gt;</p>
+<pre><code>SpawnWave(Enemies:[]enemy_class)&lt;suspends&gt;:void =
+    for (Enemy : Enemies):
+        spawn{Enemy.Spawn()}
+        Sleep(0.5)  # Half second between spawns</code></pre></div>
+  </details>
+</section><section class="section" id="s33-limitations-and-considerations">
+  <div class="annotation">
+    <h3>中文批注：Limitations and Considerations</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Limitations and Considerations”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Limitations and Considerations</summary>
+    <div class="md"><h2>Limitations and Considerations</h2></div>
+  </details>
+</section><section class="section" id="s34-iteration-restrictions">
+  <div class="annotation">
+    <h3>中文批注：Iteration Restrictions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Iteration Restrictions”展开。阅读时先抓住这些英文关键词：interaction、between、iteration、certain、concurrency。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;suspends&gt;</span><span class="chip">branch</span><span class="chip">loop</span><span class="chip">for</span><span class="chip">task</span><span class="chip">rush</span><span class="chip">suspends</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Iteration Restrictions</summary>
+    <div class="md"><h3>Iteration Restrictions</h3>
+<p>The interaction between iteration and certain concurrency expressions requires careful consideration. Rush and branch cannot be used directly inside loop or for bodies, a restriction that prevents unbounded task accumulation. When you write a loop that might execute hundreds or thousands of times, allowing rush or branch directly would create that many background tasks, potentially overwhelming the system.</p>
+<p>&lt;!--versetest Operation1()&lt;suspends&gt;:void = {} Operation2()&lt;suspends&gt;:void = {}</p>
+<p>ProcessWithRush(I:int)&lt;suspends&gt;:void = rush: Operation1() Operation2()</p>
+<p>M()&lt;suspends&gt;:void = for (I := 0..10): ProcessWithRush(I) &lt;# --&gt; &lt;!-- 76 --&gt;</p>
+<pre><code># Not allowed
+for (I := 0..10):
+    rush:  # ERROR: Cannot use rush in loop
+        Operation1()
+        Operation2()
+
+# Workaround - wrap in function
+ProcessWithRush(I:int)&lt;suspends&gt;:void =
+    rush:
+        Operation1()
+        Operation2()
+
+for (I := 0..10):
+    ProcessWithRush(I)  # OK</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This restriction forces you to be intentional about creating background tasks in iterations. By wrapping the concurrent operation in a function, you acknowledge the task creation and make it explicit in your code structure. This small friction prevents accidental resource exhaustion while maintaining the flexibility to use these patterns when genuinely needed.</p></div>
+  </details>
+</section><section class="section" id="s35-abstraction-over-implementation">
+  <div class="annotation">
+    <h3>中文批注：Abstraction Over Implementation</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Abstraction Over Implementation”展开。阅读时先抓住这些英文关键词：deliberately、abstracts、away、underlying、threading。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">task</span><span class="chip">where</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Abstraction Over Implementation</summary>
+    <div class="md"><h3>Abstraction Over Implementation</h3>
+<p>Verse deliberately abstracts away the underlying threading and scheduling mechanisms. You won&#x27;t find thread creation APIs, thread-local storage, or explicit synchronization primitives like mutexes or semaphores. This isn&#x27;t a limitation but a design philosophy. By working with higher-level task abstractions, Verse eliminates entire categories of bugs—no data races, no deadlocks from incorrect lock ordering, no forgotten unlock calls.</p>
+<p>The concurrency model is cooperative rather than preemptive. Tasks voluntarily yield control at suspension points rather than being forcibly interrupted by a scheduler. This cooperative nature makes reasoning about concurrent code easier since you know exactly where task switches can occur. It also integrates naturally with game engines&#x27; frame-based execution models, where predictable timing is crucial.</p></div>
+  </details>
+</section><section class="section" id="s36-effect-interactions">
+  <div class="annotation">
+    <h3>中文批注：Effect Interactions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Effect Interactions”展开。阅读时先抓住这些英文关键词：effect、system、makes、concurrency、safe。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">decides</span><span class="chip">suspends</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Effect Interactions</summary>
+    <div class="md"><h3>Effect Interactions</h3>
+<p>The effect system that makes Verse&#x27;s concurrency safe also introduces some restrictions. The <code>decides</code> effect, which marks functions that can fail, cannot be combined with the <code>suspends</code> effect. This separation keeps the failure model and the concurrency model orthogonal, preventing complex interactions that would be difficult to reason about. Transactional operations and certain device-specific operations may also have restrictions when used in concurrent contexts, ensuring that operations that must be atomic remain so.</p></div>
+  </details>
+</section>
+<nav class="footer-nav"><div><a href="../13_effects/index.html">上一页：效果系统</a></div><div><a href="../15_live_variables/index.html">下一页：实时变量</a></div></nav>
+</main></div></body></html>

@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>可持久化类型 - Book of Verse 中文提炼版</title>
+<title>可持久化类型 - Book of Verse 中文批注版</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<script src="../assets/reader.js"></script>
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar">
-  <div class="brand">Book of Verse</div>
-  <div class="sub">中文提炼版 · 同源目录结构</div>
-  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -32,34 +30,406 @@
 <a class="active" href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
-</aside>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
 <main class="main">
-  <div class="crumb">Persistable Types / <a href="https://verselang.github.io/book/17_persistable/">原文页面</a></div>
-  <section class="hero">
-    <h1>可持久化类型</h1>
-    <p class="lead">持久化页讲哪些类型能跨会话保存，以及如何通过模块级 <code>weak_map(player,t)</code> 自动加载玩家数据。重点是类型限制、schema 演化和序列化边界。</p>
-    <div class="meta"><span class="pill">源文件：17_persistable.md</span><span class="pill">小节数：11</span><span class="pill">生成：2026-06-25</span></div>
-  </section>
-  <section class="grid">
-    <article class="card"><h2>核心提炼</h2><ul class="list"><li>持久化数据通常存放在模块作用域 <code>weak_map(player,t)</code>。</li><li>内建可持久化类型包括 logic、int、float、string、char、char32。</li><li>array、map、option、tuple 只有元素/键/值也可持久化时才可持久化。</li><li>自定义 class、struct、enum 可用 <code>&lt;persistable&gt;</code> 标记。</li><li>可持久化 class 必须 <code>&lt;final&gt;</code>，不能 <code>&lt;unique&gt;</code>，字段必须都是持久化类型。</li><li>JSON serialization 小节标注为未发布功能，可用于调试和迁移设想。</li></ul></article>
-    <article class="card"><h2>规则与坑点</h2><ul class="list"><li><code>any</code>、<code>comparable</code>、<code>type</code>、<code>rational</code>、函数、weak_map、接口不能作为持久化字段。</li><li>可持久化 class 不能有 <code>var</code> 字段。</li><li>可持久化 struct 发布后 schema 很难修改。</li><li>反序列化不会执行 class block 初始化逻辑。</li></ul></article>
-    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>Data : weak_map(player, int) = map{}</code></li><li><code>profile := class&lt;final&gt;&lt;persistable&gt;:</code></li><li><code>coords := struct&lt;persistable&gt;:</code></li><li><code>day := enum&lt;persistable&gt;:</code></li><li><code>set PlayerData[Player] = NewStats</code></li></ul></article>
-  </section>
-  <section>
-    <h2>原文小节结构</h2>
-    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
-    <ol class="toc"><li class="level-1">Persistable Types</li><li class="level-2">Built-in Persistable Types</li><li class="level-2">Custom Persistable Types</li><li class="level-2">Prohibited Field Types</li><li class="level-2">Example</li><li class="level-2">JSON Serialization</li><li class="level-3">Type-Specific Serialization</li><li class="level-3">Default Value Handling</li><li class="level-3">Block Clauses During Deserialization</li><li class="level-3">Integer Range Limitations</li><li class="level-2">Best Practices</li></ol>
-  </section>
-  <section>
-    <h2>阅读提示</h2>
-    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
-  </section>
-  <nav class="footer-nav">
-    <div><a href="../16_modules/index.html">上一页：模块与路径</a></div>
-    <div><a href="../18_evolution/index.html">下一页：代码演化</a></div>
-  </nav>
-</main>
-</div>
-</body>
-</html>
+<div class="crumb">Persistable Types / <a href="https://verselang.github.io/book/17_persistable/">原文页面</a></div>
+<section class="hero"><h1>可持久化类型</h1><p class="lead">本页讲哪些类型可保存，以及 player weak_map 如何承载跨会话数据。</p><div class="meta"><span class="pill">源文件：17_persistable.md</span><span class="pill">批注段落：11</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>这一页读什么</h2><p>持久化类型的限制直接决定玩家存档能否长期读取。</p><h3>注意点</h3><ul class="list"><li>persistable class 必须 final 且字段受限。</li><li>JSON serialization 章节标注为未发布。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-persistable-types">Persistable Types</a></li><li class="lvl2"><a href="#s1-built-in-persistable-types">Built-in Persistable Types</a></li><li class="lvl2"><a href="#s2-custom-persistable-types">Custom Persistable Types</a></li><li class="lvl2"><a href="#s3-prohibited-field-types">Prohibited Field Types</a></li><li class="lvl2"><a href="#s4-example">Example</a></li><li class="lvl2"><a href="#s5-json-serialization">JSON Serialization</a></li><li class="lvl3"><a href="#s6-type-specific-serialization">Type-Specific Serialization</a></li><li class="lvl3"><a href="#s7-default-value-handling">Default Value Handling</a></li><li class="lvl3"><a href="#s8-block-clauses-during-deserialization">Block Clauses During Deserialization</a></li><li class="lvl3"><a href="#s9-integer-range-limitations">Integer Range Limitations</a></li><li class="lvl2"><a href="#s10-best-practices">Best Practices</a></li></ol></article></section>
+<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<section class="section" id="s0-persistable-types">
+  <div class="annotation">
+    <h3>中文批注：Persistable Types</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Persistable Types”展开。阅读时先抓住这些英文关键词：Persistable、types、allow、store、data。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">weak_map(player, t)</span><span class="chip">t</span><span class="chip">for</span><span class="chip">using</span><span class="chip">module</span><span class="chip">weak_map</span><span class="chip">where</span><span class="chip">persistable</span><span class="chip">map</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Persistable Types</summary>
+    <div class="md"><h1>Persistable Types</h1>
+<p>Persistable types allow you to store data that persists beyond the current game session. This is essential for saving player progress, preferences, and other game state that should be maintained across multiple play sessions.</p>
+<p>Persistable data is stored using module-scoped <code>weak_map(player, t)</code> variables, where <code>t</code> is any persistable type. When a player joins a game, their previously saved data is automatically loaded into all module-scoped variables of type <code>weak_map(player, t)</code>.</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 01 --&gt;</p>
+<pre><code>using { /Fortnite.com/Devices }
+using { /UnrealEngine.com/Temporary/Diagnostics }
+using { /Verse.org/Simulation }
+
+# Global persistable variable storing player data
+MySavedPlayerData : weak_map(player, int) = map{}
+
+# Initialize data for a player if not already present
+InitializePlayerData(Player : player) : void =
+    if (not MySavedPlayerData[Player]):
+        if (set MySavedPlayerData[Player] = 0) {}</code></pre></div>
+  </details>
+</section><section class="section" id="s1-built-in-persistable-types">
+  <div class="annotation">
+    <h3>中文批注：Built-in Persistable Types</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Built-in Persistable Types”展开。可把它先理解为“内建可持久化类型”。阅读时先抓住这些英文关键词：following、primitive、types、persistable、default。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">logic</span><span class="chip">int</span><span class="chip">float</span><span class="chip">string</span><span class="chip">char</span><span class="chip">char32</span><span class="chip">array</span><span class="chip">map</span><span class="chip">option</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Built-in Persistable Types</summary>
+    <div class="md"><h2>Built-in Persistable Types</h2>
+<p>The following primitive types are persistable by default:</p>
+<ul>
+<li>Numeric Types:</li>
+</ul>
+<ul>
+<li><strong><code>logic</code></strong> - Boolean values (true/false)</li>
+<li><strong><code>int</code></strong> - Integer values (must fit in 64-bit signed range for persistence)</li>
+<li><strong><code>float</code></strong> - Floating-point numbers</li>
+</ul>
+<ul>
+<li>Character Types:</li>
+</ul>
+<ul>
+<li><strong><code>string</code></strong> - Text values</li>
+<li><strong><code>char</code></strong> - Single UTF-8 character</li>
+<li><strong><code>char32</code></strong> - Single UTF-32 character</li>
+</ul>
+<ul>
+<li>Container Types:</li>
+</ul>
+<ul>
+<li><strong><code>array</code></strong> - Persistable if element type is persistable</li>
+<li><strong><code>map</code></strong> - Persistable if both key and value types are persistable</li>
+<li><strong><code>option</code></strong> - Persistable if the wrapped type is persistable</li>
+<li><strong><code>tuple</code></strong> - Persistable if all element types are persistable</li>
+</ul></div>
+  </details>
+</section><section class="section" id="s2-custom-persistable-types">
+  <div class="annotation">
+    <h3>中文批注：Custom Persistable Types</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Custom Persistable Types”展开。可把它先理解为“自定义可持久化类型”。阅读时先抓住这些英文关键词：create、custom、persistable、types、specifier。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;persistable&gt;</span><span class="chip">specifier
+- Must be</span><span class="chip">(no subclasses allowed)
+- Cannot be</span><span class="chip">var</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">Important notes:
+
+-</span><span class="chip">&lt;open&gt;</span><span class="chip">&lt;final&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Custom Persistable Types</summary>
+    <div class="md"><h2>Custom Persistable Types</h2>
+<p>You can create custom persistable types using the <code>&lt;persistable&gt;</code> specifier with classes, structs, and enums.</p>
+<p>Classes must meet specific requirements to be persistable:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 02 --&gt;</p>
+<pre><code>player_class := enum&lt;persistable&gt;:
+    Villager
+
+player_profile_data := class&lt;final&gt;&lt;persistable&gt;:
+    Version:int = 1
+    Class:player_class = player_class.Villager
+    XP:int = 0
+    Rank:int = 0
+    CompletedQuestCount:int = 0</code></pre>
+<p>Requirements for persistable classes:</p>
+<ul>
+<li>Must have the <code>&lt;persistable&gt;</code> specifier</li>
+<li>Must be <code>&lt;final&gt;</code> (no subclasses allowed)</li>
+<li>Cannot be <code>&lt;unique&gt;</code> </li>
+<li>Cannot have a superclass (including interfaces) </li>
+<li>Cannot be parametric (generic) </li>
+<li>Can only contain persistable field types </li>
+<li>Cannot have variable members (<code>var</code> fields) </li>
+<li>Field initializers must be effect-free (cannot use <code>&lt;transacts&gt;</code>, <code>&lt;decides&gt;</code>, etc.) </li>
+</ul>
+<p>Structs are ideal for simple data structures that won&#x27;t change after publication:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 03 --&gt;</p>
+<pre><code>coordinates := struct&lt;persistable&gt;:
+    X:float = 0.0
+    Y:float = 0.0</code></pre>
+<p>Requirements for persistable structs:</p>
+<ul>
+<li>Must have the <code>&lt;persistable&gt;</code> specifier</li>
+<li>Cannot be parametric (generic) </li>
+<li>Can only contain persistable field types (see Prohibited Field Types below) </li>
+<li>Field initializers must be effect-free (cannot use <code>&lt;transacts&gt;</code>, <code>&lt;decides&gt;</code>, etc.)</li>
+<li>Cannot be modified after island publication</li>
+</ul>
+<p>Enums represent a fixed set of named values:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 04 --&gt;</p>
+<pre><code>day := enum&lt;persistable&gt;:
+    Monday
+    Tuesday
+    Wednesday
+    Thursday
+    Friday
+    Saturday
+    Sunday</code></pre>
+<p>Important notes:</p>
+<ul>
+<li><code>&lt;closed&gt;</code> persistable enums cannot be changed to open after publication</li>
+<li>Only <code>&lt;open&gt;</code> persistable enums can have new values added after publication</li>
+</ul></div>
+  </details>
+</section><section class="section" id="s3-prohibited-field-types">
+  <div class="annotation">
+    <h3>中文批注：Prohibited Field Types</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Prohibited Field Types”展开。阅读时先抓住这些英文关键词：Persistable、types、have、strict、restrictions。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">any</span><span class="chip">comparable</span><span class="chip">type</span><span class="chip">rational</span><span class="chip">int -&gt; int</span><span class="chip">weak_map</span><span class="chip">&lt;persistable&gt;</span><span class="chip">persistable</span><span class="chip">interface</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Prohibited Field Types</summary>
+    <div class="md"><h2>Prohibited Field Types</h2>
+<p>Persistable types have strict restrictions on what field types they can contain. The following types <strong>cannot</strong> be used as fields in persistable classes or structs:</p>
+<ul>
+<li>Abstract and Dynamic Types:</li>
+</ul>
+<ul>
+<li><strong><code>any</code></strong> - Cannot be persisted (too dynamic)</li>
+<li><strong><code>comparable</code></strong> - Abstract interface type</li>
+<li><strong><code>type</code></strong> - Type values cannot be persisted</li>
+</ul>
+<ul>
+<li>Non-Serializable Types:</li>
+</ul>
+<ul>
+<li><strong><code>rational</code></strong> - Exact rational numbers (not persistable)</li>
+<li><strong>Function types</strong> (e.g., <code>int -&gt; int</code>) - Functions cannot be serialized</li>
+<li><strong><code>weak_map</code></strong> - Weak references are not persistable</li>
+<li><strong>Interface types</strong> - Abstract interfaces cannot be persisted</li>
+</ul>
+<ul>
+<li>Non-Persistable User Types</li>
+</ul>
+<ul>
+<li><strong>Non-persistable enums</strong> - Enums without <code>&lt;persistable&gt;</code> specifier cannot be used</li>
+<li><strong>Non-persistable classes</strong> - Classes without <code>&lt;persistable&gt;</code> specifier cannot be used</li>
+<li><strong>Non-persistable structs</strong> - Structs without <code>&lt;persistable&gt;</code> specifier cannot be used</li>
+</ul></div>
+  </details>
+</section><section class="section" id="s4-example">
+  <div class="annotation">
+    <h3>中文批注：Example</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Example”展开。阅读时先抓住这些英文关键词：Initializing、Player、Data、versetest、player。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;persistent&gt;</span><span class="chip">&lt;module_scoped_var_weak_map_key&gt;</span><span class="chip">&lt;persistable&gt;</span><span class="chip">class</span><span class="chip">unique</span><span class="chip">struct</span><span class="chip">persistable</span><span class="chip">var</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Example</summary>
+    <div class="md"><h2>Example</h2>
+<p>Initializing Player Data:</p>
+<p>&lt;!--versetest player := class&lt;unique&gt;&lt;persistent&gt;&lt;module_scoped_var_weak_map_key&gt;{} player_stats := struct&lt;persistable&gt;: Level:int = 1 Experience:int = 0 GamesPlayed:int = 0</p>
+<p>var PlayerData : weak_map(player, player_stats) = map{}</p>
+<p>GetOrCreatePlayerStats(Player : player) : player_stats = if (ExistingStats := PlayerData[Player]): ExistingStats else: NewStats := player_stats{} if (set PlayerData[Player] = NewStats): NewStats else: player_stats{} &lt;# --&gt; &lt;!-- 06 --&gt;</p>
+<pre><code># Define a persistable player stats structure
+player_stats := struct&lt;persistable&gt;:
+    Level:int = 1
+    Experience:int = 0
+    GamesPlayed:int = 0
+
+# Global persistent storage
+PlayerData : weak_map(player, player_stats) = map{}
+
+# Initialize or retrieve player data
+GetOrCreatePlayerStats(Player : player) : player_stats =
+    if (ExistingStats := PlayerData[Player]):
+        ExistingStats
+    else:
+        NewStats := player_stats{}
+        if (set PlayerData[Player] = NewStats):
+            NewStats
+        else:
+            player_stats{}  # Fallback</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s5-json-serialization">
+  <div class="annotation">
+    <h3>中文批注：JSON Serialization</h3>
+    <div class="rows">
+      <div><p>这一节围绕“JSON Serialization”展开。可把它先理解为“JSON 序列化”。阅读时先抓住这些英文关键词：note、Unreleased、Feature、JSON、Serialization。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">weak_map(player, t)</span><span class="chip">**Metadata fields:**
+
+-</span><span class="chip">- Package path of the type
+-</span><span class="chip">x_</span><span class="chip">i___verse_0x123_FieldName</span><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;final&gt;</span><span class="chip">&lt;persistable&gt;</span><span class="chip">&lt;public&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：JSON Serialization</summary>
+    <div class="md"><h2>JSON Serialization</h2>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>JSON Serialization have not yet been released and is not publicly available.</p></div>
+<p>Verse provides JSON serialization functions for persistable types, enabling manual serialization and deserialization of data. While the primary persistence mechanism uses <code>weak_map(player, t)</code> for automatic player data, JSON serialization can be useful for debugging, data migration, or integration with external systems.</p>
+<p>Converts a persistable value to JSON string:</p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} player_data := class&lt;final&gt;&lt;persistable&gt;: Level:int = 1 Score:int = 100 PersistenceModule := module{ ToJson&lt;public&gt;(Data:player_data)&lt;decides&gt;:string = &quot;&quot; } --&gt; &lt;!-- 08 --&gt;</p>
+<pre><code># Serialize persistable data to JSON
+Data := player_data{Level := 5, Score := 250}
+JsonString := PersistenceModule.ToJson[Data]
+# Produces: {&quot;$package_name&quot;:&quot;/...&quot;, &quot;$class_name&quot;:&quot;player_data&quot;, &quot;x_Level&quot;:5, &quot;x_Score&quot;:250}</code></pre>
+<p>Deserializes JSON string to typed value:</p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} player_data := class&lt;final&gt;&lt;persistable&gt;: Level:int = 1 Score:int = 100 PersistenceModule := module{ FromJson&lt;public&gt;(JsonStr:string, T:type)&lt;transacts&gt;&lt;decides&gt;:player_data = false? player_data{Level := 1, Score := 100} } --&gt; &lt;!-- 09 --&gt;</p>
+<pre><code># Deserialize JSON to typed value
+JsonString := &quot;&quot;
+if (Restored := PersistenceModule.FromJson[JsonString, player_data]):
+    # Restored.Level = 10
+    # Restored.Score = 500</code></pre>
+<p>All serialized persistable objects include metadata fields:</p>
+<pre><code>{
+  &quot;$package_name&quot;: &quot;/SolIdeDataSources/_Verse&quot;,
+  &quot;$class_name&quot;: &quot;player_data&quot;,
+  &quot;x_Level&quot;: 5,
+  &quot;x_Score&quot;: 250
+}</code></pre>
+<p><strong>Metadata fields:</strong></p>
+<ul>
+<li><code>$package_name</code> - Package path of the type</li>
+<li><code>$class_name</code> - Qualified class/struct name</li>
+</ul>
+<p><strong>Field names:</strong></p>
+<ul>
+<li>Prefixed with <code>x_</code> in current format</li>
+<li>Old format used mangled names like <code>i___verse_0x123_FieldName</code></li>
+</ul></div>
+  </details>
+</section><section class="section" id="s6-type-specific-serialization">
+  <div class="annotation">
+    <h3>中文批注：Type-Specific Serialization</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Type-Specific Serialization”展开。阅读时先抓住这些英文关键词：Primitives、versetest、player、class&lt;unique、int。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;final&gt;</span><span class="chip">&lt;persistable&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">class</span><span class="chip">unique</span><span class="chip">final</span><span class="chip">persistable</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Type-Specific Serialization</summary>
+    <div class="md"><h3>Type-Specific Serialization</h3>
+<p><strong>Primitives:</strong></p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} int_ref := class&lt;final&gt;&lt;persistable&gt;: Value:int PersistenceModule := module{ ToJson&lt;public&gt;(Data:int_ref)&lt;decides&gt;:string = &quot;&quot; } --&gt; &lt;!-- 11 --&gt;</p>
+<pre><code># Serialized as JSON number
+JsonString := PersistenceModule.ToJson[int_ref{Value := 42}]
+# {&quot;$package_name&quot;:&quot;...&quot;, &quot;$class_name&quot;:&quot;int_ref&quot;, &quot;x_Value&quot;:42}</code></pre>
+<p><strong>Optional types:</strong></p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} optional_ref := class&lt;final&gt;&lt;persistable&gt;: Value:?int PersistenceModule := module{ ToJson&lt;public&gt;(Data:optional_ref)&lt;decides&gt;:string = &quot;&quot; } --&gt; &lt;!-- 12 --&gt;</p>
+<pre><code># None serialized as false
+PersistenceModule.ToJson[optional_ref{Value := false}]
+# {..., &quot;x_Value&quot;:false}
+
+# Some serialized as object with empty key
+PersistenceModule.ToJson[optional_ref{Value := option{42}}]
+# {..., &quot;x_Value&quot;:{&quot;&quot;:42}}</code></pre>
+<p><strong>Tuples:</strong></p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} tuple_ref := class&lt;final&gt;&lt;persistable&gt;: Pair:tuple(int, int) empty_tuple_ref := class&lt;final&gt;&lt;persistable&gt;: Empty:tuple() PersistenceModule := module{ ToJson&lt;public&gt;(Data:tuple_ref):string = &quot;&quot; ToJson&lt;public&gt;(Data:empty_tuple_ref):string = &quot;&quot; } --&gt; &lt;!-- 13 --&gt;</p>
+<pre><code># Serialized as JSON array
+PersistenceModule.ToJson(tuple_ref{Pair := (4, 5)})
+# {..., &quot;x_Pair&quot;:[4,5]}
+
+# Empty tuple
+PersistenceModule.ToJson(empty_tuple_ref{Empty := ()})
+# {..., &quot;x_Empty&quot;:[]}</code></pre>
+<p><strong>Arrays:</strong> &lt;!--versetest player := class&lt;unique&gt;{} array_ref := class&lt;final&gt;&lt;persistable&gt;: Values:[]int PersistenceModule := module{ ToJson&lt;public&gt;(Data:array_ref)&lt;decides&gt;:string = &quot;&quot; } --&gt; &lt;!-- 14 --&gt;</p>
+<pre><code>PersistenceModule.ToJson[array_ref{Values := array{1, 2, 3}}]
+# {..., &quot;x_Values&quot;:[1,2,3]}</code></pre>
+<p><strong>Maps:</strong></p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} map_ref := class&lt;final&gt;&lt;persistable&gt;: Lookup:[string]int PersistenceModule := module{ ToJson&lt;public&gt;(Data:map_ref)&lt;decides&gt;:string = &quot;&quot; } --&gt; &lt;!-- 15 --&gt;</p>
+<pre><code>PersistenceModule.ToJson[map_ref{Lookup := map{&quot;a&quot; =&gt; 1, &quot;b&quot; =&gt; 2}}]
+# {..., &quot;x_Lookup&quot;:[{&quot;k&quot;:{&quot;&quot;:&quot;a&quot;},&quot;v&quot;:{&quot;&quot;:1}}, {&quot;k&quot;:{&quot;&quot;:&quot;b&quot;},&quot;v&quot;:{&quot;&quot;:2}}]}</code></pre>
+<p><strong>Enums:</strong></p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} day := enum&lt;persistable&gt;: Monday Tuesday enum_ref := class&lt;final&gt;&lt;persistable&gt;: Day:day PersistenceModule := module{ ToJson&lt;public&gt;(Data:enum_ref)&lt;decides&gt;:string = &quot;&quot; } --&gt; &lt;!-- 16 --&gt;</p>
+<pre><code>PersistenceModule.ToJson[enum_ref{Day := day.Monday}]
+# {..., &quot;x_Day&quot;:&quot;day::Monday&quot;}</code></pre></div>
+  </details>
+</section><section class="section" id="s7-default-value-handling">
+  <div class="annotation">
+    <h3>中文批注：Default Value Handling</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Default Value Handling”展开。阅读时先抓住这些英文关键词：deserializing、missing、fields、automatically、filled。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;final&gt;</span><span class="chip">&lt;persistable&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">class</span><span class="chip">unique</span><span class="chip">final</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Default Value Handling</summary>
+    <div class="md"><h3>Default Value Handling</h3>
+<p>When deserializing, missing fields are automatically filled with their default values:</p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} versioned_data := class&lt;final&gt;&lt;persistable&gt;: Version:int = 1 NewField:int = 0 PersistenceModule := module{ FromJson&lt;public&gt;(JsonStr:string, T:type)&lt;transacts&gt;&lt;decides&gt;:versioned_data = false? versioned_data{Version := 1, NewField := 0} } --&gt; &lt;!-- 17 --&gt;</p>
+<pre><code># Old JSON without NewField
+OldJson := &quot;&quot;
+
+# Deserializes successfully with default for NewField
+if (Data := PersistenceModule.FromJson[OldJson, versioned_data]):
+    Data.Version = 1
+    Data.NewField = 0  # Uses default value</code></pre>
+<p>This enables forward-compatible schema evolution - new fields with defaults can be added without breaking old saved data.</p></div>
+  </details>
+</section><section class="section" id="s8-block-clauses-during-deserialization">
+  <div class="annotation">
+    <h3>中文批注：Block Clauses During Deserialization</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Block Clauses During Deserialization”展开。阅读时先抓住这些英文关键词：Block、clauses、not、execute、deserializing。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;final&gt;</span><span class="chip">&lt;persistable&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">class</span><span class="chip">unique</span><span class="chip">final</span><span class="chip">persistable</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Block Clauses During Deserialization</summary>
+    <div class="md"><h3>Block Clauses During Deserialization</h3>
+<p>Block clauses do not execute when deserializing from JSON:</p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} logged_class := class&lt;final&gt;&lt;persistable&gt;: Value:int PersistenceModule := module{ ToJson&lt;public&gt;(Data:logged_class):string = &quot;&quot; FromJson&lt;public&gt;(JsonStr:string, T:type)&lt;transacts&gt;:logged_class = logged_class{Value := 1} } --&gt; &lt;!-- 18 --&gt;</p>
+<pre><code># Normal construction triggers block
+Instance1 := logged_class{Value := 1}
+
+# Deserialization does NOT trigger block
+Json := PersistenceModule.ToJson(Instance1)
+Instance2 := PersistenceModule.FromJson(Json, logged_class)  # No print</code></pre>
+<p>Block clauses are only executed during normal construction, not during deserialization. This means initialization logic in blocks won&#x27;t run for loaded data.</p></div>
+  </details>
+</section><section class="section" id="s9-integer-range-limitations">
+  <div class="annotation">
+    <h3>中文批注：Integer Range Limitations</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Integer Range Limitations”展开。阅读时先抓住这些英文关键词：protects、against、integer、overflow、during。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;final&gt;</span><span class="chip">&lt;persistable&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">class</span><span class="chip">unique</span><span class="chip">final</span><span class="chip">persistable</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Integer Range Limitations</summary>
+    <div class="md"><h3>Integer Range Limitations</h3>
+<p>Verse protects against integer overflow during serialization. Integers that exceed the safe serialization range cause runtime errors:</p>
+<p>&lt;!--versetest player := class&lt;unique&gt;{} int_ref := class&lt;final&gt;&lt;persistable&gt;: Value:int PersistenceModule := module{ ToJson&lt;public&gt;(Data:int_ref)&lt;decides&gt;:string = &quot;&quot; } --&gt; &lt;!-- 19 --&gt;</p>
+<pre><code># Safe range integers work fine
+SafeData := int_ref{Value := 1000000000000000000}
+PersistenceModule.ToJson[SafeData]  # OK
+
+# Very large integers may cause runtime errors during serialization
+# to prevent silent precision loss</code></pre>
+<p>This prevents silent precision loss that could occur with floating-point representation of large integers.</p></div>
+  </details>
+</section><section class="section" id="s10-best-practices">
+  <div class="annotation">
+    <h3>中文批注：Best Practices</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Best Practices”展开。可把它先理解为“最佳实践”。阅读时先抓住这些英文关键词：Schema、Stability、Design、persistable、types。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">persistable</span><span class="chip">for</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Best Practices</summary>
+    <div class="md"><h2>Best Practices</h2>
+<ul>
+<li><strong>Schema Stability:</strong> Design your persistable types carefully, as</li>
+<p>they cannot be easily changed after publication. Consider versioning strategies for future updates.</p>
+</ul>
+<ul>
+<li><strong>Use Structs for Simple Data:</strong> For data that won&#x27;t need</li>
+<p>inheritance or complex behavior, prefer persistable structs over classes.</p>
+</ul>
+<ul>
+<li><strong>Handle Missing Data:</strong> Always check if data exists for a player</li>
+<p>before accessing it, and provide appropriate defaults.</p>
+</ul>
+<ul>
+<li><strong>Atomic Updates:</strong> When updating persistent data, create new</li>
+<p>instances rather than trying to modify existing ones (Verse uses immutable data structures).</p>
+</ul>
+<ul>
+<li><strong>Consider Memory Usage:</strong> Persistent data is loaded for all players</li>
+<p>when they join, so be mindful of the amount of data stored per player.</p>
+</ul></div>
+  </details>
+</section>
+<nav class="footer-nav"><div><a href="../16_modules/index.html">上一页：模块与路径</a></div><div><a href="../18_evolution/index.html">下一页：代码演化</a></div></nav>
+</main></div></body></html>

@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>访问控制与元数据 - Book of Verse 中文提炼版</title>
+<title>访问控制与元数据 - Book of Verse 中文批注版</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<script src="../assets/reader.js"></script>
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar">
-  <div class="brand">Book of Verse</div>
-  <div class="sub">中文提炼版 · 同源目录结构</div>
-  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -32,34 +30,961 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
-</aside>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
 <main class="main">
-  <div class="crumb">Access Specifiers / <a href="https://verselang.github.io/book/12_access/">原文页面</a></div>
-  <section class="hero">
-    <h1>访问控制与元数据</h1>
-    <p class="lead">访问控制页说明 public、protected、private、internal、scoped 等可见性，以及读写分离、注解、metadata、localization message 和 getter/setter 相关机制。</p>
-    <div class="meta"><span class="pill">源文件：12_access.md</span><span class="pill">小节数：39</span><span class="pill">生成：2026-06-25</span></div>
-  </section>
-  <section class="grid">
-    <article class="card"><h2>核心提炼</h2><ul class="list"><li>访问 specifier 控制定义、字段、方法在模块、继承和协作边界中的可见性。</li><li><code>public</code> 暴露 API；<code>private</code> 限制本作用域；<code>protected</code> 面向继承层级；<code>internal</code> 面向包/模块内部。</li><li><code>scoped</code> 用更精细的作用域限定访问，用于跨模块协作和 API 边界。</li><li>读写访问可分离，允许外部读取但限制写入。</li><li>内建注解包括 <code>@deprecated</code>、<code>@experimental</code>、<code>@available</code>，用于演化和版本可用性。</li><li>自定义 attribute 可限制可应用目标，如函数、字段等。</li><li>localization 用 <code>&lt;localizes&gt;</code> message 支持参数插值、整数格式、默认参数和继承覆盖。</li></ul></article>
-    <article class="card"><h2>规则与坑点</h2><ul class="list"><li>同一定义不能叠多个互斥访问级别。</li><li>降低已公开 API 的访问性会破坏兼容性。</li><li>使用 experimental 功能可能需要显式允许。</li><li>localizes message 必须满足严格的字面量和类型限制，不能随意拼接表达式。</li><li>可本地化消息参数类型有限，optional、复杂自定义类型等可能不被支持。</li></ul></article>
-    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>Name&lt;public&gt;:int = 1</code></li><li><code>Field&lt;private&gt;:int</code></li><li><code>Thing&lt;scoped{Module}&gt;:int</code></li><li><code>@deprecated</code></li><li><code>@experimental</code></li><li><code>Message&lt;localizes&gt;(Name:string):message = &quot;Hi {Name}&quot;</code></li></ul></article>
-  </section>
-  <section>
-    <h2>原文小节结构</h2>
-    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
-    <ol class="toc"><li class="level-1">Access Specifiers</li><li class="level-2">Public</li><li class="level-2">Protected</li><li class="level-2">Private</li><li class="level-2">Internal</li><li class="level-2">Scoped</li><li class="level-3">Scoped Definitions</li><li class="level-3">Cross-Module Collaboration</li><li class="level-3">Scoped Read or Write Access</li><li class="level-3">Visibility and Access Paths</li><li class="level-3">Scoped Access and Inheritance</li><li class="level-3">Using Scoped for API Boundaries</li><li class="level-3">Design Considerations</li><li class="level-2">Separating Read and Write Access</li><li class="level-2">Best Practices</li><li class="level-2">Annotations and Metadata</li><li class="level-3">Built-in Annotations</li><li class="level-4">@deprecated</li><li class="level-4">@experimental</li><li class="level-4">@available</li><li class="level-3">Custom Attributes</li><li class="level-4">Attribute Scopes</li><li class="level-3">Getter and Setter Accessors</li><li class="level-3">Localization</li><li class="level-4">Message Parameters</li><li class="level-1">Multiple parameters, some repeated</li><li class="level-1">Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;</li><li class="level-1">Not all parameters required in message text</li><li class="level-4">Integer Formatting</li><li class="level-4">Named and Default Parameters</li><li class="level-4">Tuple Parameters</li><li class="level-1">Test the call</li><li class="level-4">String Escaping and Unicode</li><li class="level-4">Scope Requirements</li><li class="level-4">Inheritance and Override</li><li class="level-4">Restrictions and Errors</li><li class="level-4">Access Specifiers</li><li class="level-4">Best Practices</li><li class="level-2">Evolution</li></ol>
-  </section>
-  <section>
-    <h2>阅读提示</h2>
-    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
-  </section>
-  <nav class="footer-nav">
-    <div><a href="../11_types/index.html">上一页：类型系统</a></div>
-    <div><a href="../13_effects/index.html">下一页：效果系统</a></div>
-  </nav>
-</main>
-</div>
-</body>
-</html>
+<div class="crumb">Access Specifiers / <a href="https://verselang.github.io/book/12_access/">原文页面</a></div>
+<section class="hero"><h1>访问控制与元数据</h1><p class="lead">本页讲 public/private/protected/internal/scoped、读写分离、注解和本地化 message。</p><div class="meta"><span class="pill">源文件：12_access.md</span><span class="pill">批注段落：25</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>这一页读什么</h2><p>访问级别决定 API 承诺，公开得越多，未来演化越受限制。</p><h3>注意点</h3><ul class="list"><li>降低访问性通常是破坏性变更。</li><li>localizes message 只能使用受限的字面量和参数插值。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-access-specifiers">Access Specifiers</a></li><li class="lvl2"><a href="#s1-public">Public</a></li><li class="lvl2"><a href="#s2-protected">Protected</a></li><li class="lvl2"><a href="#s3-private">Private</a></li><li class="lvl2"><a href="#s4-internal">Internal</a></li><li class="lvl2"><a href="#s5-scoped">Scoped</a></li><li class="lvl3"><a href="#s6-scoped-definitions">Scoped Definitions</a></li><li class="lvl3"><a href="#s7-cross-module-collaboration">Cross-Module Collaboration</a></li><li class="lvl3"><a href="#s8-scoped-read-or-write-access">Scoped Read or Write Access</a></li><li class="lvl3"><a href="#s9-visibility-and-access-paths">Visibility and Access Paths</a></li><li class="lvl3"><a href="#s10-scoped-access-and-inheritance">Scoped Access and Inheritance</a></li><li class="lvl3"><a href="#s11-using-scoped-for-api-boundaries">Using Scoped for API Boundaries</a></li><li class="lvl3"><a href="#s12-design-considerations">Design Considerations</a></li><li class="lvl2"><a href="#s13-separating-read-and-write-access">Separating Read and Write Access</a></li><li class="lvl2"><a href="#s14-best-practices">Best Practices</a></li><li class="lvl2"><a href="#s15-annotations-and-metadata">Annotations and Metadata</a></li><li class="lvl3"><a href="#s16-built-in-annotations">Built-in Annotations</a></li><li class="lvl3"><a href="#s17-custom-attributes">Custom Attributes</a></li><li class="lvl3"><a href="#s18-getter-and-setter-accessors">Getter and Setter Accessors</a></li><li class="lvl3"><a href="#s19-localization">Localization</a></li><li class="lvl1"><a href="#s20-multiple-parameters-some-repeated">Multiple parameters, some repeated</a></li><li class="lvl1"><a href="#s21-outputs-congratulations-alice-your-score-is-1-500-great-job-alice">Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;</a></li><li class="lvl1"><a href="#s22-not-all-parameters-required-in-message-text">Not all parameters required in message text</a></li><li class="lvl1"><a href="#s23-test-the-call">Test the call</a></li><li class="lvl2"><a href="#s24-evolution">Evolution</a></li></ol></article></section>
+<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<section class="section" id="s0-access-specifiers">
+  <div class="annotation">
+    <h3>中文批注：Access Specifiers</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Access Specifiers”展开。阅读时先抓住这些英文关键词：Access、specifiers、control、visibility、accessibility。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">&lt;internal&gt;</span><span class="chip">&lt;private&gt;</span><span class="chip">&lt;protected&gt;</span><span class="chip">&lt;scoped&gt;</span><span class="chip">&lt;epic_internal&gt;</span><span class="chip">where</span><span class="chip">for</span><span class="chip">public</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Access Specifiers</summary>
+    <div class="md"><h1>Access Specifiers</h1>
+<p>Access specifiers control visibility and accessibility of code elements. They provide a nuanced spectrum of access levels that reflect the complex reality of modern software development, particularly in the context of a persistent, global metaverse where code from many authors must coexist safely.</p>
+<p>Five primary visibility levels are defined that form a carefully designed hierarchy, each serving specific architectural needs. Understanding when and why to use each level is crucial for creating well-structured, maintainable code.</p>
+<p>| Specifier | Visibility | Usage | |-----------|------------|-------| | <code>&lt;public&gt;</code> | Universally accessible | Members intended for external use | | <code>&lt;internal&gt;</code> | Only within the module (default) | Module-private implementation | | <code>&lt;private&gt;</code> | Only in immediate enclosing scope | Local to class/struct | | <code>&lt;protected&gt;</code> | Current class and subtypes | Inheritance hierarchies | | <code>&lt;scoped&gt;</code> | Current scope and enclosing scopes | Special use cases | | <code>&lt;epic_internal&gt;</code> | Scopes with the /Verse.org, /UnrealEngine.com, and /Fortnite.com domains | <code>&lt;epic_internal&gt;</code> is only usable by Epic-authored code |</p></div>
+  </details>
+</section><section class="section" id="s1-public">
+  <div class="annotation">
+    <h3>中文批注：Public</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Public”展开。可把它先理解为“public 公共访问”。阅读时先抓住这些英文关键词：public、specifier、represents、broadest、level。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">public</span><span class="chip">module</span><span class="chip">class</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Public</summary>
+    <div class="md"><h2>Public</h2>
+<p>The <code>&lt;public&gt;</code> specifier represents the broadest level of access, making an identifier universally accessible from any code that can reference the containing module or type. When you mark something as public, you&#x27;re making a strong commitment about its availability and stability:</p>
+<p>&lt;!--versetest Test01 := module: PlayerManager&lt;public&gt; := module: MaxPlayers&lt;public&gt;:int = 100</p>
+<p>player&lt;public&gt; := class: Name&lt;public&gt;:string Level&lt;public&gt;:int = 1 &lt;# --&gt; &lt;!-- 01 --&gt;</p>
+<pre><code>PlayerManager&lt;public&gt; := module:
+    MaxPlayers&lt;public&gt;:int = 100
+
+    player&lt;public&gt; := class:
+        Name&lt;public&gt;:string
+        Level&lt;public&gt;:int = 1</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Public members form the contract between your code and the outside world. In the metaverse context, public declarations are particularly significant because they represent guarantees that extend potentially forever—once published, removing or incompatibly changing a public member breaks the promise you&#x27;ve made to other developers who depend on your code.</p>
+<p>The public specifier can be applied to modules, classes, interfaces, structs, enums, methods, and data members. When applied to a type definition itself, it makes the type available for use outside its defining module. When applied to members within a type, it makes those members accessible to any code that has access to an instance of that type.</p></div>
+  </details>
+</section><section class="section" id="s2-protected">
+  <div class="annotation">
+    <h3>中文批注：Protected</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Protected”展开。可把它先理解为“protected 受保护访问”。阅读时先抓住这些英文关键词：protected、specifier、creates、middle、ground。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;protected&gt;</span><span class="chip">protected</span><span class="chip">public</span><span class="chip">private</span><span class="chip">class</span><span class="chip">var</span><span class="chip">set</span><span class="chip">for</span><span class="chip">where</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Protected</summary>
+    <div class="md"><h2>Protected</h2>
+<p>The <code>&lt;protected&gt;</code> specifier creates a middle ground between public and private, allowing access within the defining class and any classes that inherit from it. This level exists specifically to support inheritance hierarchies while maintaining encapsulation:</p>
+<p>&lt;!--versetest vector3:=class{} MaxHealth:int=1 --&gt;</p>
+<pre><code>game_entity := class:
+    var Position&lt;protected&gt;:vector3 = vector3{x:=0.0, y:=0.0, z:=0.0}
+    var Health&lt;protected&gt;:int = 100
+
+    UpdatePosition&lt;protected&gt;(NewPos:vector3):void =
+        set Position = NewPos
+        OnPositionChanged()
+
+    OnPositionChanged&lt;protected&gt;():void = {}  # Overridable by subclasses
+
+player := class(game_entity):
+    MoveToSpawn():void =
+        UpdatePosition(GetSpawnLocation())  # Can access protected member
+        set Health = MaxHealth              # Can modify protected variable</code></pre>
+<p>Protected access enables the template method pattern and other inheritance-based designs while preventing external code from accessing implementation details that should remain within the class hierarchy. This is particularly valuable for game entities and other hierarchical structures where parent classes need to share behavior with children without exposing that behavior to the world.</p></div>
+  </details>
+</section><section class="section" id="s3-private">
+  <div class="annotation">
+    <h3>中文批注：Private</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Private”展开。可把它先理解为“private 私有访问”。阅读时先抓住这些英文关键词：private、specifier、provides、strictest、access。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;private&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">private</span><span class="chip">internal</span><span class="chip">struct</span><span class="chip">class</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Private</summary>
+    <div class="md"><h2>Private</h2>
+<p>The <code>&lt;private&gt;</code> specifier provides the strictest access control, limiting visibility to the immediately enclosing scope. Private members are truly internal implementation details that can be changed freely without affecting any external code:</p>
+<p>&lt;!--versetest item:=struct{Weight:float=0.0} inventory := class: var Items&lt;private&gt;:[]item = array{} var Capacity&lt;private&gt;:int = 20 var CurrentWeight&lt;private&gt;:float = 0.0 MaxWeight:float=20.0</p>
+<p>AddItem&lt;public&gt;(NewItem:item, At:int)&lt;transacts&gt;&lt;decides&gt;:void = ValidateCapacity[NewItem] set Items[At] = NewItem set CurrentWeight = CurrentWeight + NewItem.Weight</p>
+<p>ValidateCapacity&lt;private&gt;(NewItem:item)&lt;reads&gt;&lt;decides&gt;:void = Items.Length &lt; Capacity CurrentWeight + NewItem.Weight &lt;= MaxWeight &lt;# --&gt; &lt;!-- 03 --&gt;</p>
+<pre><code>inventory := class:
+    var Items&lt;private&gt;:[]item = array{}
+    var Capacity&lt;private&gt;:int = 20
+    var CurrentWeight&lt;private&gt;:float = 0.0
+    MaxWeight:float=20.0
+
+    AddItem&lt;public&gt;(NewItem:item, At:int)&lt;transacts&gt;&lt;decides&gt;:void =
+        ValidateCapacity[NewItem]
+        set Items[At] = NewItem
+        set CurrentWeight = CurrentWeight + NewItem.Weight
+
+    ValidateCapacity&lt;private&gt;(NewItem:item)&lt;reads&gt;&lt;decides&gt;:void =
+        Items.Length &lt; Capacity
+        CurrentWeight + NewItem.Weight &lt;= MaxWeight</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Private members are the building blocks of encapsulation. They allow you to maintain invariants, hide complexity, and create clean abstractions. Changes to private members never break external code, giving you the freedom to refactor and optimize implementation details as needed.</p></div>
+  </details>
+</section><section class="section" id="s4-internal">
+  <div class="annotation">
+    <h3>中文批注：Internal</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Internal”展开。可把它先理解为“internal 内部访问”。阅读时先抓住这些英文关键词：internal、specifier、default、access、level。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;internal&gt;</span><span class="chip">&lt;abstract&gt;</span><span class="chip">internal</span><span class="chip">module</span><span class="chip">for</span><span class="chip">class</span><span class="chip">abstract</span><span class="chip">var</span><span class="chip">array</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Internal</summary>
+    <div class="md"><h2>Internal</h2>
+<p>The <code>&lt;internal&gt;</code> specifier, which is the default access level when no specifier is provided, makes members accessible within the defining module but not outside it. This creates a natural boundary for collaborative code that needs to share implementation details without exposing them publicly:</p>
+<p>&lt;!--versetest game_entity:=class{} collision_info:=class{} ApplyGravity(:game_entity,:float):void={} CheckCollisions(:game_entity):void={}</p>
+<p>Physics := module: gravity_constant:float = 9.81</p>
+<p>collision_detector := class&lt;abstract&gt;: DetectCollision&lt;internal&gt;(A:game_entity, B:game_entity):?collision_info</p>
+<p>physics_world := class: var Entities&lt;internal&gt;:[]game_entity = array{}</p>
+<p>SimulateStep&lt;internal&gt;(DeltaTime:float):void = for (Entity : Entities): ApplyGravity(Entity, DeltaTime) CheckCollisions(Entity) &lt;# --&gt; &lt;!-- 04 --&gt;</p>
+<pre><code>Physics := module:
+    # Internal types and constants
+    gravity_constant:float = 9.81
+
+    collision_detector := class&lt;abstract&gt;:
+        DetectCollision&lt;internal&gt;(A:game_entity, B:game_entity):?collision_info
+
+    physics_world := class:
+        var Entities&lt;internal&gt;:[]game_entity = array{}
+
+        SimulateStep&lt;internal&gt;(DeltaTime:float):void =
+            for (Entity : Entities):
+                ApplyGravity(Entity, DeltaTime)
+                CheckCollisions(Entity)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Internal access is ideal for module-wide utilities, shared implementation details, and helper functions that multiple classes within a module need but shouldn&#x27;t be exposed to external code. It provides a clean separation between the module&#x27;s public interface and its implementation machinery.</p></div>
+  </details>
+</section><section class="section" id="s5-scoped">
+  <div class="annotation">
+    <h3>中文批注：Scoped</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Scoped”展开。可把它先理解为“scoped 作用域访问”。阅读时先抓住这些英文关键词：scoped、specifier、creates、custom、access。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;scoped&gt;</span><span class="chip">public</span><span class="chip">internal</span><span class="chip">private</span><span class="chip">scoped</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Scoped</summary>
+    <div class="md"><h2>Scoped</h2>
+<p>The <code>&lt;scoped&gt;</code> specifier creates custom access boundaries between modules or code locations. Unlike the fixed visibility levels of <code>public</code>, <code>internal</code>, and <code>private</code>, <code>scoped</code> access allows you to explicitly grant access to particular modules while excluding all others—creating a kind of &quot;friend&quot; relationship between program entities.</p></div>
+  </details>
+</section><section class="section" id="s6-scoped-definitions">
+  <div class="annotation">
+    <h3>中文批注：Scoped Definitions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Scoped Definitions”展开。阅读时先抓住这些英文关键词：scoped、access、level、created、expression。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">scoped{...}</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;Shared&gt;</span><span class="chip">using</span><span class="chip">module</span><span class="chip">public</span><span class="chip">class</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Scoped Definitions</summary>
+    <div class="md"><h3>Scoped Definitions</h3>
+<p>A scoped access level is created using the <code>scoped{...}</code> expression, which takes one or more module references:</p>
+<p>&lt;!-- NoCompile --&gt;</p>
+<pre><code>Collaboration := module:
+    # Create a scope that includes both ModuleA and ModuleB
+    Shared&lt;public&gt; := scoped{ModuleA, ModuleB}
+
+    # This class is only accessible within ModuleA and ModuleB
+    SharedResource&lt;Shared&gt; := class:
+        Data&lt;public&gt;:int = 42</code></pre>
+<p>The scoped definition creates an access level that can then be used as a specifier on classes, functions, variables, and other definitions. Code within any of the listed entities can access the scoped member, while code outside those modules cannot—even if it can see the containing scope.</p></div>
+  </details>
+</section><section class="section" id="s7-cross-module-collaboration">
+  <div class="annotation">
+    <h3>中文批注：Cross-Module Collaboration</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Cross-Module Collaboration”展开。阅读时先抓住这些英文关键词：most、powerful、use、scoped、access。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;abstract&gt;</span><span class="chip">&lt;override&gt;</span><span class="chip">&lt;SharedGameplayScope&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">module</span><span class="chip">where</span><span class="chip">class</span><span class="chip">interface</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Cross-Module Collaboration</summary>
+    <div class="md"><h3>Cross-Module Collaboration</h3>
+<p>The most powerful use of scoped access is enabling controlled collaboration between modules. A definition can be created in one module but scoped to another, making it accessible where it&#x27;s needed while keeping it hidden elsewhere:</p>
+<p>&lt;!--versetest bounding_box:=class{} Graphics := module: CollidableShape&lt;scoped{Physics}&gt; := interface: GetBounds():bounding_box</p>
+<p>Physics := module: using{Graphics}</p>
+<p>sphere_collider := class&lt;abstract&gt;(CollidableShape): GetBounds&lt;override&gt;():bounding_box &lt;# --&gt; &lt;!-- 06 --&gt;</p>
+<pre><code>Graphics := module:
+    # Define an interface scoped to the physics module
+    CollidableShape&lt;scoped{Physics}&gt; := interface:
+        GetBounds():bounding_box
+
+Physics := module:
+    using{Graphics}
+
+    # Physics can implement the interface even though it&#x27;s defined in graphics
+    sphere_collider := class&lt;abstract&gt;(CollidableShape):
+        GetBounds&lt;override&gt;():bounding_box</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This pattern allows graphics to define contracts that physics implements without exposing those implementation details publicly. The interface exists at the boundary between the two modules but isn&#x27;t part of either module&#x27;s public API.</p>
+<p>You can scope a definition to multiple modules, creating a shared private space for collaboration:</p>
+<p>&lt;!--versetest Gameplay := module: SharedGameplayScope := scoped{Inventory, Crafting}</p>
+<p>Item&lt;SharedGameplayScope&gt; := class: ID&lt;public&gt;:int Properties&lt;public&gt;:[string]string</p>
+<p>CreateItem&lt;SharedGameplayScope&gt;(TheID:int):Item = Item{ID:=TheID, Properties:=map{}}</p>
+<p>Inventory := module: using{Gameplay}</p>
+<p>AddToInventory(ItemID:int):void = NewItem := CreateItem(ItemID)</p>
+<p>Crafting := module: using{Gameplay}</p>
+<p>CraftItem(Recipe:[]int)&lt;decides&gt;:Item = CreateItem(Recipe[0]) &lt;# --&gt; &lt;!-- 07 --&gt;</p>
+<pre><code>Gameplay := module:
+    # This scope includes both the inventory and crafting modules
+    SharedGameplayScope := scoped{Inventory, Crafting}
+
+    # Items can be accessed by both inventory and crafting
+    Item&lt;SharedGameplayScope&gt; := class:
+        ID&lt;public&gt;:int
+        Properties&lt;public&gt;:[string]string
+
+    # Factory function available to both systems
+    CreateItem&lt;SharedGameplayScope&gt;(TheID:int):Item = Item{ID:=TheID, Properties:=map{}}
+
+Inventory := module:
+    using{Gameplay}
+
+    AddToInventory(ItemID:int):void =
+        NewItem := CreateItem(ItemID)  # Can access scoped function
+        # Implementation...
+
+Crafting := module:
+    using{Gameplay}
+
+    CraftItem(Recipe:[]int)&lt;decides&gt;:Item =
+        # Can create items and access their properties
+        CreateItem(Recipe[0])</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s8-scoped-read-or-write-access">
+  <div class="annotation">
+    <h3>中文批注：Scoped Read or Write Access</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Scoped Read or Write Access”展开。阅读时先抓住这些英文关键词：Like、other、access、specifiers、scoped。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;SharedScope&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">class</span><span class="chip">computes</span><span class="chip">module</span><span class="chip">var</span><span class="chip">public</span><span class="chip">internal</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Scoped Read or Write Access</summary>
+    <div class="md"><h3>Scoped Read or Write Access</h3>
+<p>Like other access specifiers, scoped can be applied separately to read and write operations on variables:</p>
+<p>&lt;!--  BUG?  Or at least unhelpful error message</p>
+<p>a:=class&lt;computes&gt;{} F()&lt;computes&gt;:a= a{} b := class{ G:a = F() }</p>
+<p>Gives: Line 8: Verse compiler error V3582: Divergent calls (calls that might not complete) cannot be used to define data-members. --&gt;</p>
+<p>&lt;!--versetest ModuleA:=module{} ModuleB:=module{} game_state:=class{}</p>
+<p>SharedScope := scoped{ModuleA, ModuleB}</p>
+<p>state_manager := class: var&lt;SharedScope&gt; GameState&lt;public&gt;:game_state = game_state{}</p>
+<p>var&lt;SharedScope&gt; SyncCounter&lt;SharedScope&gt;:int = 0 &lt;# --&gt; &lt;!-- 08 --&gt;</p>
+<pre><code>SharedScope := scoped{ModuleA, ModuleB}
+
+state_manager := class:
+    # Public read access, but only ModuleA and ModuleB can write
+    var&lt;SharedScope&gt; GameState&lt;public&gt;:game_state = game_state{}
+
+    # Only ModuleA and ModuleB can read or write this internal state
+    var&lt;SharedScope&gt; SyncCounter&lt;SharedScope&gt;:int = 0</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This pattern is particularly useful for shared state that multiple modules need to coordinate on without exposing write access publicly.</p></div>
+  </details>
+</section><section class="section" id="s9-visibility-and-access-paths">
+  <div class="annotation">
+    <h3>中文批注：Visibility and Access Paths</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Visibility and Access Paths”展开。阅读时先抓住这些英文关键词：important、subtlety、scoped、access、grants。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">module</span><span class="chip">class</span><span class="chip">using</span><span class="chip">internal</span><span class="chip">public</span><span class="chip">interface</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Visibility and Access Paths</summary>
+    <div class="md"><h3>Visibility and Access Paths</h3>
+<p>An important subtlety of scoped access is that it grants access to a specific member, but doesn&#x27;t make intermediate types or modules visible. To access a scoped member, you must be able to see the entire path to it:</p>
+<p>&lt;!-- NoCompile --&gt;</p>
+<pre><code>Outer := module:
+    # Internal to outer
+    Inner := module:
+        # Scoped to TargetModule
+        SharedClass&lt;scoped{TargetModule}&gt; := class:
+            Value:int = 42
+
+TargetModule := module:
+    using{Outer}
+
+    # ERROR: Can&#x27;t see Outer.Inner because Inner is internal to Outer
+    # even though SharedClass is scoped to us
+    UseShared():void = Outer.Inner.SharedClass{}</code></pre>
+<p>For scoped access to work, either the containing scope must be accessible (public or also scoped appropriately), or the scoped member must be accessed through a public interface that exposes it.</p>
+<p>A definition can only have one scoped access level—you cannot apply multiple scoped specifiers:</p>
+<p>&lt;!-- NoCompile--&gt;</p>
+<pre><code># ERROR: Cannot have multiple access level specifiers
+InvalidScope&lt;scoped{ModuleA}&gt;&lt;scoped{ModuleB}&gt; := class{}</code></pre></div>
+  </details>
+</section><section class="section" id="s10-scoped-access-and-inheritance">
+  <div class="annotation">
+    <h3>中文批注：Scoped Access and Inheritance</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Scoped Access and Inheritance”展开。阅读时先抓住这些英文关键词：class、member、has、scoped、access。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;SharedScope&gt;</span><span class="chip">&lt;override&gt;</span><span class="chip">class</span><span class="chip">module</span><span class="chip">internal</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Scoped Access and Inheritance</summary>
+    <div class="md"><h3>Scoped Access and Inheritance</h3>
+<p>When a class member has scoped access, overriding members in subclasses can maintain or narrow that access, following normal inheritance rules:</p>
+<p>&lt;!--versetest ModuleA:=module{} ModuleB:=module{} SharedScope := scoped{ModuleA, ModuleB}</p>
+<p>base := class: ComputeValue&lt;SharedScope&gt;():int = 42</p>
+<p>derived := class(base): ComputeValue&lt;override&gt;():int = 100 &lt;# --&gt; &lt;!-- 11 --&gt;</p>
+<pre><code>SharedScope := scoped{ModuleA, ModuleB}
+
+base := class:
+    # Accessible only in ModuleA and ModuleB
+    ComputeValue&lt;SharedScope&gt;():int = 42
+
+derived := class(base):
+    # Can override with same or more restrictive access
+    ComputeValue&lt;override&gt;():int = 100  # Now internal to this module</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s11-using-scoped-for-api-boundaries">
+  <div class="annotation">
+    <h3>中文批注：Using Scoped for API Boundaries</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Using Scoped for API Boundaries”展开。阅读时先抓住这些英文关键词：Scoped、access、excels、creating、controlled。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;public&gt;</span><span class="chip">&lt;NetworkScope&gt;</span><span class="chip">for</span><span class="chip">where</span><span class="chip">public</span><span class="chip">interface</span><span class="chip">module</span><span class="chip">var</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Using Scoped for API Boundaries</summary>
+    <div class="md"><h3>Using Scoped for API Boundaries</h3>
+<p>Scoped access excels at creating controlled API boundaries where certain functionality should be shared between specific modules but not exposed as part of the public interface:</p>
+<p>&lt;!-- NoCompile --&gt;</p>
+<pre><code>Networking := module:
+    # Public scope for modules that need network access
+    NetworkScope&lt;public&gt; := scoped{PlayerSystem, Matchmaking, Telemetry}
+
+    # Core networking available to specific systems
+    SendPacket&lt;NetworkScope&gt;(Data:[]uint8):void =
+        # Implementation...
+
+    # Internal statistics
+    var&lt;NetworkScope&gt; BytesSent&lt;NetworkScope&gt;:int = 0</code></pre>
+<p>This creates an explicit architectural boundary—only the modules listed in the scope can access the networking primitives, while other code must use higher-level public APIs.</p></div>
+  </details>
+</section><section class="section" id="s12-design-considerations">
+  <div class="annotation">
+    <h3>中文批注：Design Considerations</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Design Considerations”展开。阅读时先抓住这些英文关键词：Scoped、access、represents、architectural、commitment。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">using</span><span class="chip">for</span><span class="chip">module</span><span class="chip">public</span><span class="chip">where</span><span class="chip">protected</span><span class="chip">internal</span><span class="chip">case</span><span class="chip">unique</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Design Considerations</summary>
+    <div class="md"><h3>Design Considerations</h3>
+<p>Scoped access represents an architectural commitment between modules. When using it effectively:</p>
+<ul>
+<li>Use scoped for legitimate cross-module collaboration that doesn&#x27;t</li>
+<p>belong in the public API</p>
+<li>Keep scope definitions at the module level where they can be documented and maintained</li>
+<li>Prefer scoping to explicit modules rather than deeply nested scopes</li>
+<li>Consider whether protected or internal access might be simpler for your use case</li>
+<li>Document why particular modules are included in a scope</li>
+</ul>
+<p>The scoped specifier fills a unique niche between internal and public access, enabling sophisticated module architectures where multiple components need to collaborate intimately without exposing those implementation details to the wider codebase.</p></div>
+  </details>
+</section><section class="section" id="s13-separating-read-and-write-access">
+  <div class="annotation">
+    <h3>中文批注：Separating Read and Write Access</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Separating Read and Write Access”展开。阅读时先抓住这些英文关键词：innovative、feature、ability、apply、different。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">&lt;protected&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;private&gt;</span><span class="chip">&lt;internal&gt;</span><span class="chip">class</span><span class="chip">protected</span><span class="chip">public</span><span class="chip">private</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Separating Read and Write Access</summary>
+    <div class="md"><h2>Separating Read and Write Access</h2>
+<p>An innovative feature is the ability to apply different access specifiers to reading and writing operations on the same variable. This fine-grained control allows you to create variables that are widely readable but narrowly writable, implementing common patterns like read-only properties elegantly:</p>
+<p>&lt;!--versetest game_state := class: var&lt;protected&gt; Score&lt;public&gt;:int = 0</p>
+<p>var&lt;private&gt; PlayerCount&lt;public&gt;:int = 0</p>
+<p>var&lt;private&gt; SessionID&lt;internal&gt;:string &lt;# --&gt; &lt;!-- 13 --&gt;</p>
+<pre><code>game_state := class:
+    # Public read, protected write
+    var&lt;protected&gt; Score&lt;public&gt;:int = 0
+
+    # Public read, private write
+    var&lt;private&gt; PlayerCount&lt;public&gt;:int = 0
+
+    # Internal read, private write
+    var&lt;private&gt; SessionID&lt;internal&gt;:string</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This dual-specifier system solves a common problem in object-oriented programming where you want to expose state for reading without allowing external modification. Rather than requiring getter methods or property syntax, Verse makes this pattern a first-class language feature.</p>
+<p>The syntax places the write-access specifier on the <code>var</code> keyword and the read-access specifier on the identifier itself. This visual separation makes the access levels immediately clear when reading code. The write specifier must be at least as restrictive as the read specifier — you cannot write to a variable that&#x27;s privately readable but publicly writable, as this would violate basic encapsulation principles.</p></div>
+  </details>
+</section><section class="section" id="s14-best-practices">
+  <div class="annotation">
+    <h3>中文批注：Best Practices</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Best Practices”展开。可把它先理解为“最佳实践”。阅读时先抓住这些英文关键词：Understanding、use、each、access、level。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;private&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">public</span><span class="chip">module</span><span class="chip">if</span><span class="chip">for</span><span class="chip">class</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Best Practices</summary>
+    <div class="md"><h2>Best Practices</h2>
+<p>Understanding when to use each access level requires thinking about your code&#x27;s architecture and evolution. The principle of least privilege suggests starting with the most restrictive access that works and only broadening it when necessary.</p>
+<p>For public  APIs, every public  member is a commitment.  Before making something public, consider  whether it truly needs to be  part of your module&#x27;s contract or if it&#x27;s  an implementation detail that happens to be  needed elsewhere  temporarily.  Public members  should be  stable, well-documented, and designed for longevity.</p>
+<p>Protected access should be used thoughtfully in inheritance hierarchies. Not everything in a base class needs to be protected—only those members that form the inheritance contract between parent and child classes. Overuse of protected access can create tight coupling between classes in a hierarchy.</p>
+<p>Private access is your default for implementation details. Most helper functions, intermediate calculations, and state management should be private. This gives you maximum flexibility to refactor and optimize without breaking dependent code.</p>
+<p>The dual-specifier pattern for variables is particularly powerful for maintaining invariants. By making variables publicly readable but privately or protectively writable, you can expose state for observation while maintaining complete control over modifications:</p>
+<p>&lt;!--versetest resource_manager := class: var&lt;private&gt; TotalResources&lt;public&gt;:int = 1000 var&lt;private&gt; AllocatedResources&lt;public&gt;:int = 0 var&lt;private&gt; AvailableResources&lt;public&gt;:int = 1000</p>
+<p>AllocateResources&lt;public&gt;(Amount:int)&lt;decides&gt;&lt;transacts&gt;:void = Amount &lt;= AvailableResources set AllocatedResources = AllocatedResources + Amount set AvailableResources = AvailableResources - Amount &lt;# --&gt; &lt;!-- 14 --&gt;</p>
+<pre><code>resource_manager := class:
+    var&lt;private&gt; TotalResources&lt;public&gt;:int = 1000
+    var&lt;private&gt; AllocatedResources&lt;public&gt;:int = 0
+    var&lt;private&gt; AvailableResources&lt;public&gt;:int = 1000
+
+    AllocateResources&lt;public&gt;(Amount:int)&lt;decides&gt;&lt;transacts&gt;:void =
+        Amount &lt;= AvailableResources
+        set AllocatedResources = AllocatedResources + Amount
+        set AvailableResources = AvailableResources - Amount</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s15-annotations-and-metadata">
+  <div class="annotation">
+    <h3>中文批注：Annotations and Metadata</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Annotations and Metadata”展开。可把它先理解为“注解与元数据”。阅读时先抓住这些英文关键词：provides、annotation、system、attaching、metadata。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">@</span><span class="chip">for</span><span class="chip">using</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Annotations and Metadata</summary>
+    <div class="md"><h2>Annotations and Metadata</h2>
+<p>Verse provides an annotation system for attaching metadata to definitions using the <code>@</code> prefix syntax. Annotations provide compiler directives and metadata that affect how code is treated during compilation and evolution.</p></div>
+  </details>
+</section><section class="section" id="s16-built-in-annotations">
+  <div class="annotation">
+    <h3>中文批注：Built-in Annotations</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Built-in Annotations”展开。阅读时先抓住这些英文关键词：warning、Internal、Feature、deprecated、attribute。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">@deprecated</span><span class="chip">&lt;!-- #&gt; --&gt;
+
+The</span><span class="chip">@experimental</span><span class="chip">AllowExperimental</span><span class="chip">@available</span><span class="chip">internal</span><span class="chip">class</span><span class="chip">enum</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Built-in Annotations</summary>
+    <div class="md"><h3>Built-in Annotations</h3>
+<h4>@deprecated</h4>
+<div class="admonition"><div class="admonition-title">Internal Feature</div><p>@deprecated attribute is currently an internal feature and cannot be used by end-users.</p></div>
+<p>The <code>@deprecated</code> annotation marks definitions that should no longer be used. When code references a deprecated definition, the compiler produces a warning, alerting developers to update their code:</p>
+<p>&lt;!--versetest @deprecated OldFunction():void = Print(&quot;This function is deprecated&quot;)</p>
+<p>@deprecated legacy_player := class: Name:string</p>
+<p>UseDeprecated():void = OldFunction() &lt;# --&gt; &lt;!-- 15 --&gt;</p>
+<pre><code># Mark a definition as deprecated
+@deprecated
+OldFunction():void =
+    Print(&quot;This function is deprecated&quot;)
+
+# Mark a class as deprecated
+@deprecated
+legacy_player := class:
+    Name:string
+
+# Attempting to use deprecated code produces a warning
+UseDeprecated():void =
+    OldFunction()  # Warning: OldFunction is deprecated</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Deprecated definitions can use other deprecated definitions without warnings, but non-deprecated code cannot use deprecated definitions without triggering warnings. This allows gradual migration of deprecated APIs:</p>
+<p>&lt;!--versetest @deprecated OldAPI():int = 42 @deprecated MigrateOldAPI():int = OldAPI()</p>
+<p>&lt;# --&gt; &lt;!-- 16 --&gt;</p>
+<pre><code>@deprecated
+OldAPI():int = 42
+
+# Valid: deprecated can call deprecated
+@deprecated
+MigrateOldAPI():int = OldAPI()
+
+# Warning: non-deprecated calling deprecated
+# NewCode():int = OldAPI()</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The <code>@deprecated</code> annotation can be applied to:</p>
+<ul>
+<li>Functions and methods</li>
+<li>Classes, interfaces, structs, and enums</li>
+<li>Individual enum values</li>
+<li>Data members</li>
+<li>Modules</li>
+</ul>
+<h4>@experimental</h4>
+<div class="admonition"><div class="admonition-title">Internal Feature</div><p>@deprecated attribute is currently an internal feature and cannot be used by end-users.</p></div>
+<p>The <code>@experimental</code> annotation marks features that are not yet stable and may change or be removed in future versions. Experimental features can only be used when the <code>AllowExperimental</code> package flag is enabled:</p>
+<p>&lt;!-- NoCompile --&gt;</p>
+<pre><code># Mark a feature as experimental
+@experimental
+experimental_class := class:
+    NewFeature:int
+
+# Using experimental features requires AllowExperimental flag
+# Without flag: error
+# With AllowExperimental:=true: allowed
+UseExperimental(Obj:experimental_class):void =
+    Print(&quot;Using experimental feature&quot;)</code></pre>
+<p>Experimental definitions behave similarly to deprecated ones—experimental definitions can freely use other experimental definitions, but stable code cannot use experimental definitions unless the <code>AllowExperimental</code> flag is set.</p>
+<p>The <code>@experimental</code> annotation cannot be applied to:</p>
+<ul>
+<li>Local variables</li>
+<li>Override methods (base method&#x27;s experimental status is inherited)</li>
+</ul>
+<h4>@available</h4>
+<p>The <code>@available</code> annotation controls when a definition becomes available based on version numbers. This enables gradual API rollout and version-specific functionality:</p>
+<p>&lt;!--versetest using { /Verse.org/Native } @available{MinUploadedAtFNVersion := 3000} NewFeature():void = Print(&quot;New feature&quot;) @available{MinUploadedAtFNVersion := 2900} OldImplementation():int = 42</p>
+<p>@available{MinUploadedAtFNVersion := 3000} NewImplementation():int = 100</p>
+<p>&lt;# --&gt; &lt;!-- 18 --&gt;</p>
+<pre><code>using { /Verse.org/Native }  # Required for @available
+
+# Available only in version 3000 and later
+@available{MinUploadedAtFNVersion := 3000}
+NewFeature():void =
+    Print(&quot;New feature&quot;)
+
+# Multiple definitions can coexist for different versions
+@available{MinUploadedAtFNVersion := 2900}
+OldImplementation():int = 42
+
+@available{MinUploadedAtFNVersion := 3000}
+NewImplementation():int = 100</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The <code>@available</code> annotation can be applied to the same kinds of definitions as <code>@deprecated</code>.</p></div>
+  </details>
+</section><section class="section" id="s17-custom-attributes">
+  <div class="annotation">
+    <h3>中文批注：Custom Attributes</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Custom Attributes”展开。阅读时先抓住这些英文关键词：warning、Internal、Feature、Custom、attributes。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">attribute</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;abstract&gt;</span><span class="chip">internal</span><span class="chip">class</span><span class="chip">computes</span><span class="chip">where</span><span class="chip">using</span><span class="chip">abstract</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Custom Attributes</summary>
+    <div class="md"><h3>Custom Attributes</h3>
+<div class="admonition"><div class="admonition-title">Internal Feature</div><p>Custom attributes are currently an internal feature and cannot be created by end-users.</p></div>
+<p>You can create custom attributes by inheriting from the special <code>attribute</code> class. Custom attributes allow you to attach domain-specific metadata to your code:</p>
+<p>&lt;!--versetest @attribscope_class gameplay_element := class&lt;computes&gt;(attribute): Category:string Priority:int @gameplay_element{Category := &quot;Combat&quot;, Priority := 1} weapon_system := class: Damage:int &lt;# --&gt; &lt;!-- 19 --&gt;</p>
+<pre><code># Define a custom attribute
+@attribscope_class
+gameplay_element := class&lt;computes&gt;(attribute):
+    Category:string
+    Priority:int
+
+# Use the custom attribute
+@gameplay_element{Category := &quot;Combat&quot;, Priority := 1}
+weapon_system := class:
+    Damage:int</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Attribute Scopes</h4>
+<p>When defining custom attributes, you must specify where they can be applied using scope annotations:</p>
+<ul>
+<li><strong>@attribscope_class</strong> - Can be applied to regular classes</li>
+<li><strong>@attribscope_attribclass</strong> - Can be applied to attribute classes (classes that inherit from <code>attribute</code>)</li>
+<li><strong>@attribscope_enum</strong> - Can be applied to enums</li>
+<li><strong>@attribscope_interface</strong> - Can be applied to interfaces</li>
+<li><strong>@attribscope_function</strong> - Can be applied to functions and methods</li>
+<li><strong>@attribscope_data</strong> - Can be applied to data members</li>
+</ul>
+<p>Example of scoped custom attributes:</p>
+<p>&lt;!--versetest @attribscope_function performance_critical := class&lt;computes&gt;(attribute): MaxExecutionTimeMs:int</p>
+<p>@attribscope_data serializable_field := class&lt;computes&gt;(attribute): SerializationKey:string</p>
+<p>entity := class&lt;abstract&gt;: @serializable_field{SerializationKey := &quot;entity_id&quot;} ID:int</p>
+<p>@performance_critical{MaxExecutionTimeMs := 16} Update():void</p>
+<p>&lt;# --&gt; &lt;!-- 20 --&gt;</p>
+<pre><code># Attribute that can only be applied to functions
+@attribscope_function
+performance_critical := class(attribute):
+    MaxExecutionTimeMs:int
+
+# Attribute that can only be applied to data members
+@attribscope_data
+serializable_field := class(attribute):
+    SerializationKey:string
+
+# Use them appropriately
+entity := class&lt;abstract&gt;:
+    @serializable_field{SerializationKey := &quot;entity_id&quot;}
+    ID:int
+
+    @performance_critical{MaxExecutionTimeMs := 16}
+    Update():void</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Attempting to use an attribute in the wrong location produces a compiler error. For example, a function-scoped attribute cannot be applied to a class.</p>
+<p><strong>Reading attributes:</strong> Custom attributes are currently metadata for external tooling — the compiler, LSP, and the Unreal Editor can read and act on them, but there is no Verse API to query attributes at runtime. Attributes are used to apply rules, constraints, or extra data that tools outside the language consume, such as serialization hints, editor annotations, or performance directives.</p></div>
+  </details>
+</section><section class="section" id="s18-getter-and-setter-accessors">
+  <div class="annotation">
+    <h3>中文批注：Getter and Setter Accessors</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Getter and Setter Accessors”展开。阅读时先抓住这些英文关键词：warning、Internal、Feature、Getter、setter。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;getter(...)&gt;</span><span class="chip">&lt;setter(...)&gt;</span><span class="chip">= external{}</span><span class="chip">var</span><span class="chip">internal</span><span class="chip">for</span><span class="chip">class</span><span class="chip">interface</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Getter and Setter Accessors</summary>
+    <div class="md"><h3>Getter and Setter Accessors</h3>
+<div class="admonition"><div class="admonition-title">Internal Feature</div><p>Getter and setter accessors are currently an internal feature and cannot be used by end-users.</p></div>
+<p>While not strictly annotations, the <code>&lt;getter(...)&gt;</code> and <code>&lt;setter(...)&gt;</code> specifiers provide a related form of metadata for controlling field access. These can be applied to both class and interface fields to define custom access logic:</p>
+<p>&lt;!--versetest entity := class: var Health&lt;getter(GetHealth)&gt;&lt;setter(SetHealth)&gt;:int = external{}</p>
+<p>var InternalHealth:int = 100</p>
+<p>GetHealth(:accessor):int = InternalHealth</p>
+<p>SetHealth(:accessor, NewValue:int):void = if (NewValue &gt;= 0, NewValue &lt;= 100): set InternalHealth = NewValue</p>
+<p>&lt;# --&gt; &lt;!-- 21 --&gt;</p>
+<pre><code>entity := class:
+    # External field with custom accessors
+    var Health&lt;getter(GetHealth)&gt;&lt;setter(SetHealth)&gt;:int = external{}
+
+    var InternalHealth:int = 100
+
+    GetHealth(:accessor):int = InternalHealth
+
+    SetHealth(:accessor, NewValue:int):void =
+        if (NewValue &gt;= 0, NewValue &lt;= 100):
+            set InternalHealth = NewValue</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Constraints on accessors:</p>
+<ul>
+<li>Must include both <code>&lt;getter(...)&gt;</code> and <code>&lt;setter(...)&gt;</code> - cannot have only one</li>
+<li>The field must have <code>= external{}</code> or no default value (with archetype initialization required)</li>
+<li>Fields with accessors cannot be overridden in subclasses</li>
+<li>The field must be mutable (marked with <code>var</code>)</li>
+<li>Not all types are supported for accessor fields</li>
+<li>Accessor fields are currently only allowed in epic_internal scopes</li>
+</ul>
+<p>For more details on accessor patterns, see <a href="../10_classes_interfaces/index.html">Fields with Accessors</a>.</p></div>
+  </details>
+</section><section class="section" id="s19-localization">
+  <div class="annotation">
+    <h3>中文批注：Localization</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Localization”展开。阅读时先抓住这些英文关键词：localizes、specifier、marks、definitions、localizable。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;localizes&gt;</span><span class="chip">message</span><span class="chip">- Text values
+-</span><span class="chip">{ParameterName}</span><span class="chip">for</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Localization</summary>
+    <div class="md"><h3>Localization</h3>
+<p>The <code>&lt;localizes&gt;</code> specifier marks definitions as localizable messages for internationalization. Localized messages use the <code>message</code> type and can be extracted for translation into different languages:</p>
+<p>&lt;!--versetest WelcomeMessage&lt;localizes&gt; : message = &quot;Welcome to the game!&quot;</p>
+<p>ShowWelcome():void = Print(Localize(WelcomeMessage)) &lt;# --&gt; &lt;!-- 22 --&gt;</p>
+<pre><code># Simple localized message
+WelcomeMessage&lt;localizes&gt; : message = &quot;Welcome to the game!&quot;
+
+# Call Localize to get the string
+ShowWelcome():void =
+    Print(Localize(WelcomeMessage))</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Message Parameters</h4>
+<p>Localized messages can accept parameters for dynamic content interpolation:</p>
+<p>&lt;!--versetest GreetPlayer&lt;localizes&gt;(PlayerName:string) : message = &quot;Hello, {PlayerName}!&quot;</p>
+<p>ShowGreeting(Name:string):void = Print(Localize(GreetPlayer(Name))) &lt;# --&gt; &lt;!-- 23 --&gt;</p>
+<pre><code># Message with parameter interpolation
+GreetPlayer&lt;localizes&gt;(PlayerName:string) : message = &quot;Hello, {PlayerName}!&quot;
+
+# Use with arguments
+ShowGreeting(Name:string):void =
+    Print(Localize(GreetPlayer(Name)))
+    # Outputs: &quot;Hello, Aldric!&quot; (if Name = &quot;Aldric&quot;)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Supported parameter types:</strong></p>
+<ul>
+<li><code>string</code> - Text values</li>
+<li><code>int</code> - Integer values (formatted with comma separators)</li>
+<li><code>float</code> - Floating-point values</li>
+</ul>
+<p><strong>Parameter interpolation syntax:</strong></p>
+<ul>
+<li>Use <code>{ParameterName}</code> to insert parameter values</li>
+<li>Parameters can be used multiple times or not at all</li>
+<li>Only parameter names and Unicode code points allowed in braces</li>
+</ul>
+<p>&lt;!--versetest</p></div>
+  </details>
+</section><section class="section" id="s20-multiple-parameters-some-repeated">
+  <div class="annotation">
+    <h3>中文批注：Multiple parameters, some repeated</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Multiple parameters, some repeated”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;localizes&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Multiple parameters, some repeated</summary>
+    <div class="md"><h1>Multiple parameters, some repeated</h1>
+<p>ScoreMessage&lt;localizes&gt;(Player:string, Score:int) : message = &quot;Congratulations {Player}! Your score is {Score}. Great job, {Player}!&quot;</p></div>
+  </details>
+</section><section class="section" id="s21-outputs-congratulations-alice-your-score-is-1-500-great-job-alice">
+  <div class="annotation">
+    <h3>中文批注：Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;</summary>
+    <div class="md"><h1>Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;</h1></div>
+  </details>
+</section><section class="section" id="s22-not-all-parameters-required-in-message-text">
+  <div class="annotation">
+    <h3>中文批注：Not all parameters required in message text</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Not all parameters required in message text”展开。阅读时先抓住这些英文关键词：Integer、parameters、automatically、formatted、comma。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;localizes&gt;</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Not all parameters required in message text</summary>
+    <div class="md"><h1>Not all parameters required in message text</h1>
+<p>OptionalParam&lt;localizes&gt;(Name:string, Score:int) : message = &quot;Thanks for playing!&quot;  # Score parameter ignored &lt;# --&gt; &lt;!-- 24 --&gt;</p>
+<pre><code># Multiple parameters, some repeated
+ScoreMessage&lt;localizes&gt;(Player:string, Score:int) : message =
+    &quot;Congratulations {Player}! Your score is {Score}. Great job, {Player}!&quot;
+
+# Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;
+
+# Not all parameters required in message text
+OptionalParam&lt;localizes&gt;(Name:string, Score:int) : message =
+    &quot;Thanks for playing!&quot;  # Score parameter ignored</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Integer Formatting</h4>
+<p>Integer parameters are automatically formatted with comma separators for readability:</p>
+<p>&lt;!--versetest HighScore&lt;localizes&gt;(Points:int) : message = &quot;New record: {Points} points!&quot;</p>
+<p>&lt;# --&gt; &lt;!-- 25 --&gt;</p>
+<pre><code>HighScore&lt;localizes&gt;(Points:int) : message = &quot;New record: {Points} points!&quot;
+
+# Localize(HighScore(190091)) produces: &quot;New record: 190,091 points!&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Named and Default Parameters</h4>
+<p>Localized messages support named parameters and default values:</p>
+<p>&lt;!--versetest ConfigMessage&lt;localizes&gt;(?MaxPlayers:int = 8, ?TimeLimit:int = 300):message = &quot;Game settings: {MaxPlayers} players, {TimeLimit} seconds&quot;</p>
+<p>assert: Localize(ConfigMessage())                           # Uses defaults Localize(ConfigMessage(?MaxPlayers := 16))          # Override one Localize(ConfigMessage(?TimeLimit := 600, ?MaxPlayers := 32))  # Override both &lt;# --&gt; &lt;!-- 26 --&gt;</p>
+<pre><code>ConfigMessage&lt;localizes&gt;(?MaxPlayers:int = 8, ?TimeLimit:int = 300):message =
+    &quot;Game settings: {MaxPlayers} players, {TimeLimit} seconds&quot;
+
+# Can be called with any combination
+Localize(ConfigMessage())                           # Uses defaults
+Localize(ConfigMessage(?MaxPlayers := 16))          # Override one
+Localize(ConfigMessage(?TimeLimit := 600, ?MaxPlayers := 32))  # Override both</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Tuple Parameters</h4>
+<p>Messages can accept tuple parameters, which are destructured in the parameter list:</p>
+<p>&lt;!--versetest LocationMessage&lt;localizes&gt;(Player:string, (X:int, Y:int)) : message = &quot;{Player} is at position ({X}, {Y})&quot;</p></div>
+  </details>
+</section><section class="section" id="s23-test-the-call">
+  <div class="annotation">
+    <h3>中文批注：Test the call</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Test the call”展开。阅读时先抓住这些英文关键词：Unicode、code、points、versetest、UnicodeMessage&lt;localizes。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">: message</span><span class="chip">{}</span><span class="chip">&lt;localizes&gt;</span><span class="chip">&lt;override&gt;</span><span class="chip">&lt;abstract&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">&lt;protected&gt;</span><span class="chip">&lt;final&gt;</span><span class="chip">&lt;private&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Test the call</summary>
+    <div class="md"><h1>Test the call</h1>
+<p>TestTupleParam():void = Localize(LocationMessage(&quot;Hero&quot;, (10, 20))) &lt;# --&gt; &lt;!-- 27 --&gt;</p>
+<pre><code>LocationMessage&lt;localizes&gt;(Player:string, (X:int, Y:int)) : message =
+    &quot;{Player} is at position ({X}, {Y})&quot;
+
+# Call with tuple
+Localize(LocationMessage(&quot;Hero&quot;, (10, 20)))
+# Outputs: &quot;Hero is at position (10, 20)&quot;</code></pre>
+<p>&lt;!-- #&gt;--&gt;</p>
+<h4>String Escaping and Unicode</h4>
+<p><strong>Unicode code points:</strong></p>
+<p>&lt;!--versetest UnicodeMessage&lt;localizes&gt; : message = &quot;The letter is {0u004d}&quot; &lt;# --&gt; &lt;!-- 28 --&gt;</p>
+<pre><code>UnicodeMessage&lt;localizes&gt; : message = &quot;The letter is {0u004d}&quot;
+# Outputs: &quot;The letter is M&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Escaped braces</strong> (to show literal braces):</p>
+<p>&lt;!--versetest EscapedMessage&lt;localizes&gt;(Name:string) : message = &quot;Use \{Name\} to insert {Name}&quot; &lt;# --&gt; &lt;!-- 29 --&gt;</p>
+<pre><code>EscapedMessage&lt;localizes&gt;(Name:string) : message =
+    &quot;Use \{Name\} to insert {Name}&quot;
+# Localize(EscapedMessage(&quot;value&quot;)) produces: &quot;Use {Name} to insert value&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Special characters:</strong></p>
+<p>&lt;!--versetest SpecialChars&lt;localizes&gt; : message = &quot;Supports: \\r\\n\\t\\\&quot;\\&#x27;\\#\\&lt;\\&gt;\\&amp;\\~&quot; &lt;# --&gt; &lt;!-- 30 --&gt;</p>
+<pre><code>SpecialChars&lt;localizes&gt; : message =
+    &quot;Supports: \\r\\n\\t\\\&quot;\\&#x27;\\#\\&lt;\\&gt;\\&amp;\\~&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Whitespace and comments</strong> are allowed in interpolation:</p>
+<p>&lt;!--versetest SpacedParam&lt;localizes&gt;(Name:string) : message = &quot;Hello { Name }&quot; CommentedParam&lt;localizes&gt;(Name:string) : message = &quot;Hello {Name}&quot; &lt;# --&gt; &lt;!-- 31 --&gt;</p>
+<pre><code>SpacedParam&lt;localizes&gt;(Name:string) : message = &quot;Hello { Name }&quot;
+CommentedParam&lt;localizes&gt;(Name:string) : message = &quot;Hello {&lt;# comment #&gt;Name}&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Scope Requirements</h4>
+<p>Localized messages <strong>must be defined at module or snippet scope</strong>. They cannot be defined inside functions:</p>
+<p>&lt;!-- NoCompile --&gt;</p>
+<pre><code># Valid: module scope
+MyModule := module:
+    ModuleMessage&lt;localizes&gt; : message = &quot;Valid&quot;
+
+# Valid: snippet scope
+TopLevelMessage&lt;localizes&gt; : message = &quot;Valid&quot;
+
+BadFunction():void =
+    LocalMessage&lt;localizes&gt; : message = &quot;Invalid&quot;  # ERROR</code></pre>
+<h4>Inheritance and Override</h4>
+<p>Localized messages can be overridden in class hierarchies:</p>
+<p>&lt;!--versetest base_ui := class: Title&lt;localizes&gt;:message = &quot;Base Title&quot; Description&lt;localizes&gt;:message = &quot;Base description&quot;</p>
+<p>derived_ui := class(base_ui): Title&lt;localizes&gt;&lt;override&gt;:message = &quot;Derived Title&quot; &lt;# --&gt; &lt;!-- 33 --&gt;</p>
+<pre><code>base_ui := class:
+    Title&lt;localizes&gt;:message = &quot;Base Title&quot;
+    Description&lt;localizes&gt;:message = &quot;Base description&quot;
+
+derived_ui := class(base_ui):
+    # Override the title message
+    Title&lt;localizes&gt;&lt;override&gt;:message = &quot;Derived Title&quot;
+    # Inherits Description from base</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Localized messages can also be abstract:</p>
+<p>&lt;!--versetest quest_base := class&lt;abstract&gt;: TaskDescription&lt;localizes&gt;&lt;public&gt; : message CompletionMessage&lt;localizes&gt;&lt;protected&gt; : message = &quot;Quest complete!&quot;</p>
+<p>fetch_quest := class&lt;final&gt;(quest_base): TaskDescription&lt;localizes&gt;&lt;override&gt; : message = &quot;Collect 10 items&quot; &lt;# --&gt; &lt;!-- 34 --&gt;</p>
+<pre><code>quest_base := class&lt;abstract&gt;:
+    # Abstract message - must be implemented by subclasses
+    TaskDescription&lt;localizes&gt;&lt;public&gt; : message
+    # Concrete message with default
+    CompletionMessage&lt;localizes&gt;&lt;protected&gt; : message = &quot;Quest complete!&quot;
+
+fetch_quest := class&lt;final&gt;(quest_base):
+    TaskDescription&lt;localizes&gt;&lt;override&gt; : message = &quot;Collect 10 items&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Restrictions and Errors</h4>
+<p><strong>Must use explicit type annotation:</strong></p>
+<p>The type annotation <code>: message</code> is required. Implicit typing is not supported:</p>
+<p>&lt;!--versetest</p>
+<p>GoodMessage&lt;localizes&gt; : message = &quot;Text&quot; &lt;# --&gt; &lt;!-- 35 --&gt;</p>
+<pre><code># ERROR: Missing type annotation
+# BadMessage&lt;localizes&gt; := &quot;Text&quot;  # ERROR 3639
+
+# Valid: Explicit type
+GoodMessage&lt;localizes&gt; : message = &quot;Text&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>RHS must be string literal:</strong></p>
+<p>&lt;!--versetest</p>
+<p>ValidMessage&lt;localizes&gt; : message = &quot;AB&quot; &lt;# --&gt; &lt;!-- 36 --&gt;</p>
+<pre><code># ERROR: Expression not allowed
+# InvalidMessage&lt;localizes&gt; : message = &quot;A&quot; + &quot;B&quot;  # ERROR 3638
+
+# Valid: Literal only
+ValidMessage&lt;localizes&gt; : message = &quot;AB&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Restricted parameter types:</strong></p>
+<p>Not all types are supported as parameters:</p>
+<p>&lt;!--versetest</p>
+<p>my_class := class{Value:int} &lt;# --&gt; &lt;!-- 37 --&gt;</p>
+<pre><code># ERROR: Optional types not supported
+# OptionalMsg&lt;localizes&gt;(Player:?string) : message = &quot;{Player}&quot;  # ERROR 3509
+
+# ERROR: Custom classes not supported
+my_class := class{Value:int}
+# ClassMsg&lt;localizes&gt;(Obj:my_class) : message = &quot;{Object}&quot;  # ERROR 3509</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Interpolation syntax restrictions:</strong></p>
+<p>Only parameter names and Unicode code points are allowed inside <code>{}</code>:</p>
+<p>&lt;!--versetest</p>
+<p>ParamMessage&lt;localizes&gt;(Name:string) : message = &quot;{Name}&quot; &lt;# --&gt; &lt;!-- 38 --&gt;</p>
+<pre><code># ERROR: Expressions not allowed
+# ExprMessage&lt;localizes&gt;(Name:string) : message = &quot;{&quot;Hello&quot;}&quot;  # ERROR 3652
+
+# Valid: Parameter names only
+ParamMessage&lt;localizes&gt;(Name:string) : message = &quot;{Name}&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p><strong>Non-parameter identifiers are escaped:</strong></p>
+<p>If you reference an identifier that isn&#x27;t a parameter, it gets escaped in the output:</p>
+<p>&lt;!--versetest GlobalName:string = &quot;World&quot;</p>
+<p>RefMessage&lt;localizes&gt;(Greeting:string) : message = &quot;{Greeting} to {GlobalName}&quot;</p>
+<p>&lt;# --&gt; &lt;!-- 39 --&gt;</p>
+<pre><code>GlobalName:string = &quot;World&quot;
+
+RefMessage&lt;localizes&gt;(Greeting:string) : message =
+    &quot;{Greeting} to {GlobalName}&quot;
+
+# Localize(RefMessage(&quot;Hello&quot;)) produces: &quot;Hello to \{GlobalName\}&quot;
+# Note: GlobalName is escaped because it&#x27;s not a parameter</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Access Specifiers</h4>
+<p>Localized messages support standard access specifiers:</p>
+<p>&lt;!--versetest MyModule := module: PublicMessage&lt;localizes&gt;&lt;public&gt; : message = &quot;Public message&quot; InternalMessage&lt;localizes&gt; : message = &quot;Internal message&quot;</p>
+<p>some_class := class: PrivateMessage&lt;localizes&gt;&lt;private&gt; : message = &quot;Private message&quot; &lt;# --&gt; &lt;!-- 40 --&gt;</p>
+<pre><code>MyModule := module:
+    PublicMessage&lt;localizes&gt;&lt;public&gt; : message = &quot;Public message&quot;
+    InternalMessage&lt;localizes&gt; : message = &quot;Internal message&quot;
+
+    some_class := class:
+        PrivateMessage&lt;localizes&gt;&lt;private&gt; : message = &quot;Private message&quot;  # private not allowed in module scopes</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<h4>Best Practices</h4>
+<p><strong>Keep messages translatable:</strong></p>
+<ul>
+<li>Use complete sentences, not fragments that might be concatenated</li>
+<li>Avoid gender or number assumptions that don&#x27;t translate well</li>
+<li>Provide context through parameter names</li>
+</ul>
+<p><strong>Design for different languages:</strong></p>
+<ul>
+<li>Don&#x27;t assume word order - let translators rearrange parameter positions</li>
+<li>Allow repeated parameter use for languages that need it</li>
+<li>Keep formatting codes (like comma separators) automated</li>
+</ul>
+<p><strong>Organization:</strong></p>
+<ul>
+<li>Group related messages in the same module</li>
+<li>Use descriptive names that indicate message purpose</li>
+<li>Consider using abstract base classes for message families</li>
+</ul>
+<p>&lt;!--versetest PlayerJoined&lt;localizes&gt;(PlayerName:string, TeamName:string) : message = &quot;{PlayerName} joined team {TeamName}&quot;</p>
+<p>&lt;# --&gt; &lt;!-- 41 --&gt;</p>
+<pre><code># Good: Clear, complete, flexible
+PlayerJoined&lt;localizes&gt;(PlayerName:string, TeamName:string) : message =
+    &quot;{PlayerName} joined team {TeamName}&quot;
+
+# Avoid: Fragments that might be concatenated
+# PlayerPrefix&lt;localizes&gt;(Name:string) : message = &quot;Player {Name}&quot;
+# JoinedSuffix&lt;localizes&gt;(Team:string) : message = &quot;joined {Team}&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s24-evolution">
+  <div class="annotation">
+    <h3>中文批注：Evolution</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Evolution”展开。阅读时先抓住这些英文关键词：Access、specifiers、play、crucial、role。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;castable&gt;</span><span class="chip">public</span><span class="chip">private</span><span class="chip">protected</span><span class="chip">castable</span><span class="chip">for</span><span class="chip">using</span><span class="chip">internal</span><span class="chip">module</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Evolution</summary>
+    <div class="md"><h2>Evolution</h2>
+<p>Access specifiers play a crucial role in code evolution. Changing access levels after publication can break compatibility:</p>
+<ul>
+<li>Narrowing access (public to private) breaks external code that</li>
+<p>depends on the member</p>
+<li>Widening access (private to public) is generally safe but creates</li>
+<p>new commitments</p>
+<li>Changing protected members affects the inheritance contract</li>
+</ul>
+<p>The <code>&lt;castable&gt;</code> specifier on classes has special compatibility requirements—once published, it cannot be added or removed, as this would affect the safety of dynamic casts throughout the codebase.</p>
+<p>When designing for long-term evolution, consider using internal access for members that might eventually become public. This allows you to test and refine APIs within your module before committing to public exposure.</p></div>
+  </details>
+</section>
+<nav class="footer-nav"><div><a href="../11_types/index.html">上一页：类型系统</a></div><div><a href="../13_effects/index.html">下一页：效果系统</a></div></nav>
+</main></div></body></html>

@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>实时变量 - Book of Verse 中文提炼版</title>
+<title>实时变量 - Book of Verse 中文批注版</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<script src="../assets/reader.js"></script>
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar">
-  <div class="brand">Book of Verse</div>
-  <div class="sub">中文提炼版 · 同源目录结构</div>
-  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -32,34 +30,735 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
-</aside>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
 <main class="main">
-  <div class="crumb">Live Variables / <a href="https://verselang.github.io/book/15_live_variables/">原文页面</a></div>
-  <section class="hero">
-    <h1>实时变量</h1>
-    <p class="lead">实时变量页介绍计划中的响应式编程模型：变量可依赖其他变量自动重算，<code>await</code>、<code>upon</code>、<code>when</code> 和 <code>batch</code> 建立在该机制上。该页明确标注为未发布功能。</p>
-    <div class="meta"><span class="pill">源文件：15_live_variables.md</span><span class="pill">小节数：23</span><span class="pill">生成：2026-06-25</span></div>
-  </section>
-  <section class="grid">
-    <article class="card"><h2>核心提炼</h2><ul class="list"><li>live expression 将目标变量与 guard 表达式绑定，并动态追踪 guard 实际读取的依赖。</li><li>支持 <code>var live</code>、<code>set live</code> 和不可变 <code>live</code> 派生值。</li><li>函数类型若带 <code>&lt;reads&gt;</code>，可形成输入过滤和依赖重算。</li><li>输入-输出变量保存原始输入与变换后的输出。</li><li><code>await</code> 等待条件成功，<code>upon</code> 首次成功触发一次，<code>when</code> 条件成功时持续响应。</li><li><code>batch</code> 合并多次更新，延迟通知，观察者看到最终状态。</li></ul></article>
-    <article class="card"><h2>规则与坑点</h2><ul class="list"><li>live guard 不能写状态，因为系统可能反复求值。</li><li>常规 <code>set X = ...</code> 可关闭由 guard 建立的 liveness。</li><li>循环依赖可能稳定也可能发散，设计时要避免无终止重算。</li><li>这是未发布功能，不应直接当当前 UE/UEFN 可用语法。</li></ul></article>
-    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>var live X:int = Exp</code></li><li><code>set live X = Exp</code></li><li><code>live Y:int = Exp</code></li><li><code>await{Condition}</code></li><li><code>upon(Condition): Body</code></li><li><code>when(Condition): Body</code></li><li><code>batch: ...</code></li></ul></article>
-  </section>
-  <section>
-    <h2>原文小节结构</h2>
-    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
-    <ol class="toc"><li class="level-1">Live Variables</li><li class="level-2">Live Expressions</li><li class="level-3">Declaration Forms</li><li class="level-3">Functions as Types</li><li class="level-3">Input-Output Variables</li><li class="level-3">Restricted Effects and Stability</li><li class="level-3">Tracking Dependencies</li><li class="level-3">Turning Off Liveness</li><li class="level-2">Reactive Constructs</li><li class="level-3">The await Expression</li><li class="level-3">The upon Expression</li><li class="level-3">The when Expression</li><li class="level-3">Cancellation</li><li class="level-2">The batch Expression</li><li class="level-2">Issues and Patterns</li><li class="level-3">API Design</li><li class="level-3">Failures and Liveness</li><li class="level-3">Derived Synchronization</li><li class="level-3">Conditional Reactivity</li><li class="level-3">Resource Loading</li><li class="level-3">Modifier Stack (Under Consideration)</li><li class="level-3">Common Errors</li><li class="level-2">Evolution</li></ol>
-  </section>
-  <section>
-    <h2>阅读提示</h2>
-    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
-  </section>
-  <nav class="footer-nav">
-    <div><a href="../14_concurrency/index.html">上一页：并发</a></div>
-    <div><a href="../16_modules/index.html">下一页：模块与路径</a></div>
-  </nav>
-</main>
-</div>
-</body>
-</html>
+<div class="crumb">Live Variables / <a href="https://verselang.github.io/book/15_live_variables/">原文页面</a></div>
+<section class="hero"><h1>实时变量</h1><p class="lead">本页讲计划中的响应式 live variables 和 await/upon/when/batch。</p><div class="meta"><span class="pill">源文件：15_live_variables.md</span><span class="pill">批注段落：23</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>这一页读什么</h2><p>它展示 Verse 未来可能如何把状态依赖和事件响应变成语言级机制。</p><h3>注意点</h3><ul class="list"><li>该章标注为未发布功能。</li><li>live guard 不能写状态。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-live-variables">Live Variables</a></li><li class="lvl2"><a href="#s1-live-expressions">Live Expressions</a></li><li class="lvl3"><a href="#s2-declaration-forms">Declaration Forms</a></li><li class="lvl3"><a href="#s3-functions-as-types">Functions as Types</a></li><li class="lvl3"><a href="#s4-input-output-variables">Input-Output Variables</a></li><li class="lvl3"><a href="#s5-restricted-effects-and-stability">Restricted Effects and Stability</a></li><li class="lvl3"><a href="#s6-tracking-dependencies">Tracking Dependencies</a></li><li class="lvl3"><a href="#s7-turning-off-liveness">Turning Off Liveness</a></li><li class="lvl2"><a href="#s8-reactive-constructs">Reactive Constructs</a></li><li class="lvl3"><a href="#s9-the-await-expression">The await Expression</a></li><li class="lvl3"><a href="#s10-the-upon-expression">The upon Expression</a></li><li class="lvl3"><a href="#s11-the-when-expression">The when Expression</a></li><li class="lvl3"><a href="#s12-cancellation">Cancellation</a></li><li class="lvl2"><a href="#s13-the-batch-expression">The batch Expression</a></li><li class="lvl2"><a href="#s14-issues-and-patterns">Issues and Patterns</a></li><li class="lvl3"><a href="#s15-api-design">API Design</a></li><li class="lvl3"><a href="#s16-failures-and-liveness">Failures and Liveness</a></li><li class="lvl3"><a href="#s17-derived-synchronization">Derived Synchronization</a></li><li class="lvl3"><a href="#s18-conditional-reactivity">Conditional Reactivity</a></li><li class="lvl3"><a href="#s19-resource-loading">Resource Loading</a></li><li class="lvl3"><a href="#s20-modifier-stack-under-consideration">Modifier Stack (Under Consideration)</a></li><li class="lvl3"><a href="#s21-common-errors">Common Errors</a></li><li class="lvl2"><a href="#s22-evolution">Evolution</a></li></ol></article></section>
+<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<section class="section" id="s0-live-variables">
+  <div class="annotation">
+    <h3>中文批注：Live Variables</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Live Variables”展开。阅读时先抓住这些英文关键词：note、Unreleased、Feature、Live、variables。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">A</span><span class="chip">B</span><span class="chip">await</span><span class="chip">upon</span><span class="chip">when</span><span class="chip">where</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Live Variables</summary>
+    <div class="md"><h1>Live Variables</h1>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>Live variables have not yet been released. This chapter documents planned functionality that is not currently available.</p></div>
+<p>Live variables represent a reactive programming paradigm in Verse, enabling variables to automatically recompute their values when dependencies change. Rather than requiring explicit callbacks or event handlers, live variables establish dynamic relationships between data, creating a declarative system where changes propagate naturally through your code.</p>
+<p>Traditional programming requires manual tracking of dependencies and explicit updates when values change. If variable <code>A</code> depends on variable <code>B</code>, you must remember to update <code>A</code> whenever <code>B</code> changes, often through callback functions or observer patterns. Live variables eliminate this bookkeeping by automatically tracking which variables are read during evaluation and re-evaluating when those dependencies change. This creates more maintainable code where the intent—that <code>A</code> should always reflect some function of <code>B</code> — is expressed directly in the code itself.</p>
+<p>Live variables build a foundation for reactive programming constructs, including <code>await</code>, <code>upon</code>, and <code>when</code>. Understanding live variables is essential for working with Verse&#x27;s event-driven programming model, particularly for game development scenarios where many values must stay synchronized.</p></div>
+  </details>
+</section><section class="section" id="s1-live-expressions">
+  <div class="annotation">
+    <h3>中文批注：Live Expressions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Live Expressions”展开。可把它先理解为“实时表达式”。阅读时先抓住这些英文关键词：live、expression、establishes、dynamic、relationship。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!--
+X = 6
+--&gt;
+
+In the above,</span><span class="chip">X</span><span class="chip">Y+1</span><span class="chip">Y</span><span class="chip">sync</span><span class="chip">var</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Live Expressions</summary>
+    <div class="md"><h2>Live Expressions</h2>
+<p>A <em>live expression</em> establishes a dynamic relationship between a variable and a guard. Once established, the target is automatically re-evaluated whenever any of the guard&#x27;s dependencies change, keeping the variable in sync.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 01--&gt;</p>
+<pre><code>var X:int = 0
+var Y:int = 0
+set live X = Y+1  # X now tracks Y
+set Y = 5         # X automatically becomes 6</code></pre>
+<p>&lt;!-- X = 6 --&gt;</p>
+<p>In the above, <code>set live X = Y+1</code> is a live expression, the target is the previously declared variable <code>X</code> and the guard is the expression <code>Y+1</code> with a dependency on variable <code>Y</code>.</p>
+<p>Live variables extend mutable variables (see <a href="../05_mutability/index.html">Mutability</a>) with automated dependency tracking: any variable read during the evaluation of the guard expression is tracked. When any of those variables change, the guard is re-evaluated, and the target variable updates automatically.</p></div>
+  </details>
+</section><section class="section" id="s2-declaration-forms">
+  <div class="annotation">
+    <h3>中文批注：Declaration Forms</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Declaration Forms”展开。阅读时先抓住这些英文关键词：Live、variables、declared、several、ways。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">The most common form,</span><span class="chip">set live X = Exp</span><span class="chip">live Y = Exp</span><span class="chip">&lt;reads&gt;</span><span class="chip">live</span><span class="chip">Exp</span><span class="chip">var</span><span class="chip">set</span><span class="chip">reads</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Declaration Forms</summary>
+    <div class="md"><h3>Declaration Forms</h3>
+<p>Live variables can be declared in several ways, each suited to different use cases:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 02--&gt;</p>
+<pre><code># Live variable declaration
+var live X:int = Exp
+
+# Live assignment to existing variable
+var X:int = 0
+# ... later ...
+set live X = Exp
+
+# Immutable live variable
+live Y:int = Exp
+
+# Variable with a function type (with &lt;reads&gt; effect)
+var X: F = Exp            # Initial value computed normally
+var live X: F = Exp       # Initial value tracked for dependencies
+
+# Immutable variable with a function type (with &lt;reads&gt; effect)
+X: F = Exp                # Initial value computed normally
+live X: F = Exp           # Initial value tracked for dependencies
+
+# Input-output variable pairs
+var In-&gt;Out: F = Exp      # Initial value computed normally
+var live In-&gt;Out: F = Exp # Initial value tracked for dependencies
+
+In-&gt;Out: F = Exp          # Initial value computed normally
+live In-&gt;Out: F = Exp     # Initial value tracked for dependencies</code></pre>
+<p>The most common form, <code>var live X = Exp</code>, creates a mutable variable whose initial value comes from evaluating the guard and subsequently updates whenever dependencies change. The guard expression can read other variables, and those reads are tracked to establish the dependency relationship.</p>
+<p>The assignment form, <code>set live X = Exp</code>, converts an existing variable into a live variable by attaching a guard. This is useful when you need to make a variable reactive after initialization or conditionally based on program state.</p>
+<p>Immutable live variables, declared with just <code>live Y = Exp</code>, cannot be directly written but still update automatically when their guard&#x27;s dependencies change. This provides a read-only reactive value, useful for derived computations that should never be manually overridden.</p>
+<p>When a variable&#x27;s type is a function with the <code>&lt;reads&gt;</code> effect, the variable becomes live through its type (assignments are filtered through the function, and changes to the function&#x27;s dependencies trigger recalculation). The <code>live</code> keyword in the declaration determines whether the initial expression <code>Exp</code> is also tracked for dependencies. Without <code>live</code>, <code>Exp</code> is evaluated once; with <code>live</code>, dependencies in <code>Exp</code> are tracked and can trigger updates before the first assignment.</p>
+<p>Input-output pairs create two variables where one captures raw values and the other holds transformed values. Again, the <code>live</code> keyword controls whether the initial expression <code>Exp</code> is tracked for dependencies.</p>
+<p>The following sections detail these more complex forms.</p></div>
+  </details>
+</section><section class="section" id="s3-functions-as-types">
+  <div class="annotation">
+    <h3>中文批注：Functions as Types</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Functions as Types”展开。阅读时先抓住这些英文关键词：allows、functions、used、types、variables。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;!--
+X = 10
+--&gt;
+
+In this example,</span><span class="chip">X</span><span class="chip">var X : Multiply</span><span class="chip">int</span><span class="chip">set X = 10</span><span class="chip">Multiply(10)</span><span class="chip">Multiply</span><span class="chip">Mult</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Functions as Types</summary>
+    <div class="md"><h3>Functions as Types</h3>
+<p>Verse allows functions to be used as types for variables. When a function with the <code>&lt;reads&gt;</code> effect is used as a type, the variable automatically becomes live, updating whenever the function&#x27;s dependencies change.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 03 FAILURE Line 8: Script Error 3547: Expected a type, got function identifier instead. Line 8: Script Error 3601: Data definitions at this scope must be initialized with a value. --&gt;</p>
+<pre><code>var Mult:int = 2
+
+Multiply(Arg: int)&lt;reads&gt;:int = Arg * Mult
+
+var X : Multiply
+
+set X = 10        # X gets 20
+set Mult = 1      # X gets 10</code></pre>
+<p>&lt;!-- X = 10 --&gt;</p>
+<p>In this example, <code>Multiply</code> serves dual roles: it&#x27;s both a function and a type for variable <code>X</code>.</p>
+<p><strong>As a type:</strong> When you declare <code>var X : Multiply</code>, several things happen:</p>
+<ul>
+<li>The storage type of <code>X</code> becomes <code>int</code> (the function&#x27;s return type)</li>
+<li>Values assigned to <code>X</code> must be <code>int</code> (the function&#x27;s parameter type)</li>
+<li>Each assignment passes through the function: <code>set X = 10</code> calls <code>Multiply(10)</code> and stores the result</li>
+</ul>
+<p><strong>As a live expression:</strong> Because <code>Multiply</code> has a <code>&lt;reads&gt;</code> effect (it reads mutable variable <code>Mult</code>), the variable declaration becomes a live expression with <code>Multiply</code> as its guard. This creates two ways the value changes:</p>
+<ol>
+<li><strong>Direct assignment:</strong> <code>set X = 10</code> filters the value through <code>Multiply</code>, storing 20</li>
+<li><strong>Dependency updates:</strong> <code>set Mult = 1</code> triggers recalculation, updating <code>X</code> to 10</li>
+</ol>
+<p>This pattern elegantly combines transformation (every write is filtered) with reactivity (changes to dependencies trigger updates).</p></div>
+  </details>
+</section><section class="section" id="s4-input-output-variables">
+  <div class="annotation">
+    <h3>中文批注：Input-Output Variables</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Input-Output Variables”展开。阅读时先抓住这些英文关键词：Input-output、variable、pairs、capture、both。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var In-&gt;Out:F=Exp</span><span class="chip">Out</span><span class="chip">In</span><span class="chip">F</span><span class="chip">When you write to</span><span class="chip">2. The value is passed through</span><span class="chip">, and the result is stored in</span><span class="chip">Because</span><span class="chip">has a</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Input-Output Variables</summary>
+    <div class="md"><h3>Input-Output Variables</h3>
+<p>Input-output variable pairs capture both raw input values and their transformed outputs. The syntax <code>var In-&gt;Out:F=Exp</code> creates two related variables where <code>Out</code> is the writable variable and <code>In</code> automatically stores the untransformed value before it passes through function <code>F</code>.</p>
+<p>This pattern elegantly handles common game scenarios where values must stay within dynamic constraints. Consider health that must remain within bounds:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 04--&gt;</p>
+<pre><code>clamp := class:
+    var Lower:int = 0
+    var Upper:int = 100
+    Evaluate(Value:int)&lt;reads&gt;:int =
+        if (Value &lt; Upper) then:
+           if (Value &gt; Lower) then Value else Lower
+        else:
+           Upper
+
+Clamp := clamp{}
+var BaseHealth-&gt;Health: Clamp.Evaluate = 50
+
+# Health = 50 (clamped to [0, 100])
+set Health = 75      # BaseHealth = 75, Health = 75
+set Health = 120     # BaseHealth = 120, Health = 100 (clamped)
+set Clamp.Upper = 60 # BaseHealth = 120, Health = 60 (reclamped)</code></pre>
+<p>When you write to <code>Health</code>, two things happen:</p>
+<ol>
+<li>The raw value is stored in <code>BaseHealth</code></li>
+<li>The value is passed through <code>Clamp.Evaluate</code>, and the result is stored in <code>Health</code></li>
+</ol>
+<p>Because <code>Clamp.Evaluate</code> has a <code>&lt;reads&gt;</code> effect (it reads the mutable variables <code>Lower</code> and <code>Upper</code>), this becomes a live expression. When the constraints change, <code>Health</code> is automatically recalculated from <code>BaseHealth</code>.</p>
+<p><strong>How It Works</strong></p>
+<p>The declaration <code>var BaseHealth-&gt;Health: Clamp.Evaluate = 50</code> creates a live expression where:</p>
+<ul>
+<li><code>BaseHealth</code> stores the raw input value (read-only from external perspective)</li>
+<li><code>Health</code> stores the clamped value (read-write)</li>
+<li><code>Clamp.Evaluate</code> is the transformation function with a <code>&lt;reads&gt;</code> effect</li>
+</ul>
+<p>The object <code>Clamp</code> is an instance of class <code>clamp</code> with mutable bounds <code>Lower</code> and <code>Upper</code>. Because <code>Evaluate</code> reads these mutable variables, changes to them trigger recalculation:</p>
+<ul>
+<li><code>set Health=75</code> — The value passes through unchanged, so both <code>BaseHealth</code> and <code>Health</code> become 75</li>
+<li><code>set Health=120</code> — Exceeds <code>Upper</code>, so <code>BaseHealth</code> becomes 120 but <code>Health</code> becomes 100</li>
+<li><code>set Clamp.Upper=60</code> — The constraint changes, triggering recalculation: <code>Health</code> updates to 60 while <code>BaseHealth</code> remains 120</li>
+</ul>
+<p>Using an instance method like <code>Clamp.Evaluate</code> allows multiple independent clamps in the same context, each with its own dynamic bounds.</p>
+<p><strong>Access Control</strong></p>
+<p>The scope of input and output variables can be controlled independently by adding access specifiers: for example <code>var In&lt;private&gt;-&gt;Out&lt;public&gt;:t</code> makes the base value private while exposing the constrained value publicly.</p></div>
+  </details>
+</section><section class="section" id="s5-restricted-effects-and-stability">
+  <div class="annotation">
+    <h3>中文批注：Restricted Effects and Stability</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Restricted Effects and Stability”展开。阅读时先抓住这些英文关键词：Live、variable、guards、cannot、have。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;writes&gt;</span><span class="chip">X</span><span class="chip">Y</span><span class="chip">&lt;diverges&gt;</span><span class="chip">writes</span><span class="chip">var</span><span class="chip">set</span><span class="chip">if</span><span class="chip">case</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Restricted Effects and Stability</summary>
+    <div class="md"><h3>Restricted Effects and Stability</h3>
+<p>Live variable guards cannot have the <code>&lt;writes&gt;</code> effect. This fundamental restriction prevents side effects during guard evaluation, which Verse must be able to perform freely whenever dependencies change.</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 05--&gt;</p>
+<pre><code># ERROR: guard cannot write
+var X:int = 0
+var GlobalCounter:int = 0
+set live X = block:
+    set GlobalCounter += 1  # Not allowed!
+    GlobalCounter</code></pre>
+<p>Live variables with interdependencies can form cycles. When target expressions use idempotent operations and values are comparable, these cycles can naturally converge to fixed points.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 06--&gt;</p>
+<pre><code>var X:int = 2
+var Y:int = 2
+
+set live X = if (Y &lt; 0) then 0 else Y - 1
+set live Y = if (X &lt; 0) then 0 else X - 1
+
+# Evaluates as: X=1, Y=0, X=-1, Y=0 (stable)</code></pre>
+<p>&lt;!-- X=-1 Y=0 --&gt;</p>
+<p>If the type of the variable is comparable, the guards are re-evaluated until values stabilize. In this example, <code>X</code> decrements to -1, <code>Y</code> clamps to 0, and <code>X</code> would recompute but produces -1 again, so the system stabilizes.</p>
+<p>However, cycles without proper termination conditions can diverge. Verse cannot prevent all divergence—care must be taken when designing interdependent live variables.</p>
+<p>This has a subtle implication: since any variable might become live after creation, reading any variable must be assumed to potentially trigger guard evaluation and, in the worst case, trigger a cycle. The effect system accounts for this: the <code>&lt;writes&gt;</code> effect implies <code>&lt;diverges&gt;</code> because any write might trigger cyclic live variable evaluation. The following illustrates a cyclic definition when <code>X</code> is larger than 0:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 07--&gt;</p>
+<pre><code>var X:int = 0
+var live Y:int = if (X&gt;0) then X+1 else 0
+
+set live X = Y
+set X = 1  # Error! Cyclic evaluation</code></pre></div>
+  </details>
+</section><section class="section" id="s6-tracking-dependencies">
+  <div class="annotation">
+    <h3>中文批注：Tracking Dependencies</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Tracking Dependencies”展开。阅读时先抓住这些英文关键词：Live、variables、track、dependencies、dynamically。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">Initially,</span><span class="chip">reads</span><span class="chip">(which is 3) and evaluates the</span><span class="chip">branch, reading</span><span class="chip">, yielding</span><span class="chip">with dependencies</span><span class="chip">.
+
+After</span><span class="chip">, the change to</span><span class="chip">triggers re-evaluation. Now</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Tracking Dependencies</summary>
+    <div class="md"><h3>Tracking Dependencies</h3>
+<p>Live variables track dependencies dynamically at runtime, not statically from source code. A variable becomes a dependency only when it&#x27;s actually read during evaluation, not merely when it appears in the guard expression:</p>
+<ol>
+<li><em>Runtime tracking:</em> Dependencies are determined by which variables are actually accessed during each evaluation</li>
+<li><em>Transitive tracking:</em> Dependencies include variables read in called functions</li>
+<li><em>Dynamic changes:</em> The dependency set can change from one evaluation to the next</li>
+</ol>
+<p>Consider this example:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 08--&gt;</p>
+<pre><code>var X:int = 1
+var Y:int = 2
+var Z:int = 3
+
+SomeFun(Value:int):int =
+   if(Value &gt; 0) then X else Y
+
+var live W:int = SomeFun(Z)   # W is 1, Dependencies: {Z, X}
+set Z = 0                     # W is 2, Dependencies: {Z, Y}</code></pre>
+<p>Initially, <code>SomeFun(Z)</code> reads <code>Z</code> (which is 3) and evaluates the <code>then</code> branch, reading <code>X</code>, yielding <code>W=1</code> with dependencies <code>{Z, X}</code>.</p>
+<p>After <code>set Z=0</code>, the change to <code>Z</code> triggers re-evaluation. Now <code>SomeFun(Z)</code> reads <code>Z</code> (which is 0) and evaluates the <code>else</code> branch, reading <code>Y</code>. This results in <code>W=2</code> with new dependencies <code>{Z, Y}</code>.</p>
+<p>Notice how <code>Y</code> became a dependency only when the execution path changed. If <code>X</code> is subsequently modified, <code>W</code> will <em>not</em> update because <code>X</code> is no longer in the dependency set. This dynamic tracking ensures that live variables only react to changes that actually affect their current value.</p></div>
+  </details>
+</section><section class="section" id="s7-turning-off-liveness">
+  <div class="annotation">
+    <h3>中文批注：Turning Off Liveness</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Turning Off Liveness”展开。阅读时先抓住这些英文关键词：live、variable、established、through、its。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Turning Off Liveness</summary>
+    <div class="md"><h3>Turning Off Liveness</h3>
+<p>A live variable established through its guard (not its type) can be turned off by a subsequent regular assignment.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 09--&gt;</p>
+<pre><code>var X:int = 0
+var Y:int = 5
+set live X = Y  # X is now live, tracking Y
+
+set Y = 10      # X becomes 10
+set X = 20      # X is now a regular variable again
+set Y = 15      # X remains 20 (no longer tracking Y)</code></pre>
+<p>&lt;!-- X=20 --&gt;</p>
+<p>This allows temporary reactive behavior that can be disabled when no longer needed. However, variables that are live through their type expression remain live permanently—their reactive behavior is intrinsic to their type.</p></div>
+  </details>
+</section><section class="section" id="s8-reactive-constructs">
+  <div class="annotation">
+    <h3>中文批注：Reactive Constructs</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Reactive Constructs”展开。可把它先理解为“响应式构造”。阅读时先抓住这些英文关键词：Live、variables、form、foundation、three。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">await</span><span class="chip">upon</span><span class="chip">when</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Reactive Constructs</summary>
+    <div class="md"><h2>Reactive Constructs</h2>
+<p>Live variables form the foundation for three reactive constructs that handle asynchronous events without explicit callbacks: <code>await</code>, <code>upon</code>, and <code>when</code>.</p></div>
+  </details>
+</section><section class="section" id="s9-the-await-expression">
+  <div class="annotation">
+    <h3>中文批注：The await Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The await Expression”展开。阅读时先抓住这些英文关键词：await、expression、suspends、execution、until。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">await</span><span class="chip">branch</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">suspends</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The await Expression</summary>
+    <div class="md"><h3>The await Expression</h3>
+<p>The <code>await</code> expression suspends execution until a target expression succeeds, providing a synchronization primitive for asynchronous programming.</p>
+<p>&lt;!--versetest --&gt; &lt;!-- 10--&gt;</p>
+<pre><code>F()&lt;suspends&gt;:void =
+    var X:int = 0
+
+    OldX := X # copy the old value
+
+    # Suspend until X changes from OldX (0)
+    await{X &lt;&gt; OldX}
+    Print(&quot;X changed to: {X}&quot;)</code></pre>
+<p>The target expression is evaluated immediately. If it fails, the task suspends. Verse tracks which variables were read during evaluation. Whenever those variables change, the guard is re-evaluated. If it succeeds, execution resumes immediately.</p>
+<p>The practical implications are that you can write code that naturally expresses &quot;wait for this condition&quot; without manually managing event handlers or callback registration. The code suspends at the await point and resumes exactly when the condition becomes true.</p>
+<p>&lt;!--versetest int_ref := class: var Contents:int = 0</p>
+<p>TestAwait()&lt;transacts&gt;&lt;suspends&gt;:void = X:int_ref=int_ref{} Y:int_ref=int_ref{} # Wait for a specific condition await{X.Contents &gt; 10} set Y.Contents = X.Contents * 2 &lt;# --&gt; &lt;!-- 11 --&gt;</p>
+<pre><code># Wait for a specific condition
+await{X.Contents &gt; 10}
+set Y.Contents = X.Contents * 2</code></pre>
+<p>&lt;!-- #&gt;--&gt;</p>
+<p>The guard expression must have effects <code>&lt;reads&gt;&lt;computes&gt;&lt;decides&gt;</code> (see <a href="../13_effects/index.html">Effects</a>)—it can read and compute but cannot write. This ensures re-evaluation is side-effect free. The body of <code>await</code> also cannot contain <code>branch</code> expressions, since <code>branch</code> requires a <code>&lt;suspends&gt;</code> context and the guard must remain side-effect free.</p></div>
+  </details>
+</section><section class="section" id="s10-the-upon-expression">
+  <div class="annotation">
+    <h3>中文批注：The upon Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The upon Expression”展开。阅读时先抓住这些英文关键词：upon、expression、provides、one-shot、reactive。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">upon</span><span class="chip">await</span><span class="chip">The</span><span class="chip">task(t)</span><span class="chip">t</span><span class="chip">&lt;transacts&gt;</span><span class="chip">task</span><span class="chip">var</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The upon Expression</summary>
+    <div class="md"><h3>The upon Expression</h3>
+<p>The <code>upon</code> expression provides one-shot reactive behavior: when a condition becomes true, execute some code once. Unlike <code>await</code>, which resumes the current task, <code>upon</code> creates a new concurrent task that runs when triggered.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 12--&gt;</p>
+<pre><code>var Health:int = 100
+var IsDead:logic = false
+
+upon(Health &lt;= 0):
+    set IsDead = true
+    Print(&quot;Player died!&quot;)
+
+set Health = 50  # Nothing happens
+set Health = 0   # Triggers: prints &quot;Player died!&quot;
+set Health = -10 # Nothing happens (already triggered once)</code></pre>
+<p>The <code>upon</code> expression evaluates its guard immediately and records the variables read. It then yields a <code>task(t)</code> where <code>t</code> is the result type of the body, representing the pending reactive behavior. When dependencies change, the guard is re-evaluated. If it succeeds, the body executes once in a new concurrent task, and the upon completes.</p>
+<p>This one-shot behavior makes <code>upon</code> perfect for state transitions and event notifications. When a threshold is crossed, when a resource becomes available, when a timer expires—these scenarios naturally map to <code>upon</code>&#x27;s &quot;fire once when condition becomes true&quot; semantics.</p>
+<p>The body must have the <code>&lt;transacts&gt;</code> effect (see <a href="../13_effects/index.html">Effects</a>), allowing it to read and write variables (including other live variables), with execution guaranteed to be atomic with respect to notifications.</p></div>
+  </details>
+</section><section class="section" id="s11-the-when-expression">
+  <div class="annotation">
+    <h3>中文批注：The when Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The when Expression”展开。阅读时先抓住这些英文关键词：expression、provides、continuous、reactive、behavior。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">when</span><span class="chip">var</span><span class="chip">weak_map</span><span class="chip">The</span><span class="chip">task(void)</span><span class="chip">The body executes with the</span><span class="chip">&lt;transacts&gt;</span><span class="chip">set</span><span class="chip">task</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The when Expression</summary>
+    <div class="md"><h3>The when Expression</h3>
+<p>The <code>when</code> expression provides continuous reactive behavior: every time a condition is true, execute some code. This creates a persistent observer that runs whenever its guard succeeds.</p>
+<p>&lt;!--verstest--&gt; &lt;!-- 13 FAILURE Line 6: Verse compiler error V3560: Expected definition but found macro invocation. Line 10: Verse compiler error V3560: Expected definition but found assignment. Line 11: Verse compiler error V3560: Expected definition but found assignment. Line 12: Verse compiler error V3560: Expected definition but found assignment. Line 3: Verse compiler error V3502: Module-scoped <code>var</code> must have <code>weak_map</code> type. Line 4: Verse compiler error V3502: Module-scoped <code>var</code> must have <code>weak_map</code> type. --&gt;</p>
+<pre><code>var Score:int = 0
+var DisplayedScore:int = 0
+
+when(Score):
+    set DisplayedScore = Score
+    Print(&quot;Score updated to: {Score}&quot;)
+
+set Score = 100  # Triggers: prints &quot;Score updated to: 100&quot;
+set Score = 100  # No trigger (value unchanged)
+set Score = 200  # Triggers: prints &quot;Score updated to: 200&quot;</code></pre>
+<p>The <code>when</code> expression evaluates its guard immediately. If the guard succeeds, the body executes. Then it records the variables read by the guard and yields a <code>task(void)</code>. Whenever dependencies change and the guard succeeds, the body executes again, creating a continuous observation loop.</p>
+<p>This makes <code>when</code> ideal for maintaining derived state and responding to ongoing changes. Synchronizing UI with game state, updating AI behavior based on player actions, or maintaining consistency between related variables all benefit from <code>when</code>&#x27;s persistent reactivity.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 14--&gt;</p>
+<pre><code>var X:int = 2
+var Y:int = 2
+
+when(Y):
+    Z := if (Y &lt; 0) then 0 else Y - 1
+    if (Z &lt;&gt; X):
+        set X = Z
+
+when(X):
+    Z := if (X &lt; 0) then 0 else X - 1
+    if (Z &lt;&gt; Y):
+        set Y = Z
+
+# These when expressions will stabilize at X = -1, Y = 0</code></pre>
+<p>The body executes with the <code>&lt;transacts&gt;</code> effect, and the when immediately re-registers after each execution, creating the continuous observation pattern.</p></div>
+  </details>
+</section><section class="section" id="s12-cancellation">
+  <div class="annotation">
+    <h3>中文批注：Cancellation</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Cancellation”展开。阅读时先抓住这些英文关键词：All、three、reactive、constructs、await。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">await</span><span class="chip">upon</span><span class="chip">when</span><span class="chip">task</span><span class="chip">suspends</span><span class="chip">var</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Cancellation</summary>
+    <div class="md"><h3>Cancellation</h3>
+<p>All three reactive constructs—<code>await</code>, <code>upon</code>, and <code>when</code>—return a <code>task</code> that can be canceled, allowing dynamic control over reactive behavior.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 15 FAILURE Line 10: Script Error 3512: This invocation calls a function that has the &#x27;suspends&#x27; effect, which is not allowed by its context. --&gt;</p>
+<pre><code>var X:int = 0
+var Y:int = 0
+
+Task := upon(X &gt; 5):
+    set Y = X
+
+Task.Cancel()  # Cancels the reactive behavior
+set X = 10     # Y remains 0</code></pre>
+<p>Canceling a task immediately removes all dependency tracking and prevents the associated code from running. This provides fine-grained control over the lifecycle of reactive behaviors, allowing you to enable and disable observations based on game state or user actions.</p></div>
+  </details>
+</section><section class="section" id="s13-the-batch-expression">
+  <div class="annotation">
+    <h3>中文批注：The batch Expression</h3>
+    <div class="rows">
+      <div><p>这一节围绕“The batch Expression”展开。可把它先理解为“batch 表达式”。阅读时先抓住这些英文关键词：batch、expression、groups、multiple、variable。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">batch</span><span class="chip">Inside a</span><span class="chip">&lt;suspends&gt;</span><span class="chip">var</span><span class="chip">set</span><span class="chip">final</span><span class="chip">suspends</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：The batch Expression</summary>
+    <div class="md"><h2>The batch Expression</h2>
+<p>The <code>batch</code> expression groups multiple variable updates together, delaying notifications until the entire group completes. This prevents intermediate states from triggering reactive behaviors and ensures observers see consistent snapshots of related changes.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 16--&gt;</p>
+<pre><code>var X:int = 0
+var Y:int = 0
+
+when(X &gt; 1 and Y &lt; 10):
+    Print(&quot;Fired!&quot;) # Never prints
+
+when(X):
+    Print(&quot;X Changed to {X}!&quot;) # Prints once
+
+batch:
+    set X = 2   
+    set Y = 10
+    set X += 5
+    Print(&quot;Inside batch&quot;)
+
+Print(&quot;After batch&quot;)
+
+# Output order:
+# -&quot;Inside batch&quot;
+# -&quot;X Changed to 7!&quot;
+# -&quot;After batch&quot;</code></pre>
+<p>Inside a <code>batch</code> block, variable updates occur immediately but notifications to awaiting tasks and reactive constructs are deferred. When the batch completes, all pending notifications fire in the order their triggers occurred, but observers see the final consistent state rather than intermediate values.</p>
+<p>If the same notification occurs twice, only the first of them will be delivered.</p>
+<p>Batch expressions nest: notifications are delayed until all enclosing batches complete. This composability ensures that no matter how deeply nested your code, you can guarantee atomic updates of related variables.</p>
+<p>The body of a batch must not have the <code>&lt;suspends&gt;</code> effect—all operations must complete immediately. This ensures batch blocks have well-defined boundaries and can&#x27;t leave the system in an inconsistent state by suspending mid-update.</p></div>
+  </details>
+</section><section class="section" id="s14-issues-and-patterns">
+  <div class="annotation">
+    <h3>中文批注：Issues and Patterns</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Issues and Patterns”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Issues and Patterns</summary>
+    <div class="md"><h2>Issues and Patterns</h2></div>
+  </details>
+</section><section class="section" id="s15-api-design">
+  <div class="annotation">
+    <h3>中文批注：API Design</h3>
+    <div class="rows">
+      <div><p>这一节围绕“API Design”展开。阅读时先抓住这些英文关键词：Any、variable、appearing、public、interface。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">live</span><span class="chip">comparable</span><span class="chip">Here</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;private&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">public</span><span class="chip">interface</span><span class="chip">class</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：API Design</summary>
+    <div class="md"><h3>API Design</h3>
+<p>Any variable appearing in the public interface of a class or module can be made live by external code, potentially violating class invariants. To avoid this, one could limit the exposure of mutable variables or at least use access modifiers to control this:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 17 FAILURE Line 4: Script Error 3509: This variable expects to be initialized with a value of type int, but this initializer is an incompatible value of type type{_(:float)&lt;reads&gt;:float}. Line 4: Script Error 3509: <code>live</code> requires a <code>comparable</code> right-hand side.  This right-hand side is of type type{_(:float)&lt;reads&gt;:float}. Line 4: Script Error 3641: Attributes on var only allowed inside a module or a class Line 4: Script Error 3594: Access level private is only allowed inside classes and interfaces. --&gt;</p>
+<pre><code>var&lt;private&gt; live X&lt;public&gt;:int = Exp</code></pre>
+<p>Here <code>X</code> is publicly visible for reading but can only be updated by the class itself. This prevents external code from attaching arbitrary guards that might break the class&#x27;s invariants.</p></div>
+  </details>
+</section><section class="section" id="s16-failures-and-liveness">
+  <div class="annotation">
+    <h3>中文批注：Failures and Liveness</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Failures and Liveness”展开。阅读时先抓住这些英文关键词：Live、variable、updates、reactive、construct。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">var</span><span class="chip">if</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Failures and Liveness</summary>
+    <div class="md"><h3>Failures and Liveness</h3>
+<p>Live variable updates and reactive construct triggers are integrated in the failure semantics of Verse.  When there is a failure, live variable updates are rolled back and their notifications are suppressed.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 18--&gt;</p>
+<pre><code>var X:int = 0
+var Y:int = 0
+
+if:
+    set live X = Y + 5  # Establishes live relationship
+    false?          # Transaction fails
+
+upon(X):
+    Print(&quot;{X}&quot;) # Does not print when Y changes
+
+# Live relationship was not established
+set Y = 10  # X remains 0</code></pre>
+<p>This ensures that reactive behaviors only observe committed changes, maintaining consistency even in the presence of speculative execution and failure.</p></div>
+  </details>
+</section><section class="section" id="s17-derived-synchronization">
+  <div class="annotation">
+    <h3>中文批注：Derived Synchronization</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Derived Synchronization”展开。阅读时先抓住这些英文关键词：common、pattern、multiple、elements、reflect。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">when</span><span class="chip">Every change to</span><span class="chip">for</span><span class="chip">var</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Derived Synchronization</summary>
+    <div class="md"><h3>Derived Synchronization</h3>
+<p>A common pattern is for multiple UI elements to reflect the same game state, <code>when</code> provides automatic synchronization:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 19--&gt;</p>
+<pre><code>var PlayerScore:int = 0
+var DisplayedScore:int = 0
+var ScoreText:string = &quot;&quot;
+
+when(PlayerScore):
+    set DisplayedScore = PlayerScore
+    set ScoreText = &quot;Score: {PlayerScore}&quot;</code></pre>
+<p>Every change to <code>PlayerScore</code> automatically updates both the numeric display value and the formatted text, keeping the UI consistent without manual coordination.</p></div>
+  </details>
+</section><section class="section" id="s18-conditional-reactivity">
+  <div class="annotation">
+    <h3>中文批注：Conditional Reactivity</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Conditional Reactivity”展开。阅读时先抓住这些英文关键词：Live、variables、track、different、sources。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">if</span><span class="chip">var</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Conditional Reactivity</summary>
+    <div class="md"><h3>Conditional Reactivity</h3>
+<p>Live variables can track different sources based on conditions:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 20 FAILURE Line 10: Script Error 3513: Expected an expression that can fail in the &#x27;if&#x27; condition clause --&gt;</p>
+<pre><code>var UseAlternate:logic = false
+var PrimaryValue:int = 10
+var AlternateValue:int = 20
+var CurrentValue:int = 0
+
+set live CurrentValue =
+    if (UseAlternate?) then AlternateValue else PrimaryValue
+
+# CurrentValue = 10
+set UseAlternate = true
+# CurrentValue = 20
+set AlternateValue = 30
+# CurrentValue = 30
+set PrimaryValue = 15
+# CurrentValue = 30 (still tracking AlternateValue)</code></pre>
+<p>The dependency tracking is dynamic: when the condition changes, the set of tracked variables changes accordingly, allowing flexible reactive routing.</p></div>
+  </details>
+</section><section class="section" id="s19-resource-loading">
+  <div class="annotation">
+    <h3>中文批注：Resource Loading</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Resource Loading”展开。阅读时先抓住这些英文关键词：Use、upon、one-time、initialization、resources。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">upon</span><span class="chip">&lt;suspends&gt;</span><span class="chip">for</span><span class="chip">class</span><span class="chip">var</span><span class="chip">suspends</span><span class="chip">module</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Resource Loading</summary>
+    <div class="md"><h3>Resource Loading</h3>
+<p>Use <code>upon</code> for one-time initialization when resources become available:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 21 FAILURE resource_manager := class: var TextureLoaded:logic = false var ModelLoaded:logic = false</p>
+<p>Initialize()&lt;suspends&gt;:void = {} --&gt; &lt;!-- 21 FAILURE Line 8: Verse compiler error V3502: Type definitions are not yet implemented outside of a module scope. --&gt;</p>
+<pre><code>resource_manager := class:
+    var TextureLoaded:logic = false
+    var ModelLoaded:logic = false
+
+    Initialize()&lt;suspends&gt;:void =
+        upon(TextureLoaded? and ModelLoaded?):
+            Print(&quot;All resources loaded, starting game&quot;)
+            StartGame()</code></pre>
+<p>This pattern eliminates manual tracking of loading state. When both resources finish loading, the game starts automatically.</p></div>
+  </details>
+</section><section class="section" id="s20-modifier-stack-under-consideration">
+  <div class="annotation">
+    <h3>中文批注：Modifier Stack (Under Consideration)</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Modifier Stack (Under Consideration)”展开。阅读时先抓住这些英文关键词：design、modifier、stack、has、not。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">modifier_stack</span><span class="chip">modifier_iterface(t)</span><span class="chip">t</span><span class="chip">modifier_stack(t)</span><span class="chip">modifier_stack.Evaluate</span><span class="chip">&lt;reads&gt;</span><span class="chip">The</span><span class="chip">method returns a</span><span class="chip">Health</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Modifier Stack (Under Consideration)</summary>
+    <div class="md"><h3>Modifier Stack (Under Consideration)</h3>
+<p><strong>The design of modifier_stack has not been finalized; material presented here is likely to change.</strong></p>
+<p>Game development often requires applying multiple modifiers to a single value. For instance, a player&#x27;s health might need to be clamped to a valid range, temporarily boosted by a health potion and automatically recomputed when dependencies change.</p>
+<p>The <code>modifier_stack</code> pattern provides a composable solution using live variables and function-as-type, allowing ordered transformations that automatically update when any modifier&#x27;s dependencies change.</p>
+<p>The modifier stack consists of three components:</p>
+<ol>
+<li><strong><code>modifier_iterface(t)</code></strong> - An interface for modifiers that transform values of type <code>t</code></li>
+<li><strong><code>modifier_stack(t)</code></strong> - A container that orders and composes modifiers</li>
+<li><strong>Live variable</strong> - Uses <code>modifier_stack.Evaluate</code> as its type for automatic reactivity</li>
+</ol>
+<p>When you assign to a live variable with a modifier stack type, the value flows through each modifier in position order, and the final result is stored. Because <code>modifier_stack.Evaluate</code> has the <code>&lt;reads&gt;</code> effect, changes to any modifier&#x27;s dependencies (or adding/removing modifiers) trigger automatic recalculation.</p>
+<p>The public API is as follows:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 22--&gt;</p>
+<pre><code>modifier_iterface(t : type) := interface:
+   Evaluate(Value:t)&lt;reads&gt; : t
+
+modifier_stack(t:type) := class:
+   # Insert a Modifier at Position; return a cancelable used to remove the Modifier.
+   AddModifier&lt;final&gt;(Modifier:modifier_iterface(t), Position:rational)&lt;transacts&gt;: cancelable
+
+   # Returns the input Value evaluated against each modifier in the stack in position order.
+   Evaluate&lt;final&gt;(Value:t)&lt;reads&gt; : t</code></pre>
+<p>The <code>AddModifier</code> method returns a <code>cancelable</code> which can be used to remove the inserted modifier. Removing a modifier triggers recalculation of any live variable associated with this stack.</p>
+<p>For example, consider the following which creates a live variable <code>Health</code> filtered through a modifier stack containing a magic potion modifier that doubles the input value:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 23--&gt;</p>
+<pre><code>HealthStack := modifier_stack(float){}
+HealthStack.AddModifier(magic_potion{Value:=2.0})
+var RawHealth -&gt; Health : HealthStack.Evaluate = 10.0
+# RawHealth = 10.0, Health = 20.0</code></pre>
+<p>The variable automatically recomputes when the multiplier changes or when modifiers are added to the stack.</p>
+<p>In more detail, this example demonstrates two modifiers working together: a <code>magic_potion</code> that multiplies health, and a <code>clamp</code> that bounds values within a range.</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 24--&gt;</p>
+<pre><code># Define modifier implementations
+magic_potion := class(modifier_iterface(float)):
+   var Value:float
+   Evaluate&lt;override&gt;(Arg:float)&lt;reads&gt;:float = Arg * Value
+
+clamp := class(modifier_iterface(float)):
+   var Low:float
+   var High:float
+   Evaluate&lt;override&gt;(Arg:float)&lt;reads&gt;:float =
+       if (Arg&lt;Low) then Low else { if (Arg&gt;High) then High else Arg }
+
+# Create instances
+Potion := magic_potion{ Value:= 2.0 }
+Clamp := clamp{Low:=1.0, High:= 12.0 }
+
+# Build the modifier stack
+HealthStack := modifier_stack(float){}
+RevokePotion := HealthStack.AddModifier(Potion, 0.0)  # Apply first (position 0.0)
+HealthStack.AddModifier(Clamp, 1.0)                   # Apply second (position 1.0)
+
+# Create live variable with modifier stack
+var Health : HealthStack.Evaluate = 5.0  # 5.0 * 2.0 = 10.0 (then clamped to [1.0, 12.0])
+set Potion.Value = 3.0                   # 5.0 * 3.0 = 15.0 (clamped to 12.0)
+RevokePotion.Cancel()                    # 5.0 (no potion, just clamp to [1.0, 12.0])</code></pre>
+<p>The value flows through modifiers in position order:</p>
+<ol>
+<li><strong>Initial:</strong> 5.0 → Potion (×2.0) → 10.0 → Clamp → 10.0</li>
+<li><strong>After changing <code>Potion.Value</code>:</strong> 5.0 → Potion (×3.0) → 15.0 → Clamp → 12.0</li>
+<li><strong>After removing potion:</strong> 5.0 → Clamp → 5.0</li>
+</ol>
+<p>There are plans to enforce via the compiler that: each modifier instance can only be added to one stack, and each stack instance can be associated with one variable.  This will enable future features where modifier stacks maintain state specific to their associated live variable.</p></div>
+  </details>
+</section><section class="section" id="s21-common-errors">
+  <div class="annotation">
+    <h3>中文批注：Common Errors</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Common Errors”展开。阅读时先抓住这些英文关键词：Unnecessary、Live、Declarations、Defining、live。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">In both cases,</span><span class="chip">live</span><span class="chip">Since</span><span class="chip">is immutable,</span><span class="chip">would make</span><span class="chip">live because the expression has a</span><span class="chip">effect (it reads</span><span class="chip">) and returns a function type</span><span class="chip">&lt;reads&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Common Errors</summary>
+    <div class="md"><h3>Common Errors</h3>
+<p><strong>Unnecessary Live Declarations</strong></p>
+<p>Defining a live variable with no dependencies that can change is unnecessary and misleading:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 25--&gt;</p>
+<pre><code>var live X:int = 10    # X is 10 and will never change
+set live X = 20        # X is 20 and will never change</code></pre>
+<p>In both cases, <code>X</code> does not update automatically, so the program behaves identically without the <code>live</code> keyword. The <code>live</code> annotation falsely suggests reactive behavior where none exists.</p>
+<p><strong>Missing Mutable Dependencies</strong></p>
+<p>Similarly, a live variable that only depends on immutable values will never update:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 26--&gt;</p>
+<pre><code>X:int = 10
+var live Y = X+1    # Y is 11 and will never change</code></pre>
+<p>Since <code>X</code> is immutable, <code>Y</code> has no mutable dependencies and will remain at 11 forever. The <code>live</code> declaration is pointless.</p>
+<p><strong>Function-as-Type Confusion</strong></p>
+<p>A subtle error occurs when trying to make a variable live through a function type:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 27--&gt;</p>
+<pre><code>var Mult:int = 10
+
+Multiply(Value:int):type{_(:int):int} =
+    Fun(Arg:int):int = Value * Arg
+    Fun
+
+var X:Multiply(Mult) = 10    # X = 100
+
+set Mult = 20                 # X is still 100 (not live!)</code></pre>
+<p>This code is mistaken. The programmer likely thought that <code>Multiply(Mult)</code> would make <code>X</code> live because the expression has a <code>&lt;reads&gt;</code> effect (it reads <code>Mult</code>) and returns a function type <code>int-&gt;int</code>.</p>
+<p><strong>The error:</strong> For a variable to be live through its type, the <em>returned function itself</em> must have the <code>&lt;reads&gt;</code> effect, not the expression that produces the function.</p>
+<p>To see why, consider this equivalent transformation:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 28--&gt;</p>
+<pre><code>MFun = Multiply(Mult)
+var X:MFun = 10</code></pre>
+<p>Now it&#x27;s clear that <code>X</code> is not live—<code>MFun</code> is just a function value with type <code>int-&gt;int</code>, and that function does not have a <code>&lt;reads&gt;</code> effect.</p>
+<p><strong>The correct approach:</strong> Use the pattern where the function used as a type directly has the <code>&lt;reads&gt;</code> effect:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 29--&gt;</p>
+<pre><code>var Mult:int = 10
+
+Multiply(Arg:int)&lt;reads&gt;:int = Arg * Mult
+
+var X:Multiply = 10    # X = 100
+set Mult = 20          # X = 200 (now live!)</code></pre>
+<p>Here <code>Multiply</code> itself has <code>&lt;reads&gt;</code>, so using it as a type makes <code>X</code> live.</p>
+<p>If the same function has to be reused with different variables as dependent, one can package it in an object as shown earlier.</p></div>
+  </details>
+</section><section class="section" id="s22-evolution">
+  <div class="annotation">
+    <h3>中文批注：Evolution</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Evolution”展开。阅读时先抓住这些英文关键词：publishing、new、version、system、allowed。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">live</span><span class="chip">when</span><span class="chip">upon</span><span class="chip">if</span><span class="chip">set</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Evolution</summary>
+    <div class="md"><h2>Evolution</h2>
+<p>When publishing a new version of a system, it is allowed to remove <code>live</code> from a variable definition. This forward compatibility guarantee means that reactive behavior is an implementation detail that can be optimized away without breaking client code.</p>
+<p>Converting a regular variable to a live variable in a new version is generally safe if the computed value matches what the previous version maintained manually. However, if external code depends on being able to set arbitrary values, this could break expectations.</p>
+<p>The ability to cancel reactive constructs provides an important upgrade path: code that creates <code>when</code> or <code>upon</code> observers can later be modified to cancel them under different conditions without breaking existing behavior.</p></div>
+  </details>
+</section>
+<nav class="footer-nav"><div><a href="../14_concurrency/index.html">上一页：并发</a></div><div><a href="../16_modules/index.html">下一页：模块与路径</a></div></nav>
+</main></div></body></html>

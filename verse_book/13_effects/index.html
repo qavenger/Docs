@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>效果系统 - Book of Verse 中文提炼版</title>
+<title>效果系统 - Book of Verse 中文批注版</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<script src="../assets/reader.js"></script>
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar">
-  <div class="brand">Book of Verse</div>
-  <div class="sub">中文提炼版 · 同源目录结构</div>
-  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -32,34 +30,634 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
-</aside>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
 <main class="main">
-  <div class="crumb">Effects / <a href="https://verselang.github.io/book/13_effects/">原文页面</a></div>
-  <section class="hero">
-    <h1>效果系统</h1>
-    <p class="lead">效果系统页解释 Verse 如何用 effect specifier 描述表达式能力：是否纯计算、读写状态、分配、事务、失败、挂起或发散。</p>
-    <div class="meta"><span class="pill">源文件：13_effects.md</span><span class="pill">小节数：17</span><span class="pill">生成：2026-06-25</span></div>
-  </section>
-  <section class="grid">
-    <article class="card"><h2>核心提炼</h2><ul class="list"><li>effects 是函数类型的一部分，也是调用方能否调用该函数的能力契约。</li><li>cardinality/计算相关效果包括 <code>&lt;computes&gt;</code>、<code>&lt;converges&gt;</code>、<code>&lt;decides&gt;</code> 等。</li><li>heap 相关效果包括 <code>&lt;reads&gt;</code>、<code>&lt;writes&gt;</code>、<code>&lt;allocates&gt;</code>、<code>&lt;transacts&gt;</code>，表示读取、写入、分配和可回滚事务。</li><li>suspension 相关效果用 <code>&lt;suspends&gt;</code> 表示异步挂起能力。</li><li>内部/特殊效果包括 native、no_rollback、diverges 等，与实现和终止性相关。</li><li>多个 effects 会组合，调用链的总效果通常是所需能力的并集。</li><li>函数类型兼容允许更“少能力需求/更纯”的函数赋给允许更多效果的类型。</li><li>class/interface/struct 的 specifier 与字段初始化、block、构造器效果有约束。</li></ul></article>
-    <article class="card"><h2>规则与坑点</h2><ul class="list"><li>可失败 <code>&lt;decides&gt;</code> 函数必须在失败上下文用 <code>[]</code> 或等价方式处理。</li><li>不能把会写状态的 <code>&lt;transacts&gt;</code> 函数赋给只允许 <code>&lt;computes&gt;</code> 的函数类型。</li><li>field initializer 和 class block 的效果不能超过类型声明允许范围。</li><li>数据类型本身通常不能声明 async/failable effects；构造函数可以表达可失败或事务能力。</li><li>发布 API 的 effects 是兼容契约，未来只能朝更少副作用方向演化。</li></ul></article>
-    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>Validate(X:int)&lt;decides&gt;:int = ...</code></li><li><code>ReadState()&lt;reads&gt;:int</code></li><li><code>Update()&lt;transacts&gt;:void</code></li><li><code>Wait()&lt;suspends&gt;:void</code></li><li><code>type{_(:int)&lt;computes&gt;&lt;decides&gt;:int}</code></li></ul></article>
-  </section>
-  <section>
-    <h2>原文小节结构</h2>
-    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
-    <ol class="toc"><li class="level-1">Effects</li><li class="level-2">Understanding Effects</li><li class="level-2">Effect Families and Specifiers</li><li class="level-2">How Effects Compose</li><li class="level-2">Effect Families in Detail</li><li class="level-3">Cardinality effects</li><li class="level-3">Heap effects</li><li class="level-3">Suspension effects</li><li class="level-3">Internal effects</li><li class="level-4">Prediction effects</li><li class="level-4">Divergence effects</li><li class="level-2">Effect Composition</li><li class="level-2">Subtyping and Type Compatibility</li><li class="level-2">Effects on Data Types</li><li class="level-3">Interface Construction Effect Constraints</li><li class="level-2">Working with Effects</li><li class="level-2">Backwards Compatibility</li></ol>
-  </section>
-  <section>
-    <h2>阅读提示</h2>
-    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
-  </section>
-  <nav class="footer-nav">
-    <div><a href="../12_access/index.html">上一页：访问控制与元数据</a></div>
-    <div><a href="../14_concurrency/index.html">下一页：并发</a></div>
-  </nav>
-</main>
-</div>
-</body>
-</html>
+<div class="crumb">Effects / <a href="https://verselang.github.io/book/13_effects/">原文页面</a></div>
+<section class="hero"><h1>效果系统</h1><p class="lead">本页讲 effect specifier 如何把副作用、失败、挂起和事务能力写进签名。</p><div class="meta"><span class="pill">源文件：13_effects.md</span><span class="pill">批注段落：15</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>这一页读什么</h2><p>effects 是 Verse 组合性和安全性的核心，不理解 effects 很难理解函数类型兼容。</p><h3>注意点</h3><ul class="list"><li>函数不能做超出声明 effect 的事。</li><li>公开 API 增加 effect 通常是破坏性变更。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-effects">Effects</a></li><li class="lvl2"><a href="#s1-understanding-effects">Understanding Effects</a></li><li class="lvl2"><a href="#s2-effect-families-and-specifiers">Effect Families and Specifiers</a></li><li class="lvl2"><a href="#s3-how-effects-compose">How Effects Compose</a></li><li class="lvl2"><a href="#s4-effect-families-in-detail">Effect Families in Detail</a></li><li class="lvl3"><a href="#s5-cardinality-effects">Cardinality effects</a></li><li class="lvl3"><a href="#s6-heap-effects">Heap effects</a></li><li class="lvl3"><a href="#s7-suspension-effects">Suspension effects</a></li><li class="lvl3"><a href="#s8-internal-effects">Internal effects</a></li><li class="lvl2"><a href="#s9-effect-composition">Effect Composition</a></li><li class="lvl2"><a href="#s10-subtyping-and-type-compatibility">Subtyping and Type Compatibility</a></li><li class="lvl2"><a href="#s11-effects-on-data-types">Effects on Data Types</a></li><li class="lvl3"><a href="#s12-interface-construction-effect-constraints">Interface Construction Effect Constraints</a></li><li class="lvl2"><a href="#s13-working-with-effects">Working with Effects</a></li><li class="lvl2"><a href="#s14-backwards-compatibility">Backwards Compatibility</a></li></ol></article></section>
+<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<section class="section" id="s0-effects">
+  <div class="annotation">
+    <h3>中文批注：Effects</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Effects”展开。可把它先理解为“效果”。阅读时先抓住这些英文关键词：Every、function、tells、two、stories。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">UpdateScore(player,
+points)</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;writes&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">reads</span><span class="chip">writes</span><span class="chip">decides</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Effects</summary>
+    <div class="md"><h1>Effects</h1>
+<p>Every function tells two stories. The first story, told through types, describes what data flows in and what data flows out. The second story, told through effects, describes what the function does along the way — whether it reads from memory, writes to storage, might fail, or could suspend execution. While most languages leave this second story implicit, Verse makes it explicit, turning side effects from hidden surprises into documented contracts.</p>
+<p>Think about a simple game function that updates a player&#x27;s score. In most languages, you&#x27;d see a signature like <code>UpdateScore(player, points)</code> and have to guess what happens inside. Does it modify the player object? Write to a database? Print to a log? Trigger animations? Without reading the implementation, you can&#x27;t know. In Verse, effects are part of the signature itself, declaring upfront exactly what kinds of operations the function might perform.</p>
+<p>This explicitness might seem like extra work at first, but it fundamentally changes how you reason about code. When you see <code>&lt;reads&gt;</code> on a function, you know it observes mutable state. When you see <code>&lt;writes&gt;</code>, you know it modifies that state. When you see <code>&lt;decides&gt;</code>, you know it might fail. These aren&#x27;t comments or documentation that might be wrong — they&#x27;re compiler-enforced contracts that must be accurate.</p></div>
+  </details>
+</section><section class="section" id="s1-understanding-effects">
+  <div class="annotation">
+    <h3>中文批注：Understanding Effects</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Understanding Effects”展开。可把它先理解为“理解效果”。阅读时先抓住这些英文关键词：Effects、represent、observable、interactions、between。</p><p>本节与并发相关；注意 &lt;code&gt;&amp;lt;suspends&amp;gt;&lt;/code&gt;、任务生命周期和取消点。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;!--
+#&gt;
+--&gt;
+
+The</span><span class="chip">GreetPlayer()</span><span class="chip">&lt;writes&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;predicts&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">for</span><span class="chip">class</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Understanding Effects</summary>
+    <div class="md"><h2>Understanding Effects</h2>
+<p>Effects represent observable interactions between your code and the world around it. Reading a player&#x27;s health, updating a score, spawning a particle effect, waiting for an animation to complete — all these operations have effects that ripple beyond simple computation. Verse&#x27;s effect system captures these interactions, making them visible and verifiable.</p>
+<p>Consider this simple function that greets a player:</p>
+<p>&lt;!--versetest c:=class: var CurrentGreeting:string=&quot;&quot; GreetPlayer()&lt;transacts&gt;:void = set CurrentGreeting = &quot;Hello, adventurer!&quot; assert: C:=c{} C.GreetPlayer() &lt;# --&gt; &lt;!-- 01 --&gt;</p>
+<pre><code>GreetPlayer()&lt;transacts&gt;:void =
+    set CurrentGreeting = &quot;Hello, adventurer!&quot;
+    Print(CurrentGreeting)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The <code>&lt;transacts&gt;</code> effect tells you immediately that this function modifies mutable state. You don&#x27;t need to read the implementation to know that calling <code>GreetPlayer()</code> will change something in your program&#x27;s memory. The effect is a promise about behavior, checked and enforced by the compiler.</p>
+<p>Effects compose naturally through function calls. If function A calls function B, and B has certain effects, then A must declare at least those same effects (with some exceptions we&#x27;ll explore). This propagation ensures that effects can&#x27;t be hidden or laundered through intermediate functions — the true nature of an operation is always visible at every level of the call stack.</p>
+<p><strong>Why Effects Matter</strong></p>
+<p>Making effects explicit serves both human understanding and compiler optimization. For developers, effects act as documentation that can&#x27;t lie. When you&#x27;re debugging why a value changed unexpectedly, you can trace through the call chain looking only at functions with <code>&lt;writes&gt;</code>. When you&#x27;re trying to understand why a function might fail, you look for <code>&lt;decides&gt;</code>. This isn&#x27;t guesswork — it&#x27;s guaranteed by the type system.</p>
+<p>For the compiler, explicit effects enable powerful optimizations and safety guarantees. Pure functions marked <code>&lt;computes&gt;</code> can be memoized, their results cached because they&#x27;ll always return the same output for the same input. Functions without <code>&lt;writes&gt;</code> can be safely executed in parallel without locks. Functions without <code>&lt;decides&gt;</code> can be called without failure handling.</p>
+<p>The effect system also enforces architectural decisions. Want to ensure your math library remains pure? Mark its functions <code>&lt;computes&gt;</code>. Building a predictive client system that must run on players&#x27; machines? Use <code>&lt;predicts&gt;</code> to ensure no server-only operations sneak in. These aren&#x27;t just conventions — they&#x27;re compiler-enforced guarantees.</p></div>
+  </details>
+</section><section class="section" id="s2-effect-families-and-specifiers">
+  <div class="annotation">
+    <h3>中文批注：Effect Families and Specifiers</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Effect Families and Specifiers”展开。可把它先理解为“效果族与说明符”。阅读时先抓住这些英文关键词：organizes、effects、families、each、tracking。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;transacts&gt;</span><span class="chip">reads</span><span class="chip">writes</span><span class="chip">allocates</span><span class="chip">&lt;converges&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;reads&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Effect Families and Specifiers</summary>
+    <div class="md"><h2>Effect Families and Specifiers</h2>
+<p>Verse organizes effects into families, each tracking a specific aspect of computation. Each family contains fundamental effects, and effect specifiers declare which effects a function may perform.</p>
+<p>The six effect families are:</p>
+<ul>
+<li><strong>Cardinality</strong>: Whether and how a function returns</li>
+<li><strong>Heap</strong>: Access to mutable memory</li>
+<li><strong>Suspension</strong>: Whether a function may suspend execution</li>
+<li><strong>Divergence</strong>: Whether a function may run forever</li>
+<li><strong>Prediction</strong>: Where a function runs</li>
+<li><strong>Internal</strong>: Reserved for internal use</li>
+</ul>
+<p>Some effects have no specifier, while some specifiers imply multiple effects. For instance, <code>&lt;transacts&gt;</code> implies <code>reads</code>, <code>writes</code> and <code>allocates</code>, and belongs to the Heap family.</p>
+<p>Effect specifiers can be further divided into <em>exclusive</em> specifiers (<code>&lt;converges&gt;</code>, <code>&lt;computes&gt;</code>, <code>&lt;transacts&gt;</code>) and <em>additive</em> specifiers (<code>&lt;suspends&gt;</code>, <code>&lt;decides&gt;</code>, <code>&lt;reads&gt;</code>, <code>&lt;writes&gt;</code>, <code>&lt;allocates&gt;</code>). A function may have at most one exclusive specifier but can combine multiple additive ones. For example, <code>&lt;computes&gt;&lt;decides&gt;</code> is valid (pure computation that may fail), but <code>&lt;computes&gt;&lt;transacts&gt;</code> is an error (cannot have two exclusive effects).</p>
+<p>|Fundamental Effect|Effect Specifier|Effect Family|Effects implied by Specifier | Notes | | -----        | -----------    | -------     | ----- | ---- | | <strong>succeeds</strong> |                | Cardinality |                  | <em>No specifier; Must Succeed</em> | | <strong>fails</strong>    |                | Cardinality |                  | <em>No specifier; Can Fail</em> | |              | <code>&lt;decides&gt;</code>    | Cardinality | <code>{succeeds, fails}</code> | <em>Cannot combine with <code>&lt;suspends&gt;</code></em> | | <strong>reads</strong>    | <code>&lt;reads&gt;</code>      | Heap        | <code>{reads}</code>        | <em>Allows reading mutable states</em> | | <strong>writes</strong>   | <code>&lt;writes&gt;</code>     | Heap        | <code>{writes}</code>       | <em>Allows writing mutable states</em> | | <strong>allocates</strong>| <code>&lt;allocates&gt;</code>  | Heap        | <code>{allocates}</code>    | <em>Allows allocation of mutable memory</em> | |              | <code>&lt;transacts&gt;</code>  | Heap        | <code>{reads, writes, allocates}</code> | <em>Exclusive; default</em> | |              | <code>&lt;computes&gt;</code>   | Heap        | <code>{}</code>             | <em>Exclusive; Pure computation</em> | | <strong>suspends</strong> | <code>&lt;suspends&gt;</code>   | Suspension  | <code>{suspends}</code>     | <em>Cannot combine with <code>&lt;decides&gt;</code></em> | | <strong>diverges</strong> |                | Divergence  | <code>{diverges}</code>     | <em>No specifier; May run forever</em> | |              | <code>&lt;converges&gt;</code>  | Divergence  | <code>{}</code>             | <em>Exclusive; Native functions, abstract methods, type signatures</em> | | <strong>dictates</strong> |                | Prediction  | <code>{dictates}</code>     | <em>No specifier; Server Authority</em> | |              | <code>&lt;predicts&gt;</code>   | Prediction  | <code>{}</code>             | <em>Allows Client Prediction</em> | | <strong>no_rollback</strong> |             | Internal    | <code>{no_rollback}</code>  | <em>To be deprecated; Transactions disallowed</em> |</p>
+<p>The following restrictions are in effect:</p>
+<ul>
+<li><code>&lt;suspends&gt;</code> and <code>&lt;decides&gt;</code> cannot be combined on the same function,</li>
+<li><code>&lt;converges&gt;</code> is only allowed on <code>&lt;native&gt;</code> functions, abstract methods, and type signatures,</li>
+<li>duplicate specifiers (e.g., <code>&lt;computes&gt;&lt;computes&gt;</code>) are errors.</li>
+</ul></div>
+  </details>
+</section><section class="section" id="s3-how-effects-compose">
+  <div class="annotation">
+    <h3>中文批注：How Effects Compose</h3>
+    <div class="rows">
+      <div><p>这一节围绕“How Effects Compose”展开。可把它先理解为“效果组合”。阅读时先抓住这些英文关键词：Think、effect、specifiers、setting、bits。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">GameUpdate</span><span class="chip">dictates</span><span class="chip">reads</span><span class="chip">writes</span><span class="chip">allocates</span><span class="chip">succeeds</span><span class="chip">&lt;dictates&gt;&lt;transacts&gt;</span><span class="chip">fails</span><span class="chip">&lt;fails&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：How Effects Compose</summary>
+    <div class="md"><h2>How Effects Compose</h2>
+<p>Think of effect specifiers as setting bits in a bit vector: one bit per fundamental effect. Without any annotation, a function such as <code>GameUpdate</code> has the following effects:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 02 --&gt;</p>
+<pre><code>GameUpdate():void = ...  # No explicit effects specified</code></pre>
+<p>| dictates | suspends | reads | writes | allocates | succeeds | fails | | :---:    | :---:    | :---: | :---:  | :---:     | :---:    | :---: | | ✔️       | ❌      | ✔️    | ✔️    | ✔️        | ✔️      | ❌    |</p>
+<p>This means it has effects <code>dictates</code>, <code>reads</code>, <code>writes</code>, <code>allocates</code> and <code>succeeds</code>. It&#x27;s almost like writing <code>&lt;dictates&gt;&lt;transacts&gt;</code> except we lack a way to say the function cannot fail.</p>
+<p>As an aside: the absence of specifiers for <code>fails</code> and <code>succeeds</code> can be explained by the fact that a specifier like <code>&lt;fails&gt;</code> means the function always fails, never returns a value, and cannot have observable side effects (they would be undone by failure).  The <code>succeeds</code> effect is implicit.</p>
+<p>Annotating a function only affects the bits in that specifier&#x27;s family. For example, function <code>CheckPlayerStatus</code> with the <code>&lt;reads&gt;</code> and <code>&lt;predicts&gt;</code> specifier:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 03 --&gt;</p>
+<pre><code>CheckPlayerStatus()&lt;reads&gt;&lt;predicts&gt;:string = ...</code></pre>
+<p>has the following effects:</p>
+<p>| dictates | suspends | reads | writes | allocates | succeeds | fails | | :---: | :---: | :---: | :---: | :---: | :---: | :---: | | ❌ | ❌ | ✔️ | ❌ | ❌ | ✔️ | ❌ |</p>
+<p>Specifying <code>&lt;reads&gt;</code> clears the <code>writes</code> and <code>allocates</code> bits, and <code>&lt;predicts&gt;</code> clears the <code>dictates</code> bit, everything else is unchanged.</p></div>
+  </details>
+</section><section class="section" id="s4-effect-families-in-detail">
+  <div class="annotation">
+    <h3>中文批注：Effect Families in Detail</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Effect Families in Detail”展开。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Effect Families in Detail</summary>
+    <div class="md"><h2>Effect Families in Detail</h2></div>
+  </details>
+</section><section class="section" id="s5-cardinality-effects">
+  <div class="annotation">
+    <h3>中文批注：Cardinality effects</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Cardinality effects”展开。阅读时先抓住这些英文关键词：cardinality、family、deals、whether、functions。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">decides</span><span class="chip">transacts</span><span class="chip">struct</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Cardinality effects</summary>
+    <div class="md"><h3>Cardinality effects</h3>
+<p>The cardinality family deals with whether functions return values successfully. Every function either succeeds (returning its declared type) or fails (producing no value). Most functions always succeed — they&#x27;re deterministic transformations that always produce output. But functions marked with <code>&lt;decides&gt;</code> can fail, turning failure into a control flow mechanism.</p>
+<p>&lt;!--versetest ValidateHealth(Health:float)&lt;transacts&gt;&lt;decides&gt;:void = Health &gt; 0.0 Health &lt;= 100.0</p>
+<p>StartCombat():void={} player:=struct{Health:float}</p>
+<p>assert: Player:=player{Health:=50.0} if (ValidateHealth[Player.Health]): StartCombat() &lt;# --&gt; &lt;!-- 04 --&gt;</p>
+<pre><code>ValidateHealth(Health:float)&lt;transacts&gt;&lt;decides&gt;:void =
+    Health &gt; 0.0      # Fails if health is zero or negative
+    Health &lt;= 100.0   # Fails if health exceeds maximum
+
+# Usage
+if (ValidateHealth[Player.Health]):
+    # Health is valid, continue processing
+    StartCombat()</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The beauty of the decides effect is that it unifies validation with control flow. You don&#x27;t check conditions and then act on them — the check itself drives the program&#x27;s path.</p></div>
+  </details>
+</section><section class="section" id="s6-heap-effects">
+  <div class="annotation">
+    <h3>中文批注：Heap effects</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Heap effects”展开。阅读时先抓住这些英文关键词：heap、family、governs、access、mutable。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;computes&gt;</span><span class="chip">The</span><span class="chip">&lt;!--
+#&gt;
+--&gt;
+
+The</span><span class="chip">set</span><span class="chip">&lt;writes&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">reads</span><span class="chip">allocates</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Heap effects</summary>
+    <div class="md"><h3>Heap effects</h3>
+<p>The heap family governs access to mutable memory. This is perhaps the most important family for understanding program behavior, as it determines whether functions can observe or modify state.</p>
+<p>The <code>&lt;computes&gt;</code> specifier marks pure functions — those that neither read nor write mutable state. These functions are deterministic: given the same inputs, they always produce the same outputs. They&#x27;re the mathematical ideal of computation, transforming data without side effects.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 05 --&gt;</p>
+<pre><code>CalculateDamage(BaseDamage:float, Multiplier:float)&lt;computes&gt;:float =
+    BaseDamage * Multiplier</code></pre>
+<p>The <code>&lt;reads&gt;</code> effect allows functions to observe mutable state. They can see the current values of variables and mutable fields, but cannot modify them. This is useful for queries and calculations based on current game state.</p>
+<p>&lt;!--versetest player := class: Name:string var Health:float = 100.0 var Score:int = 0</p>
+<p>GetPlayerStatus(P:player)&lt;reads&gt;:string = if (P.Health &gt; 50.0): &quot;Healthy&quot; else if (P.Health &gt; 0.0): &quot;Injured&quot; else: &quot;Defeated&quot;</p>
+<p>assert: P:=player{Name:=&quot;Test&quot;} Status:=GetPlayerStatus(P) &lt;# --&gt; &lt;!-- 06 --&gt;</p>
+<pre><code>player := class:
+    Name:string
+    var Health:float = 100.0
+    var Score:int = 0
+
+GetPlayerStatus(P:player)&lt;reads&gt;:string =
+    if (P.Health &gt; 50.0):
+        &quot;Healthy&quot;
+    else if (P.Health &gt; 0.0):
+        &quot;Injured&quot;
+    else:
+        &quot;Defeated&quot;</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The <code>&lt;writes&gt;</code> effect permits modification of mutable state. Functions with this effect can use <code>set</code> to update variables and mutable fields. <code>&lt;writes&gt;</code> often requires <code>&lt;reads&gt;</code> as well, for instance when modification involves reading the current value.</p>
+<p>In fact, the <code>set</code> instruction is by default <code>&lt;transacts&gt;</code> due to the addition of <em>live variables</em> to the language. A live variable is variable whose value depends on other variables; when one of those variables is updated by a <code>set</code> the live variable will be evaluated with potentially some <code>reads</code> and <code>allocates</code>.</p>
+<p>&lt;!--versetest player := class: Name:string var Health:float = 100.0</p>
+<p>HealPlayer(P:player, Amount:float)&lt;transacts&gt;:void = NewHealth := P.Health + Amount set P.Health = Min(NewHealth, 100.0)</p>
+<p>assert: P:=player{Name:=&quot;Test&quot;, Health:=50.0} HealPlayer(P, 30.0) &lt;# --&gt; &lt;!-- 07 --&gt;</p>
+<pre><code>HealPlayer(P:player, Amount:float)&lt;transacts&gt;:void =
+    NewHealth := P.Health + Amount
+    set P.Health = Min(NewHealth, 100.0)</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>The <code>&lt;allocates&gt;</code> effect indicates functions that create observably unique values — either objects marked <code>&lt;unique&gt;</code> or values containing mutable fields. Each call to such a function returns a distinct value, even if the inputs are identical.</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 08 --&gt;</p>
+<pre><code>game_entity := class&lt;allocates&gt;:
+    ID:id
+    var Position:vector3
+
+CreateEntity(Pos:vector3)&lt;allocates&gt;:game_entity =
+    game_entity{ID := GenerateID(), Position := Pos}</code></pre>
+<p>The <code>&lt;transacts&gt;</code> is the default for functions.</p></div>
+  </details>
+</section><section class="section" id="s7-suspension-effects">
+  <div class="annotation">
+    <h3>中文批注：Suspension effects</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Suspension effects”展开。阅读时先抓住这些英文关键词：suspension、family、contains、single、effect。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;suspends&gt;</span><span class="chip">The</span><span class="chip">&lt;decides&gt;</span><span class="chip">[]</span><span class="chip">A</span><span class="chip">function can call another</span><span class="chip">:
+
+&lt;!--versetest--&gt;
+&lt;!-- 11 --&gt;</span><span class="chip">The asymmetry exists because</span><span class="chip">and</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Suspension effects</summary>
+    <div class="md"><h3>Suspension effects</h3>
+<p>The suspension family contains a single effect: <code>&lt;suspends&gt;</code>. Functions with this effect can pause their execution and resume later, potentially across multiple game frames. This is essential for operations that take time: animations, cooldowns, waiting for player input, or any multi-frame behavior.</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 09 --&gt;</p>
+<pre><code>PlayVictorySequence()&lt;suspends&gt;:void =
+    PlayAnimation(VictoryDance)
+    Sleep(2.0)  # Wait 2 seconds
+    PlaySound(VictoryFanfare)
+    Sleep(1.0)
+    ShowRewardsScreen()</code></pre>
+<p>The <code>suspends</code> effect is viral — any function that calls a suspending function must itself be marked <code>&lt;suspends&gt;</code>. This ensures you always know which functions might take time to complete.</p>
+<p>While <code>&lt;suspends&gt;</code> and <code>&lt;decides&gt;</code> cannot be combined on the same function, they have specific rules for how they interact across function calls. A <code>&lt;suspends&gt;</code> function can call a <code>&lt;decides&gt;</code> function, but <em>only within a failure context</em> using the square bracket <code>[]</code> syntax -- this ensures that the failure is handled locally and doesn&#x27;t propagate as a failure effect:</p>
+<p>&lt;!--versetest DoAsyncWork():void={} --&gt; &lt;!-- 10 --&gt;</p>
+<pre><code>ValidateInput(Value:int)&lt;decides&gt;&lt;computes&gt;:void =
+    Value &gt; 0
+    Value &lt; 100
+
+ProcessAsync(Value:int)&lt;suspends&gt;:void =
+    # Valid: calling decides function in failure context
+    if (ValidateInput[Value]):
+        # Process valid input
+        DoAsyncWork()
+
+# Invalid: calling decides function outside failure context
+# ProcessAsync(Value:int)&lt;suspends&gt;:void =
+#     ValidateInput(Value)  # ERROR: must use [] syntax</code></pre>
+<p>A <code>&lt;suspends&gt;</code> function can call another <code>&lt;suspends&gt;</code> function, but <em>must not use failure-handling syntax</em> like <code>?</code>:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 11 --&gt;</p>
+<pre><code>AsyncOp()&lt;suspends&gt;:?int = false
+
+CallAsync()&lt;suspends&gt;:void =
+    # Valid: calling suspends function normally
+    X := AsyncOp()
+
+    # Invalid: cannot use ? with suspends in suspends context
+    # if (Value := AsyncOp()?):</code></pre>
+<p>The asymmetry exists because <code>&lt;suspends&gt;</code> and <code>&lt;decides&gt;</code> represent fundamentally different control flow mechanisms—suspension is about time, while failure is about success/failure. Mixing their syntactic forms creates ambiguity about what&#x27;s being handled.</p></div>
+  </details>
+</section><section class="section" id="s8-internal-effects">
+  <div class="annotation">
+    <h3>中文批注：Internal effects</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Internal effects”展开。阅读时先抓住这些英文关键词：Pre-release、rollback、effect、deprecated、note。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;no_rollback&gt;</span><span class="chip">&lt;predicts&gt;</span><span class="chip">dictates</span><span class="chip">&lt;converges&gt;</span><span class="chip">&lt;native&gt;</span><span class="chip">where</span><span class="chip">for</span><span class="chip">if</span><span class="chip">abstract</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Internal effects</summary>
+    <div class="md"><h3>Internal effects</h3>
+<p><strong>[Pre-release]</strong>: The <code>&lt;no_rollback&gt;</code> effect is deprecated.</p>
+<h4>Prediction effects</h4>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p>The <code>&lt;predicts&gt;</code> effect is not yet released.</p></div>
+<p>The prediction family determines where code runs in a client-server architecture. By default, functions have the <code>dictates</code> effect, meaning they run authoritatively on the server. The <code>&lt;predicts&gt;</code> specifier allows functions to run predictively on clients for responsiveness, with the server later validating and potentially correcting the results.</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 12 --&gt;</p>
+<pre><code>HandleJumpInput()&lt;predicts&gt;:void =
+    # Runs immediately on the client for responsiveness
+    StartJumpAnimation()
+    PlayJumpSound()
+
+    # Server will validate and correct if needed
+    PerformJump()</code></pre>
+<p>This enables responsive gameplay even with network latency, as players see immediate feedback for their actions while the server maintains authoritative state.</p>
+<h4>Divergence effects</h4>
+<p>Currently in planning, the divergence family will track whether functions are guaranteed to terminate. The <code>&lt;converges&gt;</code> specifier marks functions that provably complete in finite time, while functions without it might run forever. This is particularly important for constructors and initialization code.</p>
+<p>The <code>&lt;converges&gt;</code> specifier can be used on:</p>
+<ul>
+<li><code>&lt;native&gt;</code> functions that are guaranteed to terminate</li>
+<li>Abstract method signatures in classes and interfaces</li>
+<li>Function signatures in type expressions</li>
+</ul>
+<p>Regular function implementations cannot use <code>&lt;converges&gt;</code> — only their declarations in abstract contexts or as native functions.</p>
+<p>&lt;!-- TODO: write more --&gt;</p></div>
+  </details>
+</section><section class="section" id="s9-effect-composition">
+  <div class="annotation">
+    <h3>中文批注：Effect Composition</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Effect Composition”展开。阅读时先抓住这些英文关键词：Effects、generally、propagate、call、chain。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">if</span><span class="chip">fails</span><span class="chip">The</span><span class="chip">expression hides the</span><span class="chip">code
+including</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;transacts&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Effect Composition</summary>
+    <div class="md"><h2>Effect Composition</h2>
+<p>Effects generally propagate up the call chain — a function must declare all the effects of the functions it calls. However, certain language constructs can hide specific effects, preventing them from propagating further.</p>
+<p>An <code>if</code> expression hides <code>fails</code> effects in its failure context, thus failure failure in a condition does not propagate to the enclosing function:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 13 --&gt;</p>
+<pre><code>SafeMod(A:int, B:int)&lt;computes&gt;:int =
+    if (V:= Mod[A,B])  then V else 0</code></pre>
+<p>The <code>spawn</code> expression hides the <code>suspends</code> effect, allowing immediate functions to start asynchronous operations that continue independently:</p>
+<p>&lt;!--versetest GetNextTrack():int=0 PlayTrack(:int)&lt;suspends&gt;:void={} --&gt; &lt;!-- 14 --&gt;</p>
+<pre><code>Play()&lt;suspends&gt;:void =
+        loop:
+            PlayTrack(GetNextTrack())
+            Sleep(180.0)  
+
+StartBackgroundMusic():void =  # No &lt;suspends&gt;
+    spawn:
+        Play() # Suspends effect hidden by spawn</code></pre>
+<p>As mentioned above failure is not allowed within <code>&lt;suspends&gt;</code> code including <code>spawn</code>. One way around this restriction is to use the <code>option</code> expression to convert failure into an optional value, transforming the <code>fails</code> effect into a regular value that can be handled without <code>&lt;decides&gt;</code>:</p>
+<p>&lt;!--versetest item:=struct{} --&gt; &lt;!-- 16 --&gt;</p>
+<pre><code>TryGetItem(Items:[]item, Index:int):?item =
+    option{Items[Index]}  # Array access might fail, option catches it</code></pre>
+<p>The <code>defer</code> expression provides cleanup code that runs when exiting a scope, but has strict effect limitations:</p>
+<ul>
+<li>Cannot contain <code>&lt;suspends&gt;</code> operations—deferred code must execute synchronously</li>
+<li>Cannot contain <code>&lt;decides&gt;</code> operations—deferred code must always succeed</li>
+</ul>
+<p>&lt;!--versetest resource:=class{} DoAsyncWork():void={} GetResource()&lt;transacts&gt;:resource=resource{} --&gt; &lt;!-- 17 --&gt;</p>
+<pre><code>AcquireResource()&lt;transacts&gt;:resource = GetResource()
+ReleaseResource(R:resource)&lt;transacts&gt;:void = {}
+
+ProcessResource()&lt;suspends&gt;:void =
+    R := AcquireResource()
+    defer:
+        ReleaseResource(R)  # Valid: transacts allowed in defer
+
+    # Process resource with async operations
+    DoAsyncWork()</code></pre>
+<p>These constraints ensure that cleanup code executes predictably and completely, without the possibility of suspension or failure that could leave resources in an inconsistent state.</p></div>
+  </details>
+</section><section class="section" id="s10-subtyping-and-type-compatibility">
+  <div class="annotation">
+    <h3>中文批注：Subtyping and Type Compatibility</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Subtyping and Type Compatibility”展开。阅读时先抓住这些英文关键词：Effect、annotations、create、subtyping、relationship。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">In this example,</span><span class="chip">has only</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;computes&gt;&lt;decides&gt;</span><span class="chip">where</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Subtyping and Type Compatibility</summary>
+    <div class="md"><h2>Subtyping and Type Compatibility</h2>
+<p>Effect annotations create a subtyping relationship between function types. Understanding how effects interact with type compatibility is essential when storing functions in variables, passing them as parameters, or choosing between different implementations.</p>
+<p>A function with <strong>fewer effects</strong> can be used where a function with <strong>more effects</strong> is expected. This is effect subtyping—a function that does less is compatible with a context that allows more:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 18 --&gt;</p>
+<pre><code># Pure function with only computes
+PureAdd(X:int)&lt;computes&gt;:int = X + 1
+
+# Variable that expects computes and decides
+F:type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} = PureAdd
+
+# Calling through the variable
+Result := F[5]  # Must use [] syntax since type has &lt;decides&gt;
+# Returns option{6} since PureAdd never fails</code></pre>
+<p>In this example, <code>PureAdd</code> has only <code>&lt;computes&gt;</code>, but it can be assigned to a variable expecting <code>&lt;computes&gt;&lt;decides&gt;</code>. The pure function is a valid implementation of the failable interface—it simply never exercises the failure capability.</p>
+<p>This principle applies to all effects:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 19 --&gt;</p>
+<pre><code># Function with &lt;computes&gt;
+Compute(X:int)&lt;computes&gt;:int = X * 2
+
+# Can assign to types expecting more effects
+F1:type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} = Compute
+F2:type{_(:int)&lt;transacts&gt;:int} = Compute
+F3:type{_(:int)&lt;reads&gt;:int} = Compute
+
+# All valid - Compute does less than what&#x27;s allowed</code></pre>
+<p>When deciding subtyping, effects have the following impact:</p>
+<ul>
+<li><code>&lt;computes&gt;</code> is a subtype of <code>&lt;reads&gt;</code>, <code>&lt;transacts&gt;</code>, and any combination with <code>&lt;decides&gt;</code></li>
+<li><code>&lt;reads&gt;</code> is a subtype of <code>&lt;transacts&gt;</code></li>
+<li>Functions without <code>&lt;decides&gt;</code> are subtypes of functions with <code>&lt;decides&gt;</code></li>
+<li>Functions without <code>&lt;suspends&gt;</code> are subtypes of functions with <code>&lt;suspends&gt;</code> (when compatible)</li>
+</ul>
+<p>While you can add effects through subtyping, you <strong>cannot remove</strong> effects that a function actually has:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 20 --&gt;</p>
+<pre><code>Validate(X:int)&lt;computes&gt;&lt;decides&gt;:int =
+    X &gt; 0
+    X
+
+# ERROR: Cannot assign to type without &lt;decides&gt;
+# F:type{_(:int)&lt;computes&gt;:int} = Validate
+# The function CAN fail, but the type doesn&#x27;t allow it</code></pre>
+<p>Similarly, functions with heap effects cannot be assigned to pure types:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 21 --&gt;</p>
+<pre><code>counter := class:
+    var Count:int = 0
+
+Increment(C:counter)&lt;transacts&gt;:int =
+    set C.Count = C.Count + 1
+    C.Count
+
+# ERROR: Cannot assign transacts function to computes type
+# F:type{_(:counter)&lt;computes&gt;:int} = Increment
+# The function writes state, type doesn&#x27;t permit it</code></pre>
+<p>This restriction ensures type safety—the type signature is a promise about what effects the function might perform, and the actual function must honor that promise.</p>
+<p>When you conditionally select between functions with different effects, the resulting expression has the union of all possible effects. This is <em>effect joining</em>—the compiler conservatively assumes the result might perform any effect that any branch could perform:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 22 --&gt;</p>
+<pre><code># Functions with different effects
+PureFunction(X:int)&lt;computes&gt;:int = X + 1
+FailableFunction(X:int)&lt;computes&gt;&lt;decides&gt;:int =
+    X &gt; 0
+    X + 1
+
+# Conditional selection joins effects
+SelectFunction(UseFailable:logic):type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} =
+    if (UseFailable?):
+        FailableFunction  # Has &lt;computes&gt;&lt;decides&gt;
+    else:
+        PureFunction      # Has &lt;computes&gt;
+    # Result type must account for both: &lt;computes&gt;&lt;decides&gt;
+
+# The returned function might fail (from FailableFunction)
+# or might not (from PureFunction), so type must include &lt;decides&gt;
+F := SelectFunction(true)
+Result := F[5]  # Must use [] because result type has &lt;decides&gt;</code></pre>
+<p>Effect joining applies to all control flow that selects between functions:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 23 --&gt;</p>
+<pre><code>Identity(X:int)&lt;computes&gt;:int = X
+
+DecidesIdentity(X:int)&lt;computes&gt;&lt;decides&gt;:int =
+    X &gt; 0
+    X
+
+TransactsIdentity(X:int)&lt;transacts&gt;:int = X
+
+# Joining &lt;computes&gt; and &lt;computes&gt;&lt;decides&gt;
+F1:type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} =
+    if (true?):
+        Identity
+    else:
+        DecidesIdentity
+# Result: &lt;computes&gt;&lt;decides&gt; (union of effects)
+
+# Joining &lt;computes&gt;&lt;decides&gt; and &lt;transacts&gt;
+F2:type{_(:int)&lt;decides&gt;&lt;transacts&gt;:int} =
+    if (true?):
+        DecidesIdentity  # &lt;computes&gt;&lt;decides&gt;
+    else:
+        TransactsIdentity  # &lt;transacts&gt;
+# Result: &lt;decides&gt;&lt;transacts&gt; (union of effects)</code></pre>
+<p>Effect subtyping enables flexible function parameters:</p>
+<p>&lt;!--versetest PureAdd(:int)&lt;computes&gt;:int=1 Validate(:int)&lt;computes&gt;&lt;decides&gt;:int=1 Increment(:int)&lt;transacts&gt;:int=1 --&gt; &lt;!-- 25 --&gt;</p>
+<pre><code># Accepts any function that doesn&#x27;t exceed &lt;transacts&gt;&lt;decides&gt;
+ProcessValues(
+    Data:[]int,
+    Transform(:int)&lt;transacts&gt;&lt;decides&gt;:int
+):[]int =
+    for (Value:Data, Result := Transform[Value]):
+        Result
+
+# Can pass pure functions
+ProcessValues(array{1, 2, 3}, PureAdd)
+
+# Can pass failable functions
+ProcessValues(array{1, 2, 3}, Validate)
+
+# Can pass transactional functions
+ProcessValues(array{1, 2, 3}, Increment)</code></pre>
+<p>Effect subtyping makes function composition work naturally:</p>
+<p>&lt;!--versetest PureFunction(:int)&lt;computes&gt;:int=1 FailableFunction(:int)&lt;computes&gt;&lt;decides&gt;:int=1 --&gt; &lt;!-- 26 --&gt;</p>
+<pre><code>Compose(
+    F(:int)&lt;computes&gt;:int,
+    G(:int)&lt;computes&gt;:int
+):type{_(:int)&lt;computes&gt;:int} =
+    Local(X:int)&lt;computes&gt;:int = G(F(X))
+    Local
+
+# If we want to allow more effects:
+ComposeFlexible(
+    F(:int)&lt;transacts&gt;&lt;decides&gt;:int,
+    G(:int)&lt;transacts&gt;&lt;decides&gt;:int
+):type{_(:int)&lt;transacts&gt;&lt;decides&gt;:int} =
+    Local(X:int)&lt;transacts&gt;&lt;decides&gt;:int =
+        if (IntermediateResult := F[X]):
+            G[IntermediateResult]
+        else:
+            1=2; 0
+    Local
+
+# Can pass functions with fewer effects
+ComposeFlexible(PureFunction, PureFunction)
+ComposeFlexible(PureFunction, FailableFunction)</code></pre>
+<p>The following table summarize the interaction of effects and types:</p>
+<p>| Scenario | Valid? | Explanation | |----------|--------|-------------| | Assign <code>&lt;computes&gt;</code> to <code>&lt;computes&gt;&lt;decides&gt;</code> type | ✓ | Adding effects via subtyping | | Assign <code>&lt;computes&gt;</code> to <code>&lt;transacts&gt;</code> type | ✓ | Pure is subtype of transactional | | Assign <code>&lt;reads&gt;</code> to <code>&lt;transacts&gt;</code> type | ✓  | Reads is subtype of transactional | | Assign <code>&lt;computes&gt;&lt;decides&gt;</code> to <code>&lt;computes&gt;</code> type | ✗  | Cannot remove <code>&lt;decides&gt;</code> | | Assign <code>&lt;transacts&gt;</code> to <code>&lt;computes&gt;</code> type | ✗  | Cannot remove heap effects | | Select between <code>&lt;computes&gt;</code> and <code>&lt;decides&gt;</code> | Result: <code>&lt;computes&gt;&lt;decides&gt;</code> | Effect joining | | Select between <code>&lt;reads&gt;</code> and <code>&lt;transacts&gt;</code> | Result: <code>&lt;transacts&gt;</code> | Effect joining |</p>
+<p>These rules ensure that effect annotations remain trustworthy contracts—functions can do less than declared (subtyping), but never more, and conditional selection conservatively accounts for all possibilities (joining).</p></div>
+  </details>
+</section><section class="section" id="s11-effects-on-data-types">
+  <div class="annotation">
+    <h3>中文批注：Effects on Data Types</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Effects on Data Types”展开。阅读时先抓住这些英文关键词：Classes、structs、interfaces、annotated、effect。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;suspends&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">my_class{...}</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;allocates&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;unique&gt;</span><span class="chip">&lt;constructor&gt;</span><span class="chip">for</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Effects on Data Types</summary>
+    <div class="md"><h2>Effects on Data Types</h2>
+<p>Classes, structs, and interfaces can be annotated with effect specifiers, which apply to their constructors. This is particularly useful for ensuring that creating certain objects remains pure or has limited effects:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 28 --&gt;</p>
+<pre><code># Pure data structure - constructor has no effects
+vector3 := struct&lt;computes&gt;:
+    X:float = 0.0
+    Y:float = 0.0
+    Z:float = 0.0
+
+# Entity that requires allocation due to unique identity
+monster := class&lt;unique&gt;&lt;allocates&gt;:
+    Name:string
+    var Health:float = 100.0</code></pre>
+<p>Classes, interfaces, and structs <strong>cannot</strong> be marked with <code>&lt;suspends&gt;</code> or <code>&lt;decides&gt;</code>:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 29 --&gt;</p>
+<pre><code># Valid effect specifiers for classes/interfaces/structs:
+valid_class := class&lt;computes&gt;{}
+valid_interface := interface&lt;computes&gt;{}
+valid_struct := struct&lt;transacts&gt;{}
+
+# Invalid: async and failable effects not allowed
+# invalid_class := class&lt;suspends&gt;{}      # ERROR
+# invalid_interface := interface&lt;decides&gt;{}  # ERROR
+# invalid_struct := struct&lt;decides&gt;{}     # ERROR</code></pre>
+<p>This restriction applies to the class/struct <strong>declaration</strong> itself — the archetype constructor <code>my_class{...}</code> cannot be failable or suspending. However, <strong>constructor functions</strong> can use <code>&lt;decides&gt;</code>:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 29a --&gt;</p>
+<pre><code># The class declaration cannot be &lt;decides&gt;
+my_class := class:
+    Value:int
+
+# But a constructor function CAN be &lt;decides&gt;
+MakeMyClass&lt;constructor&gt;(V:int)&lt;transacts&gt;&lt;decides&gt; := my_class:
+    Value := block:
+        V &gt; 0      # Fails if V &lt;= 0
+        V &lt; 100    # Fails if V &gt;= 100
+        V</code></pre>
+<p>This provides failable construction when needed — the object either exists fully formed or the constructor function fails and no object is created.</p>
+<p>Field default values and block clauses in classes have strict effect requirements:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 30 --&gt;</p>
+<pre><code># Field initializers must use pure functions
+HelperFunction()&lt;transacts&gt;:int = 42
+
+# Invalid: field initializers cannot call transacts functions
+# bad_class := class:
+#     Value:int = HelperFunction()  # ERROR
+
+# Block clauses must respect class effects
+valid_class := class&lt;transacts&gt;:
+    var Counter:int = 0
+    block:
+        set Counter = 1  # Valid: class has transacts
+
+# Invalid: block effect exceeds class effect
+# bad_class := class&lt;computes&gt;:
+#     var Counter:int = 0
+#     block:
+#         set Counter = 1  # ERROR: computes class cannot write</code></pre>
+<p>Class member initializers and block clauses are implicitly restricted to have no more effects than what the class declares. This ensures that constructing an instance of the class respects the class&#x27;s effect contract.</p>
+<p>Limiting constructor effects helps maintain architectural boundaries. Data transfer objects can be kept pure with <code>&lt;computes&gt;</code>, ensuring they&#x27;re just data carriers. Game entities might require <code>&lt;allocates&gt;</code> for unique identity, while service objects might need full <code>&lt;transacts&gt;</code> to initialize their state.</p></div>
+  </details>
+</section><section class="section" id="s12-interface-construction-effect-constraints">
+  <div class="annotation">
+    <h3>中文批注：Interface Construction Effect Constraints</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Interface Construction Effect Constraints”展开。阅读时先抓住这些英文关键词：classes、interfaces、inherit、construction、effects。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">transacts</span><span class="chip">interface</span><span class="chip">class</span><span class="chip">computes</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Interface Construction Effect Constraints</summary>
+    <div class="md"><h3>Interface Construction Effect Constraints</h3>
+<p>When classes or interfaces inherit from interfaces with construction effects, they must declare at least the same construction effects:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 31 --&gt;</p>
+<pre><code># Interface with transacts effect
+transacting_interface := interface&lt;transacts&gt;{}
+
+# Valid: class has at least transacts
+valid_class := class&lt;transacts&gt;(transacting_interface){}
+
+# Invalid: class has less effects than interface requires
+# invalid_class := class&lt;computes&gt;(transacting_interface){}  # ERROR</code></pre>
+<p>Interface field initializers must also respect the interface&#x27;s declared construction effects:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 32 --&gt;</p>
+<pre><code>transacting_class := class&lt;transacts&gt;{}
+
+# Valid: interface has transacts, field initializer has transacts
+valid_interface := interface&lt;transacts&gt;:
+    Instance:transacting_class = transacting_class{}
+
+# Invalid: interface has computes, but field initializer has transacts
+# invalid_interface := interface&lt;computes&gt;:
+#     Instance:transacting_class = transacting_class{}  # ERROR</code></pre>
+<p>These constraints ensure that construction effects flow correctly through inheritance hierarchies. A class inheriting an interface must be able to construct all interface fields, which requires having at least the same construction effects.</p></div>
+  </details>
+</section><section class="section" id="s13-working-with-effects">
+  <div class="annotation">
+    <h3>中文批注：Working with Effects</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Working with Effects”展开。阅读时先抓住这些英文关键词：designing、functions、start、minimal、effects。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;writes&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;public&gt;</span><span class="chip">computes</span><span class="chip">reads</span><span class="chip">writes</span><span class="chip">decides</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Working with Effects</summary>
+    <div class="md"><h2>Working with Effects</h2>
+<p>When designing functions, start with the minimal effects needed and expand only when necessary. Pure functions with <code>&lt;computes&gt;</code> are the easiest to test, reason about, and compose. Add <code>&lt;reads&gt;</code> when you need to observe state, <code>&lt;writes&gt;</code> when you need to modify it, and <code>&lt;decides&gt;</code> when you need failure-based control flow.</p>
+<p>Effects are part of your API contract. Once published, removing effects is a backwards-compatible change (your function does less than before), but adding effects is breaking (your function now does more than callers might expect). Design your effect signatures thoughtfully, as they become promises to your users.</p>
+<p>Remember that over-specifying effects is allowed and sometimes beneficial. A function marked <code>&lt;reads&gt;</code> can be implemented as pure <code>&lt;computes&gt;</code> internally. This provides flexibility for future changes without breaking existing callers.</p>
+<p>&lt;!--versetest weapon:=struct&lt;computes&gt;{Type:weapon_type,Dammage:int} weapon_type:=enum: Sword --&gt; &lt;!-- 32 --&gt;</p>
+<pre><code># API promises it might read state
+GetDefaultWeapon&lt;public&gt;()&lt;reads&gt;:weapon =
+    # But current implementation is pure
+    weapon{Type := weapon_type.Sword, Dammage := 10}</code></pre>
+<p>Effect over-specification can future-proof APIs and avoid breaking changes later. For example, marking a currently pure function as <code>&lt;reads&gt;</code> allows you to add state observation in the future without breaking compatibility.</p></div>
+  </details>
+</section><section class="section" id="s14-backwards-compatibility">
+  <div class="annotation">
+    <h3>中文批注：Backwards Compatibility</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Backwards Compatibility”展开。阅读时先抓住这些英文关键词：effects、function、part、what、checked。</p><p>本节与长期兼容/持久化相关；公开 API 或存档 schema 一旦发布，后续修改会受限制。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">for</span><span class="chip">reads</span><span class="chip">transacts</span><span class="chip">computes</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Backwards Compatibility</summary>
+    <div class="md"><h2>Backwards Compatibility</h2>
+<p>The effects of a function are part of what is checked for backwards compatibility. When updating a function that is part of a published API, the new version can have &quot;fewer bits&quot; but not more. So, a function that was marked as <code>&lt;reads&gt;</code> in a previous version cannot be changed to <code>&lt;transacts&gt;</code>, but it can be refined to <code>&lt;computes&gt;</code>.</p>
+<p>Effects transform side effects from hidden gotchas into visible, verifiable contracts. By making the implicit explicit, Verse helps you write more predictable, maintainable, and correct code. The effect system isn&#x27;t a burden — it&#x27;s a tool that helps you express your intent clearly and have the compiler verify that your implementation matches that intent.</p></div>
+  </details>
+</section>
+<nav class="footer-nav"><div><a href="../12_access/index.html">上一页：访问控制与元数据</a></div><div><a href="../14_concurrency/index.html">下一页：并发</a></div></nav>
+</main></div></body></html>

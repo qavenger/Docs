@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>控制流 - Book of Verse 中文提炼版</title>
+<title>控制流 - Book of Verse 中文批注版</title>
 <link rel="stylesheet" href="../assets/styles.css">
+<script src="../assets/reader.js"></script>
 </head>
 <body>
 <div class="layout">
-<aside class="sidebar">
-  <div class="brand">Book of Verse</div>
-  <div class="sub">中文提炼版 · 同源目录结构</div>
-  <nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
+<aside class="sidebar"><div class="brand">Book of Verse</div><div class="sub">中文批注版 · 原文折叠 · 同源目录结构</div><nav class="nav"><a href="../index.html"><span>Home</span><br><small>Verse 语言文档总览</small></a>
 <a href="../00_overview/index.html"><span>Overview</span><br><small>Verse 编程语言概览</small></a>
 <a href="../01_expressions/index.html"><span>Expressions</span><br><small>表达式</small></a>
 <a href="../02_primitives/index.html"><span>Primitives types</span><br><small>基础数据类型</small></a>
@@ -32,34 +30,786 @@
 <a href="../17_persistable/index.html"><span>Persistable Types</span><br><small>可持久化类型</small></a>
 <a href="../18_evolution/index.html"><span>Code Evolution</span><br><small>代码演化</small></a>
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
-<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav>
-</aside>
+<a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside>
 <main class="main">
-  <div class="crumb">Control Flow / <a href="https://verselang.github.io/book/07_control/">原文页面</a></div>
-  <section class="hero">
-    <h1>控制流</h1>
-    <p class="lead">控制流页说明 block、if、case、loop、for、first、return、defer 和 profiling 都如何作为表达式或控制边界参与求值。</p>
-    <div class="meta"><span class="pill">源文件：07_control.md</span><span class="pill">小节数：10</span><span class="pill">生成：2026-06-25</span></div>
-  </section>
-  <section class="grid">
-    <article class="card"><h2>核心提炼</h2><ul class="list"><li>block 创建新作用域，值来自最后执行表达式。</li><li><code>if</code> 由成功/失败驱动，条件中应包含可失败表达式。</li><li><code>case</code> 适合离散值和 enum，可参与穷尽检查。</li><li><code>loop</code> 是无限循环，需用 <code>break</code> 退出；<code>break</code> 可适配多种类型上下文。</li><li><code>for</code> body 的结果会收集成 array，header 里的失败表达式可作为过滤器。</li><li><code>defer</code> 是作用域退出清理机制，多个 defer 后注册先执行。</li></ul></article>
-    <article class="card"><h2>规则与坑点</h2><ul class="list"><li><code>for</code> 没有 <code>continue</code>，用 header 过滤或内部条件代替。</li><li>range 只能直接用于迭代，不应保存成变量。</li><li><code>return</code> 必须处于 tail position，通常只用于提前退出。</li><li><code>first</code> 章节标注为未发布设计。</li></ul></article>
-    <article class="card"><h2>典型语法</h2><ul class="list"><li><code>if (Value := Items[0]): ... else: ...</code></li><li><code>case(Value): A =&gt; ...; _ =&gt; ...</code></li><li><code>for (Index -&gt; Item : Items): ...</code></li><li><code>defer: Cleanup()</code></li></ul></article>
-  </section>
-  <section>
-    <h2>原文小节结构</h2>
-    <p class="source">下面保留原页面的标题层级，方便按原书结构回查。代码块内的注释标题已过滤。</p>
-    <ol class="toc"><li class="level-1">Control Flow</li><li class="level-2">Blocks</li><li class="level-2">If Expressions</li><li class="level-2">Case Expressions</li><li class="level-2">Loop Expressions</li><li class="level-2">For Expressions</li><li class="level-2">First Expressions</li><li class="level-2">Return Statements</li><li class="level-2">Defer Statements</li><li class="level-2">Profiling</li></ol>
-  </section>
-  <section>
-    <h2>阅读提示</h2>
-    <p>本页是中文提炼，不替代完整英文原文。遇到编译器行为、未发布功能或 UE/UEFN 版本差异时，请回到上方原文链接和当前引擎版本文档确认。</p>
-  </section>
-  <nav class="footer-nav">
-    <div><a href="../06_functions/index.html">上一页：函数</a></div>
-    <div><a href="../08_failure/index.html">下一页：失败系统</a></div>
-  </nav>
-</main>
-</div>
-</body>
-</html>
+<div class="crumb">Control Flow / <a href="https://verselang.github.io/book/07_control/">原文页面</a></div>
+<section class="hero"><h1>控制流</h1><p class="lead">本页讲 block、if、case、loop、for、return、defer 如何作为表达式或控制边界运作。</p><div class="meta"><span class="pill">源文件：07_control.md</span><span class="pill">批注段落：10</span><span class="pill">完整原文已内嵌</span><span class="pill">生成：2026-06-25</span></div></section>
+<section class="guide"><article class="card"><h2>这一页读什么</h2><p>控制流和失败系统紧密绑定，if/for 的条件区经常是 failure context。</p><h3>注意点</h3><ul class="list"><li>for 没有 continue，通常用 header 过滤。</li><li>range 不是一等值，主要用于迭代。</li></ul></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-control-flow">Control Flow</a></li><li class="lvl2"><a href="#s1-blocks">Blocks</a></li><li class="lvl2"><a href="#s2-if-expressions">If Expressions</a></li><li class="lvl2"><a href="#s3-case-expressions">Case Expressions</a></li><li class="lvl2"><a href="#s4-loop-expressions">Loop Expressions</a></li><li class="lvl2"><a href="#s5-for-expressions">For Expressions</a></li><li class="lvl2"><a href="#s6-first-expressions">First Expressions</a></li><li class="lvl2"><a href="#s7-return-statements">Return Statements</a></li><li class="lvl2"><a href="#s8-defer-statements">Defer Statements</a></li><li class="lvl2"><a href="#s9-profiling">Profiling</a></li></ol></article></section>
+<div class="toolbar"><strong>原文显示：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">每个章节都先给中文批注，再放可折叠原文。</span></div>
+<section class="section" id="s0-control-flow">
+  <div class="annotation">
+    <h3>中文批注：Control Flow</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Control Flow”展开。阅读时先抓住这些英文关键词：Every、program、has、natural、rhythm。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><p class="source">本节没有明显的内联语法标记，按标题和段落理解即可。</p></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Control Flow</summary>
+    <div class="md"><h1>Control Flow</h1>
+<p>Every program has a natural rhythm to its execution, a sequence in which instructions are processed and decisions are made. In Verse, this flow is more than just a mechanical progression through lines of code - it&#x27;s a carefully orchestrated dance between different types of expressions, each contributing to the overall behavior of your program.</p></div>
+  </details>
+</section><section class="section" id="s1-blocks">
+  <div class="annotation">
+    <h3>中文批注：Blocks</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Blocks”展开。可把它先理解为“代码块”。阅读时先抓住这些英文关键词：code、block、fundamental、organizational、unit。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">&lt;reads&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">for</span><span class="chip">where</span><span class="chip">if</span><span class="chip">reads</span><span class="chip">branch</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Blocks</summary>
+    <div class="md"><h2>Blocks</h2>
+<p>A code block is a fundamental organizational unit, it groups related expressions together and creates a new scope for variables and constants. Unlike many languages where blocks are merely syntactic conveniences, blocks are expressions themselves, meaning they produce values just like any other expression.</p>
+<p>The concept of scope is crucial to understanding code blocks. When you create a variable or constant within a block, it exists only within that block&#x27;s context. This containment ensures that your code remains organized and that names don&#x27;t accidentally conflict across different parts of your program. Consider this function, it&#x27;s body is a code block that contains one if-then-else expression, itself composed of three different code blocks.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 01 --&gt;</p>
+<pre><code>CalculateReward(PlayerLevel:int)&lt;reads&gt;:int =
+    if:
+        PlayerLevel &gt; 10
+        Multiplier := 2.0  # Only exists within this if block
+        Base := 100
+        Result := Floor[(Base+PlayerLevel) * Multiplier] # Fails on infinity
+    then:
+        Result  # This block extends the scope of the if
+    else:
+        50      # Different branch, different scope
+                # Multiplier and Result don&#x27;t exist here</code></pre>
+<p>&lt;!-- CalculateReward(11) = 222 --&gt;</p>
+<p>Verse has a flexible syntax with three equivalent formats for writing blocks. The spaced format is the most common, using a colon to introduce the block and indentation to show structure:</p>
+<p>&lt;!--versetest IsPlayerReady()&lt;decides&gt;&lt;transacts&gt;:void = {} StartMatch()&lt;transacts&gt;:void = {} BeginCountdown()&lt;transacts&gt;:void = {} --&gt; &lt;!-- 02 --&gt;</p>
+<pre><code>if (IsPlayerReady[]):
+    StartMatch()
+    BeginCountdown()</code></pre>
+<p>The multi-line braced format offers familiarity for programmers coming from C-style languages:</p>
+<p>&lt;!--versetest IsPlayerReady()&lt;decides&gt;&lt;transacts&gt;:void = {} StartMatch()&lt;transacts&gt;:void = {} BeginCountdown()&lt;transacts&gt;:void = {} --&gt; &lt;!-- 03 --&gt;</p>
+<pre><code>if (IsPlayerReady[]) {
+    StartMatch()
+    BeginCountdown()
+}</code></pre>
+<p>For simple operations, the single-line dot format keeps code concise:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 04 --&gt;</p>
+<pre><code>HasPowerup()&lt;computes&gt;&lt;decides&gt;:void={}
+ApplyBoost():void={}
+F():void=
+    if (HasPowerup[]). ApplyBoost()</code></pre>
+<p>Since everything is an expression, blocks themselves have values. The value of a block is given by the last expression executed within it. This enables elegant patterns where complex computations can be encapsulated in blocks that seamlessly integrate with surrounding code:</p>
+<p>&lt;!--versetest CalculateScore()&lt;computes&gt;:int = 100 CalculateBonus(Time:float)&lt;computes&gt;:int = 50 CompletionTime:float = 10.0 AccuracyValue:float = 0.95 --&gt; &lt;!-- 05 --&gt;</p>
+<pre><code>FinalScore := block:              # The variable has the block&#x27;s value
+    Base := CalculateScore()
+    Bonus := CalculateBonus(CompletionTime)
+    Accuracy := Floor[AccuracyValue * 100.0]
+    Base + Bonus + Accuracy       # This becomes the block&#x27;s value</code></pre></div>
+  </details>
+</section><section class="section" id="s2-if-expressions">
+  <div class="annotation">
+    <h3>中文批注：If Expressions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“If Expressions”展开。可把它先理解为“if 表达式”。阅读时先抓住这些英文关键词：expression、uses、success、failure、drive。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">if</span><span class="chip">then:</span><span class="chip">else:</span><span class="chip">else</span><span class="chip">then</span><span class="chip">any</span><span class="chip">All branches must produce a value for the</span><span class="chip">&lt;computes&gt;</span><span class="chip">&lt;decides&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：If Expressions</summary>
+    <div class="md"><h2>If Expressions</h2>
+<p>The <code>if</code> expression uses success and failure to drive decisions (see <a href="../08_failure/index.html">Failure</a> for details). When an expression in the condition succeeds, the corresponding branch executes:</p>
+<p>&lt;!--versetest player := class: CanJump()&lt;computes&gt;&lt;decides&gt;:void={} Jump()&lt;computes&gt;:void={} GetEquippedWeapon()&lt;computes&gt;&lt;decides&gt;:weapon=weapon{} Idle()&lt;computes&gt;:void={}</p>
+<p>weapon:=class&lt;computes&gt;{ Fire():void={} } ConsumeAmmo():void={} PlayJumpSound():void={} --&gt; &lt;!-- 07 --&gt;</p>
+<pre><code>HandlePlayerAction(Player:player, Action:string):void =
+    if (Action = &quot;jump&quot;, Player.CanJump[]):
+        Player.Jump()
+        PlayJumpSound()
+    else if (Action = &quot;attack&quot;, Weapon := Player.GetEquippedWeapon[]):
+        Weapon.Fire()
+        ConsumeAmmo()
+    else:
+        # Default action
+        Player.Idle()</code></pre>
+<p>This approach allows you to chain conditions that might fail without explicit error handling at each step.</p>
+<p>An alternative syntax uses <code>then:</code> and <code>else:</code> keywords to explicitly label branches:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 08 --&gt;</p>
+<pre><code>ProcessValue(Value:int):string =
+    if:
+        Value &gt; 0
+        Value &lt; 100
+    then:
+        &quot;Valid&quot;
+    else:
+        &quot;Out of range&quot;
+
+ProcessValue(50) = &quot;Valid&quot;</code></pre>
+<p>This syntax can improve readability when you have multiple conditions or want to emphasize the condition-action separation.</p>
+<p>The condition in an <code>if</code> must contain at least one expression that can fail. This requirement ensures <code>if</code> is used for its intended purpose—handling uncertain outcomes:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 10 --&gt;</p>
+<pre><code># Error: condition cannot fail
+if (1 + 1):  # Compile error - no fallible expression
+    DoSomething()
+
+# Valid: array access can fail
+if (FirstItem := Items[0]):
+    Process(FirstItem)</code></pre>
+<p>Empty conditions are also not allowed—every <code>if</code> must test something.</p>
+<p>If any expression in the condition fails, control flow proceeds to the <code>else</code> branch if present. Any effects performed while evaluating the condition are automatically rolled back (see <a href="../08_failure/index.html#speculative-execution">Failure</a> for details):</p>
+<p>&lt;!--versetest GetPlayerScore()&lt;decides&gt;&lt;computes&gt;:int=1 --&gt; &lt;!-- 11 --&gt;</p>
+<pre><code>var Counter:int = 0
+
+if:
+    set Counter = Counter + 1  # Provisional change
+    Score := GetPlayerScore[]  # Might fail
+    Score &gt; 100
+then:
+    # Counter was incremented
+else:
+    # Counter rolled back to original value - increment undone!</code></pre>
+<p>This speculative execution makes conditional logic safer—you can perform operations optimistically, knowing they&#x27;ll be reversed if subsequent conditions fail.</p>
+<p>Variables defined in the condition are available in the <code>then</code> branch but not in the <code>else</code> branch:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 12 --&gt;</p>
+<pre><code>if:
+    Player := FindPlayer[Name]  # Define Player
+then:
+    AwardBonus(Player)  # OK - Player available
+else:
+    Penalize(Player)  # Compile error</code></pre>
+<p>This scoping reflects the logical flow: in the <code>else</code> branch, the condition failed, so any variables bound during the condition might not have meaningful values.</p>
+<p>Since <code>if</code> is an expression, it produces a value. When all branches return compatible types, the <code>if</code> can be used anywhere a value is expected:</p>
+<p>&lt;!--versetest IsCritical:logic= false BaseDamage:int=0 Health:int=0 --&gt; &lt;!-- 13 --&gt;</p>
+<pre><code>Damage := if (IsCritical?):
+    BaseDamage * 2
+else:
+    BaseDamage
+
+# Ternary-style
+Status := if (Health &gt; 50). &quot;Healthy&quot; else. &quot;Wounded&quot;</code></pre>
+<p>When branches have incompatible types, the result is widened to <code>any</code>:</p>
+<p>&lt;!--versetest UseNumber:logic=false --&gt; &lt;!-- 14 --&gt;</p>
+<pre><code># Different types in branches yields any
+Result:any = if (UseNumber?) then 42 else &quot;text&quot;</code></pre>
+<p>All branches must produce a value for the <code>if</code> to be used as an expression.</p></div>
+  </details>
+</section><section class="section" id="s3-case-expressions">
+  <div class="annotation">
+    <h3>中文批注：Case Expressions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Case Expressions”展开。可把它先理解为“case 表达式”。阅读时先抓住这些英文关键词：need、make、decisions、based、multiple。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">case</span><span class="chip">The</span><span class="chip">if-else</span><span class="chip">int</span><span class="chip">logic</span><span class="chip">char</span><span class="chip">string</span><span class="chip">float</span><span class="chip">enum</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Case Expressions</summary>
+    <div class="md"><h2>Case Expressions</h2>
+<p>When you need to make decisions based on multiple possible values, the <code>case</code> expression provides clear, readable branching:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 15 --&gt;</p>
+<pre><code>GetWeaponDamage(WeaponType:string):float =
+    case(WeaponType):
+        &quot;sword&quot;  =&gt; 50.0
+        &quot;bow&quot;    =&gt; 35.0
+        &quot;staff&quot;  =&gt; 40.0
+        &quot;dagger&quot; =&gt; 25.0
+        _        =&gt; 10.0  # Default damage for unknown weapons
+
+GetWeaponDamage(&quot;sword&quot;) = 50.0</code></pre>
+<p>The <code>case</code> expression is used when you have discrete values to match against, making your intent clearer than a series of <code>if-else</code> conditions.</p>
+<p>Case expressions work with specific types that support direct value comparison:</p>
+<ul>
+<li><strong>Primitives</strong>: <code>int</code>, <code>logic</code>, <code>char</code></li>
+<li><strong>Strings</strong>: <code>string</code></li>
+<li><strong>Enums</strong>: Both open and closed enums</li>
+<li><strong>Refinement types</strong>: Custom types with constraints</li>
+</ul>
+<p>They do not work on <code>float</code>, objects and tuples due to implementation limitations.</p>
+<p><strong>Exhaustiveness Checking with Enums.</strong> <code>case</code> with <code>enum</code> are checked for exhaustiveness.  For closed enums where all values are known, the compiler verifies you&#x27;ve handled all cases:</p>
+<p>&lt;!--versetest direction := enum: North South East West --&gt; &lt;!-- 17 --&gt;</p>
+<pre><code># Exhaustive - no wildcard needed
+GetVector(Dir:direction):tuple(int, int) =
+    case (Dir):
+        direction.North =&gt; (0, 1)
+        direction.South =&gt; (0, -1)
+        direction.East =&gt; (1, 0)
+        direction.West =&gt; (-1, 0)
+
+GetVector(direction.North) = (0, 1)</code></pre>
+<p>If you add a wildcard when all cases are covered, you&#x27;ll get a warning that the wildcard is unreachable:</p>
+<p>&lt;!--versetest direction := enum: North South East West</p>
+<p>GetVectorWithUnreachable(Dir:direction):tuple(int, int) = case (Dir): direction.North =&gt; (0, 1) direction.South =&gt; (0, -1) direction.East =&gt; (1, 0) direction.West =&gt; (-1, 0) _ =&gt; (0, 0)</p>
+<p>assert: # Test that the function works despite unreachable wildcard GetVectorWithUnreachable(direction.North) = (0, 1) &lt;# --&gt; &lt;!-- 18 --&gt;</p>
+<pre><code>    case (Dir):
+        direction.North =&gt; (0, 1)
+        direction.South =&gt; (0, -1)
+        direction.East =&gt; (1, 0)
+        direction.West =&gt; (-1, 0)
+        _ =&gt; (0, 0)  # Warning: all cases already covered</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>Incomplete case coverage is allowed in a <code>&lt;decides&gt;</code> context:</p>
+<p>&lt;!--versetest direction := enum{  North, South, East, West} --&gt; &lt;!-- 19 --&gt;</p>
+<pre><code># Without wildcard in &lt;decides&gt; context - OK
+GetPrimaryDirection2(Dir:direction)&lt;decides&gt;:string =
+    case (Dir):
+        direction.North =&gt; &quot;Primary&quot;
+        # Other directions cause function to fail</code></pre>
+<p>Open enums can have values added after publication, so they can never be exhaustive. They always require either a wildcard or a <code>&lt;decides&gt;</code> context.</p></div>
+  </details>
+</section><section class="section" id="s4-loop-expressions">
+  <div class="annotation">
+    <h3>中文批注：Loop Expressions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Loop Expressions”展开。可把它先理解为“loop 表达式”。阅读时先抓住这些英文关键词：loop、expression、creates、infinite、continues。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">loop</span><span class="chip">The</span><span class="chip">break</span><span class="chip">This demonstrates bottom type:</span><span class="chip">unifies with</span><span class="chip">(from</span><span class="chip">)
+in the if-expression. The assignment</span><span class="chip">true</span><span class="chip">The following restrictions apply. The</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Loop Expressions</summary>
+    <div class="md"><h2>Loop Expressions</h2>
+<p>The <code>loop</code> expression creates an infinite loop that continues until explicitly broken:</p>
+<p>&lt;!--versetest UpdatePlayerPositions()&lt;transacts&gt;:void={} CheckCollisions()&lt;transacts&gt;:void={} RenderFrame()&lt;transacts&gt;:void={} GameOver()&lt;decides&gt;&lt;transacts&gt;:void={} --&gt; &lt;!-- 22 --&gt;</p>
+<pre><code>GameLoop():void =
+    loop:
+        UpdatePlayerPositions()
+        CheckCollisions()
+        RenderFrame()
+        if (GameOver[]). break</code></pre>
+<p>The <code>break</code> expression exits the loop entirely, terminating iteration. <code>break</code> has &quot;bottom&quot; type—a type that represents a computation that never returns normally. Since the bottom type is a subtype of all other types, <code>break</code> can be used in any type context:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 55 --&gt;</p>
+<pre><code>NumberOfBits(X:int):int =
+    var B:int = 1
+    var C:int = 0
+    loop:
+        set B = if (B &gt; X) { break } else { 2*B }
+        set C = C+1
+    C</code></pre>
+<p>This demonstrates bottom type: <code>break</code> unifies with <code>int</code> (from <code>2*B</code>) in the if-expression. The assignment <code>set B = ...</code> uses the value of the if-expression, showing that <code>break</code> is compatible in any type context.</p>
+<p><strong>Loop Return Value:</strong> The loop expression itself produces a value of type <code>true</code> (the top type), regardless of what expressions appear in its body. This return value is rarely useful in practice—loops are typically used for their side effects.</p>
+<p>When <code>break</code> appears in nested loops, it exits only the innermost enclosing loop:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 57 --&gt;</p>
+<pre><code>var Outer:int = 0
+loop:
+    set Outer += 1
+    var Inner:int = 0
+    loop:
+        set Inner += 1
+        if (Inner = 5):
+            break        # Exits inner loop
+    if (Outer = 10):
+        break            # Exits outer loop</code></pre>
+<p>The following restrictions apply. The <code>break</code> statement must appear in a code block, not as part of a complex expression.  A loop must contain at least one non-break statement. Finally, using <code>break</code> outside a <code>loop</code> produces an error:</p>
+<p>&lt;!--versetest ShouldStop()&lt;decides&gt;:void={}</p>
+<p>assert_semantic_error(3506, 3581): ProcessData():void = if (ShouldStop[]): break      # Error &lt;# --&gt; &lt;!-- 58 --&gt;</p>
+<pre><code>ProcessData():void =
+   if (ShouldStop[]):
+           break      # Error</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p></div>
+  </details>
+</section><section class="section" id="s5-for-expressions">
+  <div class="annotation">
+    <h3>中文批注：For Expressions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“For Expressions”展开。可把它先理解为“for 表达式”。阅读时先抓住这些英文关键词：expression、iterates、over、collections、ranges。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">for</span><span class="chip">do:</span><span class="chip">Values</span><span class="chip">Floor</span><span class="chip">decides</span><span class="chip">Index -&gt; Value</span><span class="chip">Key -&gt; Value</span><span class="chip">**Filtering with Failure:**
+
+Verse&#x27;s</span><span class="chip">if</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：For Expressions</summary>
+    <div class="md"><h2>For Expressions</h2>
+<p>The <code>for</code> expression iterates over collections, ranges, and other iterable types, providing a more structured approach to repetition:</p>
+<p>&lt;!--versetest player:=class{} GetScore(P:player):int=100 &lt;# --&gt; &lt;!-- 23 --&gt;</p>
+<pre><code>CalculateTotalScore(Players:[]player)&lt;transacts&gt;:int =
+    var Total:int = 0
+    for (Player : Players):
+        PlayerScore := GetScore(Player)
+        set Total += PlayerScore
+    Total</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>While it may look familiar from earlier imperative languages, <code>for</code> is best thought of as a functional construct that combines iteration, filtering with speculative execution, and construction of a collection of results.</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 223 --&gt;</p>
+<pre><code>Values:[]float= array{1.0, 10.1, 100.2}
+Result := 
+   for:
+      V : Values
+      V &gt;= 10.0
+      R := Floor[V]
+   do:
+      R*2.0
+
+Result = array{20.0, 200.0}</code></pre>
+<p>The above is written with an alternative multi-clause syntax using the <code>do:</code> keyword to  separate the iteration specification  from the body. The <code>for</code> iterates  over the <code>Values</code> array,  discarding values smaller than 10  and rounding down  numbers. It  returns an array  of floats. The <code>Floor</code> function is defined as <code>decides</code> --if it were to fail that iterate would be discarded.</p>
+<p>There is another alternative syntax: the single-line dot syntax for simple operations:</p>
+<p>&lt;!--versetest Values:[]int = array{1, 2, 3} DoSomething(V:int):void = {} --&gt; &lt;!-- 26 --&gt;</p>
+<pre><code># Single-line dot style
+for (V : Values). DoSomething(V)</code></pre>
+<p><strong>Index and Value Pairs:</strong></p>
+<p>When iterating arrays or maps, you can access both the index/key and the value using the pair syntax <code>Index -&gt; Value</code> or <code>Key -&gt; Value</code>:</p>
+<p>&lt;!--versetest player:=struct{ Name:string } --&gt; &lt;!-- 28 --&gt;</p>
+<pre><code>PrintRoster(Players:[]player):void =
+    for (Index -&gt; Player : Players):
+        Print(&quot;Player {Index}: {Player.Name}&quot;)</code></pre>
+<p>The index is zero-based, matching Verse&#x27;s array indexing convention.</p>
+<p><strong>Defining Variables in For Clauses:</strong></p>
+<p>The for loop allows you to define intermediate variables that can be used in subsequent filters or the loop body:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 29 --&gt;</p>
+<pre><code># Define Y based on X
+Doubled := for (X := 1..5, Y := X * 2):
+    Y  # Returns array{2, 4, 6, 8, 10}
+
+# Combine with filtering
+SafeDivision := for (X := -3..3, X &lt;&gt; 0, Y := Floor[10.0 / (X*1.0)]):
+    Y  # Skips X=0, returns array{-3, -5, -10, 10, 5, 3}</code></pre>
+<p>These intermediate variables are scoped to the iteration and can reference earlier variables in the same clause.</p>
+<p><strong>Multiple Filters:</strong></p>
+<p>You can chain multiple filter conditions using comma-separated or semicolon-separated expressions. Each filter must be failable, and if any fails, that iteration is skipped:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 30 --&gt;</p>
+<pre><code># Multiple independent filters
+Filtered := for (X := 1..10, X &lt;&gt; 3, X &lt;&gt; 7):
+    X  # Returns array{1, 2, 4, 5, 6, 8, 9, 10}
+
+# Filters with intermediate variables
+Complex := for (X := 1..5, X &lt;&gt; 2, Y := X * 2, Y &lt; 10):
+    Y  # Only includes values where X≠2 and Y&lt;10</code></pre>
+<p>Each filter condition is evaluated in order, and iteration continues only if all conditions succeed.</p>
+<p><strong>Iterating Over Maps:</strong></p>
+<p>Maps can be iterated over in two ways: values only, or key-value pairs using the pair syntax:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 31 --&gt;</p>
+<pre><code># Iterate over values only
+Scores:[int]int = map{1 =&gt; 100, 2 =&gt; 200, 3 =&gt; 150}
+TopScores := for (Score : Scores):
+    Score  # Returns array{100, 200, 150}
+
+# Iterate over key-value pairs
+PlayerScores:[string]int = map{&quot;Alice&quot; =&gt; 100, &quot;Bob&quot; =&gt; 200}
+for (PlayerName -&gt; Score : PlayerScores):
+    Print(&quot;{PlayerName} scored {Score}&quot;)</code></pre>
+<p>Maps preserve insertion order, so iteration order matches the order in which keys were added to the map.</p>
+<p><strong>String Iteration:</strong></p>
+<p>Strings can be iterated character by character:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 32 --&gt;</p>
+<pre><code>CountVowels(Text:string):int =
+    var Count:int = 0
+    for (Char : Text, Char = &#x27;a&#x27; or Char = &#x27;e&#x27; or Char = &#x27;i&#x27; or Char = &#x27;o&#x27; or Char = &#x27;u&#x27;):
+        set Count += 1
+    Count</code></pre>
+<p><strong>Nested Iteration (Cartesian Products):</strong></p>
+<p>Multiple iteration sources create nested loops, producing the cartesian product:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 33 --&gt;</p>
+<pre><code>PrintGrid():void =
+    for (X := 1..3, Y := 1..3):
+        Print(&quot;({X}, {Y})&quot;)
+    # Produces: (1,1), (1,2), (1,3), (2,1), (2,2), (2,3), (3,1), (3,2), (3,3)</code></pre>
+<p><strong>Filtering with Failure:</strong></p>
+<p>Verse&#x27;s <code>for</code> expressions are particularly powerful when they leverage failure contexts, as they can naturally filter:</p>
+<p>&lt;!--versetest player:=struct{ Name:string } GetScore(P:player)&lt;computes&gt;:int=0 --&gt; &lt;!-- 34 --&gt;</p>
+<pre><code>GetHighScorers(Players:[]player):[]player =
+    for (Player : Players, Score := GetScore(Player), Score &gt; 1000):
+        Player  # Only players with score &gt; 1000 are included</code></pre>
+<p>When any expression in the iteration header fails, that iteration is skipped. This allows elegant filtering without explicit <code>if</code> statements:</p>
+<p>&lt;!--versetest item:=struct{Price:float} --&gt; &lt;!-- 35 --&gt;</p>
+<pre><code># Filter items under budget and apply transformation
+AffordableItems(Items:[]item, Budget:float):[]float =
+    for (Item : Items, Item.Price &lt;= Budget):
+        Item.Price * 1.1  # Apply 10% markup</code></pre>
+<p><strong>For as an Expression:</strong></p>
+<p>Like other control flow constructs, <code>for</code> is an expression. When the body produces values, <code>for</code> collects them into an array:</p>
+<p>&lt;!--versetest player:=struct{Name:string} --&gt; &lt;!-- 36 --&gt;</p>
+<pre><code># Collect player names
+GetNames(Players:[]player):[]string =
+    for (Player : Players):
+        Player.Name  # Each iteration produces a string</code></pre>
+<p>This makes <code>for</code> a powerful tool for transforming collections without explicit accumulator variables.</p>
+<p><strong>Breaking from For Loops:</strong></p>
+<p>The <code>break</code> statement cannot exit <code>for</code> loops early. If you need only the first matching result from an iteration, use <code>first</code> instead of <code>for</code> (see <a href="#first-expressions">First Expressions</a> below).</p>
+<p><strong>Note on Continue:</strong></p>
+<p>Unlike many languages, Verse does not currently support a <code>continue</code> statement to skip to the next iteration. Instead, use conditional logic or failure-based filtering to achieve similar results:</p>
+<p>&lt;!--versetest item:=struct{IsValid:logic} ProcessItem(I:item):void={} --&gt; &lt;!-- 38 --&gt;</p>
+<pre><code># Instead of continue, use conditional blocks
+ProcessItems(Items:[]item):void =
+    for (Item : Items):
+        if (Item.IsValid?):
+            ProcessItem(Item)
+        # No continue needed - just structure with conditions
+
+# Or use failure-based filtering in the header
+ProcessValidItems(Items:[]item):void =
+    for (Item : Items, Item.IsValid?):
+        ProcessItem(Item)  # Only valid items reach here</code></pre>
+<p><strong>Range Iteration.</strong> The range operator <code>..</code> provides numeric iteration over integer sequences. Ranges are inclusive on both ends:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 27 --&gt;</p>
+<pre><code># Iterates: 1, 2, 3, 4, 5 (both bounds included)
+for (I := 1..5):
+    Print(&quot;Count: {I}&quot;)
+
+# Single element range
+for (I := 42..42):
+    Print(&quot;Answer: {I}&quot;)  # Prints once: &quot;Answer: 42&quot;
+
+# Empty range (start &gt; end produces no iterations)
+for (I := 5..1):
+    Print(&quot;Never executes&quot;)  # Loop body never runs</code></pre>
+<p>The <code>..</code> operator is always inclusive. There is no exclusive range syntax.</p>
+<p>Range bounds are evaluated in a specific order, and side effects occur predictably:</p>
+<ol>
+<li><strong>Left bound evaluated first</strong>, then right bound</li>
+<li><strong>Both bounds always evaluated</strong>, even if the range is empty</li>
+<li><strong>Side effects happen in order</strong>, regardless of whether iterations occur</li>
+</ol>
+<p>While you cannot store ranges as values, you can create arrays using for expressions:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 47 --&gt;</p>
+<pre><code># This works because for produces an array, not because ranges are storable
+DoubledNumbers:[]int = for (I := 1..5){ I * 2 }
+
+# Can then iterate over the array normally
+for (N : DoubledNumbers):
+    Print(&quot;{N}&quot;)</code></pre>
+<p>The range exists only during the for expression evaluation; the resulting array is what gets stored.</p>
+<p><strong>Restrictions.</strong> The for loop has several important restrictions:</p>
+<ol>
+<li><strong>Iteration source must be iterable:</strong> Only ranges (<code>1..10</code>),</li>
+<p>arrays, maps, and strings can be iterated.</p>
+</ol>
+<ol>
+<li><strong>Filters must be failable:</strong> Filter conditions must contain at</li>
+<p>least one expression that can fail.</p>
+</ol>
+<ol>
+<li><strong>Cannot redefine iteration variables:</strong> You cannot redefine the</li>
+<p>iteration variable in the same clause.</p>
+</ol>
+<ol>
+<li><strong>Cannot define mutable variables:</strong> Using <code>var</code> to declare</li>
+<p>variables in the for clause is not allowed.</p>
+</ol>
+<p>The range operator <code>..</code> has strict limitations that distinguish it from other iterable types. Ranges are <em>not first-class values</em>—they are expressions that iteratively yield each integer in the range as a separate value. Ranges cannot be used in some contexts where you might expect them to work:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 40 --&gt;</p>
+<pre><code># ERROR: Cannot store range in variable
+MyRange := 1..10
+for (I := MyRange):
+
+# ERROR: Cannot pass range to function
+ProcessRange(1..10)
+
+# ERROR: Cannot use range as standalone expression
+Result := 1..10
+
+# ERROR: Cannot put range in array
+Ranges := array{1..10}
+
+# ERROR: Cannot index range
+Value := (1..10)(5)
+
+# ERROR: Cannot access members on range
+Length := (1..10).Length</code></pre>
+<p>Ranges work exclusively with the <code>int</code> type. Other numeric types, booleans, types, or objects are not supported.</p></div>
+  </details>
+</section><section class="section" id="s6-first-expressions">
+  <div class="annotation">
+    <h3>中文批注：First Expressions</h3>
+    <div class="rows">
+      <div><p>这一节围绕“First Expressions”展开。阅读时先抓住这些英文关键词：note、Unreleased、Feature、first、expressions。</p><p>本节含未发布或讨论中特性，适合理解设计方向，不应直接假定当前 UE/UEFN 可用。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">first</span><span class="chip">for</span><span class="chip">&lt;decides&gt;</span><span class="chip">Like</span><span class="chip">, the</span><span class="chip">do:</span><span class="chip">The</span><span class="chip">expression uses the same binding syntax as</span><span class="chip">-&gt;</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：First Expressions</summary>
+    <div class="md"><h2>First Expressions</h2>
+<div class="admonition"><div class="admonition-title">Unreleased Feature</div><p><code>first</code> expressions have not yet been released. This section documents planned functionality that is not currently available.</p></div>
+<p>The <code>first</code> expression is similar to <code>for</code>, but instead of evaluating the body for every iteration of the domain clause, it evaluates only the <strong>first</strong> iteration of the domain clause that succeeds. Instead of yielding an array as <code>for</code> does, it yields the value of the body for that single iteration. If no iteration reaches the body, <code>first</code> fails — so it requires a <code>&lt;decides&gt;</code> context.</p>
+<p>&lt;!--versetest player:=struct{ Name:string } GetScore(P:player)&lt;computes&gt;&lt;decides&gt;:int=0 --&gt; &lt;!-- 80 --&gt;</p>
+<pre><code># Find the first player with a score above the threshold
+FindTopScorer(Players:[]player, Threshold:int)&lt;decides&gt;:player =
+    first (Player : Players; GetScore[Player] &gt; Threshold):
+        Player</code></pre>
+<p>Like <code>for</code>, the <code>first</code> expression supports three syntax forms. The block form uses <code>do:</code> to separate the iteration clauses from the body:</p>
+<p>&lt;!--NoCompile--&gt; &lt;!-- 81 --&gt;</p>
+<pre><code># Block form with do:
+first:
+    X : Collection
+    Predicate[X]
+do:
+    Process(X)
+
+# Braces form
+first(X : Collection; Predicate[X]){ Process(X) }
+
+# Dot form for single expressions
+first(X : Collection; Predicate[X]). Process(X)</code></pre>
+<p>The <code>first</code> expression uses the same binding syntax as <code>for</code>. You can iterate arrays, maps, strings, and ranges. You can use index-value pairs with the <code>-&gt;</code> syntax, chain multiple filters, and nest multiple iteration sources:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 82 --&gt;</p>
+<pre><code># Find the index of an element using index -&gt; value binding
+IndexOf(Arr:[]int, Target:int)&lt;decides&gt;:int =
+    first(I -&gt; V : Arr, V = Target). I</code></pre>
+<p>Note that <code>first</code> yields the value of the <strong>body</strong> expression, not the iteration variable. This is what makes it possible to search for one thing and yield another — for example, finding an index by matching a value.</p>
+<p><strong>First vs For:</strong></p>
+<p>| | <code>for</code> | <code>first</code> | |-|-------|---------| | Yields | Array of all results | First result only | | On no match | Empty array | <strong>Fails</strong> (requires <code>&lt;decides&gt;</code>) | | Stops | After all iterations | After the first iteration |</p>
+<p><strong>Common Patterns:</strong></p>
+<p>Since <code>first</code> requires <code>&lt;decides&gt;</code>, a common way to use it is to wrap it in an <code>if</code> or an <code>option</code> to handle the case where no match is found:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 83 --&gt;</p>
+<pre><code># Find with fallback using if
+FindOrDefault(Arr:[]int, Target:int):int =
+    if (Index := first(I -&gt; V : Arr, V = Target). I):
+        Index
+    else:
+        -1</code></pre>
+<p>Or:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 84 --&gt;</p>
+<pre><code># Find with fallback using if
+FindOptional(Arr:[]int, Target:int):?int =
+    option:
+        Index := first(I -&gt; V : Arr, V = Target). I
+            Index</code></pre></div>
+  </details>
+</section><section class="section" id="s7-return-statements">
+  <div class="annotation">
+    <h3>中文批注：Return Statements</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Return Statements”展开。可把它先理解为“return 语句”。阅读时先抓住这些英文关键词：return、statement、provides、explicit、early。</p><p>本节与失败语义相关；注意哪些表达式必须放在 failure context，哪些效果会在失败时回滚。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">return</span><span class="chip">In functions with the</span><span class="chip">effect,</span><span class="chip">&lt;transacts&gt;</span><span class="chip">&lt;decides&gt;</span><span class="chip">&lt;allocates&gt;</span><span class="chip">&lt;computes&gt;</span><span class="chip">if</span><span class="chip">transacts</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Return Statements</summary>
+    <div class="md"><h2>Return Statements</h2>
+<p>The <code>return</code> statement provides explicit early exits from functions, allowing you to terminate execution and return a value before reaching the end of the function body:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 48 --&gt;</p>
+<pre><code>ValidateInput(Value:int):string =
+    if (Value &lt; 0):
+        return &quot;Error: Negative value&quot;
+
+    if (Value &gt; 1000):
+        return &quot;Error: Value too large&quot;
+
+    &quot;Valid&quot;     # Implicit return</code></pre>
+<p>Return statements can only appear in specific positions within your code—they must be in &quot;tail position,&quot; meaning they must be the last operation performed before control exits a scope. This restriction ensures predictable control flow:</p>
+<p>&lt;!--versetest GetOrder(:int)&lt;transacts&gt;&lt;decides&gt;:order=order{} order := class&lt;allocates&gt;{ IsValid()&lt;decides&gt;&lt;transacts&gt;:logic=false } --&gt; &lt;!-- 49 --&gt;</p>
+<pre><code># Valid: return is last operation
+ProcessOrder(OrderId:int)&lt;transacts&gt;:string =
+    if (Order := GetOrder[OrderId]):
+        if (Order.IsValid[]):
+            return &quot;Processed&quot;
+    &quot;Invalid order&quot;
+
+# Valid: return in both branches
+GetStatus(Value:int):string =
+    if (Value &gt; 0):
+        return &quot;Positive&quot;
+    else:
+        return &quot;Non-positive&quot;</code></pre>
+<p>Verse functions implicitly return the value of their last expression, so <code>return</code> is only needed for early exits:</p>
+<p>&lt;!--versetest CalculateBonus(Score:int):int={ if(Score&lt;100)then{return 0} Score*10 } --&gt; &lt;!-- 51 --&gt;</p>
+<pre><code># Implicit return
+GetValue():int = 42  # Returns 42
+
+# Explicit early return
+GetDiscount(Price:float):float =
+    if (Price &lt; 10.0):
+        return 0.0  # Early exit with no discount
+
+    Price * 0.1  # Implicit return with 10% discount</code></pre>
+<p>In functions with the <code>&lt;decides&gt;</code> effect, <code>return</code> allows you to provide successful values from early exits, while still allowing other paths to fail:</p>
+<p>&lt;!--versetest config:=struct{MaxRetries:int} GetConfig()&lt;transacts&gt;&lt;decides&gt;:config=config{MaxRetries:=3} AttemptOperation(Retry:int)&lt;computes&gt;&lt;decides&gt;:string=&quot;success&quot; --&gt; &lt;!-- 52 --&gt;</p>
+<pre><code>RetryableOperation()&lt;transacts&gt;:string =
+    if (Config := GetConfig[]):
+        for (Retry := 1..Config.MaxRetries):
+            if (Result := AttemptOperation[Retry]):
+                return Result  # Success - exit immediately
+    &quot;Failed&quot; # All retries exhausted</code></pre>
+<p>This pattern is common for search operations where you want to return immediately upon finding a match, but fail if no match is found.</p></div>
+  </details>
+</section><section class="section" id="s8-defer-statements">
+  <div class="annotation">
+    <h3>中文批注：Defer Statements</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Defer Statements”展开。可把它先理解为“defer 语句”。阅读时先抓住这些英文关键词：defer、statement、schedules、code、run。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">defer</span><span class="chip">for</span><span class="chip">loop</span><span class="chip">break</span><span class="chip">if</span><span class="chip">then</span><span class="chip">else</span><span class="chip">block</span><span class="chip">not</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Defer Statements</summary>
+    <div class="md"><h2>Defer Statements</h2>
+<p>The <code>defer</code> statement schedules code to run when the enclosing scope exits. This makes it invaluable for cleanup operations like closing files, releasing resources, or logging.</p>
+<p>Defer is <strong>scope-based</strong>, not function-based. A <code>defer</code> block executes when leaving the scope that directly contains it, including:</p>
+<ul>
+<li><strong>Function bodies</strong> — runs when the function returns</li>
+<li><strong><code>for</code> loops</strong> — the <code>for</code> body runs each iteration in its own</li>
+<p>scope; the <code>for</code> domain also introduces a lexical scope</p>
+<li><strong>Each iteration of <code>loop</code> blocks</strong> — runs at the end of each</li>
+<p>iteration (including on <code>break</code>)</p>
+<li><strong><code>if</code>/<code>then</code>/<code>else</code> clauses</strong> — runs when leaving the chosen branch</li>
+<li><strong><code>block</code> scopes</strong> — runs when leaving the block</li>
+<li><strong><code>not</code> expressions</strong> — <code>not e</code> evaluates <code>e</code> in a new lexical scope</li>
+<li><strong><code>or</code> expressions</strong> — <code>e0 or e1</code> evaluates <code>e0</code> in a new lexical</li>
+<p>scope</p>
+<li><strong><code>and</code> expressions</strong> — <code>e0 and e1</code> evaluates the entire expression</li>
+<p>in a new lexical scope</p>
+<li><strong><code>option</code> and <code>logic</code> expressions</strong> — <code>option{e}</code> and <code>logic{e}</code></li>
+<p>evaluate <code>e</code> in a new lexical scope</p>
+<li><strong><code>case</code> expressions</strong> — <code>case(e0){e1=&gt;e2, e3=&gt;e4}</code> creates a</li>
+<p>lexical scope for the whole <code>case</code>, and then for each result expression (<code>e2</code>, <code>e4</code>)</p>
+<li><strong>Archetype instantiation</strong> — <code>my_class{...}</code> introduces a lexical</li>
+<p>scope for the body</p>
+<li><strong><code>defer</code> blocks themselves</strong> — nested defers run when the outer</li>
+<p>defer completes</p>
+<li><strong>Structured concurrency macros</strong> (<code>race</code>, <code>rush</code>, <code>branch</code>) —</li>
+<p>each arm runs in its own lexical scope</p>
+<li><strong><code>spawn</code>, <code>await</code>, and <code>batch</code> expressions</strong> — <code>spawn{e}</code>,</li>
+<p><code>await{e}</code>, and <code>batch{e}</code> evaluate <code>e</code> in a new lexical scope</p>
+<li><strong><code>live</code> bindings</strong> — <code>live Name : e0 = e1</code> creates a new lexical</li>
+<p>scope for <code>e1</code></p>
+<li><strong>Cancelled concurrent scopes</strong> — runs during cancellation</li>
+<p>unwinding (see <a href="../14_concurrency/index.html#cleanup-and-resource-management">Concurrency</a>)</p>
+</ul>
+<p>Here is a basic example:</p>
+<p>&lt;!--versetest OpenFile(P:string)&lt;computes&gt;:?int=false CloseFile(P:int)&lt;computes&gt;:void={} ReadFile(P:int)&lt;computes&gt;:?string=false ProcessContents(P:string)&lt;computes&gt;&lt;decides&gt;:void={} SaveResults()&lt;computes&gt;&lt;decides&gt;:void={} --&gt; &lt;!-- 61 --&gt;</p>
+<pre><code>ProcessFile(FileName:string)&lt;transacts&gt;&lt;decides&gt;:void =
+    File := OpenFile(FileName)?
+    defer:
+        CloseFile(File)  # Runs on success or early exit
+
+    Contents := ReadFile(File)?
+    ProcessContents[Contents]
+    SaveResults[]</code></pre>
+<p>Deferred code executes when the scope exits successfully or through explicit control flow like <code>return</code>:</p>
+<p>&lt;!--versetest OpenConnection()&lt;transacts&gt;:int=0 CloseConnection(Id:int)&lt;transacts&gt;:void={} Query(Id:int)&lt;decides&gt;&lt;transacts&gt;:string=&quot;result&quot; ProcessResult(R:string)&lt;transacts&gt;:void={}</p>
+<p>ProcessQuery()&lt;transacts&gt;:void = ConnId := OpenConnection() defer: CloseConnection(ConnId)  # Cleanup always needed</p>
+<p>for (Attempt := 1..5): if (Result := Query[ConnId]): ProcessResult(Result) return  # defer executes after return being called</p>
+<p># defer executes before leaving the function scope on success</p>
+<p>assert: # ProcessQuery is defined and demonstrates defer with return &lt;# --&gt; &lt;!-- 62 --&gt;</p>
+<pre><code>ProcessQuery()&lt;transacts&gt;:void =
+    ConnId := OpenConnection()
+    defer:
+        CloseConnection(ConnId)  # Cleanup always needed
+
+    for (Attempt := 1..5):
+        if (Result := Query[ConnId]):
+            ProcessResult(Result)
+            return  # defer executes after return being called
+
+    # defer executes before leaving the function scope on success</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This is a subtle but crucial point: if a function fails due to speculative execution, deferred code does <strong>not</strong> execute. This is because failure triggers a rollback that undoes all effects, including the scheduling of defer blocks:</p>
+<p>&lt;!--versetest AcquireResource()&lt;transacts&gt;&lt;decides&gt;:int=0 ReleaseResource(Id:int)&lt;transacts&gt;:void={} RiskyOperation(Id:int)&lt;transacts&gt;&lt;decides&gt;:void={} --&gt; &lt;!-- 63 --&gt;</p>
+<pre><code>ExampleWithFailure()&lt;transacts&gt;&lt;decides&gt;:void =
+    ResourceId := AcquireResource[]
+    defer:
+        ReleaseResource(ResourceId) # Scheduled...
+
+    RiskyOperation[ResourceId] # This fails!
+    # defer does NOT run - entire scope was speculative and rolled back</code></pre>
+<p>When the <code>RiskyOperation</code> fails, the entire function also fails, and speculative execution undoes everything—including the defer registration. The resource cleanup never happens because the resource acquisition itself is rolled back.</p>
+<p>This behavior ensures consistency: if a function fails, it&#x27;s as if it never ran, including any cleanup code that was scheduled.</p>
+<p><strong>Execution Order:</strong></p>
+<p>When multiple <code>defer</code>s exist in the same scope, they execute in reverse order of definition (last-in, first-out), mimicking the stack-based cleanup of nested resources:</p>
+<p>&lt;!--versetest OpenDatabase()&lt;transacts&gt;:int=0 CloseDatabase(Id:int)&lt;transacts&gt;:void={} BeginTransaction(Id:int)&lt;decides&gt;&lt;transacts&gt;:int=0 CommitTransaction(Id:int)&lt;transacts&gt;:void={} DoWork()&lt;transacts&gt;&lt;decides&gt;:void={} --&gt; &lt;!-- 64 --&gt;</p>
+<pre><code>DatabaseTransaction()&lt;transacts&gt;&lt;decides&gt;:void =
+    DbId := OpenDatabase()
+    defer:
+        CloseDatabase(DbId)  # Executes second (outer resource)
+
+    TxnId := BeginTransaction[DbId]
+    defer:
+        CommitTransaction(TxnId)  # Executes first (inner resource)
+
+    DoWork[]  # Work happens with both resources active
+    # Defers execute: CommitTransaction, then CloseDatabase</code></pre>
+<p><strong>Defers and Async Cancellation:</strong></p>
+<p>Deferred code also executes when async operations are cancelled, such as when a <code>race</code> completes or a <code>spawn</code> is interrupted:</p>
+<p>&lt;!--versetest AcquireResource()&lt;transacts&gt;:int=0 ReleaseResource(Resource:int)&lt;transacts&gt;:void={} LongRunningTask(Resource:int)&lt;suspends&gt;&lt;transacts&gt;:void={}</p>
+<p>ProcessWithTimeout()&lt;suspends&gt;&lt;transacts&gt;:void = race: block: Resource := AcquireResource() defer: ReleaseResource(Resource)  # Runs if cancelled</p>
+<p>LongRunningTask(Resource)</p>
+<p>block: Sleep(10.0)  # Timeout # If timeout wins, first block is cancelled and defer runs</p>
+<p>assert: # ProcessWithTimeout demonstrates defer with async cancellation &lt;# --&gt; &lt;!-- 65 --&gt;</p>
+<pre><code>ProcessWithTimeout()&lt;suspends&gt;&lt;transacts&gt;:void =
+    race:
+        block:
+            Resource := AcquireResource()
+            defer:
+                ReleaseResource(Resource)  # Runs if cancelled
+
+            LongRunningTask(Resource)
+
+        block:
+            Sleep(10.0)  # Timeout
+    # If timeout wins, first block is cancelled and defer runs</code></pre>
+<p>&lt;!-- #&gt; --&gt;</p>
+<p>This ensures cleanup happens even when concurrency control interrupts your code.</p>
+<p><strong>Nested Defers:</strong></p>
+<p>Defer statements can be nested within other defer blocks, creating a cascade of cleanup operations:</p>
+<p>&lt;!--versetest Log(S:string)&lt;transacts&gt;:void={} --&gt; &lt;!-- 66 --&gt;</p>
+<pre><code>ProcessWithCleanup():void =
+    Log(&quot;A&quot;)
+    defer:
+        Log(&quot;B&quot;)
+        defer:
+            Log(&quot;inner&quot;)  # Runs after B
+        Log(&quot;C&quot;)
+    Log(&quot;D&quot;)
+    # Output: A D B C inner</code></pre>
+<p>The execution order follows the LIFO principle at each nesting level—inner defers execute after the outer defer&#x27;s code, maintaining the stack-like cleanup order.</p>
+<p><strong>Defers in Control Flow:</strong></p>
+<p>Defers work correctly within all control flow constructs:</p>
+<p>&lt;!--versetest Log(S:string)&lt;transacts&gt;:void={} --&gt; &lt;!-- 67 --&gt;</p>
+<pre><code>ProcessLoop():void =
+    for (I := 0..2):
+        Log(&quot;Start&quot;)
+        defer:
+            Log(&quot;Cleanup&quot;)  # Runs after each iteration
+        Log(&quot;End&quot;)
+    # Output: Start End Cleanup Start End Cleanup Start End Cleanup
+
+ProcessWithIf(Condition:logic):void =
+    if (Condition?):
+        defer:
+            Log(&quot;Then cleanup&quot;)
+        Log(&quot;Then body&quot;)
+    else:
+        defer:
+            Log(&quot;Else cleanup&quot;)
+        Log(&quot;Else body&quot;)</code></pre>
+<p>Each control flow path executes its own defers independently.</p>
+<p><strong>Defer Restrictions.</strong> The defer statement has important restrictions to ensure predictable behavior:</p>
+<ol>
+<li><strong>Cannot be empty:</strong> Defer blocks must contain at least one</li>
+<p>expression:</p>
+</ol>
+<ol>
+<li><strong>Cannot be used as expression:</strong> Defer cannot be used in positions</li>
+<p>where a value is expected.</p>
+</ol>
+<ol>
+<li><strong>Cannot cross boundaries:</strong> Defer blocks cannot contain <code>return</code>,</li>
+<p><code>break</code>, or other control flow that would exit the defer&#x27;s scope.</p>
+</ol>
+<ol>
+<li><strong>Cannot fail:</strong> Expressions in defer blocks cannot fail.</li>
+</ol>
+<ol>
+<li><strong>Cannot suspend directly:</strong> Defer blocks cannot contain suspend</li>
+<p>expressions, but they can use <code>spawn</code> for fire-and-forget async operations.</p>
+</ol>
+<p>For how <code>defer</code> interacts with async cancellation and concurrency constructs like <code>race</code> and <code>spawn</code>, see <a href="../14_concurrency/index.html#cleanup-and-resource-management">Cleanup and Resource Management</a>.</p></div>
+  </details>
+</section><section class="section" id="s9-profiling">
+  <div class="annotation">
+    <h3>中文批注：Profiling</h3>
+    <div class="rows">
+      <div><p>这一节围绕“Profiling”展开。阅读时先抓住这些英文关键词：Understanding、how、code、performs、crucial。</p><p>建议先看中文批注，再展开原文核对语法细节；遇到代码块时重点观察调用括号、effect specifier 和失败上下文。</p></div>
+      <div><p><strong>本节可留意的语法/术语：</strong></p><div class="chips"><span class="chip">profile</span><span class="chip">&lt;computes&gt;</span><span class="chip">for</span><span class="chip">var</span><span class="chip">set</span><span class="chip">computes</span></div></div>
+    </div>
+  </div>
+  <details class="original" open>
+    <summary>原文：Profiling</summary>
+    <div class="md"><h2>Profiling</h2>
+<p>Understanding how your code performs is crucial for optimization, and the <code>profile</code> expression measures execution time:</p>
+<p>&lt;!--versetest--&gt; &lt;!-- 73 --&gt;</p>
+<pre><code>OptimizedCalculation():float =
+    profile(&quot;Complex Math&quot;):
+        var Result:float = 0.0
+        for (I := 1..1000000):
+            set Result += Sin(I*1.0) * Cos(I*1.0)
+        Result</code></pre>
+<p>The profile expression wraps around the code you want to measure, logging the execution time to the output. You can add descriptive tags to organize your profiling output, making it easier to identify bottlenecks in complex systems.</p>
+<p>Profile expressions pass through their results transparently, meaning you can wrap them around any expression without changing the program&#x27;s behavior:</p>
+<p>&lt;!--versetest BaseDamage:float = 50.0 GetMultiplier()&lt;computes&gt;:float = 1.5 GetCriticalBonus()&lt;computes&gt;:float = 2.0 --&gt; &lt;!-- 74 --&gt;</p>
+<pre><code>PlayerDamage := profile(&quot;Damage Calculation&quot;):
+    BaseDamage * GetMultiplier() * GetCriticalBonus()</code></pre></div>
+  </details>
+</section>
+<nav class="footer-nav"><div><a href="../06_functions/index.html">上一页：函数</a></div><div><a href="../08_failure/index.html">下一页：失败系统</a></div></nav>
+</main></div></body></html>
