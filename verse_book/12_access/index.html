@@ -23,7 +23,7 @@
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
 <a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
 <div class="crumb">Access Specifiers / <a href="https://verselang.github.io/book/12_access/">原文页面</a></div><section class="hero"><h1>访问控制与元数据</h1><p class="lead">访问控制页，讲 public/private/protected/internal/scoped、读写分离、注解和本地化 message。</p><div class="meta"><span class="pill">源文件：12_access.md</span><span class="pill">中文段落：21</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-access-specifiers">访问说明符 / Access Specifiers</a></li><li class="lvl2"><a href="#s1-public">public / Public</a></li><li class="lvl2"><a href="#s2-protected">protected / Protected</a></li><li class="lvl2"><a href="#s3-private">private / Private</a></li><li class="lvl2"><a href="#s4-internal">internal / Internal</a></li><li class="lvl2"><a href="#s5-scoped">scoped / Scoped</a></li><li class="lvl3"><a href="#s6-scoped-definitions">Scoped Definitions</a></li><li class="lvl3"><a href="#s7-cross-module-collaboration">Cross-Module Collaboration</a></li><li class="lvl3"><a href="#s8-scoped-read-or-write-access">Scoped Read or Write Access</a></li><li class="lvl3"><a href="#s9-visibility-and-access-paths">Visibility and Access Paths</a></li><li class="lvl3"><a href="#s10-scoped-access-and-inheritance">Scoped Access and Inheritance</a></li><li class="lvl3"><a href="#s11-using-scoped-for-api-boundaries">Using Scoped for API Boundaries</a></li><li class="lvl3"><a href="#s12-design-considerations">Design Considerations</a></li><li class="lvl2"><a href="#s13-separating-read-and-write-access">Separating Read and Write Access</a></li><li class="lvl2"><a href="#s14-best-practices">Best Practices</a></li><li class="lvl2"><a href="#s15-annotations-and-metadata">Annotations and Metadata</a></li><li class="lvl3"><a href="#s16-built-in-annotations">Built-in Annotations</a></li><li class="lvl3"><a href="#s17-custom-attributes">Custom Attributes</a></li><li class="lvl3"><a href="#s18-getter-and-setter-accessors">Getter and Setter Accessors</a></li><li class="lvl3"><a href="#s19-localization">Localization</a></li><li class="lvl2"><a href="#s20-evolution">Evolution</a></li></ol></article></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-access-specifiers">访问说明符 / Access Specifiers</a></li><li class="lvl2"><a href="#s1-public">public / Public</a></li><li class="lvl2"><a href="#s2-protected">protected / Protected</a></li><li class="lvl2"><a href="#s3-private">private / Private</a></li><li class="lvl2"><a href="#s4-internal">internal / Internal</a></li><li class="lvl2"><a href="#s5-scoped">scoped / Scoped</a></li><li class="lvl3"><a href="#s6-scoped-definitions">scoped 定义 / Scoped Definitions</a></li><li class="lvl3"><a href="#s7-cross-module-collaboration">跨模块协作 / Cross-Module Collaboration</a></li><li class="lvl3"><a href="#s8-scoped-read-or-write-access">scoped 读写访问 / Scoped Read or Write Access</a></li><li class="lvl3"><a href="#s9-visibility-and-access-paths">可见性与访问路径 / Visibility and Access Paths</a></li><li class="lvl3"><a href="#s10-scoped-access-and-inheritance">scoped 访问与继承 / Scoped Access and Inheritance</a></li><li class="lvl3"><a href="#s11-using-scoped-for-api-boundaries">用 scoped 表达 API 边界 / Using Scoped for API Boundaries</a></li><li class="lvl3"><a href="#s12-design-considerations">设计考量 / Design Considerations</a></li><li class="lvl2"><a href="#s13-separating-read-and-write-access">分离读访问与写访问 / Separating Read and Write Access</a></li><li class="lvl2"><a href="#s14-best-practices">最佳实践 / Best Practices</a></li><li class="lvl2"><a href="#s15-annotations-and-metadata">注解与元数据 / Annotations and Metadata</a></li><li class="lvl3"><a href="#s16-built-in-annotations">内建注解 / Built-in Annotations</a></li><li class="lvl3"><a href="#s17-custom-attributes">自定义属性 / Custom Attributes</a></li><li class="lvl3"><a href="#s18-getter-and-setter-accessors">getter 与 setter 访问器 / Getter and Setter Accessors</a></li><li class="lvl3"><a href="#s19-localization">本地化 / Localization</a></li><li class="lvl2"><a href="#s20-evolution">演化 / Evolution</a></li></ol></article></section>
 <div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-access-specifiers">
   <article class="cn-read">
@@ -43,13 +43,13 @@
   <article class="cn-read">
     <h2>public <small>Public</small></h2>
     <p><code>&lt;public&gt;</code> 说明符代表最广泛的访问级别，使标识符可以从任何可以引用包含模块或类型的代码中普遍访问。当您将某些内容标记为公开时，您就对其可用性和稳定性做出了坚定的承诺：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PlayerManager&lt;public&gt; := module:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>PlayerManager&lt;public&gt; := module:
     MaxPlayers&lt;public&gt;:int = 100
 
     player&lt;public&gt; := class:
         Name&lt;public&gt;:string
         Level&lt;public&gt;:int = 1</code></pre></figure>
-<p>公共成员构成了您的代码与外界之间的契约。在 Metaverse 上下文中，公共声明特别重要，因为它们代表了可能永远延伸的保证 - 一旦发布，删除或不兼容地更改公共成员就会破坏您对依赖您的代码的其他开发人员做出的承诺。</p>
+<p>public 成员构成了您的代码与外界之间的契约。在 Metaverse 上下文中，public 声明特别重要，因为它们代表了可能永远延伸的保证 - 一旦发布，删除或不兼容地更改 public 成员就会破坏您对依赖您的代码的其他开发人员做出的承诺。</p>
 <p>public 说明符可以应用于模块、类、接口、结构、枚举、方法和数据成员。当应用于类型定义本身时，它使该类型可以在其定义模块之外使用。当应用于类型中的成员时，它使那些有权访问该类型实例的代码可以访问这些成员。</p>
   </article>
   <details class="original">
@@ -69,7 +69,7 @@
   <article class="cn-read">
     <h2>protected <small>Protected</small></h2>
     <p><code>&lt;protected&gt;</code> 说明符在公共和私有之间创建了一个中间立场，允许在定义类和从它继承的任何类中进行访问。该级别的存在专门用于支持继承层次结构，同时保持封装性：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game_entity := class:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>game_entity := class:
     var Position&lt;protected&gt;:vector3 = vector3{x:=0.0, y:=0.0, z:=0.0}
     var Health&lt;protected&gt;:int = 100
 
@@ -77,13 +77,13 @@
         set Position = NewPos
         OnPositionChanged()
 
-    OnPositionChanged&lt;protected&gt;():void = {}  # Overridable by subclasses
+    OnPositionChanged&lt;protected&gt;():void = {}  # 可被子类重写
 
 player := class(game_entity):
     MoveToSpawn():void =
-        UpdatePosition(GetSpawnLocation())  # Can access protected member
-        set Health = MaxHealth              # Can modify protected variable</code></pre></figure>
-<p>protected的访问支持模板方法模式和其他基于继承的设计，同时防止外部代码访问应保留在类层次结构中的实现细节。这对于游戏实体和其他层次结构特别有价值，在这些结构中，父类需要与子类共享行为，而不将该行为暴露给世界。</p>
+        UpdatePosition(GetSpawnLocation())  # 可以访问protected的成员
+        set Health = MaxHealth              # 可以修改protected的变量</code></pre></figure>
+<p>protected 访问支持模板方法模式和其他基于继承的设计，同时防止外部代码访问应保留在类层次结构中的实现细节。这对于游戏实体和其他层次结构特别有价值，在这些结构中，父类需要与子类共享行为，而不将该行为暴露给世界。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Protected</summary>
@@ -109,7 +109,7 @@ player := class(game_entity):
   <article class="cn-read">
     <h2>private <small>Private</small></h2>
     <p><code>&lt;private&gt;</code> 说明符提供最严格的访问控制，限制对直接封闭范围的可见性。私有成员是真正的内部实现细节，可以自由更改而不影响任何外部代码：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>inventory := class:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>inventory := class:
     var Items&lt;private&gt;:[]item = array{}
     var Capacity&lt;private&gt;:int = 20
     var CurrentWeight&lt;private&gt;:float = 0.0
@@ -149,8 +149,8 @@ player := class(game_entity):
   <article class="cn-read">
     <h2>internal <small>Internal</small></h2>
     <p><code>&lt;internal&gt;</code> 说明符是未提供说明符时的默认访问级别，它使成员可以在定义模块内访问，但不能在模块外部访问。这为需要共享实现细节而不公开暴露它们的协作代码创建了一个自然边界：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Physics := module:
-    # Internal types and constants
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Physics := module:
+    # 内部类型和常量
     gravity_constant:float = 9.81
 
     collision_detector := class&lt;abstract&gt;:
@@ -197,13 +197,13 @@ player := class(game_entity):
   </details>
 </section><section class="section" id="s6-scoped-definitions">
   <article class="cn-read">
-    <h2>范围定义 <small>Scoped Definitions</small></h2>
+    <h2>scoped 定义 <small>Scoped Definitions</small></h2>
     <p>作用域访问级别是使用 <code>scoped{...}</code> 表达式创建的，该表达式采用一个或多个模块引用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Collaboration := module:
-    # Create a scope that includes both ModuleA and ModuleB
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Collaboration := module:
+    # 创建包含 ModuleA 和 ModuleB 的范围
     Shared&lt;public&gt; := scoped{ModuleA, ModuleB}
 
-    # This class is only accessible within ModuleA and ModuleB
+    # 该类只能在 ModuleA 和 ModuleB 中访问
     SharedResource&lt;Shared&gt; := class:
         Data&lt;public&gt;:int = 42</code></pre></figure>
 <p>作用域定义创建一个访问级别，然后可以将其用作类、函数、变量和其他定义的说明符。任何列出的实体内的代码都可以访问作用域成员，而这些模块外部的代码则不能 - 即使它可以看到包含的作用域。</p>
@@ -225,43 +225,43 @@ player := class(game_entity):
   <article class="cn-read">
     <h2>跨模块协作 <small>Cross-Module Collaboration</small></h2>
     <p>范围访问最强大的用途是实现模块之间的受控协作。定义可以在一个模块中创建，但作用域为另一个模块，使其在需要时可访问，同时在其他地方隐藏：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Graphics := module:
-    # Define an interface scoped to the physics module
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Graphics := module:
+    # 定义一个范围为物理模块的接口
     CollidableShape&lt;scoped{Physics}&gt; := interface:
         GetBounds():bounding_box
 
 Physics := module:
     using{Graphics}
 
-    # Physics can implement the interface even though it&#x27;s defined in graphics
+    # 即使它是在图形中定义的，物理也可以实现该接口
     sphere_collider := class&lt;abstract&gt;(CollidableShape):
         GetBounds&lt;override&gt;():bounding_box</code></pre></figure>
-<p>这种模式允许图形定义物理实现的契约，而无需公开公开这些实现细节。该接口存在于两个模块之间的边界处，但不属于任一模块的公共 API 的一部分。</p>
+<p>这种模式允许图形定义物理实现的契约，而无需公开这些实现细节。该接口存在于两个模块之间的边界处，但不属于任一模块的public API 的一部分。</p>
 <p>您可以将定义范围限定为多个模块，从而创建用于协作的共享私有空间：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Gameplay := module:
-    # This scope includes both the inventory and crafting modules
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Gameplay := module:
+    # 此范围包括库存和制作模块
     SharedGameplayScope := scoped{Inventory, Crafting}
 
-    # Items can be accessed by both inventory and crafting
+    # 库存和制作都可以访问物品
     Item&lt;SharedGameplayScope&gt; := class:
         ID&lt;public&gt;:int
         Properties&lt;public&gt;:[string]string
 
-    # Factory function available to both systems
+    # 两个系统均可用的工厂函数
     CreateItem&lt;SharedGameplayScope&gt;(TheID:int):Item = Item{ID:=TheID, Properties:=map{}}
 
 Inventory := module:
     using{Gameplay}
 
     AddToInventory(ItemID:int):void =
-        NewItem := CreateItem(ItemID)  # Can access scoped function
-        # Implementation...
+        NewItem := CreateItem(ItemID)  # 可以访问作用域函数
+        # 实现...
 
 Crafting := module:
     using{Gameplay}
 
     CraftItem(Recipe:[]int)&lt;decides&gt;:Item =
-        # Can create items and access their properties
+        # 可以创建物品并访问其属性
         CreateItem(Recipe[0])</code></pre></figure>
   </article>
   <details class="original">
@@ -309,15 +309,15 @@ Crafting := module:
   </details>
 </section><section class="section" id="s8-scoped-read-or-write-access">
   <article class="cn-read">
-    <h2>范围读或写访问 <small>Scoped Read or Write Access</small></h2>
+    <h2>scoped 读写访问 <small>Scoped Read or Write Access</small></h2>
     <p>与其他访问说明符一样，作用域可以单独应用于变量的读写操作：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SharedScope := scoped{ModuleA, ModuleB}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>SharedScope := scoped{ModuleA, ModuleB}
 
 state_manager := class:
-    # Public read access, but only ModuleA and ModuleB can write
+    # 公共读访问，但只有ModuleA和ModuleB可以写入
     var&lt;SharedScope&gt; GameState&lt;public&gt;:game_state = game_state{}
 
-    # Only ModuleA and ModuleB can read or write this internal state
+    # 只有ModuleA和ModuleB可以读取或写入该内部状态
     var&lt;SharedScope&gt; SyncCounter&lt;SharedScope&gt;:int = 0</code></pre></figure>
 <p>此模式对于多个模块需要在不公开写入访问权限的情况下进行协调的共享状态特别有用。</p>
   </article>
@@ -337,24 +337,24 @@ state_manager := class:
   </details>
 </section><section class="section" id="s9-visibility-and-access-paths">
   <article class="cn-read">
-    <h2>可见性和访问路径 <small>Visibility and Access Paths</small></h2>
+    <h2>可见性与访问路径 <small>Visibility and Access Paths</small></h2>
     <p>作用域访问的一个重要微妙之处在于，它授予对特定成员的访问权限，但不会使中间类型或模块可见。要访问作用域成员，您必须能够看到它的完整路径：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Outer := module:
-    # Internal to outer
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Outer := module:
+    # 内部到外部
     Inner := module:
-        # Scoped to TargetModule
+        # 作用域为 TargetModule
         SharedClass&lt;scoped{TargetModule}&gt; := class:
             Value:int = 42
 
 TargetModule := module:
     using{Outer}
 
-    # ERROR: Can&#x27;t see Outer.Inner because Inner is internal to Outer
-    # even though SharedClass is scoped to us
+    # 错误：看不到 Outer.Inner，因为内部是外部
+    # 的内部，即使 SharedClass 作用域为我们
     UseShared():void = Outer.Inner.SharedClass{}</code></pre></figure>
 <p>为了使作用域访问起作用，包含作用域必须是可访问的（公共的或也具有适当的作用域），或者必须通过公开它的公共接口来访问作用域成员。</p>
 <p>一个定义只能有一个作用域访问级别 - 您不能应用多个作用域说明符：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot have multiple access level specifiers
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：不能有多个访问级别说明符
 InvalidScope&lt;scoped{ModuleA}&gt;&lt;scoped{ModuleB}&gt; := class{}</code></pre></figure>
   </article>
   <details class="original">
@@ -381,17 +381,17 @@ InvalidScope&lt;scoped{ModuleA}&gt;&lt;scoped{ModuleB}&gt; := class{}</code></pr
   </details>
 </section><section class="section" id="s10-scoped-access-and-inheritance">
   <article class="cn-read">
-    <h2>范围访问和继承 <small>Scoped Access and Inheritance</small></h2>
+    <h2>scoped 访问与继承 <small>Scoped Access and Inheritance</small></h2>
     <p>当类成员具有作用域访问权限时，子类中的重写成员可以按照正常的继承规则维护或缩小该访问权限：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SharedScope := scoped{ModuleA, ModuleB}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>SharedScope := scoped{ModuleA, ModuleB}
 
 base := class:
-    # Accessible only in ModuleA and ModuleB
+    # 仅可在 ModuleA 和 ModuleB 中访问
     ComputeValue&lt;SharedScope&gt;():int = 42
 
 derived := class(base):
-    # Can override with same or more restrictive access
-    ComputeValue&lt;override&gt;():int = 100  # Now internal to this module</code></pre></figure>
+    # 可以使用相同或更严格的访问权限覆盖
+    ComputeValue&lt;override&gt;():int = 100  # 现在位于该模块内部</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Scoped Access and Inheritance</summary>
@@ -409,19 +409,19 @@ derived := class(base):
   </details>
 </section><section class="section" id="s11-using-scoped-for-api-boundaries">
   <article class="cn-read">
-    <h2>使用 Scoped 作为 API 边界 <small>Using Scoped for API Boundaries</small></h2>
+    <h2>用 scoped 表达 API 边界 <small>Using Scoped for API Boundaries</small></h2>
     <p>范围访问擅长创建受控 API 边界，其中某些功能应在特定模块之间共享，但不应作为公共接口的一部分公开：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Networking := module:
-    # Public scope for modules that need network access
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Networking := module:
+    # 需要网络访问的模块的公共范围
     NetworkScope&lt;public&gt; := scoped{PlayerSystem, Matchmaking, Telemetry}
 
-    # Core networking available to specific systems
+    # 可用于特定系统的核心网络
     SendPacket&lt;NetworkScope&gt;(Data:[]uint8):void =
-        # Implementation...
+        # 实现...
 
-    # Internal statistics
+    # 内部统计
     var&lt;NetworkScope&gt; BytesSent&lt;NetworkScope&gt;:int = 0</code></pre></figure>
-<p>这创建了一个明确的架构边界——只有范围中列出的模块可以访问网络原语，而其他代码必须使用更高级别的公共 API。</p>
+<p>这创建了一个明确的架构边界——只有范围中列出的模块可以访问网络原语，而其他代码必须使用更高级别的public API。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Using Scoped for API Boundaries</summary>
@@ -441,10 +441,10 @@ derived := class(base):
   </details>
 </section><section class="section" id="s12-design-considerations">
   <article class="cn-read">
-    <h2>设计考虑因素 <small>Design Considerations</small></h2>
+    <h2>设计考量 <small>Design Considerations</small></h2>
     <p>范围访问代表模块之间的架构承诺。有效使用时：</p>
-<ul><li>使用范围进行不属于公共 API 的合法跨模块协作</li><li>将范围定义保留在可以记录和维护的模块级别</li><li>更喜欢显式模块的作用域而不是深层嵌套的作用域</li><li>考虑protected访问或内部访问对于您的用例来说是否更简单</li><li>记录为什么特定模块包含在范围内</li></ul>
-<p>作用域说明符填补了内部访问和公共访问之间的独特空白，从而实现了复杂的模块架构，其中多个组件需要密切协作，而不会将这些实现细节暴露给更广泛的代码库。</p>
+<ul><li>使用范围进行不属于public API 的合法跨模块协作</li><li>将范围定义保留在可以记录和维护的模块级别</li><li>更喜欢显式模块的作用域而不是深层嵌套的作用域</li><li>考虑protected访问或内部访问对于您的用例来说是否更简单</li><li>记录为什么特定模块包含在范围内</li></ul>
+<p>作用域说明符填补了内部访问和public 访问之间的独特空白，从而实现了复杂的模块架构，其中多个组件需要密切协作，而不会将这些实现细节暴露给更广泛的代码库。</p>
   </article>
   <details class="original">
     <summary>展开英文原文：Design Considerations</summary>
@@ -455,16 +455,16 @@ derived := class(base):
   </details>
 </section><section class="section" id="s13-separating-read-and-write-access">
   <article class="cn-read">
-    <h2>分离读写访问 <small>Separating Read and Write Access</small></h2>
+    <h2>分离读访问与写访问 <small>Separating Read and Write Access</small></h2>
     <p>一项创新功能是能够将不同的访问说明符应用于同一变量的读写操作。这种细粒度的控制允许您创建广泛可读但狭义可写的变量，优雅地实现只读属性等常见模式：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game_state := class:
-    # Public read, protected write
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>game_state := class:
+    # 公共读，protected写
     var&lt;protected&gt; Score&lt;public&gt;:int = 0
 
-    # Public read, private write
+    # 公共读，私有写
     var&lt;private&gt; PlayerCount&lt;public&gt;:int = 0
 
-    # Internal read, private write
+    # 内部读，私有写
     var&lt;private&gt; SessionID&lt;internal&gt;:string</code></pre></figure>
 <p>这种双说明符系统解决了面向对象编程中的一个常见问题，即您希望公开状态以供读取而不允许外部修改。 Verse 不需要 getter 方法或属性语法，而是使这种模式成为一流的语言功能。</p>
 <p>该语法将写访问说明符放在 <code>var</code> 关键字上，将读访问说明符放在标识符本身上。这种视觉分离使得阅读代码时访问级别立即清晰。写入说明符必须至少与读取说明符一样严格 - 您不能写入私有可读但公开可写的变量，因为这会违反基本封装原则。</p>
@@ -489,11 +489,11 @@ derived := class(base):
   <article class="cn-read">
     <h2>最佳实践 <small>Best Practices</small></h2>
     <p>了解何时使用每个访问级别需要考虑代码的架构和演变。最小特权原则建议从最有效的限制性访问开始，仅在必要时扩大访问范围。</p>
-<p>对于公共 API，每个公共成员都是一种承诺。在公开某些内容之前，请考虑它是否确实需要成为模块合同的一部分，或者它是否是暂时在其他地方需要的实现细节。公共成员应该是稳定的、有充分记录的、并且是为长期存在而设计的。</p>
-<p>在继承层次结构中应谨慎使用protected的访问。并非基类中的所有内容都需要受到保护，只有那些构成父类和子类之间继承契约的成员才需要受到保护。过度使用protected的访问可能会在层次结构中的类之间造成紧密耦合。</p>
+<p>对于public API，每个public 成员都是一种承诺。在公开某些内容之前，请考虑它是否确实需要成为模块合同的一部分，或者它是否是暂时在其他地方需要的实现细节。public 成员应该是稳定的、有充分记录的、并且是为长期存在而设计的。</p>
+<p>在继承层次结构中应谨慎使用protected 访问。并非基类中的所有内容都需要受到保护，只有那些构成父类和子类之间继承契约的成员才需要受到保护。过度使用protected 访问可能会在层次结构中的类之间造成紧密耦合。</p>
 <p>私有访问是实现细节的默认设置。大多数辅助函数、中间计算和状态管理应该是私有的。这为您提供了最大的重构和优化灵活性，而不会破坏相关代码。</p>
-<p>变量的双说明符模式对于维护不变量特别强大。通过使变量公开可读但私有或保护性可写，您可以公开状态以供观察，同时保持对修改的完全控制：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>resource_manager := class:
+<p>变量的双说明符模式对于维护不变量特别强大。通过使变量公开可读但私有或protected 可写，您可以公开状态以供观察，同时保持对修改的完全控制：</p>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>resource_manager := class:
     var&lt;private&gt; TotalResources&lt;public&gt;:int = 1000
     var&lt;private&gt; AllocatedResources&lt;public&gt;:int = 0
     var&lt;private&gt; AvailableResources&lt;public&gt;:int = 1000
@@ -523,7 +523,7 @@ derived := class(base):
   </details>
 </section><section class="section" id="s15-annotations-and-metadata">
   <article class="cn-read">
-    <h2>注释和元数据 <small>Annotations and Metadata</small></h2>
+    <h2>注解与元数据 <small>Annotations and Metadata</small></h2>
     <p>Verse 提供了一个注释系统，用于使用 <code>@</code> 前缀语法将元数据附加到定义。注释提供了编译器指令和元数据，这些编译器指令和元数据会影响编译和演化过程中如何处理代码。</p>
   </article>
   <details class="original">
@@ -533,58 +533,58 @@ derived := class(base):
   </details>
 </section><section class="section" id="s16-built-in-annotations">
   <article class="cn-read">
-    <h2>内置注释 <small>Built-in Annotations</small></h2>
+    <h2>内建注解 <small>Built-in Annotations</small></h2>
     <p>!!!警告“内部功能”@deprecated 属性当前是内部功能，最终用户无法使用。</p>
 <p><code>@deprecated</code> 注释标记不应再使用的定义。当代码引用已弃用的定义时，编译器会生成警告，提醒开发人员更新其代码：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Mark a definition as deprecated
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 将定义标记为已弃用
 @deprecated
 OldFunction():void =
     Print(&quot;This function is deprecated&quot;)
 
-# Mark a class as deprecated
+# 将类标记为已弃用
 @deprecated
 legacy_player := class:
     Name:string
 
-# Attempting to use deprecated code produces a warning
+# 尝试使用已弃用代码会产生警告
 UseDeprecated():void =
-    OldFunction()  # Warning: OldFunction is deprecated</code></pre></figure>
+    OldFunction()  # 警告：OldFunction 已弃用</code></pre></figure>
 <p>已弃用的定义可以使用其他已弃用的定义而不发出警告，但未弃用的代码不能使用已弃用的定义而不触发警告。这允许逐步迁移已弃用的 API：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>@deprecated
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>@deprecated
 OldAPI():int = 42
 
-# Valid: deprecated can call deprecated
+# 有效：已弃用的可以调用已弃用的
 @deprecated
 MigrateOldAPI():int = OldAPI()
 
-# Warning: non-deprecated calling deprecated
+# 警告：未弃用的可调用已弃用的
 # NewCode():int = OldAPI()</code></pre></figure>
 <p><code>@deprecated</code>注释可以应用于：</p>
 <ul><li>功能与方法</li><li>类、接口、结构体和枚举</li><li>单独的枚举值</li><li>数据成员</li><li>模块</li></ul>
 <p>!!!警告“内部功能”@deprecated 属性当前是内部功能，最终用户无法使用。</p>
 <p><code>@experimental</code> 注释标记了尚未稳定的功能，可能会在未来版本中更改或删除。仅当启用 <code>AllowExperimental</code> 包标志时才能使用实验功能：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Mark a feature as experimental
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 将功能标记为实验性
 @experimental
 experimental_class := class:
     NewFeature:int
 
-# Using experimental features requires AllowExperimental flag
-# Without flag: error
-# With AllowExperimental:=true: allowed
+# 使用实验性功能需要AllowExperimental 标志
+# 不带标志：错误
+# 使用AllowExperimental:=true：允许
 UseExperimental(Obj:experimental_class):void =
     Print(&quot;Using experimental feature&quot;)</code></pre></figure>
 <p>实验定义的行为与已弃用的定义类似 - 实验定义可以自由使用其他实验定义，但稳定代码不能使用实验定义，除非设置了 <code>AllowExperimental</code> 标志。</p>
 <p><code>@experimental</code> 注释不能应用于：</p>
 <ul><li>局部变量</li><li>覆盖方法（继承基方法的实验状态）</li></ul>
 <p><code>@available</code> 注释根据版本号控制定义何时可用。这使得 API 的逐步推出和特定于版本的功能成为可能：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>using { /Verse.org/Native }  # Required for @available
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>using { /Verse.org/Native }  # @available 必需
 
-# Available only in version 3000 and later
+# 仅在版本 3000 及更高版本中可用
 @available{MinUploadedAtFNVersion := 3000}
 NewFeature():void =
     Print(&quot;New feature&quot;)
 
-# Multiple definitions can coexist for different versions
+# 不同版本的多个定义可以共存
 @available{MinUploadedAtFNVersion := 2900}
 OldImplementation():int = 42
 
@@ -661,30 +661,30 @@ NewImplementation():int = 100</code></pre>
     <h2>自定义属性 <small>Custom Attributes</small></h2>
     <p>!!!警告“内部功能”自定义属性当前是内部功能，最终用户无法创建。</p>
 <p>您可以通过继承特殊的 <code>attribute</code> 类来创建自定义属性。自定义属性允许您将特定于域的元数据附加到代码中：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Define a custom attribute
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 定义自定义属性
 @attribscope_class
 gameplay_element := class&lt;computes&gt;(attribute):
     Category:string
     Priority:int
 
-# Use the custom attribute
+# 使用自定义属性
 @gameplay_element{Category := &quot;Combat&quot;, Priority := 1}
 weapon_system := class:
     Damage:int</code></pre></figure>
 <p>定义自定义属性时，必须使用范围注释指定可以应用它们的位置：</p>
 <ul><li><strong>@attribscope_class</strong> - 可以应用于常规类</li><li><strong>@attribscope_attribclass</strong> - 可以应用于属性类（从<code>attribute</code>继承的类）</li><li><strong>@attribscope_enum</strong> - 可应用于枚举</li><li><strong>@attribscope_interface</strong> - 可应用于接口</li><li><strong>@attribscope_function</strong> - 可应用于函数和方法</li><li><strong>@attribscope_data</strong> - 可应用于数据成员</li></ul>
 <p>范围自定义属性的示例：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Attribute that can only be applied to functions
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 只能应用于函数的属性
 @attribscope_function
 performance_critical := class(attribute):
     MaxExecutionTimeMs:int
 
-# Attribute that can only be applied to data members
+# 只能应用于数据成员的属性
 @attribscope_data
 serializable_field := class(attribute):
     SerializationKey:string
 
-# Use them appropriately
+# 适当使用它们
 entity := class&lt;abstract&gt;:
     @serializable_field{SerializationKey := &quot;entity_id&quot;}
     ID:int
@@ -735,11 +735,11 @@ entity := class&lt;abstract&gt;:
   </details>
 </section><section class="section" id="s18-getter-and-setter-accessors">
   <article class="cn-read">
-    <h2>Getter 和 Setter 访问器 <small>Getter and Setter Accessors</small></h2>
+    <h2>getter 与 setter 访问器 <small>Getter and Setter Accessors</small></h2>
     <p>!!!警告“内部功能” getter 和 setter 访问器当前是内部功能，最终用户无法使用。</p>
 <p>虽然不是严格的注释，但 <code>&lt;getter(...)&gt;</code> 和 <code>&lt;setter(...)&gt;</code> 说明符提供了用于控制字段访问的相关形式的元数据。这些可以应用于类和接口字段来定义自定义访问逻辑：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
-    # External field with custom accessors
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>entity := class:
+    # 具有自定义访问器的外部字段
     var Health&lt;getter(GetHealth)&gt;&lt;setter(SetHealth)&gt;:int = external{}
 
     var InternalHealth:int = 100
@@ -775,152 +775,152 @@ entity := class&lt;abstract&gt;:
   </details>
 </section><section class="section" id="s19-localization">
   <article class="cn-read">
-    <h2>本土化 <small>Localization</small></h2>
+    <h2>本地化 <small>Localization</small></h2>
     <p><code>&lt;localizes&gt;</code> 说明符将定义标记为可本地化的消息以进行国际化。本地化消息使用 <code>message</code> 类型，可以提取并翻译成不同的语言：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Simple localized message
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 简单本地化消息
 WelcomeMessage&lt;localizes&gt; : message = &quot;Welcome to the game!&quot;
 
-# Call Localize to get the string
+# 调用 Localize 获取字符串
 ShowWelcome():void =
     Print(Localize(WelcomeMessage))</code></pre></figure>
 <p>本地化消息可以接受动态内容插值的参数：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Message with parameter interpolation
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 带参数插值的消息
 GreetPlayer&lt;localizes&gt;(PlayerName:string) : message = &quot;Hello, {PlayerName}!&quot;
 
-# Use with arguments
+# 与参数一起使用
 ShowGreeting(Name:string):void =
     Print(Localize(GreetPlayer(Name)))
-    # Outputs: &quot;Hello, Aldric!&quot; (if Name = &quot;Aldric&quot;)</code></pre></figure>
+    # 输出：“Hello, Aldric!” （如果名称=“Aldric”）</code></pre></figure>
 <p><strong>支持的参数类型：</strong></p>
 <ul><li><code>string</code> - 文本值</li><li><code>int</code> - 整数值（使用逗号分隔符格式化）</li><li><code>float</code> - 浮点值</li></ul>
 <p><strong>参数插值语法：</strong></p>
 <ul><li>使用<code>{ParameterName}</code>插入参数值</li><li>参数可以多次使用或根本不使用</li><li>大括号中只允许参数名称和 Unicode 代码点</li></ul>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Multiple parameters, some repeated
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 多个参数，一些重复
 ScoreMessage&lt;localizes&gt;(Player:string, Score:int) : message =
     &quot;Congratulations {Player}! Your score is {Score}. Great job, {Player}!&quot;
 
-# Outputs: &quot;Congratulations Alice! Your score is 1,500. Great job, Alice!&quot;
+# 输出：“恭喜 Alice！你的分数是 1,500。干得好，Alice！”
 
-# Not all parameters required in message text
+# 并非消息文本中所需的所有参数
 OptionalParam&lt;localizes&gt;(Name:string, Score:int) : message =
-    &quot;Thanks for playing!&quot;  # Score parameter ignored</code></pre></figure>
+    &quot;Thanks for playing!&quot;  # 忽略分数参数</code></pre></figure>
 <p>为了便于阅读，整数参数会自动使用逗号分隔符进行格式化：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>HighScore&lt;localizes&gt;(Points:int) : message = &quot;New record: {Points} points!&quot;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>HighScore&lt;localizes&gt;(Points:int) : message = &quot;New record: {Points} points!&quot;
 
-# Localize(HighScore(190091)) produces: &quot;New record: 190,091 points!&quot;</code></pre></figure>
+# Localize(HighScore(190091)) 生成：“新记录：190,091 分！”</code></pre></figure>
 <p>本地化消息支持命名参数和默认值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ConfigMessage&lt;localizes&gt;(?MaxPlayers:int = 8, ?TimeLimit:int = 300):message =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ConfigMessage&lt;localizes&gt;(?MaxPlayers:int = 8, ?TimeLimit:int = 300):message =
     &quot;Game settings: {MaxPlayers} players, {TimeLimit} seconds&quot;
 
-# Can be called with any combination
-Localize(ConfigMessage())                           # Uses defaults
-Localize(ConfigMessage(?MaxPlayers := 16))          # Override one
-Localize(ConfigMessage(?TimeLimit := 600, ?MaxPlayers := 32))  # Override both</code></pre></figure>
+# 可以使用任意组合调用
+Localize(ConfigMessage())                           # 使用默认值
+Localize(ConfigMessage(?MaxPlayers := 16))          # 覆盖其中一个
+Localize(ConfigMessage(?TimeLimit := 600, ?MaxPlayers := 32))  # 覆盖两者</code></pre></figure>
 <p>消息可以接受元组参数，这些参数在参数列表中被解构：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>LocationMessage&lt;localizes&gt;(Player:string, (X:int, Y:int)) : message =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>LocationMessage&lt;localizes&gt;(Player:string, (X:int, Y:int)) : message =
     &quot;{Player} is at position ({X}, {Y})&quot;
 
-# Call with tuple
+# 使用元组
 Localize(LocationMessage(&quot;Hero&quot;, (10, 20)))
-# Outputs: &quot;Hero is at position (10, 20)&quot;</code></pre></figure>
+# 调用输出：“英雄位于位置 (10, 20)”</code></pre></figure>
 <p><strong>Unicode 代码点：</strong></p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>UnicodeMessage&lt;localizes&gt; : message = &quot;The letter is {0u004d}&quot;
-# Outputs: &quot;The letter is M&quot;</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>UnicodeMessage&lt;localizes&gt; : message = &quot;The letter is {0u004d}&quot;
+# 输出：“字母是 M”</code></pre></figure>
 <p><strong>转义大括号</strong>（显示文字大括号）：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>EscapedMessage&lt;localizes&gt;(Name:string) : message =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>EscapedMessage&lt;localizes&gt;(Name:string) : message =
     &quot;Use \{Name\} to insert {Name}&quot;
-# Localize(EscapedMessage(&quot;value&quot;)) produces: &quot;Use {Name} to insert value&quot;</code></pre></figure>
+# Localize(EscapedMessage(&quot;value&quot;)) 生成：“使用 {Name} 插入值”</code></pre></figure>
 <p><strong>特殊字符：</strong></p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SpecialChars&lt;localizes&gt; : message =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>SpecialChars&lt;localizes&gt; : message =
     &quot;Supports: \\r\\n\\t\\\&quot;\\&#x27;\\#\\&lt;\\&gt;\\&amp;\\~&quot;</code></pre></figure>
 <p><strong>插值中允许使用空格和注释</strong>：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SpacedParam&lt;localizes&gt;(Name:string) : message = &quot;Hello { Name }&quot;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>SpacedParam&lt;localizes&gt;(Name:string) : message = &quot;Hello { Name }&quot;
 CommentedParam&lt;localizes&gt;(Name:string) : message = &quot;Hello {&lt;# comment #&gt;Name}&quot;</code></pre></figure>
 <p>本地化消息<strong>必须在模块或代码片段范围内定义</strong>。它们不能在函数内部定义：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: module scope
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 有效：模块范围
 MyModule := module:
     ModuleMessage&lt;localizes&gt; : message = &quot;Valid&quot;
 
-# Valid: snippet scope
+# 有效：代码段范围
 TopLevelMessage&lt;localizes&gt; : message = &quot;Valid&quot;
 
 BadFunction():void =
     LocalMessage&lt;localizes&gt; : message = &quot;Invalid&quot;  # ERROR</code></pre></figure>
 <p>本地化消息可以在类层次结构中被覆盖：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>base_ui := class:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>base_ui := class:
     Title&lt;localizes&gt;:message = &quot;Base Title&quot;
     Description&lt;localizes&gt;:message = &quot;Base description&quot;
 
 derived_ui := class(base_ui):
-    # Override the title message
+    # 覆盖标题消息
     Title&lt;localizes&gt;&lt;override&gt;:message = &quot;Derived Title&quot;
-    # Inherits Description from base</code></pre></figure>
+    # 从基础继承描述</code></pre></figure>
 <p>本地化消息也可以是抽象的：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>quest_base := class&lt;abstract&gt;:
-    # Abstract message - must be implemented by subclasses
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>quest_base := class&lt;abstract&gt;:
+    # 抽象消息 - 必须由子类实现
     TaskDescription&lt;localizes&gt;&lt;public&gt; : message
-    # Concrete message with default
+    # 默认的具体消息
     CompletionMessage&lt;localizes&gt;&lt;protected&gt; : message = &quot;Quest complete!&quot;
 
 fetch_quest := class&lt;final&gt;(quest_base):
     TaskDescription&lt;localizes&gt;&lt;override&gt; : message = &quot;Collect 10 items&quot;</code></pre></figure>
 <p><strong>必须使用显式类型注释：</strong></p>
 <p>需要类型注释 <code>: message</code>。不支持隐式键入：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Missing type annotation
-# BadMessage&lt;localizes&gt; := &quot;Text&quot;  # ERROR 3639
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：缺少类型注释
+# BadMessage := &quot;文本&quot; # 错误 3639
 
-# Valid: Explicit type
+# 有效：显式类型
 GoodMessage&lt;localizes&gt; : message = &quot;Text&quot;</code></pre></figure>
 <p><strong>RHS 必须是字符串文字：</strong></p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Expression not allowed
-# InvalidMessage&lt;localizes&gt; : message = &quot;A&quot; + &quot;B&quot;  # ERROR 3638
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：不允许表达式
+# InvalidMessage：消息 =“A”+“B”# 错误 3638
 
-# Valid: Literal only
+# 有效：仅限文字
 ValidMessage&lt;localizes&gt; : message = &quot;AB&quot;</code></pre></figure>
 <p><strong>限制参数类型：</strong></p>
 <p>并非所有类型都支持作为参数：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Optional types not supported
-# OptionalMsg&lt;localizes&gt;(Player:?string) : message = &quot;{Player}&quot;  # ERROR 3509
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：不支持可选类型
+# 可选Msg（玩家：？字符串）：消息=“{玩家}”#错误3509
 
-# ERROR: Custom classes not supported
+# 错误：不支持自定义类
 my_class := class{Value:int}
-# ClassMsg&lt;localizes&gt;(Obj:my_class) : message = &quot;{Object}&quot;  # ERROR 3509</code></pre></figure>
+# ClassMsg(Obj:my_class) : 消息 = &quot;{Object}&quot; # 错误 3509</code></pre></figure>
 <p><strong>插值语法限制：</strong></p>
 <p><code>{}</code> 中只允许参数名称和 Unicode 代码点：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Expressions not allowed
-# ExprMessage&lt;localizes&gt;(Name:string) : message = &quot;{&quot;Hello&quot;}&quot;  # ERROR 3652
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：不允许使用表达式
+# ExprMessage(名称:字符串) : 消息 = &quot;{&quot;Hello&quot;}&quot; # 错误 3652
 
-# Valid: Parameter names only
+# 有效：仅限参数名称
 ParamMessage&lt;localizes&gt;(Name:string) : message = &quot;{Name}&quot;</code></pre></figure>
 <p><strong>非参数标识符被转义：</strong></p>
 <p>如果您引用不是参数的标识符，它将在输出中转义：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GlobalName:string = &quot;World&quot;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GlobalName:string = &quot;World&quot;
 
 RefMessage&lt;localizes&gt;(Greeting:string) : message =
     &quot;{Greeting} to {GlobalName}&quot;
 
-# Localize(RefMessage(&quot;Hello&quot;)) produces: &quot;Hello to \{GlobalName\}&quot;
-# Note: GlobalName is escaped because it&#x27;s not a parameter</code></pre></figure>
+# Localize(RefMessage(&quot;Hello&quot;)) 生成： &quot;Hello to \{GlobalName\}&quot;
+# 注意：GlobalName 被转义，因为它不是参数</code></pre></figure>
 <p>本地化消息支持标准访问说明符：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MyModule := module:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>MyModule := module:
     PublicMessage&lt;localizes&gt;&lt;public&gt; : message = &quot;Public message&quot;
     InternalMessage&lt;localizes&gt; : message = &quot;Internal message&quot;
 
     some_class := class:
-        PrivateMessage&lt;localizes&gt;&lt;private&gt; : message = &quot;Private message&quot;  # private not allowed in module scopes</code></pre></figure>
+        PrivateMessage&lt;localizes&gt;&lt;private&gt; : message = &quot;Private message&quot;  # 模块范围内不允许使用 private</code></pre></figure>
 <p><strong>保持消息可翻译：</strong></p>
 <ul><li>使用完整的句子，而不是可能连接的片段</li><li>避免无法很好翻译的性别或数字假设</li><li>通过参数名称提供上下文</li></ul>
 <p><strong>针对不同语言的设计：</strong></p>
 <ul><li>不要假设词序 - 让翻译人员重新排列参数位置</li><li>允许对需要的语言重复使用参数</li><li>保持代码格式（如逗号分隔符）自动化</li></ul>
 <p><strong>组织：</strong></p>
 <ul><li>将相关消息分组到同一模块中</li><li>使用表明消息目的的描述性名称</li><li>考虑使用消息族的抽象基类</li></ul>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Good: Clear, complete, flexible
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 好：清晰、完整、灵活
 PlayerJoined&lt;localizes&gt;(PlayerName:string, TeamName:string) : message =
     &quot;{PlayerName} joined team {TeamName}&quot;
 
-# Avoid: Fragments that might be concatenated
-# PlayerPrefix&lt;localizes&gt;(Name:string) : message = &quot;Player {Name}&quot;
-# JoinedSuffix&lt;localizes&gt;(Team:string) : message = &quot;joined {Team}&quot;</code></pre></figure>
+# 避免：可能串联的片段
+# PlayerPrefix(Name:string) : message = &quot;玩家 {Name}&quot;
+# JoinedSuffix(Team:string) : message = &quot;已加入 {Team}&quot;</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Localization</summary>
@@ -1083,9 +1083,9 @@ PlayerJoined&lt;localizes&gt;(PlayerName:string, TeamName:string) : message =
   </details>
 </section><section class="section" id="s20-evolution">
   <article class="cn-read">
-    <h2>进化 <small>Evolution</small></h2>
+    <h2>演化 <small>Evolution</small></h2>
     <p>访问说明符在代码演化中起着至关重要的作用。发布后更改访问级别可能会破坏兼容性：</p>
-<ul><li>缩小访问范围（从公共到私有）会破坏依赖于成员的外部代码</li><li>扩大访问范围（从私人到公共）通常是安全的，但会产生新的承诺</li><li>更改protected成员会影响继承契约</li></ul>
+<ul><li>缩小访问范围（从 public 到 private）会破坏依赖于成员的外部代码</li><li>扩大访问范围（从 private 到 public）通常是安全的，但会产生新的承诺</li><li>更改protected成员会影响继承契约</li></ul>
 <p>类上的 <code>&lt;castable&gt;</code> 说明符具有特殊的兼容性要求 - 一旦发布，就无法添加或删除，因为这会影响整个代码库动态转换的安全性。</p>
 <p>在设计长期发展时，请考虑对最终可能公开的成员使用内部访问权限。这使您可以在公开曝光之前测试和完善模块中的 API。</p>
   </article>

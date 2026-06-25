@@ -23,7 +23,7 @@
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
 <a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
 <div class="crumb">Failure / <a href="https://verselang.github.io/book/08_failure/">原文页面</a></div><section class="hero"><h1>失败系统</h1><p class="lead">失败系统页，解释成功/失败、失败上下文、推测执行、option、cast 和运行时错误的区别。</p><div class="meta"><span class="pill">源文件：08_failure.md</span><span class="pill">中文段落：17</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-failure">失败 / Failure</a></li><li class="lvl2"><a href="#s1-failable-expressions">可失败表达式 / Failable Expressions</a></li><li class="lvl2"><a href="#s2-failure-contexts">失败上下文 / Failure Contexts</a></li><li class="lvl2"><a href="#s3-speculative-execution">推测执行 / Speculative Execution</a></li><li class="lvl2"><a href="#s4-the-logic-of-failure">The Logic of Failure</a></li><li class="lvl2"><a href="#s5-expressions-in-decides">Expressions in Decides</a></li><li class="lvl2"><a href="#s6-option-types">Option Types</a></li><li class="lvl3"><a href="#s7-unwrapping">Unwrapping</a></li><li class="lvl3"><a href="#s8-nesting">Nesting</a></li><li class="lvl3"><a href="#s9-chained-access">Chained Access</a></li><li class="lvl3"><a href="#s10-defaulting">Defaulting</a></li><li class="lvl3"><a href="#s11-comparison">Comparison</a></li><li class="lvl2"><a href="#s12-failure-with-optionals">Failure with Optionals</a></li><li class="lvl2"><a href="#s13-casts-as-decides">Casts as Decides</a></li><li class="lvl2"><a href="#s14-idioms-and-patterns">Idioms and Patterns</a></li><li class="lvl2"><a href="#s15-runtime-errors">Runtime Errors</a></li><li class="lvl2"><a href="#s16-living-with-failure">Living with Failure</a></li></ol></article></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-failure">失败 / Failure</a></li><li class="lvl2"><a href="#s1-failable-expressions">可失败表达式 / Failable Expressions</a></li><li class="lvl2"><a href="#s2-failure-contexts">失败上下文 / Failure Contexts</a></li><li class="lvl2"><a href="#s3-speculative-execution">推测执行 / Speculative Execution</a></li><li class="lvl2"><a href="#s4-the-logic-of-failure">The Logic of Failure</a></li><li class="lvl2"><a href="#s5-expressions-in-decides">decides 中的表达式 / Expressions in Decides</a></li><li class="lvl2"><a href="#s6-option-types">Option Types</a></li><li class="lvl3"><a href="#s7-unwrapping">Unwrapping</a></li><li class="lvl3"><a href="#s8-nesting">Nesting</a></li><li class="lvl3"><a href="#s9-chained-access">链式访问 / Chained Access</a></li><li class="lvl3"><a href="#s10-defaulting">Defaulting</a></li><li class="lvl3"><a href="#s11-comparison">Comparison</a></li><li class="lvl2"><a href="#s12-failure-with-optionals">Failure with Optionals</a></li><li class="lvl2"><a href="#s13-casts-as-decides">Casts as Decides</a></li><li class="lvl2"><a href="#s14-idioms-and-patterns">Idioms and Patterns</a></li><li class="lvl2"><a href="#s15-runtime-errors">Runtime Errors</a></li><li class="lvl2"><a href="#s16-living-with-failure">Living with Failure</a></li></ol></article></section>
 <div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-failure">
   <article class="cn-read">
@@ -31,12 +31,12 @@
     <p>大多数编程语言将控制流视为真或假、是或否、一或零的问题。他们评估布尔条件并相应地进行分支，创建一个二元决策的世界，通常需要检查两次条件 - 一次是为了查看某件事是否可能，另一次是为了实际执行它。 Verse采取了不同的方法。 Verse 没有问“这是真的吗？”，而是问“这成功了吗？”</p>
 <p>这种区别可能看起来很微妙，但它改变了程序的编写和推理方式。失败不是错误或异常，而是驱动控制流的一流概念。当表达式失败时，它不会使您的程序崩溃或引发需要捕获的异常。相反，失败是一种正常的、预期的结果，您的代码可以通过语言本身的结构优雅地处理它。</p>
 <p>考虑访问数组元素的简单行为。在传统语言中，您可能会这样写：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (Index &lt; Array.Length) {  # Traditional, non-Verse
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>if (Index &lt; Array.Length) {  # 传统的、非Verse的
     Value = Array[Index]
     Process(Value)
 }</code></pre></figure>
 <p>这将检查有效性与访问分开，如果检查和访问分开或者数组在它们之间发生变化，就会产生错误的机会。在 Verse 中，验证和访问是统一的：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (Value := Array[Index]):
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>if (Value := Array[Index]):
     Process(Value)</code></pre></figure>
 <p>数组访问要么成功并绑定该值，要么失败并继续执行。没有单独的验证步骤，因此检查和访问不会变得不一致，并且访问无效索引不会导致未定义的行为。</p>
   </article>
@@ -60,15 +60,15 @@
     <h2>可失败表达式 <small>Failable Expressions</small></h2>
     <p>可失败表达式是指要么成功并产生一个值，要么失败但不产生任何结果的表达式。这与返回 null 或错误代码不同 - 当表达式失败时，它实际上根本不产生任何值。计算在该特定执行路径中的该点停止。</p>
 <p>许多操作自然会失败。当索引越界时，数组索引会失败。当键不存在时，map查找会失败。当值不相等时比较失败。除以零时除法失败。即使是简单的文字也可能会失败：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>42      # Always succeeds with value 42
-false?  # Always fails - the query of false
-true?   # Always succeeds - the query of true</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>42      # 始终成功，值为 42
+false?  # 始终失败 - 查询为 false
+true?   # 始终成功 - 查询为 true</code></pre></figure>
 <p>查询运算符 <code>?</code> 将任何值转换为失败的表达式。当应用于<code>false</code>时，总是失败。当应用于任何其他值时，它会以该值成功。这种简单的机制为控制程序流程提供了巨大的力量。</p>
 <p>您可以通过标有 <code>&lt;decides&gt;</code> 效果的函数创建自己的失败表达式：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateAge(Age:int)&lt;decides&gt;:int =
-    Age &gt;= 0    # Fails if age is negative
-    Age &lt;= 150  # Fails if age is unrealistic
-    Age         # Returns the age if both checks pass</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidateAge(Age:int)&lt;decides&gt;:int =
+    Age &gt;= 0    # 如果年龄为负则失败
+    Age &lt;= 150  # 如果年龄不切实际则失败
+    Age         # 如果两项检查都通过则返回年龄</code></pre></figure>
 <p>这个函数不只是检查条件——它体现了它们。如果年龄无效，则该功能失败。如果有效，则成功并显示年龄值。验证和价值是密不可分的。</p>
   </article>
   <details class="original">
@@ -92,19 +92,19 @@ true?   # Always succeeds - the query of true</code></pre>
     <h2>失败上下文 <small>Failure Contexts</small></h2>
     <p>并非程序的每个部分都可以执行失败的表达式。它们只能出现在失败环境中——语言知道如何处理成功和失败的地方。每个失败上下文定义了当其中的表达式失败时会发生什么。</p>
 <p>最常见的失败上下文是 <code>if</code> 表达式的条件：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (Player := GetPlayerByName[Name], Score := GetPlayerScore[Player], Score &gt; 100):
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>if (Player := GetPlayerByName[Name], Score := GetPlayerScore[Player], Score &gt; 100):
     Print(&quot;High scorer: {Name} with {Score} points!&quot;)</code></pre></figure>
 <p>此 <code>if</code> 条件包含三个可能失败的表达式。一切都必须成功，身体才能执行。如果其中任何一个失败，则整个条件失败，并且控制将移至 <code>else</code> 分支（如果存在）或完全越过 <code>if</code>。美妙之处在于每个表达式都可以使用先前表达式的结果 - 仅当我们成功找到 <code>Player</code> 时才会计算 <code>Score</code>。</p>
 <p><code>for</code> 表达式为域子句的每次迭代创建失败上下文：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>for (Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50):
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>for (Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50):
     Print(&quot;Powerful weapon: {Item} with {Damage} damage&quot;)</code></pre></figure>
 <p>每次迭代都会尝试可失败表达式。如果它们全部成功，则主体会针对该项目执行。如果有任何失败，则跳过该迭代，并继续循环执行下一项。这创建了一种自然的过滤机制，无需明确的条件逻辑。</p>
 <p>!!!注意“未发布的功能”<code>first</code> 尚未发布。以下记录了当前不可用的计划功能。</p>
 <p>与 <code>for</code> 类似，<code>first</code> 表达式为域子句创建失败上下文：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PowerfulWeapon := option. first(Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50). Item</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>PowerfulWeapon := option. first(Item : Inventory, IsWeapon[Item], Damage := GetDamage[Item], Damage &gt; 50). Item</code></pre></figure>
 <p>与 <code>for</code> 不同，如果没有成功的迭代，<code>first</code> 本身就会失败，因此必须在失败上下文中使用。在上面的示例中，<code>option</code>用于处理<code>first</code>的故障。</p>
 <p>标有 <code>&lt;decides&gt;</code> 的函数为其整个主体创建失败上下文：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindBestWeapon(Inventory:[]item)&lt;decides&gt;:item =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>FindBestWeapon(Inventory:[]item)&lt;decides&gt;:item =
     var BestWeapon:?item = false
     var MaxDamage:int = 0
 
@@ -113,7 +113,7 @@ true?   # Always succeeds - the query of true</code></pre>
             set BestWeapon = option{Item}
             set MaxDamage = Damage
 
-    BestWeapon?  # Fails if no weapon was found</code></pre></figure>
+    BestWeapon?  # 如果没有找到武器则失败</code></pre></figure>
 <p>函数体是一个失败上下文，允许整个表达式失败。最后一行从选项中提取值，如果没有找到武器则失败。</p>
   </article>
   <details class="original">
@@ -149,22 +149,22 @@ true?   # Always succeeds - the query of true</code></pre>
   <article class="cn-read">
     <h2>推测执行 <small>Speculative Execution</small></h2>
     <p>当您在失败上下文中执行代码时，对可变变量的更改是临时的，只有在整个上下文成功时它们才会成为永久性的。在失败上下文中修改状态的函数必须使用 <code>&lt;transacts&gt;</code> 或 <code>&lt;writes&gt;</code> 效果说明符（请参阅<a href="../13_effects/index.html">效果</a>）：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>m:=module:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>m:=module:
     buyer := class:
         var PlayerGold:int
         AttemptPurchase(Cost:int)&lt;transacts&gt;&lt;decides&gt;:void =
-           set PlayerGold = PlayerGold - Cost  # Provisional change
-           PlayerGold &gt;= 0                     # Check if still valid
-           # If this fails, PlayerGold reverts to original value</code></pre></figure>
+           set PlayerGold = PlayerGold - Cost  # 临时更改
+           PlayerGold &gt;= 0                     # 检查是否仍然有效
+           # 如果失败，PlayerGold 恢复为原始值</code></pre></figure>
 <p>如果检查失败，减法会自动回滚。您无需在修改状态之前手动恢复原始值或检查条件。</p>
 <p>这种事务行为使得复杂的状态更新变得安全且可预测。要么一切成功并且所有更改都已提交，要么某些事情失败并且没有任何改变。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game := class:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>game := class:
     var State:game_state
     ComplexOperation()&lt;transacts&gt;&lt;decides&gt;:void =
-       ModifyHealth()       # All these operations
-       UpdateInventory()    # are provisional
-       ChargeResources()    # until all succeed
-       ValidateFinalState[] # If this fails, everything rolls back</code></pre></figure>
+       ModifyHealth()       # 所有这些操作
+       UpdateInventory()    # 都是临时的
+       ChargeResources()    # 直到全部成功
+       ValidateFinalState[] # 如果失败，一切都会回滚</code></pre></figure>
 <p><code>game</code> 类有多个更新 <code>game_state</code> 的方法，在返回 <code>ComplexOperation</code> 之前验证对象是否处于有效状态，如果不是，则回滚在该方法中执行的所有更改。</p>
   </article>
   <details class="original">
@@ -194,14 +194,14 @@ true?   # Always succeeds - the query of true</code></pre>
     <h2>失败的逻辑 <small>The Logic of Failure</small></h2>
     <p>Verse 提供了处理失败的逻辑运算符，创建了用于组合失败表达式的代数。</p>
 <p><code>and</code> 运算符确保两个表达式都成功。 <code>not</code> 运算符反转成功和失败：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (not (Enemy := GetNearestEnemy[]) and Score &gt; 0):
-    Print(&quot;Coast is clear!&quot;)  # Executes when GetNearestEnemy fails</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>if (not (Enemy := GetNearestEnemy[]) and Score &gt; 0):
+    Print(&quot;Coast is clear!&quot;)  # 当 GetNearestEnemy 失败时执行</code></pre></figure>
 <p>值得注意的是，<code>Enemy</code> 不在 <code>then</code> 分支的范围内，因为它位于 <code>not</code> 下。</p>
 <p><code>or</code> 运算符提供了替代方案：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Weapon := PrimaryWeapon[] or SecondaryWeapon[] or DefaultWeapon?</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Weapon := PrimaryWeapon[] or SecondaryWeapon[] or DefaultWeapon?</code></pre></figure>
 <p>这将按顺序尝试每个选项，并在第一次成功时停止。它不是评估布尔条件 - 它正在尝试计算并采用第一个成功的计算。</p>
 <p>您可以组合这些运算符来创建复杂的控制流：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidatePlayer(Player:player)&lt;decides&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidatePlayer(Player:player)&lt;decides&gt;:void =
     IsAlive[Player]
     not IsStunned[Player]
     HasAmmunition[Player] or HasMeleeWeapon[Player]</code></pre></figure>
@@ -229,19 +229,19 @@ true?   # Always succeeds - the query of true</code></pre>
   </details>
 </section><section class="section" id="s5-expressions-in-decides">
   <article class="cn-read">
-    <h2>决策中的表达式 <small>Expressions in Decides</small></h2>
+    <h2>decides 中的表达式 <small>Expressions in Decides</small></h2>
     <p>一个微妙的特征是关系表达式在决定上下文中的行为方式。当比较出现在可以处理失败的上下文中时，它不仅仅测试条件 - 它会生成一个值，特别是返回其左侧。因此，<code>X&gt;0</code> 返回 <code>X</code>，<code>0&lt;=X</code> 返回 <code>0</code>。此行为适用于决定上下文中的所有比较运算符：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetIfNotEqual(X:int, Y:int)&lt;decides&gt;:int =
-    X &lt;&gt; Y  # Returns X when X ≠ Y, fails when X = Y
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GetIfNotEqual(X:int, Y:int)&lt;decides&gt;:int =
+    X &lt;&gt; Y  # 当 X ≠ Y 时返回 X，当 X = Y 时失败
 
 GetIfLessOrEqual(X:int, Limit:int)&lt;decides&gt;:int =
-    X &lt;= Limit  # Returns X when X ≤ Limit, fails otherwise
+    X &lt;= Limit  # 当 X ≤ Limit 时返回 X，否则失败
 
 GetIfGreaterThan(X:int, Threshold:int)&lt;decides&gt;:int =
-    X &gt; Threshold  # Returns X when X &gt; Threshold, fails otherwise</code></pre></figure>
+    X &gt; Threshold  # 当 X &gt; 阈值时返回 X，否则失败</code></pre></figure>
 <p><code>A op B</code> 形式的比较表达式在比较成功时返回 <code>A</code>，在比较错误时返回失败。</p>
 <p>这将创建简洁的验证函数，要么返回 <code>Value</code>，要么失败：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInRange(Value:int, LwrBnd:int, UprBnd:int)&lt;decides&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidateInRange(Value:int, LwrBnd:int, UprBnd:int)&lt;decides&gt;:int =
     Value &gt;= LwrBnd and Value &lt;= UprBnd</code></pre></figure>
   </article>
   <details class="original">
@@ -265,34 +265,34 @@ GetIfGreaterThan(X:int, Threshold:int)&lt;decides&gt;:int =
   <article class="cn-read">
     <h2>期权类型 <small>Option Types</small></h2>
     <p>期权类型和失败密切相关。选项要么包含值，要么为空（由 <code>false</code> 表示）。查询运算符 <code>?</code> 在选项和失败之间进行转换：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>M()&lt;decides&gt;:void=
-    MaybeValue:?int = option{42}  # An optional int
-    Value := MaybeValue?          # Succeeds with 42
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>M()&lt;decides&gt;:void=
+    MaybeValue:?int = option{42}  # 可选 int
+    Value := MaybeValue?          # 成功 42
 
-    Empty:?int = false            # An empty value
-    Other := Empty?               # Failure</code></pre></figure>
+    Empty:?int = false            # 空值
+    Other := Empty?               # 失败</code></pre></figure>
 <p><code>option{}</code> 构造函数反向工作，将失败转换为空选项：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Result := option{RiskyComputation[]} # option{value} if computation succeeds
-                                     # otherwise false</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Result := option{RiskyComputation[]} # option{value} 如果计算成功
+                                     # 否则 false</code></pre></figure>
 <p>这种双向转换使选项和故障可以互换，使您可以为您的特定用例选择最合适的表示形式。</p>
 <p>选项类型 <code>?T</code> 表示可能存在也可能不存在的值。问号出现在类型<em>之前</em>，而不是之后：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidSyntax:?int = option{42}      # Correct</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidSyntax:?int = option{42}      # 右结合</code></pre></figure>
 <p><code>?</code> 前缀适用于任何类型：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybeNumber:?int = option{42}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>MaybeNumber:?int = option{42}
 MaybeText:?string = option{&quot;hello&quot;}
 MaybePlayer:?player = option{player{}}</code></pre></figure>
 <p>使用 <code>option{}</code> 构造函数来包装一个值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Filled:?int = option{42}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Filled:?int = option{42}
 Empty:?int  = false
-Result:?int = option{RiskyComputation[]}  # false if computation fails</code></pre></figure>
+Result:?int = option{RiskyComputation[]}  # 如果计算失败则返回 false</code></pre></figure>
 <p>空选项和 <code>false</code> 是等价的——空选项<em>是</em> <code>false</code>：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>EmptyOption:?int = false
-EmptyOption = false  # This comparison succeeds</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>EmptyOption:?int = false
+EmptyOption = false  # 这次比较成功</code></pre></figure>
 <p>Verse 具有丰富而灵活的语法，有时也会导致微妙的错误。逗号产生 <code>option</code> 中的元组，而分号计算所有值但仅保留最后一个值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Comma creates tuple
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 逗号创建元组
 option{1, 2}? = (1, 2)
 
-# Semicolon creates sequence - last value is used
+# 分号创建序列 - 使用最后一个值
 option{1; 2}? = 2</code></pre></figure>
   </article>
   <details class="original">
@@ -333,24 +333,24 @@ option{1; 2}? = 2</code></pre></div>
   <article class="cn-read">
     <h2>展开 <small>Unwrapping</small></h2>
     <p>查询运算符 <code>?</code> 从选项中提取值，如果选项为空则失败：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>M()&lt;decides&gt;:void=
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>M()&lt;decides&gt;:void=
     MaybeValue:?int = option{42}
-    Value := MaybeValue?  # Succeeds with 42
+    Value := MaybeValue?  # 成功 42
 
     Empty:?int = false
-    Other := Empty?  # Fails - cannot unwrap empty option</code></pre></figure>
+    Other := Empty?  # 失败 - 无法解开空选项</code></pre></figure>
 <p>仅允许在失败上下文中展开：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: In if condition (failure context)
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 有效：在 if 条件（失败上下文）中
 if (Value := MaybeInt?):
     Print(&quot;Got {Value}&quot;)
 
-# Valid: In for loop (failure context)
+# 有效：在 for 循环（失败上下文）中
 for (Item : Items, ValidItem := ProcessItem(Item)?):
     UseItem(Item)
 
-# Valid: In &lt;decides&gt; function body (failure context)
+# 有效：在  函数体中（失败上下文）
 GetRequired(Maybe:?int)&lt;decides&gt;:int =
-    Maybe?  # Fails if Maybe is empty</code></pre></figure>
+    Maybe?  # 如果 Maybe 为空则失败</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Unwrapping</summary>
@@ -379,28 +379,28 @@ GetRequired(Maybe:?int)&lt;decides&gt;:int =
   <article class="cn-read">
     <h2>嵌套 <small>Nesting</small></h2>
     <p>选项可以嵌套来表示多层缺席：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Double-nested option
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 双重嵌套选项
 Double:??int = option{option{42}}
 
-# Single unwrap gets outer option
+# 单次解包获取外层选项
 if (Inner := Double?):
     if (TheValue := Inner?):
-        # TheValue has type int, equals 42
+        # TheValue 类型为 int，等于 42
 
-# Double unwrap gets the value directly
-Value := Double??  # Fails if either layer is empty</code></pre></figure>
+# 双重解包直接获取值
+Value := Double??  # 如果任一层为空则失败</code></pre></figure>
 <p>辅助函数也适用于嵌套选项：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>UnpackNested(MaybeValue:??int):?int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>UnpackNested(MaybeValue:??int):?int =
     if (Inner := MaybeValue?):
         Inner
     else:
-        option{-1}  # Default for outer empty
+        option{-1}  # 外层默认为空
 
 DirectUnpack(MaybeValue:??int):int =
     if (Value := MaybeValue??):
         Value
     else:
-        -1  # Default for any level empty</code></pre></figure>
+        -1  # 任意级别默认为空</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Nesting</summary>
@@ -433,26 +433,26 @@ DirectUnpack(MaybeValue:??int):int =
   <article class="cn-read">
     <h2>链式访问 <small>Chained Access</small></h2>
     <p><code>?.</code> 运算符提供对可选值的安全成员访问：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>entity := class:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>entity := class:
     Name:string = &quot;Unknown&quot;
     Health:int = 100
 
 MaybeEntity:?entity = option{entity{}}
 
-# Safe field access
+# 安全字段访问
 if (Name := MaybeEntity?.Name):
-    Print(&quot;Entity: {Name}&quot;)  # Succeeds
+    Print(&quot;Entity: {Name}&quot;)  # 成功
 
-# Safe method call
-MaybeEntity?.TakeDamage(10)  # Only calls if entity present
+# 安全方法调用
+MaybeEntity?.TakeDamage(10)  # 仅在存在实体时调用
 
-# Chaining through multiple optionals
+# 通过多个选项进行链接
 linked_list := class:
     Value:int = 0
     Next:?linked_list = false
 
 Head:?linked_list = option{linked_list{Value := 1}}
-SecondValue := Head?.Next?.Value  # Fails if any link is empty</code></pre></figure>
+SecondValue := Head?.Next?.Value  # 如果任何链接为空则失败</code></pre></figure>
 <p><code>?.</code> 运算符短路 - 如果选项为空，则整个表达式将失败，而不评估成员访问权限。</p>
   </article>
   <details class="original">
@@ -485,10 +485,10 @@ SecondValue := Head?.Next?.Value  # Fails if any link is empty</code></pre>
   <article class="cn-read">
     <h2>违约 <small>Defaulting</small></h2>
     <p>使用 <code>or</code> 运算符为空选项提供后备值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybeValue:?int = false
-Value := MaybeValue? or 42  # Yields 42
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>MaybeValue:?int = false
+Value := MaybeValue? or 42  # 产生值 42
 
-# Chaining multiple options
+# 链接多个选项
 Primary:?string = false
 Secondary:?string = option{&quot;backup&quot;}
 Default:string = &quot;default&quot;
@@ -513,16 +513,16 @@ Result := Primary? or Secondary? or Default</code></pre></div>
   <article class="cn-read">
     <h2>比较 <small>Comparison</small></h2>
     <p>正确比较时，空选项等于 <code>false</code>，填充选项等于其展开值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>EmptyOption:?int = false
-EmptyOption = false  # Succeeds
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>EmptyOption:?int = false
+EmptyOption = false  # 成功
 
 FilledOption:?int = option{1}
-FilledOption? = 1  # Succeeds - unwrap then compare</code></pre></figure>
+FilledOption? = 1  # 成功 - 打开然后比较</code></pre></figure>
 <p>但是，您不能在不展开的情况下直接比较可选值和非可选值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Opt:?int = option{42}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Opt:?int = option{42}
 Regular:int = 42
 
-# Must unwrap to compare
+# 必须拆开才能比较
 if (Opt? = Regular):
     Print(&quot;Equal&quot;)</code></pre></figure>
   </article>
@@ -549,29 +549,29 @@ if (Opt? = Regular):
     <p>将决定函数与可选返回类型相结合，创建一个具有多层故障的系统。这种模式可以简洁地表达复杂的条件，同时保持清晰度。</p>
 <p>一个函数可能会在两个层面上失败：</p>
 <ul><li><em>函数级故障</em>：使用 <code>&lt;decides&gt;</code> 整个函数失败</li><li><em>值级失败</em>：函数成功但返回空选项</li></ul>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindEligiblePlayer(Name:string)&lt;decides&gt;:?player =
-    Name &lt;&gt; &quot;&quot;           # Layer 1: Fail if name is empty
-    Player := LookupPlayer[Name]  # Layer 1: Fail if player not found
-    option{IsActive[Player]}      # Layer 2: Empty option if player inactive</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>FindEligiblePlayer(Name:string)&lt;decides&gt;:?player =
+    Name &lt;&gt; &quot;&quot;           # 第 1 层：如果名称为空，则失败
+    Player := LookupPlayer[Name]  # 第 1 层：如果未找到玩家，则失败
+    option{IsActive[Player]}      # 第 2 层：如果玩家不活动，则为空选项</code></pre></figure>
 <p>该函数有三种可能的结果：</p>
-<ul><li><em>功能失败</em>：名称为空或未找到玩家</li><li><em>功能成功，选项为空</em>：找到玩家但不活动</li><li><em>功能成功并填充选项</em>：玩家已找到并处于活动状态</li></ul>
+<ul><li><em>功能失败</em>：名称为空或未找到玩家</li><li><em>功能成功，选项为空</em>：找到玩家但不活动</li><li><em>功能成功并填充选项</em>：玩家已找到并处于实时状态</li></ul>
 <p>调用此函数演示了分层故障：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function-level failure
-Result1 := FindEligiblePlayer[&quot;&quot;]  # Fails, Result1 never assigned
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 函数级失败
+Result1 := FindEligiblePlayer[&quot;&quot;]  # 失败，Result1 从未分配
 
-# Function succeeds, returns empty option
+# 函数成功，返回空选项
 if (Player := FindEligiblePlayer[&quot;InactiveUser&quot;]?):
-    # Won&#x27;t execute - function succeeds but ? query fails
+    # 不会执行 - 函数成功但是？查询失败
 else:
-    # Executes here
+    # 此处执行
 
-# Function succeeds, returns filled option
+# 函数成功，返回填充选项
 if (Player := FindEligiblePlayer[&quot;ActiveUser&quot;]?):
-    # Executes with Player bound to the active player</code></pre></figure>
+    # 执行时玩家绑定到活动玩家</code></pre></figure>
 <p>此模式对于验证不同的故障模式特别强大：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateScore(Score:int)&lt;decides&gt;:?int =
-    Score &gt;= 0           # Layer 1: Reject negative scores (invalid input)
-    option{Score &lt;= 100} # Layer 2: Reject high scores (out of range)</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidateScore(Score:int)&lt;decides&gt;:?int =
+    Score &gt;= 0           # 第 1 层：拒绝负分（无效输入）
+    option{Score &lt;= 100} # 第 2 层：拒绝高分（超出范围）</code></pre></figure>
 <p>功能级故障和值级故障之间的区别使您可以表达不同类型的错误。功能级故障通常意味着“此操作无法完成”，而值级故障意味着“操作已完成，但结果不符合预期标准”。</p>
   </article>
   <details class="original">
@@ -610,34 +610,34 @@ if (Player := FindEligiblePlayer[&quot;ActiveUser&quot;]?):
     <h2>演员阵容决定 <small>Casts as Decides</small></h2>
     <p>Verse 中的类型转换已集成到故障系统中。动态转换的行为就像 <code>&lt;decides&gt;</code> 函数调用一样，并且类似地使用括号语法。例如，<code>Type[value]</code> 尝试将 <code>value</code> 的类型强制转换为 <code>Type</code>，如果不成功则失败。</p>
 <p>这也适用于必须指定 <code>&lt;castable&gt;</code> 的用户定义类型：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>component := class&lt;castable&gt;:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>component := class&lt;castable&gt;:
     Name:string = &quot;Component&quot;
 
 physics_component := class&lt;castable&gt;(component):
     Velocity:float = 0.0
 
-# Casting as a decides operation
+# 强制转换为决定操作
 TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
-    physics_component[Comp]  # Succeeds if Comp is actually a physics_component</code></pre></figure>
+    physics_component[Comp]  # 如果 Comp 实际上是物理组件，则成功</code></pre></figure>
 <p>这使得基于类型的调度很容易表达：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessComponent(Comp:component):void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessComponent(Comp:component):void =
     if (Physics := physics_component[Comp]):
         UpdatePhysics(Physics)
     else if (Render := render_component[Comp]):
         UpdateRendering(Render)
     else:
-        # Unknown component type
+        # 未知的组件类型
         UpdateGeneric(Comp)</code></pre></figure>
 <p>强制转换本身就是条件——不需要单独的类型检查。当转换成功时，您既确认了类型又获得了正确类型的引用。</p>
 <p>您可以将强制转换与其他决定操作链接起来：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetActivePhysicsComponent(Entity:entity)&lt;decides&gt;:physics_component =
-    Comp := Entity.GetComponent[]  # Fails if no component
-    Physics := physics_component[Comp]  # Fails if not physics
-    IsActive[Physics]  # Fails if inactive
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GetActivePhysicsComponent(Entity:entity)&lt;decides&gt;:physics_component =
+    Comp := Entity.GetComponent[]  # 如果没有组件则失败
+    Physics := physics_component[Comp]  # 如果不是物理组件则失败
+    IsActive[Physics]  # 如果不活动则失败
     Physics</code></pre></figure>
 <p>每个步骤都必须成功，函数才能返回值。这将创建自记录验证链，其中类型要求是明确的。</p>
 <p>强制转换与 <code>or</code> 组合器一起用于后备类型：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetInteractable(Entity:entity)&lt;decides&gt;:component =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GetInteractable(Entity:entity)&lt;decides&gt;:component =
     physics_component[Entity] or
     trigger_component[Entity] or
     scripted_component[Entity]</code></pre></figure>
@@ -686,7 +686,7 @@ TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
     <h2>习语和模式 <small>Idioms and Patterns</small></h2>
     <p>当你面对失败时，某些模式会出现，可以优雅地解决常见问题。</p>
 <p>验证链模式使用顺序失败来确保满足所有条件：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessAction(Action:action)&lt;decides&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessAction(Action:action)&lt;decides&gt;:void =
     Player := GetActingPlayer[Action]
     IsValidTurn[Player]
     HasRequiredResources[Player, Action]
@@ -695,18 +695,18 @@ TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
     ExecuteAction[Action]</code></pre></figure>
 <p>每行都必须成功才能继续执行。这将创建自记录代码，其中前提条件是明确的并按顺序检查。</p>
 <p>第一次成功模式会尝试替代方案，直到其中一个有效为止：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FindPath(Start:location, End:location)&lt;decides&gt;:path =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>FindPath(Start:location, End:location)&lt;decides&gt;:path =
     DirectPath[Start, End] or
     PathAroundObstacles[Start, End] or
     ComplexPathfinding[Start, End]</code></pre></figure>
 <p>这自然表示先尝试简单的解决方案，然后再尝试复杂的解决方案。</p>
 <p>过滤模式使用失败来选择项目：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetEliteEnemies(Enemies:[]enemy):[]enemy =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GetEliteEnemies(Enemies:[]enemy):[]enemy =
     for (Enemy : Enemies, Level := GetLevel[Enemy], Level &gt;= 10):
         Enemy</code></pre></figure>
 <p>结果中仅包含具有等级且等级至少为 10 的敌人。</p>
 <p>事务模式组相关变化：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TradeItems(PlayerA:player, PlayerB:player, ItemA:item, ItemB:item)&lt;transacts&gt;&lt;decides&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>TradeItems(PlayerA:player, PlayerB:player, ItemA:item, ItemB:item)&lt;transacts&gt;&lt;decides&gt;:void =
     RemoveItem[PlayerA, ItemA]
     RemoveItem[PlayerB, ItemB]
     AddItem(PlayerA, ItemB)
@@ -715,40 +715,40 @@ TryGetPhysics(Comp:component)&lt;decides&gt;:physics_component =
 <p>要么整个事务成功，要么什么都没有改变。</p>
 <p><strong>可选索引</strong></p>
 <p>使用可选容器时，您可以使用将可选检查与元素访问相结合的专用查询语法来访问其内容。可选元组支持通过查询运算符直接访问元素：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>MaybePair:?tuple(int, string) = option{(42, &quot;answer&quot;)}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>MaybePair:?tuple(int, string) = option{(42, &quot;answer&quot;)}
 
-# Access first element
+# 访问第一个元素
 if (FirstValue := MaybePair?(0)):
-    # FirstValue is 42 (type: int)
+    # FirstValue 为 42（类型：int）
     Print(&quot;First: {FirstValue}&quot;)
 
-# Access second element
+# 访问第二个元素
 if (SecondValue := MaybePair?(1)):
-    # SecondValue is &quot;answer&quot; (type: string)
+    # SecondValue 为“answer”（类型：string）
     Print(&quot;Second: {SecondValue}&quot;)</code></pre></figure>
 <p>同时语法<code>Option?(index)</code>：</p>
 <ul><li>查询选项是否非空</li><li>访问给定索引处的元组元素</li><li>如果两者都成功则绑定元素值</li></ul>
 <p><strong>组合和调用链</strong></p>
 <p>决定函数自然地组合，允许从简单、可重用的部分构建复杂的操作。当一个决定函数调用另一个决定函数时，失败会自动传播。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidatePositive(X:int)&lt;decides&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidatePositive(X:int)&lt;decides&gt;:int =
     X &gt; 0
 
 Double(X:int)&lt;decides&gt;:int =
-    Validated := ValidatePositive[X]  # Fails if X ≤ 0
+    Validated := ValidatePositive[X]  # 如果 X ≤ 0，则失败
     Validated * 2</code></pre></figure>
 <p>如果 <code>ValidatePositive</code> 失败，<code>Double</code> 立即失败。经过验证的价值在链条中流动。</p>
 <p><strong>保留失败上下文：</strong></p>
 <p>当在非决定上下文中调用决定函数时，必须显式处理失败：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># This won&#x27;t compile - ProcessPlayer doesn&#x27;t have &lt;decides&gt;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 这不会编译 - ProcessPlayer 没有
 # BadProcessPlayer(Name:string):void =
-#    Player := FindPlayer[Name]  # ERROR: Unhandled failure
+#    Player := FindPlayer[Name] # 错误：未处理的失败
 
-# Handle with if
+# 处理 if
 ProcessPlayerWithIf(Name:string):void =
     if (Player := FindPlayer[Name]):
         UsePlayer(Player)
 
-# Handle with or
+# 处理 or
 ProcessPlayerWithOr(Name:string):void =
     Player := FindPlayer[Name] or GetDefaultPlayer()
     UsePlayer(Player)</code></pre></figure>
@@ -832,43 +832,42 @@ ProcessPlayerWithOr(Name:string):void =
     <h2>运行时错误 <small>Runtime Errors</small></h2>
     <p>虽然失败 (<code>&lt;decides&gt;</code>) 表示具有事务回滚的正常控制流，但<em>运行时错误</em>表示终止执行的不可恢复条件。运行时错误在调用堆栈中向上传播，绕过正常的故障处理，并且无法在 Verse 代码中捕获或恢复。</p>
 <p><code>Err()</code> 函数显式触发运行时错误，并带有可选消息：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInput(Value:int):int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidateInput(Value:int):int =
     if (Value &lt; 0):
         Err(&quot;Negative values not allowed&quot;)
     Value</code></pre></figure>
 <p>当发生运行时错误时，执行将通过调用堆栈展开，终止当前操作：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>DeepFunction()&lt;transacts&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>DeepFunction()&lt;transacts&gt;:int =
     Log(&quot;C&quot;)
-    Err(&quot;Fatal error&quot;)  # Runtime error here
-    Log(&quot;D&quot;)            # Never executes
+    Err(&quot;Fatal error&quot;)  # 此处运行时错误
+    Log(&quot;D&quot;)            # 从不执行
     return 1
 
 MiddleFunction():int =
     Log(&quot;B&quot;)
-    Result := DeepFunction()  # Error propagates through here
-    Log(&quot;E&quot;)                  # Never executes
+    Result := DeepFunction()  # 错误通过此处传播
+    Log(&quot;E&quot;)                  # 从不执行
     return Result
 
 TopFunction():void =
     Log(&quot;A&quot;)
-    Value := MiddleFunction()  # Error propagates to here
-    Log(&quot;F&quot;)                   # Never executes
+    Value := MiddleFunction()  # 错误传播到此处
+    Log(&quot;F&quot;)                   # 从不执行
 
-# Execution order: A, B, C, then terminates
-# Output: &quot;ABC&quot;</code></pre></figure>
+# 执行顺序：A、B、C，然后终止
+# 输出：“ABC”</code></pre></figure>
 <p>运行时错误立即传播，绕过调用链中的所有后续代码。</p>
 <p>运行时错误通过异步操作传播，终止生成的赋值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AsyncOperation()&lt;suspends&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>AsyncOperation()&lt;suspends&gt;:int =
     Log(&quot;Start&quot;)
     WaitTicks(1)
-    Err(&quot;Async error&quot;)  # Runtime error during async execution
-    WaitTicks(1)        # Never executes
+    Err(&quot;Async error&quot;)  # 异步执行期间的运行时错误
+    WaitTicks(1)        # 从不执行
     return 1
 
 KickOff()&lt;suspends&gt;:void=
-    # Error propagates out of spawned task
-    spawn{ AsyncOperation() }
-</code></pre></figure>
+    # 错误从生成的赋值中传播出去
+    spawn{ AsyncOperation() }</code></pre></figure>
 <p>当生成的赋值遇到运行时错误时，该特定赋值将终止。运行时错误不会自动传播到生成上下文。</p>
   </article>
   <details class="original">
@@ -920,7 +919,7 @@ KickOff()&lt;suspends&gt;:void=
     <h2>与失败共存 <small>Living with Failure</small></h2>
     <p>Verse 的失败方法源于逻辑编程，其中计算搜索解决方案而不是执行步骤。当路径失败时，计算会回溯并尝试替代方案。这种非确定性模型虽然强大，但很难完全推理其普遍性。 Verse 通过明确失败上下文并限制对特定结构的回溯来驯服这种力量。您可以获得逻辑编程的好处 - 声明性代码、自动搜索、优雅的替代方案处理 - 无需完全统一和无限制回溯的复杂性。</p>
 <p>考虑一个简单的逻辑谜题求解器：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SolvePuzzle(Constraints:[]constraint)&lt;decides&gt;:solution =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>SolvePuzzle(Constraints:[]constraint)&lt;decides&gt;:solution =
     var State:solution = InitialState()
     for (Constraint : Constraints):
         ApplyConstraint(State, Constraint)

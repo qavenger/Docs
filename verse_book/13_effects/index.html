@@ -23,7 +23,7 @@
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
 <a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
 <div class="crumb">Effects / <a href="https://verselang.github.io/book/13_effects/">原文页面</a></div><section class="hero"><h1>效果系统</h1><p class="lead">效果系统页，讲 effects 如何进入函数签名，表达读取、写入、事务、失败和挂起。</p><div class="meta"><span class="pill">源文件：13_effects.md</span><span class="pill">中文段落：15</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-effects">效果 / Effects</a></li><li class="lvl2"><a href="#s1-understanding-effects">Understanding Effects</a></li><li class="lvl2"><a href="#s2-effect-families-and-specifiers">Effect Families and Specifiers</a></li><li class="lvl2"><a href="#s3-how-effects-compose">How Effects Compose</a></li><li class="lvl2"><a href="#s4-effect-families-in-detail">Effect Families in Detail</a></li><li class="lvl3"><a href="#s5-cardinality-effects">Cardinality effects</a></li><li class="lvl3"><a href="#s6-heap-effects">Heap effects</a></li><li class="lvl3"><a href="#s7-suspension-effects">Suspension effects</a></li><li class="lvl3"><a href="#s8-internal-effects">Internal effects</a></li><li class="lvl2"><a href="#s9-effect-composition">Effect Composition</a></li><li class="lvl2"><a href="#s10-subtyping-and-type-compatibility">Subtyping and Type Compatibility</a></li><li class="lvl2"><a href="#s11-effects-on-data-types">Effects on Data Types</a></li><li class="lvl3"><a href="#s12-interface-construction-effect-constraints">Interface Construction Effect Constraints</a></li><li class="lvl2"><a href="#s13-working-with-effects">Working with Effects</a></li><li class="lvl2"><a href="#s14-backwards-compatibility">Backwards Compatibility</a></li></ol></article></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-effects">效果 / Effects</a></li><li class="lvl2"><a href="#s1-understanding-effects">Understanding Effects</a></li><li class="lvl2"><a href="#s2-effect-families-and-specifiers">Effect Families and Specifiers</a></li><li class="lvl2"><a href="#s3-how-effects-compose">How Effects Compose</a></li><li class="lvl2"><a href="#s4-effect-families-in-detail">Effect Families in Detail</a></li><li class="lvl3"><a href="#s5-cardinality-effects">Cardinality effects</a></li><li class="lvl3"><a href="#s6-heap-effects">Heap effects</a></li><li class="lvl3"><a href="#s7-suspension-effects">Suspension effects</a></li><li class="lvl3"><a href="#s8-internal-effects">内部效果 / Internal effects</a></li><li class="lvl2"><a href="#s9-effect-composition">Effect Composition</a></li><li class="lvl2"><a href="#s10-subtyping-and-type-compatibility">Subtyping and Type Compatibility</a></li><li class="lvl2"><a href="#s11-effects-on-data-types">Effects on Data Types</a></li><li class="lvl3"><a href="#s12-interface-construction-effect-constraints">接口构造效果约束 / Interface Construction Effect Constraints</a></li><li class="lvl2"><a href="#s13-working-with-effects">Working with Effects</a></li><li class="lvl2"><a href="#s14-backwards-compatibility">Backwards Compatibility</a></li></ol></article></section>
 <div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-effects">
   <article class="cn-read">
@@ -44,7 +44,7 @@
     <h2>了解效果 <small>Understanding Effects</small></h2>
     <p>效果代表代码与其周围世界之间可观察到的交互。读取玩家的健康状况、更新分数、生成粒子效果、等待动画完成——所有这些操作都会产生超出简单计算范围的影响。 Verse 的效果系统捕获这些交互，使它们可见且可验证。</p>
 <p>考虑这个向玩家打招呼的简单函数：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GreetPlayer()&lt;transacts&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GreetPlayer()&lt;transacts&gt;:void =
     set CurrentGreeting = &quot;Hello, adventurer!&quot;
     Print(CurrentGreeting)</code></pre></figure>
 <p><code>&lt;transacts&gt;</code> 效果立即告诉您该函数修改可变状态。您无需阅读实现即可知道调用 <code>GreetPlayer()</code> 会更改程序内存中的某些内容。效果是关于行为的承诺，由编译器检查和强制执行。</p>
@@ -77,7 +77,7 @@
 <ul><li><strong>基数</strong>：函数是否以及如何返回</li><li><strong>堆</strong>：访问可变内存</li><li><strong>暂停</strong>：函数是否可以暂停执行</li><li><strong>发散</strong>：函数是否可以永远运行</li><li><strong>预测</strong>：函数运行的位置</li><li><strong>内部</strong>：保留供内部使用</li></ul>
 <p>有些效果没有说明符，而有些说明符则暗示多种效果。例如，<code>&lt;transacts&gt;</code> 意味着 <code>reads</code>、<code>writes</code> 和 <code>allocates</code>，属于 Heap 系列。</p>
 <p>效果说明符可以进一步分为<em>独占</em>说明符（<code>&lt;converges&gt;</code>、<code>&lt;computes&gt;</code>、<code>&lt;transacts&gt;</code>）和<em>附加</em>说明符（<code>&lt;suspends&gt;</code>、<code>&lt;decides&gt;</code>、<code>&lt;reads&gt;</code>、<code>&lt;writes&gt;</code>、<code>&lt;allocates&gt;</code>）。一个函数最多可以有一个独占说明符，但可以组合多个附加说明符。例如，<code>&lt;computes&gt;&lt;decides&gt;</code> 是有效的（纯计算可能会失败），但 <code>&lt;computes&gt;&lt;transacts&gt;</code> 是错误的（不能有两个互斥的效果）。</p>
-<table><thead><tr><th>基本效应</th><th>效果说明符</th><th>效应系列</th><th>说明符隐含的效果</th><th>笔记</th></tr></thead><tbody><tr><td><strong>成功</strong></td><td></td><td>基数</td><td></td><td><em>无说明符；必须成功</em></td></tr><tr><td><strong>失败</strong></td><td></td><td>基数</td><td></td><td><em>无说明符；可能会失败</em></td></tr><tr><td></td><td><code>&lt;decides&gt;</code></td><td>基数</td><td><code>{succeeds, fails}</code></td><td><em>不能与<code>&lt;suspends&gt;</code>结合使用</em></td></tr><tr><td><strong>阅读</strong></td><td><code>&lt;reads&gt;</code></td><td>堆</td><td><code>{reads}</code></td><td><em>允许读取可变状态</em></td></tr><tr><td><strong>写</strong></td><td><code>&lt;writes&gt;</code></td><td>堆</td><td><code>{writes}</code></td><td><em>允许写入可变状态</em></td></tr><tr><td><strong>分配</strong></td><td><code>&lt;allocates&gt;</code></td><td>堆</td><td><code>{allocates}</code></td><td><em>允许分配可变内存</em></td></tr><tr><td></td><td><code>&lt;transacts&gt;</code></td><td>堆</td><td><code>{reads, writes, allocates}</code></td><td><em>独家的;默认</em></td></tr><tr><td></td><td><code>&lt;computes&gt;</code></td><td>堆</td><td><code>{}</code></td><td><em>独家的;纯计算</em></td></tr><tr><td><strong>暂停</strong></td><td><code>&lt;suspends&gt;</code></td><td>暂停</td><td><code>{suspends}</code></td><td><em>不能与<code>&lt;decides&gt;</code>结合使用</em></td></tr><tr><td><strong>分歧</strong></td><td></td><td>分歧</td><td><code>{diverges}</code></td><td><em>无说明符；可能会永远运行</em></td></tr><tr><td></td><td><code>&lt;converges&gt;</code></td><td>分歧</td><td><code>{}</code></td><td><em>独家的;本机函数、抽象方法、类型签名</em></td></tr><tr><td><strong>规定</strong></td><td></td><td>预言</td><td><code>{dictates}</code></td><td><em>无说明符；服务器权限</em></td></tr><tr><td></td><td><code>&lt;predicts&gt;</code></td><td>预言</td><td><code>{}</code></td><td><em>允许客户预测</em></td></tr><tr><td><strong>无回滚</strong></td><td></td><td>内部的</td><td><code>{no_rollback}</code></td><td><em>将被弃用；禁止事务</em></td></tr></tbody></table>
+<table><thead><tr><th>基本效应</th><th>效果说明符</th><th>效应系列</th><th>说明符隐含的效果</th><th>说明</th></tr></thead><tbody><tr><td><strong>成功</strong></td><td></td><td>基数</td><td></td><td><em>无说明符；必须成功</em></td></tr><tr><td><strong>失败</strong></td><td></td><td>基数</td><td></td><td><em>无说明符；可能会失败</em></td></tr><tr><td></td><td><code>&lt;decides&gt;</code></td><td>基数</td><td><code>{succeeds, fails}</code></td><td><em>不能与<code>&lt;suspends&gt;</code>结合使用</em></td></tr><tr><td><strong>阅读</strong></td><td><code>&lt;reads&gt;</code></td><td>堆</td><td><code>{reads}</code></td><td><em>允许读取可变状态</em></td></tr><tr><td><strong>写</strong></td><td><code>&lt;writes&gt;</code></td><td>堆</td><td><code>{writes}</code></td><td><em>允许写入可变状态</em></td></tr><tr><td><strong>分配</strong></td><td><code>&lt;allocates&gt;</code></td><td>堆</td><td><code>{allocates}</code></td><td><em>允许分配可变内存</em></td></tr><tr><td></td><td><code>&lt;transacts&gt;</code></td><td>堆</td><td><code>{reads, writes, allocates}</code></td><td><em>独家的;默认</em></td></tr><tr><td></td><td><code>&lt;computes&gt;</code></td><td>堆</td><td><code>{}</code></td><td><em>独家的;纯计算</em></td></tr><tr><td><strong>暂停</strong></td><td><code>&lt;suspends&gt;</code></td><td>暂停</td><td><code>{suspends}</code></td><td><em>不能与<code>&lt;decides&gt;</code>结合使用</em></td></tr><tr><td><strong>分歧</strong></td><td></td><td>分歧</td><td><code>{diverges}</code></td><td><em>无说明符；可能会永远运行</em></td></tr><tr><td></td><td><code>&lt;converges&gt;</code></td><td>分歧</td><td><code>{}</code></td><td><em>独家的;本机函数、抽象方法、类型签名</em></td></tr><tr><td><strong>规定</strong></td><td></td><td>预言</td><td><code>{dictates}</code></td><td><em>无说明符；服务器权限</em></td></tr><tr><td></td><td><code>&lt;predicts&gt;</code></td><td>预言</td><td><code>{}</code></td><td><em>允许客户预测</em></td></tr><tr><td><strong>无回滚</strong></td><td></td><td>internal</td><td><code>{no_rollback}</code></td><td><em>将被弃用；禁止事务</em></td></tr></tbody></table>
 <p>以下限制有效：</p>
 <ul><li><code>&lt;suspends&gt;</code> 和 <code>&lt;decides&gt;</code> 不能组合在同一函数上，</li><li><code>&lt;converges&gt;</code> 仅允许用于 <code>&lt;native&gt;</code> 函数、抽象方法和类型签名，</li><li>重复的说明符（例如，<code>&lt;computes&gt;&lt;computes&gt;</code>）是错误。</li></ul>
   </article>
@@ -97,12 +97,12 @@
   <article class="cn-read">
     <h2>效果如何构成 <small>How Effects Compose</small></h2>
     <p>将效果说明符视为位向量中的设置位：每个基本效果一位。在没有任何注解的情况下，<code>GameUpdate</code>这样的函数具有以下效果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GameUpdate():void = ...  # No explicit effects specified</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GameUpdate():void = ...  # 没有指定明确的效果</code></pre></figure>
 <table><thead><tr><th>规定</th><th>暂停</th><th>读</th><th>写</th><th>分配</th><th>成功</th><th>失败</th></tr></thead><tbody><tr><td>✔️</td><td>❌</td><td>✔️</td><td>✔️</td><td>✔️</td><td>✔️</td><td>❌</td></tr></tbody></table>
 <p>这意味着它具有效果 <code>dictates</code>、<code>reads</code>、<code>writes</code>、<code>allocates</code> 和 <code>succeeds</code>。这几乎就像编写 <code>&lt;dictates&gt;&lt;transacts&gt;</code> 一样，只是我们缺少一种方法来表明该函数不会失败。</p>
 <p>顺便说一句：<code>fails</code> 和 <code>succeeds</code> 缺少说明符可以用以下事实来解释：像 <code>&lt;fails&gt;</code> 这样的说明符意味着函数总是失败，从不返回值，并且不能产生可观察到的副作用（它们将因失败而被撤销）。 <code>succeeds</code> 效果是隐式的。</p>
 <p>对函数进行注释仅影响该说明符族中的位。例如，带有 <code>&lt;reads&gt;</code> 和 <code>&lt;predicts&gt;</code> 说明符的函数 <code>CheckPlayerStatus</code>：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CheckPlayerStatus()&lt;reads&gt;&lt;predicts&gt;:string = ...</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>CheckPlayerStatus()&lt;reads&gt;&lt;predicts&gt;:string = ...</code></pre></figure>
 <p>有以下效果：</p>
 <table><thead><tr><th>规定</th><th>暂停</th><th>读</th><th>写</th><th>分配</th><th>成功</th><th>失败</th></tr></thead><tbody><tr><td>❌</td><td>❌</td><td>✔️</td><td>❌</td><td>❌</td><td>✔️</td><td>❌</td></tr></tbody></table>
 <p>指定<code>&lt;reads&gt;</code>将清除<code>writes</code>和<code>allocates</code>位，指定<code>&lt;predicts&gt;</code>将清除<code>dictates</code>位，其他一切不变。</p>
@@ -134,13 +134,13 @@
   <article class="cn-read">
     <h2>基数效应 <small>Cardinality effects</small></h2>
     <p>基数族处理函数是否成功返回值。每个函数要么成功（返回其声明的类型），要么失败（不产生任何值）。大多数函数总是成功的——它们是总是产生输出的确定性转换。但是标有 <code>&lt;decides&gt;</code> 的函数可能会失败，从而将失败转变为控制流机制。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateHealth(Health:float)&lt;transacts&gt;&lt;decides&gt;:void =
-    Health &gt; 0.0      # Fails if health is zero or negative
-    Health &lt;= 100.0   # Fails if health exceeds maximum
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidateHealth(Health:float)&lt;transacts&gt;&lt;decides&gt;:void =
+    Health &gt; 0.0      # 如果运行状况为零或负数则失败
+    Health &lt;= 100.0   # 如果运行状况超出最大值则失败
 
-# Usage
+# 用法
 if (ValidateHealth[Player.Health]):
-    # Health is valid, continue processing
+    # 运行状况有效，继续处理
     StartCombat()</code></pre></figure>
 <p>决定效果的美妙之处在于它将验证与控制流统一起来。您不需要检查条件然后对其采取行动 - 检查本身驱动程序的路径。</p>
   </article>
@@ -163,10 +163,10 @@ if (ValidateHealth[Player.Health]):
     <h2>堆效应 <small>Heap effects</small></h2>
     <p>堆家族控制对可变内存的访问。这可能是理解程序行为最重要的家族，因为它决定函数是否可以观察或修改状态。</p>
 <p><code>&lt;computes&gt;</code> 说明符标记纯函数 - 既不读取也不写入可变状态的函数。这些函数是确定性的：给定相同的输入，它们总是产生相同的输出。它们是计算的数学理想，可以无副作用地转换数据。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CalculateDamage(BaseDamage:float, Multiplier:float)&lt;computes&gt;:float =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>CalculateDamage(BaseDamage:float, Multiplier:float)&lt;computes&gt;:float =
     BaseDamage * Multiplier</code></pre></figure>
 <p><code>&lt;reads&gt;</code> 效果允许函数观察可变状态。他们可以查看变量和可变字段的当前值，但无法修改它们。这对于基于当前游戏状态的查询和计算很有用。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player := class:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>player := class:
     Name:string
     var Health:float = 100.0
     var Score:int = 0
@@ -179,12 +179,12 @@ GetPlayerStatus(P:player)&lt;reads&gt;:string =
     else:
         &quot;Defeated&quot;</code></pre></figure>
 <p><code>&lt;writes&gt;</code> 效果允许修改可变状态。具有此效果的函数可以使用 <code>set</code> 来更新变量和可变字段。 <code>&lt;writes&gt;</code> 通常也需要 <code>&lt;reads&gt;</code>，例如当修改涉及读取当前值时。</p>
-<p>事实上，由于向该语言添加了“live variable”，<code>set</code> 指令默认为 <code>&lt;transacts&gt;</code>。活变量是其值取决于其他变量的变量；当这些变量之一被 <code>set</code> 更新时，活动变量将使用可能的一些 <code>reads</code> 和 <code>allocates</code> 进行评估。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>HealPlayer(P:player, Amount:float)&lt;transacts&gt;:void =
+<p>事实上，由于向该语言添加了“实时变量”，<code>set</code> 指令默认为 <code>&lt;transacts&gt;</code>。活变量是其值取决于其他变量的变量；当这些变量之一被 <code>set</code> 更新时，实时变量将使用可能的一些 <code>reads</code> 和 <code>allocates</code> 进行评估。</p>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>HealPlayer(P:player, Amount:float)&lt;transacts&gt;:void =
     NewHealth := P.Health + Amount
     set P.Health = Min(NewHealth, 100.0)</code></pre></figure>
 <p><code>&lt;allocates&gt;</code> 效果表示创建明显唯一值的函数 - 标记为 <code>&lt;unique&gt;</code> 的对象或包含可变字段的值。即使输入相同，每次调用此类函数都会返回不同的值。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game_entity := class&lt;allocates&gt;:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>game_entity := class&lt;allocates&gt;:
     ID:id
     var Position:vector3
 
@@ -230,36 +230,36 @@ CreateEntity(Pos:vector3)&lt;allocates&gt;:game_entity =
   <article class="cn-read">
     <h2>悬浮效果 <small>Suspension effects</small></h2>
     <p>该悬架系列包含一个效果：<code>&lt;suspends&gt;</code>。具有此效果的函数可以暂停执行并稍后恢复，可能跨多个游戏帧。这对于需要时间的操作至关重要：动画、冷却、等待玩家输入或任何多帧行为。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PlayVictorySequence()&lt;suspends&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>PlayVictorySequence()&lt;suspends&gt;:void =
     PlayAnimation(VictoryDance)
-    Sleep(2.0)  # Wait 2 seconds
+    Sleep(2.0)  # 等待 2 秒
     PlaySound(VictoryFanfare)
     Sleep(1.0)
     ShowRewardsScreen()</code></pre></figure>
 <p><code>suspends</code> 效应具有病毒性——任何调用挂起函数的函数本身都必须标记为 <code>&lt;suspends&gt;</code>。这可确保您始终知道哪些功能可能需要时间才能完成。</p>
 <p>虽然 <code>&lt;suspends&gt;</code> 和 <code>&lt;decides&gt;</code> 不能在同一函数上组合，但它们对于如何跨函数调用进行交互有特定的规则。 <code>&lt;suspends&gt;</code> 函数可以调用 <code>&lt;decides&gt;</code> 函数，但<em>仅在失败上下文中</em>使用方括号 <code>[]</code> 语法 - 这确保故障在本地处理，并且不会作为故障影响传播：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInput(Value:int)&lt;decides&gt;&lt;computes&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidateInput(Value:int)&lt;decides&gt;&lt;computes&gt;:void =
     Value &gt; 0
     Value &lt; 100
 
 ProcessAsync(Value:int)&lt;suspends&gt;:void =
-    # Valid: calling decides function in failure context
+    # 有效：在失败上下文中调用决定函数
     if (ValidateInput[Value]):
-        # Process valid input
+        # 处理有效输入
         DoAsyncWork()
 
-# Invalid: calling decides function outside failure context
-# ProcessAsync(Value:int)&lt;suspends&gt;:void =
-#     ValidateInput(Value)  # ERROR: must use [] syntax</code></pre></figure>
+# 无效：在失败上下文之外调用决定函数
+# ProcessAsync(值:int):void =
+#     ValidateInput(Value) # 错误：必须使用 [] 语法</code></pre></figure>
 <p><code>&lt;suspends&gt;</code> 函数可以调用另一个 <code>&lt;suspends&gt;</code> 函数，但<em>不得使用失败处理语法</em>，如 <code>?</code>：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AsyncOp()&lt;suspends&gt;:?int = false
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>AsyncOp()&lt;suspends&gt;:?int = false
 
 CallAsync()&lt;suspends&gt;:void =
-    # Valid: calling suspends function normally
+    # 有效：正常调用挂起函数
     X := AsyncOp()
 
-    # Invalid: cannot use ? with suspends in suspends context
-    # if (Value := AsyncOp()?):</code></pre></figure>
+    # 无效：不能使用？在暂停上下文
+    # 中暂停 if (Value := AsyncOp()?):</code></pre></figure>
 <p>之所以存在这种不对称性，是因为 <code>&lt;suspends&gt;</code> 和 <code>&lt;decides&gt;</code> 代表了根本不同的控制流机制——暂停与时间有关，而失败与成功/失败有关。混合它们的语法形式会导致所处理的内容含糊不清。</p>
   </article>
   <details class="original">
@@ -300,17 +300,17 @@ CallAsync()&lt;suspends&gt;:void =
   </details>
 </section><section class="section" id="s8-internal-effects">
   <article class="cn-read">
-    <h2>内部效应 <small>Internal effects</small></h2>
+    <h2>内部效果 <small>Internal effects</small></h2>
     <p><strong>[预发布]</strong>：<code>&lt;no_rollback&gt;</code> 效果已弃用。</p>
 <p>!!!注意“未发布的功能”</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>The `&lt;predicts&gt;` effect is not yet released.</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>The `&lt;predicts&gt;` effect is not yet released.</code></pre></figure>
 <p>预测系列确定代码在客户端-服务器架构中运行的位置。默认情况下，函数具有 <code>dictates</code> 效果，这意味着它们在服务器上权威运行。 <code>&lt;predicts&gt;</code> 说明符允许函数在客户端上预测性地运行以提高响应能力，服务器稍后验证并可能纠正结果。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>HandleJumpInput()&lt;predicts&gt;:void =
-    # Runs immediately on the client for responsiveness
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>HandleJumpInput()&lt;predicts&gt;:void =
+    # 立即在客户端上运行以获得响应能力
     StartJumpAnimation()
     PlayJumpSound()
 
-    # Server will validate and correct if needed
+    # 服务器将根据需要进行验证和更正
     PerformJump()</code></pre></figure>
 <p>即使有网络延迟，这也能实现响应式游戏，因为玩家可以看到其操作的即时反馈，同时服务器保持权威状态。</p>
 <p>目前正在规划中，分歧系列将跟踪函数是否保证终止。 <code>&lt;converges&gt;</code> 说明符标记可证明在有限时间内完成的函数，而没有它的函数可能会永远运行。这对于构造函数和初始化代码尤其重要。</p>
@@ -345,31 +345,31 @@ CallAsync()&lt;suspends&gt;:void =
     <h2>效果成分 <small>Effect Composition</small></h2>
     <p>效果通常沿着调用链向上传播——函数必须声明它所调用的函数的所有效果。然而，某些语言结构可以隐藏特定的效果，阻止它们进一步传播。</p>
 <p><code>if</code> 表达式在其失败上下文中隐藏 <code>fails</code> 效果，因此条件中的失败不会传播到封闭函数：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>SafeMod(A:int, B:int)&lt;computes&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>SafeMod(A:int, B:int)&lt;computes&gt;:int =
     if (V:= Mod[A,B])  then V else 0</code></pre></figure>
 <p><code>spawn</code> 表达式隐藏了 <code>suspends</code> 效果，允许立即函数启动独立继续的异步操作：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Play()&lt;suspends&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Play()&lt;suspends&gt;:void =
         loop:
             PlayTrack(GetNextTrack())
             Sleep(180.0)  
 
-StartBackgroundMusic():void =  # No &lt;suspends&gt;
+StartBackgroundMusic():void =  # 无
     spawn:
-        Play() # Suspends effect hidden by spawn</code></pre></figure>
+        Play() # 暂停由生成隐藏的效果</code></pre></figure>
 <p>如上所述，<code>&lt;suspends&gt;</code> 代码（包括 <code>spawn</code>）内不允许出现故障。解决此限制的一种方法是使用 <code>option</code> 表达式将失败转换为可选值，将 <code>fails</code> 效果转换为无需 <code>&lt;decides&gt;</code> 即可处理的常规值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>TryGetItem(Items:[]item, Index:int):?item =
-    option{Items[Index]}  # Array access might fail, option catches it</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>TryGetItem(Items:[]item, Index:int):?item =
+    option{Items[Index]}  # 数组访问可能失败，选项捕获它</code></pre></figure>
 <p><code>defer</code> 表达式提供了在退出作用域时运行的清理代码，但具有严格的效果限制：</p>
 <ul><li>不能包含 <code>&lt;suspends&gt;</code> 操作 - 延迟代码必须同步执行</li><li>不能包含 <code>&lt;decides&gt;</code> 操作 - 延迟代码必须始终成功</li></ul>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>AcquireResource()&lt;transacts&gt;:resource = GetResource()
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>AcquireResource()&lt;transacts&gt;:resource = GetResource()
 ReleaseResource(R:resource)&lt;transacts&gt;:void = {}
 
 ProcessResource()&lt;suspends&gt;:void =
     R := AcquireResource()
     defer:
-        ReleaseResource(R)  # Valid: transacts allowed in defer
+        ReleaseResource(R)  # 有效：defer
 
-    # Process resource with async operations
+    # 中允许的事务具有异步操作的进程资源
     DoAsyncWork()</code></pre></figure>
 <p>这些约束确保清理代码可预测且完整地执行，而不会出现可能导致资源处于不一致状态的挂起或失败。</p>
   </article>
@@ -411,69 +411,69 @@ ProcessResource()&lt;suspends&gt;:void =
     <h2>子类型和类型兼容性 <small>Subtyping and Type Compatibility</small></h2>
     <p>效果注释在函数类型之间创建子类型关系。在将函数存储在变量中、将它们作为参数传递或在不同的实现之间进行选择时，了解效果如何与类型兼容性交互至关重要。</p>
 <p>当需要具有<strong>更多效果</strong>的函数时，可以使用<strong>更少效果</strong>的函数。这就是效果子类型——执行较少操作的函数与允许执行更多操作的上下文兼容：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Pure function with only computes
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 纯函数，仅计算
 PureAdd(X:int)&lt;computes&gt;:int = X + 1
 
-# Variable that expects computes and decides
+# 期望计算和决定的变量
 F:type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} = PureAdd
 
-# Calling through the variable
-Result := F[5]  # Must use [] syntax since type has &lt;decides&gt;
-# Returns option{6} since PureAdd never fails</code></pre></figure>
+# 通过变量调用
+Result := F[5]  # 必须使用 [] 语法，因为类型具有
+# 返回选项{6}，因为 PureAdd 永远不会失败</code></pre></figure>
 <p>在此示例中，<code>PureAdd</code> 仅具有 <code>&lt;computes&gt;</code>，但可以将其分配给期望为 <code>&lt;computes&gt;&lt;decides&gt;</code> 的变量。纯函数是可失败接口的有效实现——它根本不会行使失败能力。</p>
 <p>这个原则适用于所有效果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Function with &lt;computes&gt;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 的功能
 Compute(X:int)&lt;computes&gt;:int = X * 2
 
-# Can assign to types expecting more effects
+# 可以分配给期望更多效果的类型
 F1:type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} = Compute
 F2:type{_(:int)&lt;transacts&gt;:int} = Compute
 F3:type{_(:int)&lt;reads&gt;:int} = Compute
 
-# All valid - Compute does less than what&#x27;s allowed</code></pre></figure>
+# 全部有效 - 计算执行的操作少于允许的执行次数</code></pre></figure>
 <p>在决定子类型时，效果具有以下影响：</p>
 <ul><li><code>&lt;computes&gt;</code> 是 <code>&lt;reads&gt;</code>、<code>&lt;transacts&gt;</code> 以及与 <code>&lt;decides&gt;</code> 的任意组合的子类型</li><li><code>&lt;reads&gt;</code> 是 <code>&lt;transacts&gt;</code> 的子类型</li><li>不带 <code>&lt;decides&gt;</code> 的函数是带 <code>&lt;decides&gt;</code> 的函数的子类型</li><li>不带 <code>&lt;suspends&gt;</code> 的函数是带 <code>&lt;suspends&gt;</code> 的函数的子类型（兼容时）</li></ul>
 <p>虽然您可以通过子类型添加效果，但您<strong>无法删除</strong>函数实际具有的效果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Validate(X:int)&lt;computes&gt;&lt;decides&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Validate(X:int)&lt;computes&gt;&lt;decides&gt;:int =
     X &gt; 0
     X
 
-# ERROR: Cannot assign to type without &lt;decides&gt;
-# F:type{_(:int)&lt;computes&gt;:int} = Validate
-# The function CAN fail, but the type doesn&#x27;t allow it</code></pre></figure>
+# 错误：无法分配给没有  的类型
+# F:type{_(:int):int} = 验证
+# 的情况下分配给类型 函数可能会失败，但类型不允许</code></pre></figure>
 <p>同样，具有堆效应的函数不能分配给纯类型：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>counter := class:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>counter := class:
     var Count:int = 0
 
 Increment(C:counter)&lt;transacts&gt;:int =
     set C.Count = C.Count + 1
     C.Count
 
-# ERROR: Cannot assign transacts function to computes type
-# F:type{_(:counter)&lt;computes&gt;:int} = Increment
-# The function writes state, type doesn&#x27;t permit it</code></pre></figure>
+# 错误：无法将事务函数分配给计算类型
+# F:type{_(:counter):int} = 增量
+# 该函数写入状态，类型不允许</code></pre></figure>
 <p>此限制确保类型安全 - 类型签名是关于函数可能执行的效果的承诺，并且实际函数必须遵守该承诺。</p>
 <p>当您在具有不同效果的函数之间进行条件选择时，生成的表达式具有所有可能效果的并集。这是<em>效果连接</em>——编译器保守地假设结果可能会执行任何分支可以执行的任何效果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Functions with different effects
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 具有不同效果的函数
 PureFunction(X:int)&lt;computes&gt;:int = X + 1
 FailableFunction(X:int)&lt;computes&gt;&lt;decides&gt;:int =
     X &gt; 0
     X + 1
 
-# Conditional selection joins effects
+# 条件选择连接效果
 SelectFunction(UseFailable:logic):type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} =
     if (UseFailable?):
-        FailableFunction  # Has &lt;computes&gt;&lt;decides&gt;
+        FailableFunction  # 有
     else:
-        PureFunction      # Has &lt;computes&gt;
-    # Result type must account for both: &lt;computes&gt;&lt;decides&gt;
+        PureFunction      # 有
+    # 结果类型必须同时考虑：
 
-# The returned function might fail (from FailableFunction)
-# or might not (from PureFunction), so type must include &lt;decides&gt;
+# 返回的函数可能会失败（来自 FailableFunction）
+# 或可能不（来自 PureFunction），因此类型必须包含
 F := SelectFunction(true)
-Result := F[5]  # Must use [] because result type has &lt;decides&gt;</code></pre></figure>
+Result := F[5]  # 必须使用 []，因为结果类型为</code></pre></figure>
 <p>效果连接适用于在函数之间进行选择的所有控制流：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Identity(X:int)&lt;computes&gt;:int = X
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Identity(X:int)&lt;computes&gt;:int = X
 
 DecidesIdentity(X:int)&lt;computes&gt;&lt;decides&gt;:int =
     X &gt; 0
@@ -481,23 +481,23 @@ DecidesIdentity(X:int)&lt;computes&gt;&lt;decides&gt;:int =
 
 TransactsIdentity(X:int)&lt;transacts&gt;:int = X
 
-# Joining &lt;computes&gt; and &lt;computes&gt;&lt;decides&gt;
+# 加入  和
 F1:type{_(:int)&lt;computes&gt;&lt;decides&gt;:int} =
     if (true?):
         Identity
     else:
         DecidesIdentity
-# Result: &lt;computes&gt;&lt;decides&gt; (union of effects)
+# 结果：（效果并集）
 
-# Joining &lt;computes&gt;&lt;decides&gt; and &lt;transacts&gt;
+# 加入  和
 F2:type{_(:int)&lt;decides&gt;&lt;transacts&gt;:int} =
     if (true?):
-        DecidesIdentity  # &lt;computes&gt;&lt;decides&gt;
+        DecidesIdentity  # 
     else:
-        TransactsIdentity  # &lt;transacts&gt;
-# Result: &lt;decides&gt;&lt;transacts&gt; (union of effects)</code></pre></figure>
+        TransactsIdentity  # 
+# 结果：（效果并集）</code></pre></figure>
 <p>效果子类型支持灵活的函数参数：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Accepts any function that doesn&#x27;t exceed &lt;transacts&gt;&lt;decides&gt;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 接受任何不超过  的函数
 ProcessValues(
     Data:[]int,
     Transform(:int)&lt;transacts&gt;&lt;decides&gt;:int
@@ -505,23 +505,23 @@ ProcessValues(
     for (Value:Data, Result := Transform[Value]):
         Result
 
-# Can pass pure functions
+# 可以传递纯函数
 ProcessValues(array{1, 2, 3}, PureAdd)
 
-# Can pass failable functions
+# 可以传递可失败函数
 ProcessValues(array{1, 2, 3}, Validate)
 
-# Can pass transactional functions
+# 可以传递事务函数
 ProcessValues(array{1, 2, 3}, Increment)</code></pre></figure>
 <p>效果子类型使函数组合自然地发挥作用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Compose(
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Compose(
     F(:int)&lt;computes&gt;:int,
     G(:int)&lt;computes&gt;:int
 ):type{_(:int)&lt;computes&gt;:int} =
     Local(X:int)&lt;computes&gt;:int = G(F(X))
     Local
 
-# If we want to allow more effects:
+# 如果我们想允许更多的效果：
 ComposeFlexible(
     F(:int)&lt;transacts&gt;&lt;decides&gt;:int,
     G(:int)&lt;transacts&gt;&lt;decides&gt;:int
@@ -533,7 +533,7 @@ ComposeFlexible(
             1=2; 0
     Local
 
-# Can pass functions with fewer effects
+# 可以传递效果更少的函数
 ComposeFlexible(PureFunction, PureFunction)
 ComposeFlexible(PureFunction, FailableFunction)</code></pre></figure>
 <p>下表总结了效果和类型的相互作用：</p>
@@ -678,57 +678,57 @@ ComposeFlexible(PureFunction, FailableFunction)</code></pre>
   <article class="cn-read">
     <h2>对数据类型的影响 <small>Effects on Data Types</small></h2>
     <p>类、结构和接口可以使用效果说明符进行注释，这些说明符适用于它们的构造函数。这对于确保创建某些对象保持纯粹或效果有限特别有用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Pure data structure - constructor has no effects
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 纯数据结构 - 构造函数没有影响
 vector3 := struct&lt;computes&gt;:
     X:float = 0.0
     Y:float = 0.0
     Z:float = 0.0
 
-# Entity that requires allocation due to unique identity
+# 由于唯一标识而需要分配的实体
 monster := class&lt;unique&gt;&lt;allocates&gt;:
     Name:string
     var Health:float = 100.0</code></pre></figure>
 <p>类、接口和结构<strong>不能</strong>用 <code>&lt;suspends&gt;</code> 或 <code>&lt;decides&gt;</code> 标记：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid effect specifiers for classes/interfaces/structs:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 类/接口/结构的有效效果说明符：
 valid_class := class&lt;computes&gt;{}
 valid_interface := interface&lt;computes&gt;{}
 valid_struct := struct&lt;transacts&gt;{}
 
-# Invalid: async and failable effects not allowed
-# invalid_class := class&lt;suspends&gt;{}      # ERROR
-# invalid_interface := interface&lt;decides&gt;{}  # ERROR
-# invalid_struct := struct&lt;decides&gt;{}     # ERROR</code></pre></figure>
+# 无效：不允许异步和可失败效果
+# invalid_class := class{} # 错误
+# invalid_interface := 接口{} # 错误
+# invalid_struct := struct{} # 错误</code></pre></figure>
 <p>此限制适用于类/结构<strong>声明</strong>本身 - 原型构造函数 <code>my_class{...}</code> 不能失败或挂起。但是，<strong>构造函数</strong>可以使用 <code>&lt;decides&gt;</code>：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># The class declaration cannot be &lt;decides&gt;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 类声明不能是
 my_class := class:
     Value:int
 
-# But a constructor function CAN be &lt;decides&gt;
+# 但构造函数可以是
 MakeMyClass&lt;constructor&gt;(V:int)&lt;transacts&gt;&lt;decides&gt; := my_class:
     Value := block:
-        V &gt; 0      # Fails if V &lt;= 0
-        V &lt; 100    # Fails if V &gt;= 100
+        V &gt; 0      # 如果 V &lt;= 0，则失败
+        V &lt; 100    # 如果 V &gt;= 100，则失败
         V</code></pre></figure>
 <p>这在需要时提供了可失败的构造——对象要么完全存在，要么构造函数失败并且没有创建对象。</p>
 <p>类中的字段默认值和块子句有严格的效果要求：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Field initializers must use pure functions
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 字段初始值设定项必须使用纯函数
 HelperFunction()&lt;transacts&gt;:int = 42
 
-# Invalid: field initializers cannot call transacts functions
+# 无效：字段初始值设定项无法调用事务函数
 # bad_class := class:
-#     Value:int = HelperFunction()  # ERROR
+#     Value:int = HelperFunction() # 错误
 
-# Block clauses must respect class effects
+# 块子句必须考虑类效果
 valid_class := class&lt;transacts&gt;:
     var Counter:int = 0
     block:
-        set Counter = 1  # Valid: class has transacts
+        set Counter = 1  # 有效：类具有事务
 
-# Invalid: block effect exceeds class effect
-# bad_class := class&lt;computes&gt;:
+# 无效：块效应超过类效应
+# bad_class := class:
 #     var Counter:int = 0
 #     block:
-#         set Counter = 1  # ERROR: computes class cannot write</code></pre></figure>
+#         set Counter = 1 # 错误：计算类无法写入</code></pre></figure>
 <p>类成员初始值设定项和块子句被隐式限制为不会比类声明的效果更大。这确保了构造类的实例遵循类的效果契约。</p>
 <p>限制构造函数的影响有助于维护架构边界。使用 <code>&lt;computes&gt;</code> 可以保持数据传输对象的纯粹性，确保它们只是数据载体。游戏实体可能需要 <code>&lt;allocates&gt;</code> 来获得唯一标识，而服务对象可能需要完整的 <code>&lt;transacts&gt;</code> 来初始化其状态。</p>
   </article>
@@ -792,26 +792,26 @@ valid_class := class&lt;transacts&gt;:
   </details>
 </section><section class="section" id="s12-interface-construction-effect-constraints">
   <article class="cn-read">
-    <h2>界面构建效果约束 <small>Interface Construction Effect Constraints</small></h2>
+    <h2>接口构造效果约束 <small>Interface Construction Effect Constraints</small></h2>
     <p>当类或接口继承具有构造效果的接口时，它们必须至少声明相同的构造效果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Interface with transacts effect
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 具有事务效果的接口
 transacting_interface := interface&lt;transacts&gt;{}
 
-# Valid: class has at least transacts
+# 有效：类至少具有事务
 valid_class := class&lt;transacts&gt;(transacting_interface){}
 
-# Invalid: class has less effects than interface requires
-# invalid_class := class&lt;computes&gt;(transacting_interface){}  # ERROR</code></pre></figure>
+# 无效：类的效果少于接口要求的效果
+# invalid_class := class(transacting_interface){} # 错误</code></pre></figure>
 <p>接口字段初始值设定项还必须尊重接口声明的构造效果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>transacting_class := class&lt;transacts&gt;{}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>transacting_class := class&lt;transacts&gt;{}
 
-# Valid: interface has transacts, field initializer has transacts
+# 有效：接口有事务，字段初始值设定项有事务
 valid_interface := interface&lt;transacts&gt;:
     Instance:transacting_class = transacting_class{}
 
-# Invalid: interface has computes, but field initializer has transacts
-# invalid_interface := interface&lt;computes&gt;:
-#     Instance:transacting_class = transacting_class{}  # ERROR</code></pre></figure>
+# 无效：接口有计算，但字段初始值设定项有事务
+# invalid_interface := 接口:
+#     Instance:transacting_class = transacting_class{} # ERROR</code></pre></figure>
 <p>这些约束确保构造效果在继承层次结构中正确流动。继承接口的类必须能够构造所有接口字段，这要求至少具有相同的构造效果。</p>
   </article>
   <details class="original">
@@ -844,9 +844,9 @@ valid_interface := interface&lt;transacts&gt;:
     <p>设计功能时，从所需的最小效果开始，仅在必要时进行扩展。使用 <code>&lt;computes&gt;</code> 的纯函数是最容易测试、推理和组合的。当需要观察状态时添加<code>&lt;reads&gt;</code>，当需要修改状态时添加<code>&lt;writes&gt;</code>，当需要基于故障的控制流时添加<code>&lt;decides&gt;</code>。</p>
 <p>效果是 API 合同的一部分。一旦发布，删除效果是一个向后兼容的更改（您的函数比以前做得更少），但添加效果正在破坏（您的函数现在比调用者预期的要多）。深思熟虑地设计您的效果签名，因为它们成为对用户的承诺。</p>
 <p>请记住，过度指定效果是允许的，有时甚至是有益的。标记为 <code>&lt;reads&gt;</code> 的函数可以在内部实现为纯 <code>&lt;computes&gt;</code>。这为未来的变化提供了灵活性，而不会破坏现有的调用者。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># API promises it might read state
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># API 承诺它可能会读取状态
 GetDefaultWeapon&lt;public&gt;()&lt;reads&gt;:weapon =
-    # But current implementation is pure
+    # 但当前的实现是纯粹的
     weapon{Type := weapon_type.Sword, Dammage := 10}</code></pre></figure>
 <p>影响过度规范可以使 API 面向未来，并避免以后发生重大更改。例如，将当前纯函数标记为 <code>&lt;reads&gt;</code> 允许您将来添加状态观察，而不会破坏兼容性。</p>
   </article>

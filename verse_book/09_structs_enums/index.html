@@ -23,7 +23,7 @@
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
 <a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
 <div class="crumb">Structs &amp; Enums / <a href="https://verselang.github.io/book/09_structs_enums/">原文页面</a></div><section class="hero"><h1>结构体与枚举</h1><p class="lead">结构体与枚举页，介绍值类型记录和有限命名集合。</p><div class="meta"><span class="pill">源文件：09_structs_enums.md</span><span class="pill">中文段落：14</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-structs-and-enums">Structs and Enums</a></li><li class="lvl2"><a href="#s1-structs">Structs</a></li><li class="lvl3"><a href="#s2-construction">Construction</a></li><li class="lvl3"><a href="#s3-comparison">Comparison</a></li><li class="lvl3"><a href="#s4-persistable-structs">Persistable Structs</a></li><li class="lvl2"><a href="#s5-enums">Enums</a></li><li class="lvl3"><a href="#s6-restrictions">Restrictions</a></li><li class="lvl3"><a href="#s7-using-enums">Using Enums</a></li><li class="lvl3"><a href="#s8-open-vs-closed-enums">Open vs Closed Enums</a></li><li class="lvl3"><a href="#s9-exhaustiveness">Exhaustiveness</a></li><li class="lvl3"><a href="#s10-unreachable-case-detection">Unreachable Case Detection</a></li><li class="lvl3"><a href="#s11-the-ignoreunreachable-attribute">The @ignoreunreachable Attribute</a></li><li class="lvl3"><a href="#s12-explicit-qualification">Explicit Qualification</a></li><li class="lvl3"><a href="#s13-comparison-2">Comparison</a></li></ol></article></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-structs-and-enums">Structs and Enums</a></li><li class="lvl2"><a href="#s1-structs">Structs</a></li><li class="lvl3"><a href="#s2-construction">构造 / Construction</a></li><li class="lvl3"><a href="#s3-comparison">Comparison</a></li><li class="lvl3"><a href="#s4-persistable-structs">Persistable Structs</a></li><li class="lvl2"><a href="#s5-enums">Enums</a></li><li class="lvl3"><a href="#s6-restrictions">Restrictions</a></li><li class="lvl3"><a href="#s7-using-enums">Using Enums</a></li><li class="lvl3"><a href="#s8-open-vs-closed-enums">Open vs Closed Enums</a></li><li class="lvl3"><a href="#s9-exhaustiveness">Exhaustiveness</a></li><li class="lvl3"><a href="#s10-unreachable-case-detection">Unreachable Case Detection</a></li><li class="lvl3"><a href="#s11-the-ignoreunreachable-attribute">The @ignoreunreachable Attribute</a></li><li class="lvl3"><a href="#s12-explicit-qualification">Explicit Qualification</a></li><li class="lvl3"><a href="#s13-comparison-2">Comparison</a></li></ol></article></section>
 <div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-structs-and-enums">
   <article class="cn-read">
@@ -44,7 +44,7 @@
     <h2>结构体 <small>Structs</small></h2>
     <p>结构提供轻量级数据容器，但没有类的面向对象功能。它们是针对简单数据聚合而优化的值类型，非常适合数学类型、数据传输对象以及任何需要简单的相关值捆绑而无需行为的场景。</p>
 <p>以最小的开销构造组相关数据：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>damage_type:= enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>damage_type:= enum:
     Physical
 character := struct{}
 vector2 := struct:
@@ -55,7 +55,7 @@ color := struct:
     R : int = 0
     G : int = 0
     B : int = 0
-    A : int = 255  # Alpha channel
+    A : int = 255  # Alpha 通道
 
 damage_info := struct:
     Amount : int = 0
@@ -91,15 +91,15 @@ damage_info := struct:
   </details>
 </section><section class="section" id="s2-construction">
   <article class="cn-read">
-    <h2>建造 <small>Construction</small></h2>
+    <h2>构造 <small>Construction</small></h2>
     <p>创建结构实例使用与类相同的原型语法：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Origin := vector2{}  # Uses defaults: (0.0, 0.0)
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Origin := vector2{}  # 使用默认值：(0.0, 0.0)
 PlayerPos := vector2{X := 100.0, Y := 250.0}
-RedColor := color{R := 255}  # Other channels default to 0/255
+RedColor := color{R := 255}  # 其他通道默认为 0/255
 
-# Structs are values - assignment creates a copy
+# 结构体是值 - 赋值创建副本
 NewPos := PlayerPos
-# NewPos is a separate instance with the same values</code></pre></figure>
+# NewPos 是具有相同值的单独实例</code></pre></figure>
 <p>由于结构体是值类型，因此将结构体分配给变量会创建其所有数据的副本。这与使用引用语义的类不同。</p>
   </article>
   <details class="original">
@@ -119,7 +119,7 @@ NewPos := PlayerPos
   <article class="cn-read">
     <h2>比较 <small>Comparison</small></h2>
     <p>具有所有可比较字段的结构都支持相等比较：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>vector3i := struct:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>vector3i := struct:
     X : int = 0
     Y : int = 0
     Z : int = 0
@@ -127,10 +127,10 @@ NewPos := PlayerPos
 Origin := vector3i{}
 UnitX := vector3i{X := 1}
 
-if (Origin = vector3i{}):  # Succeeds - all fields match
+if (Origin = vector3i{}):  # 成功 - 所有字段都匹配
     Print(&quot;At origin&quot;)
 
-if (Origin = UnitX):  # Fails - X fields differ
+if (Origin = UnitX):  # 失败 - X 个字段不同
     Print(&quot;Same position&quot;)</code></pre></figure>
 <p>比较逐个字段进行，只有当所有相应字段都相等时才会成功。</p>
   </article>
@@ -157,12 +157,12 @@ if (Origin = UnitX):  # Fails - X fields differ
   <article class="cn-read">
     <h2>持久化结构 <small>Persistable Structs</small></h2>
     <p>结构体可以标记为可持久化，以便与 Verse 的持久化系统一起使用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>player_stats := struct&lt;persistable&gt;:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>player_stats := struct&lt;persistable&gt;:
     HighScore : int = 0
     GamesPlayed : int = 0
     WinRate : float = 0.0
 
-# Can be used in persistent storage
+# 可用于持久存储
 PlayerData : weak_map(player, player_stats) = map{}</code></pre></figure>
 <p>一旦发布，持久结构就无法修改，从而确保游戏更新之间的数据兼容性。</p>
   </article>
@@ -184,7 +184,7 @@ PlayerData : weak_map(player, player_stats) = map{}</code></pre>
     <h2>枚举 <small>Enums</small></h2>
     <p>枚举使用一组固定的命名值定义类型，非常适合表示状态、类型或具有已知的有限替代集的任何概念。它们通过用有意义的名称替换幻数来使代码更具可读性，并通过将值限制为定义的集合来提供编译时安全性。</p>
 <p>枚举列出了类型的所有可能值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>game_state := enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>game_state := enum:
     MainMenu
     Playing
     Paused
@@ -203,22 +203,22 @@ direction := enum:
     South
     West</code></pre></figure>
 <p>枚举中的每个值都成为该枚举类型的命名常量。编译器确保枚举类型的变量只能保存这些定义值之一。枚举甚至可以为空：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>placeholder := enum{}  # Valid but rarely useful</code></pre></figure>
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>placeholder := enum{}  # 有效但很少有用</code></pre></figure>
 <p>枚举引入了一种类型和一组值，区分它们至关重要：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>status := enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>status := enum:
     Active
     Inactive
 
-# status is the TYPE
-# status.Active and status.Inactive are VALUES
+# status 是 TYPE
+# status.Active 和 status.Inactive 是 VALUES
 
-CurrentStatus:status = status.Active  # OK - value of type status</code></pre></figure>
+CurrentStatus:status = status.Active  # OK - 类型 status 的值</code></pre></figure>
 <p>您不能在需要值的地方使用枚举类型：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot use type as value
-BadAssignment:status = status  # Compile error
-set CurrentStatus = status     # Compile error
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：无法使用类型作为值
+BadAssignment:status = status  # 编译错误
+set CurrentStatus = status     # 编译错误
 
-# CORRECT: Use enum values
+# 正确：使用枚举值
 GoodAssignment:status = status.Active  # OK
 set CurrentStatus = status.Inactive    # OK</code></pre></figure>
 <p>这种区别可以防止混淆并确保类型安全。枚举类型定义了可能的值，而枚举值是您在代码中使用的实际常量。</p>
@@ -272,24 +272,24 @@ set CurrentStatus = status.Inactive    # OK</code></pre>
     <h2>限制 <small>Restrictions</small></h2>
     <p>枚举有特定的语法要求，以保持其用法清晰明确：</p>
 <p><strong>枚举必须位于定义的直接右侧：</strong></p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 有效
 priority := enum:
     Low
     Medium
     High
 
-# Invalid - cannot use enum in expressions
-Result := -enum{A, B}      # Compile error
-value := enum{X, Y} + 1    # Compile error</code></pre></figure>
+# 无效 - 不能在表达式中使用枚举
+Result := -enum{A, B}      # 编译错误
+value := enum{X, Y} + 1    # 编译错误</code></pre></figure>
 <p><strong>枚举必须是模块或类级定义：</strong></p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 有效
 my_enum := enum:
     Value1
     Value2
 
-# Invalid - cannot define local enums
+# 无效 - 无法定义本地枚举
 ProcessData():void =
-    LocalEnum := enum{A, B}  # Compile error - no local enums</code></pre></figure>
+    LocalEnum := enum{A, B}  # 编译错误 - 没有本地枚举</code></pre></figure>
 <p>这些限制确保枚举在整个代码库中保持稳定、可引用的定义，而不是短暂的本地值。</p>
   </article>
   <details class="original">
@@ -321,7 +321,7 @@ ProcessData():void =
   <article class="cn-read">
     <h2>使用枚举 <small>Using Enums</small></h2>
     <p>枚举为容易出错的字符串或整数常量提供了类型安全的替代方案：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var CurrentState:game_state = game_state.MainMenu
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>var CurrentState:game_state = game_state.MainMenu
 
 ProcessInput(Input:string):void =
     case (CurrentState):
@@ -369,8 +369,8 @@ ProcessInput(Input:string):void =
   <article class="cn-read">
     <h2>开放枚举与封闭枚举 <small>Open vs Closed Enums</small></h2>
     <p>枚举可以标记为开放或封闭，从根本上影响它们如何演变以及它们如何与模式匹配交互：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Closed enum - cannot add values after publication
-day_of_week := enum&lt;closed&gt;:  # &lt;closed&gt; is the default
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 封闭枚举 - 发布后无法添加值
+day_of_week := enum&lt;closed&gt;:  # 默认为
     Monday
     Tuesday
     Wednesday
@@ -379,12 +379,12 @@ day_of_week := enum&lt;closed&gt;:  # &lt;closed&gt; is the default
     Saturday
     Sunday
 
-# Open enum - can add new values after publication
+# 开放枚举 - 发布后可以添加新值
 weapon_type := enum&lt;open&gt;:
     Sword
     Bow
     Staff
-    # Can add Wand, Dagger, etc. in updates</code></pre></figure>
+    # 可以在更新中添加 Wand、Dagger 等</code></pre></figure>
 <p><strong>封闭枚举</strong>（默认）永远承诺一组固定的值。这允许编译器验证 case 表达式是否详尽地处理了所有可能性。使用封闭枚举来实现真正固定的集合：一周中的几天、基本方向、基本游戏状态。</p>
 <p><strong>开放枚举</strong>允许在未来版本中添加新值。这种灵活性是有代价的：case 表达式不能详尽无遗，因为未来的值可能存在。对可扩展集使用开放枚举：项目类型、敌人类型、伤害类型或任何可能增长的内容。</p>
   </article>
@@ -417,81 +417,81 @@ weapon_type := enum&lt;open&gt;:
     <p>枚举类型和 case 表达式之间的交互遵循复杂的规则，可以防止错误，同时实现安全性和灵活性。理解这些规则对于有效地使用枚举至关重要。</p>
 <p><strong>完全覆盖的封闭枚举：</strong></p>
 <p>当您的 case 表达式处理封闭枚举中的每个值时，不需要通配符：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>day := enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>day := enum:
     Monday
     Tuesday
     Wednesday
 
-# Exhaustive - all values covered
+# 详尽 - 涵盖所有值
 GetDayType(D:day):string =
     case (D):
         day.Monday =&gt; &quot;Weekday&quot;
         day.Tuesday =&gt; &quot;Weekday&quot;
         day.Wednesday =&gt; &quot;Weekday&quot;
-    # No wildcard needed - all values handled</code></pre></figure>
+    # 不需要通配符 - 处理所有值</code></pre></figure>
 <p>当覆盖所有情况时添加通配符会触发无法访问的代码警告：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Warning: unreachable wildcard
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 警告：无法访问通配符
 GetDayType(D:day):string =
     case (D):
         day.Monday =&gt; &quot;Weekday&quot;
         day.Tuesday =&gt; &quot;Weekday&quot;
         day.Wednesday =&gt; &quot;Weekday&quot;
-        _ =&gt; &quot;Unknown&quot;  # WARNING: unreachable - all values already matched</code></pre></figure>
+        _ =&gt; &quot;Unknown&quot;  # 警告：无法访问 - 所有值均已匹配</code></pre></figure>
 <p><strong>部分覆盖的封闭枚举：</strong></p>
 <p>如果您不匹配所有值，则必须提供通配符或位于 <code>&lt;decides&gt;</code> 上下文中：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>day := enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>day := enum:
     Monday
     Tuesday
     Wednesday
     Thursday
 
-# With wildcard - OK
+# 使用通配符 - OK
 GetWeekStartWildCard(D:day):string =
     case (D):
         day.Monday =&gt; &quot;Week start&quot;
         _ =&gt; &quot;Mid-week&quot;
 
-# Without wildcard but in &lt;decides&gt; context - OK
+# 没有通配符但在  上下文中 - 好的
 GetWeekStartDecides(D:day)&lt;decides&gt;:string =
     case (D):
         day.Monday =&gt; &quot;Week start&quot;
-        # Missing other days causes failure
+        # 缺少其他日期会导致失败
 
-# Without either - COMPILE ERROR
+# 不使用任何一个 - COMPILE ERROR
 # GetWeekStartBad(D:day):string =
-#    case (D):
-#        day.Monday =&gt; &quot;Week start&quot;
-#        # ERROR: Missing cases and no wildcard</code></pre></figure>
+#    情况 (D):
+#        day.Monday =&gt;“周开始”
+#        # 错误：缺少案例且没有通配符</code></pre></figure>
 <p><strong>开放枚举始终需要通配符或 <code>&lt;decides&gt;</code>：</strong></p>
 <p>开放枚举可以在发布后添加新值，因此它们永远不会详尽无遗。\这是为了确保使用它们的函数的向后兼容性（另请参阅<a href="../06_functions/index.html#publishing-functions">发布函数</a>）：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>weapon := enum&lt;open&gt;:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>weapon := enum&lt;open&gt;:
     Sword
     Bow
     Staff
 
-# Must have wildcard - OK
+# 必须有通配符 - OK
 GetWeaponClassWildCard(W:weapon):string =
     case (W):
         weapon.Sword =&gt; &quot;Melee&quot;
         weapon.Bow =&gt; &quot;Ranged&quot;
         weapon.Staff =&gt; &quot;Magic&quot;
-        _ =&gt; &quot;Unknown&quot;  # REQUIRED - future values may exist
+        _ =&gt; &quot;Unknown&quot;  # 必需 - 未来值可能存在
 
-# In &lt;decides&gt; context without wildcard - OK
+# 在没有通配符的  上下文中 - 确定
 GetWeaponClassDecides(W:weapon)&lt;decides&gt;:string =
     case (W):
         weapon.Sword =&gt; &quot;Melee&quot;
         weapon.Bow =&gt; &quot;Ranged&quot;
         weapon.Staff =&gt; &quot;Magic&quot;
-        # Can fail for unknown (future) values
+        # 对于未知（未来）值可能会失败
 
-# Without either - COMPILE ERROR
+# 不使用任何一个 - COMPILE ERROR
 # GetWeaponClassBad(W:weapon):string =
-#    case (W):
-#        weapon.Sword =&gt; &quot;Melee&quot;
-#        weapon.Bow =&gt; &quot;Ranged&quot;
-#        weapon.Staff =&gt; &quot;Magic&quot;
-#        # ERROR: Open enum requires wildcard or &lt;decides&gt;</code></pre></figure>
+#    (W):
+#        Weapon.Sword =&gt; “近战”
+#        Weapon.Bow =&gt; “远程”
+#        Weapon.Staff =&gt; “Magic”
+#        # 错误：开放枚举需要通配符或</code></pre></figure>
 <p>即使您匹配开放枚举中所有当前定义的值，您仍然需要通配符或 <code>&lt;decides&gt;</code> 上下文，因为未来版本中可能会添加新值。</p>
 <p><strong>详尽性规则摘要：</strong></p>
 <table><thead><tr><th>枚举类型</th><th>案例覆盖范围</th><th>通配符</th><th>语境</th><th>结果</th></tr></thead><tbody><tr><td>关闭</td><td>满的</td><td>不</td><td>任何</td><td>✓ 有效 - 详尽</td></tr><tr><td>关闭</td><td>满的</td><td>是的</td><td>任何</td><td>⚠ 警告 - 无法访问的通配符</td></tr><tr><td>关闭</td><td>部分的</td><td>是的</td><td>任何</td><td>✓ 有效</td></tr><tr><td>关闭</td><td>部分的</td><td>不</td><td><code>&lt;decides&gt;</code></td><td>✓ 有效 - 不匹配的值失败</td></tr><tr><td>关闭</td><td>部分的</td><td>不</td><td>非<code>&lt;decides&gt;</code></td><td>✗ 错误 - 缺失案例</td></tr><tr><td>打开</td><td>任何</td><td>是的</td><td>任何</td><td>✓ 有效</td></tr><tr><td>打开</td><td>任何</td><td>不</td><td><code>&lt;decides&gt;</code></td><td>✓ 有效 - 不匹配的值失败</td></tr><tr><td>打开</td><td>任何</td><td>不</td><td>非<code>&lt;decides&gt;</code></td><td>✗ 错误 - 开放枚举需要通配符</td></tr></tbody></table>
@@ -588,25 +588,25 @@ GetWeaponClassDecides(W:weapon)&lt;decides&gt;:string =
     <h2>无法到达的案例检测 <small>Unreachable Case Detection</small></h2>
     <p>编译器主动检测 case 表达式中无法访问的 case，帮助您识别死代码和逻辑错误：</p>
 <p><strong>重复的案例</strong>被标记为无法访问：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>status := enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>status := enum:
     Active
     Inactive
     Pending
 
-# ERROR: Duplicate case is unreachable
+# 错误：无法访问重复的大小写
 GetStatusCode(S:status):int =
     case (S):
         status.Active =&gt; 1
         status.Inactive =&gt; 2
         status.Pending =&gt; 3
-        status.Pending =&gt; 4  # ERROR: unreachable - already matched above</code></pre></figure>
+        status.Pending =&gt; 4  # 错误：无法访问 - 上面已匹配</code></pre></figure>
 <p><strong>通配符之后的情况</strong>始终无法访问：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Case after wildcard
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：通配符后的大小写
 GetStatusCode(S:status):int =
     case (S):
         status.Active =&gt; 1
-        _ =&gt; 0  # Wildcard matches everything
-        status.Inactive =&gt; 2  # ERROR: unreachable - wildcard already matched</code></pre></figure>
+        _ =&gt; 0  # 通配符与所有内容匹配
+        status.Inactive =&gt; 2  # 错误：无法访问 - 通配符已匹配</code></pre></figure>
 <p>这些错误可以防止您认为正在处理特定情况但代码永远不会执行的逻辑错误。</p>
   </article>
   <details class="original">
@@ -639,7 +639,7 @@ GetStatusCode(S:status):int =
   <article class="cn-read">
     <h2>@ignoreunreachable 属性 <small>The @ignoreunreachable Attribute</small></h2>
     <p>有时，您故意想要无法访问的案例 - 用于测试、迁移或防御性编程。 <code>@ignore_unreachable</code> 属性抑制特定情况下无法访问的警告和错误：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>status := enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>status := enum:
     Active
     Inactive
 
@@ -647,15 +647,15 @@ ProcessStatus(S:status):int =
     case (S):
         status.Active =&gt; 1
         status.Inactive =&gt; 2
-        @ignore_unreachable status.Inactive =&gt; 3  # No error
-        @ignore_unreachable _ =&gt; 0  # No unreachable warning</code></pre></figure>
+        @ignore_unreachable status.Inactive =&gt; 3  # 无错误
+        @ignore_unreachable _ =&gt; 0  # 无无法访问的警告</code></pre></figure>
 <p>此属性仅影响其应用的情况。其他没有该属性的无法访问的情况仍然会产生错误：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessStatus(S:status):int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessStatus(S:status):int =
     case (S):
         status.Active =&gt; 1
         status.Inactive =&gt; 2
-        @ignore_unreachable status.Inactive =&gt; 3  # Suppressed
-        status.Active =&gt; 4  # ERROR: still unreachable without attribute</code></pre></figure>
+        @ignore_unreachable status.Inactive =&gt; 3  # 已抑制
+        status.Active =&gt; 4  # 错误：没有属性仍然无法访问</code></pre></figure>
 <p>谨慎使用 <code>@ignore_unreachable</code>，主要是在重构期间或出于测试目的维护多个代码路径时。</p>
   </article>
   <details class="original">
@@ -685,42 +685,42 @@ ProcessStatus(S:status):int =
   <article class="cn-read">
     <h2>明确的资格 <small>Explicit Qualification</small></h2>
     <p>枚举数可能会与父作用域中的标识符发生冲突。发生这种情况时，您可以使用显式限定来消除歧义：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Top level &#x27;Start&#x27;
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 顶级“Start”
 Start:int = 0
 
-# Enum wants to use &#x27;Start&#x27; as enumerator
+# 枚举想要使用“Start”作为枚举器
 game_state := enum:
-    (game_state:)Start  # Explicit qualification avoids collision
+    (game_state:)Start  # 显式限定避免冲突
     Playing
     Paused
 
-# Now both are accessible
-OuterStart:int = Start             # References the int
-StateStart:game_state = game_state.Start  # References the enum value</code></pre></figure>
+# 现在两者均可访问
+OuterStart:int = Start             # 引用 int
+StateStart:game_state = game_state.Start  # 引用枚举值</code></pre></figure>
 <p>语法 <code>(enum_name:)enumerator</code> 显式限定枚举器，防止与外部范围符号发生冲突。</p>
 <p><strong>使用保留字作为枚举值：</strong></p>
 <p>资格还允许您使用保留字和关键字作为枚举值，否则会导致错误：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Using reserved words as enum values
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 使用保留字作为枚举值
 keyword_enum := enum:
-    (keyword_enum:)public    # OK: reserved word qualified
-    (keyword_enum:)for       # OK: keyword qualified
-    (keyword_enum:)class     # OK: reserved word qualified
-    Regular                  # Normal enum value
+    (keyword_enum:)public    # OK：保留字限定
+    (keyword_enum:)for       # OK：关键字限定
+    (keyword_enum:)class     # OK：保留字限定
+    Regular                  # 普通枚举值
 
-# Without qualification - errors
+# 无限定 - 错误
 # bad_enum := enum:
-#    public    # Error: reserved word
-#    for       # Error: reserved keyword</code></pre></figure>
+#    public # 错误：保留字
+#    for # 错误：保留关键字</code></pre></figure>
 <p>这在对语言结构、访问级别或保留字生成自然值名称的任何域进行建模时特别有用。</p>
 <p><strong>自引用枚举值：</strong></p>
 <p>您甚至可以在限定时使用枚举自己的名称作为值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>recursive_enum := enum:
-    (recursive_enum:)recursive_enum  # OK: qualified with enum name
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>recursive_enum := enum:
+    (recursive_enum:)recursive_enum  # OK：使用枚举名称进行限定
     OtherValue
 
-# Without qualification - error
+# 不进行限定 - 错误
 # bad_recursive := enum:
-  #  bad_recursive  # Error: shadows the type name</code></pre></figure>
+  #  bad_recursive # 错误：隐藏类型名称</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Explicit Qualification</summary>
@@ -767,7 +767,7 @@ keyword_enum := enum:
   <article class="cn-read">
     <h2>比较 <small>Comparison</small></h2>
     <p>枚举值完全可比较，这意味着它们支持相等 (<code>=</code>) 和不等 (<code>&lt;&gt;</code>) 运算符。这使得它们非常适合状态跟踪和条件逻辑：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CurrentWeapon := weapon_type.Sword
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>CurrentWeapon := weapon_type.Sword
 if (CurrentWeapon = weapon_type.Sword):
     PlaySwordAnimation()
 
@@ -776,32 +776,32 @@ PreviousState := game_state.Playing
 if (CurrentState &lt;&gt; PreviousState):
     OnStateChanged(PreviousState, CurrentState)</code></pre></figure>
 <p>相同枚举类型的枚举值可以进行比较，而不同枚举类型的值总是不相等：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>letters := enum:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>letters := enum:
     A, B, C
 
 numbers := enum:
     One, Two, Three
 
 Test()&lt;decides&gt;:letters =
-    letters.A = letters.A    # Succeeds - same value
-    letters.A &lt;&gt; letters.B   # Succeeds - different values
-    letters.A &lt;&gt; numbers.One # Succeeds - different enum types</code></pre></figure>
+    letters.A = letters.A    # 成功 - 相同值
+    letters.A &lt;&gt; letters.B   # 成功 - 不同值
+    letters.A &lt;&gt; numbers.One # 成功 - 不同枚举类型</code></pre></figure>
 <p>因为枚举是可比较的，所以它们可以用作映射键，存储在集合中，并与需要可比较类型的泛型函数一起使用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Enums as map keys
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 枚举作为映射键
 StateIDs:[game_state]int = map{
     game_state.Menu =&gt; 0,
     game_state.Playing =&gt; 1,
     game_state.Paused =&gt; 2
 }
 
-# In generic functions
+# 在通用函数中
 FindStateID(States:[]game_state, Target:game_state):int =
     for (
         State : States, State = Target,
         ID := StateIDs[State]
     ):
         return ID
-    -1 # Return -1 if state is not found</code></pre></figure>
+    -1 # 如果未找到状态则返回 -1</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Comparison</summary>

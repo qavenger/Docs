@@ -23,7 +23,7 @@
 <a href="../VerseSyntaxValidation/index.html"><span>VerseSyntaxValidation</span><br><small>语法高亮验证样例</small></a>
 <a href="../concept_index/index.html"><span>Concept Index</span><br><small>概念索引</small></a></nav></aside><main class="main">
 <div class="crumb">Control Flow / <a href="https://verselang.github.io/book/07_control/">原文页面</a></div><section class="hero"><h1>控制流</h1><p class="lead">控制流页，说明 block、if、case、loop、for、return、defer 等如何作为表达式或控制边界工作。</p><div class="meta"><span class="pill">源文件：07_control.md</span><span class="pill">中文段落：10</span><span class="pill">隐藏测试注释已过滤</span><span class="pill">生成：2026-06-25</span></div></section>
-<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-control-flow">控制流 / Control Flow</a></li><li class="lvl2"><a href="#s1-blocks">代码块 / Blocks</a></li><li class="lvl2"><a href="#s2-if-expressions">if 表达式 / If Expressions</a></li><li class="lvl2"><a href="#s3-case-expressions">case 表达式 / Case Expressions</a></li><li class="lvl2"><a href="#s4-loop-expressions">Loop Expressions</a></li><li class="lvl2"><a href="#s5-for-expressions">for 表达式 / For Expressions</a></li><li class="lvl2"><a href="#s6-first-expressions">First Expressions</a></li><li class="lvl2"><a href="#s7-return-statements">Return Statements</a></li><li class="lvl2"><a href="#s8-defer-statements">Defer Statements</a></li><li class="lvl2"><a href="#s9-profiling">Profiling</a></li></ol></article></section>
+<section class="guide"><article class="card"><h2>阅读方式</h2><p>上方中文阅读稿按原文结构组织，尽量保留原文信息密度，但改成更自然的中文表达；代码案例原样保留。英文原文默认折叠在每节下方，需要校对时展开即可。</p></article><article class="card"><h2>本页目录</h2><ol class="toc"><li class="lvl1"><a href="#s0-control-flow">控制流 / Control Flow</a></li><li class="lvl2"><a href="#s1-blocks">代码块 / Blocks</a></li><li class="lvl2"><a href="#s2-if-expressions">if 表达式 / If Expressions</a></li><li class="lvl2"><a href="#s3-case-expressions">case 表达式 / Case Expressions</a></li><li class="lvl2"><a href="#s4-loop-expressions">loop 表达式 / Loop Expressions</a></li><li class="lvl2"><a href="#s5-for-expressions">for 表达式 / For Expressions</a></li><li class="lvl2"><a href="#s6-first-expressions">first 表达式 / First Expressions</a></li><li class="lvl2"><a href="#s7-return-statements">Return Statements</a></li><li class="lvl2"><a href="#s8-defer-statements">Defer Statements</a></li><li class="lvl2"><a href="#s9-profiling">Profiling</a></li></ol></article></section>
 <div class="toolbar"><strong>英文原文：</strong><button onclick="setOriginals(true)">全部展开</button><button onclick="setOriginals(false)">全部折叠</button><span class="source">中文阅读稿中已保留代码案例；原文用于核查。</span></div>
 <section class="section" id="s0-control-flow">
   <article class="cn-read">
@@ -40,37 +40,37 @@
     <h2>代码块 <small>Blocks</small></h2>
     <p>代码块是一个基本的组织单元，它将相关的表达式组合在一起，并为变量和常量创建新的范围。与许多语言中的块仅仅是语法上的便利不同，块本身就是表达式，这意味着它们就像任何其他表达式一样产生值。</p>
 <p>范围的概念对于理解代码块至关重要。当您在块中创建变量或常量时，它仅存在于该块的上下文中。这种遏制可确保您的代码保持井井有条，并且名称不会在程序的不同部分之间意外发生冲突。考虑这个函数，它的主体是一个包含一个 if-then-else 表达式的代码块，它本身由三个不同的代码块组成。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CalculateReward(PlayerLevel:int)&lt;reads&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>CalculateReward(PlayerLevel:int)&lt;reads&gt;:int =
     if:
         PlayerLevel &gt; 10
-        Multiplier := 2.0  # Only exists within this if block
+        Multiplier := 2.0  # 仅存在于该 if 块内
         Base := 100
-        Result := Floor[(Base+PlayerLevel) * Multiplier] # Fails on infinity
+        Result := Floor[(Base+PlayerLevel) * Multiplier] # 无穷大失败
     then:
-        Result  # This block extends the scope of the if
+        Result  # 该块扩展了 if 的范围
     else:
-        50      # Different branch, different scope
-                # Multiplier and Result don&#x27;t exist here</code></pre></figure>
+        50      # 不同的分支，不同的范围
+                # 此处不存在乘数和结果</code></pre></figure>
 <p>Verse 具有灵活的语法，具有三种等效的写入块格式。空格格式是最常见的，使用冒号来引入块并使用缩进来显示结构：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (IsPlayerReady[]):
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>if (IsPlayerReady[]):
     StartMatch()
     BeginCountdown()</code></pre></figure>
 <p>多行花括号格式让来自 C 风格语言的程序员更加熟悉：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if (IsPlayerReady[]) {
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>if (IsPlayerReady[]) {
     StartMatch()
     BeginCountdown()
 }</code></pre></figure>
 <p>对于简单的操作，单行点格式使代码简洁：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>HasPowerup()&lt;computes&gt;&lt;decides&gt;:void={}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>HasPowerup()&lt;computes&gt;&lt;decides&gt;:void={}
 ApplyBoost():void={}
 F():void=
     if (HasPowerup[]). ApplyBoost()</code></pre></figure>
 <p>由于一切都是表达式，因此块本身具有值。块的值由块内执行的最后一个表达式给出。这使得优雅的模式成为可能，其中复杂的计算可以封装在与周围代码无缝集成的块中：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>FinalScore := block:              # The variable has the block&#x27;s value
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>FinalScore := block:              # 该变量具有块的值
     Base := CalculateScore()
     Bonus := CalculateBonus(CompletionTime)
     Accuracy := Floor[AccuracyValue * 100.0]
-    Base + Bonus + Accuracy       # This becomes the block&#x27;s value</code></pre></figure>
+    Base + Bonus + Accuracy       # 这将成为块的值</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Blocks</summary>
@@ -113,7 +113,7 @@ F():void=
   <article class="cn-read">
     <h2>if 表达式 <small>If Expressions</small></h2>
     <p><code>if</code> 表达式使用成功和失败来驱动决策（有关详细信息，请参阅<a href="../08_failure/index.html">失败</a>）。当条件中的表达式成功时，相应的分支执行：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>HandlePlayerAction(Player:player, Action:string):void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>HandlePlayerAction(Player:player, Action:string):void =
     if (Action = &quot;jump&quot;, Player.CanJump[]):
         Player.Jump()
         PlayJumpSound()
@@ -121,11 +121,11 @@ F():void=
         Weapon.Fire()
         ConsumeAmmo()
     else:
-        # Default action
+        # 默认操作
         Player.Idle()</code></pre></figure>
 <p>这种方法允许您链接可能失败的条件，而无需在每个步骤进行显式错误处理。</p>
 <p>另一种语法使用 <code>then:</code> 和 <code>else:</code> 关键字来显式标记分支：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessValue(Value:int):string =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessValue(Value:int):string =
     if:
         Value &gt; 0
         Value &lt; 100
@@ -137,44 +137,44 @@ F():void=
 ProcessValue(50) = &quot;Valid&quot;</code></pre></figure>
 <p>当您有多个条件或想要强调条件与操作分离时，此语法可以提高可读性。</p>
 <p><code>if</code> 中的条件必须至少包含一个可能失败的表达式。此要求确保 <code>if</code> 用于其预期目的 - 处理不确定的结果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Error: condition cannot fail
-if (1 + 1):  # Compile error - no fallible expression
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：条件不能失败
+if (1 + 1):  # 编译错误 - 没有易错的表达式
     DoSomething()
 
-# Valid: array access can fail
+# 有效：数组访问可能失败
 if (FirstItem := Items[0]):
     Process(FirstItem)</code></pre></figure>
 <p>空条件也是不允许的——每个 <code>if</code> 都必须测试一些东西。</p>
 <p>如果条件中的任何表达式失败，控制流将继续到 <code>else</code> 分支（如果存在）。评估条件时执行的任何效果都会自动回滚（有关详细信息，请参阅<a href="../08_failure/index.html#speculative-execution">失败</a>）：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Counter:int = 0
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>var Counter:int = 0
 
 if:
-    set Counter = Counter + 1  # Provisional change
-    Score := GetPlayerScore[]  # Might fail
+    set Counter = Counter + 1  # 临时更改
+    Score := GetPlayerScore[]  # 可能会失败
     Score &gt; 100
 then:
-    # Counter was incremented
+    # 计数器已递增
 else:
-    # Counter rolled back to original value - increment undone!</code></pre></figure>
+    # 计数器回滚到原始值 - 增量撤消！</code></pre></figure>
 <p>这种推测执行使条件逻辑更安全——您可以乐观地执行操作，因为知道如果后续条件失败，它们将被逆转。</p>
 <p>条件中定义的变量在 <code>then</code> 分支中可用，但在 <code>else</code> 分支中不可用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>if:
-    Player := FindPlayer[Name]  # Define Player
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>if:
+    Player := FindPlayer[Name]  # 定义玩家
 then:
-    AwardBonus(Player)  # OK - Player available
+    AwardBonus(Player)  # OK - 玩家可用
 else:
-    Penalize(Player)  # Compile error</code></pre></figure>
+    Penalize(Player)  # 编译错误</code></pre></figure>
 <p>此范围反映了逻辑流：在 <code>else</code> 分支中，条件失败，因此在条件期间绑定的任何变量可能没有有意义的值。</p>
 <p>由于 <code>if</code> 是一个表达式，因此它会产生一个值。当所有分支返回兼容类型时，<code>if</code> 可以在任何需要值的地方使用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Damage := if (IsCritical?):
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Damage := if (IsCritical?):
     BaseDamage * 2
 else:
     BaseDamage
 
-# Ternary-style
+# 三元式
 Status := if (Health &gt; 50). &quot;Healthy&quot; else. &quot;Wounded&quot;</code></pre></figure>
 <p>当分支具有不兼容的类型时，结果将扩展为 <code>any</code>：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Different types in branches yields any
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 分支中的不同类型产生任何
 Result:any = if (UseNumber?) then 42 else &quot;text&quot;</code></pre></figure>
 <p>所有分支都必须为 <code>if</code> 生成一个值以用作表达式。</p>
   </article>
@@ -251,13 +251,13 @@ Result:any = if (UseNumber?) then 42 else &quot;text&quot;</code></pre>
   <article class="cn-read">
     <h2>case 表达式 <small>Case Expressions</small></h2>
     <p>当您需要根据多个可能值做出决策时，<code>case</code> 表达式提供清晰、可读的分支：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetWeaponDamage(WeaponType:string):float =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GetWeaponDamage(WeaponType:string):float =
     case(WeaponType):
         &quot;sword&quot;  =&gt; 50.0
         &quot;bow&quot;    =&gt; 35.0
         &quot;staff&quot;  =&gt; 40.0
         &quot;dagger&quot; =&gt; 25.0
-        _        =&gt; 10.0  # Default damage for unknown weapons
+        _        =&gt; 10.0  # 未知武器的默认伤害
 
 GetWeaponDamage(&quot;sword&quot;) = 50.0</code></pre></figure>
 <p>当您有要匹配的离散值时，使用 <code>case</code> 表达式，使您的意图比一系列 <code>if-else</code> 条件更清晰。</p>
@@ -265,7 +265,7 @@ GetWeaponDamage(&quot;sword&quot;) = 50.0</code></pre></figure>
 <ul><li><strong>原语</strong>：<code>int</code>、<code>logic</code>、<code>char</code></li><li><strong>字符串</strong>：<code>string</code></li><li><strong>枚举</strong>：开放枚举和封闭枚举</li><li><strong>细化类型</strong>：具有约束的自定义类型</li></ul>
 <p>由于实现限制，它们不适用于 <code>float</code>、对象和元组。</p>
 <p><strong>使用枚举进行详尽性检查。</strong> <code>case</code> 和 <code>enum</code> 进行详尽性检查。对于所有值都已知的封闭枚举，编译器会验证您是否已处理所有情况：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Exhaustive - no wildcard needed
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 详尽 - 无需通配符
 GetVector(Dir:direction):tuple(int, int) =
     case (Dir):
         direction.North =&gt; (0, 1)
@@ -275,18 +275,18 @@ GetVector(Dir:direction):tuple(int, int) =
 
 GetVector(direction.North) = (0, 1)</code></pre></figure>
 <p>如果在涵盖所有情况时添加通配符，您将收到一条警告，指出通配符无法访问：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>    case (Dir):
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>    case (Dir):
         direction.North =&gt; (0, 1)
         direction.South =&gt; (0, -1)
         direction.East =&gt; (1, 0)
         direction.West =&gt; (-1, 0)
-        _ =&gt; (0, 0)  # Warning: all cases already covered</code></pre></figure>
+        _ =&gt; (0, 0)  # 警告：所有情况均已涵盖</code></pre></figure>
 <p><code>&lt;decides&gt;</code> 上下文中允许不完整的案例覆盖：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Without wildcard in &lt;decides&gt; context - OK
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 上下文中没有通配符 - 确定
 GetPrimaryDirection2(Dir:direction)&lt;decides&gt;:string =
     case (Dir):
         direction.North =&gt; &quot;Primary&quot;
-        # Other directions cause function to fail</code></pre></figure>
+        # 其他方向导致函数失败</code></pre></figure>
 <p>开放枚举可以在发布后添加值，因此它们永远不可能详尽无遗。它们始终需要通配符或 <code>&lt;decides&gt;</code> 上下文。</p>
   </article>
   <details class="original">
@@ -333,16 +333,16 @@ GetPrimaryDirection2(Dir:direction)&lt;decides&gt;:string =
   </details>
 </section><section class="section" id="s4-loop-expressions">
   <article class="cn-read">
-    <h2>循环表达式 <small>Loop Expressions</small></h2>
+    <h2>loop 表达式 <small>Loop Expressions</small></h2>
     <p><code>loop</code> 表达式创建一个无限循环，该循环将持续到明确中断为止：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GameLoop():void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GameLoop():void =
     loop:
         UpdatePlayerPositions()
         CheckCollisions()
         RenderFrame()
         if (GameOver[]). break</code></pre></figure>
 <p><code>break</code> 表达式完全退出循环，终止迭代。 <code>break</code> 具有“底部”类型——表示永远不会正常返回的计算的类型。由于底部类型是所有其他类型的子类型，因此 <code>break</code> 可以在任何类型上下文中使用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>NumberOfBits(X:int):int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>NumberOfBits(X:int):int =
     var B:int = 1
     var C:int = 0
     loop:
@@ -352,20 +352,20 @@ GetPrimaryDirection2(Dir:direction)&lt;decides&gt;:string =
 <p>这演示了底层类型：<code>break</code> 与 if 表达式中的 <code>int</code>（来自 <code>2*B</code>）统一。赋值 <code>set B = ...</code> 使用 if 表达式的值，表明 <code>break</code> 在任何类型上下文中都是兼容的。</p>
 <p><strong>循环返回值：</strong> 循环表达式本身会生成 <code>true</code> 类型（顶级类型）的值，无论其主体中出现什么表达式。这个返回值在实践中很少有用——循环通常因其副作用而被使用。</p>
 <p>当 <code>break</code> 出现在嵌套循环中时，它仅退出最内层的封闭循环：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>var Outer:int = 0
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>var Outer:int = 0
 loop:
     set Outer += 1
     var Inner:int = 0
     loop:
         set Inner += 1
         if (Inner = 5):
-            break        # Exits inner loop
+            break        # 退出内循环
     if (Outer = 10):
-        break            # Exits outer loop</code></pre></figure>
+        break            # 退出外循环</code></pre></figure>
 <p>以下限制适用。 <code>break</code> 语句必须出现在代码块中，而不是作为复杂表达式的一部分。循环必须至少包含一个非break 语句。最后，在 <code>loop</code> 之外使用 <code>break</code> 会产生错误：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessData():void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessData():void =
    if (ShouldStop[]):
-           break      # Error</code></pre></figure>
+           break      # 错误</code></pre></figure>
   </article>
   <details class="original">
     <summary>展开英文原文：Loop Expressions</summary>
@@ -407,14 +407,14 @@ loop:
   <article class="cn-read">
     <h2>for 表达式 <small>For Expressions</small></h2>
     <p><code>for</code> 表达式迭代集合、范围和其他可迭代类型，提供更结构化的重复方法：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CalculateTotalScore(Players:[]player)&lt;transacts&gt;:int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>CalculateTotalScore(Players:[]player)&lt;transacts&gt;:int =
     var Total:int = 0
     for (Player : Players):
         PlayerScore := GetScore(Player)
         set Total += PlayerScore
     Total</code></pre></figure>
 <p>虽然它在早期的命令式语言中看起来很熟悉，但最好将 <code>for</code> 视为一种功能构造，它将迭代、过滤与推测执行以及结果集合的构造结合在一起。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>Values:[]float= array{1.0, 10.1, 100.2}
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>Values:[]float= array{1.0, 10.1, 100.2}
 Result := 
    for:
       V : Values
@@ -426,111 +426,111 @@ Result :=
 Result = array{20.0, 200.0}</code></pre></figure>
 <p>上面是用另一种多子句语法编写的，使用 <code>do:</code> 关键字将迭代规范与主体分开。 <code>for</code> 迭代 <code>Values</code> 数组，丢弃小于 10 的值并向下舍入数字。它返回一个浮点数组。 <code>Floor</code> 函数定义为 <code>decides</code> ——如果失败，则迭代将被丢弃。</p>
 <p>还有另一种替代语法：用于简单操作的单行点语法：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Single-line dot style
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 单线点样式
 for (V : Values). DoSomething(V)</code></pre></figure>
 <p><strong>索引和值对：</strong></p>
 <p>迭代数组或映射时，您可以使用对语法 <code>Index -&gt; Value</code> 或 <code>Key -&gt; Value</code> 访问索引/键和值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PrintRoster(Players:[]player):void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>PrintRoster(Players:[]player):void =
     for (Index -&gt; Player : Players):
         Print(&quot;Player {Index}: {Player.Name}&quot;)</code></pre></figure>
 <p>该索引从零开始，符合 Verse 的数组索引约定。</p>
 <p><strong>在 For 子句中定义变量：</strong></p>
 <p>for 循环允许您定义可在后续过滤器或循环体中使用的中间变量：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Define Y based on X
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 根据 X 定义 Y
 Doubled := for (X := 1..5, Y := X * 2):
-    Y  # Returns array{2, 4, 6, 8, 10}
+    Y  # 返回数组{2, 4, 6, 8, 10}
 
-# Combine with filtering
+# 结合过滤
 SafeDivision := for (X := -3..3, X &lt;&gt; 0, Y := Floor[10.0 / (X*1.0)]):
-    Y  # Skips X=0, returns array{-3, -5, -10, 10, 5, 3}</code></pre></figure>
+    Y  # 跳过 X=0，返回数组{-3, -5, -10, 10, 5, 3}</code></pre></figure>
 <p>这些中间变量的范围仅限于迭代，并且可以引用同一子句中较早的变量。</p>
 <p><strong>多重过滤器：</strong></p>
 <p>您可以使用逗号分隔或分号分隔的表达式链接多个过滤条件。每个过滤器都必须是可失败的，如果有任何失败，则跳过该迭代：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Multiple independent filters
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 多个独立过滤器
 Filtered := for (X := 1..10, X &lt;&gt; 3, X &lt;&gt; 7):
-    X  # Returns array{1, 2, 4, 5, 6, 8, 9, 10}
+    X  # 返回数组{1, 2, 4, 5, 6, 8, 9, 10}
 
-# Filters with intermediate variables
+# 带中间变量的过滤器
 Complex := for (X := 1..5, X &lt;&gt; 2, Y := X * 2, Y &lt; 10):
-    Y  # Only includes values where X≠2 and Y&lt;10</code></pre></figure>
+    Y  # 仅包括 X≠2 且 Y&lt;10 的值</code></pre></figure>
 <p>每个过滤条件按顺序进行评估，并且仅当所有条件都成功时才继续迭代。</p>
 <p><strong>迭代map：</strong></p>
 <p>可以通过两种方式迭代映射：仅值，或使用对语法的键值对：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Iterate over values only
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 仅迭代值
 Scores:[int]int = map{1 =&gt; 100, 2 =&gt; 200, 3 =&gt; 150}
 TopScores := for (Score : Scores):
-    Score  # Returns array{100, 200, 150}
+    Score  # 返回数组{100, 200, 150}
 
-# Iterate over key-value pairs
+# 迭代键值对
 PlayerScores:[string]int = map{&quot;Alice&quot; =&gt; 100, &quot;Bob&quot; =&gt; 200}
 for (PlayerName -&gt; Score : PlayerScores):
     Print(&quot;{PlayerName} scored {Score}&quot;)</code></pre></figure>
 <p>映射保留插入顺序，因此迭代顺序与将键添加到映射的顺序匹配。</p>
 <p><strong>字符串迭代：</strong></p>
 <p>字符串可以逐字符迭代：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>CountVowels(Text:string):int =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>CountVowels(Text:string):int =
     var Count:int = 0
     for (Char : Text, Char = &#x27;a&#x27; or Char = &#x27;e&#x27; or Char = &#x27;i&#x27; or Char = &#x27;o&#x27; or Char = &#x27;u&#x27;):
         set Count += 1
     Count</code></pre></figure>
 <p><strong>嵌套迭代（笛卡尔积）：</strong></p>
 <p>多个迭代源创建嵌套循环，生成笛卡尔积：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PrintGrid():void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>PrintGrid():void =
     for (X := 1..3, Y := 1..3):
         Print(&quot;({X}, {Y})&quot;)
-    # Produces: (1,1), (1,2), (1,3), (2,1), (2,2), (2,3), (3,1), (3,2), (3,3)</code></pre></figure>
+    # 产生：(1,1)、(1,2)、(1,3)、(2,1)、(2,2)、(2,3)、(3,1)、(3,2)、(3,3)</code></pre></figure>
 <p><strong>过滤失败：</strong></p>
 <p>Verse 的 <code>for</code> 表达式在利用失败上下文时特别强大，因为它们可以自然地过滤：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>GetHighScorers(Players:[]player):[]player =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>GetHighScorers(Players:[]player):[]player =
     for (Player : Players, Score := GetScore(Player), Score &gt; 1000):
-        Player  # Only players with score &gt; 1000 are included</code></pre></figure>
+        Player  # 仅包含得分 &gt; 1000 的玩家</code></pre></figure>
 <p>当迭代头中的任何表达式失败时，该迭代将被跳过。这允许优雅的过滤，无需显式的 <code>if</code> 语句：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Filter items under budget and apply transformation
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 过滤预算内的项目并应用转换
 AffordableItems(Items:[]item, Budget:float):[]float =
     for (Item : Items, Item.Price &lt;= Budget):
-        Item.Price * 1.1  # Apply 10% markup</code></pre></figure>
+        Item.Price * 1.1  # 应用 10% 的加价</code></pre></figure>
 <p><strong>作为表达式：</strong></p>
 <p>与其他控制流结构一样，<code>for</code> 是一个表达式。当主体产生值时，<code>for</code> 将它们收集到一个数组中：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Collect player names
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 收集玩家姓名
 GetNames(Players:[]player):[]string =
     for (Player : Players):
-        Player.Name  # Each iteration produces a string</code></pre></figure>
+        Player.Name  # 每次迭代都会生成一个字符串</code></pre></figure>
 <p>这使得 <code>for</code> 成为无需显式累加器变量即可转换集合的强大工具。</p>
 <p><strong>打破 For 循环：</strong></p>
 <p><code>break</code> 语句无法提前退出 <code>for</code> 循环。如果您只需要迭代中的第一个匹配结果，请使用 <code>first</code> 而不是 <code>for</code>（请参阅下面的<a href="#first-expressions">第一个表达式</a>）。</p>
 <p><strong>继续注意：</strong></p>
 <p>与许多语言不同，Verse 目前不支持使用 <code>continue</code> 语句跳到下一个迭代。相反，使用条件逻辑或基于故障的过滤来实现类似的结果：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Instead of continue, use conditional blocks
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 使用条件块代替继续
 ProcessItems(Items:[]item):void =
     for (Item : Items):
         if (Item.IsValid?):
             ProcessItem(Item)
-        # No continue needed - just structure with conditions
+        # 不需要继续 - 只需带条件的结构
 
-# Or use failure-based filtering in the header
+# 或者在标头中使用基于失败的过滤
 ProcessValidItems(Items:[]item):void =
     for (Item : Items, Item.IsValid?):
-        ProcessItem(Item)  # Only valid items reach here</code></pre></figure>
+        ProcessItem(Item)  # 仅有效项目到达此处</code></pre></figure>
 <p><strong>范围迭代。</strong> 范围运算符 <code>..</code> 提供整数序列上的数字迭代。范围两端均包含在内：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Iterates: 1, 2, 3, 4, 5 (both bounds included)
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 迭代：1、2、3、4、5（包括两个边界）
 for (I := 1..5):
     Print(&quot;Count: {I}&quot;)
 
-# Single element range
+# 单个元素范围
 for (I := 42..42):
-    Print(&quot;Answer: {I}&quot;)  # Prints once: &quot;Answer: 42&quot;
+    Print(&quot;Answer: {I}&quot;)  # 打印一次：“答案：42”
 
-# Empty range (start &gt; end produces no iterations)
+# 空范围（开始 &gt; 结束不产生迭代）
 for (I := 5..1):
-    Print(&quot;Never executes&quot;)  # Loop body never runs</code></pre></figure>
+    Print(&quot;Never executes&quot;)  # 循环体从不运行</code></pre></figure>
 <p><code>..</code> 运算符始终包含在内。没有独占范围语法。</p>
 <p>范围边界按特定顺序进行评估，并且副作用的发生是可预测的：</p>
 <ol><li><strong>首先评估左结合界</strong>，然后评估右边界</li><li><strong>始终评估两个边界</strong>，即使范围为空</li><li><strong>副作用按顺序发生</strong>，无论是否发生迭代</li></ol>
 <p>虽然您无法将范围存储为值，但您可以使用 for 表达式创建数组：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># This works because for produces an array, not because ranges are storable
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 这是有效的，因为 for 生成一个数组，而不是因为范围是可存储的
 DoubledNumbers:[]int = for (I := 1..5){ I * 2 }
 
-# Can then iterate over the array normally
+# 然后可以正常迭代数组
 for (N : DoubledNumbers):
     Print(&quot;{N}&quot;)</code></pre></figure>
 <p>该范围仅在 for 表达式求值期间存在；结果数组就是存储的内容。</p>
@@ -540,23 +540,23 @@ for (N : DoubledNumbers):
 <ol><li><strong>无法重新定义迭代变量：</strong> 您不能在同一子句中重新定义迭代变量。</li></ol>
 <ol><li><strong>不能定义可变变量：</strong> 不允许在 for 子句中使用 <code>var</code> 声明变量。</li></ol>
 <p>范围运算符 <code>..</code> 具有严格的限制，使其与其他可迭代类型区分开来。范围<em>不是一流的值</em> - 它们是迭代地将范围中的每个整数生成为单独值的表达式。范围不能在您可能期望它们工作的某些上下文中使用：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># ERROR: Cannot store range in variable
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 错误：无法在变量
 MyRange := 1..10
 for (I := MyRange):
 
-# ERROR: Cannot pass range to function
+# 中存储范围 错误：无法将范围传递给函数
 ProcessRange(1..10)
 
-# ERROR: Cannot use range as standalone expression
+# 错误：无法将范围用作独立表达式
 Result := 1..10
 
-# ERROR: Cannot put range in array
+# 错误：无法将范围放入数组
 Ranges := array{1..10}
 
-# ERROR: Cannot index range
+# 错误：无法索引范围
 Value := (1..10)(5)
 
-# ERROR: Cannot access members on range
+# 错误：无法访问成员在范围内
 Length := (1..10).Length</code></pre></figure>
 <p>范围仅适用于 <code>int</code> 类型。不支持其他数值类型、布尔值、类型或对象。</p>
   </article>
@@ -719,28 +719,28 @@ Length := (1..10).Length</code></pre>
   </details>
 </section><section class="section" id="s6-first-expressions">
   <article class="cn-read">
-    <h2>第一个表达 <small>First Expressions</small></h2>
+    <h2>first 表达式 <small>First Expressions</small></h2>
     <p>!!!注意“未发布的功能”<code>first</code> 表达式尚未发布。本节记录了当前不可用的计划功能。</p>
 <p><code>first</code> 表达式与 <code>for</code> 类似，但它不是评估域子句的每次迭代的主体，而是仅评估成功的域子句的<strong>第一个</strong>迭代。它不像 <code>for</code> 那样生成数组，而是生成该单次迭代的主体值。如果没有迭代到达主体，则 <code>first</code> 失败 - 因此它需要 <code>&lt;decides&gt;</code> 上下文。</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Find the first player with a score above the threshold
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 找到第一个得分高于阈值的玩家
 FindTopScorer(Players:[]player, Threshold:int)&lt;decides&gt;:player =
     first (Player : Players; GetScore[Player] &gt; Threshold):
         Player</code></pre></figure>
 <p>与 <code>for</code> 一样，<code>first</code> 表达式支持三种语法形式。块形式使用 <code>do:</code> 将迭代子句与主体分开：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Block form with do:
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 带 do 的块形式：
 first:
     X : Collection
     Predicate[X]
 do:
     Process(X)
 
-# Braces form
+# 大括号形式
 first(X : Collection; Predicate[X]){ Process(X) }
 
-# Dot form for single expressions
+# 单个表达式的点形式
 first(X : Collection; Predicate[X]). Process(X)</code></pre></figure>
 <p><code>first</code> 表达式使用与 <code>for</code> 相同的绑定语法。您可以迭代数组、映射、字符串和范围。您可以将索引值对与 <code>-&gt;</code> 语法结合使用，链接多个过滤器并嵌套多个迭代源：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Find the index of an element using index -&gt; value binding
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 使用索引 -&gt; 值绑定查找元素的索引
 IndexOf(Arr:[]int, Target:int)&lt;decides&gt;:int =
     first(I -&gt; V : Arr, V = Target). I</code></pre></figure>
 <p>请注意，<code>first</code> 生成 <strong>body</strong> 表达式的值，而不是迭代变量。这使得搜索一件事并产生另一件事成为可能——例如，通过匹配值来查找索引。</p>
@@ -748,14 +748,14 @@ IndexOf(Arr:[]int, Target:int)&lt;decides&gt;:int =
 <table><thead><tr><th></th><th><code>for</code></th><th><code>first</code></th></tr></thead><tbody><tr><td>产生值</td><td>所有结果的数组</td><td>仅第一个结果</td></tr><tr><td>没有匹配时</td><td>空数组</td><td><strong>失败</strong>（需要 <code>&lt;decides&gt;</code>）</td></tr><tr><td>停止条件</td><td>经过所有迭代</td><td>第一次迭代后</td></tr></tbody></table>
 <p><strong>常见模式：</strong></p>
 <p>由于 <code>first</code> 需要 <code>&lt;decides&gt;</code>，因此一种常见的使用方法是将其包装在 <code>if</code> 或 <code>option</code> 中以处理未找到匹配的情况：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Find with fallback using if
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 使用 if 进行回退查找
 FindOrDefault(Arr:[]int, Target:int):int =
     if (Index := first(I -&gt; V : Arr, V = Target). I):
         Index
     else:
         -1</code></pre></figure>
 <p>或者：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Find with fallback using if
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 使用 if 进行回退查找
 FindOptional(Arr:[]int, Target:int):?int =
     option:
         Index := first(I -&gt; V : Arr, V = Target). I
@@ -809,45 +809,45 @@ FindOptional(Arr:[]int, Target:int):?int =
   <article class="cn-read">
     <h2>退货声明 <small>Return Statements</small></h2>
     <p><code>return</code> 语句提供函数的显式提前退出，允许您在到达函数体末尾之前终止执行并返回一个值：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ValidateInput(Value:int):string =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ValidateInput(Value:int):string =
     if (Value &lt; 0):
         return &quot;Error: Negative value&quot;
 
     if (Value &gt; 1000):
         return &quot;Error: Value too large&quot;
 
-    &quot;Valid&quot;     # Implicit return</code></pre></figure>
+    &quot;Valid&quot;     # 隐式回报</code></pre></figure>
 <p>Return 语句只能出现在代码中的特定位置 - 它们必须位于“尾部位置”，这意味着它们必须是控制退出作用域之前执行的最后一个操作。此限制确保可预测的控制流：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Valid: return is last operation
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 有效：返回是最后一个操作
 ProcessOrder(OrderId:int)&lt;transacts&gt;:string =
     if (Order := GetOrder[OrderId]):
         if (Order.IsValid[]):
             return &quot;Processed&quot;
     &quot;Invalid order&quot;
 
-# Valid: return in both branches
+# 有效：在两个分支中都返回
 GetStatus(Value:int):string =
     if (Value &gt; 0):
         return &quot;Positive&quot;
     else:
         return &quot;Non-positive&quot;</code></pre></figure>
 <p>Verse 函数隐式返回其最后一个表达式的值，因此仅在早期退出时才需要 <code>return</code>：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code># Implicit return
-GetValue():int = 42  # Returns 42
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code># 隐式回报
+GetValue():int = 42  # 返回 42
 
-# Explicit early return
+# 显式提前退货
 GetDiscount(Price:float):float =
     if (Price &lt; 10.0):
-        return 0.0  # Early exit with no discount
+        return 0.0  # 提前退出，无折扣
 
-    Price * 0.1  # Implicit return with 10% discount</code></pre></figure>
+    Price * 0.1  # 隐式退货，有 10% 折扣</code></pre></figure>
 <p>在具有 <code>&lt;decides&gt;</code> 效果的函数中，<code>return</code> 允许您从早期退出中提供成功的值，同时仍然允许其他路径失败：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>RetryableOperation()&lt;transacts&gt;:string =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>RetryableOperation()&lt;transacts&gt;:string =
     if (Config := GetConfig[]):
         for (Retry := 1..Config.MaxRetries):
             if (Result := AttemptOperation[Retry]):
-                return Result  # Success - exit immediately
-    &quot;Failed&quot; # All retries exhausted</code></pre></figure>
+                return Result  # 成功 - 立即退出
+    &quot;Failed&quot; # 所有重试均已用尽</code></pre></figure>
 <p>此模式对于搜索操作很常见，您希望在找到匹配项后立即返回，但如果未找到匹配项则失败。</p>
   </article>
   <details class="original">
@@ -902,85 +902,85 @@ GetDiscount(Price:float):float =
 <p>Defer 是<strong>基于范围</strong>，而不是基于功能。 <code>defer</code> 块在离开直接包含它的作用域时执行，包括：</p>
 <ul><li><strong>函数体</strong> — 在函数返回时运行</li><li><strong><code>for</code> 循环</strong> — <code>for</code> 主体在其自己的范围内运行每次迭代； <code>for</code> 域还引入了词法范围</li><li><strong><code>loop</code> 块的每次迭代</strong> — 在每次迭代结束时运行（包括在 <code>break</code> 上）</li><li><strong><code>if</code>/<code>then</code>/<code>else</code> 子句</strong> — 在离开所选分支时运行</li><li><strong><code>block</code> 范围</strong> — 离开区块时运行</li><li><strong><code>not</code> 表达式</strong> — <code>not e</code> 在新的词法范围中计算 <code>e</code></li><li><strong><code>or</code> 表达式</strong> — <code>e0 or e1</code> 在新的词法范围中计算 <code>e0</code></li><li><strong><code>and</code> 表达式</strong> — <code>e0 and e1</code> 在新的词法范围内计算整个表达式</li><li><strong><code>option</code> 和 <code>logic</code> 表达式</strong> — <code>option{e}</code> 和 <code>logic{e}</code> 在新的词法范围中计算 <code>e</code></li><li><strong><code>case</code> 表达式</strong> — <code>case(e0){e1=&gt;e2, e3=&gt;e4}</code> 为整个 <code>case</code> 创建词法范围，然后为每个结果表达式（<code>e2</code>、<code>e4</code>）创建词法范围</li><li><strong>原型实例化</strong> - <code>my_class{...}</code> 引入了主体的词法范围</li><li><strong><code>defer</code> 自行阻塞</strong> — 嵌套延迟在外部延迟完成时运行</li><li><strong>结构化并发宏</strong>（<code>race</code>、<code>rush</code>、<code>branch</code>）——每个分支在自己的词法范围内运行</li><li><strong><code>spawn</code>、<code>await</code> 和 <code>batch</code> 表达式</strong> — <code>spawn{e}</code>、<code>await{e}</code> 和 <code>batch{e}</code> 在新的词法范围中计算 <code>e</code></li><li><strong><code>live</code> 绑定</strong> — <code>live Name : e0 = e1</code> 为 <code>e1</code> 创建新的词法范围</li><li><strong>取消的并发作用域</strong> — 在取消展开期间运行（请参阅<a href="../14_concurrency/index.html#cleanup-and-resource-management">并发</a>）</li></ul>
 <p>这是一个基本示例：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessFile(FileName:string)&lt;transacts&gt;&lt;decides&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessFile(FileName:string)&lt;transacts&gt;&lt;decides&gt;:void =
     File := OpenFile(FileName)?
     defer:
-        CloseFile(File)  # Runs on success or early exit
+        CloseFile(File)  # 成功或提前退出时运行
 
     Contents := ReadFile(File)?
     ProcessContents[Contents]
     SaveResults[]</code></pre></figure>
 <p>当作用域成功退出或通过显式控制流（如 <code>return</code>）退出时，将执行延迟代码：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessQuery()&lt;transacts&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessQuery()&lt;transacts&gt;:void =
     ConnId := OpenConnection()
     defer:
-        CloseConnection(ConnId)  # Cleanup always needed
+        CloseConnection(ConnId)  # 始终需要清理
 
     for (Attempt := 1..5):
         if (Result := Query[ConnId]):
             ProcessResult(Result)
-            return  # defer executes after return being called
+            return  # 延迟在调用 return 后执行
 
-    # defer executes before leaving the function scope on success</code></pre></figure>
+    # 延迟在成功离开函数作用域之前执行</code></pre></figure>
 <p>这是一个微妙但关键的点：如果函数由于推测执行而失败，则延迟代码<strong>不会</strong>执行。这是因为失败会触发回滚，从而撤消所有影响，包括延迟块的调度：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ExampleWithFailure()&lt;transacts&gt;&lt;decides&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ExampleWithFailure()&lt;transacts&gt;&lt;decides&gt;:void =
     ResourceId := AcquireResource[]
     defer:
-        ReleaseResource(ResourceId) # Scheduled...
+        ReleaseResource(ResourceId) # 已安排...
 
-    RiskyOperation[ResourceId] # This fails!
-    # defer does NOT run - entire scope was speculative and rolled back</code></pre></figure>
+    RiskyOperation[ResourceId] # 失败！
+    # defer 不运行 - 整个范围是推测性的并回滚</code></pre></figure>
 <p>当 <code>RiskyOperation</code> 失败时，整个函数也会失败，并且推测执行会撤消所有内容，包括延迟注册。资源清理永远不会发生，因为资源获取本身已回滚。</p>
 <p>此行为可确保一致性：如果函数失败，就好像它从未运行过，包括计划的任何清理代码。</p>
 <p><strong>执行顺序：</strong></p>
 <p>当同一作用域中存在多个 <code>defer</code> 时，它们以与定义相反的顺序执行（后进先出），模仿基于堆栈的嵌套资源清理：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>DatabaseTransaction()&lt;transacts&gt;&lt;decides&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>DatabaseTransaction()&lt;transacts&gt;&lt;decides&gt;:void =
     DbId := OpenDatabase()
     defer:
-        CloseDatabase(DbId)  # Executes second (outer resource)
+        CloseDatabase(DbId)  # 执行第二个（外部资源）
 
     TxnId := BeginTransaction[DbId]
     defer:
-        CommitTransaction(TxnId)  # Executes first (inner resource)
+        CommitTransaction(TxnId)  # 第一个执行（内部资源）
 
-    DoWork[]  # Work happens with both resources active
-    # Defers execute: CommitTransaction, then CloseDatabase</code></pre></figure>
+    DoWork[]  # 两个资源都处于实时状态时工作发生
+    # 推迟执行：CommitTransaction，然后 CloseDatabase</code></pre></figure>
 <p><strong>延迟和异步取消：</strong></p>
 <p>当异步操作被取消时，例如当 <code>race</code> 完成或 <code>spawn</code> 被中断时，也会执行延迟代码：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessWithTimeout()&lt;suspends&gt;&lt;transacts&gt;:void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessWithTimeout()&lt;suspends&gt;&lt;transacts&gt;:void =
     race:
         block:
             Resource := AcquireResource()
             defer:
-                ReleaseResource(Resource)  # Runs if cancelled
+                ReleaseResource(Resource)  # 如果取消则运行
 
             LongRunningTask(Resource)
 
         block:
-            Sleep(10.0)  # Timeout
-    # If timeout wins, first block is cancelled and defer runs</code></pre></figure>
+            Sleep(10.0)  # 超时
+    # 如果超时获胜，则取消第一个块并推迟运行</code></pre></figure>
 <p>这确保即使并发控制中断您的代码时也会进行清理。</p>
 <p><strong>嵌套延迟：</strong></p>
 <p>Defer 语句可以嵌套在其他 defer 块中，创建一系列清理操作：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessWithCleanup():void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessWithCleanup():void =
     Log(&quot;A&quot;)
     defer:
         Log(&quot;B&quot;)
         defer:
-            Log(&quot;inner&quot;)  # Runs after B
+            Log(&quot;inner&quot;)  # 在 B
         Log(&quot;C&quot;)
     Log(&quot;D&quot;)
-    # Output: A D B C inner</code></pre></figure>
+    # 之后运行输出：A D B C 内部</code></pre></figure>
 <p>每个嵌套级别的执行顺序都遵循 LIFO 原则 - 内部延迟在外部延迟的代码之后执行，保持类似堆栈的清理顺序。</p>
 <p><strong>控制流中的延迟：</strong></p>
 <p>延迟在所有控制流结构中都能正常工作：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>ProcessLoop():void =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>ProcessLoop():void =
     for (I := 0..2):
         Log(&quot;Start&quot;)
         defer:
-            Log(&quot;Cleanup&quot;)  # Runs after each iteration
+            Log(&quot;Cleanup&quot;)  # 每次迭代后运行
         Log(&quot;End&quot;)
-    # Output: Start End Cleanup Start End Cleanup Start End Cleanup
+    # 输出： Start End Cleanup Start End Cleanup Start End Cleanup
 
 ProcessWithIf(Condition:logic):void =
     if (Condition?):
@@ -1109,7 +1109,7 @@ ProcessWithIf(Condition:logic):void =
   <article class="cn-read">
     <h2>分析 <small>Profiling</small></h2>
     <p>了解代码的执行方式对于优化至关重要，<code>profile</code> 表达式可测量执行时间：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>OptimizedCalculation():float =
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>OptimizedCalculation():float =
     profile(&quot;Complex Math&quot;):
         var Result:float = 0.0
         for (I := 1..1000000):
@@ -1117,7 +1117,7 @@ ProcessWithIf(Condition:logic):void =
         Result</code></pre></figure>
 <p>配置文件表达式包含您要测量的代码，将执行时间记录到输出中。您可以添加描述性标签来组织分析输出，从而更轻松地识别复杂系统中的瓶颈。</p>
 <p>配置文件表达式透明地传递其结果，这意味着您可以将它们包装在任何表达式周围，而无需更改程序的行为：</p>
-<figure class="code-case"><figcaption>代码案例（保留原文）</figcaption><pre><code>PlayerDamage := profile(&quot;Damage Calculation&quot;):
+<figure class="code-case"><figcaption>代码案例（注释已译，代码保持原样）</figcaption><pre><code>PlayerDamage := profile(&quot;Damage Calculation&quot;):
     BaseDamage * GetMultiplier() * GetCriticalBonus()</code></pre></figure>
   </article>
   <details class="original">
