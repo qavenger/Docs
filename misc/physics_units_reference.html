@@ -96,6 +96,61 @@
       flex: 1 1 280px;
     }
 
+    .unit-inspector {
+      margin: 18px auto 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.5fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .inspector-title {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .inspector-unit {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .inspector-desc {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .chain {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      min-height: 36px;
+    }
+
+    .chain-chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #edf3ef;
+      color: #344139;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .chain-arrow {
+      color: var(--accent-2);
+      font-weight: 900;
+    }
+
     main {
       padding: 22px 0 58px;
     }
@@ -244,6 +299,40 @@
       white-space: nowrap;
     }
 
+    .unit-token {
+      cursor: help;
+      border-bottom: 1px dotted currentColor;
+    }
+
+    .unit-token:focus-visible {
+      outline: 2px solid rgba(23, 107, 91, 0.45);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .tooltip {
+      position: fixed;
+      z-index: 50;
+      max-width: min(360px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 18px 44px rgba(24, 33, 29, 0.16);
+      font-size: 13px;
+      line-height: 1.5;
+      pointer-events: none;
+      display: none;
+    }
+
+    .tooltip strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--accent);
+      font-size: 14px;
+    }
+
     .hidden { display: none; }
 
     @media (max-width: 900px) {
@@ -254,6 +343,10 @@
 
       .toolbar {
         position: static;
+      }
+
+      .unit-inspector {
+        grid-template-columns: 1fr;
       }
 
       .section-head,
@@ -278,12 +371,31 @@
         <option value="">全部领域</option>
         <option value="base">基础单位</option>
         <option value="symbols">希腊字母</option>
+        <option value="constants">常量</option>
         <option value="mechanics">经典力学</option>
         <option value="electricity">电学</option>
         <option value="optics">光学</option>
       </select>
     </div>
   </div>
+
+  <aside class="wrap unit-inspector" aria-live="polite">
+    <div>
+      <p class="inspector-title">当前单位拆解</p>
+      <div id="inspectorUnit" class="inspector-unit">把鼠标放到单位上</div>
+      <p id="inspectorDesc" class="inspector-desc">悬停或点击表格里的红色/蓝色单位，就会在这里看到它如何拆成更基础的单位。</p>
+    </div>
+    <div>
+      <p class="inspector-title">依赖关系</p>
+      <div id="inspectorChain" class="chain">
+        <span class="chain-chip">例如 J</span>
+        <span class="chain-arrow">=</span>
+        <span class="chain-chip">N·m</span>
+        <span class="chain-arrow">=</span>
+        <span class="chain-chip">kg·m²/s²</span>
+      </div>
+    </div>
+  </aside>
 
   <main class="wrap">
     <section data-domain="base">
@@ -368,19 +480,31 @@
           <tbody>
             <tr data-domain="mechanics"><td>经典力学</td><td>面积</td><td><span class="alias">m²</span></td><td><span class="formula">m·m</span></td><td>长度乘长度。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>体积</td><td><span class="alias">m³</span></td><td><span class="formula">m·m·m</span></td><td>三个方向的长度。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>密度</td><td><span class="alias">kg/m³</span></td><td><span class="formula">kg·m^-3</span></td><td>单位体积质量，没有专用 SI 别名但极常用。</td></tr>
             <tr data-domain="mechanics optics"><td>经典力学 / 光学</td><td>频率</td><td><span class="alias">Hz</span> 赫兹</td><td><span class="formula">s^-1</span></td><td>每秒发生多少次。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>速度</td><td><span class="alias">m/s</span></td><td><span class="formula">m·s^-1</span></td><td>每秒走多少米。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>加速度</td><td><span class="alias">m/s²</span></td><td><span class="formula">m·s^-2</span></td><td>速度每秒变化多少。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>体积流量</td><td><span class="alias">m³/s</span></td><td><span class="formula">m³·s^-1</span></td><td>每秒流过多少体积。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>质量流量</td><td><span class="alias">kg/s</span></td><td><span class="formula">kg·s^-1</span></td><td>每秒流过多少质量。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>动量</td><td><span class="alias">kg·m/s</span></td><td><span class="formula">kg·m·s^-1</span></td><td>质量乘速度。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>力</td><td><span class="alias">N</span> 牛顿</td><td><span class="formula">kg·m/s²</span></td><td><code>F = ma</code>，质量乘加速度。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>压强 / 应力</td><td><span class="alias">Pa</span> 帕斯卡</td><td><span class="formula">N/m² = kg·m^-1·s^-2</span></td><td>单位面积承受的力。</td></tr>
             <tr data-domain="mechanics electricity optics"><td>经典力学 / 电学 / 光学</td><td>能量 / 功</td><td><span class="alias">J</span> 焦耳</td><td><span class="formula">N·m = kg·m²/s²</span></td><td>力推动一段距离。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>比能量</td><td><span class="alias">J/kg</span></td><td><span class="formula">m²/s²</span></td><td>每千克携带多少能量。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>比热容</td><td><span class="alias">J/(kg·K)</span></td><td><span class="formula">m²·s^-2·K^-1</span></td><td>每千克升高 1 K 需要多少能量。</td></tr>
             <tr data-domain="mechanics electricity optics"><td>经典力学 / 电学 / 光学</td><td>功率</td><td><span class="alias">W</span> 瓦特</td><td><span class="formula">J/s = kg·m²/s³</span></td><td>每秒消耗或输出多少能量。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>冲量</td><td><span class="alias">N·s</span></td><td><span class="formula">kg·m/s</span></td><td>力乘作用时间，等于动量变化。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>角速度</td><td><span class="alias">rad/s</span></td><td><span class="formula">s^-1</span></td><td>每秒转过多少角度，rad 本身无量纲。</td></tr>
             <tr data-domain="mechanics"><td>经典力学</td><td>转矩</td><td><span class="alias">N·m</span></td><td><span class="formula">kg·m²/s²</span></td><td>力乘力臂；单位形式和 J 相同，但意义不同。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>角动量</td><td><span class="alias">kg·m²/s</span></td><td><span class="formula">kg·m²·s^-1</span></td><td>转动版动量。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>转动惯量</td><td><span class="alias">kg·m²</span></td><td><span class="formula">kg·m²</span></td><td>质量对转轴分布的“抗转动”程度。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>表面张力</td><td><span class="alias">N/m</span></td><td><span class="formula">kg·s^-2</span></td><td>单位长度边界上的拉力。</td></tr>
+            <tr data-domain="mechanics"><td>经典力学</td><td>动力粘度</td><td><span class="alias">Pa·s</span></td><td><span class="formula">kg·m^-1·s^-1</span></td><td>流体“粘”的程度。</td></tr>
 
             <tr data-domain="electricity"><td>电学</td><td>电荷量</td><td><span class="alias">C</span> 库仑</td><td><span class="formula">A·s</span></td><td>电流持续一段时间流过的电量。</td></tr>
+            <tr data-domain="electricity"><td>电学</td><td>面电荷密度</td><td><span class="alias">C/m²</span></td><td><span class="formula">A·s·m^-2</span></td><td>单位面积上的电荷量。</td></tr>
+            <tr data-domain="electricity"><td>电学</td><td>体电荷密度</td><td><span class="alias">C/m³</span></td><td><span class="formula">A·s·m^-3</span></td><td>单位体积上的电荷量。</td></tr>
+            <tr data-domain="electricity"><td>电学</td><td>电流密度</td><td><span class="alias">A/m²</span></td><td><span class="formula">A·m^-2</span></td><td>单位面积流过的电流。</td></tr>
             <tr data-domain="electricity"><td>电学</td><td>电压 / 电势差</td><td><span class="alias">V</span> 伏特</td><td><span class="formula">J/C = kg·m²·s^-3·A^-1</span></td><td>每单位电荷有多少能量。</td></tr>
             <tr data-domain="electricity"><td>电学</td><td>电阻</td><td><span class="alias">Ω</span> 欧姆</td><td><span class="formula">V/A = kg·m²·s^-3·A^-2</span></td><td>电压除以电流。</td></tr>
             <tr data-domain="electricity"><td>电学</td><td>电导</td><td><span class="alias">S</span> 西门子</td><td><span class="formula">A/V = Ω^-1</span></td><td>电阻的倒数。</td></tr>
@@ -390,6 +514,9 @@
             <tr data-domain="electricity"><td>电学</td><td>电感</td><td><span class="alias">H</span> 亨利</td><td><span class="formula">Wb/A = kg·m²·s^-2·A^-2</span></td><td>电流变化时产生磁通或感应电压的能力。</td></tr>
             <tr data-domain="electricity"><td>电学</td><td>电场强度</td><td><span class="alias">V/m</span> 或 <span class="alias">N/C</span></td><td><span class="formula">kg·m·s^-3·A^-1</span></td><td>单位电荷受到的力，也可看成电压梯度。</td></tr>
             <tr data-domain="electricity"><td>电学</td><td>磁场强度</td><td><span class="alias">A/m</span></td><td><span class="formula">A·m^-1</span></td><td>和电流分布相关的磁场量。</td></tr>
+            <tr data-domain="electricity"><td>电学</td><td>电阻率</td><td><span class="alias">Ω·m</span></td><td><span class="formula">kg·m³·s^-3·A^-2</span></td><td>材料本身的电阻特性。</td></tr>
+            <tr data-domain="electricity"><td>电学</td><td>电导率</td><td><span class="alias">S/m</span></td><td><span class="formula">kg^-1·m^-3·s³·A²</span></td><td>电阻率的倒数。</td></tr>
+            <tr data-domain="electricity optics"><td>电学 / 光学</td><td>介电常数 / 电容率</td><td><span class="alias">F/m</span></td><td><span class="formula">A²·s⁴·kg^-1·m^-3</span></td><td>描述介质支持电场的能力。</td></tr>
             <tr data-domain="electricity"><td>电学</td><td>电子伏特</td><td><span class="alias">eV</span></td><td><span class="formula">1 eV = 1.602176634×10^-19 J</span></td><td>一个电子经过 1 V 电势差获得的能量。</td></tr>
 
             <tr data-domain="optics"><td>光学</td><td>波长</td><td><span class="alias">m</span>、<span class="alias">nm</span></td><td><span class="formula">1 nm = 10^-9 m</span></td><td>一段波的空间长度。</td></tr>
@@ -397,7 +524,9 @@
             <tr data-domain="optics"><td>光学</td><td>光子能量</td><td><span class="alias">J</span> 或 <span class="alias">eV</span></td><td><span class="formula">E = hν = hc/λ</span></td><td>频率越高、波长越短，单个光子能量越高。</td></tr>
             <tr data-domain="optics"><td>光学</td><td>辐射通量</td><td><span class="alias">W</span></td><td><span class="formula">J/s</span></td><td>每秒辐射出去的能量。</td></tr>
             <tr data-domain="optics"><td>光学</td><td>辐照度</td><td><span class="alias">W/m²</span></td><td><span class="formula">kg·s^-3</span></td><td>单位面积接收到的辐射功率。</td></tr>
+            <tr data-domain="optics"><td>光学</td><td>辐射强度</td><td><span class="alias">W/sr</span></td><td><span class="formula">W·sr^-1</span></td><td>单位立体角内的辐射功率。</td></tr>
             <tr data-domain="optics"><td>光学</td><td>辐亮度</td><td><span class="alias">W/(m²·sr)</span></td><td><span class="formula">kg·s^-3·sr^-1</span></td><td>单位面积、单位立体角的辐射功率。</td></tr>
+            <tr data-domain="optics"><td>光学</td><td>辐照量</td><td><span class="alias">J/m²</span></td><td><span class="formula">kg·s^-2</span></td><td>单位面积累计接收到的辐射能量。</td></tr>
             <tr data-domain="optics"><td>光学</td><td>发光强度</td><td><span class="alias">cd</span> 坎德拉</td><td><span class="formula">SI 基本单位</span></td><td>按人眼视觉响应加权后的“某方向亮度能力”。</td></tr>
             <tr data-domain="optics"><td>光学</td><td>光通量</td><td><span class="alias">lm</span> 流明</td><td><span class="formula">cd·sr</span></td><td>人眼感受到的总“可见光功率”。</td></tr>
             <tr data-domain="optics"><td>光学</td><td>照度</td><td><span class="alias">lx</span> 勒克斯</td><td><span class="formula">lm/m² = cd·sr/m²</span></td><td>单位面积上有多少光通量。</td></tr>
@@ -490,9 +619,45 @@
       </div>
     </section>
 
+    <section data-domain="constants mechanics electricity optics">
+      <div class="section-head">
+        <h2>四、常用物理和数学常数</h2>
+        <p>常数本身也有单位。像 <code>c</code> 是速度，<code>h</code> 是作用量，<code>e</code> 既可能是自然常数，也可能是元电荷，必须看上下文。</p>
+      </div>
+      <div class="table-scroll">
+        <table id="constantTable">
+          <thead>
+            <tr>
+              <th>符号</th>
+              <th>名称</th>
+              <th>常用值</th>
+              <th>单位/性质</th>
+              <th>常见公式</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-domain="constants optics"><td><span class="alias">c</span></td><td>真空光速</td><td>299,792,458</td><td><span class="formula">m/s</span></td><td><code>E = mc²</code>，<code>c = λν</code>。</td></tr>
+            <tr data-domain="constants optics"><td><span class="alias">h</span></td><td>普朗克常数</td><td>6.62607015×10^-34</td><td><span class="formula">J·s</span></td><td><code>E = hν</code>，<code>E = hc/λ</code>。</td></tr>
+            <tr data-domain="constants optics"><td><span class="alias">ℏ</span></td><td>约化普朗克常数</td><td>1.054571817...×10^-34</td><td><span class="formula">J·s</span></td><td><code>ℏ = h/(2π)</code>，角频率公式里常见。</td></tr>
+            <tr data-domain="constants electricity"><td><span class="alias">e</span></td><td>元电荷</td><td>1.602176634×10^-19</td><td><span class="formula">C</span></td><td><code>1 eV = e·1V</code>。注意不同于自然常数 <code>e</code>。</td></tr>
+            <tr data-domain="constants mechanics electricity optics"><td><span class="alias">e</span></td><td>自然常数</td><td>2.718281828...</td><td>无量纲</td><td>指数衰减、增长、波动相量里常见。</td></tr>
+            <tr data-domain="constants mechanics electricity optics"><td><span class="alias">π</span></td><td>圆周率</td><td>3.141592654...</td><td>无量纲</td><td><code>ω = 2πf</code>，圆、波、角量里到处出现。</td></tr>
+            <tr data-domain="constants mechanics"><td><span class="alias">G</span></td><td>万有引力常数</td><td>约 6.67430×10^-11</td><td><span class="formula">N·m²/kg²</span></td><td><code>F = Gm1m2/r²</code>。</td></tr>
+            <tr data-domain="constants electricity optics"><td><span class="alias">ε0</span></td><td>真空电容率</td><td>约 8.8541878128×10^-12</td><td><span class="formula">F/m</span></td><td>库仑定律、麦克斯韦方程组里常见。</td></tr>
+            <tr data-domain="constants electricity optics"><td><span class="alias">μ0</span></td><td>真空磁导率</td><td>约 1.25663706212×10^-6</td><td><span class="formula">N/A²</span> 或 <span class="formula">H/m</span></td><td>与 <code>c² = 1/(ε0μ0)</code> 相关。</td></tr>
+            <tr data-domain="constants mechanics optics"><td><span class="alias">kB</span></td><td>玻尔兹曼常数</td><td>1.380649×10^-23</td><td><span class="formula">J/K</span></td><td><code>E ~ kBT</code>，黑体辐射、热运动常见。</td></tr>
+            <tr data-domain="constants mechanics"><td><span class="alias">NA</span></td><td>阿伏伽德罗常数</td><td>6.02214076×10^23</td><td><span class="formula">mol^-1</span></td><td>每摩尔包含多少个基本粒子。</td></tr>
+            <tr data-domain="constants mechanics"><td><span class="alias">R</span></td><td>气体常数</td><td>8.314462618...</td><td><span class="formula">J/(mol·K)</span></td><td><code>pV = nRT</code>。</td></tr>
+            <tr data-domain="constants optics"><td><span class="alias">σ</span></td><td>斯特藩-玻尔兹曼常数</td><td>5.670374419×10^-8</td><td><span class="formula">W·m^-2·K^-4</span></td><td>黑体总辐射功率 <code>j* = σT⁴</code>。</td></tr>
+            <tr data-domain="constants mechanics"><td><span class="alias">g</span></td><td>标准重力加速度</td><td>约 9.80665</td><td><span class="formula">m/s²</span></td><td>近地面重力估算，注意不是质量单位克 <code>g</code>。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <section data-domain="mechanics electricity optics">
       <div class="section-head">
-        <h2>四、几个容易混淆的点</h2>
+        <h2>五、几个容易混淆的点</h2>
       </div>
       <div class="section-body grid cols-2">
         <div class="callout">
@@ -518,8 +683,88 @@
   <script>
     const searchBox = document.getElementById("searchBox");
     const domainFilter = document.getElementById("domainFilter");
-    const rows = Array.from(document.querySelectorAll("#unitTable tbody tr, #symbolTable tbody tr"));
+    const rows = Array.from(document.querySelectorAll("#unitTable tbody tr, #symbolTable tbody tr, #constantTable tbody tr"));
     const sections = Array.from(document.querySelectorAll("main section[data-domain]"));
+    const inspectorUnit = document.getElementById("inspectorUnit");
+    const inspectorDesc = document.getElementById("inspectorDesc");
+    const inspectorChain = document.getElementById("inspectorChain");
+
+    const unitInfo = {
+      "m": { title: "m 米", desc: "长度基础单位。", chain: ["基础单位", "长度 L"] },
+      "kg": { title: "kg 千克", desc: "质量基础单位。克 g 是 10^-3 kg。", chain: ["基础单位", "质量 M"] },
+      "s": { title: "s 秒", desc: "时间基础单位。", chain: ["基础单位", "时间 T"] },
+      "A": { title: "A 安培", desc: "电流基础单位。", chain: ["基础单位", "电流 I"] },
+      "K": { title: "K 开尔文", desc: "热力学温度基础单位。", chain: ["基础单位", "温度 Θ"] },
+      "cd": { title: "cd 坎德拉", desc: "发光强度基础单位。", chain: ["基础单位", "光度 J"] },
+      "mol": { title: "mol 摩尔", desc: "物质的量基础单位。", chain: ["基础单位", "物质的量 N"] },
+      "rad": { title: "rad 弧度", desc: "角度单位，本质是弧长/半径，因此无量纲。", chain: ["rad", "m/m", "无量纲"] },
+
+      "Hz": { title: "Hz 赫兹", desc: "频率单位，表示每秒多少次。", chain: ["Hz", "1/s", "s^-1"] },
+      "N": { title: "N 牛顿", desc: "力的单位，来自 F = ma。", chain: ["N", "kg·m/s²", "kg", "m", "s"] },
+      "Pa": { title: "Pa 帕斯卡", desc: "压强或应力单位，表示单位面积上的力。", chain: ["Pa", "N/m²", "kg·m^-1·s^-2"] },
+      "J": { title: "J 焦耳", desc: "能量、功、热量的单位。", chain: ["J", "N·m", "kg·m²/s²"] },
+      "W": { title: "W 瓦特", desc: "功率单位，表示每秒多少能量。", chain: ["W", "J/s", "kg·m²/s³"] },
+      "C": { title: "C 库仑", desc: "电荷量单位，电流乘时间。", chain: ["C", "A·s", "A", "s"] },
+      "V": { title: "V 伏特", desc: "电压单位，单位电荷对应的能量。", chain: ["V", "J/C", "kg·m²·s^-3·A^-1"] },
+      "Ω": { title: "Ω 欧姆", desc: "电阻单位，电压除以电流。", chain: ["Ω", "V/A", "kg·m²·s^-3·A^-2"] },
+      "S": { title: "S 西门子", desc: "电导单位，电阻的倒数。", chain: ["S", "1/Ω", "A/V"] },
+      "F": { title: "F 法拉", desc: "电容单位，单位电压能存多少电荷。", chain: ["F", "C/V", "A²·s⁴·kg^-1·m^-2"] },
+      "Wb": { title: "Wb 韦伯", desc: "磁通量单位。", chain: ["Wb", "V·s", "kg·m²·s^-2·A^-1"] },
+      "T": { title: "T 特斯拉", desc: "磁感应强度单位，单位面积磁通量。", chain: ["T", "Wb/m²", "kg·s^-2·A^-1"] },
+      "H": { title: "H 亨利", desc: "电感单位。", chain: ["H", "Wb/A", "kg·m²·s^-2·A^-2"] },
+      "eV": { title: "eV 电子伏特", desc: "一个电子经过 1 V 电势差获得的能量。", chain: ["eV", "e·V", "1.602176634×10^-19 J"] },
+
+      "lm": { title: "lm 流明", desc: "光通量单位，按人眼视觉响应加权。", chain: ["lm", "cd·sr", "cd", "sr"] },
+      "lx": { title: "lx 勒克斯", desc: "照度单位，单位面积上的光通量。", chain: ["lx", "lm/m²", "cd·sr/m²"] },
+      "D": { title: "D 屈光度", desc: "透镜焦距倒数。", chain: ["D", "1/m", "m^-1"] },
+      "nit": { title: "nit 尼特", desc: "亮度单位，等于 cd/m²。", chain: ["nit", "cd/m²"] },
+
+      "kg/m³": { title: "kg/m³ 密度单位", desc: "单位体积质量。", chain: ["kg/m³", "kg", "m³"] },
+      "m/s": { title: "m/s 速度单位", desc: "每秒移动的距离。", chain: ["m/s", "m", "s^-1"] },
+      "m/s²": { title: "m/s² 加速度单位", desc: "速度每秒变化量。", chain: ["m/s²", "m", "s^-2"] },
+      "kg·m/s": { title: "kg·m/s 动量单位", desc: "质量乘速度。", chain: ["kg·m/s", "kg", "m/s"] },
+      "N·s": { title: "N·s 冲量单位", desc: "力乘时间，等于动量变化。", chain: ["N·s", "N", "s", "kg·m/s"] },
+      "N·m": { title: "N·m", desc: "可表示功，也可表示转矩；形式相同，语义不同。", chain: ["N·m", "kg·m²/s²"] },
+      "kg·m²": { title: "kg·m² 转动惯量单位", desc: "质量乘距离平方。", chain: ["kg·m²", "kg", "m²"] },
+      "kg·m²/s": { title: "kg·m²/s 角动量单位", desc: "转动版动量。", chain: ["kg·m²/s", "kg·m²", "s^-1"] },
+      "J/kg": { title: "J/kg 比能量单位", desc: "每千克多少能量。", chain: ["J/kg", "J", "kg^-1", "m²/s²"] },
+      "J/(kg·K)": { title: "J/(kg·K) 比热容单位", desc: "单位质量升高 1 K 所需能量。", chain: ["J/(kg·K)", "J", "kg^-1", "K^-1"] },
+      "N/m": { title: "N/m 表面张力单位", desc: "单位长度上的力。", chain: ["N/m", "kg·s^-2"] },
+      "Pa·s": { title: "Pa·s 动力粘度单位", desc: "流体粘性常用单位。", chain: ["Pa·s", "kg·m^-1·s^-1"] },
+
+      "C/m²": { title: "C/m² 面电荷密度", desc: "单位面积电荷量。", chain: ["C/m²", "A·s·m^-2"] },
+      "C/m³": { title: "C/m³ 体电荷密度", desc: "单位体积电荷量。", chain: ["C/m³", "A·s·m^-3"] },
+      "A/m²": { title: "A/m² 电流密度", desc: "单位面积电流。", chain: ["A/m²", "A", "m^-2"] },
+      "V/m": { title: "V/m 电场强度", desc: "电压梯度，也等于 N/C。", chain: ["V/m", "N/C", "kg·m·s^-3·A^-1"] },
+      "A/m": { title: "A/m 磁场强度", desc: "和电流分布相关的磁场量。", chain: ["A/m", "A", "m^-1"] },
+      "Ω·m": { title: "Ω·m 电阻率", desc: "材料本身的电阻特性。", chain: ["Ω·m", "kg·m³·s^-3·A^-2"] },
+      "S/m": { title: "S/m 电导率", desc: "电阻率的倒数。", chain: ["S/m", "kg^-1·m^-3·s³·A²"] },
+      "F/m": { title: "F/m 电容率", desc: "介质支持电场的能力。", chain: ["F/m", "A²·s⁴·kg^-1·m^-3"] },
+
+      "W/m²": { title: "W/m² 辐照度", desc: "单位面积接收到的辐射功率。", chain: ["W/m²", "kg·s^-3"] },
+      "W/sr": { title: "W/sr 辐射强度", desc: "单位立体角内的辐射功率。", chain: ["W/sr", "W", "sr^-1"] },
+      "W/(m²·sr)": { title: "W/(m²·sr) 辐亮度", desc: "单位面积、单位立体角的辐射功率。", chain: ["W/(m²·sr)", "W", "m^-2", "sr^-1"] },
+      "J/m²": { title: "J/m² 辐照量", desc: "单位面积累计接收到的辐射能量。", chain: ["J/m²", "kg·s^-2"] },
+      "cd/m²": { title: "cd/m² 亮度", desc: "屏幕亮度常用单位，也叫 nit。", chain: ["cd/m²", "cd", "m^-2"] },
+
+      "c": { title: "c 真空光速", desc: "速度常数。", chain: ["c", "299,792,458 m/s", "m/s"] },
+      "h": { title: "h 普朗克常数", desc: "能量和频率的比例常数。", chain: ["h", "J·s", "kg·m²/s"] },
+      "ℏ": { title: "ℏ 约化普朗克常数", desc: "h/(2π)，常配合角频率使用。", chain: ["ℏ", "h/(2π)", "J·s"] },
+      "e": { title: "e", desc: "可能是元电荷，也可能是自然常数，要看上下文。", chain: ["元电荷 e = 1.602176634×10^-19 C", "自然常数 e ≈ 2.71828"] },
+      "π": { title: "π 圆周率", desc: "无量纲数学常数。", chain: ["π", "3.141592654...", "无量纲"] },
+      "G": { title: "G 万有引力常数", desc: "牛顿引力公式中的比例常数。", chain: ["G", "N·m²/kg²"] },
+      "ε0": { title: "ε0 真空电容率", desc: "真空中电场相关常数。", chain: ["ε0", "F/m"] },
+      "μ0": { title: "μ0 真空磁导率", desc: "真空中磁场相关常数。", chain: ["μ0", "N/A²", "H/m"] },
+      "kB": { title: "kB 玻尔兹曼常数", desc: "温度和能量尺度之间的比例常数。", chain: ["kB", "J/K"] },
+      "NA": { title: "NA 阿伏伽德罗常数", desc: "每摩尔粒子数。", chain: ["NA", "mol^-1"] },
+      "R": { title: "R 气体常数", desc: "理想气体状态方程中的常数。", chain: ["R", "J/(mol·K)"] },
+      "σ": { title: "σ", desc: "可能表示应力、电导率或斯特藩-玻尔兹曼常数。", chain: ["应力 Pa", "电导率 S/m", "辐射常数 W·m^-2·K^-4"] },
+      "g": { title: "g", desc: "可能是克，也可能是重力加速度。", chain: ["质量: 1 g = 10^-3 kg", "重力加速度: g ≈ 9.80665 m/s²"] }
+    };
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+    document.body.appendChild(tooltip);
 
     function matchesDomain(value, domain) {
       if (!domain) return true;
@@ -543,8 +788,97 @@
       });
     }
 
+    function normalizeToken(text) {
+      return text
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/（.*?）|\(.*?\)/g, "")
+        .split("=")[0]
+        .split(" 或 ")[0]
+        .split("，")[0]
+        .split(",")[0]
+        .trim();
+    }
+
+    function lookupInfo(text) {
+      const key = normalizeToken(text);
+      return unitInfo[key] || {
+        title: key || "未知单位",
+        desc: "这个条目没有预设拆解。可以从所在行的展开式继续追到基础单位。",
+        chain: [key || text]
+      };
+    }
+
+    function renderChain(chain) {
+      inspectorChain.innerHTML = "";
+      chain.forEach((item, index) => {
+        if (index > 0) {
+          const arrow = document.createElement("span");
+          arrow.className = "chain-arrow";
+          arrow.textContent = index === 1 ? "→" : "=";
+          inspectorChain.appendChild(arrow);
+        }
+
+        const chip = document.createElement("span");
+        chip.className = "chain-chip";
+        chip.textContent = item;
+        inspectorChain.appendChild(chip);
+      });
+    }
+
+    function updateInspector(text) {
+      const info = lookupInfo(text);
+      inspectorUnit.textContent = info.title;
+      inspectorDesc.textContent = info.desc;
+      renderChain(info.chain);
+      return info;
+    }
+
+    function showTooltip(target, info) {
+      const rect = target.getBoundingClientRect();
+      tooltip.innerHTML = `<strong>${info.title}</strong><span>${info.desc}</span>`;
+      tooltip.style.display = "block";
+      const left = Math.min(rect.left, window.innerWidth - tooltip.offsetWidth - 12);
+      const top = rect.bottom + 8;
+      tooltip.style.left = `${Math.max(12, left)}px`;
+      tooltip.style.top = `${Math.min(top, window.innerHeight - tooltip.offsetHeight - 12)}px`;
+    }
+
+    function hideTooltip() {
+      tooltip.style.display = "none";
+    }
+
+    function bindInteractiveTokens() {
+      const tokens = Array.from(document.querySelectorAll(".alias, .formula, .symbol, code"));
+      tokens.forEach(token => {
+        token.classList.add("unit-token");
+        token.setAttribute("tabindex", "0");
+        token.addEventListener("mouseenter", () => showTooltip(token, updateInspector(token.innerText)));
+        token.addEventListener("mousemove", () => showTooltip(token, lookupInfo(token.innerText)));
+        token.addEventListener("mouseleave", hideTooltip);
+        token.addEventListener("focus", () => showTooltip(token, updateInspector(token.innerText)));
+        token.addEventListener("blur", hideTooltip);
+        token.addEventListener("click", event => {
+          event.stopPropagation();
+          showTooltip(token, updateInspector(token.innerText));
+        });
+      });
+
+      rows.forEach(row => {
+        row.addEventListener("mouseenter", () => {
+          const token = row.querySelector(".alias, .formula, code");
+          if (token) updateInspector(token.innerText);
+        });
+        row.addEventListener("click", () => {
+          const token = row.querySelector(".alias, .formula, code");
+          if (token) updateInspector(token.innerText);
+        });
+      });
+    }
+
     searchBox.addEventListener("input", applyFilters);
     domainFilter.addEventListener("change", applyFilters);
+    bindInteractiveTokens();
   </script>
 </body>
 </html>
