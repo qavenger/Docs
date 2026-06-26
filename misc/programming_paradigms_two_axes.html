@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>从硬件视角理解程序设计思路</title>
+  <style>
+    :root {
+      --bg: #f5f6f3;
+      --paper: #fffefa;
+      --ink: #1e2522;
+      --muted: #626b66;
+      --line: #d9dfd8;
+      --accent: #176b5b;
+      --accent-2: #9a4b26;
+      --soft: #edf5f1;
+      --warn-soft: #fbf1e8;
+      --code: #1f2328;
+      --code-ink: #f5f7fa;
+      --shadow: 0 18px 46px rgba(30, 37, 34, 0.08);
+      font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(23, 107, 91, 0.10), transparent 32%),
+        linear-gradient(315deg, rgba(154, 75, 38, 0.08), transparent 36%),
+        var(--bg);
+      line-height: 1.72;
+    }
+
+    .wrap {
+      width: min(1160px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 58px 0 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 980px;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 930px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 12px 0;
+      background: rgba(245, 246, 243, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(217, 223, 216, 0.78);
+    }
+
+    .toolbar nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .toolbar a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 11px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .toolbar a:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    main {
+      padding: 22px 0 72px;
+    }
+
+    section {
+      margin: 28px 0;
+    }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      line-height: 1.22;
+    }
+
+    h3 {
+      margin: 26px 0 10px;
+      font-size: 21px;
+    }
+
+    h4 {
+      margin: 18px 0 8px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul {
+      margin: 10px 0;
+      padding-left: 1.35rem;
+    }
+
+    code {
+      padding: 0.12em 0.34em;
+      border-radius: 4px;
+      background: #eef0eb;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 0.93em;
+    }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 16px;
+      overflow: auto;
+      color: var(--code-ink);
+      background: var(--code);
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    pre code {
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      font-size: 13.5px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .three-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mini {
+      border-left: 5px solid var(--accent);
+    }
+
+    .mini:nth-child(2n) {
+      border-left-color: var(--accent-2);
+    }
+
+    .note {
+      background: var(--soft);
+      border: 1px solid #cfe1d9;
+      border-radius: 8px;
+      padding: 15px 17px;
+    }
+
+    .warning {
+      background: var(--warn-soft);
+      border-color: #ead2bf;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
+    .matrix th,
+    .matrix td {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .matrix th {
+      background: #eef2ec;
+      font-weight: 800;
+    }
+
+    .tag {
+      display: inline-flex;
+      margin: 3px 5px 3px 0;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .example {
+      margin-top: 18px;
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+    }
+
+    .ladder {
+      counter-reset: step;
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .ladder-item {
+      position: relative;
+      padding: 14px 16px 14px 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .ladder-item::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 14px;
+      top: 16px;
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 920px) {
+      .grid,
+      .three-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        padding: 19px;
+      }
+
+      pre code {
+        font-size: 12.5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <p class="eyebrow">Programming Paradigms / From Hardware to Abstractions</p>
+    <h1>从硬件视角理解不同程序设计思路</h1>
+    <p class="lead">所有高级语言最终都会落到 CPU 指令、寄存器、内存读写和分支跳转上。程序设计范式不是在否认这个事实，而是在硬件执行模型之上建立不同的组织方式，让人更容易描述复杂系统。</p>
+  </header>
+
+  <div class="toolbar">
+    <nav class="wrap">
+      <a href="#hardware">硬件视角</a>
+      <a href="#axes">两个维度</a>
+      <a href="#task">统一示例</a>
+      <a href="#state">状态表达</a>
+      <a href="#structure">数据组织</a>
+      <a href="#compare">组合关系</a>
+      <a href="#summary">选择方法</a>
+    </nav>
+  </div>
+
+  <main class="wrap">
+    <section id="hardware" class="panel">
+      <h2>一、先从硬件视角看程序</h2>
+      <p>如果把所有语法糖拿掉，计算机真正做的事情相当朴素：从内存取指令，把数据加载到寄存器，执行算术、比较、跳转、读写内存，然后继续执行下一条指令。无论是 C++、Verse、Python、SQL，最终都要被解释器、虚拟机或编译器转换成某种可执行的低层操作。</p>
+
+      <div class="grid">
+        <article class="note">
+          <h3>硬件关心什么</h3>
+          <ul>
+            <li><strong>指令顺序：</strong>下一步执行什么，是否跳转，是否循环。</li>
+            <li><strong>数据位置：</strong>数据在寄存器、缓存、内存、磁盘或网络上。</li>
+            <li><strong>数据布局：</strong>连续数组通常比零散对象更利于缓存。</li>
+            <li><strong>状态变化：</strong>某块内存里的值在什么时候被改写。</li>
+            <li><strong>并行和同步：</strong>多个核心、线程或任务是否会同时读写同一份数据。</li>
+          </ul>
+        </article>
+
+        <article class="note warning">
+          <h3>人类关心什么</h3>
+          <ul>
+            <li><strong>意图：</strong>这段代码想表达什么规则。</li>
+            <li><strong>边界：</strong>哪些数据属于同一类问题。</li>
+            <li><strong>复用：</strong>相同逻辑如何避免重复书写。</li>
+            <li><strong>可维护性：</strong>需求变化时改哪里，风险有多大。</li>
+            <li><strong>正确性：</strong>怎样减少状态混乱和隐式副作用。</li>
+          </ul>
+        </article>
+      </div>
+
+      <p>因此，程序设计思路可以理解为一层层抽象：越靠近硬件，越强调指令顺序、内存布局和显式状态；越靠近问题领域，越强调规则、对象、数据关系和结果描述。</p>
+    </section>
+
+    <section id="axes" class="panel">
+      <h2>二、两个核心维度</h2>
+      <p>不同范式经常被混在一起讨论，但它们其实主要回答两个不同问题。</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>它回答的问题</th>
+            <th>更贴近硬件的一侧</th>
+            <th>更贴近问题描述的一侧</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>计算和状态如何表达</strong></td>
+            <td>程序是一步步修改状态，还是把计算组织成产生结果的表达式、函数或规则？</td>
+            <td>指令式、过程式</td>
+            <td>表达式式、函数式、声明式</td>
+          </tr>
+          <tr>
+            <td><strong>数据和行为如何组织</strong></td>
+            <td>数据放在哪里，行为归属于谁，系统边界如何划分？</td>
+            <td>面向内存布局、面向数据</td>
+            <td>面向对象、ECS、领域模型、关系模型</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="ladder">
+        <div class="ladder-item">
+          <strong>机器层：</strong>指令流操作寄存器和内存。它是所有程序的最终落点。
+        </div>
+        <div class="ladder-item">
+          <strong>指令/过程层：</strong>程序员显式安排步骤、循环、条件、变量更新。
+        </div>
+        <div class="ladder-item">
+          <strong>数据组织层：</strong>为了性能或领域建模，决定数据按数组、对象、组件还是表组织。
+        </div>
+        <div class="ladder-item">
+          <strong>规则表达层：</strong>代码更像是在描述“要什么结果”，执行细节交给语言、编译器或引擎。
+        </div>
+      </div>
+    </section>
+
+    <section id="task" class="panel">
+      <h2>三、统一示例：玩家战斗结算</h2>
+      <p>为了让不同范式可以横向比较，下面所有示例都实现同一个功能：给一批玩家做战斗结算。</p>
+      <ul>
+        <li>只处理仍然存活且已参战的玩家。</li>
+        <li>得分公式：击杀 10 分，助攻 4 分，占点 25 分，存活额外 8 分。</li>
+        <li>得分达到阈值的玩家获得奖励。</li>
+        <li>最终生成战报：有效玩家数、总分、奖励列表。</li>
+      </ul>
+      <p>这个例子不复杂，但包含了筛选、循环、计算、条件判断、聚合和结果构造，足够观察不同编程思路的差异。</p>
+    </section>
+
+    <section id="state" class="panel">
+      <h2>四、维度一：计算和状态如何表达</h2>
+      <p>这个维度最接近“硬件如何执行”。它关心的是：程序如何从旧状态走到新状态。</p>
+
+      <article class="example">
+        <h3>1. 指令式：明确写出每一步状态变化</h3>
+        <p><span class="tag">贴近硬件</span><span class="tag">流程清楚</span><span class="tag">状态显式变化</span></p>
+        <p>指令式编程把程序写成一系列命令：先创建变量，再循环，再判断，再累加，再写入结果。这种写法和 CPU 顺序执行指令的模型最接近，所以直观、可控，也容易做底层优化。</p>
+        <p>它的代价是状态变化分散在流程中。代码一长，就需要非常小心地追踪变量什么时候被改过。</p>
+        <pre><code class="language-cpp">struct PlayerStats {
+    bool active;
+    int health;
+    int kills;
+    int assists;
+    int objectives;
+};
+
+struct Reward {
+    int playerIndex;
+    int score;
+};
+
+struct BattleReport {
+    int eligibleCount;
+    int totalScore;
+    std::vector&lt;Reward&gt; rewards;
+};
+
+BattleReport BuildReportImperative(
+    const std::vector&lt;PlayerStats&gt;&amp; players,
+    int minScore
+) {
+    BattleReport report;
+    report.eligibleCount = 0;
+    report.totalScore = 0;
+
+    for (int i = 0; i &lt; players.size(); ++i) {
+        const PlayerStats&amp; player = players[i];
+
+        if (!player.active || player.health &lt;= 0) {
+            continue;
+        }
+
+        int score = player.kills * 10;
+        score += player.assists * 4;
+        score += player.objectives * 25;
+        score += 8;
+
+        report.eligibleCount += 1;
+        report.totalScore += score;
+
+        if (score &gt;= minScore) {
+            report.rewards.push_back({ i, score });
+        }
+    }
+
+    return report;
+}</code></pre>
+      </article>
+
+      <article class="example">
+        <h3>2. 过程式 / 模块化：把步骤拆成函数</h3>
+        <p><span class="tag">仍然接近硬件</span><span class="tag">复用流程</span><span class="tag">降低主流程噪声</span></p>
+        <p>过程式编程仍然是指令式的，但它把重复逻辑封装成函数。它不强调对象是谁，也不要求所有代码都围绕类型建模；重点是把流程拆成清楚的子过程。</p>
+        <p>这种方式适合工具函数、算法、脚本、数据转换、引擎底层模块。它的优点是直接，缺点是当数据和行为关系变复杂时，函数之间可能缺少清晰归属。</p>
+        <pre><code class="language-cpp">bool IsEligible(const PlayerStats&amp; player) {
+    return player.active &amp;&amp; player.health &gt; 0;
+}
+
+int CalculateScore(const PlayerStats&amp; player) {
+    return player.kills * 10
+         + player.assists * 4
+         + player.objectives * 25
+         + 8;
+}
+
+void AddPlayerResult(
+    BattleReport&amp; report,
+    int playerIndex,
+    int score,
+    int minScore
+) {
+    report.eligibleCount += 1;
+    report.totalScore += score;
+
+    if (score &gt;= minScore) {
+        report.rewards.push_back({ playerIndex, score });
+    }
+}
+
+BattleReport BuildReportProcedural(
+    const std::vector&lt;PlayerStats&gt;&amp; players,
+    int minScore
+) {
+    BattleReport report{ 0, 0, {} };
+
+    for (int i = 0; i &lt; players.size(); ++i) {
+        if (IsEligible(players[i])) {
+            AddPlayerResult(report, i, CalculateScore(players[i]), minScore);
+        }
+    }
+
+    return report;
+}</code></pre>
+      </article>
+
+      <article class="example">
+        <h3>3. 表达式式：让一段代码产生值，而不是只执行动作</h3>
+        <p><span class="tag">减少临时状态</span><span class="tag">结果导向</span><span class="tag">适合 Verse 这类语言</span></p>
+        <p>表达式式编程的关键是：很多代码结构本身都能产生值。比如一个循环、条件、代码块不只是“做一些事”，也可以直接形成一个结果。这样可以把“计算新值”和“提交到外部状态”分开。</p>
+        <p>这类思路特别适合减少中途改写：先在局部范围内构造结果，最后一次性赋给更外层变量。它比纯指令式更强调值的流动，但通常不要求完全无副作用。</p>
+        <pre><code class="language-verse">player_stats := struct:
+    Active:logic
+    Health:int
+    Kills:int
+    Assists:int
+    Objectives:int
+
+reward := struct:
+    PlayerIndex:int
+    Score:int
+
+battle_report := struct:
+    EligibleCount:int
+    TotalScore:int
+    Rewards:[]reward
+
+ScoreOf(Player:player_stats):int =
+    Player.Kills * 10 + Player.Assists * 4 + Player.Objectives * 25 + 8
+
+BuildReportExpression(Players:[]player_stats, MinScore:int):battle_report =
+    Entries :=
+        for (Index -&gt; Player : Players, Player.Active?, Player.Health &gt; 0):
+            Score := ScoreOf(Player)
+            reward{ PlayerIndex := Index, Score := Score }
+
+    battle_report:
+        EligibleCount := Entries.Length
+        TotalScore := Sum(for (Entry : Entries): Entry.Score)
+        Rewards := for (Entry : Entries, Entry.Score &gt;= MinScore): Entry</code></pre>
+      </article>
+
+      <article class="example">
+        <h3>4. 函数式：把计算看成值到值的转换</h3>
+        <p><span class="tag">强调不可变数据</span><span class="tag">组合小函数</span><span class="tag">副作用集中管理</span></p>
+        <p>函数式编程会尽量避免在原地修改状态，而是把输入数据转换成新的输出数据。常见操作是筛选、映射、折叠：先过滤有效玩家，再映射成得分条目，最后归约成战报。</p>
+        <p>这种方式的优势是容易推理和测试，因为函数输出主要由输入决定。代价是如果语言或运行时没有做好优化，可能产生更多中间数据；在性能敏感代码里需要配合惰性求值、迭代器或专门的数据结构。</p>
+        <pre><code class="language-typescript">type PlayerStats = {
+  active: boolean;
+  health: number;
+  kills: number;
+  assists: number;
+  objectives: number;
+};
+
+type Reward = { playerIndex: number; score: number };
+type BattleReport = { eligibleCount: number; totalScore: number; rewards: Reward[] };
+
+const scoreOf = (player: PlayerStats) =>
+  player.kills * 10 + player.assists * 4 + player.objectives * 25 + 8;
+
+function buildReportFunctional(players: PlayerStats[], minScore: number): BattleReport {
+  const entries = players
+    .map((player, index) =&gt; ({ player, index }))
+    .filter(({ player }) =&gt; player.active &amp;&amp; player.health &gt; 0)
+    .map(({ player, index }) =&gt; ({ playerIndex: index, score: scoreOf(player) }));
+
+  return {
+    eligibleCount: entries.length,
+    totalScore: entries.reduce((sum, entry) =&gt; sum + entry.score, 0),
+    rewards: entries.filter(entry =&gt; entry.score &gt;= minScore),
+  };
+}</code></pre>
+      </article>
+
+      <article class="example">
+        <h3>5. 声明式：描述想要的结果，让执行引擎决定怎么做</h3>
+        <p><span class="tag">离硬件更远</span><span class="tag">规则优先</span><span class="tag">执行计划交给引擎</span></p>
+        <p>声明式编程不重点描述“先做什么再做什么”，而是描述结果必须满足什么条件。SQL 是典型例子：你写的是筛选、分组、聚合规则，数据库引擎会决定索引、扫描顺序和执行计划。</p>
+        <p>它的好处是表达领域规则非常直接，尤其适合查询、约束、布局、配置、构建规则。缺点是当性能异常或执行顺序很重要时，需要理解背后的引擎。</p>
+        <pre><code class="language-sql">WITH eligible AS (
+  SELECT
+    player_id,
+    kills * 10 + assists * 4 + objectives * 25 + 8 AS score
+  FROM player_stats
+  WHERE active = true AND health &gt; 0
+),
+summary AS (
+  SELECT
+    COUNT(*) AS eligible_count,
+    SUM(score) AS total_score
+  FROM eligible
+),
+rewarded AS (
+  SELECT player_id, score
+  FROM eligible
+  WHERE score &gt;= :min_score
+)
+SELECT
+  summary.eligible_count,
+  summary.total_score,
+  rewarded.player_id,
+  rewarded.score
+FROM summary
+LEFT JOIN rewarded ON true;</code></pre>
+      </article>
+    </section>
+
+    <section id="structure" class="panel">
+      <h2>五、维度二：数据和行为如何组织</h2>
+      <p>这个维度关心的是：数据在程序里被摆成什么形状，逻辑围绕什么边界展开。它既影响可维护性，也影响性能。</p>
+
+      <article class="example">
+        <h3>1. 面向数据：先考虑内存布局和批量处理</h3>
+        <p><span class="tag">接近缓存和内存</span><span class="tag">适合游戏和引擎</span><span class="tag">强调批处理</span></p>
+        <p>面向数据设计从硬件角度出发：CPU 不理解“玩家对象”，它只读取内存。若同一类字段连续存放，循环处理时缓存命中更好，也更容易向量化或并行化。</p>
+        <p>它常用于游戏引擎、渲染、物理、粒子、动画、服务器批处理等场景。缺点是领域语义可能没有对象模型那么直观，代码需要更自觉地维护数据列之间的对应关系。</p>
+        <pre><code class="language-cpp">struct PlayerColumns {
+    std::vector&lt;bool&gt; active;
+    std::vector&lt;int&gt; health;
+    std::vector&lt;int&gt; kills;
+    std::vector&lt;int&gt; assists;
+    std::vector&lt;int&gt; objectives;
+};
+
+BattleReport BuildReportDataOriented(
+    const PlayerColumns&amp; players,
+    int minScore
+) {
+    BattleReport report{ 0, 0, {} };
+    int count = static_cast&lt;int&gt;(players.health.size());
+
+    for (int i = 0; i &lt; count; ++i) {
+        if (!players.active[i] || players.health[i] &lt;= 0) {
+            continue;
+        }
+
+        int score = players.kills[i] * 10
+                  + players.assists[i] * 4
+                  + players.objectives[i] * 25
+                  + 8;
+
+        report.eligibleCount += 1;
+        report.totalScore += score;
+
+        if (score &gt;= minScore) {
+            report.rewards.push_back({ i, score });
+        }
+    }
+
+    return report;
+}</code></pre>
+      </article>
+
+      <article class="example">
+        <h3>2. 面向对象：把数据和行为放到同一个概念边界里</h3>
+        <p><span class="tag">领域建模</span><span class="tag">封装状态</span><span class="tag">适合复杂业务对象</span></p>
+        <p>面向对象把程序看成一组对象，每个对象持有自己的状态，并提供行为。它的核心价值不是“把函数塞进类里”，而是用对象边界表达领域概念：玩家知道自己是否可结算，结算器负责生成战报。</p>
+        <p>这种方式适合有清晰身份、生命周期和行为边界的系统。风险是对象太多、继承过深、状态分散后，程序会变成大量对象之间的隐式协作，调试和性能都可能变难。</p>
+        <pre><code class="language-cpp">class Player {
+public:
+    Player(bool active, int health, int kills, int assists, int objectives)
+        : active(active), health(health), kills(kills),
+          assists(assists), objectives(objectives) {}
+
+    bool CanBeSettled() const {
+        return active &amp;&amp; health &gt; 0;
+    }
+
+    int Score() const {
+        return kills * 10 + assists * 4 + objectives * 25 + 8;
+    }
+
+private:
+    bool active;
+    int health;
+    int kills;
+    int assists;
+    int objectives;
+};
+
+class BattleSettlement {
+public:
+    BattleReport BuildReport(const std::vector&lt;Player&gt;&amp; players, int minScore) const {
+        BattleReport report{ 0, 0, {} };
+
+        for (int i = 0; i &lt; players.size(); ++i) {
+            if (!players[i].CanBeSettled()) {
+                continue;
+            }
+
+            int score = players[i].Score();
+            report.eligibleCount += 1;
+            report.totalScore += score;
+
+            if (score &gt;= minScore) {
+                report.rewards.push_back({ i, score });
+            }
+        }
+
+        return report;
+    }
+};</code></pre>
+      </article>
+
+      <article class="example">
+        <h3>3. ECS：实体是 ID，组件是数据，系统是批量逻辑</h3>
+        <p><span class="tag">游戏常用</span><span class="tag">组合优于继承</span><span class="tag">兼顾结构和性能</span></p>
+        <p>ECS 可以理解为面向数据和领域组织之间的一种折中。实体只是 ID，组件存放数据，系统处理拥有某些组件的一批实体。它避免把所有能力塞进继承层级，也比传统对象更容易批处理。</p>
+        <p>它适合游戏玩法、模拟、编辑器场景和大量实体同时更新的系统。代价是单个实体的行为不再集中在一个对象里，阅读代码时需要沿着组件和系统关系理解整体流程。</p>
+        <pre><code class="language-cpp">struct Entity {
+    int id;
+};
+
+struct CombatStats {
+    int kills;
+    int assists;
+    int objectives;
+};
+
+struct Health {
+    int value;
+};
+
+struct BattleSettlementSystem {
+    BattleReport Update(World&amp; world, int minScore) {
+        BattleReport report{ 0, 0, {} };
+
+        world.ForEach&lt;Health, CombatStats, ActivePlayer&gt;(
+            [&amp;](Entity entity, const Health&amp; health, const CombatStats&amp; stats) {
+                if (health.value &lt;= 0) {
+                    return;
+                }
+
+                int score = stats.kills * 10
+                          + stats.assists * 4
+                          + stats.objectives * 25
+                          + 8;
+
+                report.eligibleCount += 1;
+                report.totalScore += score;
+
+                if (score &gt;= minScore) {
+                    report.rewards.push_back({ entity.id, score });
+                }
+            }
+        );
+
+        return report;
+    }
+};</code></pre>
+      </article>
+
+      <article class="example">
+        <h3>4. 关系模型：把数据看成表和关系</h3>
+        <p><span class="tag">数据系统常用</span><span class="tag">规则清晰</span><span class="tag">天然适合查询</span></p>
+        <p>关系模型不把重点放在对象或内存数组上，而是把数据组织成表、字段、约束和关系。它更接近“业务数据事实”的表达：哪些玩家存在，哪些字段参与结算，哪些记录满足奖励条件。</p>
+        <p>它非常适合持久化、统计、报表、后台系统和跨维度查询。缺点是它通常不是最自然的实时玩法逻辑表达方式，需要和内存中的运行时模型相互转换。</p>
+        <pre><code class="language-sql">CREATE TABLE player_stats (
+  player_id INTEGER PRIMARY KEY,
+  active BOOLEAN NOT NULL,
+  health INTEGER NOT NULL,
+  kills INTEGER NOT NULL,
+  assists INTEGER NOT NULL,
+  objectives INTEGER NOT NULL
+);
+
+CREATE VIEW battle_scores AS
+SELECT
+  player_id,
+  kills * 10 + assists * 4 + objectives * 25 + 8 AS score
+FROM player_stats
+WHERE active = true AND health &gt; 0;</code></pre>
+      </article>
+    </section>
+
+    <section id="compare" class="panel">
+      <h2>六、它们不是互斥选项，而是可以组合</h2>
+      <p>很多误解来自把范式当成互相排斥的阵营。实际项目里，常常是多个思路同时存在，只是不同层级的主导思路不同。</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>组合</th>
+            <th>常见场景</th>
+            <th>理解方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>面向对象 + 指令式</td>
+            <td>传统游戏玩法类、业务服务、编辑器工具</td>
+            <td>对象负责封装状态，方法内部仍然一步步修改状态。</td>
+          </tr>
+          <tr>
+            <td>面向数据 + 指令式</td>
+            <td>渲染、物理、动画、粒子、批量服务器逻辑</td>
+            <td>数据按缓存友好的方式排列，循环显式处理每个元素。</td>
+          </tr>
+          <tr>
+            <td>ECS + 面向数据</td>
+            <td>大量实体同时更新的游戏系统</td>
+            <td>组件提供数据布局，系统按组件组合批量执行逻辑。</td>
+          </tr>
+          <tr>
+            <td>函数式 + 过程式</td>
+            <td>数据转换、编译器管线、构建工具、前端状态计算</td>
+            <td>外层流程仍然有步骤，内部尽量用纯函数组合计算。</td>
+          </tr>
+          <tr>
+            <td>声明式 + 引擎执行</td>
+            <td>SQL、正则、UI 布局、构建配置、规则系统</td>
+            <td>程序员描述规则，由执行引擎把规则转成具体步骤。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="summary" class="panel">
+      <h2>七、实践中的选择方法</h2>
+
+      <div class="three-grid">
+        <article class="note">
+          <h3>性能和数据量优先</h3>
+          <p>先看数据布局和访问模式。大量同类数据、频繁循环、缓存敏感的系统，通常更适合面向数据或 ECS。</p>
+        </article>
+
+        <article class="note">
+          <h3>领域概念优先</h3>
+          <p>如果问题天然由有身份、有生命周期、有行为边界的对象组成，面向对象会让模型更贴近人的理解。</p>
+        </article>
+
+        <article class="note">
+          <h3>规则和结果优先</h3>
+          <p>如果重点是描述筛选、约束、变换、聚合或配置，函数式和声明式通常比手写流程更清楚。</p>
+        </article>
+      </div>
+
+      <h3>一个更稳定的理解</h3>
+      <p>硬件最终执行的一定是低层指令，但人写程序不必停留在指令层。指令式让你控制“怎么做”，表达式式和函数式让你更关注“值如何得到”，声明式让你描述“结果满足什么规则”。面向对象、面向数据、ECS、关系模型则是在回答另一件事：数据和行为应该以什么形状组织起来。</p>
+      <p>所以，程序设计思路不是从低级到高级的单向替代关系，而是不同抽象层的工具箱。越理解底层，就越能知道什么时候该贴近硬件；越理解抽象，就越能知道什么时候该让代码贴近问题本身。</p>
+    </section>
+  </main>
+</body>
+</html>
