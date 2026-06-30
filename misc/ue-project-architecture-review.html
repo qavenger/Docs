@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UE_game 工程架构评估与整改报告</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#171c24; --panel2:#1d2530; --line:#2a313c; --text:#d7dde5;
+    --muted:#8b96a5; --accent:#4ea1ff; --green:#5dd39e; --amber:#f5b54a;
+    --purple:#b07cff; --red:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei",Roboto,sans-serif; line-height:1.7; font-size:15px}
+  .wrap{max-width:1120px; margin:0 auto; padding:34px 26px 90px}
+  h1{font-size:26px; font-weight:700; margin:0 0 4px}
+  .sub{color:var(--muted); margin-bottom:24px}
+  /* tabs */
+  .tabbar{display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--line); margin-bottom:24px; position:sticky; top:0; background:var(--bg); padding-top:8px; z-index:5}
+  .tab{padding:9px 15px; border:1px solid transparent; border-bottom:none; border-radius:8px 8px 0 0;
+    cursor:pointer; color:var(--muted); font-size:14px; font-weight:600; white-space:nowrap; user-select:none}
+  .tab:hover{color:var(--text); background:var(--panel)}
+  .tab.active{color:#fff; background:var(--panel); border-color:var(--line)}
+  .tab .sev{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle}
+  .s0{background:var(--red)} .s1{background:var(--amber)} .s2{background:#d8c84a} .si{background:var(--accent)}
+  /* panels */
+  .panel{display:none; animation:fade .25s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1; transform:none}}
+  h2{font-size:21px; margin:4px 0 4px; color:#fff}
+  .badge{display:inline-block; font-size:12px; padding:2px 10px; border-radius:20px; font-weight:700; margin-left:8px; vertical-align:middle}
+  .b0{background:rgba(255,107,107,.16); color:var(--red); border:1px solid rgba(255,107,107,.45)}
+  .b1{background:rgba(245,181,74,.16); color:var(--amber); border:1px solid rgba(245,181,74,.45)}
+  .b2{background:rgba(216,200,74,.16); color:#e4d75f; border:1px solid rgba(216,200,74,.4)}
+  .bi{background:rgba(78,161,255,.16); color:var(--accent); border:1px solid rgba(78,161,255,.45)}
+  .problem{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 20px; margin:14px 0 22px}
+  .problem.p1{border-left-color:var(--amber)} .problem.p2{border-left-color:#d8c84a} .problem.pi{border-left-color:var(--accent)}
+  .problem h4{margin:0 0 6px; color:var(--muted); font-size:13px; letter-spacing:1px; text-transform:uppercase}
+  code{background:#222a35; padding:2px 6px; border-radius:4px; font-size:13px; color:var(--green); font-family:"Cascadia Code",Consolas,monospace}
+  .opts-title{font-size:14px; color:var(--muted); margin:24px 0 10px; letter-spacing:.5px}
+  .opt{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:12px 0}
+  .opt-head{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+  .opt-num{display:flex; align-items:center; justify-content:center; min-width:26px; height:26px; border-radius:50%;
+    background:var(--accent); color:#04121f; font-weight:700; font-size:13px}
+  .opt-name{font-size:16px; font-weight:700; color:#fff}
+  .rec{font-size:11px; font-weight:700; color:var(--green); border:1px solid var(--green); border-radius:20px; padding:1px 8px; margin-left:auto}
+  .opt p{margin:7px 0}
+  .opt .lbl{color:var(--accent); font-weight:600}
+  .pro{color:var(--green)} .con{color:var(--amber)}
+  ul{margin:6px 0; padding-left:20px} li{margin:4px 0}
+  .meta{display:flex; gap:18px; flex-wrap:wrap; margin:10px 0 0; font-size:13px; color:var(--muted)}
+  .meta b{color:var(--text)}
+  table{width:100%; border-collapse:collapse; margin:10px 0; font-size:13.5px}
+  th,td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top}
+  th{background:var(--panel2); color:#fff}
+  td:first-child{color:var(--accent); font-weight:600; white-space:nowrap}
+  .road{position:relative; margin:20px 0 0; padding-left:26px}
+  .road::before{content:""; position:absolute; left:8px; top:6px; bottom:6px; width:2px; background:var(--line)}
+  .step{position:relative; margin:0 0 18px; padding:12px 18px; background:var(--panel); border:1px solid var(--line); border-radius:10px}
+  .step::before{content:""; position:absolute; left:-22px; top:18px; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg)}
+  .step b{color:#fff}
+  .note{border-left:3px solid var(--amber); padding:8px 14px; background:rgba(245,181,74,.08); margin:14px 0; border-radius:0 6px 6px 0; font-size:14px}
+  .footer{margin-top:46px; color:var(--muted); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>UE_game 工程架构评估与整改报告</h1>
+  <div class="sub">自研 UE4 引擎 + 游戏同仓工程 · 移动端(iOS/Android)+Win64 · Lua 玩法 · 国内/海外双发 &nbsp;|&nbsp; 生成于 2026-06-30 · 只读分析</div>
+
+  <div class="tabbar" id="tabbar">
+    <div class="tab active" data-t="t0"><span class="sev si"></span>概况</div>
+    <div class="tab" data-t="t1"><span class="sev s0"></span>引擎魔改&amp;同仓</div>
+    <div class="tab" data-t="t2"><span class="sev s0"></span>巨石模块</div>
+    <div class="tab" data-t="t3"><span class="sev s1"></span>插件平铺</div>
+    <div class="tab" data-t="t4"><span class="sev s1"></span>仓库卫生</div>
+    <div class="tab" data-t="t5"><span class="sev s2"></span>Build/发行耦合</div>
+    <div class="tab" data-t="t6"><span class="sev s2"></span>工具链散乱</div>
+    <div class="tab" data-t="t7"><span class="sev si"></span>整改路线图</div>
+  </div>
+
+  <!-- ============ T0 概况 ============ -->
+  <div class="panel active" id="t0">
+    <h2>工程概况</h2>
+    <table>
+      <tr><th>维度</th><th>现状</th></tr>
+      <tr><td>仓库形态</td><td>引擎(<code>Engine/</code>) + 游戏(<code>UE_game/</code>) 同一棵树</td></tr>
+      <tr><td>主模块规模</td><td>单个 <code>UE_game</code> 模块含 <b>4071 个 .cpp + 3127 个 .h</b></td></tr>
+      <tr><td>插件</td><td><code>UE_game/Plugins</code> 下 <b>99 个</b>平铺；<code>Engine/Plugins</code> 内混入 7+ 个公司自定义插件</td></tr>
+      <tr><td>玩法层</td><td>Lua(<code>Script/Lua</code>) + C++ <code>LuaApi</code> 桥接</td></tr>
+      <tr><td>发行</td><td>编译期读 ini 切换 国内/海外、CN/Overseas 模块</td></tr>
+      <tr><td>版本管理</td><td>信号矛盾：有 Git 配置，但工具链是 Perforce 式(<code>checkout.exe</code>/<code>merge.py</code>)</td></tr>
+    </table>
+    <div class="note">本报告把每个架构问题独立成一个标签页；每页给出 <b>2–4 个可选整改方案</b>（含推荐项与代价对比），最后一页是分阶段落地路线图。整改原则：<b>先止血、后重构，每步可独立验证、可回滚</b>。</div>
+    <h3 style="color:var(--accent)">问题清单总览</h3>
+    <table>
+      <tr><th>级别</th><th>问题</th><th>核心影响</th></tr>
+      <tr><td style="color:var(--red)">P0</td><td>引擎被直接魔改且与项目同仓</td><td>无法跟随 UE 升级、无法复用到第二个项目</td></tr>
+      <tr><td style="color:var(--red)">P0</td><td>巨石主模块(7000+ 文件)</td><td>全量重编、耦合失控、编辑器代码混入运行时</td></tr>
+      <tr><td style="color:var(--amber)">P1</td><td>99 插件平铺无分类</td><td>归属/授权/升级路径不可知</td></tr>
+      <tr><td style="color:var(--amber)">P1</td><td>构建产物&amp;第三方入库</td><td>仓库膨胀、二进制 exe 入库、第三方无版本隔离</td></tr>
+      <tr><td style="color:#e4d75f">P2</td><td>Build.cs 不可维护 / 发行耦合编译期</td><td>重复依赖、区域逻辑脆弱</td></tr>
+      <tr><td style="color:#e4d75f">P2</td><td>工具链散乱硬编码</td><td>不可维护、强依赖本地路径</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ T1 引擎魔改 ============ -->
+  <div class="panel" id="t1">
+    <h2>引擎被直接魔改，且与项目同仓<span class="badge b0">P0</span></h2>
+    <div class="problem">
+      <h4>问题描述</h4>
+      <code>Engine/Plugins</code> 混入公司自定义插件：<code>XDCacheLog</code>、<code>XDTextureCompress</code>、<code>XGEController</code>、<code>AliCloundLog</code>、<code>MultiPlatformLightControl</code>、<code>PowerAnalysisPlugin</code>、<code>BlueprintAssetBreakerTools</code>，<code>Engine/Kantan</code> 还有自定义配置。定制散落在原生引擎目录、与 Epic 原始代码无法区分；引擎与游戏共用一个 VCS 根。
+      <div class="meta"><span><b>影响：</b>UE 版本几乎无法干净 rebase</span><span><b>波及：</b>升级、复用、独立发版</span></div>
+    </div>
+    <div class="opts-title">▎可选整改方案</div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">引擎独立成「公司基线 Fork」+ 二进制分发</span><span class="rec">推荐</span></div>
+      <p>把 <code>Engine/</code> 拆为独立仓库 <b>Engine-Base</b>（公司唯一引擎主干），由引擎组维护、编译出二进制 Installed Build 发到制品库；项目仓库只用<b>引擎版本号</b>引用，不再内嵌引擎源码。</p>
+      <p><span class="con">代价：</span>需建引擎组 + 制品库 + CI；首次拆分有一次性成本。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>彻底解耦、可升级、可复用到下个项目</span><span><b>工期：</b>1–2 月</span><span><b>风险：</b>中</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">定制插件迁出原生目录 + 源码改动补丁化</span></div>
+      <p>过渡方案：暂不拆仓，但把 <code>XD*</code>/<code>Ali*</code>/<code>XGE*</code> 等自定义插件从 <code>Engine/Plugins</code> 迁到独立的「公共插件集」目录，与原生 UE 物理分离；必须改引擎源码处用<b>集中补丁(patch set)</b>管理，每处标注原因，便于未来 rebase。</p>
+      <p><span class="con">代价：</span>引擎仍在同仓，未根治；补丁需人工维护。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>成本低、可立即开始、为方案1铺路</span><span><b>工期：</b>2–3 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">3</span><span class="opt-name">定制能力尽量「插件化/配置化」下沉</span></div>
+      <p>逐项审查每处引擎源码改动，能用插件、模块、<code>DefaultEngine.ini</code> 或编译开关实现的，全部下沉，把"必须改源码"的集合压到最小。优先级：配置 &gt; 插件 &gt; 引擎源码。</p>
+      <p><span class="con">代价：</span>需逐项评估，周期长，部分深度改动无法下沉。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>从根上降低升级成本，是长期正解</span><span><b>工期：</b>持续</span><span><b>风险：</b>低</span></div>
+    </div>
+  </div>
+
+  <!-- ============ T2 巨石模块 ============ -->
+  <div class="panel" id="t2">
+    <h2>巨石主模块（Monolith）<span class="badge b0">P0</span></h2>
+    <div class="problem">
+      <h4>问题描述</h4>
+      <code>UE_game</code> 单模块装下全部：<code>Core / Fight / Game / Net / View / Windows / Editor / AutoTest / LuaApi / Utils</code>（7000+ 文件）。改任意一处近乎全量重编；模块内无边界、任意互相引用；<b>编辑器代码 <code>Private/Editor</code> 塞进了 Runtime 模块</b>，靠 <code>bBuildEditor</code> 散落分支隔离。
+      <div class="meta"><span><b>影响：</b>迭代编译慢、耦合失控、有随包误发编辑器代码风险</span></div>
+    </div>
+    <div class="opts-title">▎可选整改方案</div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">按现有目录边界渐进拆分多模块</span><span class="rec">推荐</span></div>
+      <p>沿用 <code>Private/</code> 的天然边界拆模块，依赖单向向下：<br>
+      <code>GameCore</code>(Utils/基础) ← <code>GameNet</code> ← <code>GameFight</code> ← <code>GameUI</code>(View/Windows) ← <code>GameLua</code>(LuaApi)。一次拆一个、独立验证。</p>
+      <p><span class="con">代价：</span>需先理清并切断反向依赖，过程中接口要反复调整。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>增量编译大幅提速、耦合显式化、风险可控</span><span><b>工期：</b>2–4 月持续</span><span><b>风险：</b>中</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">优先剥离 Editor 与 AutoTest（最高性价比的第一刀）</span></div>
+      <p>先把 <code>Private/Editor</code> 抽成独立的 <b>Editor 类型模块 <code>GameEditor</code></b>，<code>AutoTest</code> 抽成独立测试模块。这两块与运行时耦合最浅，收益（消除误发风险、隔离编辑器依赖）最直接。</p>
+      <p><span class="con">代价：</span>仅解决一部分，主运行时仍是巨石。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>见效快、风险低，适合作为拆分起点</span><span><b>工期：</b>2–3 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">3</span><span class="opt-name">功能模块插件化（GameFeature）</span></div>
+      <p>把相对独立的玩法（如战斗、特定系统）逐步迁成 Game Feature Plugin / 独立插件，按需加载，进一步降低主模块体量与耦合。</p>
+      <p><span class="con">代价：</span>改造量大，需配套加载流程，建议在方案1完成后做。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>边界最清晰、可按需裁剪、利于复用</span><span><b>工期：</b>长期</span><span><b>风险：</b>中高</span></div>
+    </div>
+    <div class="note">配套：随拆分逐步把 <code>bUseUnity</code> 全量编译替换为模块级增量；用模块依赖图持续校验"Core 不依赖上层"。</div>
+  </div>
+
+  <!-- ============ T3 插件平铺 ============ -->
+  <div class="panel" id="t3">
+    <h2>99 个插件平铺、职责混杂、无分类<span class="badge b1">P1</span></h2>
+    <div class="problem p1">
+      <h4>问题描述</h4>
+      一个目录混放四类完全不同的东西，无分层/无 owner/无 license：三方 SDK(<code>Tap*</code>/<code>XDG*</code>/<code>LeanCloud</code>/<code>Wwise</code>/<code>Spine</code>/<code>Houdini</code>)、编辑器工具(约 30 个 <code>*Editor</code>/<code>*Tool</code>)、引擎级能力(<code>TorchLightHotUpdate</code>/<code>UEBackgroundDownload</code>)、玩法功能(<code>Arc</code>/<code>Narwhal</code>…)。无法快速回答"哪些外购、哪些随引擎升级、哪些本项目专属"。
+    </div>
+    <div class="opts-title">▎可选整改方案</div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">按职责分类目录化 + Owner/License 清单</span><span class="rec">推荐</span></div>
+      <p>分四类归档：<code>Plugins/ThirdSDK</code>(外购)、<code>Plugins/EditorTools</code>(工具)、<code>Plugins/GameFeature</code>(玩法)、<code>Plugins/Engine</code>(引擎级)。每类维护一张表：owner、license、版本、更新方式。</p>
+      <p><span class="con">代价：</span>移动插件需同步改引用路径与 CI。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>归属清晰、升级路径明确、成本低</span><span><b>工期：</b>1–2 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">通用插件上提到引擎基线层</span></div>
+      <p>与"引擎拆分"联动：把跨项目通用的插件（热更、下载、SDK 接入层等）上提到 <b>Engine-Base</b> 的公共插件集，随引擎统一分发；项目目录只留本项目专属插件。</p>
+      <p><span class="con">代价：</span>依赖引擎层先拆好(见标签①方案1)。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>消除跨项目重复、便于统一升级</span><span><b>工期：</b>随引擎拆分推进</span><span><b>风险：</b>中</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">3</span><span class="opt-name">外购 SDK 统一接入层封装</span></div>
+      <p>为 <code>Tap*</code>/<code>XDG*</code> 等渠道 SDK 建一层薄封装(adapter)，业务只依赖封装接口，不直接依赖具体 SDK；换渠道/升级 SDK 时改动收敛在一处。</p>
+      <p><span class="con">代价：</span>需设计统一接口，初期有封装成本。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>渠道解耦、降低 SDK 升级波及面</span><span><b>工期：</b>中</span><span><b>风险：</b>中</span></div>
+    </div>
+  </div>
+
+  <!-- ============ T4 仓库卫生 ============ -->
+  <div class="panel" id="t4">
+    <h2>构建产物 &amp; 第三方库入库<span class="badge b1">P1</span></h2>
+    <div class="problem p1">
+      <h4>问题描述</h4>
+      根目录 <code>.ue4dependencies</code>(15MB)、<code>code_mark_file.cs</code>、<code>server_build.cs</code>(670KB)、<code>client_dll_submit_mark_file.txt</code>(592KB) 等构建标记文件直接入库；<code>ToolsEx</code> 签入二进制 <code>checkout.exe</code>/<code>merge.exe</code>/<code>ui.exe</code>；三方源码(<code>Lua</code>/<code>Zstd</code>/<code>SoftFloat</code>/<code>ProtoBuf</code>)嵌进主模块 <code>Public/Third</code> 用 IncludePath 引入，无版本隔离。
+    </div>
+    <div class="opts-title">▎可选整改方案</div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">构建产物/缓存移出版本管理</span><span class="rec">推荐</span></div>
+      <p>把 <code>*_mark_file.*</code>、<code>.ue4dependencies</code>、<code>DerivedDataCache/</code>、<code>Intermediate/</code>、<code>Saved/</code> 移出 VCS，改由共享 DDC 服务器 / 制品库 / CI 产物承载。</p>
+      <p><span class="con">代价：</span>需搭 DDC/制品库并改 CI 流程。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>仓库瘦身、拉取加速、消除"产物冲突"</span><span><b>工期：</b>1 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">二进制工具改为制品拉取或源码现编</span></div>
+      <p><code>ToolsEx</code> 里的 <code>*.exe</code> 不再入库：要么把对应 py 源码留库、运行时现编/直接跑 py，要么发布到内网制品库由脚本按版本拉取。</p>
+      <p><span class="con">代价：</span>需补齐工具源码与构建说明。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>可审计、可追溯版本、避免黑盒 exe</span><span><b>工期：</b>1–2 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">3</span><span class="opt-name">第三方库独立化并锁版本</span></div>
+      <p>把 <code>Lua</code>/<code>Zstd</code>/<code>Berkeley-SoftFloat</code>/<code>ProtoBuf</code> 从主模块 IncludePath 抽成独立 ThirdParty 模块或插件，标注来源版本号，集中升级。</p>
+      <p><span class="con">代价：</span>需重整包含路径与链接配置(见 Build.cs L38-52,148-175)。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>版本可控、与业务解耦、降低主模块耦合</span><span><b>工期：</b>2–3 周</span><span><b>风险：</b>中</span></div>
+    </div>
+  </div>
+
+  <!-- ============ T5 Build/发行 ============ -->
+  <div class="panel" id="t5">
+    <h2>Build.cs 不可维护 / 发行逻辑耦合编译期<span class="badge b2">P2</span></h2>
+    <div class="problem p2">
+      <h4>问题描述</h4>
+      依赖列表超长且<b>有重复项</b>(<code>XDEMoreTickGroupEvent</code> 写了两遍，见 Build.cs:25)；CN/海外通过在 <code>Build.cs</code> 里读 ini 再换模块实现(L110-142)；区域/平台/编辑器分支全手工硬连，脆弱易错。
+    </div>
+    <div class="opts-title">▎可选整改方案</div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">发行差异迁到 Target.cs + 编译开关/配置</span><span class="rec">推荐</span></div>
+      <p>CN/海外、平台差异从 <code>Build.cs</code> 移到对应 <b>Target.cs</b> 与配置/宏开关；<code>Build.cs</code> 只描述"我依赖谁"，不承载发行策略。</p>
+      <p><span class="con">代价：</span>需梳理现有分支语义并迁移。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>职责清晰、发行策略集中、易扩展新区域</span><span><b>工期：</b>1–2 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">依赖清单去重 + 自动校验</span></div>
+      <p>清理重复/失效依赖项，加一条 CI 检查（脚本扫描重复模块名、未使用依赖），防止再次劣化。</p>
+      <p><span class="con">代价：</span>需写校验脚本。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>立即见效、防回归</span><span><b>工期：</b>数天</span><span><b>风险：</b>极低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">3</span><span class="opt-name">渠道/区域包用插件集 + Feature 开关</span></div>
+      <p>把 CN/Overseas 的差异封装为可插拔的渠道插件集，配合 Feature 开关在打包阶段选择，而非编译期硬切模块依赖。</p>
+      <p><span class="con">代价：</span>改造较大，依赖渠道接入层(见标签③方案3)。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>多区域扩展性最好、解耦彻底</span><span><b>工期：</b>中</span><span><b>风险：</b>中</span></div>
+    </div>
+  </div>
+
+  <!-- ============ T6 工具链 ============ -->
+  <div class="panel" id="t6">
+    <h2>工具链散乱、硬编码、命名随意<span class="badge b2">P2</span></h2>
+    <div class="problem p2">
+      <h4>问题描述</h4>
+      <code>Tools/</code> <code>ToolsEx/</code> 内大量临时 py/bat，中文命名(<code>同步数据.bat</code>/<code>启动全功能个人服.bat</code>)，职责混杂(导表/合并/校验混在一起)，无统一入口与配置，强依赖本地路径。
+    </div>
+    <div class="opts-title">▎可选整改方案</div>
+
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">统一 CLI 工具入口 + 子命令</span><span class="rec">推荐</span></div>
+      <p>收口为一个有文档的工具入口（如 <code>tools &lt;导表|合并|校验|起服&gt;</code>），英文规范命名，统一参数与日志；旧 bat 作为薄封装过渡。</p>
+      <p><span class="con">代价：</span>需重整脚本并补文档。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>可发现、可维护、降低上手成本</span><span><b>工期：</b>2–3 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">路径/环境配置外置</span></div>
+      <p>把硬编码路径抽到统一配置文件 / 环境变量，工具从配置读取，消除"换台机器就跑不起来"。</p>
+      <p><span class="con">代价：</span>需逐个脚本改造。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>可移植、CI 友好</span><span><b>工期：</b>1–2 周</span><span><b>风险：</b>低</span></div>
+    </div>
+    <div class="opt">
+      <div class="opt-head"><span class="opt-num">3</span><span class="opt-name">导表/数据管线独立成服务</span></div>
+      <p>把 Excel 导表、校验、合并(<code>export_tables</code>/<code>validate_excel</code>/<code>auto_merge</code>)整合为独立的数据管线，接入 CI，本地与服务器共用同一套逻辑。</p>
+      <p><span class="con">代价：</span>改造量中等，需与策划流程对齐。</p>
+      <div class="meta"><span class="pro"><b>优点：</b>一致性强、可自动化、减少人工失误</span><span><b>工期：</b>中</span><span><b>风险：</b>中</span></div>
+    </div>
+  </div>
+
+  <!-- ============ T7 路线图 ============ -->
+  <div class="panel" id="t7">
+    <h2>分阶段整改路线图</h2>
+    <div class="note">最大杠杆点是 <b>阶段1（抽离引擎）</b> 与 <b>阶段2（拆巨石模块）</b>：前者决定能否跟上 UE 升级、能否复用到下个项目；后者直接决定迭代编译效率与耦合度。</div>
+    <div class="road">
+      <div class="step"><b>阶段 0 · 止血（1–2 周，零风险）</b><br>
+        ① 构建产物/缓存/标记文件移出 VCS；二进制 exe 改制品拉取 <span style="color:var(--muted)">[标签④]</span><br>
+        ② 明确"引擎=Git / 资产=P4"边界，停止双轨混用</div>
+      <div class="step"><b>阶段 1 · 抽离引擎层（核心，1–2 月）</b><br>
+        ③ <code>Engine/</code> 拆为独立公司基线 Fork + 二进制分发，项目按版本号引用 <span style="color:var(--muted)">[标签①方案1]</span><br>
+        ④ <code>Engine/Plugins</code> 自定义插件迁出原生目录、源码改动补丁化 <span style="color:var(--muted)">[标签①方案2]</span></div>
+      <div class="step"><b>阶段 2 · 拆解巨石模块（持续，2–4 月）</b><br>
+        ⑤ 先剥离 <code>Editor</code> 与 <code>AutoTest</code> <span style="color:var(--muted)">[标签②方案2]</span><br>
+        ⑥ 按 Core→Net→Fight→UI→Lua 渐进拆分多模块 <span style="color:var(--muted)">[标签②方案1]</span></div>
+      <div class="step"><b>阶段 3 · 治理插件与第三方（持续）</b><br>
+        ⑦ 插件四类目录化 + owner/license 清单 <span style="color:var(--muted)">[标签③方案1]</span><br>
+        ⑧ 第三方独立化锁版本、通用插件上提引擎层 <span style="color:var(--muted)">[标签④方案3 / 标签③方案2]</span></div>
+      <div class="step"><b>阶段 4 · 构建与工具链规范（持续）</b><br>
+        ⑨ 发行差异迁 Target.cs + 依赖去重防回归 <span style="color:var(--muted)">[标签⑤]</span><br>
+        ⑩ 工具链统一 CLI 入口、路径外置、导表成管线 <span style="color:var(--muted)">[标签⑥]</span></div>
+    </div>
+    <table>
+      <tr><th>阶段</th><th>目标产出</th><th>验证标准</th></tr>
+      <tr><td>阶段0</td><td>干净仓库 + 单一 VCS 策略</td><td>新克隆体积显著下降、无产物冲突</td></tr>
+      <tr><td>阶段1</td><td>独立引擎基线 + 二进制分发</td><td>项目可用二进制引擎构建、引擎可独立升级</td></tr>
+      <tr><td>阶段2</td><td>多模块 + 独立 Editor 模块</td><td>单模块改动增量编译、运行时无编辑器依赖</td></tr>
+      <tr><td>阶段3</td><td>分类插件库 + 锁版本第三方</td><td>每个插件可溯源 owner/license/版本</td></tr>
+      <tr><td>阶段4</td><td>规范构建 + 统一工具链</td><td>CI 全流程跑通、换机即用</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">UE_game 工程架构评估与整改报告 · 切页式 · 本报告为只读分析，未改动任何工程代码</div>
+</div>
+
+<script>
+  var bar=document.getElementById('tabbar');
+  bar.addEventListener('click',function(e){
+    var t=e.target.closest('.tab'); if(!t) return;
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});
+    document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('active')});
+    t.classList.add('active');
+    document.getElementById(t.dataset.t).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+</script>
+</body>
+</html>
