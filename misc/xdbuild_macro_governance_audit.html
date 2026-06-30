@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XDBuild 宏模块治理校对</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8fa;
+      --paper: #ffffff;
+      --ink: #18202b;
+      --muted: #5b6676;
+      --line: #dfe4ea;
+      --soft: #eef3f8;
+      --blue: #1d5fa7;
+      --green: #26734d;
+      --amber: #9a5b00;
+      --red: #a43b37;
+      --violet: #6650a4;
+      --code: #f2f4f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.65;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 36px 24px 64px;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 22px;
+      margin-bottom: 26px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+      border-left: 4px solid var(--blue);
+      padding-left: 10px;
+    }
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.4;
+      letter-spacing: 0;
+    }
+    p { margin: 8px 0 12px; }
+    code {
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.92em;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 16px 0;
+    }
+    .note {
+      background: #fff8e9;
+      border-color: #ead4a8;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0 10px;
+    }
+    .stat {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .stat b {
+      display: block;
+      font-size: 24px;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      margin: 14px 0 22px;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      word-break: break-word;
+    }
+    th {
+      background: var(--soft);
+      text-align: left;
+      font-weight: 700;
+    }
+    ul, ol { padding-left: 22px; }
+    li { margin: 5px 0; }
+    .tag {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin: 2px 4px 2px 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .keep { background: var(--blue); }
+    .config { background: var(--green); }
+    .plugin { background: var(--violet); }
+    .hook { background: #3b6f73; }
+    .schema { background: var(--amber); }
+    .fix { background: #607d3b; }
+    .temp { background: var(--red); }
+    .small { font-size: 13px; color: var(--muted); }
+    @media (max-width: 860px) {
+      main { padding: 24px 14px 48px; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      h1 { font-size: 27px; }
+      table { table-layout: auto; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>XDBuild 宏模块治理校对</h1>
+    <p class="meta">范围：<code>Engine/Source/Programs/UnrealBuildTool/Configuration/XDBuildConfiguration</code> 与 <code>UEBuildTarget.SetupXDNewFeaturesGlobalMacros</code></p>
+    <p class="meta">生成时间：2026-06-30；目的：把现有引擎二次开发宏按功能模块校对，给出更适合长期维护的收敛方式。</p>
+  </header>
+
+  <section class="panel note">
+    <h3>核心判断</h3>
+    <p>
+      当前 <code>XDBuildXXXConfiguration.cs</code> 的问题不是“宏不好”，而是很多不同性质的东西都被放进了同一种全局编译宏机制：
+      bugfix、平台兼容、项目配置值、编辑器工具、接口扩展、渲染功能、cook/PSO 管线优化都混在一起。
+      这会导致关闭宏时难以保证回到源码一致，也会让新开发者很难判断一个宏应该怎么验证、由谁负责、什么时候可以移除。
+    </p>
+    <p>
+      推荐方向是：保留少量真正需要编译期裁剪的宏，把可运行时选择的内容迁到 CVar/配置，把工具迁到插件，把扩展能力沉淀为 Hook/Interface/Modular Feature，
+      把涉及资源格式和 UHT 的变更沉淀为稳定 schema 和 CustomVersion，把已经证明正确的 bugfix 收敛为常开补丁。
+    </p>
+  </section>
+
+  <div class="grid">
+    <div class="stat"><b>552</b><span>当前扫描到的 public static int 宏/配置值</span></div>
+    <div class="stat"><b>494+</b><span>绝大多数默认开启，宏更像补丁清单而不是可选能力</span></div>
+    <div class="stat"><b>7</b><span>入口注册的配置类数量</span></div>
+    <div class="stat"><b>1</b><span>统一注入点：UEBuildTarget 的全局 Definition</span></div>
+  </div>
+
+  <h2>宏注入原理</h2>
+  <p>
+    <code>XDBuildConfiguration.ConfigurationClasses</code> 注册了 <code>XDRenderingFeatures</code>、
+    <code>XDOptimizationFeatures</code>、<code>XDToolsFeatures</code>、<code>XDFixBugFeatures</code>、
+    <code>XDNewInterfaces</code>、<code>XDFrontEndTools</code>、<code>XDCustomizedProjectFeatures</code>。
+    构建时 <code>UEBuildTarget.SetupXDNewFeaturesGlobalMacros</code> 先执行依赖检查，再通过反射读取这些类里的
+    <code>public static int</code> 字段，并把 <code>字段名=字段值</code> 加入 <code>GlobalCompileEnvironment.Definitions</code>。
+  </p>
+  <p>
+    所以这些 C# 文件可以控制 C++，本质是 UBT 在编译 C++ 前生成了全局预处理宏。它控制的是编译期代码裁剪，不是运行时开关。
+    另外，C++ 宏不会自动进入 shader 编译环境，shader 侧仍需要 <code>ModifyCompilationEnvironment</code>、
+    <code>OutEnvironment.SetDefine</code> 或统一 shader include hook 来桥接。
+  </p>
+
+  <h2>现状盘点</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 22%">配置类</th>
+        <th style="width: 12%">数量</th>
+        <th style="width: 18%">文件</th>
+        <th>主要内容判断</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>XDFixBugFeatures</code></td>
+        <td>172</td>
+        <td><code>XDBuildFixBugConfiguration.cs</code></td>
+        <td>平台崩溃修复、渲染/RHI 修复、Slate/UMG/Sequencer 修复、cook/PSO/DDC 确定性修复、临时尝试修复。</td>
+      </tr>
+      <tr>
+        <td><code>XDNewInterfaces</code></td>
+        <td>140</td>
+        <td><code>XDBuildMiscConfiguration.cs</code></td>
+        <td>新增接口、平台行为接管、错误弹窗、pak/PSO/asset registry 扩展、编辑器行为、内存和日志扩展。</td>
+      </tr>
+      <tr>
+        <td><code>XDOptimizationFeatures</code></td>
+        <td>92</td>
+        <td><code>XDBuildOptConfiguration.cs</code></td>
+        <td>移动端渲染优化、粒子优化、tick/UBO/内存优化、cook/pak/shader lib 优化、PSO 优化。</td>
+      </tr>
+      <tr>
+        <td><code>XDRenderingFeatures</code></td>
+        <td>70</td>
+        <td><code>XDBuildRenderingConfiguration.cs</code></td>
+        <td>自定义 shading model、stencil/base pass、outline/OIT/extra GBuffer、PC RHI 兼容、HDR/DLSS、LightGrid/Clustered Lighting。</td>
+      </tr>
+      <tr>
+        <td><code>XDToolsFeatures</code></td>
+        <td>51</td>
+        <td><code>XDBuildToolsConfiguration.cs</code></td>
+        <td>调试 dump、profiling、cook/pak 报告、编辑器菜单扩展、资源审计、序列化修复工具、runtime/editor delegate 扩展。</td>
+      </tr>
+      <tr>
+        <td><code>XDCustomizedProjectFeatures</code></td>
+        <td>24</td>
+        <td><code>XDBuildProjectFeaturesConfiguration.cs</code></td>
+        <td>Torchlight 项目专有行为、赛季号、UI 规则、DLSS、材质 selector 数量、项目流式资源策略。</td>
+      </tr>
+      <tr>
+        <td><code>XDFrontEndTools</code></td>
+        <td>3</td>
+        <td><code>XDBuildFrontEndConfiguration.cs</code></td>
+        <td>P4 提交、pre-checkin 事件、SlateVectorArtData 创建方法，基本属于前端/编辑器工具。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>治理分类</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 20%">分类</th>
+        <th style="width: 25%">适用对象</th>
+        <th>推荐处理方式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag keep">保留宏</span></td>
+        <td>必须编译期裁剪的 ABI、平台 SDK、RHI、shader permutation、极低层性能路径。</td>
+        <td>保留宏，但建立 feature card：负责人、依赖、默认值、验证场景、关闭时源码等价性。每个宏要有 owner 和失效条件。</td>
+      </tr>
+      <tr>
+        <td><span class="tag config">CVar/Config</span></td>
+        <td>运行时策略、调试开关、平台策略、画质策略、项目数值。</td>
+        <td>迁到 <code>DefaultEngine.ini</code>、DeviceProfile、Project Settings、TargetRules 或 CVar。编译宏只保留“有没有这个能力”。</td>
+      </tr>
+      <tr>
+        <td><span class="tag plugin">插件/模块</span></td>
+        <td>编辑器工具、菜单扩展、资源审计、dump/report、front-end 工具。</td>
+        <td>迁到 Editor/Developer 插件，通过模块启用、菜单 extender、命令行参数或 CVar 控制。Shipping 构建自然不带工具代码。</td>
+      </tr>
+      <tr>
+        <td><span class="tag hook">Hook/Interface</span></td>
+        <td>引擎需要留扩展点，但具体行为可由项目/插件绑定的功能。</td>
+        <td>引擎侧只放稳定事件、接口或 Modular Feature，例如 pak 挂载失败、低内存回调、异步加载 flush、PSO 接管点。</td>
+      </tr>
+      <tr>
+        <td><span class="tag schema">Schema/Version</span></td>
+        <td>UFUNCTION、UPROPERTY、资产格式、序列化升级、DDC key、cook 确定性。</td>
+        <td>不要用宏包住反射字段和资产 schema。用 CustomVersion、版本化迁移、稳定字段、兼容读取来降低破坏性。</td>
+      </tr>
+      <tr>
+        <td><span class="tag fix">常开补丁</span></td>
+        <td>已验证正确、不会改变项目策略的 bugfix。</td>
+        <td>宏经过灰度后移除，作为引擎 fork 的常开补丁维护。否则默认开启的 bugfix 宏只是在制造伪开关。</td>
+      </tr>
+      <tr>
+        <td><span class="tag temp">临时隔离</span></td>
+        <td><code>XD_TMP_</code>、<code>XD_TRY_FIX_</code>、<code>_DEBUG</code>、<code>_TESTING</code> 这类实验开关。</td>
+        <td>必须有过期时间、验证结论和删除计划。默认关闭，不能长期混在正式功能清单里。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>按模块整理建议</h2>
+
+  <h3>1. Rendering：从“功能宏”收敛到渲染扩展层</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 27%">代表宏</th>
+        <th style="width: 22%">问题性质</th>
+        <th>建议整理方式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>XD_RENDERING_CUSTOM_UNLIT</code>、<code>XD_PC_RENDERING_CUSTOM_UNLIT</code>、<code>XD_RENDERING_TOON_LIT_SHADING_MODEL</code>、<code>XD_RENDERING_CUSTOM_GI</code></td>
+        <td>新增 shading model 和 shader 路径，影响材质 schema、shader permutation、GBuffer/LightGrid。</td>
+        <td><span class="tag hook">Hook</span><span class="tag schema">Schema</span>引擎侧保留最小稳定插槽：shading model ID、材质编译 hook、shader include hook、LightGrid/IBL 输入约定。具体 BRDF、ramp、GI、额外贴图逻辑放到插件或可替换 shader include 中。</td>
+      </tr>
+      <tr>
+        <td><code>XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</code>、<code>XD_RENDERING_BASEPASS_RENDERING_PRIORITY</code>、<code>XD_RENDERING_DISABLE_COLOR_WRITE</code>、<code>XD_EXTRA_GBUFFER</code></td>
+        <td>改变 render pass 数据结构和排序规则，容易产生全局副作用。</td>
+        <td><span class="tag keep">保留宏</span><span class="tag hook">Hook</span>先按能力域合并成“Renderer Material Extension”层，统一管理 mesh batch flags、base pass priority、stencil/color write、extra GBuffer 通道，减少散落宏。</td>
+      </tr>
+      <tr>
+        <td><code>XD_RENDERING_CLUSTERED_LIGHTING</code>、<code>XD_CUSTOMUNLIT_SPOTLIGHT_SUPP</code>、<code>EXTRA_SSSHADOW_CHANNEL_FOR_CUSTOMUNLIT</code></td>
+        <td>局部光、shadow channel、LightGrid 数据读取路径。</td>
+        <td><span class="tag hook">Hook</span>不要按 shading model 各自维护灯光列表。沉淀一个统一 LightGrid 访问约定，CustomUnlit 和 Mobile DefaultLit 都复用同一套 local light 数据结构和过滤规则。</td>
+      </tr>
+      <tr>
+        <td><code>XD_PC_SWITCH_DX_VERSION_AFTER_CRASH</code>、<code>XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH</code>、<code>XD_PC_GRAPHICS_DRIVER_VERSION_WARNING</code></td>
+        <td>PC 平台兼容策略，不是渲染算法本身。</td>
+        <td><span class="tag config">CVar/Config</span>迁到 Platform Compatibility/Launcher 策略模块，使用配置、崩溃记录、驱动数据库控制。宏只保留 D3D11/D3D12 编译能力。</td>
+      </tr>
+      <tr>
+        <td><code>XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE</code>、<code>XD_BLOOM_CLAMP</code>、<code>XD_RENDERING_OPAQUE_UNLIT_DISABLE_FOG</code></td>
+        <td>画质/策略开关。</td>
+        <td><span class="tag config">CVar/Config</span>优先迁到 CVar 或项目渲染设置，方便不同平台和画质档切换。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2. Optimization：按“性能路径”和“策略路径”拆开</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 27%">代表宏</th>
+        <th style="width: 22%">问题性质</th>
+        <th>建议整理方式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>XD_OPT_DONT_UPDATE_PRIMITIVE_UBO_WHEN_PARAMS_NOT_CHANGE</code>、<code>XD_OPT_SKELETAL_MESH_SKIP_CREATE_UNIFORM_BUFFER_EVERY_FRAME</code>、<code>XD_OPT_MEMORY_LIGHT_PRIMITIVE_INTERACTION_ALLOC</code></td>
+        <td>底层性能优化，关闭/开启会改变热路径。</td>
+        <td><span class="tag keep">保留宏</span><span class="tag fix">常开补丁</span>如果已经长期验证稳定，建议转为常开优化；若仍有风险，保留宏但补充性能基准和回归用例。</td>
+      </tr>
+      <tr>
+        <td><code>XD_OPT_MOBILE_UPSCALE_PASS_DISABLE_WHEN_SIZE_DIFF_LITTLE</code>、<code>XD_OPT_MOBILE_USE_COARSE_STATIC_SHADOW_MASK_TEXTURE</code>、<code>XD_OPT_MOBILE_LANDSCAPE_POINT_LIGHTING</code></td>
+        <td>移动端渲染策略。</td>
+        <td><span class="tag config">CVar/Config</span>迁到 DeviceProfile/RendererSettings。和 LightGrid、DefaultLit、CustomUnlit 的移动端光照路径一起定义平台策略。</td>
+      </tr>
+      <tr>
+        <td><code>XD_OPT_PARTICLE_INSTANCING</code>、<code>XD_OPT_PARTICLE_COMPONENT_INTERFACE</code>、<code>XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT</code>、<code>XD_OPT_LOCK_FREE_PARTICLE_MEMORY_POOL</code></td>
+        <td>粒子系统扩展和性能重构，既有接口又有内存池。</td>
+        <td><span class="tag hook">Hook</span><span class="tag schema">Schema</span>拆成 Particle Runtime Extension。稳定接口和组件字段不要宏包裹，性能实现可以由插件/配置选择。</td>
+      </tr>
+      <tr>
+        <td><code>XD_OPT_PRECOMPILE_PSO_SMOOTHLY</code>、<code>XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL</code>、<code>XD_OPT_ITERATIVE_PAK</code>、<code>XD_OPT_SHADER_LIB_SRIP</code></td>
+        <td>cook、pak、shader library、PSO 资产管线。</td>
+        <td><span class="tag plugin">插件/模块</span><span class="tag schema">Schema</span>迁到 Build/Cook Pipeline 模块，以命令行、配置、cook profile 控制，增加 cook determinism 和 DDC key 验证。</td>
+      </tr>
+      <tr>
+        <td><code>XD_OPT_LLM_CSV_EXTENSIONS</code>、<code>XD_OPT_ANALYSIS_IOS_PLATFORM_UNTRACKED_MEMORY</code>、<code>XD_OPT_ANALYSIS_WIN_PLATFORM_UNTRACKED_MEMORY</code></td>
+        <td>分析与统计。</td>
+        <td><span class="tag plugin">插件/模块</span>迁入 Developer/Profiling 插件。Shipping 通过构建配置剔除，日常用 CVar/命令行打开。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3. Tools 与 FrontEnd：优先插件化</h3>
+  <p>
+    <code>XD_TOOL_DUMP_XD_CONSOLE_VARIABLES</code>、<code>XD_TOOL_EXPORT_MATERIAL_ANALYZER_RESULT</code>、
+    <code>XD_TOOL_ASSET_AUDIT_EXT_COL</code>、<code>XD_FE_P4_SUBMITTER_TOOL</code>、
+    <code>XD_PRE_CHECKIN_EVENT_SEND</code> 这类功能本质是工具，不应该依赖全局引擎宏。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 27%">子类</th>
+        <th>建议</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Dump、Report、Profiler、Debug UI</td>
+        <td><span class="tag plugin">插件/模块</span>迁到 Developer 插件，用命令行/CVar/Editor 菜单启用。</td>
+      </tr>
+      <tr>
+        <td>编辑器菜单扩展</td>
+        <td><span class="tag plugin">插件/模块</span>用 Editor Module、ToolMenus、Extender 绑定，减少 Engine 源码改动。</td>
+      </tr>
+      <tr>
+        <td><code>XD_SERIALIZE_UPGRADE_FIXUP_STATIC_MESH_NONUSED_PROPERTY</code></td>
+        <td><span class="tag schema">Schema/Version</span>序列化升级不适合用宏长期包裹，应改为 CustomVersion 或一次性迁移命令let，并保留兼容读取。</td>
+      </tr>
+      <tr>
+        <td>Runtime/Editor delegates</td>
+        <td><span class="tag hook">Hook</span>例如 save delegate、Slate loading pre-tick delegate，可以沉淀为引擎扩展点，具体逻辑由插件绑定。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4. NewInterfaces/Misc：拆成平台、错误、资源、接口四个包</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 27%">代表宏</th>
+        <th style="width: 22%">建议归属</th>
+        <th>说明</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>XD_EXT_ADD_ON_LOW_MEMORY_DELEGATE</code>、<code>XD_EXT_ASYNC_LOAD_FLUSH_DELEGATE</code>、<code>XD_MISC_SKELETAL_MESH_COMPONENT_ADD_DELEGATES</code></td>
+        <td><span class="tag hook">Hook/Interface</span></td>
+        <td>这类是好扩展点。引擎留空事件和接口，项目插件决定绑定什么逻辑。</td>
+      </tr>
+      <tr>
+        <td><code>XD_EXT_PLATFORM_UNWANTED_BEHAVIORS_TAKEOVER</code>、<code>XD_EXT_ANDROID_ALLOW_OPENGL_FALLBACK_TO_VULKAN</code>、<code>XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION</code></td>
+        <td><span class="tag config">平台策略配置</span></td>
+        <td>平台行为接管应集中到 Platform Policy 模块，避免散落在 Misc 宏里。</td>
+      </tr>
+      <tr>
+        <td><code>XD_EXT_OOM_POP_UP_TIPS_WINDOWS</code>、<code>XD_EXT_DX_ERROR_POP_UP_TIPS_WINDOWS</code>、<code>XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR</code></td>
+        <td><span class="tag plugin">错误处理插件</span></td>
+        <td>错误弹窗、崩溃上报、用户提示应做成 Error Reporter/Crash Tools 插件，由产品配置决定是否启用。</td>
+      </tr>
+      <tr>
+        <td><code>XD_MISC_PAK_FILE_ENCRY</code>、<code>XD_PRE_MOUNT_PAK</code>、<code>XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES</code>、<code>XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</code></td>
+        <td><span class="tag plugin">资源管线模块</span></td>
+        <td>pak、PSO cache、program binary cache 建议统一进 Packaging/Runtime Asset Pipeline。</td>
+      </tr>
+      <tr>
+        <td><code>XD_MISC_LOG_SHADER_DETAILED_DDC_KEY</code>、<code>XD_MISC_SHADER_KEEPDEBUG_INFO</code>、<code>XD_EXT_OUTPUT_SHADER_LINK_HASH</code></td>
+        <td><span class="tag plugin">诊断工具</span></td>
+        <td>诊断开关迁到 Developer 插件和命令行，减少全局宏污染。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>5. FixBug：建立“补丁生命周期”，不要永久宏化</h3>
+  <p>
+    <code>XDFixBugFeatures</code> 有 172 项，是最需要治理的模块。这里建议按生命周期而不是按文件归类。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 24%">类别</th>
+        <th style="width: 31%">例子</th>
+        <th>处理建议</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>已验证通用 bugfix</td>
+        <td><code>XD_BUG_FIX_FONT_CACHE_MEM_LEAK</code>、<code>XD_BUG_FIX_GC_SYNCOBJ</code>、<code>XD_BUG_FIX_EDITOR_TRANSACTION_BUFFER_NULLPTR</code></td>
+        <td><span class="tag fix">常开补丁</span>经过回归后移除宏，作为 fork 的稳定补丁。长期默认开启的 bugfix 宏价值很低。</td>
+      </tr>
+      <tr>
+        <td>平台/RHI workaround</td>
+        <td><code>XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT</code>、<code>XD_BUG_FIX_VULKAN_TILE_FAST_CLEAR_ARTIFACT</code>、<code>XD_BUG_FIX_MSAA_CRASH_ON_MAC</code>、<code>XD_BUG_FIX_MUMU_GL_BACK_BUFFER_SAMPLE</code></td>
+        <td><span class="tag config">平台策略配置</span>放入 Platform Compatibility 层，结合设备、驱动、RHI、模拟器白名单配置控制。</td>
+      </tr>
+      <tr>
+        <td>Cook/DDC/PSO 确定性</td>
+        <td><code>XD_BUG_FIX_GENERATE_DETERMINED_MATSM_DDC</code>、<code>XD_BUG_FIX_COOK_DETERMINED_PSO</code>、<code>XD_BUG_FIX_KEEP_SAME_UBULK_FILE_WHEN_CHECK_COOK_DETERMINISTIC</code></td>
+        <td><span class="tag schema">Schema/Version</span>纳入 Build Pipeline 验证，配套 determinism 测试和 DDC key golden data。</td>
+      </tr>
+      <tr>
+        <td>编辑器交互修复</td>
+        <td><code>XD_BUG_FIX_ADD_ARRAY_ELEMENT_TO_SEQUENCER_TRACK</code>、<code>XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL</code>、<code>XD_BUG_FIX_P4_SOURCE_CONTROL_PATH_CASE_SENSITIVITY</code></td>
+        <td><span class="tag plugin">插件/模块</span><span class="tag fix">常开补丁</span>如果是工具行为增强，可插件化；如果是明确 bug，验证后常开。</td>
+      </tr>
+      <tr>
+        <td>临时尝试或测试</td>
+        <td><code>XD_TMP_FIX_MALLOC_ZERO_ISSUE</code>、<code>XD_TRY_FIX_BUG_SLATE_INVALID_TEXTURE_PTR</code>、<code>XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT_TESTING</code></td>
+        <td><span class="tag temp">临时隔离</span>必须有删除日期和验证结论。长期存在会让宏清单失去可信度。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>6. ProjectFeatures：不要让项目配置值污染引擎全局宏</h3>
+  <p>
+    <code>XDCustomizedProjectFeatures</code> 中有明显项目专有项，例如 <code>XD_TORCHLIGHT_SEASON = 14</code>、
+    <code>XD_MATERIAL_SELECTOR_SWITCH_NUM = 7</code>、<code>XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE</code>。
+    这类内容不适合作为全局引擎二开宏。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 27%">类型</th>
+        <th>建议</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>项目数值</td>
+        <td><span class="tag config">CVar/Config</span>迁到项目配置、TargetRules、GameFeatureData 或 Project Settings。编译宏不适合表达赛季号、selector 数量这类数据。</td>
+      </tr>
+      <tr>
+        <td>项目 UI/编辑器规则</td>
+        <td><span class="tag plugin">插件/模块</span>迁到项目 Editor 插件，例如 TorchlightEditorExtensions。</td>
+      </tr>
+      <tr>
+        <td>项目运行时行为</td>
+        <td><span class="tag hook">Hook</span>引擎提供通用 hook，项目插件绑定 Torchlight 逻辑。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>建议的目标结构</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 28%">目标包</th>
+        <th style="width: 28%">吸收内容</th>
+        <th>落地形式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>EngineExtensionCore</td>
+        <td>通用 Hook、Interface、Modular Feature、事件广播。</td>
+        <td>少量引擎侵入式补丁，必须稳定、低语义、可被多个项目复用。</td>
+      </tr>
+      <tr>
+        <td>RendererExtension</td>
+        <td>自定义 shading model 插槽、LightGrid 访问、extra GBuffer、stencil/material pass 扩展。</td>
+        <td>引擎侧提供最小扩展面，功能实现由插件或 shader include 组合。</td>
+      </tr>
+      <tr>
+        <td>PlatformCompatibility</td>
+        <td>DX fallback、驱动警告、iOS/Android/Vulkan/Metal/模拟器 workaround。</td>
+        <td>平台配置、设备画像、崩溃记录、launcher 策略。</td>
+      </tr>
+      <tr>
+        <td>BuildCookPipeline</td>
+        <td>cook determinism、pak、PSO、shader library、DDC key、program binary cache。</td>
+        <td>Commandlet、cook profile、CI 验证、golden data。</td>
+      </tr>
+      <tr>
+        <td>DeveloperTools</td>
+        <td>dump、report、asset audit、profiling、material analyzer、debug UI。</td>
+        <td>Editor/Developer 插件，按构建配置剔除。</td>
+      </tr>
+      <tr>
+        <td>ProjectFeaturePlugins</td>
+        <td>Torchlight 等项目专用 UI、运行时策略、资源规则。</td>
+        <td>项目插件、Project Settings、GameFeatureData。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>迁移路线</h2>
+  <ol>
+    <li><strong>先建台账。</strong> 给每个宏补上 owner、模块、默认值、依赖、验证方式、关闭后期望行为、是否影响资源格式。</li>
+    <li><strong>先处理工具类。</strong> Tools、FrontEnd、Debug、Report、Audit 优先插件化，收益高、风险低。</li>
+    <li><strong>再处理项目专有配置。</strong> 把 Torchlight 项目项和数值项迁到项目插件或配置，减少引擎 fork 污染。</li>
+    <li><strong>对 FixBug 做生命周期治理。</strong> 默认开启且稳定的 bugfix 转常开补丁；临时/try/testing 类宏限期删除；平台 workaround 迁到 PlatformCompatibility。</li>
+    <li><strong>最后处理渲染和资源 schema。</strong> 这类风险最高，需要先定义稳定扩展面，再逐步减少散落宏。</li>
+    <li><strong>建立双构建验证。</strong> CI 至少保留“源码等价配置”和“项目完整配置”两套构建，避免宏关闭路径腐烂。</li>
+  </ol>
+
+  <h2>最值得优先行动的清单</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 26%">优先项</th>
+        <th style="width: 24%">原因</th>
+        <th>建议第一步</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Tools/FrontEnd 插件化</td>
+        <td>侵入低，能快速减少全局宏数量。</td>
+        <td>从 dump/report/asset audit/P4/pre-checkin 菜单开始迁。</td>
+      </tr>
+      <tr>
+        <td>ProjectFeatures 外迁</td>
+        <td>项目策略不该进入引擎全局宏，尤其是数值型宏。</td>
+        <td>建立 TorchlightProjectExtensions 插件和项目配置对象。</td>
+      </tr>
+      <tr>
+        <td>FixBug 分类清理</td>
+        <td>172 项默认开启宏会显著增加维护成本。</td>
+        <td>按“常开补丁、平台 workaround、临时实验、cook 确定性”打标签。</td>
+      </tr>
+      <tr>
+        <td>RendererExtension 抽象</td>
+        <td>渲染宏最容易产生连锁副作用，但也是长期价值最高的扩展面。</td>
+        <td>先定义 Custom Shading Model、LightGrid、extra GBuffer、material pass flags 的统一扩展边界。</td>
+      </tr>
+      <tr>
+        <td>宏 schema 校验</td>
+        <td>现在用反射扫描字段，缺少元数据和约束。</td>
+        <td>给宏增加结构化描述，生成 HTML/Markdown 台账，并在 UBT 里校验依赖和废弃状态。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <section class="panel">
+    <h3>一句话落地原则</h3>
+    <p>
+      宏只应该回答“这段代码是否参与编译”；不要让宏同时承担项目配置、运行时策略、工具入口、平台黑名单、资产版本迁移和扩展机制。
+      对引擎二开来说，真正可长期维护的形态是：少量稳定引擎 hook，加一组可替换插件，再加清晰的配置和 CI 验证。
+    </p>
+  </section>
+</main>
+</body>
+</html>
