@@ -61,6 +61,31 @@
   .step::before{content:""; position:absolute; left:-22px; top:18px; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg)}
   .step b{color:#fff}
   .note{border-left:3px solid var(--amber); padding:8px 14px; background:rgba(245,181,74,.08); margin:14px 0; border-radius:0 6px 6px 0; font-size:14px}
+  /* === 目录结构案例 === */
+  .fsctl{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:16px 0 6px}
+  .fsbtn{padding:7px 14px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--muted); cursor:pointer; font-size:14px; font-weight:600; user-select:none}
+  .fsbtn:hover{color:var(--text)}
+  .fsbtn.active{background:var(--accent); color:#04121f; border-color:var(--accent)}
+  .modeswitch{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-left:auto}
+  .modeswitch .fsbtn{border:none; border-radius:0}
+  .modeswitch .fsbtn.cur.active{background:var(--red); color:#1a0606}
+  .modeswitch .fsbtn.rec.active{background:var(--green); color:#04140d}
+  .intro{background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:11px 15px; margin:10px 0 12px; font-size:13.5px; color:var(--text)}
+  .legend{display:flex; gap:20px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin:6px 0 12px}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .dot{width:10px; height:10px; border-radius:3px; display:inline-block}
+  .dot.bad{background:#ff9b9b} .dot.good{background:#7fe0b3} .dot.neu{background:#46505e}
+  .tree{font-family:"Cascadia Code",Consolas,"Microsoft YaHei",monospace; font-size:14px; background:#10151c; border:1px solid var(--line); border-radius:10px; padding:14px 12px; overflow-x:auto}
+  .row{display:flex; align-items:flex-start; padding:3px 6px; border-radius:5px}
+  .row.folder{cursor:pointer}
+  .row.folder:hover{background:#1a212b}
+  .caret{display:inline-block; width:14px; flex:none; color:var(--muted); text-align:center}
+  .ico{margin-right:7px; flex:none}
+  .nm{color:var(--text); flex:none}
+  .row.bad .nm{color:#ff9b9b} .row.good .nm{color:#7fe0b3}
+  .fsnote{color:var(--muted); font-size:12.5px; margin-left:12px}
+  .row.bad .fsnote{color:var(--amber)} .row.good .fsnote{color:var(--green)}
+  .hidden{display:none}
   .footer{margin-top:46px; color:var(--muted); font-size:13px; text-align:center}
 </style>
 </head>
@@ -77,6 +102,7 @@
     <div class="tab" data-t="t4"><span class="sev s1"></span>仓库卫生</div>
     <div class="tab" data-t="t5"><span class="sev s2"></span>Build/发行耦合</div>
     <div class="tab" data-t="t6"><span class="sev s2"></span>工具链散乱</div>
+    <div class="tab" data-t="tfs"><span class="sev si"></span>📂 目录结构案例</div>
     <div class="tab" data-t="t7"><span class="sev si"></span>整改路线图</div>
   </div>
 
@@ -110,9 +136,10 @@
     <h2>引擎被直接魔改，且与项目同仓<span class="badge b0">P0</span></h2>
     <div class="problem">
       <h4>问题描述</h4>
-      <code>Engine/Plugins</code> 混入公司自定义插件：<code>XDCacheLog</code>、<code>XDTextureCompress</code>、<code>XGEController</code>、<code>AliCloundLog</code>、<code>MultiPlatformLightControl</code>、<code>PowerAnalysisPlugin</code>、<code>BlueprintAssetBreakerTools</code>，<code>Engine/Kantan</code> 还有自定义配置。定制散落在原生引擎目录、与 Epic 原始代码无法区分；引擎与游戏共用一个 VCS 根。
+      <code>Engine/Plugins</code> 混入公司自定义插件：<code>XDCacheLog</code>、<code>XDTextureCompress</code>、<code>XGEController</code>、<code>AliCloundLog</code>、<code>MultiPlatformLightControl</code>、<code>PowerAnalysisPlugin</code>、<code>BlueprintAssetBreakerTools</code>，<code>Engine/Kantan</code> 还有自定义配置。这些插件<b>直接和原厂插件平铺在同一层、无分组</b>，源码改动也无标记，与 Epic 原始代码无法区分；引擎与游戏共用一个 VCS 根。
       <div class="meta"><span><b>影响：</b>UE 版本几乎无法干净 rebase</span><span><b>波及：</b>升级、复用、独立发版</span></div>
     </div>
+    <div class="note"><b>注意定位：</b>问题不是"改了引擎"——引擎 Fork 改源码、加插件都很正常、不可避免。问题是这些定制<b>没有被集中、分组、标记</b>，导致和原厂代码混成一锅、无从追踪。整改目标是让定制「<b>可控 · 可追踪 · 可合并</b>」，而非追求"和官方完全一致"。</div>
     <div class="opts-title">▎可选整改方案</div>
 
     <div class="opt">
@@ -122,9 +149,10 @@
       <div class="meta"><span class="pro"><b>优点：</b>彻底解耦、可升级、可复用到下个项目</span><span><b>工期：</b>1–2 月</span><span><b>风险：</b>中</span></div>
     </div>
     <div class="opt">
-      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">定制插件迁出原生目录 + 源码改动补丁化</span></div>
-      <p>过渡方案：暂不拆仓，但把 <code>XD*</code>/<code>Ali*</code>/<code>XGE*</code> 等自定义插件从 <code>Engine/Plugins</code> 迁到独立的「公共插件集」目录，与原生 UE 物理分离；必须改引擎源码处用<b>集中补丁(patch set)</b>管理，每处标注原因，便于未来 rebase。</p>
-      <p><span class="con">代价：</span>引擎仍在同仓，未根治；补丁需人工维护。</p>
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">定制插件归类到 CompanyPlugins 子目录 + 源码改动标记化</span></div>
+      <p>过渡方案：暂不拆仓，但把 <code>XD*</code>/<code>Ali*</code>/<code>XGE*</code> 等自定义插件<b>统一收进 <code>Engine/Plugins/CompanyPlugins/</code> 子目录</b>（引擎递归扫描子目录，<b>无需改任何插件路径规则</b>），和原厂插件一眼区分；必须改的引擎源码用统一标记(<code>// [XD] BEGIN/END</code>) + 集中补丁清单管理，每处标注原因，便于未来跟官方合并。</p>
+      <p><span class="con">代价：</span>引擎仍在同仓，未根治；补丁清单需人工维护。</p>
+      <p style="color:var(--muted);font-size:13px">注：只有当插件要拆成独立仓库、跨多个引擎版本共享时，才考虑放引擎树外的目录 + <code>AdditionalPluginDirectories</code> 注册路径。</p>
       <div class="meta"><span class="pro"><b>优点：</b>成本低、可立即开始、为方案1铺路</span><span><b>工期：</b>2–3 周</span><span><b>风险：</b>低</span></div>
     </div>
     <div class="opt">
@@ -283,6 +311,32 @@
     </div>
   </div>
 
+  <!-- ============ 目录结构案例 ============ -->
+  <div class="panel" id="tfs">
+    <h2>目录结构案例：现状 ▸ 推荐<span class="badge bi">给 PM 看的对照</span></h2>
+    <p style="color:var(--muted)">下面用「文件夹」的方式直观对比。<b>点击带 ▸ 的文件夹可以展开/折叠</b>；先选场景，再用右侧开关切换 <span style="color:var(--red);font-weight:700">现状</span> 和 <span style="color:var(--green);font-weight:700">推荐</span>。</p>
+
+    <div class="fsctl">
+      <div class="fsbtn active" data-sc="engine">① 引擎与定制混放</div>
+      <div class="fsbtn" data-sc="module">② 巨石代码模块</div>
+      <div class="fsbtn" data-sc="plugin">③ 99个插件平铺</div>
+      <div class="modeswitch">
+        <div class="fsbtn cur active" data-mode="cur">现状</div>
+        <div class="fsbtn rec" data-mode="rec">推荐</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i class="dot neu"></i> 普通文件/文件夹</span>
+      <span><i class="dot bad"></i> 存在问题的地方</span>
+      <span><i class="dot good"></i> 改进/新增的地方</span>
+      <span>📁 文件夹 &nbsp; 📄 文件</span>
+    </div>
+
+    <div class="intro" id="fsintro"></div>
+    <div class="tree" id="fstree"></div>
+  </div>
+
   <!-- ============ T7 路线图 ============ -->
   <div class="panel" id="t7">
     <h2>分阶段整改路线图</h2>
@@ -327,6 +381,155 @@
     document.getElementById(t.dataset.t).classList.add('active');
     window.scrollTo({top:0,behavior:'smooth'});
   });
+
+  /* ===== 目录结构案例：数据 ===== */
+  // n=名字 t:'d'文件 (默认文件夹) tone:'bad'|'good' note=大白话注释 o=是否默认展开 c=子项
+  var SC = {
+    engine: {
+      title: '引擎和公司自己加的东西混在一起',
+      cur: { intro: '现状：公司自己写的插件，<b>直接和原厂插件平铺在同一层</b>、没有分组；改过的引擎源码也没有任何标记。结果不是"改了引擎"这件事本身（引擎 Fork 改源码很正常），而是<b>分不清哪些是原厂、哪些是公司加的、动过哪里</b>——升级新版本时改动散落各处、无从下手。',
+        tree: [{n:'Editor（一个大仓库，引擎+游戏全塞一起）',o:true,c:[
+          {n:'Engine/  引擎（公司 Fork）',tone:'bad',note:'定制散落、没分组也没标记',o:true,c:[
+            {n:'Plugins/',o:true,c:[
+              {n:'Animation/',note:'原厂自带'},
+              {n:'AI/',note:'原厂自带'},
+              {n:'XDCacheLog/',tone:'bad',note:'公司插件，直接和原厂平铺在同一层'},
+              {n:'XDTextureCompress/',tone:'bad',note:'公司插件，混在原厂里'},
+              {n:'AliCloundLog/',tone:'bad',note:'公司插件，混在原厂里'},
+              {n:'XGEController/',tone:'bad',note:'公司插件，混在原厂里'}
+            ]},
+            {n:'Source/  改过的引擎源码',tone:'bad',note:'没打标记，分不清动过哪里 ⚠'}
+          ]},
+          {n:'UE_game/  游戏项目'}
+        ]}] },
+      rec: { intro: '推荐：引擎是公司的<b>受控 Fork</b>——改源码不可避免，关键是让定制"可控、可追踪、可合并"。① 公司插件统一收进 <code>Engine/Plugins/CompanyPlugins/</code> <b>子文件夹</b>（引擎本来就会递归扫描子目录，<b>无需任何自定义路径规则</b>），和原厂插件一眼区分；② 必须改的引擎源码用统一标记（如 <code>// [XD] BEGIN/END</code>）+ 补丁清单记录，升级时能干净地重新合并上去。游戏项目只引用引擎版本号。',
+        tree: [
+          {n:'引擎仓库 Engine-Base（公司受控 Fork，引擎组维护）',tone:'good',o:true,c:[
+            {n:'Engine/  在官方基础上有"受控且可追踪"的定制',tone:'good',note:'定制不可避免，目标是能跟官方干净合并',o:true,c:[
+              {n:'Plugins/',o:true,c:[
+                {n:'Animation/',note:'原厂自带'},
+                {n:'AI/',note:'原厂自带'},
+                {n:'CompanyPlugins/  公司插件统一收进这个子文件夹',tone:'good',note:'引擎自动扫描，无需改路径规则；和原厂一眼区分',o:true,c:[
+                  {n:'XDCacheLog/'},{n:'XDTextureCompress/'},{n:'AliCloundLog/'},{n:'XGEController/'}
+                ]}
+              ]},
+              {n:'Source/  少量必须改的引擎源码',tone:'good',note:'用 // [XD] BEGIN/END 标记 + 补丁清单跟踪',o:true,c:[
+                {n:'（被标记包裹的改动）',t:'d'}
+              ]}
+            ]}
+          ]},
+          {n:'游戏仓库 UE_game（独立）',tone:'good',o:true,c:[
+            {n:'用哪个引擎版本.txt',t:'d',tone:'good',note:'只写一句：引用 引擎 v5.x-build123'}
+          ]}
+        ] }
+    },
+    module: {
+      title: '所有代码堆在一个超大模块里',
+      cur: { intro: '现状：游戏的全部代码（7000+ 个文件）<b>全堆在一个模块里</b>，战斗、网络、界面、连同"只在编辑器里用的工具代码"都混在一起。结果：改一行就要<b>重新编译全部</b>，慢；编辑器代码还可能被误打进玩家的安装包。',
+        tree: [{n:'UE_game / Source / UE_game / （一个超大模块）',tone:'bad',o:true,c:[
+          {n:'Private/',o:true,c:[
+            {n:'Core/',note:'基础'},
+            {n:'Fight/',note:'战斗'},
+            {n:'Net/',note:'网络'},
+            {n:'View/',note:'界面'},
+            {n:'Editor/',tone:'bad',note:'编辑器工具代码，混进了游戏运行代码里 ⚠'},
+            {n:'AutoTest/',note:'测试'}
+          ]}
+        ]}] },
+      rec: { intro: '推荐：按职责<b>拆成多个小模块</b>，各管一摊、依赖关系清晰。改"战斗"就只重编战斗那一块，<b>编译快很多</b>；编辑器代码单独隔离，<b>永远不会进玩家包</b>。',
+        tree: [{n:'UE_game / Source / （拆成多个独立模块）',tone:'good',o:true,c:[
+          {n:'GameCore/',tone:'good',note:'基础（最底层）'},
+          {n:'GameNet/',tone:'good',note:'网络（依赖 Core）'},
+          {n:'GameFight/',tone:'good',note:'战斗（改它只重编它）'},
+          {n:'GameUI/',tone:'good',note:'界面'},
+          {n:'GameLua/',tone:'good',note:'Lua 桥接'},
+          {n:'GameEditor/',tone:'good',note:'编辑器代码单独隔离，绝不进玩家包 ✓'},
+          {n:'GameTest/',tone:'good',note:'测试单独放'}
+        ]}] }
+    },
+    plugin: {
+      title: '99 个插件平铺，杂乱无章',
+      cur: { intro: '现状：99 个插件<b>平铺在一个文件夹里</b>，外部买的 SDK、给策划用的编辑器工具、游戏玩法功能全混在一起。结果：<b>没人说得清</b>哪些是花钱买的、哪些要随引擎升级、哪些是自己写的。',
+        tree: [{n:'UE_game / Plugins / （99个，全平铺）',tone:'bad',o:true,c:[
+          {n:'TapDB/',tone:'bad',note:'外部买的 SDK'},
+          {n:'SkillEditor/',tone:'bad',note:'编辑器工具'},
+          {n:'Wwise/',tone:'bad',note:'外部音频 SDK'},
+          {n:'Arc/',tone:'bad',note:'游戏玩法'},
+          {n:'MapEditor/',tone:'bad',note:'编辑器工具'},
+          {n:'XDGPayment/',tone:'bad',note:'外部支付 SDK'},
+          {n:'Spine/',tone:'bad',note:'外部动画 SDK'},
+          {n:'……还有 90 多个，混在一起',tone:'bad'}
+        ]}] },
+      rec: { intro: '推荐：按"它是什么"<b>分门别类放进子文件夹</b>，再配一张清单写明每个插件谁负责、什么授权、什么版本。一眼就能看清家底。',
+        tree: [{n:'UE_game / Plugins /',tone:'good',o:true,c:[
+          {n:'ThirdSDK/  外部购买/接入的 SDK',tone:'good',o:true,c:[
+            {n:'TapDB/'},{n:'Wwise/'},{n:'Spine/'},{n:'XDGPayment/'}
+          ]},
+          {n:'EditorTools/  给策划·美术用的编辑器工具',tone:'good',o:true,c:[
+            {n:'SkillEditor/'},{n:'MapEditor/'}
+          ]},
+          {n:'GameFeature/  游戏玩法功能',tone:'good',o:true,c:[
+            {n:'Arc/'}
+          ]},
+          {n:'插件清单.md',t:'d',tone:'good',note:'每个插件：谁负责 / 什么授权 / 什么版本'}
+        ]}] }
+    }
+  };
+
+  var fsState = {sc:'engine', mode:'cur'};
+
+  function buildTree(nodes){
+    var html='';
+    nodes.forEach(function(nd){
+      var hasC = nd.c && nd.c.length;
+      var tone = nd.tone ? ' '+nd.tone : '';
+      var open = nd.o !== false;
+      var caret = hasC ? (open?'▾':'▸') : '';
+      var ico = nd.t==='d' ? '📄' : '📁';
+      html += '<div class="row'+(hasC?' folder':'')+tone+'">'
+            + '<span class="caret">'+caret+'</span>'
+            + '<span class="ico">'+ico+'</span>'
+            + '<span class="nm">'+nd.n+'</span>'
+            + (nd.note?'<span class="fsnote">'+nd.note+'</span>':'')
+            + '</div>';
+      if(hasC){
+        html += '<div class="children'+(open?'':' hidden')+'">'+buildTree(nd.c)+'</div>';
+      }
+    });
+    return html;
+  }
+
+  function renderFS(){
+    var data = SC[fsState.sc][fsState.mode];
+    document.getElementById('fsintro').innerHTML = data.intro;
+    document.getElementById('fstree').innerHTML = buildTree(data.tree);
+  }
+
+  // 场景 / 模式 切换
+  document.querySelector('#tfs .fsctl').addEventListener('click', function(e){
+    var b = e.target.closest('.fsbtn'); if(!b) return;
+    if(b.dataset.sc){
+      document.querySelectorAll('#tfs .fsbtn[data-sc]').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active'); fsState.sc=b.dataset.sc;
+    } else if(b.dataset.mode){
+      document.querySelectorAll('#tfs .fsbtn[data-mode]').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active'); fsState.mode=b.dataset.mode;
+    }
+    renderFS();
+  });
+
+  // 文件夹展开/折叠
+  document.getElementById('fstree').addEventListener('click', function(e){
+    var row = e.target.closest('.row.folder'); if(!row) return;
+    var kids = row.nextElementSibling;
+    if(kids && kids.classList.contains('children')){
+      kids.classList.toggle('hidden');
+      var c = row.querySelector('.caret');
+      if(c) c.textContent = kids.classList.contains('hidden') ? '▸' : '▾';
+    }
+  });
+
+  renderFS();
 </script>
 </body>
 </html>
