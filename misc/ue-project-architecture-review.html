@@ -168,23 +168,25 @@
     <h2>巨石主模块（Monolith）<span class="badge b0">P0</span></h2>
     <div class="problem">
       <h4>问题描述</h4>
-      <code>UE_game</code> 单模块装下全部：<code>Core / Fight / Game / Net / View / Windows / Editor / AutoTest / LuaApi / Utils</code>（7000+ 文件）。改任意一处近乎全量重编；模块内无边界、任意互相引用；<b>编辑器代码 <code>Private/Editor</code> 塞进了 Runtime 模块</b>，靠 <code>bBuildEditor</code> 散落分支隔离。
+      <code>UE_game</code> 单模块装下全部：<code>Core / Fight / Game / Net / View / Windows / Editor / AutoTest / LuaApi / Utils</code>（7000+ 文件）。改任意一处近乎全量重编；模块内无边界、任意互相引用；<b>编辑器代码 <code>Private/Editor</code> 塞进了 <code>Type: Runtime</code> 模块</b>，靠 <code>#if WITH_EDITOR</code> / <code>bBuildEditor</code> 散落隔离——它本应是独立的 <code>Type: Editor</code> 模块。
       <div class="meta"><span><b>影响：</b>迭代编译慢、耦合失控、有随包误发编辑器代码风险</span></div>
     </div>
+    <div class="note"><b>UE 规范依据：</b>模块有 <code>Type</code> 字段，<code>Type: Editor</code> 的模块只编进编辑器目标(<code>UE_gameEditor.Target.cs</code>)、永不进玩家包。惯例是<b>每个功能各配一个 Editor 兄弟模块</b>，而非把所有编辑器代码并成一个大模块。本项目插件已普遍这么写：<code>SkillCommon↔SkillEditor</code>、<code>AffixCommon↔AffixEditor</code>、<code>AICommon↔AIEditor</code>，.uproject 里 <code>Cascade…(Runtime)↔…EdExt(Editor)</code> 亦然。</div>
     <div class="opts-title">▎可选整改方案</div>
 
     <div class="opt">
-      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">按现有目录边界渐进拆分多模块</span><span class="rec">推荐</span></div>
-      <p>沿用 <code>Private/</code> 的天然边界拆模块，依赖单向向下：<br>
-      <code>GameCore</code>(Utils/基础) ← <code>GameNet</code> ← <code>GameFight</code> ← <code>GameUI</code>(View/Windows) ← <code>GameLua</code>(LuaApi)。一次拆一个、独立验证。</p>
+      <div class="opt-head"><span class="opt-num">1</span><span class="opt-name">按功能拆运行时模块 + 各自配对 Editor 模块</span><span class="rec">推荐</span></div>
+      <p>沿用 <code>Private/</code> 的天然边界拆 <code>Type: Runtime</code> 模块，依赖单向向下：<br>
+      <code>GameCore</code>(Utils/基础) ← <code>GameNet</code> ← <code>GameFight</code> ← <code>GameUI</code>(View/Windows) ← <code>GameLua</code>(LuaApi)。<br>
+      <b>凡是带编辑器代码的功能，就配一个 <code>Type: Editor</code> 的兄弟模块</b>（如 <code>GameFight ↔ GameFightEditor</code>），把该功能的编辑器代码放进去——与项目现有 <code>XxxCommon/XxxEditor</code> 写法一致。一次拆一个、独立验证。</p>
       <p><span class="con">代价：</span>需先理清并切断反向依赖，过程中接口要反复调整。</p>
-      <div class="meta"><span class="pro"><b>优点：</b>增量编译大幅提速、耦合显式化、风险可控</span><span><b>工期：</b>2–4 月持续</span><span><b>风险：</b>中</span></div>
+      <div class="meta"><span class="pro"><b>优点：</b>增量编译大幅提速、耦合显式化、符合 UE 规范</span><span><b>工期：</b>2–4 月持续</span><span><b>风险：</b>中</span></div>
     </div>
     <div class="opt">
-      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">优先剥离 Editor 与 AutoTest（最高性价比的第一刀）</span></div>
-      <p>先把 <code>Private/Editor</code> 抽成独立的 <b>Editor 类型模块 <code>GameEditor</code></b>，<code>AutoTest</code> 抽成独立测试模块。这两块与运行时耦合最浅，收益（消除误发风险、隔离编辑器依赖）最直接。</p>
+      <div class="opt-head"><span class="opt-num">2</span><span class="opt-name">第一刀：把编辑器代码移出 Runtime 模块到 Editor 模块</span></div>
+      <p>最高性价比的起点：把主模块 <code>Private/Editor</code>（仅 6 个 cpp）的编辑器代码<b>移到 <code>Type: Editor</code> 模块</b>，按所属功能配对放置（不是堆成一个大 editor 模块）；<code>AutoTest</code> 也单独成模块。耦合最浅、收益最直接——彻底消除"编辑器代码被打进玩家包"的风险。</p>
       <p><span class="con">代价：</span>仅解决一部分，主运行时仍是巨石。</p>
-      <div class="meta"><span class="pro"><b>优点：</b>见效快、风险低，适合作为拆分起点</span><span><b>工期：</b>2–3 周</span><span><b>风险：</b>低</span></div>
+      <div class="meta"><span class="pro"><b>优点：</b>见效快、风险低，符合规范，适合作为拆分起点</span><span><b>工期：</b>1–2 周</span><span><b>风险：</b>低</span></div>
     </div>
     <div class="opt">
       <div class="opt-head"><span class="opt-num">3</span><span class="opt-name">功能模块插件化（GameFeature）</span></div>
@@ -349,8 +351,8 @@
         ③ <code>Engine/</code> 拆为独立公司基线 Fork + 二进制分发，项目按版本号引用 <span style="color:var(--muted)">[标签①方案1]</span><br>
         ④ <code>Engine/Plugins</code> 自定义插件迁出原生目录、源码改动补丁化 <span style="color:var(--muted)">[标签①方案2]</span></div>
       <div class="step"><b>阶段 2 · 拆解巨石模块（持续，2–4 月）</b><br>
-        ⑤ 先剥离 <code>Editor</code> 与 <code>AutoTest</code> <span style="color:var(--muted)">[标签②方案2]</span><br>
-        ⑥ 按 Core→Net→Fight→UI→Lua 渐进拆分多模块 <span style="color:var(--muted)">[标签②方案1]</span></div>
+        ⑤ 先把编辑器代码移到 <code>Type: Editor</code> 模块(按功能配对) + 剥离 <code>AutoTest</code> <span style="color:var(--muted)">[标签②方案2]</span><br>
+        ⑥ 按 Core→Net→Fight→UI→Lua 拆运行时模块，各自配对 Editor 模块 <span style="color:var(--muted)">[标签②方案1]</span></div>
       <div class="step"><b>阶段 3 · 治理插件与第三方（持续）</b><br>
         ⑦ 插件四类目录化 + owner/license 清单 <span style="color:var(--muted)">[标签③方案1]</span><br>
         ⑧ 第三方独立化锁版本、通用插件上提引擎层 <span style="color:var(--muted)">[标签④方案3 / 标签③方案2]</span></div>
@@ -425,25 +427,26 @@
     },
     module: {
       title: '所有代码堆在一个超大模块里',
-      cur: { intro: '现状：游戏的全部代码（7000+ 个文件）<b>全堆在一个模块里</b>，战斗、网络、界面、连同"只在编辑器里用的工具代码"都混在一起。结果：改一行就要<b>重新编译全部</b>，慢；编辑器代码还可能被误打进玩家的安装包。',
-        tree: [{n:'UE_game / Source / UE_game / （一个超大模块）',tone:'bad',o:true,c:[
+      cur: { intro: '现状：游戏的全部代码（7000+ 个文件）<b>全堆在一个"运行时"模块里</b>，战斗、网络、界面、连同"只在编辑器里用的工具代码"都混在一起。结果：改一行就要<b>重新编译全部</b>，慢；编辑器代码本该是独立的"仅编辑器"模块，却塞在运行时模块里靠开关隔离，<b>有被误打进玩家安装包的风险</b>。',
+        tree: [{n:'UE_game / Source / UE_game / （一个超大"运行时"模块）',tone:'bad',o:true,c:[
           {n:'Private/',o:true,c:[
             {n:'Core/',note:'基础'},
             {n:'Fight/',note:'战斗'},
             {n:'Net/',note:'网络'},
             {n:'View/',note:'界面'},
-            {n:'Editor/',tone:'bad',note:'编辑器工具代码，混进了游戏运行代码里 ⚠'},
+            {n:'Editor/',tone:'bad',note:'编辑器工具代码，混进了运行代码里——本该是独立的 Editor 模块 ⚠'},
             {n:'AutoTest/',note:'测试'}
           ]}
         ]}] },
-      rec: { intro: '推荐：按职责<b>拆成多个小模块</b>，各管一摊、依赖关系清晰。改"战斗"就只重编战斗那一块，<b>编译快很多</b>；编辑器代码单独隔离，<b>永远不会进玩家包</b>。',
-        tree: [{n:'UE_game / Source / （拆成多个独立模块）',tone:'good',o:true,c:[
-          {n:'GameCore/',tone:'good',note:'基础（最底层）'},
-          {n:'GameNet/',tone:'good',note:'网络（依赖 Core）'},
-          {n:'GameFight/',tone:'good',note:'战斗（改它只重编它）'},
-          {n:'GameUI/',tone:'good',note:'界面'},
-          {n:'GameLua/',tone:'good',note:'Lua 桥接'},
-          {n:'GameEditor/',tone:'good',note:'编辑器代码单独隔离，绝不进玩家包 ✓'},
+      rec: { intro: '推荐：按功能<b>拆成多个小模块</b>，各管一摊、依赖清晰。改"战斗"只重编战斗那块，<b>编译快很多</b>。编辑器代码按 UE 规范放进 <b>"仅编辑器"模块（Type: Editor）</b>，并<b>和它所属的功能配对</b>（如 战斗 ↔ 战斗编辑器）——这正是项目里 <code>SkillCommon↔SkillEditor</code> 已在用的写法。"仅编辑器"模块只编进编辑器，<b>永远不进玩家包</b>。',
+        tree: [{n:'UE_game / Source / （按功能拆模块，编辑器代码"按功能配对"）',tone:'good',o:true,c:[
+          {n:'GameCore/',tone:'good',note:'[运行时] 基础（最底层）'},
+          {n:'GameNet/',tone:'good',note:'[运行时] 网络（依赖 Core）'},
+          {n:'GameFight/',tone:'good',note:'[运行时] 战斗（改它只重编它）'},
+          {n:'GameFightEditor/',tone:'good',note:'[仅编辑器] 战斗的编辑器工具，和 GameFight 配对 · 不进玩家包 ✓'},
+          {n:'GameUI/',tone:'good',note:'[运行时] 界面'},
+          {n:'GameUIEditor/',tone:'good',note:'[仅编辑器] 界面相关编辑器工具，和 GameUI 配对 ✓'},
+          {n:'GameLua/',tone:'good',note:'[运行时] Lua 桥接'},
           {n:'GameTest/',tone:'good',note:'测试单独放'}
         ]}] }
     },

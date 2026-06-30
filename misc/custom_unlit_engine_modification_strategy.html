@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Custom Unlit 与引擎侵入式修改治理方案</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --paper: #ffffff;
+      --ink: #20242a;
+      --muted: #68717d;
+      --line: #d9dee5;
+      --accent: #0f6b65;
+      --accent-soft: #e6f3f1;
+      --warn: #9a5b00;
+      --warn-soft: #fff3da;
+      --code-bg: #f1f3f5;
+      --table-head: #eef2f5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.72 "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 48px));
+      margin: 32px auto 56px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 40px 48px;
+      box-shadow: 0 12px 36px rgba(20, 32, 45, 0.08);
+    }
+
+    h1, h2, h3 {
+      line-height: 1.25;
+      margin: 0;
+      color: #15191f;
+    }
+
+    h1 {
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 22px;
+      margin-top: 38px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+
+    h3 {
+      font-size: 17px;
+      margin-top: 26px;
+    }
+
+    p {
+      margin: 12px 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 26px;
+    }
+
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      border-radius: 4px;
+    }
+
+    .warning {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: var(--code-bg);
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 14px 16px;
+      border-radius: 6px;
+      background: #161b22;
+      color: #eef2f7;
+      line-height: 1.55;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--table-head);
+      text-align: left;
+      font-weight: 650;
+    }
+
+    ul, ol {
+      padding-left: 22px;
+      margin: 10px 0 18px;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 650;
+      margin-right: 6px;
+    }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Custom Unlit 与引擎侵入式修改治理方案</h1>
+  <p class="subtitle">面向长期维护自定义 UE 分支的宏治理、Hook 化与插件化改造思路。</p>
+
+  <div class="callout">
+    <strong>核心结论：</strong>不要追求所有改动在宏关闭后“字节级等于原始引擎”。更现实、更稳的目标是：让侵入边界尽量小，让副作用可见、可测、可回滚。
+  </div>
+
+  <h2>1. 当前宏方案的定位</h2>
+  <p>
+    当前项目里的 <code>XDBuildXXXConfiguration.cs</code> 本质上是一套基于 UnrealBuildTool 的全局 Feature Flag 系统。
+    C# 在 C++ 编译前运行，通过 <code>GlobalCompileEnvironment.Definitions.Add()</code> 把配置字段注入成 C++ 预处理宏。
+  </p>
+
+  <pre><code>XDBuildRenderingConfiguration.cs
+  public static int XD_RENDERING_CUSTOM_UNLIT = 1;
+
+UnrealBuildTool
+  GlobalCompileEnvironment.Definitions.Add("XD_RENDERING_CUSTOM_UNLIT=1");
+
+C++ 编译期
+  #define XD_RENDERING_CUSTOM_UNLIT 1</code></pre>
+
+  <p>
+    这类宏适合处理纯 C++ 编译裁剪、平台差异、性能敏感路径和 shader permutation 控制。
+    但它不适合作为所有引擎侵入式修改的唯一治理手段。
+  </p>
+
+  <h2>2. 宏方案的主要风险</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>风险</th>
+        <th>表现</th>
+        <th>原因</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>漏包宏</td>
+        <td>关闭宏后编译失败，或行为仍残留</td>
+        <td>大功能通常散落在多个模块、shader、editor、runtime 里</td>
+      </tr>
+      <tr>
+        <td>反射系统不可干净裁剪</td>
+        <td><code>UCLASS</code>、<code>UPROPERTY</code>、<code>UFUNCTION</code> 很难被宏安全包裹</td>
+        <td>UHT、generated header、资产序列化依赖稳定 schema</td>
+      </tr>
+      <tr>
+        <td>资产兼容性变化</td>
+        <td>关闭宏后旧资产无法加载、字段丢失、材质编译异常</td>
+        <td>材质 ShadingModel、属性、表达式节点进入资产数据</td>
+      </tr>
+      <tr>
+        <td>Shader DDC 不一致</td>
+        <td>shader 结果异常或缓存污染</td>
+        <td>C++ 宏、shader define、DDC key 没有统一管理</td>
+      </tr>
+      <tr>
+        <td>升级困难</td>
+        <td>UE merge 时冲突多，难判断功能边界</td>
+        <td>功能逻辑直接散布在引擎主流程中</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <strong>反射层建议：</strong>不要追求 <code>UPROPERTY</code> / <code>UFUNCTION</code> 随宏开关完全消失。更稳的方式是保持 schema 稳定，关闭时只关闭行为。
+  </div>
+
+  <h2>3. Custom Unlit 当前侵入点</h2>
+  <p>
+    当前 <code>CustomUnlit</code> 已经不是单一 shader 功能，而是一套完整的新 shading model 管线。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>层级</th>
+        <th>当前内容</th>
+        <th>侵入程度</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>材质类型</td>
+        <td>在 <code>EMaterialShadingModel</code> 中增加 <code>MSM_CustomUnlit</code></td>
+        <td>很高</td>
+      </tr>
+      <tr>
+        <td>材质节点</td>
+        <td><code>MaterialExpressionCustomUnlit.h</code> 增加多组 <code>UCLASS</code> 节点</td>
+        <td>中高</td>
+      </tr>
+      <tr>
+        <td>HLSL 翻译</td>
+        <td><code>FHLSLMaterialTranslator</code> 增加 <code>GetDynamicLighting</code>、<code>GetIBL</code> 等接口</td>
+        <td>高</td>
+      </tr>
+      <tr>
+        <td>Shader Define</td>
+        <td><code>MATERIAL_SHADINGMODEL_CUSTOM_UNLIT</code>、<code>MATERIAL_SHADINGMODEL_CUSTOM_UNLIT_SM5</code></td>
+        <td>中</td>
+      </tr>
+      <tr>
+        <td>PC 渲染路径</td>
+        <td>独立 <code>CustomUnlitPass</code>、<code>FCustomUnlitMeshPassProcessor</code>、<code>EMeshPass</code> slot</td>
+        <td>高</td>
+      </tr>
+      <tr>
+        <td>Mobile 渲染路径</td>
+        <td>独立 <code>MobileBasePassCustomUnlit*</code> shader</td>
+        <td>中高</td>
+      </tr>
+      <tr>
+        <td>灯光数据</td>
+        <td><code>GatherAndSortCustomUnlitLights</code>、<code>CustomUnlitLocalLightBuffer</code></td>
+        <td>中高</td>
+      </tr>
+      <tr>
+        <td>LightComponent</td>
+        <td><code>bUsedForCustomUnlit</code>、<code>IsUsedForCustomUnlit()</code></td>
+        <td>高</td>
+      </tr>
+      <tr>
+        <td>Editor 适配</td>
+        <td>PreviewMaterial、MaterialGraph、DebugViewMode 等特殊处理</td>
+        <td>中</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. 推荐的总体架构</h2>
+  <p>
+    对于 <code>CustomUnlit</code> 这类新 shading model，不建议追求完全插件化。更现实的目标是：
+  </p>
+
+  <pre><code>Engine 保留稳定 schema 和少量扩展点
+Plugin 承载具体功能逻辑
+Project Policy 决定平台、开关和策略</code></pre>
+
+  <table>
+    <thead>
+      <tr>
+        <th>层</th>
+        <th>建议承载内容</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Engine Stable Hook Layer</td>
+        <td><code>MSM_CustomUnlit</code>、MeshPass slot、材质编译通用桥、renderer RDG hook、shader include hook、light feature mask</td>
+      </tr>
+      <tr>
+        <td>XDCustomUnlit Plugin</td>
+        <td>材质节点、shader 文件、CustomUnlit pass processor、IBL/light 算法、editor 调试工具</td>
+      </tr>
+      <tr>
+        <td>Project Policy</td>
+        <td>哪些平台启用、是否走 LightGrid、是否启用独立 pass、光源筛选规则</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Hook 思路</h2>
+  <p>
+    Hook 可以理解为引擎主流程提供事件或接口，插件在外部注册实现。引擎只关心“这里允许扩展”，不关心具体功能。
+  </p>
+
+  <pre><code>// Engine
+FRendererExtensionRegistry::Get().RenderAfterBasePass(GraphBuilder, View);
+
+// Plugin
+FRendererExtensionRegistry::Get().RegisterExtension(MakeShared<FXDCustomUnlitRendererExtension>());</code></pre>
+
+  <table>
+    <thead>
+      <tr>
+        <th>形式</th>
+        <th>适合场景</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Interface</td>
+        <td>复杂状态、生命周期明确、需要多方法协作，例如 <code>ISceneViewExtension</code></td>
+      </tr>
+      <tr>
+        <td>Modular Feature</td>
+        <td>多个插件注册同一类能力，引擎枚举所有实现</td>
+      </tr>
+      <tr>
+        <td>Delegate</td>
+        <td>轻量事件，不需要复杂对象生命周期</td>
+      </tr>
+      <tr>
+        <td>Shader Include Hook</td>
+        <td>插件提供 shader 文件，引擎只保留虚拟路径 include 点</td>
+      </tr>
+      <tr>
+        <td>CVar / Config</td>
+        <td>运行时灰度、调试和平台策略，不适合结构性裁剪</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6. Custom Unlit 改造建议</h2>
+
+  <h3>6.1 统一灯光路径到 LightGrid</h3>
+  <p>
+    当前最应该优先收敛的是 CustomUnlit 专用灯光路径。
+    如果 CustomUnlit、移动端 DefaultLit 都统一使用 LightGrid，则可以逐步移除：
+  </p>
+  <ul>
+    <li><code>GatherAndSortCustomUnlitLights</code></li>
+    <li><code>CustomUnlitLocalLightData</code></li>
+    <li><code>CustomUnlitLocalLightBuffer</code></li>
+    <li><code>FForwardLocalLightCustomUnlitData</code></li>
+  </ul>
+  <p>
+    之后 CustomUnlit shader 只读取标准 forward light grid 数据：
+  </p>
+  <pre><code>ForwardLightData.ForwardLocalLightBuffer
+ForwardLightData.CulledLightDataGrid</code></pre>
+
+  <h3>6.2 Shader 文件迁入插件</h3>
+  <p>
+    使用插件 shader 虚拟目录映射：
+  </p>
+  <pre><code>AddShaderSourceDirectoryMapping(
+    TEXT("/Plugin/XDCustomUnlit"),
+    PluginShaderDir);</code></pre>
+  <p>
+    引擎 shader 中保留薄 include：
+  </p>
+  <pre><code>#if MATERIAL_SHADINGMODEL_CUSTOM_UNLIT
+#include "/Plugin/XDCustomUnlit/Private/CustomUnlitCommon.ush"
+#endif</code></pre>
+
+  <h3>6.3 Renderer pass 改为扩展点</h3>
+  <p>
+    当前 PC 路径直接在 <code>DeferredShadingRenderer.cpp</code> 调用 <code>RenderCustomUnlitOpaquePass()</code>。
+    推荐改成固定渲染阶段 hook，例如：
+  </p>
+  <ul>
+    <li><code>AfterBasePass</code></li>
+    <li><code>AfterLighting</code></li>
+    <li><code>BeforeTranslucency</code></li>
+    <li><code>AfterForwardShadow</code></li>
+  </ul>
+  <p>
+    插件注册自己的 renderer extension，在指定阶段提交 RDG pass。
+  </p>
+
+  <h3>6.4 MeshPass slot 的现实处理</h3>
+  <p>
+    <code>EMeshPass</code> 是静态 enum，纯插件动态扩展成本很高。建议保留一个稳定 slot，但把具体实现迁到扩展模块。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>方案</th>
+        <th>评价</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>保留 <code>EMeshPass::CustomUnlitOpaquePass</code></td>
+        <td>最现实，性能路径和 cached mesh command 容易保留</td>
+      </tr>
+      <tr>
+        <td>增加通用 <code>ExtensionPass0/1</code></td>
+        <td>多个功能可复用，但语义较弱</td>
+      </tr>
+      <tr>
+        <td>完全走动态 RDG draw</td>
+        <td>引擎侵入少，但性能和缓存路径需要重新评估</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>6.5 材质节点迁插件，保留通用编译桥</h3>
+  <p>
+    当前每个 CustomUnlit 节点都会要求 <code>FMaterialCompiler</code> / <code>FHLSLMaterialTranslator</code> 增加专用接口。
+    更好的方式是保留一个通用 external expression hook：
+  </p>
+  <pre><code>CompileExternalMaterialExpression(FunctionName, Inputs, Options)</code></pre>
+  <p>
+    插件节点调用这个桥，具体 HLSL 输出由 CustomUnlit 扩展实现。这样新增节点时不用继续污染材质编译器核心类。
+  </p>
+
+  <h3>6.6 LightComponent 属性改为通用 FeatureMask</h3>
+  <p>
+    不建议继续往核心 LightComponent 塞 <code>bUsedForCustomUnlit</code> 这类项目特化属性。
+    更推荐引擎提供通用能力：
+  </p>
+  <pre><code>FLightSceneProxy::GetCustomLightingFeatureMask()</code></pre>
+  <p>
+    CustomUnlit 只是其中一个 bit。以后 Toon、Stylized、GameplayLight 等都能复用。
+  </p>
+
+  <h2>7. 迁移顺序建议</h2>
+  <ol>
+    <li>统一 CustomUnlit 与移动端 DefaultLit 的 local light 到 LightGrid。</li>
+    <li>移除 CustomUnlit 专用 light gather、light buffer 和 shader 数据结构。</li>
+    <li>把 CustomUnlit HLSL 移到插件 shader 目录，引擎保留薄 include hook。</li>
+    <li>把 CustomUnlit 材质表达式类迁到插件，先保留现有 compiler 接口。</li>
+    <li>把多个 compiler 专用接口收敛成一个通用 external material expression hook。</li>
+    <li>把 CustomUnlit renderer pass 迁成 renderer extension，Engine 保留 pass slot 或 extension slot。</li>
+    <li>把 <code>bUsedForCustomUnlit</code> 收敛为通用 light feature mask 或插件 tag 方案。</li>
+  </ol>
+
+  <h2>8. 每个 Feature 应该维护的元信息</h2>
+  <p>
+    对长期维护自定义引擎来说，真正重要的是让每个改动有明确边界。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>字段</th>
+        <th>说明</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Feature 名称 / Owner</td>
+        <td>谁负责，出了问题找谁</td>
+      </tr>
+      <tr>
+        <td>改动文件列表</td>
+        <td>升级和回滚时快速定位</td>
+      </tr>
+      <tr>
+        <td>是否影响反射</td>
+        <td>涉及 UHT、Blueprint、资产 schema 的风险</td>
+      </tr>
+      <tr>
+        <td>是否影响序列化</td>
+        <td>是否需要 custom version / migration</td>
+      </tr>
+      <tr>
+        <td>是否影响 shader permutation / DDC</td>
+        <td>是否需要更新 shader version 或清缓存策略</td>
+      </tr>
+      <tr>
+        <td>是否支持运行时关闭</td>
+        <td>用 CVar / config 控制行为</td>
+      </tr>
+      <tr>
+        <td>是否支持编译期关闭</td>
+        <td>用宏裁剪代码和依赖</td>
+      </tr>
+      <tr>
+        <td>关闭时预期行为</td>
+        <td>明确是 fallback、隐藏、no-op，还是不支持关闭</td>
+      </tr>
+      <tr>
+        <td>验证用例</td>
+        <td>打开/关闭、PC/移动、Cook、Shader 编译、资产加载</td>
+      </tr>
+      <tr>
+        <td>回滚方式</td>
+        <td>出现问题时能否快速撤回</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>9. 最终判断</h2>
+  <div class="callout">
+    <p>
+      <code>CustomUnlit</code> 不适合追求完全插件化。它已经触及 UE 的静态 shading model、材质编译、MeshPass、shader permutation 和资产 schema。
+    </p>
+    <p>
+      更推荐的路线是：<strong>核心 schema 留在 Engine，具体功能逻辑进入插件；Engine 中只保留少量稳定 hook。</strong>
+      这样既不和 UE 的静态系统硬碰硬，又能显著降低后续维护和升级的冲突成本。
+    </p>
+  </div>
+
+  <p class="footer">
+    文档生成位置：F:\Docs\misc\custom_unlit_engine_modification_strategy.html
+  </p>
+</main>
+</body>
+</html>

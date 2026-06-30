@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>引擎二次开发治理与开发思路</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --ink: #20242b;
+      --muted: #68717d;
+      --line: #d9dee5;
+      --accent: #176b5d;
+      --accent-soft: #e8f3f0;
+      --warn: #985f0d;
+      --warn-soft: #fff4dc;
+      --danger: #9b2c2c;
+      --danger-soft: #fdecec;
+      --code-bg: #f1f3f5;
+      --table-head: #eef2f5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.72 "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    main {
+      width: min(1160px, calc(100% - 48px));
+      margin: 32px auto 56px;
+      padding: 42px 50px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 36px rgba(20, 32, 45, 0.08);
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.28;
+      color: #15191f;
+    }
+
+    h1 {
+      font-size: 31px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 22px;
+      margin-top: 40px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    h3 {
+      font-size: 17px;
+      margin-top: 26px;
+    }
+
+    p {
+      margin: 12px 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      border-radius: 4px;
+    }
+
+    .warning {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: var(--code-bg);
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 14px 16px;
+      border-radius: 6px;
+      background: #161b22;
+      color: #eef2f7;
+      line-height: 1.55;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--table-head);
+      text-align: left;
+      font-weight: 650;
+    }
+
+    ul, ol {
+      padding-left: 22px;
+      margin: 10px 0 18px;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 650;
+      margin-right: 6px;
+      white-space: nowrap;
+    }
+
+    .footer {
+      margin-top: 42px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>引擎二次开发治理与开发思路</h1>
+  <p class="subtitle">面向长期维护自定义 UE 分支的侵入式修改管理、扩展点设计、风险控制与协作流程。</p>
+
+  <div class="callout">
+    <strong>核心目标：</strong>不要只追求“宏关闭后等于原版源码”。更重要的是让每个引擎改动有清晰边界、明确 owner、可测试、可回滚、可升级。
+  </div>
+
+  <h2>1. 问题背景</h2>
+  <p>
+    引擎二次开发通常会从局部修复开始，逐渐演变成大量功能宏、项目特化逻辑、shader 分支、编辑器适配和资产 schema 变化。
+    如果缺少治理方式，几年后最大的问题不是“改了多少”，而是“没人知道这些改动的边界、依赖和关闭后的预期行为”。
+  </p>
+
+  <p>
+    当前常见做法是使用类似 <code>XD_RENDERING_XXX</code>、<code>XD_OPT_XXX</code> 的编译宏包裹修改。这个方案有价值，但它只能解决一部分问题。
+    当改动涉及 <code>UCLASS</code>、<code>UPROPERTY</code>、材质系统、shader permutation、Cook、DDC、序列化、MeshPass、渲染线程生命周期时，单纯靠宏会变得脆弱。
+  </p>
+
+  <h2>2. 管理目标</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>目标</th>
+        <th>说明</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>侵入边界小</td>
+        <td>Engine 源码里尽量只保留稳定扩展点，具体业务逻辑放到插件或独立模块。</td>
+      </tr>
+      <tr>
+        <td>功能归属清楚</td>
+        <td>每个 Feature 有 owner、文档、改动范围、依赖关系和回滚方式。</td>
+      </tr>
+      <tr>
+        <td>关闭行为可预期</td>
+        <td>明确关闭后是 fallback、no-op、隐藏 UI、还是不支持关闭。</td>
+      </tr>
+      <tr>
+        <td>升级成本可控</td>
+        <td>UE 版本升级时能快速判断冲突来自哪个 Feature。</td>
+      </tr>
+      <tr>
+        <td>副作用可验证</td>
+        <td>至少覆盖编译、shader 编译、Cook、资产加载、平台差异和关键运行路径。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. 宏系统的正确定位</h2>
+  <p>
+    宏不是坏方案，但它应该是治理体系的一部分，而不是唯一手段。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>适合用宏</th>
+        <th>不适合只靠宏</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>纯 C++ 实现分支</td>
+        <td><code>UCLASS</code> / <code>UPROPERTY</code> / <code>UFUNCTION</code> 反射 schema</td>
+      </tr>
+      <tr>
+        <td>平台编译差异</td>
+        <td>资产序列化格式变化</td>
+      </tr>
+      <tr>
+        <td>性能敏感路径裁剪</td>
+        <td>材质 ShadingModel、MaterialProperty、Blueprint API</td>
+      </tr>
+      <tr>
+        <td>shader permutation define</td>
+        <td>需要运行时灰度、调试或配置切换的行为</td>
+      </tr>
+      <tr>
+        <td>第三方 SDK 是否参与编译</td>
+        <td>大规模渲染管线或编辑器工作流改造</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <strong>原则：</strong>宏负责“编译期裁剪”，Hook / Plugin / CVar / Config / CustomVersion 负责“扩展、运行时策略和兼容性”。
+  </div>
+
+  <h2>4. 推荐分层架构</h2>
+  <pre><code>Engine Stable Hook Layer
+  少量稳定扩展点、通用接口、schema 兼容层
+
+Feature Plugin / Module Layer
+  具体功能实现、shader、工具、editor UI、策略代码
+
+Project Policy Layer
+  平台开关、配置、CVar、Cook 策略、发布策略</code></pre>
+
+  <table>
+    <thead>
+      <tr>
+        <th>层级</th>
+        <th>应该放什么</th>
+        <th>不应该放什么</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Engine Stable Hook Layer</td>
+        <td>通用扩展接口、少量枚举 slot、渲染阶段 hook、材质编译桥、shader include hook</td>
+        <td>项目专用业务逻辑、大量 ifdef 分支、临时实验代码</td>
+      </tr>
+      <tr>
+        <td>Feature Plugin / Module Layer</td>
+        <td>功能主体、算法实现、shader 文件、editor 工具、调试视图</td>
+        <td>必须改变核心对象内存布局的内容</td>
+      </tr>
+      <tr>
+        <td>Project Policy Layer</td>
+        <td>平台启用规则、CVar 默认值、ini 配置、Cook 和发布策略</td>
+        <td>底层引擎流程硬编码</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Hook 化思路</h2>
+  <p>
+    Hook 的思想类似引擎 delegate 或 extension point：引擎主流程在关键阶段调用扩展点，具体功能由插件注册。
+  </p>
+
+  <pre><code>// Engine
+FRenderExtensionRegistry::Get().RenderAfterBasePass(GraphBuilder, View);
+
+// Plugin
+FRenderExtensionRegistry::Get().RegisterExtension(MakeShared<FMyFeatureRenderer>());</code></pre>
+
+  <table>
+    <thead>
+      <tr>
+        <th>形式</th>
+        <th>适合场景</th>
+        <th>例子</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Interface</td>
+        <td>复杂状态、生命周期明确、多个回调函数</td>
+        <td><code>ISceneViewExtension</code></td>
+      </tr>
+      <tr>
+        <td>Modular Feature</td>
+        <td>多个插件注册同一类能力，引擎枚举所有实现</td>
+        <td><code>IModularFeatures</code></td>
+      </tr>
+      <tr>
+        <td>Delegate</td>
+        <td>轻量事件，不需要复杂状态</td>
+        <td>Editor menu extension、资产事件</td>
+      </tr>
+      <tr>
+        <td>Shader Include Hook</td>
+        <td>插件提供 shader 文件，引擎保留虚拟路径 include 点</td>
+        <td><code>AddShaderSourceDirectoryMapping</code></td>
+      </tr>
+      <tr>
+        <td>FeatureMask</td>
+        <td>多个功能共享一条通用扩展数据通道</td>
+        <td>Light / Primitive / Material 自定义功能位</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6. 反射与资产 Schema 策略</h2>
+  <p>
+    涉及 UHT 的改动必须单独看待。它们影响 generated code、Blueprint、序列化、Cook 和资产兼容性，不能用“宏关掉就没了”的心态处理。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>场景</th>
+        <th>推荐做法</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>新增 <code>UPROPERTY</code></td>
+        <td>尽量保持字段长期存在，关闭功能时隐藏 UI 或 no-op，不随宏消失。</td>
+      </tr>
+      <tr>
+        <td>新增 <code>UFUNCTION</code></td>
+        <td>保持 API 稳定，功能关闭时返回默认结果或提示不可用。</td>
+      </tr>
+      <tr>
+        <td>资产序列化变化</td>
+        <td>使用 custom version / migration，不依赖宏切换处理兼容。</td>
+      </tr>
+      <tr>
+        <td>项目特化字段</td>
+        <td>优先放插件组件、扩展对象、FeatureMask 或 metadata，少往核心类塞专用字段。</td>
+      </tr>
+      <tr>
+        <td>编辑器 UI</td>
+        <td>通过 detail customization、metadata、config 控制显示，而不是改变 schema。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout danger">
+    <strong>高风险信号：</strong>如果一个宏包裹了 <code>UCLASS</code>、<code>UPROPERTY</code>、<code>UENUM</code>、材质 ShadingModel、序列化字段，就应该进入 Feature 风险清单，而不是当作普通编译开关。
+  </div>
+
+  <h2>7. Shader 与渲染管线策略</h2>
+  <p>
+    Shader 和 Renderer 改动通常会同时影响 C++、HLSL、DDC、Cook、移动端预览和多平台差异，需要建立单独规则。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>改动类型</th>
+        <th>推荐策略</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>新增 shader 文件</td>
+        <td>优先放插件 <code>Shaders/</code>，用 <code>AddShaderSourceDirectoryMapping</code> 映射虚拟路径。</td>
+      </tr>
+      <tr>
+        <td>引擎 shader 主文件改动</td>
+        <td>只保留薄 include hook，具体实现放插件或独立 include。</td>
+      </tr>
+      <tr>
+        <td>新增 permutation</td>
+        <td>明确 DDC key、shader version、平台范围和编译数量。</td>
+      </tr>
+      <tr>
+        <td>新增 MeshPass / RDG Pass</td>
+        <td>优先通过 renderer extension 注册，必须改 enum 时保持 slot 稳定。</td>
+      </tr>
+      <tr>
+        <td>移动端/PC 差异</td>
+        <td>避免两套算法长期分叉；能统一 LightGrid、IBL、BRDF 的尽量统一。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>8. Feature 分类</h2>
+  <p>
+    所有引擎改动都应先分类，不同类型使用不同治理方式。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>类型</th>
+        <th>例子</th>
+        <th>治理方式</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge">A</span>纯实现替换</td>
+        <td>性能优化、bug fix、算法分支</td>
+        <td>宏 + 单元测试 + 性能数据</td>
+      </tr>
+      <tr>
+        <td><span class="badge">B</span>引擎扩展点</td>
+        <td>渲染阶段 hook、资源构建 hook、材质编译 hook</td>
+        <td>Interface / Delegate / Modular Feature</td>
+      </tr>
+      <tr>
+        <td><span class="badge">C</span>反射 API</td>
+        <td>新增 UPROPERTY、UFUNCTION、UENUM</td>
+        <td>schema 稳定 + migration + UI 隐藏</td>
+      </tr>
+      <tr>
+        <td><span class="badge">D</span>资产格式</td>
+        <td>材质属性、StaticMesh 数据、Cook 数据</td>
+        <td>CustomVersion + 资产升级验证</td>
+      </tr>
+      <tr>
+        <td><span class="badge">E</span>Shader 管线</td>
+        <td>新 shader、permutation、平台 define</td>
+        <td>插件 shader + DDC 策略 + 平台测试</td>
+      </tr>
+      <tr>
+        <td><span class="badge">F</span>实验功能</td>
+        <td>验证阶段的大改动</td>
+        <td>独立分支 / patch stack，不急于进主干</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>9. 开发流程建议</h2>
+  <ol>
+    <li>立项前先写 Feature Card，明确目标、owner、影响范围和关闭行为。</li>
+    <li>先判断是否能做成插件或模块；不能插件化时，再设计最小 Engine hook。</li>
+    <li>涉及反射或资产 schema 时，先设计兼容策略，再写功能。</li>
+    <li>涉及 shader 时，同步设计 C++ define、shader define、DDC、Cook 和平台矩阵。</li>
+    <li>实现时优先把业务逻辑放在 Feature 模块，Engine 只留薄扩展点。</li>
+    <li>提交前跑打开/关闭两种配置，至少保证编译和关键路径可用。</li>
+    <li>合入后更新 Feature Registry，记录改动文件、验证方式和回滚方式。</li>
+  </ol>
+
+  <h2>10. Feature Card 模板</h2>
+  <pre><code>Feature 名称：
+Owner：
+状态：实验 / 启用 / 废弃 / 迁移中
+
+目标：
+影响平台：
+影响模块：
+改动文件列表：
+
+是否影响 UHT / 反射：
+是否影响资产序列化：
+是否影响 Shader / DDC：
+是否影响 Cook：
+是否影响运行时线程模型：
+
+编译期宏：
+运行时 CVar / Config：
+关闭后的预期行为：
+
+依赖 Feature：
+冲突 Feature：
+测试方式：
+回滚方式：
+备注：</code></pre>
+
+  <h2>11. CI 与验证矩阵</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>验证项</th>
+        <th>目的</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Feature 开启编译</td>
+        <td>确保新功能路径可用。</td>
+      </tr>
+      <tr>
+        <td>Feature 关闭编译</td>
+        <td>确保关闭时没有漏包宏或未定义符号。</td>
+      </tr>
+      <tr>
+        <td>Editor 启动</td>
+        <td>验证 UHT、模块加载、反射和编辑器 UI。</td>
+      </tr>
+      <tr>
+        <td>Shader 全量编译或目标 shader 编译</td>
+        <td>验证 shader define、include 路径和 permutation。</td>
+      </tr>
+      <tr>
+        <td>Cook smoke test</td>
+        <td>验证资产序列化、Cook 数据和平台差异。</td>
+      </tr>
+      <tr>
+        <td>移动端预览 / SM5 对比</td>
+        <td>验证渲染路径一致性。</td>
+      </tr>
+      <tr>
+        <td>资产加载回归</td>
+        <td>验证旧资产、带新字段资产、关闭功能资产的兼容性。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>12. 分支与补丁管理</h2>
+  <p>
+    对长期自定义引擎来说，建议把“功能是否进主干”和“功能是否启用”分开管理。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>阶段</th>
+        <th>建议</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>实验阶段</td>
+        <td>独立分支或 patch stack，避免大量临时代码直接进入主干。</td>
+      </tr>
+      <tr>
+        <td>产品化阶段</td>
+        <td>设计 hook / plugin 边界，补齐 Feature Card 和验证用例。</td>
+      </tr>
+      <tr>
+        <td>稳定阶段</td>
+        <td>进入主干，但保留配置开关、owner 和回归测试。</td>
+      </tr>
+      <tr>
+        <td>废弃阶段</td>
+        <td>先关闭默认启用，再清理代码；反射字段需要迁移或长期兼容。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>13. 推荐落地路线</h2>
+  <ol>
+    <li>建立 Feature Registry，先把现有 <code>XD_</code> 宏按 owner 和影响范围登记。</li>
+    <li>标记高风险宏：反射、资产、shader、Cook、MeshPass、RHI、线程生命周期。</li>
+    <li>为新增功能设立准入规则：没有 Feature Card 不进主干。</li>
+    <li>把散落的大功能逐步收敛为少量 Engine hook + 插件实现。</li>
+    <li>先治理新功能，避免继续扩大债务；再逐步整理存量功能。</li>
+    <li>CI 增加开启/关闭编译矩阵，至少覆盖高风险 Feature。</li>
+    <li>UE 升级前，按 Feature Registry 分组处理冲突，而不是按文件盲合。</li>
+  </ol>
+
+  <h2>14. 总结</h2>
+  <div class="callout">
+    <p>
+      引擎二次开发的重点不是消灭所有侵入，而是让侵入可管理。
+      宏可以继续保留，但应该从“功能治理中心”降级为“编译期裁剪工具”。
+    </p>
+    <p>
+      更稳的体系是：<strong>宏做裁剪，Hook 做扩展，插件承载实现，Config/CVar 做策略，CustomVersion 做兼容，Feature Card 和 CI 保证可维护性。</strong>
+    </p>
+  </div>
+
+  <p class="footer">
+    文档生成位置：F:\Docs\misc\engine_secondary_development_governance.html
+  </p>
+</main>
+</body>
+</html>
