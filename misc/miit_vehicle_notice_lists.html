@@ -72,7 +72,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(120px, 160px) minmax(180px, 240px) auto auto;
+      grid-template-columns: minmax(120px, 160px) auto auto;
       gap: 12px;
       align-items: end;
       padding: 14px;
@@ -363,7 +363,7 @@
       <div>
         <h1>工信部新车申报公示清单追踪</h1>
         <p class="subtitle">
-          每次打开自动从工信部官方搜索接口拉取最新公示文章，并解析其中的官方清单页面链接。
+          每次打开自动从工信部官方搜索接口拉取最新公示文章，并只显示“车辆新产品公示清单”页面链接。
           数据源：中华人民共和国工业和信息化部。
         </p>
       </div>
@@ -371,17 +371,8 @@
 
     <form class="toolbar" id="controls">
       <label>
-        最新清单数量 N
+        最新新产品清单数量 N
         <input id="limit" type="number" min="1" max="50" step="1" value="6">
-      </label>
-      <label>
-        清单类型
-        <select id="kind">
-          <option value="all">全部清单</option>
-          <option value="new">车辆新产品公示清单</option>
-          <option value="change">车辆变更扩展产品公示清单</option>
-          <option value="enterprise">企业/准入变更信息清单</option>
-        </select>
       </label>
       <button id="refresh" type="submit">
         <span id="refreshIcon">刷新</span>
@@ -397,7 +388,7 @@
     <section class="layout">
       <div class="list">
         <div class="section-head">
-          <h2>公示清单</h2>
+          <h2>新产品公示清单</h2>
           <span class="count" id="resultCount">0 条</span>
         </div>
         <div class="cards" id="cards">
@@ -423,32 +414,10 @@
     const SEARCH_PAGE_SIZE = 20;
     const SEEDED_ITEMS = [
       {
-        title: "《道路机动车辆生产企业及产品公告》（第408批）拟发布的新准入车辆生产企业及已准入企业变更信息清单",
-        url: "https://www.miit.gov.cn/datainfo/dljdclscqyjcpggnfbdxzrclscqyjyzrqybgxxqd/art/2026/art_193720c0ad2b4e3990193efd73132d34.html",
-        kind: "enterprise",
-        kindLabel: "企业/准入",
-        batch: "第408批",
-        publishDate: "2026-06-10",
-        articleTitle: "关于《道路机动车辆生产企业及产品公告》（第408批）和《享受车船税减免优惠的节约能源 使用新能源汽车车型目录》（第八十七批）拟发布内容的公示",
-        articleUrl: "https://www.miit-eidc.org.cn/art/2026/6/10/art_1691_12455.html",
-        source: "装备中心备用"
-      },
-      {
         title: "申报《道路机动车辆生产企业及产品公告》（第408批）的车辆新产品公示清单",
         url: "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_2b16a3a2b8a347929b8535de66d8158a.html",
         kind: "new",
         kindLabel: "新产品",
-        batch: "第408批",
-        publishDate: "2026-06-10",
-        articleTitle: "关于《道路机动车辆生产企业及产品公告》（第408批）和《享受车船税减免优惠的节约能源 使用新能源汽车车型目录》（第八十七批）拟发布内容的公示",
-        articleUrl: "https://www.miit-eidc.org.cn/art/2026/6/10/art_1691_12455.html",
-        source: "装备中心备用"
-      },
-      {
-        title: "申报《道路机动车辆生产企业及产品公告》（第408批）的车辆变更扩展产品公示清单",
-        url: "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_d0f4ded25d8c47488fa8c3943af5ab32.html",
-        kind: "change",
-        kindLabel: "变更扩展",
         batch: "第408批",
         publishDate: "2026-06-10",
         articleTitle: "关于《道路机动车辆生产企业及产品公告》（第408批）和《享受车船税减免优惠的节约能源 使用新能源汽车车型目录》（第八十七批）拟发布内容的公示",
@@ -465,7 +434,6 @@
 
     const controls = document.getElementById("controls");
     const limitInput = document.getElementById("limit");
-    const kindSelect = document.getElementById("kind");
     const refreshButton = document.getElementById("refresh");
     const refreshIcon = document.getElementById("refreshIcon");
     const copyButton = document.getElementById("copyLinks");
@@ -506,11 +474,7 @@
     function classifyList(text) {
       const label = cleanHtml(text);
       if (label.includes("车辆新产品")) return { key: "new", label: "新产品" };
-      if (label.includes("变更扩展")) return { key: "change", label: "变更扩展" };
-      if (label.includes("新准入") || label.includes("企业变更") || label.includes("准入企业")) {
-        return { key: "enterprise", label: "企业/准入" };
-      }
-      return { key: "other", label: "其他清单" };
+      return { key: "other", label: "其他" };
     }
 
     function cleanListTitle(text) {
@@ -635,15 +599,13 @@
           const isOfficialDataPage = item.url.includes("/datainfo/");
           const isList = item.title.includes("清单");
           const isDoc = /\.(doc|docx|xls|xlsx|pdf)(\?|$)/i.test(item.url);
-          return isOfficialDataPage && isList && !isDoc;
+          return isOfficialDataPage && isList && !isDoc && item.kind === "new";
         });
     }
 
     function filterItems(items) {
-      const kind = kindSelect.value;
       const limit = Math.max(1, Math.min(50, Number(limitInput.value) || 8));
-      const filtered = kind === "all" ? items : items.filter((item) => item.kind === kind);
-      return filtered.slice(0, limit);
+      return items.filter((item) => item.kind === "new").slice(0, limit);
     }
 
     async function loadLatest() {
@@ -687,7 +649,7 @@
         state.items = collected;
         render();
         const visible = filterItems(state.items).length;
-        setStatus(`已从工信部官方接口及装备中心备用数据解析到 <strong>${state.items.length}</strong> 个清单链接，当前显示 <strong>${visible}</strong> 个。`);
+        setStatus(`已从工信部官方接口及装备中心备用数据解析到 <strong>${state.items.length}</strong> 个新产品清单链接，当前显示 <strong>${visible}</strong> 个。`);
       } catch (error) {
         state.items = [];
         cardsBox.innerHTML = `<div class="empty error">拉取失败：${cleanHtml(error.message)}。请稍后重试，或直接打开工信部通用入口。</div>`;
@@ -712,7 +674,7 @@
       resultCount.textContent = `${items.length} 条`;
 
       if (items.length === 0) {
-        cardsBox.innerHTML = `<div class="empty">没有找到符合条件的清单。可以切换“全部清单”或增大 N 后刷新。</div>`;
+        cardsBox.innerHTML = `<div class="empty">没有找到车辆新产品公示清单。可以稍后刷新，或增大 N 后再试。</div>`;
         return;
       }
 
@@ -722,8 +684,6 @@
           <div class="meta">
             <span class="pill good">${item.batch}</span>
             <span class="pill">${item.kindLabel}</span>
-            <span>${item.source || "官方"}</span>
-            <span>发布：${item.publishDate || "未知"}</span>
           </div>
           <div class="actions">
             <a href="${item.url}" target="_blank" rel="noopener">打开清单</a>
@@ -772,7 +732,6 @@
       loadLatest();
     });
 
-    kindSelect.addEventListener("change", render);
     copyButton.addEventListener("click", copyLinks);
 
     loadLatest();
