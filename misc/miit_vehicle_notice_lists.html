@@ -413,17 +413,17 @@
     const MAX_SEARCH_PAGES = 8;
     const SEARCH_PAGE_SIZE = 20;
     const SEEDED_ITEMS = [
-      {
-        title: "申报《道路机动车辆生产企业及产品公告》（第408批）的车辆新产品公示清单",
-        url: "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_2b16a3a2b8a347929b8535de66d8158a.html",
-        kind: "new",
-        kindLabel: "新产品",
-        batch: "第408批",
-        publishDate: "2026-06-10",
-        articleTitle: "关于《道路机动车辆生产企业及产品公告》（第408批）和《享受车船税减免优惠的节约能源 使用新能源汽车车型目录》（第八十七批）拟发布内容的公示",
-        articleUrl: "https://www.miit-eidc.org.cn/art/2026/6/10/art_1691_12455.html",
-        source: "装备中心备用"
-      }
+      newProductSeed("409", "2026-07-10", "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_55c31979bd934c1dac88e3976bc7570a.html"),
+      newProductSeed("408", "2026-06-10", "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_2b16a3a2b8a347929b8535de66d8158a.html", "https://www.miit-eidc.org.cn/art/2026/6/10/art_1691_12455.html"),
+      newProductSeed("407", "2026-05-14", "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_1c3689d478f24d59ae0d197a5114da79.html"),
+      newProductSeed("406", "2026-04-09", "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_090c38afa6d6494491047615fbf591a8.html", "https://www.miit.gov.cn/jgsj/zbys/qcgy/art/2026/art_295d7c44deb4400aa98e835fa05d7444.html"),
+      newProductSeed("405", "2026-03-17", "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_c838ade851a045f6838601d1a0d621e0.html"),
+      newProductSeed("404", "2026-02-06", "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_227a8b47b3604f5a9850581dbf7605de.html"),
+      newProductSeed("403", "2026-01-09", "https://www.miit.gov.cn/datainfo/cpgg/art/2026/art_6baa320b942c4255a50b73b7a03033e0.html"),
+      newProductSeed("402", "2025-12-05", "https://www.miit.gov.cn/datainfo/cpgg/art/2025/art_62721744b2f14a8ab776bf03d477b7ab.html"),
+      newProductSeed("401", "2025-11-10", "https://www.miit.gov.cn/datainfo/cpgg/art/2025/art_253244feb93c4c69812e26aa2f0f0ee3.html"),
+      newProductSeed("400", "2025-10-09", "https://www.miit.gov.cn/datainfo/cpgg/art/2025/art_37bc9e1cb2614d6fbb594b810c5a9a4d.html"),
+      newProductSeed("398", "2025-08-08", "https://www.miit.gov.cn/datainfo/cpgg/art/2025/art_9ec09a306d9444aa9e14f811f8c63a49.html")
     ];
 
     const state = {
@@ -479,6 +479,20 @@
 
     function cleanListTitle(text) {
       return cleanHtml(text).replace(/^\d+\s*[.．、]\s*/, "");
+    }
+
+    function newProductSeed(batch, publishDate, url, articleUrl = "") {
+      return {
+        title: `申报《道路机动车辆生产企业及产品公告》（第${batch}批）的车辆新产品公示清单`,
+        url,
+        kind: "new",
+        kindLabel: "新产品",
+        batch: `第${batch}批`,
+        publishDate,
+        articleTitle: "",
+        articleUrl,
+        source: "官方清单补齐"
+      };
     }
 
     function setStatus(message, tone = "") {
@@ -649,7 +663,7 @@
         state.items = collected;
         render();
         const visible = filterItems(state.items).length;
-        setStatus(`已从工信部官方接口及装备中心备用数据解析到 <strong>${state.items.length}</strong> 个新产品清单链接，当前显示 <strong>${visible}</strong> 个。`);
+        setStatus(`已从工信部官方接口及历史官方清单补齐到 <strong>${state.items.length}</strong> 个新产品清单链接，按批次/时间倒序显示 <strong>${visible}</strong> 个。`);
       } catch (error) {
         state.items = [];
         cardsBox.innerHTML = `<div class="empty error">拉取失败：${cleanHtml(error.message)}。请稍后重试，或直接打开工信部通用入口。</div>`;
@@ -687,7 +701,7 @@
           </div>
           <div class="actions">
             <a href="${item.url}" target="_blank" rel="noopener">打开清单</a>
-            <a href="${item.articleUrl}" target="_blank" rel="noopener">公示原文</a>
+            ${item.articleUrl && item.articleUrl !== item.url ? `<a href="${item.articleUrl}" target="_blank" rel="noopener">公示原文</a>` : ""}
           </div>
         </article>
       `).join("");
