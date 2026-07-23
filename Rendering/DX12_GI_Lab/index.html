@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DX12 PRT Probe Lab</title>
+  <link rel="stylesheet" href="../gi_course.css">
+  <style>
+    :root { color-scheme: dark; --bg:#071019; --card:#101d29; --line:#294055; --text:#e9f3fa; --muted:#a8bccb; --cyan:#58e0d4; --gold:#ffc56c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:16px/1.72 system-ui,"Microsoft YaHei",sans-serif; color:var(--text); background:radial-gradient(circle at 80% 0,#173047 0,transparent 32rem),var(--bg); }
+    main { width:min(1080px,calc(100% - 32px)); margin:auto; padding:52px 0 72px; }
+    h1 { margin:.2rem 0 .5rem; font-size:clamp(2rem,5vw,4.3rem); line-height:1.02; letter-spacing:-.04em; }
+    h2 { margin:0 0 .7rem; font-size:1.18rem; }
+    p { margin:.45rem 0; color:var(--muted); }
+    code { color:#d6fbf7; background:#07131d; border:1px solid #213748; border-radius:5px; padding:.08rem .35rem; }
+    pre { overflow:auto; margin:.8rem 0 0; padding:1rem; background:#061018; border:1px solid var(--line); border-radius:10px; color:#d6fbf7; }
+    a { color:var(--cyan); }
+    .eyebrow { color:var(--cyan); font-size:.78rem; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
+    .lead { max-width:800px; font-size:1.08rem; }
+    .badges { display:flex; flex-wrap:wrap; gap:8px; margin:22px 0 30px; }
+    .badge { padding:6px 10px; border:1px solid var(--line); border-radius:999px; color:#c9dbe7; background:#0c1823; font-size:.82rem; }
+    .hero-image { display:block; width:100%; margin:24px 0 14px; border:1px solid var(--line); border-radius:14px; background:#04090d; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:28px 0; }
+    .card { padding:20px; border:1px solid var(--line); border-radius:13px; background:linear-gradient(145deg,rgba(18,34,47,.96),rgba(10,21,31,.96)); }
+    .metric { color:var(--gold); font:700 1.45rem ui-monospace,Consolas,monospace; }
+    .links { display:grid; gap:9px; margin-top:12px; }
+    .links a { display:block; padding:11px 13px; border:1px solid var(--line); border-radius:8px; text-decoration:none; background:#091722; }
+    .links a:hover { border-color:var(--cyan); transform:translateX(2px); }
+    .note { border-left:3px solid var(--gold); padding:11px 14px; background:#17170f; color:#d9cba9; }
+    .topline { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; margin-bottom:34px; padding-bottom:14px; border-bottom:1px solid var(--line); font-size:.82rem; }
+    .topline nav { display:flex; flex-wrap:wrap; gap:14px; }
+    .stage-list { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:18px 0 28px; }
+    .stage-list a { padding:10px; border:1px solid var(--line); border-radius:9px; background:#0a1721; text-decoration:none; font-size:.78rem; }
+    .stage-list b { display:block; color:var(--gold); font:700 .7rem ui-monospace,Consolas,monospace; }
+    .deep { margin-top:16px; }
+    .deep h2 { margin-bottom:.2rem; font-size:1.45rem; }
+    .pipeline { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; margin:16px 0; }
+    .pipeline div { position:relative; padding:12px 9px; border:1px solid var(--line); border-radius:9px; background:#091721; font-size:.74rem; }
+    .pipeline div:not(:last-child)::after { content:"→"; position:absolute; right:-9px; top:30%; z-index:2; color:var(--gold); }
+    .pipeline b { display:block; color:#eaf4fa; }
+    .pipeline span { color:var(--muted); font-size:.68rem; }
+    footer { margin-top:36px; color:#7890a0; font-size:.85rem; }
+    @media(max-width:720px){ .grid{grid-template-columns:1fr;} .stage-list,.pipeline{grid-template-columns:1fr;} .pipeline div::after{display:none} main{padding-top:32px;} }
+  </style>
+</head>
+<body>
+<main>
+  <div class="topline"><strong>GI 学习地图 / DX12 PRT Lab</strong><nav><a href="../index.html">⌂ 主目录</a><a href="../gi_module_prt_probes.html">PRT 交互课</a><a href="../RenderGraph_GI_Lab/index.html">RenderGraph GI Lab</a><a href="../Realtime_GI_Field_Guide.html">方案总览</a></nav></div>
+  <div class="eyebrow">Native companion · D3D12 + HLSL compute</div>
+  <h1>PRT Probe Lab</h1>
+  <p class="lead">一个可编译、可单步、可自检的原生对照实验：后墙 40 个 radiance bricks 构成 <code>R</code>，固定几何传输矩阵构成 <code>W</code>，GPU compute 计算地面 120 个 receiver 的 <code>E = W · R</code>。</p>
+  <div class="badges"><span class="badge">Direct3D 12</span><span class="badge">HLSL CS 5.1</span><span class="badge">左右 3D 分屏</span><span class="badge">CPU/GPU Oracle</span><span class="badge">无第三方依赖</span></div>
+  <div class="stage-list"><a href="#input"><b>STAGE 01</b>当前灯 → 40 bricks</a><a href="#transfer"><b>STAGE 02</b>固定几何 → W</a><a href="#compute"><b>STAGE 03</b>GPU E = W·R</a><a href="#dispatch"><b>STAGE 04</b>DX12 dispatch / barrier</a><a href="#compare"><b>STAGE 05</b>baked / current</a><a href="#verify"><b>STAGE 06</b>CPU/GPU oracle</a><a href="#source"><b>STAGE 07</b>逐文件追踪</a><a href="#rendergraph"><b>STAGE 08</b>迁移 RenderGraph</a></div>
+
+  <img class="hero-image" src="assets/DX12_GI_Lab_hardware.png" alt="DX12 PRT Probe Lab 左侧 baked irradiance 与右侧当前 PRT 输出的 3D 分屏截图">
+  <p>左侧固定在旧 irradiance；右侧由本帧 GPU <code>W·R</code> 更新。截图标题中的 old/current 数值来自同一个被青色八面体标记的 receiver。</p>
+
+  <section class="grid" id="verify">
+    <article class="card"><h2>真实 GPU 自检</h2><div class="metric">2.98023e-08</div><p>修正 irradiance 量纲后，在 RTX 5060 Ti 上重新构建并实测的 GPU readback / CPU 参考最大绝对误差；通过阈值为 <code>1e-5</code>。</p></article>
+    <article class="card"><h2>D3D12 Debug Layer</h2><div class="metric">0 warnings / 0 errors</div><p>Debug x64 自检读取 Info Queue；ERROR/CORRUPTION 会使进程返回非零。</p></article>
+  </section>
+
+  <section class="card deep" id="input">
+    <h2>Stage 01 · 当前点光源先照亮 40 个 wall bricks</h2>
+    <p>点光源的世界坐标由 <code>LightPositionFromAngle</code> 生成；它是全向点光，因此 <code>forward</code> 不适用。每个 brick 保存当前出射 radiance <code>R[b]</code>，这部分随灯移动而变化。</p>
+    <div class="gi-light-card"><span class="gi-light-icon">●</span><div><strong>动态各向同性点光源</strong><div class="gi-light-meta"><span>position = LightPositionFromAngle(m_lightAngle)</span><span>forward = 不适用（全向）</span><span>color = (1.0, 0.74, 0.42)</span><span>power scale = 5.6</span></div></div></div>
+    <div class="gi-workbench" data-gi-workbench>
+      <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">实际代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际 C++</button></div>
+      <div class="gi-panel" data-gi-panel="intuition"><p>先把后墙切成 8×5 个小反射片。灯每移动一帧，只重新计算这些片此刻有多亮；固定场景传输矩阵还不用动。</p></div>
+      <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">R<sub>b</sub> = albedo<sub>b</sub>/π · lightColor · 5.6·max(n<sub>b</sub>·l,0)/(1+0.12·distance²) + ambient</div></div>
+      <div class="gi-panel" data-gi-panel="values"><p>程序中的 lightColor=(1.0, 0.74, 0.42)，ambient=0.006×albedo；<code>distance²</code> 至少为 0.1，避免灯靠得极近时分母退化。</p></div>
+      <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">for 每个 wall brick:
+  计算 brick 到点光源的方向和距离平方
+  计算 max(brickNormal · lightDirection, 0)
+  计算距离衰减后的入射光
+  乘 brick.albedo / π，得到出射 radiance
+  写入 R[brick]</code></pre></div>
+      <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="src/PrtScene.cpp · ShadeWallBricks">const XMFLOAT3 toLight =
+    Subtract(lightPosition, brick.position);
+const float distanceSquared =
+    std::max(0.1f, Dot(toLight, toLight));
+const float ndotl = std::max(
+    0.0f,
+    Dot(brick.normal, Normalize(toLight)));
+const float power =
+    5.6f * ndotl / (1.0f + 0.12f * distanceSquared);
+
+radiance[index] = {
+    brick.albedo.x * lightRgb.x * power / std::numbers::pi_v&lt;float&gt;
+        + 0.006f * brick.albedo.x,
+    brick.albedo.y * lightRgb.y * power / std::numbers::pi_v&lt;float&gt;
+        + 0.006f * brick.albedo.y,
+    brick.albedo.z * lightRgb.z * power / std::numbers::pi_v&lt;float&gt;
+        + 0.006f * brick.albedo.z,
+    1.0f,
+};</code></pre></div>
+    </div>
+  </section>
+
+  <section class="card deep" id="transfer">
+    <h2>Stage 02 · 固定几何只负责构建一次 W</h2>
+    <p><code>W[p,b]</code> 不保存当前灯光颜色；它只保存 brick 到 receiver 的固定 visibility、两端 cosine、brick area 与 inverse-square 几何衰减。这正是 PRT Probe 与普通 Irradiance Probe 的核心分界。</p>
+    <div class="gi-workbench" data-gi-workbench>
+      <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">尺寸账本</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际 C++</button></div>
+      <div class="gi-panel" data-gi-panel="intuition"><p>对每个地面接收点，提前问 40 个墙面 brick：“你和我互相朝向吗？中间被盒子挡住吗？你占多大立体角？”答案固定后，移动灯只需换 R，不再重算几何。</p></div>
+      <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">W<sub>p,b</sub> = visibility · max(n<sub>p</sub>·ω,0) · max(n<sub>b</sub>·−ω,0) · area<sub>b</sub> / distance²</div></div>
+      <div class="gi-panel" data-gi-panel="values"><p>receiver=120，brick=40，因此 W 有 4,800 个 float，约 18.75 KiB。教学程序启动时构建；生产项目通常离线烘焙、稀疏压缩并流送。</p></div>
+      <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">for 每个 receiver p:
+  for 每个 brick b:
+    如果 p 到 b 的线段穿过 blocker:
+      W[p,b] = 0
+    否则:
+      计算 receiver cosine
+      计算 brick cosine
+      W[p,b] = 两个 cosine * brickArea / distance²</code></pre></div>
+      <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="src/PrtScene.cpp · BuildTransferMatrix">const XMFLOAT3 toBrick =
+    Subtract(brick.position, receiver.position);
+const float distance = Length(toBrick);
+const XMFLOAT3 direction = Normalize(toBrick);
+const XMFLOAT3 reverseDirection{
+    -direction.x, -direction.y, -direction.z,
+};
+const float cosineReceiver = std::max(
+    0.0f, Dot(receiver.normal, direction));
+const float cosineBrick = std::max(
+    0.0f, Dot(brick.normal, reverseDirection));
+const bool blocked = SegmentIntersectsAabb(
+    receiver.position, brick.position, scene.blocker);
+
+if (!blocked) {
+    transfer[receiverIndex * kBrickCount + brickIndex] =
+        cosineReceiver * cosineBrick * brick.area /
+        (distance * distance);
+}</code></pre></div>
+    </div>
+  </section>
+
+  <section class="card deep" id="compute">
+    <h2>Stage 03 · GPU Compute 对每个 receiver 做一行点积</h2>
+    <p>每个 HLSL thread 负责一个 receiver，读取 W 的一整行和 40 个当前 brick radiance。没有隐藏 helper；下面就是实际编译的完整核心。</p>
+    <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+      <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">线程代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际 HLSL</button></div>
+      <div class="gi-panel" data-gi-panel="intuition"><p>把一个 receiver 看成一行有 40 个旋钮的调音台：W 决定每个 brick 能传来多少，R 是 brick 当前输入颜色。逐项相乘再相加，就是 receiver 当前 irradiance。</p></div>
+      <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">E<sub>p</sub> = Σ<sub>b=0..39</sub> W<sub>p,b</sub> · R<sub>b</sub></div></div>
+      <div class="gi-panel" data-gi-panel="values"><p>receiver 37 的 row offset = 37×40 = 1480；thread 读取 <code>gTransfer[1480…1519]</code>，与 <code>gBrickRadiance[0…39]</code> 相乘后写 <code>gReceiverIrradiance[37]</code>。</p></div>
+      <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">receiver = 当前 GPU thread 的 x
+如果 receiver 超出 120: 返回
+sum = 0
+row = receiver * 40
+for brick 从 0 到 39:
+  sum += W[row + brick] * R[brick]
+E[receiver] = sum</code></pre></div>
+      <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="shaders/PrtCompute.hlsl · CSMain">[numthreads(64, 1, 1)]
+void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    const uint receiver = dispatchThreadId.x;
+    if (receiver &gt;= gReceiverCount)
+        return;
+
+    float3 sum = 0.0;
+    const uint row = receiver * gBrickCount;
+    for (uint brick = 0; brick &lt; gBrickCount; ++brick)
+        sum += gTransfer[row + brick] *
+               gBrickRadiance[brick].rgb;
+
+    gReceiverIrradiance[receiver] = float4(sum, 1.0);
+}</code></pre></div>
+    </div>
+  </section>
+
+  <section class="card deep" id="dispatch">
+    <h2>Stage 04 · 手写 DX12 如何把 SRV/UAV、dispatch 与 readback 串起来</h2>
+    <div class="pipeline"><div><b>Upload R</b><span>CPU mapped upload</span></div><div><b>Bind W / R</b><span>t0 + t1 SRV</span></div><div><b>Bind E</b><span>u0 UAV</span></div><div><b>Dispatch(2,1,1)</b><span>120 / 64 threads</span></div><div><b>UAV → CopySrc</b><span>教学同步 readback</span></div></div>
+    <div class="gi-workbench" data-gi-workbench data-gi-default="code">
+      <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际 DX12 C++</button></div>
+      <div class="gi-panel" data-gi-panel="intuition"><p>DX12 不知道资源“下一步要干什么”，所以程序必须显式绑定描述符、发 dispatch、插 UAV barrier，再切到 Copy Source。RenderGraph 版会从读写声明自动推导这些状态转换。</p></div>
+      <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">绑定包含 W、R、E 的 descriptor heap
+设置 compute root signature 与 pipeline
+上传 receiverCount=120、brickCount=40
+dispatch ceil(120 / 64) 个 thread groups
+插入 UAV barrier，确保 E 写完
+把 E 从 UAV 状态切到 Copy Source
+复制到 readback buffer</code></pre></div>
+      <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="src/main.cpp · DispatchAndReadback">m_commandList-&gt;SetComputeRootSignature(
+    m_computeRoot.Get());
+m_commandList-&gt;SetComputeRootDescriptorTable(0, gpu);
+gpu.ptr += 2ull * m_computeDescriptorStride;
+m_commandList-&gt;SetComputeRootDescriptorTable(1, gpu);
+
+const UINT constants[2] = {
+    prt::kReceiverCount,
+    prt::kBrickCount,
+};
+m_commandList-&gt;SetComputeRoot32BitConstants(
+    2, 2, constants, 0);
+m_commandList-&gt;Dispatch(
+    (prt::kReceiverCount + 63) / 64, 1, 1);
+
+D3D12_RESOURCE_BARRIER uav{};
+uav.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+uav.UAV.pResource = m_irradianceBuffer.Get();
+m_commandList-&gt;ResourceBarrier(1, &amp;uav);</code></pre></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Visual Studio 18 2026 · x64 Release</h2>
+    <pre>cmake -S . -B build -G "Visual Studio 18 2026" -A x64
+cmake --build build --config Release
+build\Release\DX12_GI_Lab.exe --self-test
+build\Release\DX12_GI_Lab.exe</pre>
+    <p class="note">便携版本位于 <code>bin/Release</code>。请连同它下面的 <code>shaders</code> 目录一起复制，因为程序启动时会编译这些 HLSL 文件。</p>
+  </section>
+
+  <section class="grid" id="compare">
+    <article class="card"><h2>交互控制</h2><p><code>A / D</code> 或方向键移动灯；<code>Space</code> 自动播放；<code>R</code> 把当前结果烘焙到左侧；鼠标拖动旋转，滚轮缩放，<code>Esc</code> 退出。</p></article>
+    <article class="card"><h2>教学边界</h2><p>示例为了让结果可读，每帧同步 readback。生产代码应让 graphics shader 直接消费 GPU buffer 或 probe atlas，不能照搬这里的同步方式做性能模板。</p></article>
+  </section>
+
+  <section class="card" id="source">
+    <h2>从公式跳到真实定义</h2>
+    <div class="links">
+      <a href="README.md">完整说明、构建与验证记录 → README.md</a>
+      <a href="src/PrtScene.h">数据布局与公开函数 → src/PrtScene.h</a>
+      <a href="src/PrtScene.cpp">W、R 与 CPU 参考实现 → src/PrtScene.cpp</a>
+      <a href="shaders/PrtCompute.hlsl">GPU E = W·R → shaders/PrtCompute.hlsl</a>
+      <a href="shaders/Scene.hlsl">3D 分屏着色器 → shaders/Scene.hlsl</a>
+      <a href="src/main.cpp">完整 D3D12 初始化、dispatch、readback 与渲染 → src/main.cpp</a>
+      <a href="CMakeLists.txt">可复现的工程定义 → CMakeLists.txt</a>
+    </div>
+  </section>
+  <section class="card deep" id="rendergraph">
+    <h2>Stage 08 · 从手写 DX12 迁移到 RenderGraph</h2>
+    <p>这个 Lab 适合单步理解 root signature、descriptor、UAV barrier 与 readback；但当 GI 由 Voxelize、Mip、Cone Resolve 等多 Pass 组成时，手写状态转换会迅速膨胀。新的原生 RenderGraph Lab 已把六个 GI Pass 接入统一资源图，并在 D3D12/Vulkan 上用同一 HLSL 验收。</p>
+    <div class="links">
+      <a href="../RenderGraph_GI_Lab/index.html">打开 RenderGraph GI Lab：六 Pass 原生 Voxel GI →</a>
+      <a href="../RenderGraph_GI_Lab/assets/rendergraph_gi_source_snapshot.zip">下载随文档携带的相对路径源码快照 →</a>
+      <a href="../gi_module_prt_probes.html">回到 PRT Probe：先分清缓存结果与缓存传输算子 →</a>
+    </div>
+    <p class="note">两条路径互补：本页展示“一个 compute pass 的所有 DX12 细节”；RenderGraph 页展示“多个 GI pass 的资源依赖、自动 barrier、跨后端和中间资源预览”。</p>
+  </section>
+  <footer>所有项目内链接均为相对路径；整体移动或复制目录后仍可使用。</footer>
+</main>
+<script src="../gi_course.js"></script>
+</body>
+</html>

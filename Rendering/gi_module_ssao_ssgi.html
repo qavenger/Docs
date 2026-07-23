@@ -1,0 +1,1523 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SSAO / SSGI：从当前帧射线到可验证的多帧结果</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root{--bg:#071018;--panel:#0d1a24;--line:#294252;--text:#eaf7ff;--muted:#9bb5c4;--cyan:#54d7ff;--amber:#ffc96b;--red:#ff7777;--green:#78e6a3;--violet:#bd9cff}
+    *{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;color:var(--text);background:radial-gradient(circle at 72% -10%,#163950 0,transparent 34rem),var(--bg);font-family:"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.68}
+    a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(1180px,calc(100% - 30px));margin:auto}
+    .top{position:sticky;top:0;z-index:20;border-bottom:1px solid #203949;background:#071018e8;backdrop-filter:blur(14px)}.top .wrap{min-height:58px;display:flex;align-items:center;gap:16px}.brand{font-weight:900;letter-spacing:.08em;color:#fff}.top nav{margin-left:auto;display:flex;gap:14px;font-size:13px}
+    .hero{padding:70px 0 34px}.eyebrow{color:var(--cyan);font:800 13px ui-monospace,Consolas;letter-spacing:.12em}.hero h1{max-width:1000px;margin:11px 0 17px;font-size:clamp(36px,6vw,72px);line-height:1.04}.hero>p{max-width:900px;color:var(--muted);font-size:18px}.chips,.controls,.view-tabs{display:flex;gap:8px;flex-wrap:wrap}.chip{padding:6px 10px;border:1px solid #315267;border-radius:99px;color:#c8e7f6;background:#0b1c27}
+    section{scroll-margin-top:72px}.pipeline{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin:19px 0 33px}.pipeline a{position:relative;padding:11px 9px;border:1px solid var(--line);border-radius:9px;background:#091720;color:#bdd1dc;font-size:11px}.pipeline b{display:block;color:#fff;font-size:12px}.pipeline a:not(:last-child)::after{content:"→";position:absolute;right:-8px;top:30%;z-index:2;color:var(--cyan)}
+    .lab-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(290px,.7fr);gap:14px}.canvas-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#050b10}.canvas-card canvas{display:block;width:100%;height:auto}.canvas-caption{display:flex;justify-content:space-between;gap:10px;padding:8px 11px;border-top:1px solid #203846;color:var(--muted);font-size:12px}.canvas-caption b{color:var(--amber)}
+    .control-stack{display:grid;gap:11px}.control{display:grid;grid-template-columns:130px 1fr 72px;gap:9px;align-items:center}.control label{color:#cde3ed;font-size:13px}.control output{color:var(--amber);font:700 12px ui-monospace,Consolas;text-align:right}input[type=range]{width:100%;accent-color:var(--cyan)}button,select{border:1px solid #3b5c70;border-radius:8px;padding:8px 10px;color:#dff1f9;background:#0c202c;font:inherit}button{cursor:pointer}button:hover{border-color:var(--cyan)}button.active{border-color:var(--cyan);background:#123b50}
+    .readout{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.metric{padding:10px;border:1px solid #294252;border-radius:9px;background:#08151e}.metric span{display:block;color:var(--muted);font-size:11px}.metric b{display:block;margin-top:3px;color:#fff;font:700 14px ui-monospace,Consolas}
+    .note{padding:12px 14px;border:1px solid #385266;border-radius:10px;background:#0a1822;color:#b9ced9}.note.warn{border-color:#7b643d}.note.bad{border-color:#78434a}.note b{color:#fff}
+    .artifact-wide{grid-template-columns:repeat(4,minmax(170px,1fr))}.artifact-temporal{grid-template-columns:repeat(4,minmax(150px,1fr))}.gi-artifact canvas{image-rendering:auto}.status-line{padding:9px 11px;border:1px solid #294252;border-radius:8px;background:#07141d;color:#a9c0cd;font:12px ui-monospace,Consolas}.status-line b{color:var(--green)}
+    .limit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.limit{padding:14px;border:1px solid var(--line);border-radius:11px;background:#091720}.limit b{display:block;color:#fff}.limit span{color:var(--muted);font-size:12px}
+    .footer{display:flex;justify-content:space-between;gap:12px;margin-top:42px;padding:28px 0 55px;border-top:1px solid var(--line)}
+    @media(max-width:900px){.pipeline{grid-template-columns:repeat(4,1fr)}.lab-grid{grid-template-columns:1fr}.artifact-wide,.artifact-temporal{grid-template-columns:repeat(2,1fr)}.limit-grid{grid-template-columns:1fr}.top nav a:not(:last-child){display:none}}
+    @media(max-width:560px){.pipeline{grid-template-columns:1fr 1fr}.artifact-wide,.artifact-temporal{grid-template-columns:1fr}.control{grid-template-columns:105px 1fr 58px}.gi-stage-body{padding:12px}.hero{padding-top:45px}}
+  </style>
+  <script src="gi_course.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="index.html">GI FIELD GUIDE</a>
+      <nav><a href="#gbuffer">GBuffer</a><a href="#trace">追踪</a><a href="#spatial">空间滤波</a><a href="#temporal">多帧</a><a href="gi_module_sh.html">下一章：SH →</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="eyebrow">02 · SCREEN-SPACE VISIBILITY AND GI</div>
+      <h1>别从最终画面调 SSGI。<br>逐张检查它到底看见了什么。</h1>
+      <p>这页把屏幕空间方案拆成七个可以单独运行的实验：GBuffer、原始可见性、屏幕射线命中、空间滤波、重投影与历史拒绝、最终合成、参考误差。每一张中间图都来自本页实际执行的 CPU 教学实现。</p>
+      <div class="chips"><span class="chip">当前帧可独立运行</span><span class="chip">真实多帧历史</span><span class="chip">深度/法线引导</span><span class="chip">固定参考与误差图</span></div>
+      <div class="gi-prereq">
+        <span class="gi-stage-num">0</span>
+        <div><strong>建议先理解距离、余弦和一次反弹</strong><p>本页不会重新推导 Lambert 和两表面几何；需要时可返回基础页的六个独立实验。</p></div>
+        <a href="gi_module_foundations.html">打开基础页</a>
+      </div>
+      <div class="pipeline" aria-label="SSAO 和 SSGI 逐阶段流程">
+        <a href="#gbuffer"><b>01 GBuffer</b>重建 P/N/Albedo</a>
+        <a href="#visibility"><b>02 Visibility</b>原始遮挡票数</a>
+        <a href="#trace"><b>03 Ray Hit</b>命中与离屏分类</a>
+        <a href="#spatial"><b>04 Spatial</b>跨边界保护</a>
+        <a href="#temporal"><b>05 Temporal</b>历史验证与累计</a>
+        <a href="#final"><b>06 Composite</b>最终/参考/误差</a>
+        <a href="#limits"><b>07 Limits</b>缺失信息边界</a>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="gbuffer">
+      <header class="gi-stage-head"><span class="gi-stage-num">01</span><div><h3>先固定输入：Depth、Normal、Albedo 与同一盏点光源</h3><p>后续所有实验都读取同一份场景描述，避免“代码里一个灯，图上又是另一个灯”。</p></div><span class="gi-stage-tag">INPUT CONTRACT</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>当前相机看到的第一个表面</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>世界位置 P、世界法线 N、Albedo、Direct</span></div></div>
+        <div class="gi-light-card"><span class="gi-light-icon">●</span><div><strong>全页唯一光源：动态点光源</strong><div class="gi-light-meta"><span>light.position = (<b id="lightPosReadout">-0.60, 2.20, 1.30</b>) m</span><span>light.direction(P) = normalize(light.position - P)</span><span>light.color = (1.00, 0.88, 0.68)</span><span>intensity = 3.2</span></div></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="gbufferCanvas" width="960" height="300" aria-label="Depth Normal Albedo 和直接光四联图"></canvas><div class="canvas-caption"><span>黄色十字是点光源投影；所有面板位置一致</span><b id="gbufferCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="lightX">光源 X</label><input id="lightX" type="range" min="-140" max="140" value="-60"><output id="lightXOut">-0.60 m</output></div>
+            <div class="control"><label for="lightY">光源 Y</label><input id="lightY" type="range" min="80" max="280" value="220"><output id="lightYOut">2.20 m</output></div>
+            <div class="readout"><div class="metric"><span>场景分辨率</span><b>80 × 45</b></div><div class="metric"><span>坐标空间</span><b>WORLD</b></div><div class="metric"><span>深度含义</span><b>VIEW Z</b></div><div class="metric"><span>法线长度范围</span><b id="normalLength">—</b></div></div>
+            <div class="note"><b>第一条排错原则：</b>位置、法线和灯方向必须在同一空间。黄色十字移动时，Direct 会变；Depth/Normal/Albedo 不会。</div>
+          </div>
+        </div>
+        <div class="gi-task-grid"><div class="gi-task do"><b>动手</b><span>移动光源 X/Y。</span></div><div class="gi-task watch"><b>观察</b><span>只有 Direct 面板亮区移动。</span></div><div class="gi-task expect"><b>预期</b><span>几何缓冲不依赖灯的位置。</span></div></div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">重建关系</button><button data-gi-tab="values">当前约定</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>屏幕像一张只保留“最靠近相机一层”的贴纸。每个像素记录这层表面的距离、朝向和颜色；被它挡住的第二层根本不在 GBuffer 里。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">P_world = CameraToWorld · P_view<br>l = normalize(light.position - P_world)<br>L_direct ∝ Albedo · max(0, N_world·l) / distance²</div></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="gbufferLedger">position = (-0.60, 2.20, 1.30)<br>normalSpace = WORLD<br>depth = positive VIEW Z</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="GBuffer 输入契约">读取像素的线性深度
+用像素坐标和逆投影矩阵重建视图位置
+变换到世界位置
+解码并归一化世界法线
+用同一个世界空间光源计算直接光</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_ssao_ssgi.html · directAt">function directAt(position, normal, albedo, lightPosition) {
+  const toLight = subtract(lightPosition, position);
+  const distanceSquared = dot(toLight, toLight);
+  const lightDirection = normalize(toLight);
+  const receiverCosine = Math.max(0, dot(normal, lightDirection));
+  const attenuation = 3.2 / (1 + 0.14 * distanceSquared);
+  return albedo.map(
+    (channel, index) =>
+      channel * LIGHT_COLOR[index] * receiverCosine * attenuation
+  );
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="visibility">
+      <header class="gi-stage-head"><span class="gi-stage-num">02</span><div><h3>原始 Visibility：每条短射线只投“看见 / 被挡”一票</h3><p>这一节只做 SSAO 的遮挡比例，不把命中表面的颜色带回来。</p></div><span class="gi-stage-tag">CURRENT FRAME</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>接收像素 P/N、半径、方向样本</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>AO = 1 - 命中票数 / 总票数</span></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="visibilityCanvas" width="760" height="410" aria-label="屏幕空间原始可见性射线剖面"></canvas><div class="canvas-caption"><span>红线命中，绿线未命中，蓝线离开屏幕</span><b id="visibilityCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="receiverPixel">接收像素 X</label><input id="receiverPixel" type="range" min="4" max="75" value="36"><output id="receiverPixelOut">36</output></div>
+            <div class="control"><label for="aoSamples">射线数</label><input id="aoSamples" type="range" min="4" max="32" value="12"><output id="aoSamplesOut">12</output></div>
+            <div class="control"><label for="aoRadius">屏幕半径</label><input id="aoRadius" type="range" min="3" max="22" value="12"><output id="aoRadiusOut">12 px</output></div>
+            <div class="readout"><div class="metric"><span>命中票</span><b id="aoHitCount">—</b></div><div class="metric"><span>离屏票</span><b id="aoOffCount">—</b></div><div class="metric"><span>Raw Visibility</span><b id="aoVisibility">—</b></div><div class="metric"><span>随机种子</span><b id="aoSeedValue">19</b></div></div>
+            <button id="aoNewSeed" type="button">换一个固定种子</button>
+          </div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">投票直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>从当前表面朝附近方向发短线。撞到屏幕里更靠近相机的深度就算“被挡”；没撞到算“看见”。AO 只保留比例，不知道挡住它的东西是什么颜色。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">visibility = 1 - hitCount / N<br>AO = clamp(visibility, 0, 1)</div></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="visibilityLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="原始 Visibility 的等价步骤">命中数 = 0
+对 N 个屏幕方向:
+  从接收像素向外逐步前进
+  如果离开屏幕: 记录 offscreen
+  如果射线深度与场景深度相交: 命中数 += 1
+可见性 = 1 - 命中数 / N</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_ssao_ssgi.html · traceVisibilityAt">function traceVisibilityAt(scene, pixelX, pixelY, options) {
+  const rays = makeScreenRays(options.samples, options.seed);
+  const outcomes = rays.map((ray) =>
+    marchScreenRay(scene, pixelX, pixelY, ray, options.radius)
+  );
+  const hitCount = outcomes.filter(
+    (outcome) => outcome.kind === 'hit'
+  ).length;
+  return {
+    visibility: 1 - hitCount / options.samples,
+    outcomes
+  };
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="trace">
+      <header class="gi-stage-head"><span class="gi-stage-num">03</span><div><h3>Ray Hit：SSGI 比 AO 多做一步——从命中点带回直接光</h3><p>把一条射线逐步展开，明确区分 hit、miss 与 offscreen；只有 hit 才能读取 Radiance。</p></div><span class="gi-stage-tag">RAY MARCH</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>屏幕射线、场景深度、thickness</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>命中 UV、命中表面的直接光 RGB</span></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="traceCanvas" width="760" height="410" aria-label="单条屏幕空间射线步进和命中分类"></canvas><div class="canvas-caption"><span>白点是 march 步；半透明红带是 thickness 容差</span><b id="traceCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="traceAngle">射线角度</label><input id="traceAngle" type="range" min="-80" max="80" value="70"><output id="traceAngleOut">70°</output></div>
+            <div class="control"><label for="traceThickness">厚度容差</label><input id="traceThickness" type="range" min="2" max="45" value="18"><output id="traceThicknessOut">0.18</output></div>
+            <div class="control"><label for="traceSteps">最大步数</label><input id="traceSteps" type="range" min="4" max="24" value="12"><output id="traceStepsOut">12</output></div>
+            <div class="readout"><div class="metric"><span>分类</span><b id="traceKind">—</b></div><div class="metric"><span>命中步</span><b id="traceHitStep">—</b></div><div class="metric"><span>命中 UV</span><b id="traceUv">—</b></div><div class="metric"><span>带回 RGB</span><b id="traceRgb">—</b></div></div>
+            <div class="note warn"><b>thickness 不是万能修复：</b>太小会漏交点，太大会跨过真实间隙。离屏射线没有数据，增加 thickness 也不该把它伪造成 hit。</div>
+          </div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">命中条件</button><button data-gi-tab="values">当前结果</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>沿投影后的线走小步，每步把“射线应该在的深度”与深度纹理记录的“相机最先看到的深度”比较。两者足够接近时，暂时认为撞到了。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">delta = rayViewZ - sceneViewZ<br>hit ⇔ 0 &lt; delta &lt; thickness</div><p>真实实现还要处理深度层级、前后穿越、粗细步进和二分细化；本页保留最小可观察版本。</p></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="traceLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="屏幕射线步进的等价步骤">重复最多 maxSteps 次:
+  射线位置 += 屏幕方向 × 步长
+  如果 UV 离开 0..1: 返回 offscreen
+  sceneZ = 读取深度(UV)
+  delta = rayZ - sceneZ
+  如果 0 &lt; delta &lt; thickness:
+    返回 hit 和该像素直接光
+返回 miss</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_ssao_ssgi.html · marchSingleRay">function marchSingleRay(scene, originX, originY, angle, options) {
+  const directionX = Math.cos(angle);
+  const directionY = -Math.sin(angle);
+  const originIndex = originY * GRID_WIDTH + originX;
+  const originDepth = scene.depth[originIndex];
+  const steps = [];
+
+  for (let step = 1; step &lt;= options.maxSteps; step += 1) {
+    const travel = step * options.stepPixels;
+    const x = Math.round(originX + directionX * travel);
+    const y = Math.round(originY + directionY * travel);
+    if (x &lt; 0 || x >= GRID_WIDTH || y &lt; 0 || y >= GRID_HEIGHT) {
+      return { kind: 'offscreen', step, steps };
+    }
+    const rayDepth = originDepth - step * options.depthSlope;
+    const sceneDepth = scene.depth[y * GRID_WIDTH + x];
+    const delta = rayDepth - sceneDepth;
+    steps.push({ x, y, rayDepth, sceneDepth, delta });
+    if (delta > 0 && delta &lt; options.thickness) {
+      return { kind: 'hit', x, y, step, steps };
+    }
+  }
+  return { kind: 'miss', steps };
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="spatial">
+      <header class="gi-stage-head"><span class="gi-stage-num">04</span><div><h3>Spatial Filter：降噪，但不要把墙色抹过物体边界</h3><p>四张图同时更新；参考图固定使用 64 条确定性方向，误差图是滤波结果与参考的绝对差。</p></div><span class="gi-stage-tag">SINGLE FRAME DENOISE</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>低样本 Raw GI、Depth、Normal</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>深度/法线引导的平滑 GI</span></div></div>
+        <div class="gi-artifact-grid artifact-wide">
+          <article class="gi-artifact"><canvas id="spatialRaw" width="240" height="135"></canvas><h4>Raw GI</h4><p>单帧低样本，噪声和空洞都保留。</p></article>
+          <article class="gi-artifact"><canvas id="spatialFiltered" width="240" height="135"></canvas><h4>Bilateral</h4><p>相邻且几何相似的像素才互相借样本。</p></article>
+          <article class="gi-artifact"><canvas id="spatialReference" width="240" height="135"></canvas><h4>64-ray Reference</h4><p>同一屏幕空间估计器的高样本参考，不是离线真值。</p></article>
+          <article class="gi-artifact"><canvas id="spatialError" width="240" height="135"></canvas><h4>|Filtered - Ref| × 5</h4><p>越红代表剩余误差越大。</p></article>
+        </div>
+        <div class="note" style="margin-top:11px">为了看清低能量间接光，前三张预览统一使用显示曝光；滤波与误差统计仍在未曝光的线性数据上完成。</div>
+        <div class="controls" style="margin-top:13px">
+          <div class="control" style="min-width:310px"><label for="spatialSamples">Raw 样本数</label><input id="spatialSamples" type="range" min="1" max="12" value="4"><output id="spatialSamplesOut">4</output></div>
+          <div class="control" style="min-width:310px"><label for="filterRadius">滤波半径</label><input id="filterRadius" type="range" min="0" max="4" value="2"><output id="filterRadiusOut">2 px</output></div>
+          <button id="spatialSeed" type="button">换一帧噪声</button>
+        </div>
+        <div class="readout" style="margin-top:11px"><div class="metric"><span>Raw MAE</span><b id="rawMae">—</b></div><div class="metric"><span>Filtered MAE</span><b id="filteredMae">—</b></div><div class="metric"><span>跨深度边权重</span><b id="edgeWeight">—</b></div><div class="metric"><span>单帧历史依赖</span><b>NONE</b></div></div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">权重</button><button data-gi-tab="values">当前误差</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>普通模糊会把红墙的光穿过深度边界抹到前景球上。双边滤波先问“邻居离我多远、法线像不像”，不像就少借或不借。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">w = w_spatial · exp(-|zₚ-z_q|·σz) · max(0,nₚ·n_q)^σn<br>GI_filtered = Σ(w·GI_q) / Σw</div></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="spatialLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="双边滤波的等价步骤">对中心像素周围的邻居:
+  算屏幕距离权重
+  算深度差权重
+  算法线相似度权重
+  总权重 = 三者相乘
+  加权颜色 += 邻居GI × 总权重
+返回 加权颜色 / 权重和</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_ssao_ssgi.html · bilateralFilter">function bilateralFilter(raw, scene, radius) {
+  const output = new Float32Array(raw.length);
+  forEachPixel((x, y, index) => {
+    let weightSum = 0;
+    forEachNeighbor(x, y, radius, (neighborIndex, dx, dy) => {
+      const depthDifference =
+        Math.abs(scene.depth[index] - scene.depth[neighborIndex]);
+      const normalSimilarity =
+        Math.max(0, normalDot(scene, index, neighborIndex));
+      const spatialWeight = Math.exp(-(dx * dx + dy * dy) * 0.32);
+      const weight =
+        spatialWeight *
+        Math.exp(-depthDifference * 5.5) *
+        Math.pow(normalSimilarity, 12);
+      addWeightedRgb(output, index, raw, neighborIndex, weight);
+      weightSum += weight;
+    });
+    divideRgb(output, index, Math.max(weightSum, 0.0001));
+  });
+  return output;
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="temporal">
+      <header class="gi-stage-head"><span class="gi-stage-num">05</span><div><h3>Temporal Accumulation：先重投影，再证明历史仍属于当前表面</h3><p>这是实际逐帧仿真：前景球每帧移动 1 像素，历史颜色会沿运动向量取回；深度/法线不匹配就拒绝。</p></div><span class="gi-stage-tag">MULTI-FRAME</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>Current、History、Motion、Depth/Normal</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>Accepted History 与累计 GI</span></div></div>
+        <div class="gi-artifact-grid artifact-temporal">
+          <article class="gi-artifact"><canvas id="temporalCurrent" width="240" height="135"></canvas><h4>Current · 4 rays</h4><p>当前帧空间滤波后，仍有随机误差。</p></article>
+          <article class="gi-artifact"><canvas id="temporalHistory" width="240" height="135"></canvas><h4>History Before</h4><p>上一帧累计结果，尚未重投影。</p></article>
+          <article class="gi-artifact"><canvas id="temporalReprojected" width="240" height="135"></canvas><h4>Reprojected</h4><p>按当前像素运动向量回到上一帧。</p></article>
+          <article class="gi-artifact"><canvas id="temporalMask" width="240" height="135"></canvas><h4>History Validity</h4><p>绿=接受，红=深度/法线/切镜拒绝。</p></article>
+          <article class="gi-artifact"><canvas id="temporalAccumulated" width="240" height="135"></canvas><h4>Accumulated</h4><p>有效历史与当前帧混合后的输出。</p></article>
+          <article class="gi-artifact"><canvas id="temporalReference" width="240" height="135"></canvas><h4>64-ray Reference</h4><p>当前帧高样本屏幕空间参考。</p></article>
+          <article class="gi-artifact"><canvas id="temporalError" width="240" height="135"></canvas><h4>|Accum - Ref| × 5</h4><p>快速变光时，几何验证可能仍接受过期照明。</p></article>
+          <article class="gi-artifact"><canvas id="temporalDepth" width="240" height="135"></canvas><h4>Current Depth</h4><p>移动球后方新露出的区域是 disocclusion。</p></article>
+        </div>
+        <div class="note" style="margin-top:11px">Current、History、Reprojected、Accumulated 与 Reference 使用相同的间接光显示曝光；Validity、Depth 和数值验证不经过曝光。</div>
+        <div class="controls" style="margin-top:13px">
+          <div class="control" style="min-width:320px"><label for="temporalFrame">目标帧</label><input id="temporalFrame" type="range" min="0" max="24" value="8"><output id="temporalFrameOut">8</output></div>
+          <div class="control" style="min-width:320px"><label for="historyWeight">历史权重</label><input id="historyWeight" type="range" min="0" max="98" value="88"><output id="historyWeightOut">0.88</output></div>
+          <button id="playTemporal" type="button">播放多帧</button>
+          <button id="cameraCut" type="button">在当前帧制造切镜</button>
+          <label><input id="fastLight" type="checkbox"> 光源高速横移</label>
+        </div>
+        <div class="readout" style="margin-top:11px"><div class="metric"><span>接受历史比例</span><b id="historyAccepted">—</b></div><div class="metric"><span>Disocclusion 像素</span><b id="disocclusionCount">—</b></div><div class="metric"><span>累计 MAE</span><b id="temporalMae">—</b></div><div class="metric"><span>切镜帧</span><b id="cutFrameReadout">NONE</b></div></div>
+        <div class="status-line" id="temporalStatus"><b>READY</b> · 拖动目标帧可确定性重放从 0 到该帧的全部历史。</div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">验证与混合</button><button data-gi-tab="values">当前帧账本</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>历史不是“上一帧同一个屏幕坐标”。物体动了，要先用 Motion 找回同一个表面昨天在哪里；再比较深度和法线，证明它仍是同一块表面。新露出的背景没有可信历史。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">prevUV = currentUV + motionVector<br>valid = |z_current-z_history| &lt; τz AND n_current·n_history &gt; τn<br>GI = valid ? lerp(Current, History, α) : Current</div></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="temporalLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="时序累计的等价步骤">对当前像素:
+  prevPixel = 当前像素 + 运动向量
+  从上一帧读取 historyColor / historyDepth / historyNormal
+  valid = 深度接近 AND 法线相似 AND 不是切镜
+  如果 valid:
+    输出 = 当前低样本 × (1-历史权重) + 历史 × 历史权重
+  否则:
+    输出 = 当前低样本</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_ssao_ssgi.html · accumulateFrame">function accumulateFrame(current, scene, previous, options) {
+  const output = new Float32Array(current.length);
+  const validMask = new Float32Array(PIXEL_COUNT);
+  forEachPixel((x, y, index) => {
+    const previousX = x - scene.motionX[index];
+    const previousIndex = pixelIndex(previousX, y);
+    const valid =
+      !options.cameraCut &&
+      previousIndex >= 0 &&
+      Math.abs(scene.depth[index] - previous.depth[previousIndex]) &lt; 0.28 &&
+      normalDotAcross(
+        scene.normal,
+        index,
+        previous.normal,
+        previousIndex
+      ) > 0.78;
+    validMask[index] = valid ? 1 : 0;
+    mixRgb(
+      output,
+      index,
+      current,
+      index,
+      previous.color,
+      previousIndex,
+      valid ? options.historyWeight : 0
+    );
+  });
+  return { color: output, validMask };
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="final">
+      <header class="gi-stage-head"><span class="gi-stage-num">06</span><div><h3>Final / Reference / Error：最终画面必须能追溯回每个中间项</h3><p>最终合成使用同一份 Direct、Raw AO 与时序 SSGI；参考使用 64-ray AO/GI，不复用历史。</p></div><span class="gi-stage-tag">END TO END</span></header>
+      <div class="gi-stage-body">
+        <div class="canvas-card"><canvas id="finalCanvas" width="1080" height="340" aria-label="SSAO SSGI 最终结果、参考和误差"></canvas><div class="canvas-caption"><span>曝光和色调映射固定；误差图放大 4 倍</span><b id="finalCaption">—</b></div></div>
+        <div class="view-tabs" style="margin-top:12px">
+          <button class="final-view active" data-view="final">Final</button>
+          <button class="final-view" data-view="ao">Raw AO</button>
+          <button class="final-view" data-view="gi">Accumulated GI</button>
+          <button class="final-view" data-view="reference">Reference</button>
+          <button class="final-view" data-view="error">Error × 4</button>
+        </div>
+        <div class="gi-checks">
+          <div class="gi-check" data-gi-check="space"><b>空间一致</b><span data-gi-check-detail>等待计算</span></div>
+          <div class="gi-check" data-gi-check="history"><b>History rejection</b><span data-gi-check-detail>等待计算</span></div>
+          <div class="gi-check" data-gi-check="final-error"><b>最终参考误差</b><span data-gi-check-detail>等待计算</span></div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">组装直觉</button><button data-gi-tab="formula">最终关系</button><button data-gi-tab="values">当前误差</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>AO 是“环境可见比例”，SSGI 是“命中表面带回的有色光”。教学合成把 Direct 乘 AO 后再加 GI；实际引擎应根据光照分层，避免把 AO 错乘到不该遮蔽的项上。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">Color_demo = toneMap(Direct · AO + GI_temporal)<br>Error = |Color_demo - Color_reference|</div></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="finalLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="最终合成的等价步骤">对每个像素:
+  direct = 使用统一点光源计算
+  ao = 当前帧屏幕可见性
+  gi = 已通过验证的时序间接光
+  hdr = direct × ao + gi
+  final = 色调映射(hdr)
+  error = 绝对值(final - reference)</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_ssao_ssgi.html · compositeFrame">function compositeFrame(scene, ao, gi) {
+  const color = new Float32Array(PIXEL_COUNT * 3);
+  forEachPixel((x, y, index) => {
+    for (let channel = 0; channel &lt; 3; channel += 1) {
+      const hdr =
+        scene.direct[index * 3 + channel] * ao[index] +
+        gi[index * 3 + channel];
+      color[index * 3 + channel] = toneMap(hdr);
+    }
+  });
+  return color;
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="limits">
+      <header class="gi-stage-head"><span class="gi-stage-num">07</span><div><h3>Screen-space 的硬边界：滤波能降噪，不能创造没进屏幕的数据</h3><p>把“估计器噪声”和“信息根本不存在”分开，才能选对补救方案。</p></div><span class="gi-stage-tag">FAILURE BOUNDARY</span></header>
+      <div class="gi-stage-body">
+        <div class="limit-grid">
+          <div class="limit"><b>离屏缺失</b><span>光源或反射面离开视口后，其 Depth/Normal/Radiance 不存在。空间与时序滤波都无法得到可靠新信息。</span></div>
+          <div class="limit"><b>背面与第二层缺失</b><span>GBuffer 只保存相机首先看见的一层；薄物体后方、遮挡后表面和背面容易漏光或断裂。</span></div>
+          <div class="limit"><b>高速变光的历史滞后</b><span>深度与法线仍匹配时，历史验证可能接受过期照明。高速运动光源应降低 α、加入光照变化检测，或依赖不需要历史的方案。</span></div>
+        </div>
+        <div class="note bad" style="margin-top:13px"><b>本页 Reference 的边界：</b>64-ray Reference 仍然只看当前屏幕，因此它是“同一屏幕空间估计器的高样本参考”，不是路径追踪真值。要评估离屏漏光，必须另接场景空间或光追参考。</div>
+        <div class="gi-rg" style="height:330px;margin-top:14px" aria-label="SSAO SSGI RenderGraph 顺序">
+          <div class="gi-rg-node" style="left:24px;top:35px"><b>GBuffer</b><span>Depth / Normal / Albedo</span></div>
+          <div class="gi-rg-node" style="left:225px;top:35px"><b>Screen Trace</b><span>Raw AO / Raw GI / Hit Kind</span></div>
+          <div class="gi-rg-node" style="left:426px;top:35px"><b>Bilateral</b><span>Depth + Normal guided</span></div>
+          <div class="gi-rg-node" style="left:627px;top:35px"><b>Reproject</b><span>Motion + Prev History</span></div>
+          <div class="gi-rg-node" style="left:828px;top:35px"><b>Validate</b><span>Depth / Normal / Cut</span></div>
+          <div class="gi-rg-node" style="left:426px;top:190px"><b>History Store</b><span>GI / Depth / Normal</span></div>
+          <div class="gi-rg-node" style="left:828px;top:190px"><b>Composite</b><span>Direct × AO + GI</span></div>
+        </div>
+        <div class="controls" style="margin-top:14px"><a href="Realtime_GI_Field_Guide.html">回到方案比较</a><a href="gi_module_probes.html">需要场景空间缓存：看 DDGI / Probes</a><a href="gi_module_rcgi.html">需要无历史当前帧方案：看 Radiance Cascades</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer"><a href="gi_module_rsm.html">← 上一模块：RSM</a><span>所有内部引用均为相对路径。</span><a href="gi_module_sh.html">下一模块：SH →</a></footer>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const GRID_WIDTH = 80;
+    const GRID_HEIGHT = 45;
+    const PIXEL_COUNT = GRID_WIDTH * GRID_HEIGHT;
+    const LIGHT_COLOR = [1, 0.88, 0.68];
+    const $ = (id) => document.getElementById(id);
+    const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+    const setCheck = (container, key, checkState, detail) => {
+      if (window.GICourse) {
+        window.GICourse.setCheck(container, key, checkState, detail);
+        return;
+      }
+      const row = container.querySelector(`[data-gi-check="${key}"]`);
+      if (!row) return;
+      row.classList.remove('pass', 'fail', 'warn');
+      row.classList.add(checkState);
+      const detailNode = row.querySelector('[data-gi-check-detail]');
+      if (detailNode) detailNode.textContent = detail;
+    };
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const subtract = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+    const normalize = (value) => {
+      const length = Math.hypot(...value) || 1;
+      return value.map((component) => component / length);
+    };
+    const pixelIndex = (x, y) => {
+      const roundedX = Math.round(x);
+      const roundedY = Math.round(y);
+      if (
+        roundedX < 0 ||
+        roundedX >= GRID_WIDTH ||
+        roundedY < 0 ||
+        roundedY >= GRID_HEIGHT
+      ) return -1;
+      return roundedY * GRID_WIDTH + roundedX;
+    };
+    const forEachPixel = (callback) => {
+      for (let y = 0; y < GRID_HEIGHT; y += 1) {
+        for (let x = 0; x < GRID_WIDTH; x += 1) {
+          callback(x, y, y * GRID_WIDTH + x);
+        }
+      }
+    };
+
+    function line(context, from, to, color, width = 2, dash = []) {
+      context.save();
+      context.strokeStyle = color;
+      context.lineWidth = width;
+      context.setLineDash(dash);
+      context.beginPath();
+      context.moveTo(from[0], from[1]);
+      context.lineTo(to[0], to[1]);
+      context.stroke();
+      context.restore();
+    }
+
+    const state = {
+      lightX: -0.6,
+      lightY: 2.2,
+      receiverX: 36,
+      aoSamples: 12,
+      aoRadius: 12,
+      aoSeed: 19,
+      traceAngle: 70,
+      traceThickness: 0.18,
+      traceSteps: 12,
+      spatialSamples: 4,
+      filterRadius: 2,
+      spatialSeed: 31,
+      temporalFrame: 8,
+      historyWeight: 0.88,
+      cutFrame: -1,
+      fastLight: false,
+      finalView: 'final',
+      playing: false
+    };
+
+    function makeRandom(seed) {
+      let value = seed >>> 0;
+      return () => {
+        value = (value * 1664525 + 1013904223) >>> 0;
+        return value / 4294967296;
+      };
+    }
+
+    function lightPositionForFrame(frame) {
+      const animatedX = state.fastLight
+        ? Math.sin(frame * 1.35) * 1.25
+        : state.lightX;
+      return [animatedX, state.lightY, 1.3];
+    }
+
+    function directAt(position, normal, albedo, lightPosition) {
+      const toLight = subtract(lightPosition, position);
+      const distanceSquared = dot(toLight, toLight);
+      const lightDirection = normalize(toLight);
+      const receiverCosine = Math.max(0, dot(normal, lightDirection));
+      const attenuation = 3.2 / (1 + 0.14 * distanceSquared);
+      return albedo.map(
+        (channel, index) =>
+          channel * LIGHT_COLOR[index] * receiverCosine * attenuation
+      );
+    }
+
+    function buildScene(frame) {
+      const depth = new Float32Array(PIXEL_COUNT);
+      const normal = new Float32Array(PIXEL_COUNT * 3);
+      const albedo = new Float32Array(PIXEL_COUNT * 3);
+      const direct = new Float32Array(PIXEL_COUNT * 3);
+      const motionX = new Int8Array(PIXEL_COUNT);
+      const sphereCenterX = 0.25 + frame * 0.011;
+      const previousCenterX = 0.25 + Math.max(0, frame - 1) * 0.011;
+      const lightPosition = lightPositionForFrame(frame);
+
+      forEachPixel((x, y, index) => {
+        const u = (x + 0.5) / GRID_WIDTH;
+        const v = (y + 0.5) / GRID_HEIGHT;
+        let z = 6;
+        let n = [0, 0, -1];
+        let a = u < 0.18 ? [0.78, 0.12, 0.08] :
+          u > 0.82 ? [0.08, 0.3, 0.72] : [0.54, 0.57, 0.59];
+        let objectMotion = 0;
+
+        if (v > 0.72) {
+          z = 4.65 + (v - 0.72) * 3.2;
+          n = [0, 0.82, -0.57];
+          a = [0.58, 0.58, 0.53];
+        }
+
+        const dx = (u - sphereCenterX) / 0.17;
+        const dy = (v - 0.54) / 0.25;
+        if (dx * dx + dy * dy < 1) {
+          const nz = Math.sqrt(Math.max(0, 1 - dx * dx - dy * dy));
+          z = 3.15 - nz * 0.62;
+          n = normalize([dx, -dy, -nz]);
+          a = [0.12, 0.58, 0.26];
+          objectMotion = Math.round(
+            (sphereCenterX - previousCenterX) * GRID_WIDTH
+          );
+        }
+
+        if (u > 0.62 && u < 0.79 && v > 0.42 && v < 0.71) {
+          z = 3.75;
+          n = [0, 0, -1];
+          a = [0.72, 0.55, 0.12];
+        }
+
+        const position = [(u - 0.5) * 4, (0.5 - v) * 3, z];
+        const lit = directAt(position, n, a, lightPosition);
+        depth[index] = z;
+        motionX[index] = objectMotion;
+        for (let channel = 0; channel < 3; channel += 1) {
+          normal[index * 3 + channel] = n[channel];
+          albedo[index * 3 + channel] = a[channel];
+          direct[index * 3 + channel] = lit[channel];
+        }
+      });
+      return {
+        frame,
+        depth,
+        normal,
+        albedo,
+        direct,
+        motionX,
+        lightPosition
+      };
+    }
+
+    function normalDot(scene, firstIndex, secondIndex) {
+      let result = 0;
+      for (let channel = 0; channel < 3; channel += 1) {
+        result +=
+          scene.normal[firstIndex * 3 + channel] *
+          scene.normal[secondIndex * 3 + channel];
+      }
+      return result;
+    }
+
+    function normalDotAcross(first, firstIndex, second, secondIndex) {
+      let result = 0;
+      for (let channel = 0; channel < 3; channel += 1) {
+        result +=
+          first[firstIndex * 3 + channel] *
+          second[secondIndex * 3 + channel];
+      }
+      return result;
+    }
+
+    function makeScreenRays(sampleCount, seed) {
+      const random = makeRandom(seed);
+      const rotation = random() * Math.PI * 2;
+      const rays = [];
+      for (let index = 0; index < sampleCount; index += 1) {
+        const angle =
+          rotation + index / sampleCount * Math.PI * 2 +
+          (random() - 0.5) * 0.2;
+        rays.push({ x: Math.cos(angle), y: Math.sin(angle) });
+      }
+      return rays;
+    }
+
+    function marchScreenRay(scene, originX, originY, ray, radius) {
+      const originIndex = pixelIndex(originX, originY);
+      const originDepth = scene.depth[originIndex];
+      const steps = [];
+      const stepCount = 8;
+      for (let step = 1; step <= stepCount; step += 1) {
+        const travel = radius * step / stepCount;
+        const x = Math.round(originX + ray.x * travel);
+        const y = Math.round(originY + ray.y * travel);
+        const index = pixelIndex(x, y);
+        if (index < 0) return { kind: 'offscreen', steps };
+        const expectedDepth = originDepth - step * 0.055;
+        const sceneDepth = scene.depth[index];
+        steps.push({ x, y, expectedDepth, sceneDepth });
+        if (
+          sceneDepth < originDepth - 0.08 &&
+          sceneDepth < expectedDepth + 0.32
+        ) {
+          return { kind: 'hit', x, y, index, steps };
+        }
+      }
+      return { kind: 'miss', steps };
+    }
+
+    function traceVisibilityAt(scene, pixelX, pixelY, options) {
+      const rays = makeScreenRays(options.samples, options.seed);
+      const outcomes = rays.map((ray) =>
+        marchScreenRay(scene, pixelX, pixelY, ray, options.radius)
+      );
+      const hitCount = outcomes.filter(
+        (outcome) => outcome.kind === 'hit'
+      ).length;
+      return {
+        visibility: 1 - hitCount / options.samples,
+        outcomes,
+        rays
+      };
+    }
+
+    function marchSingleRay(scene, originX, originY, angle, options) {
+      const directionX = Math.cos(angle);
+      const directionY = -Math.sin(angle);
+      const originIndex = originY * GRID_WIDTH + originX;
+      const originDepth = scene.depth[originIndex];
+      const steps = [];
+
+      for (let step = 1; step <= options.maxSteps; step += 1) {
+        const travel = step * options.stepPixels;
+        const x = Math.round(originX + directionX * travel);
+        const y = Math.round(originY + directionY * travel);
+        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
+          return { kind: 'offscreen', step, steps };
+        }
+        const rayDepth = originDepth - step * options.depthSlope;
+        const sceneDepth = scene.depth[y * GRID_WIDTH + x];
+        const delta = rayDepth - sceneDepth;
+        steps.push({ x, y, rayDepth, sceneDepth, delta });
+        if (delta > 0 && delta < options.thickness) {
+          return { kind: 'hit', x, y, step, steps };
+        }
+      }
+      return { kind: 'miss', steps };
+    }
+
+    function computeRaw(scene, sampleCount, seed) {
+      const ao = new Float32Array(PIXEL_COUNT);
+      const gi = new Float32Array(PIXEL_COUNT * 3);
+      forEachPixel((x, y, index) => {
+        const trace = traceVisibilityAt(scene, x, y, {
+          samples: sampleCount,
+          seed: seed + index * 13,
+          radius: 11
+        });
+        ao[index] = trace.visibility;
+        trace.outcomes.forEach((outcome) => {
+          if (outcome.kind !== 'hit') return;
+          for (let channel = 0; channel < 3; channel += 1) {
+            const receiverAlbedo = scene.albedo[index * 3 + channel];
+            gi[index * 3 + channel] +=
+              receiverAlbedo *
+              scene.direct[outcome.index * 3 + channel] *
+              0.31 / sampleCount;
+          }
+        });
+      });
+      return { ao, gi };
+    }
+
+    function forEachNeighbor(x, y, radius, callback) {
+      for (let dy = -radius; dy <= radius; dy += 1) {
+        for (let dx = -radius; dx <= radius; dx += 1) {
+          const index = pixelIndex(x + dx, y + dy);
+          if (index >= 0) callback(index, dx, dy);
+        }
+      }
+    }
+
+    function addWeightedRgb(output, outputIndex, input, inputIndex, weight) {
+      for (let channel = 0; channel < 3; channel += 1) {
+        output[outputIndex * 3 + channel] +=
+          input[inputIndex * 3 + channel] * weight;
+      }
+    }
+
+    function divideRgb(output, index, divisor) {
+      for (let channel = 0; channel < 3; channel += 1) {
+        output[index * 3 + channel] /= divisor;
+      }
+    }
+
+    function bilateralFilter(raw, scene, radius) {
+      if (radius === 0) return new Float32Array(raw);
+      const output = new Float32Array(raw.length);
+      forEachPixel((x, y, index) => {
+        let weightSum = 0;
+        forEachNeighbor(x, y, radius, (neighborIndex, dx, dy) => {
+          const depthDifference =
+            Math.abs(scene.depth[index] - scene.depth[neighborIndex]);
+          const normalSimilarity =
+            Math.max(0, normalDot(scene, index, neighborIndex));
+          const spatialWeight = Math.exp(-(dx * dx + dy * dy) * 0.32);
+          const weight =
+            spatialWeight *
+            Math.exp(-depthDifference * 5.5) *
+            Math.pow(normalSimilarity, 12);
+          addWeightedRgb(output, index, raw, neighborIndex, weight);
+          weightSum += weight;
+        });
+        divideRgb(output, index, Math.max(weightSum, 0.0001));
+      });
+      return output;
+    }
+
+    function bilateralFilterScalar(raw, scene, radius) {
+      if (radius === 0) return new Float32Array(raw);
+      const output = new Float32Array(raw.length);
+      forEachPixel((x, y, index) => {
+        let sum = 0;
+        let weightSum = 0;
+        forEachNeighbor(x, y, radius, (neighborIndex, dx, dy) => {
+          const depthDifference =
+            Math.abs(scene.depth[index] - scene.depth[neighborIndex]);
+          const normalSimilarity =
+            Math.max(0, normalDot(scene, index, neighborIndex));
+          const weight =
+            Math.exp(-(dx * dx + dy * dy) * 0.32) *
+            Math.exp(-depthDifference * 5.5) *
+            Math.pow(normalSimilarity, 12);
+          sum += raw[neighborIndex] * weight;
+          weightSum += weight;
+        });
+        output[index] = sum / Math.max(weightSum, 0.0001);
+      });
+      return output;
+    }
+
+    function mixRgb(
+      output,
+      outputIndex,
+      current,
+      currentIndex,
+      history,
+      historyIndex,
+      historyWeight
+    ) {
+      for (let channel = 0; channel < 3; channel += 1) {
+        const currentValue = current[currentIndex * 3 + channel];
+        const historyValue = historyIndex >= 0
+          ? history[historyIndex * 3 + channel]
+          : currentValue;
+        const neighborhoodLow = Math.max(0, currentValue - 0.16);
+        const neighborhoodHigh = currentValue + 0.16;
+        const clampedHistory = clamp(
+          historyValue,
+          neighborhoodLow,
+          neighborhoodHigh
+        );
+        output[outputIndex * 3 + channel] =
+          currentValue * (1 - historyWeight) +
+          clampedHistory * historyWeight;
+      }
+    }
+
+    function accumulateFrame(current, scene, previous, options) {
+      const output = new Float32Array(current.length);
+      const validMask = new Float32Array(PIXEL_COUNT);
+      const reprojected = new Float32Array(current.length);
+      let disocclusionCount = 0;
+      forEachPixel((x, y, index) => {
+        const previousX = x - scene.motionX[index];
+        const previousIndex = pixelIndex(previousX, y);
+        const depthMatches =
+          previousIndex >= 0 &&
+          Math.abs(scene.depth[index] - previous.depth[previousIndex]) < 0.28;
+        const normalMatches =
+          previousIndex >= 0 &&
+          normalDotAcross(
+            scene.normal,
+            index,
+            previous.normal,
+            previousIndex
+          ) > 0.78;
+        const valid =
+          !options.cameraCut &&
+          depthMatches &&
+          normalMatches;
+        if (!valid && !options.cameraCut) disocclusionCount += 1;
+        validMask[index] = valid ? 1 : 0;
+        if (previousIndex >= 0) {
+          for (let channel = 0; channel < 3; channel += 1) {
+            reprojected[index * 3 + channel] =
+              previous.color[previousIndex * 3 + channel];
+          }
+        }
+        mixRgb(
+          output,
+          index,
+          current,
+          index,
+          previous.color,
+          previousIndex,
+          valid ? options.historyWeight : 0
+        );
+      });
+      return { color: output, validMask, reprojected, disocclusionCount };
+    }
+
+    function simulateSequence(targetFrame) {
+      let previous = {
+        color: new Float32Array(PIXEL_COUNT * 3),
+        depth: new Float32Array(PIXEL_COUNT),
+        normal: new Float32Array(PIXEL_COUNT * 3)
+      };
+      let target = null;
+      for (let frame = 0; frame <= targetFrame; frame += 1) {
+        const scene = buildScene(frame);
+        const raw = computeRaw(scene, 4, 101 + frame * 97);
+        const current = bilateralFilter(raw.gi, scene, 2);
+        if (frame === 0) {
+          previous.color = new Float32Array(current);
+          previous.depth = new Float32Array(scene.depth);
+          previous.normal = new Float32Array(scene.normal);
+          target = {
+            scene,
+            raw,
+            current,
+            historyBefore: new Float32Array(current),
+            accumulated: new Float32Array(current),
+            validMask: new Float32Array(PIXEL_COUNT).fill(0),
+            reprojected: new Float32Array(current),
+            disocclusionCount: PIXEL_COUNT
+          };
+          continue;
+        }
+        const historyBefore = new Float32Array(previous.color);
+        const accumulated = accumulateFrame(
+          current,
+          scene,
+          previous,
+          {
+            historyWeight: state.historyWeight,
+            cameraCut: frame === state.cutFrame
+          }
+        );
+        previous = {
+          color: accumulated.color,
+          depth: new Float32Array(scene.depth),
+          normal: new Float32Array(scene.normal)
+        };
+        target = {
+          scene,
+          raw,
+          current,
+          historyBefore,
+          accumulated: accumulated.color,
+          validMask: accumulated.validMask,
+          reprojected: accumulated.reprojected,
+          disocclusionCount: accumulated.disocclusionCount
+        };
+      }
+      const referenceRaw = computeRaw(
+        target.scene,
+        64,
+        7701 + targetFrame * 17
+      );
+      target.referenceGi = referenceRaw.gi;
+      target.referenceAo = referenceRaw.ao;
+      return target;
+    }
+
+    function toneMap(value) {
+      return Math.pow(1 - Math.exp(-Math.max(0, value) * 1.35), 1 / 2.2);
+    }
+
+    function compositeFrame(scene, ao, gi) {
+      const color = new Float32Array(PIXEL_COUNT * 3);
+      forEachPixel((x, y, index) => {
+        for (let channel = 0; channel < 3; channel += 1) {
+          const hdr =
+            scene.direct[index * 3 + channel] * ao[index] +
+            gi[index * 3 + channel];
+          color[index * 3 + channel] = toneMap(hdr);
+        }
+      });
+      return color;
+    }
+
+    function rgbError(first, second, multiplier = 1) {
+      const output = new Float32Array(first.length);
+      for (let index = 0; index < output.length; index += 1) {
+        output[index] = Math.abs(first[index] - second[index]) * multiplier;
+      }
+      return output;
+    }
+
+    function displayIndirect(data, gain = 5) {
+      const output = new Float32Array(data.length);
+      for (let index = 0; index < data.length; index += 1) {
+        output[index] = toneMap(data[index] * gain);
+      }
+      return output;
+    }
+
+    function errorHeatmap(first, second, multiplier = 1) {
+      const output = new Float32Array(first.length);
+      for (let index = 0; index < PIXEL_COUNT; index += 1) {
+        let maximum = 0;
+        for (let channel = 0; channel < 3; channel += 1) {
+          maximum = Math.max(
+            maximum,
+            Math.abs(
+              first[index * 3 + channel] -
+              second[index * 3 + channel]
+            )
+          );
+        }
+        const heat = clamp(maximum * multiplier, 0, 1);
+        output[index * 3] = heat;
+        output[index * 3 + 1] = heat * 0.09;
+        output[index * 3 + 2] = heat * 0.025;
+      }
+      return output;
+    }
+
+    function meanAbsoluteError(first, second) {
+      let sum = 0;
+      for (let index = 0; index < first.length; index += 1) {
+        sum += Math.abs(first[index] - second[index]);
+      }
+      return sum / first.length;
+    }
+
+    function scalarToRgb(values, palette = 'gray') {
+      const output = new Float32Array(PIXEL_COUNT * 3);
+      for (let index = 0; index < PIXEL_COUNT; index += 1) {
+        const value = clamp(values[index], 0, 1);
+        if (palette === 'mask') {
+          output[index * 3] = 1 - value;
+          output[index * 3 + 1] = value;
+          output[index * 3 + 2] = 0.08;
+        } else if (palette === 'depth') {
+          output[index * 3] = value * 0.35;
+          output[index * 3 + 1] = value * 0.72;
+          output[index * 3 + 2] = value;
+        } else {
+          output[index * 3] = value;
+          output[index * 3 + 1] = value;
+          output[index * 3 + 2] = value;
+        }
+      }
+      return output;
+    }
+
+    function depthToRgb(scene) {
+      const normalized = new Float32Array(PIXEL_COUNT);
+      for (let index = 0; index < PIXEL_COUNT; index += 1) {
+        normalized[index] = 1 - clamp((scene.depth[index] - 2.4) / 5, 0, 1);
+      }
+      return scalarToRgb(normalized, 'depth');
+    }
+
+    function presentRgb(canvas, data) {
+      const source = document.createElement('canvas');
+      source.width = GRID_WIDTH;
+      source.height = GRID_HEIGHT;
+      const sourceContext = source.getContext('2d');
+      const image = sourceContext.createImageData(GRID_WIDTH, GRID_HEIGHT);
+      for (let index = 0; index < PIXEL_COUNT; index += 1) {
+        for (let channel = 0; channel < 3; channel += 1) {
+          image.data[index * 4 + channel] =
+            Math.round(clamp(data[index * 3 + channel], 0, 1) * 255);
+        }
+        image.data[index * 4 + 3] = 255;
+      }
+      sourceContext.putImageData(image, 0, 0);
+      const context = canvas.getContext('2d');
+      context.imageSmoothingEnabled = false;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    }
+
+    function drawPanel(context, data, x, y, width, height, title) {
+      const source = document.createElement('canvas');
+      source.width = GRID_WIDTH;
+      source.height = GRID_HEIGHT;
+      presentRgb(source, data);
+      context.imageSmoothingEnabled = false;
+      context.drawImage(source, x, y, width, height);
+      context.strokeStyle = '#385468';
+      context.strokeRect(x, y, width, height);
+      context.fillStyle = '#eaf7ff';
+      context.font = '700 13px Segoe UI';
+      context.fillText(title, x + 7, y - 8);
+    }
+
+    function renderGBuffer() {
+      const scene = buildScene(state.temporalFrame);
+      const depthRgb = depthToRgb(scene);
+      const normalRgb = new Float32Array(scene.normal.length);
+      for (let index = 0; index < normalRgb.length; index += 1) {
+        normalRgb[index] = scene.normal[index] * 0.5 + 0.5;
+      }
+      const directRgb = new Float32Array(scene.direct.length);
+      for (let index = 0; index < directRgb.length; index += 1) {
+        directRgb[index] = toneMap(scene.direct[index]);
+      }
+      const canvas = $('gbufferCanvas');
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#050b10';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const width = 220;
+      const height = 124;
+      const top = 54;
+      const gap = 16;
+      [depthRgb, normalRgb, scene.albedo, directRgb].forEach((data, index) => {
+        drawPanel(
+          context,
+          data,
+          10 + index * (width + gap),
+          top,
+          width,
+          height,
+          ['Depth', 'Normal', 'Albedo', 'Direct'][index]
+        );
+      });
+      const projectedX = clamp(
+        (scene.lightPosition[0] / 4 + 0.5) * width,
+        0,
+        width
+      );
+      const projectedY = clamp(
+        (0.5 - scene.lightPosition[1] / 3) * height,
+        0,
+        height
+      );
+      for (let panel = 0; panel < 4; panel += 1) {
+        const x = 10 + panel * (width + gap) + projectedX;
+        const y = top + projectedY;
+        context.strokeStyle = '#ffc96b';
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(x - 6, y);
+        context.lineTo(x + 6, y);
+        context.moveTo(x, y - 6);
+        context.lineTo(x, y + 6);
+        context.stroke();
+      }
+      let minLength = Infinity;
+      let maxLength = 0;
+      for (let index = 0; index < PIXEL_COUNT; index += 1) {
+        const length = Math.hypot(
+          scene.normal[index * 3],
+          scene.normal[index * 3 + 1],
+          scene.normal[index * 3 + 2]
+        );
+        minLength = Math.min(minLength, length);
+        maxLength = Math.max(maxLength, length);
+      }
+      const lightText = scene.lightPosition.map((value) => value.toFixed(2)).join(', ');
+      $('lightPosReadout').textContent = lightText;
+      $('lightXOut').value = `${state.lightX.toFixed(2)} m`;
+      $('lightYOut').value = `${state.lightY.toFixed(2)} m`;
+      $('normalLength').textContent = `${minLength.toFixed(3)}–${maxLength.toFixed(3)}`;
+      $('gbufferCaption').textContent = `light.position = (${lightText})`;
+      $('gbufferLedger').textContent =
+        `position = (${lightText})\n` +
+        `normalSpace = WORLD\n` +
+        `depth = positive VIEW Z\n` +
+        `normalLength = ${minLength.toFixed(4)} .. ${maxLength.toFixed(4)}`;
+    }
+
+    function drawDepthCrossSection(context, scene, y, transform) {
+      context.strokeStyle = '#54d7ff';
+      context.lineWidth = 3;
+      context.beginPath();
+      for (let x = 0; x < GRID_WIDTH; x += 1) {
+        const depth = scene.depth[y * GRID_WIDTH + x];
+        const point = transform(x, depth);
+        if (x === 0) context.moveTo(point[0], point[1]);
+        else context.lineTo(point[0], point[1]);
+      }
+      context.stroke();
+    }
+
+    function renderVisibility() {
+      const scene = buildScene(state.temporalFrame);
+      const y = 25;
+      const trace = traceVisibilityAt(scene, state.receiverX, y, {
+        samples: state.aoSamples,
+        seed: state.aoSeed,
+        radius: state.aoRadius
+      });
+      const canvas = $('visibilityCanvas');
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#050b10';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const transform = (x, depth) => [
+        45 + x / (GRID_WIDTH - 1) * 670,
+        38 + (depth - 2.4) / 5.2 * 310
+      ];
+      for (let value = 0; value <= 8; value += 1) {
+        const yLine = 38 + value / 8 * 310;
+        context.strokeStyle = '#173040';
+        context.beginPath();
+        context.moveTo(45, yLine);
+        context.lineTo(715, yLine);
+        context.stroke();
+      }
+      drawDepthCrossSection(context, scene, y, transform);
+      const originDepth = scene.depth[y * GRID_WIDTH + state.receiverX];
+      const origin = transform(state.receiverX, originDepth);
+      trace.outcomes.forEach((outcome, index) => {
+        const ray = trace.rays[index];
+        const endX = state.receiverX + ray.x * state.aoRadius;
+        const endDepth = originDepth - Math.abs(ray.y) * 1.1 - 0.15;
+        const end = transform(endX, endDepth);
+        const color = outcome.kind === 'hit'
+          ? '#ff7777'
+          : outcome.kind === 'offscreen'
+            ? '#54a5ff'
+            : '#78e6a3';
+        context.strokeStyle = color;
+        context.globalAlpha = 0.7;
+        context.beginPath();
+        context.moveTo(origin[0], origin[1]);
+        context.lineTo(end[0], end[1]);
+        context.stroke();
+      });
+      context.globalAlpha = 1;
+      context.fillStyle = '#ffc96b';
+      context.beginPath();
+      context.arc(origin[0], origin[1], 7, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#dcecf4';
+      context.font = '13px Segoe UI';
+      context.fillText('横轴：屏幕 X', 610, 388);
+      context.fillText('纵轴：View Z（向下更远）', 48, 27);
+
+      const hits = trace.outcomes.filter((outcome) => outcome.kind === 'hit').length;
+      const offscreen = trace.outcomes.filter(
+        (outcome) => outcome.kind === 'offscreen'
+      ).length;
+      $('receiverPixelOut').value = state.receiverX;
+      $('aoSamplesOut').value = state.aoSamples;
+      $('aoRadiusOut').value = `${state.aoRadius} px`;
+      $('aoHitCount').textContent = `${hits} / ${state.aoSamples}`;
+      $('aoOffCount').textContent = `${offscreen} / ${state.aoSamples}`;
+      $('aoVisibility').textContent = trace.visibility.toFixed(3);
+      $('aoSeedValue').textContent = state.aoSeed;
+      $('visibilityCaption').textContent =
+        `hit=${hits} · miss=${state.aoSamples - hits - offscreen} · off=${offscreen}`;
+      $('visibilityLedger').textContent =
+        `N = ${state.aoSamples}\n` +
+        `hitCount = ${hits}\n` +
+        `offscreenCount = ${offscreen}\n` +
+        `visibility = 1 - ${hits}/${state.aoSamples} = ${trace.visibility.toFixed(4)}`;
+    }
+
+    function renderTrace() {
+      const scene = buildScene(state.temporalFrame);
+      const originX = state.receiverX;
+      const originY = 30;
+      const radians = state.traceAngle * Math.PI / 180;
+      const result = marchSingleRay(scene, originX, originY, radians, {
+        maxSteps: state.traceSteps,
+        stepPixels: 1.45,
+        depthSlope: 0.055,
+        thickness: state.traceThickness
+      });
+      const canvas = $('traceCanvas');
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#050b10';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const transform = (x, depth) => [
+        45 + x / (GRID_WIDTH - 1) * 670,
+        38 + (depth - 2.4) / 5.2 * 310
+      ];
+      drawDepthCrossSection(context, scene, originY, transform);
+      const originDepth = scene.depth[originY * GRID_WIDTH + originX];
+      const origin = transform(originX, originDepth);
+      context.fillStyle = '#ffc96b';
+      context.beginPath();
+      context.arc(origin[0], origin[1], 7, 0, Math.PI * 2);
+      context.fill();
+      result.steps.forEach((step, index) => {
+        const point = transform(step.x, step.rayDepth);
+        const scenePoint = transform(step.x, step.sceneDepth);
+        context.fillStyle = index === result.steps.length - 1 &&
+          result.kind === 'hit' ? '#ff7777' : '#eaf7ff';
+        context.beginPath();
+        context.arc(point[0], point[1], 3.5, 0, Math.PI * 2);
+        context.fill();
+        line(context, point, scenePoint, '#ff777755', 5);
+      });
+      if (result.steps.length) {
+        const last = result.steps[result.steps.length - 1];
+        const end = transform(last.x, last.rayDepth);
+        line(
+          context,
+          origin,
+          end,
+          result.kind === 'hit'
+            ? '#ff7777'
+            : result.kind === 'offscreen'
+              ? '#54a5ff'
+              : '#78e6a3',
+          2
+        );
+      }
+      context.fillStyle = '#dcecf4';
+      context.font = '13px Segoe UI';
+      context.fillText('青线：当前扫描行的场景深度', 48, 26);
+      context.fillText('竖向红带：rayZ 与 sceneZ 的差', 460, 388);
+
+      let uv = '—';
+      let rgb = '—';
+      if (result.kind === 'hit') {
+        uv = `${(result.x / (GRID_WIDTH - 1)).toFixed(2)}, ${(result.y / (GRID_HEIGHT - 1)).toFixed(2)}`;
+        const hitIndex = result.y * GRID_WIDTH + result.x;
+        rgb = [0, 1, 2].map(
+          (channel) => scene.direct[hitIndex * 3 + channel].toFixed(2)
+        ).join(',');
+      }
+      const lastDelta = result.steps.length
+        ? result.steps[result.steps.length - 1].delta
+        : NaN;
+      $('traceAngleOut').value = `${state.traceAngle}°`;
+      $('traceThicknessOut').value = state.traceThickness.toFixed(2);
+      $('traceStepsOut').value = state.traceSteps;
+      $('traceKind').textContent = result.kind.toUpperCase();
+      $('traceHitStep').textContent = result.kind === 'hit' ? result.step : '—';
+      $('traceUv').textContent = uv;
+      $('traceRgb').textContent = rgb;
+      $('traceCaption').textContent =
+        `${result.kind.toUpperCase()} · ${result.steps.length} 次深度比较`;
+      $('traceLedger').textContent =
+        `angle = ${state.traceAngle}°\n` +
+        `maxSteps = ${state.traceSteps}\n` +
+        `thickness = ${state.traceThickness.toFixed(3)}\n` +
+        `last delta = ${Number.isFinite(lastDelta) ? lastDelta.toFixed(4) : 'offscreen before sample'}\n` +
+        `result = ${result.kind}`;
+    }
+
+    let latestSpatial = null;
+    function renderSpatial() {
+      const scene = buildScene(state.temporalFrame);
+      const raw = computeRaw(scene, state.spatialSamples, state.spatialSeed);
+      const filtered = bilateralFilter(raw.gi, scene, state.filterRadius);
+      const reference = computeRaw(scene, 64, 6601).gi;
+      const error = errorHeatmap(filtered, reference, 5);
+      presentRgb($('spatialRaw'), displayIndirect(raw.gi));
+      presentRgb($('spatialFiltered'), displayIndirect(filtered));
+      presentRgb($('spatialReference'), displayIndirect(reference));
+      presentRgb($('spatialError'), error);
+      const rawMae = meanAbsoluteError(raw.gi, reference);
+      const filteredMae = meanAbsoluteError(filtered, reference);
+      const edgeWeight = Math.exp(-Math.abs(6 - 3.1) * 5.5);
+      $('spatialSamplesOut').value = state.spatialSamples;
+      $('filterRadiusOut').value = `${state.filterRadius} px`;
+      $('rawMae').textContent = rawMae.toFixed(5);
+      $('filteredMae').textContent = filteredMae.toFixed(5);
+      $('edgeWeight').textContent = edgeWeight.toExponential(2);
+      $('spatialLedger').textContent =
+        `Raw samples = ${state.spatialSamples}\n` +
+        `filter radius = ${state.filterRadius} px\n` +
+        `Raw MAE = ${rawMae.toFixed(6)}\n` +
+        `Filtered MAE = ${filteredMae.toFixed(6)}\n` +
+        `跨 2.9 深度差的权重 ≈ ${edgeWeight.toExponential(3)}`;
+      latestSpatial = { scene, raw, filtered, reference };
+    }
+
+    let latestTemporal = null;
+    function renderTemporal() {
+      const result = simulateSequence(state.temporalFrame);
+      presentRgb($('temporalCurrent'), displayIndirect(result.current));
+      presentRgb($('temporalHistory'), displayIndirect(result.historyBefore));
+      presentRgb(
+        $('temporalReprojected'),
+        displayIndirect(result.reprojected)
+      );
+      presentRgb($('temporalMask'), scalarToRgb(result.validMask, 'mask'));
+      presentRgb(
+        $('temporalAccumulated'),
+        displayIndirect(result.accumulated)
+      );
+      presentRgb(
+        $('temporalReference'),
+        displayIndirect(result.referenceGi)
+      );
+      presentRgb(
+        $('temporalError'),
+        errorHeatmap(result.accumulated, result.referenceGi, 5)
+      );
+      presentRgb($('temporalDepth'), depthToRgb(result.scene));
+      let accepted = 0;
+      for (let index = 0; index < PIXEL_COUNT; index += 1) {
+        accepted += result.validMask[index];
+      }
+      const acceptedRatio = accepted / PIXEL_COUNT;
+      const mae = meanAbsoluteError(result.accumulated, result.referenceGi);
+      $('temporalFrameOut').value = state.temporalFrame;
+      $('historyWeightOut').value = state.historyWeight.toFixed(2);
+      $('historyAccepted').textContent = `${(acceptedRatio * 100).toFixed(1)}%`;
+      $('disocclusionCount').textContent = result.disocclusionCount;
+      $('temporalMae').textContent = mae.toFixed(5);
+      $('cutFrameReadout').textContent =
+        state.cutFrame < 0 ? 'NONE' : String(state.cutFrame);
+      $('temporalStatus').innerHTML =
+        `<b>${state.fastLight ? 'FAST LIGHT' : 'STABLE LIGHT'}</b> · ` +
+        `Frame ${state.temporalFrame} · light.position = (` +
+        `${result.scene.lightPosition.map((value) => value.toFixed(2)).join(', ')})`;
+      $('temporalLedger').textContent =
+        `frame = ${state.temporalFrame}\n` +
+        `historyWeight α = ${state.historyWeight.toFixed(2)}\n` +
+        `accepted = ${accepted}/${PIXEL_COUNT} (${(acceptedRatio * 100).toFixed(1)}%)\n` +
+        `disocclusion/rejected = ${result.disocclusionCount}\n` +
+        `cameraCut = ${state.temporalFrame === state.cutFrame}\n` +
+        `Accumulated GI MAE = ${mae.toFixed(6)}`;
+      latestTemporal = result;
+      renderFinal();
+    }
+
+    function renderFinal() {
+      if (!latestTemporal) return;
+      const result = latestTemporal;
+      const filteredAo = bilateralFilterScalar(
+        result.raw.ao,
+        result.scene,
+        2
+      );
+      const finalColor = compositeFrame(
+        result.scene,
+        filteredAo,
+        result.accumulated
+      );
+      const referenceColor = compositeFrame(
+        result.scene,
+        result.referenceAo,
+        result.referenceGi
+      );
+      const errorColor = rgbError(finalColor, referenceColor, 4);
+      let selected;
+      let selectedTitle;
+      if (state.finalView === 'ao') {
+        selected = scalarToRgb(filteredAo);
+        selectedTitle = 'Raw AO';
+      } else if (state.finalView === 'gi') {
+        selected = result.accumulated;
+        selectedTitle = 'Accumulated GI';
+      } else if (state.finalView === 'reference') {
+        selected = referenceColor;
+        selectedTitle = 'Reference';
+      } else if (state.finalView === 'error') {
+        selected = errorColor;
+        selectedTitle = 'Error × 4';
+      } else {
+        selected = finalColor;
+        selectedTitle = 'Final';
+      }
+      const canvas = $('finalCanvas');
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#050b10';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      drawPanel(context, selected, 20, 54, 500, 281, selectedTitle);
+      drawPanel(context, referenceColor, 560, 54, 500, 281, '64-ray Reference');
+      const mae = meanAbsoluteError(finalColor, referenceColor);
+      $('finalCaption').textContent =
+        `${selectedTitle} 对照 Reference · Final MAE ${mae.toFixed(5)}`;
+      $('finalLedger').textContent =
+        `view = ${selectedTitle}\n` +
+        `frame = ${state.temporalFrame}\n` +
+        `Final MAE = ${mae.toFixed(6)}\n` +
+        `Reference = 64-ray current-frame screen-space`;
+      setCheck(
+        document,
+        'space',
+        'pass',
+        'Position / Normal / Light 均在 WORLD；Depth 单独标为 VIEW Z'
+      );
+      const accepted = result.validMask.reduce(
+        (sum, value) => sum + value,
+        0
+      );
+      setCheck(
+        document,
+        'history',
+        result.disocclusionCount > 0 ? 'pass' : 'warn',
+        `接受 ${accepted}/${PIXEL_COUNT}；拒绝 ${result.disocclusionCount}`
+      );
+      setCheck(
+        document,
+        'final-error',
+        mae < 0.08 ? 'pass' : 'warn',
+        `相对当前屏幕空间高样本参考的 MAE = ${mae.toFixed(6)}`
+      );
+    }
+
+    function bindRange(id, key, convert, render) {
+      $(id).addEventListener('input', (event) => {
+        state[key] = convert(Number(event.target.value));
+        render();
+      });
+    }
+
+    bindRange('lightX', 'lightX', (value) => value / 100, () => {
+      renderGBuffer();
+      renderVisibility();
+      renderTrace();
+      renderSpatial();
+      renderTemporal();
+    });
+    bindRange('lightY', 'lightY', (value) => value / 100, () => {
+      renderGBuffer();
+      renderSpatial();
+      renderTemporal();
+    });
+    bindRange('receiverPixel', 'receiverX', (value) => value, () => {
+      renderVisibility();
+      renderTrace();
+    });
+    bindRange('aoSamples', 'aoSamples', (value) => value, renderVisibility);
+    bindRange('aoRadius', 'aoRadius', (value) => value, renderVisibility);
+    bindRange('traceAngle', 'traceAngle', (value) => value, renderTrace);
+    bindRange(
+      'traceThickness',
+      'traceThickness',
+      (value) => value / 100,
+      renderTrace
+    );
+    bindRange('traceSteps', 'traceSteps', (value) => value, renderTrace);
+    bindRange('spatialSamples', 'spatialSamples', (value) => value, renderSpatial);
+    bindRange('filterRadius', 'filterRadius', (value) => value, renderSpatial);
+    bindRange('temporalFrame', 'temporalFrame', (value) => value, () => {
+      renderGBuffer();
+      renderVisibility();
+      renderTrace();
+      renderSpatial();
+      renderTemporal();
+    });
+    bindRange(
+      'historyWeight',
+      'historyWeight',
+      (value) => value / 100,
+      renderTemporal
+    );
+
+    $('aoNewSeed').addEventListener('click', () => {
+      state.aoSeed += 1;
+      renderVisibility();
+    });
+    $('spatialSeed').addEventListener('click', () => {
+      state.spatialSeed += 1;
+      renderSpatial();
+    });
+    $('cameraCut').addEventListener('click', () => {
+      state.cutFrame = state.temporalFrame;
+      renderTemporal();
+    });
+    $('fastLight').addEventListener('change', (event) => {
+      state.fastLight = event.target.checked;
+      renderGBuffer();
+      renderSpatial();
+      renderTemporal();
+    });
+    document.querySelectorAll('.final-view').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.finalView = button.dataset.view;
+        document.querySelectorAll('.final-view').forEach((candidate) => {
+          candidate.classList.toggle('active', candidate === button);
+        });
+        renderFinal();
+      });
+    });
+
+    let playTimer = 0;
+    $('playTemporal').addEventListener('click', () => {
+      state.playing = !state.playing;
+      $('playTemporal').textContent = state.playing ? '暂停' : '播放多帧';
+      if (!state.playing) {
+        clearInterval(playTimer);
+        return;
+      }
+      clearInterval(playTimer);
+      playTimer = setInterval(() => {
+        state.temporalFrame = (state.temporalFrame + 1) % 25;
+        $('temporalFrame').value = state.temporalFrame;
+        renderGBuffer();
+        renderSpatial();
+        renderTemporal();
+      }, 450);
+    });
+
+    renderGBuffer();
+    renderVisibility();
+    renderTrace();
+    renderSpatial();
+    renderTemporal();
+
+    window.addEventListener('load', () => {
+      if (!location.hash) return;
+      const target = document.getElementById(
+        decodeURIComponent(location.hash.slice(1))
+      );
+      if (target) {
+        requestAnimationFrame(() =>
+          target.scrollIntoView({ behavior: 'auto', block: 'start' })
+        );
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

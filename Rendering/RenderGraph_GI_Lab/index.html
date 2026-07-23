@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="RenderGraph 原生 Voxel GI Lab：从 Texture3D 体素化、分离 LOD、Cone Resolve 到 D3D12/Vulkan 验收。">
+  <title>RenderGraph GI Lab · 原生 Voxel GI</title>
+  <link rel="stylesheet" href="../gi_course.css">
+  <style>
+    :root{--bg:#071018;--panel:#0d1924;--line:#284153;--text:#e8f4fa;--muted:#9db1c0;--cyan:#58daf1;--violet:#aa96ff;--amber:#ffc76d;--green:#6fe2a6;--red:#ff7d89}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);background:radial-gradient(circle at 77% -12%,#233a5c 0,transparent 36rem),var(--bg);font:15px/1.72 Inter,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(1180px,calc(100% - 32px));margin:auto}.top{position:sticky;top:0;z-index:30;border-bottom:1px solid #ffffff14;background:#071018e8;backdrop-filter:blur(12px)}.top .wrap{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{font-weight:800}.nav{display:flex;flex-wrap:wrap;gap:15px;font-size:13px}.hero{padding:76px 0 48px;border-bottom:1px solid #1b2d3b}.eyebrow{color:var(--violet);font:750 12px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.14em}.hero h1{max-width:980px;margin:13px 0 16px;font-size:clamp(38px,6vw,70px);line-height:1.04}.hero p{max-width:920px;color:#bed0db;font-size:18px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.chip{border:1px solid #3b5063;border-radius:99px;padding:6px 11px;color:#c7d6df;background:#0d1b27;font-size:12px}.chip.hot{border-color:#7369b5;color:#d1c8ff}.section{padding:56px 0;border-bottom:1px solid #172835}.head{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:end;margin-bottom:24px}.head h2{margin:7px 0 0;font-size:clamp(27px,4vw,43px);line-height:1.13}.head p{margin:0;color:var(--muted)}.k{color:var(--violet);font:750 11px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.13em}.callout{padding:15px 17px;border-left:4px solid var(--amber);border-radius:0 11px 11px 0;background:#271f0e;color:#ead8b6}.callout.good{border-color:var(--green);background:#0d251d}.callout.bad{border-color:var(--red);background:#2a151b}.preview{display:grid;grid-template-columns:1.3fr .7fr;gap:15px}.preview figure{margin:0;border:1px solid #345369;border-radius:15px;overflow:hidden;background:#04090e}.preview img{display:block;width:100%;height:auto;image-rendering:auto}.preview figcaption{padding:10px 13px;color:#9fb4c2;font-size:12px}.metrics{display:grid;gap:9px}.metric{padding:13px;border:1px solid #2f4a5d;border-radius:11px;background:#0a1721}.metric b{display:block;color:#edf8fc;font:750 20px ui-monospace,Consolas,monospace}.metric span{color:var(--muted);font-size:11px}.graph-wrap{position:relative;min-width:940px;height:520px}.graph-wrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.graph-wrap path{fill:none;stroke:#41657b;stroke-width:3;marker-end:url(#arrow)}.graph-wrap path.hot{stroke:#aa96ff}.rg-button{position:absolute;width:178px;border:1px solid #3c5d70;border-radius:10px;padding:0;background:#0b1822;color:#eaf5fa;text-align:left;cursor:pointer;box-shadow:0 11px 24px #0005}.rg-button b{display:block;padding:9px 10px;border-bottom:1px solid #304958;font-size:12px}.rg-button span{display:block;padding:7px 10px;color:#9eb2bf;font:10px/1.45 ui-monospace,Consolas,monospace}.rg-button:hover,.rg-button.active{border-color:#aa96ff;box-shadow:0 0 0 2px #aa96ff33,0 11px 24px #0006}.node-detail{display:grid;grid-template-columns:160px 1fr;gap:14px;margin-top:12px;padding:15px;border:1px solid #355569;border-radius:12px;background:#0a1721}.node-detail code{color:#ffc76d}.io-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}.io-list div{padding:9px;border:1px solid #294353;border-radius:8px;color:#b8cad4;font-size:12px}.io-list b{display:block;color:#e6f1f6}.resource-table,.compare{width:100%;border-collapse:collapse}.resource-table th,.resource-table td,.compare th,.compare td{padding:10px;border:1px solid #294252;text-align:left;vertical-align:top}.resource-table th,.compare th{background:#102331}.resource-table td,.compare td{color:#b8cad4}.duo{display:grid;grid-template-columns:1fr 1fr;gap:13px}.command{border:1px solid #2e4b5d;border-radius:12px;background:#07131c;overflow:hidden}.command h3{margin:0;padding:10px 13px;border-bottom:1px solid #2e4b5d;font-size:13px}.command pre{margin:0;padding:14px;overflow:auto;color:#d6e7ef;font:12px/1.65 Consolas,monospace}.pipeline-map{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.map-card{padding:14px;border:1px solid #2e4a5c;border-radius:11px;background:#0a1721}.map-card b{display:block;margin-bottom:4px}.map-card span{color:var(--muted);font-size:12px}.footer{padding:32px 0 52px}.footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}@media(max-width:850px){.head{grid-template-columns:1fr}.preview,.duo{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.pipeline-map{grid-template-columns:1fr 1fr}.node-detail{grid-template-columns:1fr}.graph-scroll{overflow:auto}}@media(max-width:520px){.nav{display:none}.metrics,.pipeline-map{grid-template-columns:1fr}.hero{padding-top:48px}}
+    .hero h1{max-width:1080px;font-size:clamp(38px,5.3vw,64px)}.preview-images{display:grid;gap:15px}.graph-wrap>svg>path{fill:none;stroke:#41657b;stroke-width:3;marker-end:url(#arrow)}.graph-wrap>svg>path.hot{stroke:#aa96ff}.graph-wrap marker path{fill:#41657b;stroke:none;marker-end:none}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap"><div class="brand">GI 学习地图 / RenderGraph GI Lab</div><nav class="nav"><a href="../index.html">⌂ 主目录</a><a href="../gi_module_voxel_gi.html">Voxel GI</a><a href="../gi_module_ddgi.html">DDGI</a><a href="../Realtime_GI_Field_Guide.html">方案总览</a></nav></div></header>
+  <main>
+    <section class="hero"><div class="wrap">
+      <div class="eyebrow">MODULE 11 · NATIVE RENDERGRAPH GI WORKBENCH</div>
+      <h1>不再只画流程图。<br>让六个 Pass 在 GPU 上真正跑完。</h1>
+      <p>这个 Lab 已直接扩展 <code>F:\RenderGraph</code>：32³ Texture3D 当前帧体素化、三层独立 Volume LOD、五锥 diffuse gather、HDR Resolve 与 Present。D3D12 和 Vulkan 使用同一份 C++ RenderGraph 与 HLSL；验证帧从 GPU readback 得到，不是网页模拟图。</p>
+      <div class="chips"><span class="chip hot">Native C++20 / HLSL</span><span class="chip">D3D12 PASS</span><span class="chip">Vulkan PASS</span><span class="chip">6 passes</span><span class="chip">5 transient textures</span><span class="chip">12 barriers</span><span class="chip">history reads = 0</span></div>
+    </div></section>
+
+    <section class="section" id="stage0"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 00 · ACTUAL GPU OUTPUT</div><h2>先看交付结果，再拆资源与代码</h2></div><p>两张图由 <code>08_gi_workbench.exe --validate</code> 的 D3D12 GPU readback 生成：第一张是最终合成，第二张只显示间接光。它们与右侧数值来自同一次运行。</p></div>
+      <div class="preview">
+        <div class="preview-images">
+          <figure><img src="assets/native_voxel_gi.bmp" alt="RenderGraph 原生 Voxel GI GPU 最终输出"><figcaption>320×180 · Final GI view · 当前帧移动点光源 · ACES present</figcaption></figure>
+          <figure><img src="assets/native_voxel_gi_indirect.bmp" alt="RenderGraph 原生 Voxel GI GPU 间接光输出"><figcaption>320×180 · Indirect-only view · 独立断言不是 direct-only 假阳性</figcaption></figure>
+        </div>
+        <div class="metrics">
+          <div class="metric"><b>54.671</b><span>frame 0 mean luma（0–255）</span></div>
+          <div class="metric"><b>51,582 / 57,600</b><span>non-black pixels</span></div>
+          <div class="metric"><b>20.712</b><span>indirect-only mean luma（0–255）</span></div>
+          <div class="metric"><b>50,608 / 57,600</b><span>indirect-only non-black pixels</span></div>
+          <div class="metric"><b>6 / 0</b><span>executed / culled passes</span></div>
+          <div class="metric"><b>5 / 12</b><span>transient textures / barriers</span></div>
+          <div class="metric"><b>0</b><span>history reads；每帧重建完整 volume</span></div>
+        </div>
+      </div>
+      <div class="callout good" style="margin-top:15px"><b>可携带：</b>本页、截图与 <a href="assets/rendergraph_gi_source_snapshot.zip">GI 扩展源码快照 ZIP</a> 都使用相对链接。复制整个 <code>Rendering</code> 目录后仍可阅读；ZIP 完整保存了本次新增/修改的 sample 08、HLSL、manifest 与顶层 CMake 入口，需叠加到兼容的 RenderGraph 工程，未包含 <code>engine/</code> 和 <code>third_party/</code>，不能单独构建。</div>
+    </div></section>
+
+    <section class="section" id="stage1"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 01 · EXECUTED DAG</div><h2>点击节点，看真实读写契约</h2></div><p>这些不是建议名称，而是 C++ 传给 <code>RenderGraph::addPass</code> 的实际名称。资源声明驱动依赖、自动 barrier 与 culling。</p></div>
+      <article class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">01</span><div><h3>六 Pass / 八条数据边</h3><p>点击任意节点，检查其输入、输出、dispatch/draw 和源入口。</p></div><span class="gi-stage-tag">交互 DAG</span></div>
+        <div class="gi-stage-body">
+          <div class="gi-rg graph-scroll">
+            <div class="graph-wrap">
+              <svg viewBox="0 0 940 520" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#41657b"></path></marker></defs>
+                <path d="M188 104 C242 104 238 104 292 104"></path>
+                <path d="M470 104 C518 104 516 104 564 104"></path>
+                <path d="M742 104 C790 104 792 168 744 218"></path>
+                <path class="hot" d="M188 104 C280 176 470 226 566 258"></path>
+                <path class="hot" d="M470 104 C518 154 538 210 566 258"></path>
+                <path class="hot" d="M742 104 C752 160 728 205 704 228"></path>
+                <path d="M744 272 C790 272 790 376 744 402"></path>
+                <path d="M566 272 C500 322 480 391 414 410"></path>
+              </svg>
+              <button class="rg-button active" data-node="voxelize" style="left:10px;top:62px"><b>01 · Voxelize</b><span>UAV → Voxel L0<br>dispatch 8×8×8</span></button>
+              <button class="rg-button" data-node="mip1" style="left:292px;top:62px"><b>02 · Mip L1</b><span>L0 SRV → L1 UAV<br>dispatch 4×4×4</span></button>
+              <button class="rg-button" data-node="mip2" style="left:564px;top:62px"><b>03 · Mip L2</b><span>L1 SRV → L2 UAV<br>dispatch 2×2×2</span></button>
+              <button class="rg-button" data-node="mip3" style="left:744px;top:220px"><b>04 · Mip L3</b><span>L2 SRV → L3 UAV<br>dispatch 1×1×1</span></button>
+              <button class="rg-button" data-node="resolve" style="left:566px;top:228px"><b>05 · Cone Resolve</b><span>L0…L3 SRV → HDR UAV<br>dispatch ceil(view/8)</span></button>
+              <button class="rg-button" data-node="present" style="left:326px;top:402px"><b>06 · Present</b><span>HDR SRV → imported RT<br>fullscreen draw(3)</span></button>
+            </div>
+          </div>
+          <div class="node-detail"><div><b id="nodeTitle">GI.01 Voxelize Analytic Scene</b><p id="nodeEntry"><code>csVoxelize</code></p></div><div class="io-list"><div><b>读取</b><span id="nodeReads">当前帧点光源 + 解析 SDF 场景</span></div><div><b>写入</b><span id="nodeWrites">Voxel L0 · 32³ RGBA16F</span></div><div><b>为什么存在</b><span id="nodeWhy">把世界表面、直接光和 opacity 写进统一体素域。</span></div><div><b>验收点</b><span id="nodeCheck">每帧完整 dispatch；不读取上一帧 volume。</span></div></div></div>
+        </div>
+      </article>
+    </div></section>
+
+    <section class="section" id="stage2"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 02 · RESOURCE CONTRACTS</div><h2>先把每张资源的“谁写、谁读、装什么”钉死</h2></div><p>当前 RDG 不跟踪单个 mip 的子资源状态，所以这里故意创建四张独立 Texture3D，而不是一张多 mip texture。这是基于框架能力做出的真实设计，不是教程简写。</p></div>
+      <table class="resource-table"><thead><tr><th>资源</th><th>尺寸 / 格式</th><th>RGB</th><th>A</th><th>生命周期</th></tr></thead><tbody>
+        <tr><td>Voxel L0</td><td>32³ · RGBA16F</td><td>表面直接漫反射 radiance</td><td>保守表面 shell opacity</td><td>Voxelize → Mip1 / Resolve</td></tr>
+        <tr><td>Voxel L1</td><td>16³ · RGBA16F</td><td>2³ 子体素 alpha-weighted radiance</td><td>1 − Π(1 − α)</td><td>Mip1 → Mip2 / Resolve</td></tr>
+        <tr><td>Voxel L2</td><td>8³ · RGBA16F</td><td>同上</td><td>同上</td><td>Mip2 → Mip3 / Resolve</td></tr>
+        <tr><td>Voxel L3</td><td>4³ · RGBA16F</td><td>同上</td><td>同上</td><td>Mip3 → Resolve</td></tr>
+        <tr><td>Resolved HDR</td><td>viewport · RGBA16F</td><td>direct + indirect + tiny ambient</td><td>1</td><td>Resolve → Present</td></tr>
+        <tr><td>Final Target</td><td>swapchain / validation</td><td>ACES 后 LDR</td><td>1</td><td>imported graph output</td></tr>
+      </tbody></table>
+      <div class="gi-light-card" style="margin-top:14px"><span class="gi-light-icon">●</span><div><strong>各向同性点光源 · 每帧输入</strong><div class="gi-light-meta"><span>position = GIPush.lightPositionIntensity.xyz</span><span>forward = 不适用（全向）</span><span>intensity = .w = 7.5</span><span>color = (1.0, 0.76, 0.42)</span><span>history reads = 0</span></div></div></div>
+    </div></section>
+
+    <section class="section" id="stage3"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 03 · VOXELIZE</div><h2>world position 怎样落到一个 32³ cell</h2></div><p>Compute shader 为每个 cell 取中心点，查询解析 SDF 到最近表面的距离。离表面一个 cell 内的点写入保守 opacity shell；表面投影点计算当前点光源的直接漫反射。</p></div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">本例代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际 HLSL</button><button data-gi-tab="cpp">RenderGraph C++</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>把 8×8×8 米的房间切成 32³ 个箱子，每格边长 0.25 米。每个线程负责一个箱子：箱子中心靠近表面就记 opacity，同时把该表面此刻被点光照亮的颜色写进 RGB。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">uvw = (voxelID + 0.5) / dimension<br>world = volumeMin + uvw · extent<br>opacity = saturate(1 − |SDF(world)| / (cellSize · 0.92))</div></div>
+        <div class="gi-panel" data-gi-panel="values"><p>dimension=32，extent=8，因此 cellSize=0.25。id=(16, 8, 12) 时，uvw=(0.516, 0.266, 0.391)，再由 volumeMin=(-4,-0.45,-4) 转成 world=(0.125,1.675,-0.875)。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">每个 GPU thread 负责一个 voxel
+把 voxel id 转为 world-space 中心
+查询中心到最近解析表面的 signed distance
+根据离表面的距离生成 conservative shell opacity
+如果 opacity 大于 0:
+  估计表面法线
+  把中心投影回表面
+  用当前点光源计算 direct diffuse
+写入 float4(radiance, opacity)</code></pre></div>
+        <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="shaders/gi/voxelize_analytic.hlsl · csVoxelize">[numthreads(4, 4, 4)]
+void csVoxelize(uint3 id : SV_DispatchThreadID) {
+    uint dimension = gGI.dimensions.y;
+    if (any(id &gt;= dimension))
+        return;
+
+    float cellSize = gGI.volumeMinExtent.w / dimension;
+    float3 uvw = (float3(id) + 0.5) / dimension;
+    float3 worldPosition =
+        gGI.volumeMinExtent.xyz + uvw * gGI.volumeMinExtent.w;
+    SceneSample scene = sampleAnalyticScene(worldPosition);
+    float opacity = saturate(
+        1.0 - abs(scene.distance) / (cellSize * 0.92));
+
+    float3 radiance = 0.0;
+    if (opacity &gt; 0.001) {
+        float3 normal = sceneNormal(worldPosition);
+        float3 projected = worldPosition - normal * scene.distance;
+        radiance = evaluateDirectDiffuse(
+            projected, normal, scene.albedo);
+    }
+    gVoxelLevel0[id] = float4(radiance, opacity);
+}</code></pre></div>
+        <div class="gi-panel" data-gi-panel="cpp"><pre><code data-gi-code data-gi-status="actual" data-gi-source="samples/08_gi_workbench/main.cpp · pass 01">graph.addPass(
+    "GI.01 Voxelize Analytic Scene",
+    rdg::PassFlags::Compute,
+    [&, voxelL0, push](rdg::PassBuilder&amp; builder) {
+        builder.writeTexture(voxelL0);
+        return [voxelL0, pipeline, passPush](
+                   rdg::PassContext&amp; context) {
+            context.cmd().setPipeline(pipeline.get());
+            context.cmd().setTextureUAV(
+                0, 0, context.texture(voxelL0));
+            context.cmd().setPushConstants(
+                &amp;passPush, sizeof(passPush));
+            context.cmd().dispatch(8, 8, 8);
+        };
+    });</code></pre></div>
+      </div>
+      <div class="callout" style="margin-top:14px"><b>诚实边界：</b>这是 GPU 上真实构建的 Texture3D，但场景来源是解析 SDF，而不是 triangle conservative raster。三角形体素化、dominant-axis 与属性原子合并请回到 <a href="../gi_module_voxelization.html">Voxelization 课</a>。</div>
+    </div></section>
+
+    <section class="section" id="stage4"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 04 · VOLUME LOD</div><h2>缩小 RGB 之前，先处理 opacity 的集合语义</h2></div><p>八个子体素只要有一个很不透明，父体素就不应简单取 alpha 平均。这里把透明率相乘，再用 1 减回 opacity；RGB 用 alpha 加权。</p></div>
+      <div class="gi-workbench" data-gi-workbench>
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">本例代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际 HLSL</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>八扇并排的小窗只要有几扇完全挡住，大窗的遮挡率就会上升。把每扇窗的“还能透多少”相乘，得到整个父 cell 的剩余透明率。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">α<sub>parent</sub> = 1 − Π<sub>i=0..7</sub>(1 − α<sub>i</sub>)<br>L<sub>parent</sub> = Σ(L<sub>i</sub>α<sub>i</sub>) / max(Σα<sub>i</sub>, ε)</div></div>
+        <div class="gi-panel" data-gi-panel="values"><p>若八个 alpha 为 [0.5, 0.25, 0, 0, 0, 0, 0, 0]：简单平均只有 0.09375；集合公式为 1 − (0.5×0.75)=0.625，更能保留薄遮挡。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">父体素对应源体积的 2×2×2 区域
+remainingTransmittance = 1
+for 八个 child:
+  radianceSum += child.rgb * child.alpha
+  alphaWeight += child.alpha
+  remainingTransmittance *= 1 - child.alpha
+parent.rgb = radianceSum / max(alphaWeight, epsilon)
+parent.alpha = 1 - remainingTransmittance</code></pre></div>
+        <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="shaders/gi/voxel_mip.hlsl · csDownsample">float3 weightedRadiance = 0.0;
+float opacityWeight = 0.0;
+float remainingTransmittance = 1.0;
+
+for (uint z = 0; z &lt; 2; ++z)
+for (uint y = 0; y &lt; 2; ++y)
+for (uint x = 0; x &lt; 2; ++x) {
+    float4 child = gSourceVolume.Load(
+        int4(sourceBase + uint3(x, y, z), 0));
+    weightedRadiance += child.rgb * child.a;
+    opacityWeight += child.a;
+    remainingTransmittance *= 1.0 - saturate(child.a);
+}
+
+gTargetVolume[id] = float4(
+    weightedRadiance / max(opacityWeight, 1e-4),
+    1.0 - remainingTransmittance);</code></pre></div>
+      </div>
+    </div></section>
+
+    <section class="section" id="stage5"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 05 · CONE TRACE</div><h2>锥越走越粗，所以采样越来越低的分辨率</h2></div><p>每一步用锥直径估算连续 LOD，在四张独立 Texture3D 之间手工线性插值；随后按 front-to-back 透明率累计 radiance。</p></div>
+      <div class="duo">
+        <div class="gi-workbench" data-gi-workbench>
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">本例代值</button><button data-gi-tab="code">实际 HLSL</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>离表面近时锥截面小，要看 L0 的细节；走远后截面覆盖很多 cell，继续读 L0 既昂贵又闪烁，于是逐渐转向 L1/L2/L3。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">diameter = max(cell, 2·tan(aperture/2)·distance)<br>lod = log₂(diameter / cell)</div></div>
+          <div class="gi-panel" data-gi-panel="values"><p>cell=0.25，aperture=0.82 rad，distance=2：diameter≈1.74，lod≈log₂(6.96)=2.80，因此主要读取 L3，并少量混合 L2。</p></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="shaders/gi/voxel_cone_resolve.hlsl · traceCone">float diameter = max(
+    baseCell,
+    2.0 * tan(aperture * 0.5) * distance);
+float lod = log2(max(diameter / baseCell, 1.0));
+float4 voxel = sampleVolume(
+    origin + direction * distance,
+    lod);
+distance += max(baseCell * 0.65, diameter * 0.48);</code></pre></div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench>
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际 HLSL</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>近处先吸收；剩余透明率才允许远处贡献。近处 alpha=1 后，后面的样本全部乘 0，不能穿墙回来。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">L ← L + T · L<sub>voxel</sub> · α<br>T ← T · (1 − α)</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">radiance = 0
+transmittance = 1
+while 锥还在体积内 且 transmittance 足够大:
+  根据锥直径选连续 LOD
+  采样 voxel radiance 和 opacity
+  radiance += transmittance * voxel.rgb * opacity
+  transmittance *= 1 - opacity
+  沿锥方向推进</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="shaders/gi/voxel_cone_resolve.hlsl · front-to-back">float opacity = saturate(voxel.a);
+accumulated +=
+    transmittance * voxel.rgb * opacity;
+transmittance *= 1.0 - opacity;
+
+if (transmittance &lt;= 0.025)
+    break;</code></pre></div>
+        </div>
+      </div>
+      <div class="callout good" style="margin-top:14px"><b>组装结果：</b>Resolve 为命中表面发出 5 个 diffuse cones：法线方向权重 0.28，沿 tangent/bitangent 偏转的四锥各 0.18。采样细节、LOD 锁定与漏光实验见 <a href="../gi_module_cone_tracing.html">Cone Tracing 课</a>。</div>
+    </div></section>
+
+    <section class="section" id="stage6"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 06 · VALIDATION</div><h2>两后端、两光源位置、三张 GPU 结果</h2></div><p>验证不是只检查“程序没崩”。它检查图结构、最终图像、移动光响应，并额外渲染 indirect-only view，防止“只有直接光也能通过”的假阳性。</p></div>
+      <table class="compare"><thead><tr><th>检查</th><th>D3D12</th><th>Vulkan</th><th>通过条件</th></tr></thead><tbody>
+        <tr><td>设备 / shader target</td><td>RTX 5060 Ti · DXIL</td><td>RTX 5060 Ti · SPIR-V</td><td>相同 C++ graph 与 HLSL 入口编译执行</td></tr>
+        <tr><td>Frame 0</td><td>mean 54.671 · hash 7021018693590246120</td><td>mean 54.671 · 同 hash</td><td>mean &gt; 4；non-black &gt; 80%</td></tr>
+        <tr><td>Frame 1 moving light</td><td>mean 54.343 · 新 hash</td><td>mean 54.343 · 同新 hash</td><td>hash 改变且 mean 差 &gt; 0.02</td></tr>
+        <tr><td>Indirect-only</td><td>mean 20.712 · 50,608 non-black</td><td>mean / coverage 相同；浮点末位使 hash 可不同</td><td>mean &gt; 0.10；non-black &gt; 5%；hash ≠ final</td></tr>
+        <tr><td>RDG stats</td><td>6 pass · 0 culled · 5 texture · 12 barrier</td><td>相同</td><td>精确匹配资源链</td></tr>
+        <tr><td>History</td><td>0 reads</td><td>0 reads</td><td>两个 frame 都重建 L0→L3</td></tr>
+      </tbody></table>
+      <div class="gi-checks">
+        <div class="gi-check pass"><b>D3D12 validation</b><span>PASS · current-frame Voxel GI</span></div>
+        <div class="gi-check pass"><b>Vulkan validation</b><span>PASS · final hash 相同，indirect 数值断言通过</span></div>
+        <div class="gi-check pass"><b>Portable docs</b><span>相对 href/src + source ZIP</span></div>
+      </div>
+    </div></section>
+
+    <section class="section" id="stage7"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 07 · RUN & DEBUG</div><h2>四种原生预览入口</h2></div><p>命令都从 RenderGraph 工程根目录执行；Debug view 仍运行完整上游链，只改变 Resolve 的显示方式。</p></div>
+      <div class="duo">
+        <div class="command"><h3>构建与双后端验收</h3><pre>cmake --build build --config Debug --target 08_gi_workbench
+
+.\build\bin\Debug\08_gi_workbench.exe --validate
+.\build\bin\Debug\08_gi_workbench.exe --validate --vulkan</pre></div>
+        <div class="command"><h3>交互窗口 / 中间资源</h3><pre>.\build\bin\Debug\08_gi_workbench.exe
+.\build\bin\Debug\08_gi_workbench.exe --view=occupancy
+.\build\bin\Debug\08_gi_workbench.exe --view=radiance
+.\build\bin\Debug\08_gi_workbench.exe --view=indirect
+
+# 任一命令可追加 --vulkan</pre></div>
+      </div>
+      <div class="gi-task-grid"><div class="gi-task do"><b>操作</b><span>先开 occupancy slice，确认表面 shell 与墙/箱体位置。</span></div><div class="gi-task watch"><b>再看</b><span>radiance slice 中点光源移动会让被照表面实时换色。</span></div><div class="gi-task expect"><b>最后</b><span>indirect only 应保留墙面与地面的颜色反弹，而不是 direct shadow。</span></div></div>
+    </div></section>
+
+    <section class="section" id="stage8"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 08 · WHAT NEXT</div><h2>当前框架能做什么，不能假装做什么</h2></div><p>这个样例优先建立可运行、可验收的 GI 骨架；下列分歧决定下一轮工程扩展。</p></div>
+      <div class="pipeline-map">
+        <div class="map-card"><b>已落地 · Voxel GI</b><span>Texture3D、分离 LOD、当前帧光注入、多锥 gather、跨后端验证。</span></div>
+        <div class="map-card"><b>可复用到 · DDGI teaching-lite</b><span>用现有 voxel/SDF 作为 Probe ray source；需新增 Probe buffer/atlas 与 scrolling 更新。</span></div>
+        <div class="map-card"><b>可复用到 · RCGI teaching-lite</b><span>用 voxel/SDF 构建 interval field；需新增方向/区间 buffer 和 merge pass。</span></div>
+        <div class="map-card"><b>当前缺口 · HWRT</b><span>RHI 没有 BLAS/TLAS、Ray Query 或 DispatchRays；不能把 DDGI 写成真正 DXR 版本。</span></div>
+        <div class="map-card"><b>当前缺口 · Subresource RDG</b><span>RDG 只跟踪整资源状态，所以 L0–L3 使用四张 Texture3D。</span></div>
+        <div class="map-card"><b>当前缺口 · GraphDoc</b><span>编辑器只表达 2D texture pins；原生 C++ path 先承载 3D volume。</span></div>
+      </div>
+      <div class="callout" style="margin-top:15px"><b>继续组合：</b><a href="../gi_module_voxel_gi.html">完整 Voxel GI 页面</a>解释每个中间纹理；<a href="../gi_module_ddgi.html">DDGI</a>与<a href="../gi_module_rcgi.html">RCGI</a>页面提供同一 ray source 下的算法实验。所有链接均相对于本页。</div>
+    </div></section>
+  </main>
+  <footer class="footer"><div class="wrap"><span>GI Field Guide · Native RenderGraph Lab</span><span><a href="../gi_module_ddgi.html">← DDGI</a> · <a href="../index.html">目录</a> · <a href="assets/rendergraph_gi_source_snapshot.zip">源码快照</a></span></div></footer>
+
+  <script src="../gi_course.js"></script>
+  <script>
+  (() => {
+    'use strict';
+    const nodes = {
+      voxelize: {
+        title: 'GI.01 Voxelize Analytic Scene',
+        entry: 'csVoxelize · dispatch 8×8×8',
+        reads: '当前帧点光源 + 解析 SDF 场景',
+        writes: 'Voxel L0 · 32³ RGBA16F',
+        why: '把世界表面、直接光和 opacity 写进统一体素域。',
+        check: '每帧完整 dispatch；不读取上一帧 volume。',
+      },
+      mip1: {
+        title: 'GI.02 Voxel Mip L1',
+        entry: 'csDownsample · dispatch 4×4×4',
+        reads: 'Voxel L0 · 32³',
+        writes: 'Voxel L1 · 16³',
+        why: '把 2×2×2 子体素汇总为第一级锥采样近似。',
+        check: 'RGB alpha-weighted；alpha 使用 transmittance union。',
+      },
+      mip2: {
+        title: 'GI.03 Voxel Mip L2',
+        entry: 'csDownsample · dispatch 2×2×2',
+        reads: 'Voxel L1 · 16³',
+        writes: 'Voxel L2 · 8³',
+        why: '为更远、更粗的 cone footprint 提供预过滤结果。',
+        check: '源/目标是独立资源，RDG 可推导完整 UAV→SRV barrier。',
+      },
+      mip3: {
+        title: 'GI.04 Voxel Mip L3',
+        entry: 'csDownsample · dispatch 1×1×1',
+        reads: 'Voxel L2 · 8³',
+        writes: 'Voxel L3 · 4³',
+        why: '覆盖最远 cone step，避免远处持续读取 L0。',
+        check: '4³ 全部写完；Resolve 同时声明读取 L0…L3。',
+      },
+      resolve: {
+        title: 'GI.05 Multi-Cone Resolve',
+        entry: 'csResolve · dispatch ceil(viewport / 8)',
+        reads: 'Voxel L0、L1、L2、L3 + 当前相机/点光',
+        writes: 'Resolved HDR · viewport RGBA16F',
+        why: '解析相机场景命中，组合 direct 与 5-cone indirect。',
+        check: '连续 LOD、层间插值、front-to-back T、debug modes。',
+      },
+      present: {
+        title: 'GI.06 Present',
+        entry: 'vsMain / psPresent · draw(3)',
+        reads: 'Resolved HDR',
+        writes: 'Imported final target',
+        why: '全屏 ACES 映射到 swapchain 或 validation RGBA8。',
+        check: 'final target 是 graph output；验证随后转 CopySrc 回读。',
+      },
+    };
+    const buttons = [...document.querySelectorAll('[data-node]')];
+    function selectNode(id) {
+      const item = nodes[id];
+      buttons.forEach((button) => button.classList.toggle('active', button.dataset.node === id));
+      document.getElementById('nodeTitle').textContent = item.title;
+      document.getElementById('nodeEntry').innerHTML = `<code>${item.entry}</code>`;
+      document.getElementById('nodeReads').textContent = item.reads;
+      document.getElementById('nodeWrites').textContent = item.writes;
+      document.getElementById('nodeWhy').textContent = item.why;
+      document.getElementById('nodeCheck').textContent = item.check;
+    }
+    buttons.forEach((button) => button.addEventListener('click', () => selectNode(button.dataset.node)));
+  })();
+  </script>
+</body>
+</html>

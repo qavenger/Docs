@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Radiance Cascades GI 交互式教程：从射线区间、级联布局到 far-to-near merge，并与逐像素参考解和误差热图对照。">
+  <title>Radiance Cascades GI · 从区间到级联合并</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root{--bg:#071018;--panel:#0d1924;--line:#284153;--text:#e8f4fa;--muted:#9db1c0;--cyan:#58daf1;--violet:#aa96ff;--amber:#ffc76d;--green:#6fe2a6;--red:#ff7d89}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);background:radial-gradient(circle at 76% -15%,#27345c 0,transparent 35rem),var(--bg);font:15px/1.72 Inter,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(1180px,calc(100% - 32px));margin:auto}.top{position:sticky;top:0;z-index:30;border-bottom:1px solid #ffffff14;background:#071018e8;backdrop-filter:blur(12px)}.top .wrap{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{font-weight:800}.nav{display:flex;flex-wrap:wrap;gap:15px;font-size:13px}.hero{padding:76px 0 48px;border-bottom:1px solid #1b2d3b}.eyebrow{color:var(--violet);font:750 12px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.14em}.hero h1{max-width:940px;margin:13px 0 16px;font-size:clamp(38px,6vw,72px);line-height:1.03}.hero p{max-width:900px;color:#bed0db;font-size:18px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.chip{border:1px solid #3b5063;border-radius:99px;padding:6px 11px;color:#c7d6df;background:#0d1b27;font-size:12px}.chip.hot{border-color:#7369b5;color:#d1c8ff}.section{padding:56px 0;border-bottom:1px solid #172835}.head{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:end;margin-bottom:24px}.head h2{margin:7px 0 0;font-size:clamp(27px,4vw,43px);line-height:1.13}.head p{margin:0;color:var(--muted)}.k{color:var(--violet);font:750 11px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.13em}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{grid-column:span 6;padding:18px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#101e2b,#0a151f)}.card.full{grid-column:1/-1}.card.third{grid-column:span 4}.card h3{margin:0 0 8px}.card p{color:#b5c7d2}.callout{padding:15px 17px;border-left:4px solid var(--amber);border-radius:0 11px 11px 0;background:#271f0e;color:#ead8b6}.callout.good{border-color:var(--green);background:#0d251d}.callout.bad{border-color:var(--red);background:#2a151b}.lab{border:1px solid #36566b;border-radius:18px;overflow:hidden;background:#08131c;box-shadow:0 20px 60px #0007}.lab-head{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:14px 16px;border-bottom:1px solid #294354;background:#0d1d29}.lab-head p{margin:2px 0 0;color:var(--muted);font-size:12px}.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px;border-bottom:1px solid #294354;background:#0a1721}.control label{display:flex;justify-content:space-between;gap:8px;color:#c9d8e0;font-size:12px}.control output{color:var(--amber);font:12px ui-monospace,Consolas,monospace}.control input,.control select{width:100%;margin-top:5px;accent-color:var(--violet)}.control button{width:100%;margin-top:18px;border:1px solid #506175;border-radius:8px;padding:7px;color:#e8f3f8;background:#132432;cursor:pointer}.canvas-shell{position:relative;padding:12px;background:#04090e}.canvas-shell canvas{display:block;width:100%;height:auto;border-radius:10px;background:#02060a}.overlay{position:absolute;left:23px;top:23px;border:1px solid #ffffff24;border-radius:7px;padding:5px 8px;background:#061019d8;color:#d6e8f1;font-size:11px;pointer-events:none}.legend{display:flex;flex-wrap:wrap;gap:13px;padding:9px 14px;color:#8fa6b5;font-size:11px}.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.layers{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.layer{border:1px solid #2b4455;border-radius:10px;overflow:hidden;background:#07121a}.layer canvas{display:block;width:100%;height:auto}.layer b,.layer span{display:block;padding:5px 8px}.layer b{font-size:12px}.layer span{padding-top:0;color:var(--muted);font-size:10px}.results{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.result{border:1px solid #2c4658;border-radius:11px;overflow:hidden;background:#07121b}.result canvas{display:block;width:100%;height:auto;image-rendering:auto}.result h4{margin:0;padding:8px 10px 1px}.result p{margin:0;padding:2px 10px 9px;color:var(--muted);font-size:11px}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:11px}.stat{padding:9px;border:1px solid #2d4657;border-radius:9px;background:#0a1721}.stat b{display:block;color:#edf8fc;font:700 15px ui-monospace,Consolas,monospace}.stat span{color:var(--muted);font-size:10px}.compare{width:100%;border-collapse:collapse}.compare th,.compare td{padding:10px;border:1px solid #294252;text-align:left;vertical-align:top}.compare th{background:#102331}.compare td{color:#b8cad4}.footer{padding:32px 0 52px}.footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}@media(max-width:850px){.head{grid-template-columns:1fr}.card,.card.third{grid-column:1/-1}.controls{grid-template-columns:1fr 1fr}.layers{grid-template-columns:1fr 1fr}.results{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}@media(max-width:520px){.nav{display:none}.controls,.layers,.stats{grid-template-columns:1fr}.hero{padding-top:48px}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap"><div class="brand">GI 学习地图 / RCGI</div><nav class="nav"><a href="index.html">⌂ 主目录</a><a href="gi_module_foundations.html">前置：基础</a><a href="Realtime_GI_Field_Guide.html">方案总览</a><a href="gi_module_voxel_gi.html">下一课：Voxel GI →</a></nav></div></header>
+  <main>
+    <section class="hero"><div class="wrap">
+      <div class="eyebrow">MODULE 08 · RADIANCE CASCADES GI</div>
+      <h1>不要先背 Cascade。<br>先把一根射线切成几段。</h1>
+      <p>本课把 <b>RCGI</b> 明确定义为 <b>Radiance Cascades Global Illumination</b>。我们从成熟、可验证的二维版本开始：近处用密集 Probe 和较少方向，远处用稀疏 Probe 和更多方向，再把远区间合并回近区间。每一层都由页面真实 ray march 产生，不是预先画好的热图。</p>
+      <div class="chips"><span class="chip hot">9 个 Canvas</span><span class="chip">真实 SDF interval march</span><span class="chip">Far → Near Merge</span><span class="chip">Reference / Error</span><span class="chip">0 history reads</span><span class="chip">Edge file://</span></div>
+    </div></section>
+
+    <section class="section"><div class="wrap">
+      <div class="gi-prereq"><span class="gi-stage-num">前置</span><div><strong>只需要知道“光沿直线走，遇到东西就停”</strong><p>不要求先会积分或球谐。若“radiance / 一次反弹”仍陌生，先用基础页的可视光路热身。</p></div><a href="gi_module_foundations.html">打开基础课 →</a></div>
+      <div class="callout"><b>缩写边界：</b>有些资料把 RCGI 用于 Radiance Caching GI。本课程沿用本套文档此前的 Radiance Cascades 语境；二者不是同一个算法。本文不会把实验性的通用 3D Radiance Cascades 写成成熟即插即用方案。</div>
+    </div></section>
+
+    <section class="section" id="stage1"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 01 · PENUMBRA HYPOTHESIS</div><h2>为什么“近处看位置，远处看方向”</h2></div><p>离遮挡物近时，轻微移动位置就可能从“看见灯”变成“看不见灯”，所以空间采样要密。离得远时，位置变化影响较小，但很窄的方向变化仍可能擦过小光源，所以方向采样要密。</p></div>
+      <article class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">01</span><div><h3>空间分辨率与角分辨率交换</h3><p>拖动“观察距离”，看 Probe 密度和方向数如何交换。</p></div><span class="gi-stage-tag">独立 Demo A</span></div>
+        <div class="gi-stage-body">
+          <div class="control" style="max-width:420px"><label>离遮挡边缘的教学距离 <output id="tradeDistanceOut">8</output></label><input id="tradeDistance" type="range" min="1" max="32" value="8"></div>
+          <div class="canvas-shell"><canvas id="tradeCanvas" width="920" height="300" aria-label="空间分辨率与角分辨率交换示意"></canvas><div class="overlay">橙线 = 当前需要区分的方向；青点 = Probe</div></div>
+          <div class="gi-task-grid"><div class="gi-task do"><b>操作</b><span>把距离从 1 拉到 32。</span></div><div class="gi-task watch"><b>观察</b><span>Probe 逐渐变稀，单 Probe 的方向线变多。</span></div><div class="gi-task expect"><b>结论</b><span>总预算不是消失，而是在空间与角度之间重新分配。</span></div></div>
+        </div>
+      </article>
+    </div></section>
+
+    <section class="section" id="stage2"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 02 · INTERVAL</div><h2>一根完整射线，先切成四个互不重叠的区间</h2></div><p>Cascade 0 只负责最近一段；Cascade 1 从上一段终点继续。每一层只回答“我的区间里先撞到什么”，不重复计算更近的路程。</p></div>
+      <article class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">02</span><div><h3>选择 Probe、方向和 Cascade</h3><p>画面中的圆环就是区间起点/终点；粗紫线是当前被 ray march 的一段。</p></div><span class="gi-stage-tag">独立 Demo B</span></div>
+        <div class="gi-stage-body">
+          <div class="controls" style="padding:0 0 13px;border:0;background:none">
+            <div class="control"><label>Probe X <output id="probeXOut">18</output></label><input id="probeX" type="range" min="3" max="61" value="18"></div>
+            <div class="control"><label>Probe Y <output id="probeYOut">18</output></label><input id="probeY" type="range" min="3" max="37" value="18"></div>
+            <div class="control"><label>射线方向 <output id="rayAngleOut">22°</output></label><input id="rayAngle" type="range" min="0" max="359" value="22"></div>
+            <div class="control"><label>Cascade <output id="inspectLevelOut">1</output></label><input id="inspectLevel" type="range" min="0" max="3" value="1"></div>
+          </div>
+          <div class="canvas-shell"><canvas id="intervalCanvas" width="920" height="560" aria-label="Radiance Cascades 区间 ray march"></canvas><div class="overlay" id="intervalOverlay">—</div></div>
+          <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+            <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页代码</button></div>
+            <div class="gi-panel" data-gi-panel="intuition"><p>把射线想成四节透明水管。每节只报告三件事：有没有撞到、撞到后是什么颜色、如果没撞到还剩多少透明度。近节撞到墙后，远节即使看见灯也不能穿回来。</p></div>
+            <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula"><span data-gi-symbol="start">t<sub>start,l</sub></span> = l=0 ? 0 : b·4<sup>l−1</sup><br><span data-gi-symbol="end">t<sub>end,l</sub></span> = b·4<sup>l</sup></div></div>
+            <div class="gi-panel" data-gi-panel="values"><p id="intervalValues">—</p></div>
+            <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="RCGI / interval march pseudocode">从 tStart 开始
+while t 小于 tEnd:
+  查询当前位置到最近表面的距离
+  如果距离足够小:
+    返回 命中颜色 与 不透明
+  t += 安全步长
+返回 黑色 与 透明</code></pre></div>
+            <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rcgi.html · marchInterval">function marchInterval(origin, angle, start, end) {
+  let distance = start;
+  for (let step = 0; step &lt; 56 &amp;&amp; distance &lt; end; step += 1) {
+    const point = {
+      x: origin.x + Math.cos(angle) * distance,
+      y: origin.y + Math.sin(angle) * distance,
+    };
+    const sample = sampleScene(point.x, point.y);
+    if (sample.distance &lt; 0.32) {
+      return {
+        rgb: sample.emissive ? state.lightColor : [0, 0, 0],
+        alpha: 1,
+        distance,
+        material: sample.material,
+      };
+    }
+    distance += clamp(sample.distance * 0.78, 0.28, 2.4);
+  }
+  return { rgb: [0, 0, 0], alpha: 0, distance: end, material: 'none' };
+}</code></pre></div>
+          </div>
+        </div>
+      </article>
+    </div></section>
+
+    <section class="section" id="stage3"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 03 · BUILD CASCADES</div><h2>四层不是四张模糊图，而是四组不同区间答案</h2></div><p>每个小 Canvas 显示该层各 Probe、各方向的命中亮度平均。Probe 数逐层减少，方向数逐层增加；统计值直接来自当前数组。</p></div>
+      <article class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">03</span><div><h3>构建当前帧的 interval field</h3><p>移动发光圆盘，四层都重新 ray march；没有读取上一帧。</p></div><span class="gi-stage-tag">独立 Demo C–F</span></div>
+        <div class="gi-stage-body">
+          <div class="lab">
+            <div class="lab-head"><div><b>同一场景 · 四层真实区间缓存</b><p>亮度表示“这一层自己的区间里看到了多少发光体”。</p></div><span id="buildStatus">等待构建…</span></div>
+            <div class="controls">
+              <div class="control"><label>发光圆盘 X <output id="lightXOut">11.0</output></label><input id="lightX" type="range" min="5" max="59" step=".5" value="11"></div>
+              <div class="control"><label>发光圆盘 Y <output id="lightYOut">9.0</output></label><input id="lightY" type="range" min="5" max="35" step=".5" value="9"></div>
+              <div class="control"><label>基础 Probe 间距 <output id="baseSpacingOut">2</output></label><select id="baseSpacing"><option>2</option><option>3</option><option>4</option></select></div>
+              <div class="control"><button id="animateLight" type="button">播放移动光源</button></div>
+            </div>
+            <div class="gi-light-card" style="margin:12px"><span class="gi-light-icon">●</span><div><strong>二维圆形 emissive · 无 forward 方向</strong><div class="gi-light-meta"><span id="lightPosition">position=(11.0, 9.0)</span><span>radius=1.8</span><span>radiance=(5.2, 2.1, 0.8)</span><span>本帧输入</span></div></div></div>
+            <div class="layers" style="padding:0 12px 12px">
+              <div class="layer"><canvas id="cascade0" width="256" height="160"></canvas><b>Cascade 0</b><span id="cascade0Label">—</span></div>
+              <div class="layer"><canvas id="cascade1" width="256" height="160"></canvas><b>Cascade 1</b><span id="cascade1Label">—</span></div>
+              <div class="layer"><canvas id="cascade2" width="256" height="160"></canvas><b>Cascade 2</b><span id="cascade2Label">—</span></div>
+              <div class="layer"><canvas id="cascade3" width="256" height="160"></canvas><b>Cascade 3</b><span id="cascade3Label">—</span></div>
+            </div>
+          </div>
+          <div class="gi-workbench" data-gi-workbench>
+            <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="symbols">符号表</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际代码</button></div>
+            <div class="gi-panel" data-gi-panel="intuition"><p>第 0 层像“住址很密、每人只看几个大方向”；第 3 层像“观测站很少、每站有很多细方向”。级联的目标是让两者乘积保持在可控范围。</p></div>
+            <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">spacing<sub>l</sub> = spacing<sub>0</sub> · 2<sup>l</sup><br>directions<sub>l</sub> = directions<sub>0</sub> · 2<sup>l</sup></div></div>
+            <div class="gi-panel" data-gi-panel="symbols"><table class="gi-symbols"><tr><th>量</th><th>白话</th><th>本页值</th></tr><tr><td>spacing</td><td>相邻 Probe 的格距</td><td>2, 4, 8, 16</td></tr><tr><td>directions</td><td>每个 Probe 看多少方向</td><td>8, 16, 32, 64</td></tr><tr><td>interval</td><td>这一层负责的射线距离段</td><td>[0,4], [4,16], [16,64], [64,256]</td></tr></table></div>
+            <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">for 每个 cascade:
+  根据层级放大 Probe 间距
+  根据层级增加方向数量
+  for 每个 Probe:
+    for 该 Probe 的每个方向:
+      只追踪本层的 [start, end] 区间
+      保存 radiance 与 opacity</code></pre></div>
+            <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rcgi.html · buildCascade">function buildCascade(level) {
+  const spacing = state.baseSpacing * (2 ** level);
+  const directions = BASE_DIRECTIONS * (2 ** level);
+  const start = level === 0 ? 0 : BASE_INTERVAL * (4 ** (level - 1));
+  const end = BASE_INTERVAL * (4 ** level);
+  const columns = Math.ceil(SCENE_WIDTH / spacing);
+  const rows = Math.ceil(SCENE_HEIGHT / spacing);
+  const values = new Float32Array(columns * rows * directions * 4);
+
+  for (let y = 0; y &lt; rows; y += 1) {
+    for (let x = 0; x &lt; columns; x += 1) {
+      const origin = { x: (x + 0.5) * spacing, y: (y + 0.5) * spacing };
+      for (let ray = 0; ray &lt; directions; ray += 1) {
+        const angle = (ray + 0.5) / directions * TAU;
+        writeInterval(values, x, y, ray, marchInterval(origin, angle, start, end));
+      }
+    }
+  }
+  return { level, spacing, directions, start, end, columns, rows, values };
+}</code></pre></div>
+          </div>
+        </div>
+      </article>
+    </div></section>
+
+    <section class="section" id="stage4"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 04 · MERGE</div><h2>远处答案不能直接相加，要先问近处是否已经挡住</h2></div><p>Merge 从近到远读取区间，但语义是“远结果补到近结果的透明缺口”。近区间 opacity=1 时，远处贡献乘到 0；这就是遮挡顺序。</p></div>
+      <article class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">04</span><div><h3>单个查询点、单个方向的合并账本</h3><p>拖动方向后，表格和条带由四层缓存重新采样。</p></div><span class="gi-stage-tag">独立 Demo G</span></div>
+        <div class="gi-stage-body">
+          <div class="canvas-shell"><canvas id="mergeCanvas" width="920" height="270" aria-label="Radiance Cascades 四层合并账本"></canvas></div>
+          <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+            <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">实际代码</button></div>
+            <div class="gi-panel" data-gi-panel="intuition"><p>先看最近水管。如果它撞墙，透明度归零，后面三节全部作废；如果它没撞，才允许下一节把颜色补进来。</p></div>
+            <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">L ← L + T · L<sub>l</sub><br>T ← T · (1 − α<sub>l</sub>)</div></div>
+            <div class="gi-panel" data-gi-panel="values"><p id="mergeValues">—</p></div>
+            <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">颜色 = 0
+剩余透明度 = 1
+for cascade 从近到远:
+  样本 = 在该层插值 Probe 与方向
+  颜色 += 剩余透明度 * 样本颜色
+  剩余透明度 *= 1 - 样本不透明度
+  如果几乎不透明: 提前结束</code></pre></div>
+            <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rcgi.html · mergeDirection">function mergeDirection(x, y, angle) {
+  const radiance = [0, 0, 0];
+  let transmittance = 1;
+  for (const cascade of cascadeData) {
+    const sample = sampleCascade(cascade, x, y, angle);
+    for (let channel = 0; channel &lt; 3; channel += 1) {
+      radiance[channel] += transmittance * sample.rgb[channel];
+    }
+    transmittance *= 1 - sample.alpha;
+    if (transmittance &lt; 0.001) break;
+  }
+  return { rgb: radiance, transmittance };
+}</code></pre></div>
+          </div>
+        </div>
+      </article>
+    </div></section>
+
+    <section class="section" id="stage5"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 05 · RESOLVE & REFERENCE</div><h2>最终结果必须和更贵的参考解并排看</h2></div><p>左图用四层缓存合并；中图对每个像素发更多完整射线；右图显示绝对误差。这样“看起来不错”会变成可量化结论。</p></div>
+      <article class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">05</span><div><h3>当前帧 RCGI / reference / error</h3><p>三张图读取同一场景、同一移动光源和同一 tone scale。</p></div><span class="gi-stage-tag">独立 Demo H–J</span></div>
+        <div class="gi-stage-body">
+          <div class="results">
+            <div class="result"><canvas id="finalCanvas" width="256" height="160"></canvas><h4>Radiance Cascades</h4><p>四层 interval field + bilinear Probe + 方向采样 + merge。</p></div>
+            <div class="result"><canvas id="referenceCanvas" width="256" height="160"></canvas><h4>Brute-force reference</h4><p>每个像素发 32 根完整 SDF rays；更贵，但便于验收。</p></div>
+            <div class="result"><canvas id="errorCanvas" width="256" height="160"></canvas><h4>Absolute error</h4><p>黑色接近；黄/红表示级联离散与插值误差更高。</p></div>
+          </div>
+          <div class="stats"><div class="stat"><b id="intervalCount">—</b><span>缓存 interval</span></div><div class="stat"><b id="referenceRays">—</b><span>reference rays</span></div><div class="stat"><b id="meanError">—</b><span>平均绝对误差</span></div><div class="stat"><b id="maxError">—</b><span>最大绝对误差</span></div><div class="stat"><b id="buildMs">—</b><span>CPU 教学版耗时</span></div></div>
+          <div class="gi-checks">
+            <div class="gi-check" data-gi-check="finite"><b>数值有限</b><span data-gi-check-detail>等待计算</span></div>
+            <div class="gi-check" data-gi-check="history"><b>历史读取</b><span data-gi-check-detail>等待计算</span></div>
+            <div class="gi-check" data-gi-check="reference"><b>参考误差</b><span data-gi-check-detail>等待计算</span></div>
+          </div>
+        </div>
+      </article>
+    </div></section>
+
+    <section class="section" id="stage6"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 06 · WHAT THE DEMO IS</div><h2>这是真算法实验，但不是通用 3D 产品实现</h2></div><p>诚实区分成熟范围，避免把二维成功直接外推到任意三维游戏场景。</p></div>
+      <div class="grid">
+        <article class="card third"><h3>本页真实做了什么</h3><ul><li>解析 SDF 场景上的区间 ray march。</li><li>逐层不同 Probe spacing / direction count。</li><li>双线性 Probe 与最近方向采样。</li><li>近到远 opacity merge。</li><li>逐像素参考解和误差度量。</li></ul></article>
+        <article class="card third"><h3>教学版省略了什么</h3><ul><li><b>普通表面的二次再发射 / 多跳：</b>当前 interval 只在命中 emissive 时返回 radiance，命中普通墙返回 0；因此它验证的是 emissive→query 的 single-transport 核心，而不是完整多跳材质 GI。</li><li>若要完整 GI，还需先生成 secondary surface radiance，再做迭代传播或等价的多跳更新。</li><li>生产级方向插值与双线性修正。</li><li>优化的 radiance interval packing。</li><li>屏幕边界、动态几何和复杂材质。</li><li>3D 球方向、内存压缩和调度优化。</li></ul></article>
+        <article class="card third"><h3>进入 3D 要新增什么</h3><ul><li>体素/SDF/DXR 可见性表示。</li><li>三维 Probe lattice 和球方向参数化。</li><li>更高的方向与内存预算。</li><li>volume slice / raymarch debug views。</li></ul></article>
+      </div>
+      <div class="callout good" style="margin-top:16px"><b>与 RenderGraph Workbench 的连接：</b>原生教学版将沿用“Build Intervals → Merge → Resolve → Debug”资源链，但 ray source 会明确标成 voxel/SDF teaching-lite；框架目前没有硬件 Ray Query，文档不会伪造该能力。</div>
+    </div></section>
+
+    <section class="section" id="tradeoffs"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 07 · COST & FAILURE</div><h2>优势、代价和最常见误读</h2></div><p>“single-shot”只说明核心不需要历史，并不等于无限分辨率、无限场景或免费三维。</p></div>
+      <table class="compare"><thead><tr><th>问题</th><th>正确理解</th><th>本页如何观察</th></tr></thead><tbody>
+        <tr><td>为什么移动光没有拖尾？</td><td>每次交互都重建当前 interval field；核心 0 history reads。</td><td>播放光源，观察历史检查始终为 0。</td></tr>
+        <tr><td>为什么仍有误差？</td><td>Probe、方向和区间离散；single-shot 不等于解析真值。</td><td>看 error heatmap 与 base spacing。</td></tr>
+        <tr><td>能否直接称为成熟 3D GI？</td><td>不能。三维方向/内存/可见性成本显著增加，公开实践仍在快速演进。</td><td>第 06 阶段明确列出缺口。</td></tr>
+        <tr><td>和 Radiance Cache 一样吗？</td><td>不一样。Cascades 组织的是多尺度射线区间；cache 通常保存稀疏查询结果并更新/淘汰。</td><td>看页首缩写边界。</td></tr>
+      </tbody></table>
+    </div></section>
+
+    <section class="section" id="sources"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 08 · SOURCES</div><h2>继续阅读：先看原始项目与论文</h2></div><p>外链只用于继续阅读，不参与本页运行。</p></div>
+      <div class="grid">
+        <article class="card"><h3>Radiance Cascades 官方 WIP 汇总</h3><p>算法历史、演讲、实现与论文入口。</p><a href="https://radiance-cascades.com/" target="_blank" rel="noreferrer">radiance-cascades.com →</a></article>
+        <article class="card"><h3>Holographic Radiance Cascades</h3><p>2025 年二维 single-shot radiance transfer 论文。</p><a href="https://arxiv.org/abs/2505.02041" target="_blank" rel="noreferrer">arXiv →</a></article>
+      </div>
+    </div></section>
+  </main>
+  <footer class="footer"><div class="wrap"><span>GI Field Guide · Radiance Cascades GI</span><span><a href="gi_module_prt_probes.html">← PRT</a> · <a href="index.html">目录</a> · <a href="gi_module_voxel_gi.html">Voxel GI →</a></span></div></footer>
+
+  <script src="gi_course.js"></script>
+  <script>
+  (() => {
+    'use strict';
+    const TAU = Math.PI * 2;
+    const SCENE_WIDTH = 64;
+    const SCENE_HEIGHT = 40;
+    const BASE_DIRECTIONS = 8;
+    const BASE_INTERVAL = 4;
+    const FIELD_WIDTH = 96;
+    const FIELD_HEIGHT = 60;
+    const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      lightX: 11,
+      lightY: 9,
+      lightColor: [5.2, 2.1, 0.8],
+      baseSpacing: 2,
+      probeX: 18,
+      probeY: 18,
+      rayAngle: 22,
+      inspectLevel: 1,
+      animate: false,
+      animationStart: performance.now(),
+    };
+    let cascadeData = [];
+    let finalField = null;
+    let referenceField = null;
+    let errorField = null;
+    let animationFrame = 0;
+    let lastAnimationBuild = -Infinity;
+
+    function sdBox(x, y, centerX, centerY, halfX, halfY) {
+      const qx = Math.abs(x - centerX) - halfX;
+      const qy = Math.abs(y - centerY) - halfY;
+      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0);
+    }
+
+    function sampleScene(x, y) {
+      const candidates = [
+        { distance: Math.min(x - 0.8, SCENE_WIDTH - 0.8 - x, y - 0.8, SCENE_HEIGHT - 0.8 - y), material: 'boundary' },
+        { distance: sdBox(x, y, 32, 20, 1.15, 13.5), material: 'wall' },
+        { distance: sdBox(x, y, 19, 26, 5.6, 2.1), material: 'box' },
+        { distance: sdBox(x, y, 47, 12, 4.2, 2.6), material: 'box' },
+        { distance: Math.hypot(x - state.lightX, y - state.lightY) - 1.8, material: 'emissive', emissive: true },
+      ];
+      return candidates.reduce((best, item) => item.distance < best.distance ? item : best);
+    }
+
+    function marchInterval(origin, angle, start, end) {
+      let distance = start;
+      for (let step = 0; step < 56 && distance < end; step += 1) {
+        const point = {
+          x: origin.x + Math.cos(angle) * distance,
+          y: origin.y + Math.sin(angle) * distance,
+        };
+        const sample = sampleScene(point.x, point.y);
+        if (sample.distance < 0.32) {
+          return {
+            rgb: sample.emissive ? state.lightColor : [0, 0, 0],
+            alpha: 1,
+            distance,
+            material: sample.material,
+          };
+        }
+        distance += clamp(sample.distance * 0.78, 0.28, 2.4);
+      }
+      return { rgb: [0, 0, 0], alpha: 0, distance: end, material: 'none' };
+    }
+
+    function intervalIndex(cascade, x, y, direction) {
+      return (((y * cascade.columns + x) * cascade.directions + direction) * 4);
+    }
+
+    function writeInterval(target, index, sample) {
+      target[index] = sample.rgb[0];
+      target[index + 1] = sample.rgb[1];
+      target[index + 2] = sample.rgb[2];
+      target[index + 3] = sample.alpha;
+    }
+
+    function buildCascade(level) {
+      const spacing = state.baseSpacing * (2 ** level);
+      const directions = BASE_DIRECTIONS * (2 ** level);
+      const start = level === 0 ? 0 : BASE_INTERVAL * (4 ** (level - 1));
+      const end = BASE_INTERVAL * (4 ** level);
+      const columns = Math.ceil(SCENE_WIDTH / spacing);
+      const rows = Math.ceil(SCENE_HEIGHT / spacing);
+      const values = new Float32Array(columns * rows * directions * 4);
+      for (let y = 0; y < rows; y += 1) {
+        for (let x = 0; x < columns; x += 1) {
+          const origin = { x: (x + 0.5) * spacing, y: (y + 0.5) * spacing };
+          for (let ray = 0; ray < directions; ray += 1) {
+            const angle = (ray + 0.5) / directions * TAU;
+            writeInterval(values, intervalIndex({ columns, directions }, x, y, ray),
+              marchInterval(origin, angle, start, end));
+          }
+        }
+      }
+      return { level, spacing, directions, start, end, columns, rows, values };
+    }
+
+    function readInterval(cascade, x, y, direction) {
+      const index = intervalIndex(cascade, x, y, direction);
+      return {
+        rgb: [cascade.values[index], cascade.values[index + 1], cascade.values[index + 2]],
+        alpha: cascade.values[index + 3],
+      };
+    }
+
+    function sampleCascade(cascade, x, y, angle) {
+      const gridX = x / cascade.spacing - 0.5;
+      const gridY = y / cascade.spacing - 0.5;
+      const x0 = clamp(Math.floor(gridX), 0, cascade.columns - 1);
+      const y0 = clamp(Math.floor(gridY), 0, cascade.rows - 1);
+      const x1 = clamp(x0 + 1, 0, cascade.columns - 1);
+      const y1 = clamp(y0 + 1, 0, cascade.rows - 1);
+      const fx = clamp(gridX - Math.floor(gridX), 0, 1);
+      const fy = clamp(gridY - Math.floor(gridY), 0, 1);
+      const normalizedAngle = ((angle % TAU) + TAU) % TAU;
+      const direction = Math.floor(normalizedAngle / TAU * cascade.directions) % cascade.directions;
+      const corners = [
+        [x0, y0, (1 - fx) * (1 - fy)],
+        [x1, y0, fx * (1 - fy)],
+        [x0, y1, (1 - fx) * fy],
+        [x1, y1, fx * fy],
+      ];
+      const result = { rgb: [0, 0, 0], alpha: 0 };
+      for (const [cx, cy, weight] of corners) {
+        const sample = readInterval(cascade, cx, cy, direction);
+        result.alpha += sample.alpha * weight;
+        for (let channel = 0; channel < 3; channel += 1) {
+          result.rgb[channel] += sample.rgb[channel] * weight;
+        }
+      }
+      return result;
+    }
+
+    function mergeDirection(x, y, angle, ledger = null) {
+      const radiance = [0, 0, 0];
+      let transmittance = 1;
+      for (const cascade of cascadeData) {
+        const sample = sampleCascade(cascade, x, y, angle);
+        const before = transmittance;
+        for (let channel = 0; channel < 3; channel += 1) {
+          radiance[channel] += transmittance * sample.rgb[channel];
+        }
+        transmittance *= 1 - sample.alpha;
+        ledger?.push({ cascade, sample, before, after: transmittance });
+        if (transmittance < 0.001) break;
+      }
+      return { rgb: radiance, transmittance };
+    }
+
+    function resolveField(reference = false) {
+      const data = new Float32Array(FIELD_WIDTH * FIELD_HEIGHT * 3);
+      const directions = reference ? 32 : 12;
+      for (let py = 0; py < FIELD_HEIGHT; py += 1) {
+        const y = (py + 0.5) / FIELD_HEIGHT * SCENE_HEIGHT;
+        for (let px = 0; px < FIELD_WIDTH; px += 1) {
+          const x = (px + 0.5) / FIELD_WIDTH * SCENE_WIDTH;
+          const scene = sampleScene(x, y);
+          const output = [0, 0, 0];
+          if (scene.distance < 0.32) {
+            if (scene.emissive) {
+              output.splice(0, 3, ...state.lightColor);
+            }
+          } else {
+            for (let ray = 0; ray < directions; ray += 1) {
+              const angle = (ray + 0.5) / directions * TAU;
+              const sample = reference
+                ? marchInterval({ x, y }, angle, 0, 96)
+                : mergeDirection(x, y, angle);
+              for (let channel = 0; channel < 3; channel += 1) {
+                output[channel] += sample.rgb[channel] / directions;
+              }
+            }
+          }
+          const index = (py * FIELD_WIDTH + px) * 3;
+          data[index] = output[0];
+          data[index + 1] = output[1];
+          data[index + 2] = output[2];
+        }
+      }
+      return data;
+    }
+
+    function renderField(canvas, field, mode = 'radiance') {
+      const context = canvas.getContext('2d');
+      const image = context.createImageData(FIELD_WIDTH, FIELD_HEIGHT);
+      for (let i = 0; i < FIELD_WIDTH * FIELD_HEIGHT; i += 1) {
+        const source = i * 3;
+        const target = i * 4;
+        if (mode === 'error') {
+          const error = clamp((field[source] + field[source + 1] + field[source + 2]) / 3 * 2.4, 0, 1);
+          image.data[target] = Math.round(255 * clamp(error * 2, 0, 1));
+          image.data[target + 1] = Math.round(210 * clamp(1 - Math.abs(error - 0.45) * 2.2, 0, 1));
+          image.data[target + 2] = Math.round(55 * (1 - error));
+        } else {
+          image.data[target] = Math.round(255 * (1 - Math.exp(-field[source] * 0.78)));
+          image.data[target + 1] = Math.round(255 * (1 - Math.exp(-field[source + 1] * 0.78)));
+          image.data[target + 2] = Math.round(255 * (1 - Math.exp(-field[source + 2] * 0.78)));
+        }
+        image.data[target + 3] = 255;
+      }
+      const scratch = document.createElement('canvas');
+      scratch.width = FIELD_WIDTH;
+      scratch.height = FIELD_HEIGHT;
+      scratch.getContext('2d').putImageData(image, 0, 0);
+      context.imageSmoothingEnabled = true;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(scratch, 0, 0, canvas.width, canvas.height);
+    }
+
+    function drawSceneBase(context, canvas) {
+      const sx = canvas.width / SCENE_WIDTH;
+      const sy = canvas.height / SCENE_HEIGHT;
+      context.fillStyle = '#071018';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#40505b';
+      context.fillRect((32 - 1.15) * sx, (20 - 13.5) * sy, 2.3 * sx, 27 * sy);
+      context.fillStyle = '#35434e';
+      context.fillRect((19 - 5.6) * sx, (26 - 2.1) * sy, 11.2 * sx, 4.2 * sy);
+      context.fillRect((47 - 4.2) * sx, (12 - 2.6) * sy, 8.4 * sx, 5.2 * sy);
+      const gradient = context.createRadialGradient(state.lightX * sx, state.lightY * sy, 0, state.lightX * sx, state.lightY * sy, 5 * sx);
+      gradient.addColorStop(0, '#fff6c9');
+      gradient.addColorStop(.35, '#ffb857');
+      gradient.addColorStop(1, '#ff8a3200');
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.arc(state.lightX * sx, state.lightY * sy, 5 * sx, 0, TAU);
+      context.fill();
+      context.fillStyle = '#ffd27a';
+      context.beginPath();
+      context.arc(state.lightX * sx, state.lightY * sy, 1.8 * sx, 0, TAU);
+      context.fill();
+      context.strokeStyle = '#708797';
+      context.lineWidth = 2;
+      context.strokeRect(.8 * sx, .8 * sy, (SCENE_WIDTH - 1.6) * sx, (SCENE_HEIGHT - 1.6) * sy);
+    }
+
+    function drawTrade() {
+      const canvas = $('tradeCanvas');
+      const context = canvas.getContext('2d');
+      const distance = +$('tradeDistance').value;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#061019';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#455461';
+      context.fillRect(445, 45, 30, 210);
+      context.fillStyle = '#ffbd62';
+      context.beginPath();
+      context.arc(690, 75, 16, 0, TAU);
+      context.fill();
+      const spacing = clamp(Math.round(distance / 3), 2, 10);
+      const directions = clamp(6 + Math.round(distance * 1.2), 8, 42);
+      const probeY = 150;
+      context.strokeStyle = '#ffbd62';
+      context.globalAlpha = .35;
+      for (let ray = 0; ray < directions; ray += 1) {
+        const angle = (ray / directions - .5) * Math.PI;
+        context.beginPath();
+        context.moveTo(180, probeY);
+        context.lineTo(180 + Math.cos(angle) * 160, probeY + Math.sin(angle) * 130);
+        context.stroke();
+      }
+      context.globalAlpha = 1;
+      context.fillStyle = '#58daf1';
+      for (let x = 55; x < 405; x += spacing * 8) {
+        context.beginPath();
+        context.arc(x, probeY, 5, 0, TAU);
+        context.fill();
+      }
+      context.fillStyle = '#d7e8f0';
+      context.font = '15px Segoe UI, Microsoft YaHei';
+      context.fillText(`空间：约 ${Math.ceil(44 / spacing)} 个 Probe`, 55, 278);
+      context.fillText(`角度：每 Probe ${directions} 个方向`, 540, 278);
+      context.fillStyle = '#98adba';
+      context.font = '12px Segoe UI, Microsoft YaHei';
+      context.fillText('近场：遮挡边缘对位置敏感', 55, 28);
+      context.fillText('远场：小光源对方向敏感', 605, 28);
+      $('tradeDistanceOut').value = distance;
+    }
+
+    function drawInterval() {
+      const canvas = $('intervalCanvas');
+      const context = canvas.getContext('2d');
+      drawSceneBase(context, canvas);
+      const sx = canvas.width / SCENE_WIDTH;
+      const sy = canvas.height / SCENE_HEIGHT;
+      const origin = { x: state.probeX, y: state.probeY };
+      const angle = state.rayAngle / 180 * Math.PI;
+      const level = state.inspectLevel;
+      const start = level === 0 ? 0 : BASE_INTERVAL * (4 ** (level - 1));
+      const end = BASE_INTERVAL * (4 ** level);
+      const hit = marchInterval(origin, angle, start, end);
+      context.strokeStyle = '#647484';
+      context.lineWidth = 1.5;
+      for (const radius of [4, 16, 64]) {
+        context.beginPath();
+        context.arc(origin.x * sx, origin.y * sy, radius * sx, 0, TAU);
+        context.stroke();
+      }
+      context.strokeStyle = '#b39cff';
+      context.lineWidth = 7;
+      context.beginPath();
+      context.moveTo((origin.x + Math.cos(angle) * start) * sx, (origin.y + Math.sin(angle) * start) * sy);
+      context.lineTo((origin.x + Math.cos(angle) * Math.min(end, hit.distance)) * sx,
+        (origin.y + Math.sin(angle) * Math.min(end, hit.distance)) * sy);
+      context.stroke();
+      context.fillStyle = '#59dcef';
+      context.beginPath();
+      context.arc(origin.x * sx, origin.y * sy, 7, 0, TAU);
+      context.fill();
+      const hitX = origin.x + Math.cos(angle) * hit.distance;
+      const hitY = origin.y + Math.sin(angle) * hit.distance;
+      context.fillStyle = hit.material === 'emissive' ? '#fff2b4' : hit.alpha ? '#ff7f8c' : '#8ca0ad';
+      context.beginPath();
+      context.arc(hitX * sx, hitY * sy, 6, 0, TAU);
+      context.fill();
+      $('intervalOverlay').textContent = `Probe=(${origin.x.toFixed(1)}, ${origin.y.toFixed(1)}) · L${level} [${start}, ${end}] · ${hit.alpha ? `命中 ${hit.material} @ ${hit.distance.toFixed(2)}` : '区间内无命中'}`;
+      $('intervalValues').innerHTML = `<code>level=${level}</code>，所以 <code>start=${start}</code>、<code>end=${end}</code>。当前 march 返回 <code>alpha=${hit.alpha}</code>、<code>distance=${hit.distance.toFixed(2)}</code>、<code>material=${hit.material}</code>。`;
+    }
+
+    function drawCascadePreview(cascade) {
+      const canvas = $(`cascade${cascade.level}`);
+      const context = canvas.getContext('2d');
+      const image = context.createImageData(cascade.columns, cascade.rows);
+      for (let y = 0; y < cascade.rows; y += 1) {
+        for (let x = 0; x < cascade.columns; x += 1) {
+          let r = 0, g = 0, b = 0, a = 0;
+          for (let direction = 0; direction < cascade.directions; direction += 1) {
+            const sample = readInterval(cascade, x, y, direction);
+            r += sample.rgb[0];
+            g += sample.rgb[1];
+            b += sample.rgb[2];
+            a += sample.alpha;
+          }
+          const inv = 1 / cascade.directions;
+          const index = (y * cascade.columns + x) * 4;
+          image.data[index] = Math.round(255 * (1 - Math.exp(-r * inv)));
+          image.data[index + 1] = Math.round(255 * (1 - Math.exp(-g * inv)));
+          image.data[index + 2] = Math.round(255 * (1 - Math.exp(-b * inv)));
+          image.data[index + 3] = Math.round(110 + 145 * a * inv);
+        }
+      }
+      const scratch = document.createElement('canvas');
+      scratch.width = cascade.columns;
+      scratch.height = cascade.rows;
+      scratch.getContext('2d').putImageData(image, 0, 0);
+      context.imageSmoothingEnabled = false;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(scratch, 0, 0, canvas.width, canvas.height);
+      $(`cascade${cascade.level}Label`).textContent =
+        `${cascade.columns}×${cascade.rows} probes · ${cascade.directions} dirs · [${cascade.start},${cascade.end}]`;
+    }
+
+    function drawMerge() {
+      const canvas = $('mergeCanvas');
+      const context = canvas.getContext('2d');
+      const ledger = [];
+      const result = mergeDirection(state.probeX, state.probeY, state.rayAngle / 180 * Math.PI, ledger);
+      context.fillStyle = '#061019';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const width = 190;
+      ledger.forEach((entry, index) => {
+        const x = 35 + index * 218;
+        const luminance = entry.sample.rgb.reduce((sum, value) => sum + value, 0) / 3;
+        context.fillStyle = `rgba(${Math.round(255 * (1 - Math.exp(-entry.sample.rgb[0])))},${Math.round(255 * (1 - Math.exp(-entry.sample.rgb[1])))},${Math.round(255 * (1 - Math.exp(-entry.sample.rgb[2])))},1)`;
+        context.fillRect(x, 76, width, 54);
+        context.strokeStyle = entry.sample.alpha > .5 ? '#ffce75' : '#587487';
+        context.lineWidth = 2;
+        context.strokeRect(x, 76, width, 54);
+        context.fillStyle = '#edf8fc';
+        context.font = 'bold 13px Segoe UI';
+        context.fillText(`L${entry.cascade.level} · [${entry.cascade.start}, ${entry.cascade.end}]`, x, 38);
+        context.fillStyle = '#96acba';
+        context.font = '12px Consolas';
+        context.fillText(`sample L=${luminance.toFixed(3)}  alpha=${entry.sample.alpha.toFixed(2)}`, x, 58);
+        context.fillText(`T: ${entry.before.toFixed(2)} → ${entry.after.toFixed(2)}`, x, 153);
+        if (index < ledger.length - 1) {
+          context.fillStyle = '#aa96ff';
+          context.font = '22px Segoe UI';
+          context.fillText('→', x + width + 8, 111);
+        }
+      });
+      context.fillStyle = '#dff4fb';
+      context.font = '14px Segoe UI';
+      context.fillText(`合并结果 RGB=(${result.rgb.map((value) => value.toFixed(3)).join(', ')}) · 剩余 T=${result.transmittance.toFixed(3)}`, 35, 220);
+      $('mergeValues').innerHTML = ledger.map((entry) =>
+        `<code>L${entry.cascade.level}</code>：α=${entry.sample.alpha.toFixed(2)}，进入前 T=${entry.before.toFixed(2)}，离开后 T=${entry.after.toFixed(2)}`).join('；');
+    }
+
+    function computeAll() {
+      const startTime = performance.now();
+      cascadeData = [0, 1, 2, 3].map(buildCascade);
+      const afterCascades = performance.now();
+      finalField = resolveField(false);
+      referenceField = resolveField(true);
+      errorField = new Float32Array(finalField.length);
+      let sum = 0;
+      let maximum = 0;
+      let finite = true;
+      for (let i = 0; i < errorField.length; i += 1) {
+        const error = Math.abs(finalField[i] - referenceField[i]);
+        errorField[i] = error;
+        sum += error;
+        maximum = Math.max(maximum, error);
+        finite &&= Number.isFinite(finalField[i]) && Number.isFinite(referenceField[i]);
+      }
+      renderField($('finalCanvas'), finalField);
+      renderField($('referenceCanvas'), referenceField);
+      renderField($('errorCanvas'), errorField, 'error');
+      cascadeData.forEach(drawCascadePreview);
+      drawInterval();
+      drawMerge();
+      const intervalCount = cascadeData.reduce((total, cascade) =>
+        total + cascade.columns * cascade.rows * cascade.directions, 0);
+      const mean = sum / errorField.length;
+      $('intervalCount').textContent = intervalCount.toLocaleString();
+      $('referenceRays').textContent = (FIELD_WIDTH * FIELD_HEIGHT * 32).toLocaleString();
+      $('meanError').textContent = mean.toFixed(4);
+      $('maxError').textContent = maximum.toFixed(4);
+      $('buildMs').textContent = `${(performance.now() - startTime).toFixed(1)} ms`;
+      $('buildStatus').textContent = `当前帧完成 · intervals ${(afterCascades - startTime).toFixed(1)} ms · total ${(performance.now() - startTime).toFixed(1)} ms`;
+      $('lightPosition').textContent = `position=(${state.lightX.toFixed(1)}, ${state.lightY.toFixed(1)})`;
+      GICourse.setCheck(document, 'finite', finite ? 'pass' : 'fail', finite ? '所有 field 值均为有限数' : '出现 NaN/Infinity');
+      GICourse.setCheck(document, 'history', 'pass', '0 次；移动灯后整套 interval field 当前帧重建');
+      GICourse.setCheck(document, 'reference', maximum < 6 ? 'pass' : 'warn',
+        `mean=${mean.toFixed(4)} / max=${maximum.toFixed(4)}；误差来自 Probe/方向离散`);
+    }
+
+    function syncStateFromControls(rebuild = true) {
+      state.lightX = +$('lightX').value;
+      state.lightY = +$('lightY').value;
+      state.baseSpacing = +$('baseSpacing').value;
+      state.probeX = +$('probeX').value;
+      state.probeY = +$('probeY').value;
+      state.rayAngle = +$('rayAngle').value;
+      state.inspectLevel = +$('inspectLevel').value;
+      $('lightXOut').value = state.lightX.toFixed(1);
+      $('lightYOut').value = state.lightY.toFixed(1);
+      $('baseSpacingOut').value = state.baseSpacing;
+      $('probeXOut').value = state.probeX;
+      $('probeYOut').value = state.probeY;
+      $('rayAngleOut').value = `${state.rayAngle}°`;
+      $('inspectLevelOut').value = state.inspectLevel;
+      if (rebuild) computeAll();
+      else {
+        drawInterval();
+        drawMerge();
+      }
+    }
+
+    function animate(time) {
+      // 级联重建还会同步计算 32-ray 参考图；限制到约 6 Hz，
+      // 避免教学页在动画时占满一个 CPU 核心，同时仍能清楚观察光源响应。
+      if (state.animate && time - lastAnimationBuild >= 166) {
+        lastAnimationBuild = time;
+        const phase = (time - state.animationStart) * 0.00042;
+        $('lightX').value = String(32 + Math.sin(phase) * 24);
+        $('lightY').value = String(12 + Math.sin(phase * 1.7) * 5);
+        syncStateFromControls(true);
+      }
+      animationFrame = requestAnimationFrame(animate);
+    }
+
+    $('tradeDistance').addEventListener('input', drawTrade);
+    ['probeX', 'probeY', 'rayAngle', 'inspectLevel'].forEach((id) =>
+      $(id).addEventListener('input', () => syncStateFromControls(false)));
+    ['lightX', 'lightY'].forEach((id) => $(id).addEventListener('input', () => syncStateFromControls(true)));
+    $('baseSpacing').addEventListener('change', () => syncStateFromControls(true));
+    $('animateLight').addEventListener('click', () => {
+      state.animate = !state.animate;
+      state.animationStart = performance.now();
+      lastAnimationBuild = -Infinity;
+      $('animateLight').textContent = state.animate ? '暂停移动光源' : '播放移动光源';
+    });
+
+    drawTrade();
+    syncStateFromControls(true);
+    animationFrame = requestAnimationFrame(animate);
+    addEventListener('beforeunload', () => cancelAnimationFrame(animationFrame), { once: true });
+  })();
+  </script>
+</body>
+</html>

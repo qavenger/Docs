@@ -1,0 +1,3074 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="面向实时 GI 初学者的球谐函数进阶课程：从方向球、投影与漫反射卷积，逐步学习 L0/L1/L2 旋转、band energy、windowing、Probe 与 PRT。">
+  <title>Spherical Harmonics：从方向球到真正的系数旋转</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root {
+      --bg: #070d16;
+      --panel: #0e1926;
+      --panel2: #142335;
+      --line: #2b4358;
+      --text: #eef6fb;
+      --muted: #a8bac8;
+      --cyan: #5bd8ff;
+      --amber: #ffc66f;
+      --green: #73e1aa;
+      --red: #ff7d89;
+      --violet: #b09cff;
+      --shadow: 0 22px 60px #0008;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 72% -8%, #233a62 0, transparent 38rem),
+        radial-gradient(circle at 8% 34%, #132f35 0, transparent 31rem),
+        var(--bg);
+      font: 15px/1.72 Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    .wrap { width: min(1220px, calc(100% - 32px)); margin: auto; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid #ffffff16;
+      background: #070d16eb;
+      backdrop-filter: blur(12px);
+    }
+    .topbar .wrap {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .brand { color: #fff; font-weight: 850; }
+    .navlinks { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; }
+    .hero { padding: 68px 0 30px; }
+    .eyebrow {
+      color: var(--amber);
+      font: 800 12px/1.2 ui-monospace, Consolas, monospace;
+      letter-spacing: .16em;
+    }
+    .hero h1 {
+      max-width: 1040px;
+      margin: .22em 0;
+      font-size: clamp(36px, 6vw, 70px);
+      line-height: 1.04;
+    }
+    .lead { max-width: 1000px; color: #c2d0db; font-size: 18px; }
+    .chips, .segmented, .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip, .seg, .button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #102030;
+      padding: 7px 12px;
+    }
+    .chip.hot { border-color: #8d713d; color: #ffe0a1; }
+    .seg, .button { cursor: pointer; }
+    .seg:hover, .button:hover { border-color: #6687a3; }
+    .seg.active { border-color: var(--violet); background: #493c78; color: #fff; }
+    .toc {
+      position: sticky;
+      top: 59px;
+      z-index: 30;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 0;
+      background: linear-gradient(90deg, #070d16 86%, transparent);
+    }
+    .toc a {
+      white-space: nowrap;
+      border: 1px solid #263d51;
+      border-radius: 8px;
+      padding: 5px 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .section { padding: 35px 0; scroll-margin-top: 104px; }
+    .section h2 { margin: 0 0 12px; font-size: clamp(26px, 3.4vw, 41px); line-height: 1.18; }
+    .section h3 { line-height: 1.35; }
+    .intro { max-width: 980px; color: #b9c8d4; font-size: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; }
+    .card {
+      grid-column: span 4;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: linear-gradient(145deg, #132235dd, #0a1420dd);
+      padding: 19px;
+    }
+    .card.wide { grid-column: span 8; }
+    .card.full { grid-column: 1 / -1; }
+    .card h3 { margin: 0 0 8px; }
+    .card p { color: #b8c7d3; }
+    .callout {
+      margin: 13px 0;
+      border-left: 4px solid var(--amber);
+      border-radius: 0 10px 10px 0;
+      background: #29200e;
+      padding: 13px 15px;
+      color: #f4dfb7;
+    }
+    .callout.good { border-color: var(--green); background: #0c261d; color: #c9f5df; }
+    .callout.warn { border-color: var(--red); background: #2b131a; color: #f5c9cd; }
+    .concept-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .concept-row article {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #0b1723;
+      padding: 16px;
+    }
+    .concept-row strong { display: block; color: var(--amber); font-size: 18px; }
+    .concept-row p { margin: 6px 0 0; color: #b8c7d3; }
+    .demo-shell {
+      overflow: hidden;
+      border: 1px solid #39566c;
+      border-radius: 17px;
+      background: #07111a;
+      box-shadow: var(--shadow);
+    }
+    .demo-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: center;
+      padding: 15px 17px;
+      border-bottom: 1px solid var(--line);
+      background: #101f2d;
+    }
+    .demo-head p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+    .stage {
+      position: relative;
+      background: #02070c;
+    }
+    .stage canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 15 / 7;
+      touch-action: none;
+      cursor: grab;
+    }
+    .stage canvas:active { cursor: grabbing; }
+    .orientation-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .panel-labels {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      pointer-events: none;
+    }
+    .panel-labels div { text-align: center; }
+    .panel-labels span {
+      display: inline-block;
+      border: 1px solid #ffffff22;
+      border-radius: 7px;
+      background: #050a11df;
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+    .stage-legend {
+      position: absolute;
+      left: 13px;
+      right: 13px;
+      bottom: 10px;
+      border: 1px solid #ffffff1d;
+      border-radius: 8px;
+      background: #050a11e5;
+      padding: 7px 10px;
+      color: #bfd0dc;
+      font-size: 11px;
+      pointer-events: none;
+    }
+    .demo-body {
+      display: grid;
+      grid-template-columns: 1.22fr .9fr;
+      border-top: 1px solid var(--line);
+    }
+    .guide, .controls { padding: 17px; }
+    .controls { border-left: 1px solid var(--line); background: #0c1824; }
+    .guide h3, .controls h3 { margin-top: 0; }
+    .control { margin: 12px 0; }
+    .control label { display: flex; justify-content: space-between; gap: 12px; color: #c7d6e0; }
+    .control output { color: var(--amber); font-variant-numeric: tabular-nums; }
+    .control input[type="range"], .control select { width: 100%; accent-color: var(--violet); }
+    .control select {
+      margin-top: 6px;
+      border: 1px solid #405a6f;
+      border-radius: 8px;
+      background: #07121d;
+      color: #e8f3f8;
+      padding: 8px;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .metric {
+      border: 1px solid #294354;
+      border-radius: 9px;
+      background: #07131e;
+      padding: 8px 9px;
+    }
+    .metric small { display: block; color: var(--muted); }
+    .metric b { color: var(--amber); font-variant-numeric: tabular-nums; }
+    .orientation-readout {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin: 10px 0;
+    }
+    .orientation-readout div {
+      border: 1px solid #344b5e;
+      border-radius: 8px;
+      background: #08141e;
+      padding: 7px 9px;
+    }
+    .orientation-readout small { display: block; color: var(--muted); }
+    .orientation-readout b { color: #f1f7fa; font-variant-numeric: tabular-nums; }
+    .coeff-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .coeff {
+      border: 1px solid #2c4456;
+      border-radius: 10px;
+      background: #091621;
+      padding: 9px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .coeff:hover { border-color: #63849c; }
+    .coeff.active { outline: 2px solid var(--amber); background: #242039; }
+    .coeff .head { display: flex; justify-content: space-between; gap: 7px; }
+    .coeff code { color: var(--amber); }
+    .coeff small { display: block; color: var(--muted); line-height: 1.45; }
+    .coeff .values { margin-top: 6px; color: #bdd4df; font: 10.5px/1.5 ui-monospace, Consolas, monospace; }
+    .lab-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr);
+      gap: 13px;
+      align-items: stretch;
+    }
+    .plot-card {
+      overflow: hidden;
+      border: 1px solid #304b5c;
+      border-radius: 12px;
+      background: #061019;
+    }
+    .plot-card canvas { display: block; width: 100%; height: 310px; }
+    .plot-card.short canvas { height: 245px; }
+    .plot-caption { padding: 8px 11px; border-top: 1px solid #243c4b; color: var(--muted); font-size: 11px; }
+    .explain-list { display: grid; gap: 8px; }
+    .explain-step {
+      border: 1px solid #2c4556;
+      border-radius: 9px;
+      background: #08151f;
+      padding: 10px 11px;
+    }
+    .explain-step b { color: #eef7fb; }
+    .explain-step span { display: block; color: var(--muted); font-size: 12px; }
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(34px, 1fr));
+      gap: 4px;
+      margin-top: 10px;
+      font: 10px/1.2 ui-monospace, Consolas, monospace;
+    }
+    .matrix-grid span {
+      display: grid;
+      place-items: center;
+      min-height: 31px;
+      border: 1px solid #ffffff14;
+      border-radius: 5px;
+      color: #e7f3f8;
+      font-variant-numeric: tabular-nums;
+    }
+    .compare {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .compare th, .compare td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .compare th { background: #132435; }
+    .compare td { color: #b8c8d4; }
+    .usage-flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 9px;
+      align-items: stretch;
+    }
+    .usage-flow article {
+      position: relative;
+      border: 1px solid #304959;
+      border-radius: 11px;
+      background: #091722;
+      padding: 12px;
+    }
+    .usage-flow article:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 43%;
+      right: -9px;
+      z-index: 2;
+      color: var(--cyan);
+      font-weight: 900;
+    }
+    .usage-flow b { color: #ecf6fa; }
+    .usage-flow span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .source-list { display: grid; gap: 8px; }
+    .source {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0a1621;
+      padding: 11px 12px;
+    }
+    .source small { display: block; color: var(--muted); }
+    .footer-nav {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 35px 0 52px;
+    }
+    .footer-nav a { border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px; }
+    @media (max-width: 930px) {
+      .card, .card.wide { grid-column: 1 / -1; }
+      .concept-row, .usage-flow { grid-template-columns: 1fr; }
+      .usage-flow article::after { display: none; }
+      .demo-body, .lab-layout { grid-template-columns: 1fr; }
+      .controls { border-left: 0; border-top: 1px solid var(--line); }
+      .metrics { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 680px) {
+      .topbar .wrap { padding: 8px 0; align-items: flex-start; }
+      .navlinks { justify-content: flex-end; }
+      .hero { padding-top: 46px; }
+      .panel-labels span { padding: 3px 4px; font-size: 8.5px; }
+      .stage-legend { font-size: 9px; }
+      .coeff-grid { grid-template-columns: 1fr; }
+      .orientation-readout { grid-template-columns: 1fr; }
+      .demo-head { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="index.html">GI 学习地图 / Spherical Harmonics</a>
+      <nav class="navlinks">
+        <a href="gi_module_ssao_ssgi.html">← SSAO / SSGI</a>
+        <a href="index.html">⌂ 主页</a>
+        <a href="gi_module_voxelization.html">Voxelization →</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="eyebrow">DIRECTIONAL BASIS · ROTATION LAB</div>
+      <h1>SH 旋转不是“把球拖一下”，而是让同一 band 内的系数正确混合</h1>
+      <p class="lead">这一页不假设你熟悉线性代数。先把 SH 看成 9 只“方向测量表”，再亲手验证三个结论：L0 不变；L1 像普通三维向量旋转；L2 是五维 band，也可以等价写成一个 3×3 对称无迹张量。每条关键公式都能切换到直觉、代值、伪代码和本页实际执行的 JavaScript。</p>
+      <div class="chips">
+        <span class="chip hot">WebGL2 三球方向实验</span>
+        <span class="chip">真正的系数空间旋转</span>
+        <span class="chip">L1 向量交叉验证</span>
+        <span class="chip">L2 张量交叉验证</span>
+        <span class="chip">ringing / windowing</span>
+        <span class="chip">无外部运行库</span>
+      </div>
+    </section>
+
+    <nav class="toc">
+      <a href="#map">学习地图</a>
+      <a href="#direction-sphere">方向球</a>
+      <a href="#rotation">重投影 vs 旋转</a>
+      <a href="#l0">L0</a>
+      <a href="#l1">L1</a>
+      <a href="#l2">L2</a>
+      <a href="#energy">Energy / 成本</a>
+      <a href="#diffuse">漫反射卷积</a>
+      <a href="#ringing">Windowing</a>
+      <a href="#usage">Probe / PRT</a>
+      <a href="#sources">来源</a>
+    </nav>
+
+    <section class="section" id="map">
+      <h2>先建立一张不依赖公式的地图</h2>
+      <p class="intro">SH 压缩的是“一个位置周围，光从各方向来时分别有多亮”。它不直接保存几何、不直接保存空间位置，也不是一盏灯。一个 band 是一组必须整体处理的测量结果。</p>
+      <div class="gi-prereq">
+        <span class="gi-stage-num">PRE</span>
+        <div><strong>建议前置：积分与方向采样</strong><p>只需要知道“在球面取很多方向，把每个方向的贡献加起来”。</p></div>
+        <a href="gi_module_foundations.html">打开基础模块</a>
+      </div>
+      <div class="concept-row">
+        <article><strong>L0 · 1 个数</strong><p>只问“平均有多亮”。转动环境不会改变平均值。</p></article>
+        <article><strong>L1 · 3 个数</strong><p>问“亮度更偏向 X、Y 还是 Z”。三个数可重排成一个普通三维向量。</p></article>
+        <article><strong>L2 · 5 个数</strong><p>问“是腰带、双极还是对角四叶形”。五个数不能逐项独立旋转。</p></article>
+      </div>
+      <div class="callout good"><b>本页约定：</b>单位方向 <code>ω=(x,y,z)</code>；Y 是世界上方，Z 是 SH 的极轴。9 项代表 <b>三个 band，最高二阶（l≤2）</b>，不是“九阶 SH”。RGB 环境实际保存 9 个 <code>vec3</code>，也就是 27 个标量。</div>
+      <div class="callout"><b>9 个实 SH 基函数不再孤立展示：</b>它们已放进实验 1 下方的可切换“投影工作台”；在那里可在公式、当前代值、伪代码和本页实际 JavaScript 之间切换。</div>
+    </section>
+
+    <section class="section" id="direction-sphere">
+      <h2>实验 1：先认清“转了什么”</h2>
+      <p class="intro">拖动改变的是环境的 yaw / pitch，不是相机。表面法线、XYZ 世界轴和三只球的位置全部固定。黄色箭头表示当前环境的主亮瓣方向；它是一个来自无穷远环境的方向，因此没有有限的“光源位置”。</p>
+
+      <div class="gi-light-card">
+        <div class="gi-light-icon">↗</div>
+        <div>
+          <strong id="lightName">RGB Studio · 红色主 lobe</strong>
+          <div class="gi-light-meta">
+            <span>类型：环境方向亮瓣</span>
+            <span>位置：∞ / 不适用</span>
+            <span id="lightDirection">ω = (+0.78, +0.20, +0.60)</span>
+            <span>传播方向 = −ω</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-shell">
+        <div class="demo-head">
+          <div><b>WebGL2 · 三球共享世界坐标</b><p>拖动 = 转环境；双击 = 复位；黄色箭头和右侧 yaw / pitch 始终同步</p></div>
+          <div class="segmented" aria-label="三球实验模式">
+            <button class="seg active" type="button" data-view="rotation">旋转验证</button>
+            <button class="seg" type="button" data-view="basis">基函数 / 漫反射</button>
+          </div>
+        </div>
+        <div class="stage">
+          <canvas id="shDemo" width="1200" height="560" aria-label="环境方向球、重新投影结果与系数旋转结果"></canvas>
+          <svg class="orientation-overlay" id="orientationOverlay" viewBox="0 0 1200 560" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <marker id="arrowYellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ffd36f"></path></marker>
+              <marker id="arrowRed" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ff717b"></path></marker>
+              <marker id="arrowGreen" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#68e0a0"></path></marker>
+              <marker id="arrowBlue" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#64a8ff"></path></marker>
+            </defs>
+            <g opacity=".96">
+              <line x1="88" y1="430" x2="145" y2="430" stroke="#ff717b" stroke-width="3" marker-end="url(#arrowRed)"></line>
+              <line x1="88" y1="430" x2="88" y2="370" stroke="#68e0a0" stroke-width="3" marker-end="url(#arrowGreen)"></line>
+              <line x1="88" y1="430" x2="58" y2="451" stroke="#64a8ff" stroke-width="3" marker-end="url(#arrowBlue)"></line>
+              <text x="150" y="434" fill="#ff939a" font-size="14">+X</text>
+              <text x="78" y="362" fill="#8bf0b7" font-size="14">+Y</text>
+              <text x="37" y="464" fill="#88bbff" font-size="14">+Z</text>
+              <line id="lobeArrow" x1="88" y1="430" x2="120" y2="385" stroke="#ffd36f" stroke-width="5" marker-end="url(#arrowYellow)"></line>
+              <text id="lobeArrowLabel" x="125" y="380" fill="#ffe29a" font-size="13">主 lobe</text>
+            </g>
+          </svg>
+          <div class="panel-labels">
+            <div><span id="panel0Label">① 旋转后的真实环境</span></div>
+            <div><span id="panel1Label">② 重新采样并投影</span></div>
+            <div><span id="panel2Label">③ 只旋转已有系数</span></div>
+          </div>
+          <div class="stage-legend" id="stageLegend">旋转验证：中球每次重新访问环境函数；右球不再访问环境，只执行 L0/L1/L2 三个 band 的矩阵乘法。</div>
+        </div>
+        <div class="demo-body">
+          <div class="guide">
+            <h3>读图顺序</h3>
+            <div class="gi-task-grid">
+              <div class="gi-task do"><b>先做</b><span>选择 Sharp Window，把最高 band 依次切到 L0、L1、L2。</span></div>
+              <div class="gi-task watch"><b>观察</b><span>原环境的小亮斑很尖，L2 的两种重建却都很宽。</span></div>
+              <div class="gi-task expect"><b>应该得到</b><span>中球与右球相同；它们共同偏离左球是带宽不足，不是旋转失败。</span></div>
+            </div>
+            <div class="callout warn"><b>纠正旧页容易造成的误解：</b>旧版拖动后会再次调用 <code>project()</code>，因此看到的是“旋转环境并重新投影”。那并不能证明系数被旋转。本版右球先保存零旋转系数，再运行 <code>buildBandRotation()</code> 和 <code>applyCoefficientRotation()</code>；它才是系数空间旋转。</div>
+            <div class="orientation-readout">
+              <div><small>Yaw</small><b id="yawReadout">0.0°</b></div>
+              <div><small>Pitch</small><b id="pitchReadout">0.0°</b></div>
+              <div><small>主亮瓣世界方向</small><b id="mainDirReadout">(+0.78,+0.20,+0.60)</b></div>
+            </div>
+            <div class="metrics">
+              <div class="metric"><small>环境→L2 RMS</small><b id="reconstructionRms">—</b></div>
+              <div class="metric"><small>重投影 vs 旋转</small><b id="coefficientRms">—</b></div>
+              <div class="metric"><small>重新投影 CPU</small><b id="reprojectMs">—</b></div>
+              <div class="metric"><small>构造D + 旋转 CPU</small><b id="rotateMs">—</b></div>
+            </div>
+          </div>
+          <aside class="controls">
+            <h3>环境与旋转</h3>
+            <div class="control"><label for="preset">环境预设</label>
+              <select id="preset">
+                <option value="0">Warm Sky + broad sun</option>
+                <option value="1">Sharp Window（高频压力测试）</option>
+                <option value="2">Two broad lights</option>
+                <option value="3" selected>RGB Studio</option>
+              </select>
+            </div>
+            <div class="control"><label>最高 band</label>
+              <div class="segmented">
+                <button class="seg order" type="button" data-order="0">L0 · 1项</button>
+                <button class="seg order" type="button" data-order="1">L1 · 4项</button>
+                <button class="seg order active" type="button" data-order="2">L2 · 9项</button>
+              </div>
+            </div>
+            <div class="control"><label for="yaw">Yaw <output id="yawOut">0.0°</output></label><input id="yaw" type="range" min="-180" max="180" step="1" value="0"></div>
+            <div class="control"><label for="pitch">Pitch <output id="pitchOut">0.0°</output></label><input id="pitch" type="range" min="-70" max="70" step="1" value="0"></div>
+            <div class="control"><label for="sampleCount">重新投影样本</label>
+              <select id="sampleCount">
+                <option value="64">64（故意展示积分误差）</option>
+                <option value="256">256</option>
+                <option value="1024" selected>1024</option>
+                <option value="4096">4096（较慢）</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button class="button" id="quarterTurn" type="button">Yaw +90°</button>
+              <button class="button" id="randomTurn" type="button">换一个角度</button>
+              <button class="button" id="reset" type="button">复位</button>
+            </div>
+            <p id="glStatus" style="color:var(--muted);font-size:11px">WebGL2 初始化中…</p>
+          </aside>
+        </div>
+      </div>
+
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs">
+          <button data-gi-tab="intuition">直觉</button>
+          <button data-gi-tab="formula">公式</button>
+          <button data-gi-tab="numbers">当前代值</button>
+          <button data-gi-tab="pseudo">伪代码</button>
+          <button data-gi-tab="actual">实际 JavaScript</button>
+        </div>
+        <div class="gi-panel" data-gi-panel="intuition">
+          <h4>投影就是九张“方向问卷”</h4>
+          <p>在球面取一个方向，读取该方向的 RGB 光，再分别乘 9 个基函数值。做完整个球面后，每张问卷得到一个 RGB 总分。</p>
+        </div>
+        <div class="gi-panel" data-gi-panel="formula">
+          <div class="gi-formula"><span data-gi-symbol="c">cᵢ</span> = ∫<sub>S²</sub> <span data-gi-symbol="L">L(ω)</span> <span data-gi-symbol="Y">Yᵢ(ω)</span> dω
+
+均匀采样近似：
+<span data-gi-symbol="c">cᵢ</span> ≈ (4π / N) Σₛ <span data-gi-symbol="L">L(ωₛ)</span> <span data-gi-symbol="Y">Yᵢ(ωₛ)</span></div>
+          <div class="gi-formula">本页 <code>basis9(ω)</code> 的固定顺序：
+Y = [0.282095,
+0.488603y, 0.488603z, 0.488603x,
+1.092548xy, 1.092548yz, 0.315392(3z²−1),
+1.092548xz, 0.546274(x²−y²)]</div>
+          <table class="gi-symbols"><tr><th>符号</th><th>普通话解释</th></tr><tr><td><button class="gi-symbol" data-gi-symbol="c">cᵢ</button></td><td>第 i 张方向问卷的 RGB 得分</td></tr><tr><td><button class="gi-symbol" data-gi-symbol="L">L(ω)</button></td><td>从方向 ω 到达当前位置的 radiance</td></tr><tr><td><button class="gi-symbol" data-gi-symbol="Y">Yᵢ</button></td><td>第 i 个固定的正负方向图案</td></tr></table>
+        </div>
+        <div class="gi-panel" data-gi-panel="numbers">
+          <p id="projectionValues">N=1024；每个方向权重 4π/N≈0.01227；共读取 1024 次环境、计算 9216 个基函数值。</p>
+        </div>
+        <div class="gi-panel" data-gi-panel="pseudo">
+          <pre><code data-gi-code data-gi-status="pseudo" data-gi-source="投影步骤（每个名称都在实际代码中有同名实现）">
+把 9 个 RGB 系数清零
+for s = 0 .. N-1:
+  ω = fibonacciDirection(s, N)
+  L = sampleEnvironment(preset, ω, yaw, pitch)
+  Y = basis9(ω)
+  for i = 0 .. 8:
+    coefficient[i] += L * Y[i] * (4π / N)
+返回 9 个 RGB 系数
+          </code></pre>
+        </div>
+        <div class="gi-panel" data-gi-panel="actual">
+          <p>下面正是本页运行函数；三个依赖 <code>fibonacciDirection</code>、<code>sampleEnvironment</code>、<code>basis9</code> 都在页尾“运行函数索引”给出闭合实现。</p>
+          <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · projectEnvironment()">
+function projectEnvironment(preset, yaw, pitch, sampleCount) {
+  const coefficients = Array.from(
+    { length: 9 },
+    () => [0, 0, 0]
+  );
+  const weight = 4 * Math.PI / sampleCount;
+
+  for (let s = 0; s &lt; sampleCount; s += 1) {
+    const direction = fibonacciDirection(s, sampleCount);
+    const radiance = sampleEnvironment(
+      preset,
+      direction,
+      yaw,
+      pitch
+    );
+    const Y = basis9(direction);
+
+    for (let i = 0; i &lt; 9; i += 1) {
+      for (let channel = 0; channel &lt; 3; channel += 1) {
+        coefficients[i][channel] +=
+          radiance[channel] * Y[i] * weight;
+      }
+    }
+  }
+  return coefficients;
+}
+          </code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="rotation">
+      <h2>实验 2：重新投影环境，还是旋转已有系数？</h2>
+      <p class="intro">两条路径应该得到同一结果，但运行时成本完全不同。路径 A 重新访问环境并做球面积分；路径 B 只在每个 band 内混合已有系数。为了让算法可见，本页通过方向采样拟合旋转矩阵 D；生产代码通常使用解析 SH rotation、递推或经过验证的库。</p>
+      <div class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">02</span><div><h3>同一旋转，两条数据路径</h3><p>改变上方 yaw / pitch，本阶段的数值和 band matrix 同步更新。</p></div><span class="gi-stage-tag">RUNNING VALIDATION</span></div>
+        <div class="gi-stage-body">
+          <div class="gi-stage-io"><div><b>输入</b><span>零旋转系数 c、旋转 R、当前环境函数</span></div><div class="gi-stage-arrow">→</div><div><b>输出</b><span>直接重投影 c′ 与 D(R)c 的差</span></div></div>
+          <div class="lab-layout">
+            <div>
+              <table class="compare">
+                <thead><tr><th>路径</th><th>做了什么</th><th>环境读取</th><th>本页结果</th></tr></thead>
+                <tbody>
+                  <tr><td>A · 重新投影</td><td>对 L(R⁻¹ω) 再做一次球面积分</td><td>N 次</td><td id="routeAResult">—</td></tr>
+                  <tr><td>B · 系数旋转</td><td>每个 band 执行 c′ₗ=Dₗ(R)cₗ</td><td>0 次</td><td id="routeBResult">—</td></tr>
+                </tbody>
+              </table>
+              <div class="callout good"><b>验证条件：</b>中球与右球相同、系数 RMS 很小、每个 band 的能量保持不变。它们不必等于原环境：只有 l≤2 时，高频本来就会丢失。</div>
+            </div>
+            <div>
+              <h3 style="margin-top:0">当前 L2 的 5×5 数值旋转矩阵 D₂</h3>
+              <div class="matrix-grid" id="l2Matrix" aria-label="L2 band rotation matrix"></div>
+              <p style="color:var(--muted);font-size:11px">每一行回答：“旋转后的这个 L2 基函数，需要混合原来的哪五个 L2 基函数？”</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs">
+          <button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JavaScript</button>
+        </div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>想象把一张印有 5 个 L2 图案的透明球壳转动。转动后的某个图案通常不再等于原来的单独一张，而是原来五张图案的加权混合；这些权重就是矩阵 D₂。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">旋转环境：L′(ω) = L(R⁻¹ω)
+
+旋转系数：c′<sub>l</sub> = D<sub>l</sub>(R) c<sub>l</sub>
+
+本页数值拟合：
+Y<sub>l</sub>(Rωₛ) ≈ D<sub>l</sub> Y<sub>l</sub>(ωₛ)
+D<sub>l</sub> = C G⁻¹
+G = Σ Y(ωₛ)Y(ωₛ)ᵀ
+C = Σ Y(Rωₛ)Y(ωₛ)ᵀ</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><p id="rotationValues">当前角度为 0° / 0°；D 接近单位矩阵，c′≈c。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="数值构造单个 band 的旋转矩阵">
+for 每个 band l:
+  G = 零矩阵
+  C = 零矩阵
+  for 每个拟合方向 ω:
+    localBasis = basis9(ω) 中属于 band l 的切片
+    rotatedBasis = basis9(
+      rotateWorld(ω, yaw, pitch)
+    ) 的同一切片
+    addOuterProduct(G, localBasis, localBasis)
+    addOuterProduct(C, rotatedBasis, localBasis)
+  D_l = multiplyMatrices(C, invertMatrix(G))
+  rotatedCoefficients_l = D_l × baseCoefficients_l
+          </code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · buildBandRotation()">
+function buildBandRotation(yaw, pitch, fitSamples = 96) {
+  const ranges = [[0, 1], [1, 4], [4, 9]];
+  const full = makeMatrix(9, 9, 0);
+  const bands = [];
+
+  for (const [begin, end] of ranges) {
+    const width = end - begin;
+    const G = makeMatrix(width, width, 0);
+    const C = makeMatrix(width, width, 0);
+
+    for (let s = 0; s &lt; fitSamples; s += 1) {
+      const local = fibonacciDirection(s, fitSamples);
+      const world = rotateWorld(local, yaw, pitch);
+      const a = basis9(world).slice(begin, end);
+      const b = basis9(local).slice(begin, end);
+      addOuterProduct(C, a, b);
+      addOuterProduct(G, b, b);
+    }
+
+    const D = multiplyMatrices(C, invertMatrix(G));
+    bands.push(D);
+    for (let row = 0; row &lt; width; row += 1) {
+      for (let column = 0; column &lt; width; column += 1) {
+        full[begin + row][begin + column] = D[row][column];
+      }
+    }
+  }
+  return { full, bands };
+}
+          </code></pre></div>
+      </div>
+    </section>
+
+    <section class="section" id="l0">
+      <h2>实验 3：L0 为什么完全不动？</h2>
+      <p class="intro">L0 的基函数在球面每个方向都是同一个常数 0.282095。环境转动只是把相同的一组亮度搬到别的方向；球面总平均不会变。</p>
+      <div class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">03</span><div><h3>L0 不变量条形图</h3><p>Base、重新投影和系数旋转三组 RGB 应重合；少量差异来自有限球面样本。</p></div><span class="gi-stage-tag">1D BAND</span></div>
+        <div class="gi-stage-body">
+          <div class="lab-layout">
+            <div class="plot-card short"><canvas id="l0Canvas" width="760" height="245" aria-label="L0 系数不变量条形图"></canvas><div class="plot-caption">三组条：零旋转 base / 当前角度重新投影 / 当前角度旋转系数。</div></div>
+            <div class="explain-list">
+              <div class="explain-step"><b>1 · 看基函数</b><span>Y₀⁰ 对所有方向都等于 0.282095。</span></div>
+              <div class="explain-step"><b>2 · 转环境</b><span>每个方向的内容换了位置，但球面上的总和不变。</span></div>
+              <div class="explain-step"><b>3 · 看矩阵</b><span>D₀ 只有一个元素 [1]，所以 c′₀=c₀。</span></div>
+              <div class="metric"><small>当前 L0 最大通道漂移</small><b id="l0Drift">—</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JavaScript</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>把一杯有颜色的豆子摇匀或转动杯子，豆子的平均颜色不会变。L0 只看平均，不知道“哪一边更亮”。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">Y₀⁰(ω) = 0.282095
+
+c′₀ = ∫ L(R⁻¹ω)Y₀⁰ dω
+    = ∫ L(u)Y₀⁰ du
+    = c₀</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><p id="l0Values">R/G/B 当前代值将在 Demo 初始化后显示。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="L0 旋转">
+rotatedL0.red   = baseL0.red
+rotatedL0.green = baseL0.green
+rotatedL0.blue  = baseL0.blue
+          </code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · applyCoefficientRotation()">
+function applyCoefficientRotation(base, D) {
+  const output = Array.from(
+    { length: 9 },
+    () => [0, 0, 0]
+  );
+
+  for (let row = 0; row &lt; 9; row += 1) {
+    for (let column = 0; column &lt; 9; column += 1) {
+      for (let channel = 0; channel &lt; 3; channel += 1) {
+        output[row][channel] +=
+          D[row][column] * base[column][channel];
+      }
+    }
+  }
+  return output;
+}
+          </code></pre></div>
+      </div>
+    </section>
+
+    <section class="section" id="l1">
+      <h2>实验 4：L1 就是一支普通的三维箭头</h2>
+      <p class="intro">本页排列是 <code>[Y, Z, X]</code>，所以先把三个亮度系数重排成 <code>v=(cX,cY,cZ)</code>。如果环境按 R 旋转，v 也按同一个 3×3 R 旋转。图中绿色箭头直接做 Rv，紫色箭头使用 D₁c；它们应该重合。</p>
+      <div class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">04</span><div><h3>L1：三维向量交叉验证</h3><p>这里先把 RGB 转成 luminance，只是为了画一支箭头；RGB 实际会对三个通道分别旋转。</p></div><span class="gi-stage-tag">3D VECTOR</span></div>
+        <div class="gi-stage-body">
+          <div class="lab-layout">
+            <div class="plot-card"><canvas id="l1Canvas" width="760" height="310" aria-label="L1 向量旋转比较"></canvas><div class="plot-caption">灰：base；绿：普通三维矩阵 Rv；紫：SH 的 D₁c。右侧同时显示 X/Y/Z 分量。</div></div>
+            <div class="explain-list">
+              <div class="explain-step"><b>1 · 重排</b><span>[cY,cZ,cX] → v=(cX,cY,cZ)。</span></div>
+              <div class="explain-step"><b>2 · 普通旋转</b><span>expected = Rv，完全是熟悉的三维向量旋转。</span></div>
+              <div class="explain-step"><b>3 · SH 旋转</b><span>actual = D₁[cY,cZ,cX]，再重排回 XYZ。</span></div>
+              <div class="metric"><small>两条路径夹角误差</small><b id="l1AngleError">—</b></div>
+              <div class="metric"><small>向量长度漂移</small><b id="l1LengthDrift">—</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JavaScript</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>L1 只记录“整体更亮的一边”。把亮的一边想成一支箭头；环境往右转，箭头也往右转，箭头长度不变。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">v = (c<sub>x</sub>, c<sub>y</sub>, c<sub>z</sub>)
+
+v′ = R v
+
+在本页存储顺序中：
+[c′<sub>y</sub>, c′<sub>z</sub>, c′<sub>x</sub>]ᵀ
+= D₁ [c<sub>y</sub>, c<sub>z</sub>, c<sub>x</sub>]ᵀ</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><p id="l1Values">当前 base / Rv / D₁c 将在初始化后显示。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="L1 双路径验证">
+baseXYZ = [luminance(c3), luminance(c1), luminance(c2)]
+expectedXYZ = rotateWorld(baseXYZ, yaw, pitch)
+
+rotatedSH = applyCoefficientRotation(base, D)
+actualXYZ = [
+  luminance(rotatedSH[3]),
+  luminance(rotatedSH[1]),
+  luminance(rotatedSH[2])
+]
+
+比较 expectedXYZ 与 actualXYZ
+          </code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · luminance() / l1VectorFromCoefficients() / l1Data()">
+const DEG = Math.PI / 180;
+
+function dot3(a, b) {
+  return a[0] * b[0] +
+    a[1] * b[1] +
+    a[2] * b[2];
+}
+
+function length3(v) {
+  return Math.hypot(v[0], v[1], v[2]);
+}
+
+function luminance(rgb) {
+  return 0.2126 * rgb[0] +
+    0.7152 * rgb[1] +
+    0.0722 * rgb[2];
+}
+
+function l1VectorFromCoefficients(coefficients) {
+  return [
+    luminance(coefficients[3]),
+    luminance(coefficients[1]),
+    luminance(coefficients[2])
+  ];
+}
+
+function l1Data() {
+  const base = l1VectorFromCoefficients(baseCoefficients);
+  const expected = rotateWorld(base, state.yaw, state.pitch);
+  const actual =
+    l1VectorFromCoefficients(rotatedCoefficients);
+  const baseLength = Math.max(length3(base), 1e-12);
+  const expectedLength = Math.max(
+    length3(expected),
+    1e-12
+  );
+  const actualLength = Math.max(
+    length3(actual),
+    1e-12
+  );
+  const cosine = Math.max(
+    -1,
+    Math.min(
+      1,
+      dot3(expected, actual) /
+        (expectedLength * actualLength)
+    )
+  );
+  return {
+    base,
+    expected,
+    actual,
+    angle: Math.acos(cosine) / DEG,
+    lengthDrift:
+      Math.abs(actualLength - baseLength) / baseLength
+  };
+}
+          </code></pre></div>
+      </div>
+    </section>
+
+    <section class="section" id="l2">
+      <h2>实验 5：L2 的“五维”到底是什么意思？</h2>
+      <p class="intro">五维不是说场景多了两个空间维度，而是同一组二阶方向形状需要五个独立数字。你可以把这五个数原样看成 5D 向量；也可以把它们重新包装成一个 3×3 对称、迹为零的矩阵 Q。环境旋转时，Q′=RQRᵀ，再转回五个系数。该路径与数值 D₂c 是第二次独立验证。</p>
+      <div class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">05</span><div><h3>L2：五维 band 与对称无迹张量</h3><p>柱形图比较重新投影、数值 D₂ 和张量 RQRᵀ；右半区域是当前 D₂ 热力图。</p></div><span class="gi-stage-tag">5D / TENSOR</span></div>
+        <div class="gi-stage-body">
+          <div class="lab-layout">
+            <div class="plot-card"><canvas id="l2Canvas" width="760" height="310" aria-label="L2 五维系数与旋转矩阵比较"></canvas><div class="plot-caption">五组分别对应 XY、YZ、3Z²−1、XZ、X²−Y²；颜色表示三条计算路径。</div></div>
+            <div class="explain-list">
+              <div class="explain-step"><b>1 · 系数变 Q</b><span>对角项负责 Z² 与 X²−Y²，非对角项负责 XY/YZ/XZ。</span></div>
+              <div class="explain-step"><b>2 · 旋转 Q</b><span>普通 3D 矩阵乘法 Q′=RQRᵀ。</span></div>
+              <div class="explain-step"><b>3 · Q 变回五项</b><span>读取 Qxy、Qyz、Qzz、Qxz 与 Qxx−Qyy。</span></div>
+              <div class="metric"><small>D₂c vs RQRᵀ 最大误差</small><b id="l2TensorError">—</b></div>
+              <div class="metric"><small>Q′ 的迹（应为 0）</small><b id="l2Trace">—</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JavaScript</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>Q 像一个“二阶形状指南针”：它不只指出一支主箭头，而是描述多个轴之间的宽形状关系。对称意味着 XY 与 YX 是同一关系；迹为零去掉了已经属于 L0 的整体平均，因此恰好剩 5 个自由度。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">f₂(ω) = Σ<sub>m=-2..2</sub> c<sub>2m</sub>Y<sub>2m</sub>(ω)
+      = ωᵀ Q ω
+
+Q = Qᵀ, trace(Q)=0
+Q′ = R Q Rᵀ
+
+本页常数：
+K=1.092548, C=0.315392, D=0.546274
+Qxy=K c₄/2, Qyz=K c₅/2, Qxz=K c₇/2
+Qxx=−C c₆+D c₈
+Qyy=−C c₆−D c₈
+Qzz=2C c₆</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><p id="l2Values">当前五项代值将在初始化后显示。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="L2 张量路径">
+five = 对 i=4..8 分别执行
+       luminance(baseCoefficients[i])
+Q = l2CoefficientsToTensor(five)
+R = rotationMatrix3(yaw, pitch)
+rotatedQ = multiplyMatrices(
+  multiplyMatrices(R, Q),
+  transposeMatrix(R)
+)
+tensorFive = tensorToL2Coefficients(rotatedQ)
+
+rotatedSH = applyCoefficientRotation(baseCoefficients, D)
+numericFive = 对 i=4..8 分别执行
+              luminance(rotatedSH[i])
+比较 tensorFive 与 numericFive
+          </code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · L2 tensor conversion">
+function l2CoefficientsToTensor(c) {
+  const K = 1.092548;
+  const C = 0.315392;
+  const D = 0.546274;
+  return [
+    [-C * c[2] + D * c[4], K * c[0] / 2, K * c[3] / 2],
+    [K * c[0] / 2, -C * c[2] - D * c[4], K * c[1] / 2],
+    [K * c[3] / 2, K * c[1] / 2, 2 * C * c[2]]
+  ];
+}
+
+function tensorToL2Coefficients(Q) {
+  const K = 1.092548;
+  const C = 0.315392;
+  const D = 0.546274;
+  return [
+    2 * Q[0][1] / K,
+    2 * Q[1][2] / K,
+    Q[2][2] / (2 * C),
+    2 * Q[0][2] / K,
+    (Q[0][0] - Q[1][1]) / (2 * D)
+  ];
+}
+
+function rotationMatrix3(yaw, pitch) {
+  const x = rotateWorld([1, 0, 0], yaw, pitch);
+  const y = rotateWorld([0, 1, 0], yaw, pitch);
+  const z = rotateWorld([0, 0, 1], yaw, pitch);
+  return [
+    [x[0], y[0], z[0]],
+    [x[1], y[1], z[1]],
+    [x[2], y[2], z[2]]
+  ];
+}
+
+function rotateTensor(Q, R) {
+  return multiplyMatrices(
+    multiplyMatrices(R, Q),
+    transposeMatrix(R)
+  );
+}
+          </code></pre></div>
+      </div>
+    </section>
+
+    <section class="section" id="energy">
+      <h2>实验 6：Band energy 是旋转的“单元测试”</h2>
+      <p class="intro">正交旋转只会在同一 band 内重新分配系数，不会改变这一 band 的平方和。若能量明显改变，通常是混了 convention、矩阵方向写反、把不同 band 混在一起，或数值积分样本过少。</p>
+      <div class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">06</span><div><h3>每个 band 的能量与运行成本</h3><p>旋转系数的金色柱应贴住 base；重新投影的蓝柱会随样本数产生小幅积分误差。</p></div><span class="gi-stage-tag">INVARIANT / COST</span></div>
+        <div class="gi-stage-body">
+          <div class="lab-layout">
+            <div class="plot-card"><canvas id="energyCanvas" width="760" height="310" aria-label="SH band energy 对比"></canvas><div class="plot-caption">能量按 RGB 全部标量求和：Eₗ=ΣmΣchannel c²。</div></div>
+            <div class="explain-list">
+              <div class="metric"><small>系数旋转最大 energy 漂移</small><b id="energyDrift">—</b></div>
+              <div class="metric"><small>D 的正交性误差</small><b id="orthogonalityError">—</b></div>
+              <div class="explain-step"><b>重新投影</b><span id="costReproject">N×9 次加权；还要读取 N 次环境。</span></div>
+              <div class="explain-step"><b>应用 band rotation</b><span>每个 RGB 通道 1²+3²+5²=35 MAC；RGB 共 105 MAC，0 次环境读取。</span></div>
+              <div class="callout"><b>教学实现的额外成本：</b>本页每次用 96 个方向重新拟合 D，便于看清算法。引擎里应缓存/解析构造 D，不能把这部分误算成应用系数旋转的固定成本。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JavaScript</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>旋转像在同一只盒子里重新摇匀五颗 L2 砝码：每颗读数会变，但五颗读数的“平方总重量”不变。L0、L1、L2 是三只不同盒子，不能互相倒。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">E<sub>l</sub> = Σ<sub>m=-l..l</sub> ||c<sub>lm</sub>||²
+
+D<sub>l</sub>ᵀD<sub>l</sub> = I
+⇒ ||D<sub>l</sub>c<sub>l</sub>||² = ||c<sub>l</sub>||²
+⇒ E′<sub>l</sub> = E<sub>l</sub></div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><p id="energyValues">L0/L1/L2 的当前 base 与 rotated energy 将在初始化后显示。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="band energy 单元测试">
+for each band:
+  before = 0
+  after = 0
+  for each coefficient and RGB channel in this band:
+    before += baseValue²
+    after += rotatedValue²
+  relativeDrift = abs(after - before) / max(before, epsilon)
+  assert relativeDrift is small
+          </code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · bandEnergies()">
+function bandEnergies(coefficients) {
+  const ranges = [[0, 1], [1, 4], [4, 9]];
+  return ranges.map(([begin, end]) => {
+    let energy = 0;
+    for (let i = begin; i &lt; end; i += 1) {
+      for (let channel = 0; channel &lt; 3; channel += 1) {
+        energy += coefficients[i][channel] ** 2;
+      }
+    }
+    return energy;
+  });
+}
+          </code></pre></div>
+      </div>
+    </section>
+
+    <section class="section" id="diffuse">
+      <h2>实验 7：Diffuse convolution 为什么让 SH 特别适合漫反射？</h2>
+      <p class="intro">漫反射 irradiance 要把整个半球的入射光乘 <code>max(n·ω,0)</code> 再积分。对于 SH，这个卷积不必再次遍历所有方向：前三个 band 分别乘固定常数 π、2π/3、π/4。高 band 衰减更多，所以尖锐细节自然变宽。</p>
+      <div class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">07</span><div><h3>卷积前后 band energy</h3><p>点击上方“基函数 / 漫反射”，中球就是同一组系数经过这些 band scale 后的结果。</p></div><span class="gi-stage-tag">LAMBERT KERNEL</span></div>
+        <div class="gi-stage-body">
+          <div class="lab-layout">
+            <div class="plot-card short"><canvas id="diffuseCanvas" width="760" height="245" aria-label="漫反射卷积前后 band 能量"></canvas><div class="plot-caption">浅色：原 radiance 系数能量；绿色：乘 Lambert kernel 后的 irradiance 系数能量。</div></div>
+            <div class="explain-list">
+              <div class="explain-step"><b>L0 × π</b><span>平均环境贡献最大。</span></div>
+              <div class="explain-step"><b>L1 × 2π/3</b><span>保留主要亮侧，但比 L0 衰减更多。</span></div>
+              <div class="explain-step"><b>L2 × π/4</b><span>宽形状继续保留；更高频率被强烈低通。</span></div>
+              <div class="metric"><small>当前中球 albedo</small><b>0.68 gray</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 GLSL</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>粗糙漫反射表面会同时接收一大片半球方向的光，因此它天生看不清环境中的细小亮点。SH 截断和余弦卷积都在做低通，这正好匹配漫反射。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">E(n) ≈ Σ<sub>l=0..2</sub> Σ<sub>m</sub> A<sub>l</sub> c<sub>lm</sub>Y<sub>lm</sub>(n)
+
+A₀=π≈3.14159
+A₁=2π/3≈2.09440
+A₂=π/4≈0.78540
+
+L<sub>o</sub>(n) = ρ/π · E(n)</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><p>若某项 radiance 系数为 0.40：L0 卷积后是 1.2566；L1 是 0.8378；L2 只有 0.3142。之后再乘材质 <code>ρ/π</code>。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="法线 n 上的漫反射求值">
+irradiance = [0, 0, 0]
+for i = 0 .. activeCoefficientCount-1:
+  bandScale = PI if i is L0
+              else 2*PI/3 if i is L1
+              else PI/4
+  irradiance += coefficient[i] * basis9(n)[i] * bandScale
+outgoingRadiance = albedo / PI * max(irradiance, 0)
+        </code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · WebGL2 fragment shader">
+uniform vec3 uDirect[9];
+uniform int uOrder;
+
+float shBasis(int i, vec3 d) {
+  float x = d.x;
+  float y = d.y;
+  float z = d.z;
+  if (i == 0) return 0.282095;
+  if (i == 1) return 0.488603 * y;
+  if (i == 2) return 0.488603 * z;
+  if (i == 3) return 0.488603 * x;
+  if (i == 4) return 1.092548 * x * y;
+  if (i == 5) return 1.092548 * y * z;
+  if (i == 6) {
+    return 0.315392 * (3.0 * z * z - 1.0);
+  }
+  if (i == 7) return 1.092548 * x * z;
+  return 0.546274 * (x * x - y * y);
+}
+
+int activeCount() {
+  return uOrder == 0 ? 1 : uOrder == 1 ? 4 : 9;
+}
+
+vec3 diffuseIrradiance(vec3 normal) {
+  vec3 irradiance = vec3(0.0);
+  for (int i = 0; i &lt; 9; i += 1) {
+    if (i &gt;= activeCount()) {
+      break;
+    }
+    float bandScale =
+      i == 0 ? 3.14159265 :
+      i &lt; 4 ? 2.09439510 :
+                0.78539816;
+    irradiance +=
+      uDirect[i] * shBasis(i, normal) * bandScale;
+  }
+  return max(irradiance, vec3(0.0));
+}
+          </code></pre></div>
+      </div>
+    </section>
+
+    <section class="section" id="ringing">
+      <h2>实验 8：样本加到 4096，为什么尖窗仍然有瑕疵？</h2>
+      <p class="intro">必须区分两类误差：样本少造成“积分噪声”，增加样本能改善；band 少造成“表示带宽不足”，增加投影样本不能改善。尖锐窗口被 L2 截断后会变宽并产生负瓣/ringing。Windowing 能压低高 band，减少振铃，但会进一步模糊。</p>
+      <div class="gi-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">08</span><div><h3>Sharp Window 的大圆切片</h3><p>该实验固定使用 Sharp Window 和 4096 样本，专门隔离“只有 L2”造成的误差。</p></div><span class="gi-stage-tag">RINGING / WINDOW</span></div>
+        <div class="gi-stage-body">
+          <div class="control"><label for="windowStrength">Hann window 强度 <output id="windowOut">1.00</output></label><input id="windowStrength" type="range" min="0" max="1" step="0.05" value="1"></div>
+          <div class="plot-card"><canvas id="ringingCanvas" width="1100" height="330" aria-label="尖锐环境、L2 重建与 windowing 曲线"></canvas><div class="plot-caption">白：真实尖窗；红：未 window 的 L2；绿：Hann window。虚线是 0，低于它的 SH 重建是数学振铃，不是负光源。</div></div>
+          <div class="metrics">
+            <div class="metric"><small>未 window 最小值</small><b id="ringMinRaw">—</b></div>
+            <div class="metric"><small>window 后最小值</small><b id="ringMinWindow">—</b></div>
+            <div class="metric"><small>未 window RMS</small><b id="ringRmsRaw">—</b></div>
+            <div class="metric"><small>window 后 RMS</small><b id="ringRmsWindow">—</b></div>
+          </div>
+          <div class="callout warn"><b>怎么解决视觉瑕疵：</b>先确认是哪类误差。积分噪声 → 更多/更好的球面样本，或离线累计；截断 ringing → 增加 band、选择与信号匹配的表示、做 windowing/非负修复；尖锐阴影和镜面 → 不应只靠低阶 SH。时间滤波只能降随机噪声，不能恢复被 L2 永久丢掉的高频。</div>
+        </div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JavaScript</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>只允许 9 个很宽的“画笔”去画一扇很窄的亮窗，画笔数量再精确也画不出锐边。Windowing 相当于把最容易产生波纹的高频画笔再压轻一些。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">加窗重建：
+L̃<sub>w</sub>(ω) = Σ<sub>l=0..L</sub> w<sub>l</sub> Σ<sub>m</sub> c<sub>lm</sub>Y<sub>lm</sub>(ω)
+
+本页 Hann：
+h<sub>l</sub> = 0.5[1+cos(πl/(L+1))], L=2
+w<sub>l</sub> = mix(1, h<sub>l</sub>, strength)
+
+strength=1 时：[w₀,w₁,w₂]=[1,0.75,0.25]</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><p id="windowValues">strength=1.00；当前曲线 min / RMS 将在初始化后显示。</p></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="按 band 加窗">
+for each coefficient i:
+  l = 0 if i == 0
+      1 if i is 1..3
+      2 if i is 4..8
+  hann = 0.5 * (1 + cos(PI * l / 3))
+  weight = 1 + (hann - 1) * strength
+  reconstruction += weight * coefficient[i] * basis[i]
+          </code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · windowedReconstruction()">
+function windowedReconstruction(
+  coefficients,
+  direction,
+  strength
+) {
+  const Y = basis9(direction);
+  const output = [0, 0, 0];
+
+  for (let i = 0; i &lt; 9; i += 1) {
+    const band = i === 0 ? 0 : i &lt; 4 ? 1 : 2;
+    const hann =
+      0.5 * (1 + Math.cos(Math.PI * band / 3));
+    const weight = 1 + (hann - 1) * strength;
+    for (let channel = 0; channel &lt; 3; channel += 1) {
+      output[channel] +=
+        weight * coefficients[i][channel] * Y[i];
+    }
+  }
+  return output;
+}
+          </code></pre></div>
+      </div>
+    </section>
+
+    <section class="section" id="usage">
+      <h2>把 SH 放回 GI：Probe 与 PRT 分别在存什么？</h2>
+      <p class="intro">SH 只是“方向函数的压缩格式”。它可以装在 Irradiance/Radiance Probe 里，也可以作为 PRT 的 lighting/transfer 基；这两条管线的物理量和更新方式不同。</p>
+      <div class="usage-flow">
+        <article><b>方向光照</b><span>环境贴图、天空、多盏低频化光源</span></article>
+        <article><b>投影 / 旋转</b><span>得到当前 lighting SH；旋转环境时可旋转系数</span></article>
+        <article><b>空间或表面数据</b><span>Probe 存某位置的 radiance/irradiance；PRT 存接收点 transfer</span></article>
+        <article><b>运行时组合</b><span>Probe 插值后按法线求值；PRT 做 lighting · transfer</span></article>
+        <article><b>着色</b><span>材质 albedo、可见性与直接光共同进入最终画面</span></article>
+      </div>
+      <div class="grid" style="margin-top:15px">
+        <article class="card">
+          <h3>Irradiance / Radiance Probe</h3>
+          <p><b>空间采样点</b>携带一组 SH。相机/物体移动时插值邻近 Probe，再用表面法线求值。难点通常是空间泄漏、可见性和动态更新，不是 9 次乘加。</p>
+          <a href="gi_module_probes.html">继续：Irradiance Probes / DDGI →</a>
+        </article>
+        <article class="card">
+          <h3>PRT / Transfer</h3>
+          <p><b>表面接收点</b>预计算静态几何的可见性与余弦传输系数。动态低频光照投影/旋转后，与 transfer 做点积。几何变化会让预计算过期。</p>
+          <a href="gi_module_prt_probes.html">继续：PRT / Transport Probes →</a>
+        </article>
+        <article class="card">
+          <h3>不要把 SH 当成万能纹理</h3>
+          <p>低阶 SH 很适合 diffuse、软环境与方向 Probe；不适合清晰太阳盘、锐利阴影、镜面反射。后者通常需要 cubemap、SG、wavelet、ray tracing 或其他高频表示。</p>
+        </article>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="probe">
+        <div class="gi-tabs"><button data-gi-tab="probe">Probe 伪代码</button><button data-gi-tab="prt">PRT 伪代码</button><button data-gi-tab="difference">差异核对</button></div>
+        <div class="gi-panel" data-gi-panel="probe"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="Irradiance Probe 运行时">
+nearby = 选择当前位置周围的 Probe
+coefficients = 按距离、法线与可见性插值 nearby.coefficients
+Y = basis9(surfaceNormal)
+irradiance = Σ coefficients[i] * Y[i]
+outgoingRadiance = albedo / PI * max(irradiance, 0)
+        </code></pre></div>
+        <div class="gi-panel" data-gi-panel="prt"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="PRT 运行时">
+lightingCoefficients = 投影或旋转当前低频光照
+for each surface receiver:
+  outgoingRadiance = 0
+  for i = 0 .. coefficientCount-1:
+    outgoingRadiance +=
+      lightingCoefficients[i] *
+      receiver.transferCoefficients[i]
+        </code></pre></div>
+        <div class="gi-panel" data-gi-panel="difference"><table class="compare"><thead><tr><th></th><th>Probe</th><th>PRT receiver</th></tr></thead><tbody><tr><td>采样域</td><td>空间位置</td><td>通常绑定表面点/顶点/texel</td></tr><tr><td>典型存储</td><td>当前 radiance 或 irradiance 的 SH 答案</td><td>静态几何 transfer 的 SH/矩阵</td></tr><tr><td>光变化</td><td>需要重新追踪/更新 Probe，或使用其他注入方式</td><td>只更新 lighting coefficients 即可响应低频动态光</td></tr><tr><td>几何变化</td><td>可能造成泄漏/历史过期</td><td>直接使预计算 transfer 过期</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="section" id="coefficients">
+      <h2>当前 9 个系数：让每个数字都有方向含义</h2>
+      <p class="intro">每张卡同时列出“重新投影”和“旋转已有系数”的 luminance。点击卡片，再切换主 Demo 的“基函数 / 漫反射”，右球会显示该基函数的正负区域。</p>
+      <div class="coeff-grid" id="coeffGrid" aria-label="当前九个 SH 系数"></div>
+    </section>
+
+    <section class="section" id="runtime-functions">
+      <h2>运行函数索引：没有悬空 helper</h2>
+      <p class="intro">上面的“实际 JavaScript”只引用下列同名运行函数。每一项都能展开查看闭合实现；标准内建仅使用 <code>Math</code>、数组与 Canvas/WebGL2 API。</p>
+      <div class="grid">
+        <article class="card wide">
+          <h3><code>fibonacciDirection</code> + <code>basis9</code></h3>
+          <p>第一个函数直接生成均匀球面方向；第二个返回本页固定顺序的 9 个实 SH 值。</p>
+          <details><summary>展开闭合实现</summary><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · direction/basis helpers">
+function fibonacciDirection(index, count) {
+  const y = 1 - 2 * (index + 0.5) / count;
+  const radius = Math.sqrt(Math.max(0, 1 - y * y));
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  const azimuth = goldenAngle * index;
+  return [
+    Math.cos(azimuth) * radius,
+    y,
+    Math.sin(azimuth) * radius
+  ];
+}
+
+function basis9(direction) {
+  const [x, y, z] = direction;
+  return [
+    0.282095,
+    0.488603 * y,
+    0.488603 * z,
+    0.488603 * x,
+    1.092548 * x * y,
+    1.092548 * y * z,
+    0.315392 * (3 * z * z - 1),
+    1.092548 * x * z,
+    0.546274 * (x * x - y * y)
+  ];
+}
+          </code></pre></details>
+        </article>
+        <article class="card">
+          <h3><code>rotateWorld</code> / <code>rotateLocal</code></h3>
+          <p>world 先做 X pitch 再做 Y yaw；local 严格按相反顺序执行逆旋转。</p>
+          <details><summary>展开闭合实现</summary><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · rotation helpers">
+function rotateWorld(v, yaw, pitch) {
+  const cp = Math.cos(pitch);
+  const sp = Math.sin(pitch);
+  const afterPitch = [
+    v[0],
+    cp * v[1] - sp * v[2],
+    sp * v[1] + cp * v[2]
+  ];
+  const cy = Math.cos(yaw);
+  const sy = Math.sin(yaw);
+  return [
+    cy * afterPitch[0] + sy * afterPitch[2],
+    afterPitch[1],
+    -sy * afterPitch[0] + cy * afterPitch[2]
+  ];
+}
+
+function rotateLocal(v, yaw, pitch) {
+  const cy = Math.cos(-yaw);
+  const sy = Math.sin(-yaw);
+  const afterYaw = [
+    cy * v[0] + sy * v[2],
+    v[1],
+    -sy * v[0] + cy * v[2]
+  ];
+  const cp = Math.cos(-pitch);
+  const sp = Math.sin(-pitch);
+  return [
+    afterYaw[0],
+    cp * afterYaw[1] - sp * afterYaw[2],
+    sp * afterYaw[1] + cp * afterYaw[2]
+  ];
+}
+          </code></pre></details>
+        </article>
+        <article class="card">
+          <h3><code>sampleEnvironment</code></h3>
+          <p>环境由常量 sky/ground 和 1–3 个解析 Gaussian lobe 构成，不依赖隐藏纹理。</p>
+          <details><summary>展开接口与 lobe</summary><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · environment helpers">
+function dot3(a, b) {
+  return a[0] * b[0] +
+    a[1] * b[1] +
+    a[2] * b[2];
+}
+
+function length3(v) {
+  return Math.hypot(v[0], v[1], v[2]);
+}
+
+function normalize3(v) {
+  const length = Math.max(length3(v), 1e-12);
+  return [
+    v[0] / length,
+    v[1] / length,
+    v[2] / length
+  ];
+}
+
+function sphericalLobe(direction, axis, sharpness) {
+  const a = normalize3(axis);
+  return Math.exp(
+    (dot3(direction, a) - 1) * sharpness
+  );
+}
+
+function sampleEnvironment(
+  preset,
+  worldDirection,
+  yaw,
+  pitch
+) {
+  const local = rotateLocal(
+    worldDirection,
+    yaw,
+    pitch
+  );
+  return sampleLocalEnvironment(preset, local);
+}
+
+function sampleLocalEnvironment(preset, d) {
+  if (preset === 0) {
+    const sky = Math.max(0, d[1]);
+    const ground = Math.max(0, -d[1]);
+    const q = sphericalLobe(
+      d,
+      [0.45, 0.68, 0.58],
+      18
+    ) * 2.8;
+    return [
+      0.12 + 0.18 * ground + 0.18 * sky + q,
+      0.15 + 0.25 * sky + 0.72 * q,
+      0.19 + 0.5 * sky + 0.38 * q
+    ];
+  }
+  if (preset === 1) {
+    const q = sphericalLobe(
+      d,
+      [-0.55, 0.18, 0.82],
+      55
+    ) * 5.2;
+    return [
+      0.035 + q,
+      0.045 + 0.64 * q,
+      0.06 + 0.32 * q
+    ];
+  }
+  if (preset === 2) {
+    const a = sphericalLobe(
+      d,
+      [-0.7, 0.45, 0.35],
+      8
+    ) * 1.8;
+    const b = sphericalLobe(
+      d,
+      [0.7, -0.05, 0.7],
+      10
+    ) * 1.6;
+    return [
+      0.05 + 0.25 * a + b,
+      0.055 + 0.75 * a + 0.28 * b,
+      0.07 + a + 0.2 * b
+    ];
+  }
+  const r = sphericalLobe(
+    d,
+    [0.72, 0.18, 0.55],
+    7
+  ) * 1.55;
+  const g = sphericalLobe(
+    d,
+    [-0.62, 0.48, 0.35],
+    7
+  ) * 1.5;
+  const b = sphericalLobe(
+    d,
+    [0.05, -0.5, 0.86],
+    7
+  ) * 1.65;
+  return [
+    0.045 + r + 0.12 * g,
+    0.045 + 0.18 * r + g + 0.1 * b,
+    0.055 + 0.08 * r + 0.15 * g + b
+  ];
+}
+          </code></pre></details>
+        </article>
+        <article class="card">
+          <h3>矩阵 helper</h3>
+          <p>全部是本页实际运行代码。逆矩阵使用带 pivot 的 Gauss–Jordan，仅处理最大 5×5 小矩阵。</p>
+          <details><summary>展开闭合实现</summary><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_sh.html · matrix helpers">
+function makeMatrix(rows, columns, value = 0) {
+  return Array.from(
+    { length: rows },
+    () => Array(columns).fill(value)
+  );
+}
+
+function addOuterProduct(matrix, column, row) {
+  for (let y = 0; y &lt; matrix.length; y += 1) {
+    for (let x = 0; x &lt; matrix[y].length; x += 1) {
+      matrix[y][x] += column[y] * row[x];
+    }
+  }
+}
+
+function multiplyMatrices(a, b) {
+  const output = makeMatrix(
+    a.length,
+    b[0].length,
+    0
+  );
+  for (let row = 0; row &lt; a.length; row += 1) {
+    for (
+      let column = 0;
+      column &lt; b[0].length;
+      column += 1
+    ) {
+      for (let k = 0; k &lt; b.length; k += 1) {
+        output[row][column] +=
+          a[row][k] * b[k][column];
+      }
+    }
+  }
+  return output;
+}
+
+function transposeMatrix(matrix) {
+  return matrix[0].map(
+    (_, column) => matrix.map(
+      (row) => row[column]
+    )
+  );
+}
+
+function invertMatrix(matrix) {
+  const n = matrix.length;
+  const augmented = matrix.map((row, y) => [
+    ...row,
+    ...Array.from(
+      { length: n },
+      (_, x) => x === y ? 1 : 0
+    )
+  ]);
+
+  for (let column = 0; column &lt; n; column += 1) {
+    let pivot = column;
+    for (let row = column + 1; row &lt; n; row += 1) {
+      if (
+        Math.abs(augmented[row][column]) >
+        Math.abs(augmented[pivot][column])
+      ) {
+        pivot = row;
+      }
+    }
+    if (Math.abs(augmented[pivot][column]) &lt; 1e-12) {
+      throw new Error('SH band fit matrix is singular');
+    }
+    [augmented[column], augmented[pivot]] =
+      [augmented[pivot], augmented[column]];
+    const divisor = augmented[column][column];
+    for (let x = 0; x &lt; 2 * n; x += 1) {
+      augmented[column][x] /= divisor;
+    }
+    for (let row = 0; row &lt; n; row += 1) {
+      if (row === column) continue;
+      const factor = augmented[row][column];
+      for (let x = 0; x &lt; 2 * n; x += 1) {
+        augmented[row][x] -=
+          factor * augmented[column][x];
+      }
+    }
+  }
+  return augmented.map((row) => row.slice(n));
+}
+          </code></pre></details>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="sources">
+      <h2>可靠来源与继续阅读</h2>
+      <div class="source-list">
+        <article class="source"><a href="https://graphics.stanford.edu/papers/envmap/" target="_blank" rel="noreferrer"><b>Ramamoorthi &amp; Hanrahan — An Efficient Representation for Irradiance Environment Maps</b></a><small>低阶 SH 表示漫反射 irradiance，以及 9 系数结论。</small></article>
+        <article class="source"><a href="https://www.ppsloan.org/publications/StupidSH36.pdf" target="_blank" rel="noreferrer"><b>Peter-Pike Sloan — Stupid Spherical Harmonics (SH) Tricks</b></a><small>工程约定、旋转、卷积、windowing 与 ringing。</small></article>
+        <article class="source"><a href="https://jcgt.org/published/0002/02/06/" target="_blank" rel="noreferrer"><b>Sloan — Efficient Spherical Harmonic Evaluation</b></a><small>可靠 SH 求值方法与实现资料。</small></article>
+        <article class="source"><a href="https://www.microsoft.com/en-us/research/publication/precomputed-radiance-transfer-for-real-time-rendering-in-dynamic-low-frequency-lighting-environments/" target="_blank" rel="noreferrer"><b>Sloan, Kautz, Snyder — Precomputed Radiance Transfer</b></a><small>动态低频 lighting SH 与静态 transfer 的组合。</small></article>
+      </div>
+    </section>
+
+    <nav class="footer-nav">
+      <a href="gi_module_ssao_ssgi.html">← 上一模块：SSAO / SSGI</a>
+      <a href="index.html">返回学习主页</a>
+      <a href="gi_module_voxelization.html">下一模块：Voxelization →</a>
+    </nav>
+  </main>
+
+  <script src="gi_course.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const $ = (id) => document.getElementById(id);
+    const TAU = Math.PI * 2;
+    const DEG = Math.PI / 180;
+    const state = {
+      preset: 3,
+      order: 2,
+      view: 'rotation',
+      yaw: 0,
+      pitch: 0,
+      samples: 1024,
+      selected: 0,
+      windowStrength: 1
+    };
+    const presetInfo = [
+      { name: 'Warm Sky · broad sun', axis: [0.45, 0.68, 0.58] },
+      { name: 'Sharp Window · 主窗', axis: [-0.55, 0.18, 0.82] },
+      { name: 'Two broad lights · 青色主 lobe', axis: [-0.7, 0.45, 0.35] },
+      { name: 'RGB Studio · 红色主 lobe', axis: [0.72, 0.18, 0.55] }
+    ];
+    const coefficientMeta = [
+      ['Y₀⁰', '总平均', '整个球同号'],
+      ['Y₁⁻¹', '上下倾向', '+Y 与 −Y'],
+      ['Y₁⁰', '前后倾向', '+Z 与 −Z'],
+      ['Y₁¹', '左右倾向', '+X 与 −X'],
+      ['Y₂⁻²', 'XY 对角', 'XY 同号/异号'],
+      ['Y₂⁻¹', 'YZ 对角', 'YZ 同号/异号'],
+      ['Y₂⁰', '双极 / 腰带', '3Z²−1'],
+      ['Y₂¹', 'XZ 对角', 'XZ 同号/异号'],
+      ['Y₂²', 'X² / Y²', 'X²−Y²']
+    ];
+
+    let baseCoefficients = Array.from({ length: 9 }, () => [0, 0, 0]);
+    let directCoefficients = Array.from({ length: 9 }, () => [0, 0, 0]);
+    let rotatedCoefficients = Array.from({ length: 9 }, () => [0, 0, 0]);
+    let rotationData = null;
+    const baseCache = new Map();
+
+    function dot3(a, b) {
+      return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    }
+
+    function cross3(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+      ];
+    }
+
+    function length3(v) {
+      return Math.hypot(v[0], v[1], v[2]);
+    }
+
+    function normalize3(v) {
+      const length = Math.max(length3(v), 1e-12);
+      return [v[0] / length, v[1] / length, v[2] / length];
+    }
+
+    function fibonacciDirection(index, count) {
+      const y = 1 - 2 * (index + 0.5) / count;
+      const radius = Math.sqrt(Math.max(0, 1 - y * y));
+      const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+      const azimuth = goldenAngle * index;
+      return [
+        Math.cos(azimuth) * radius,
+        y,
+        Math.sin(azimuth) * radius
+      ];
+    }
+
+    function basis9(direction) {
+      const [x, y, z] = direction;
+      return [
+        0.282095,
+        0.488603 * y,
+        0.488603 * z,
+        0.488603 * x,
+        1.092548 * x * y,
+        1.092548 * y * z,
+        0.315392 * (3 * z * z - 1),
+        1.092548 * x * z,
+        0.546274 * (x * x - y * y)
+      ];
+    }
+
+    function rotateWorld(v, yaw, pitch) {
+      const cp = Math.cos(pitch);
+      const sp = Math.sin(pitch);
+      const afterPitch = [
+        v[0],
+        cp * v[1] - sp * v[2],
+        sp * v[1] + cp * v[2]
+      ];
+      const cy = Math.cos(yaw);
+      const sy = Math.sin(yaw);
+      return [
+        cy * afterPitch[0] + sy * afterPitch[2],
+        afterPitch[1],
+        -sy * afterPitch[0] + cy * afterPitch[2]
+      ];
+    }
+
+    function rotateLocal(v, yaw, pitch) {
+      const cy = Math.cos(-yaw);
+      const sy = Math.sin(-yaw);
+      const afterYaw = [
+        cy * v[0] + sy * v[2],
+        v[1],
+        -sy * v[0] + cy * v[2]
+      ];
+      const cp = Math.cos(-pitch);
+      const sp = Math.sin(-pitch);
+      return [
+        afterYaw[0],
+        cp * afterYaw[1] - sp * afterYaw[2],
+        sp * afterYaw[1] + cp * afterYaw[2]
+      ];
+    }
+
+    function sphericalLobe(direction, axis, sharpness) {
+      return Math.exp(
+        (dot3(direction, normalize3(axis)) - 1) * sharpness
+      );
+    }
+
+    function sampleLocalEnvironment(preset, d) {
+      if (preset === 0) {
+        const sky = Math.max(0, d[1]);
+        const ground = Math.max(0, -d[1]);
+        const q = sphericalLobe(d, [0.45, 0.68, 0.58], 18) * 2.8;
+        return [
+          0.12 + 0.18 * ground + 0.18 * sky + q,
+          0.15 + 0.25 * sky + 0.72 * q,
+          0.19 + 0.5 * sky + 0.38 * q
+        ];
+      }
+      if (preset === 1) {
+        const q = sphericalLobe(d, [-0.55, 0.18, 0.82], 55) * 5.2;
+        return [
+          0.035 + q,
+          0.045 + 0.64 * q,
+          0.06 + 0.32 * q
+        ];
+      }
+      if (preset === 2) {
+        const a = sphericalLobe(d, [-0.7, 0.45, 0.35], 8) * 1.8;
+        const b = sphericalLobe(d, [0.7, -0.05, 0.7], 10) * 1.6;
+        return [
+          0.05 + 0.25 * a + b,
+          0.055 + 0.75 * a + 0.28 * b,
+          0.07 + a + 0.2 * b
+        ];
+      }
+      const r = sphericalLobe(d, [0.72, 0.18, 0.55], 7) * 1.55;
+      const g = sphericalLobe(d, [-0.62, 0.48, 0.35], 7) * 1.5;
+      const b = sphericalLobe(d, [0.05, -0.5, 0.86], 7) * 1.65;
+      return [
+        0.045 + r + 0.12 * g,
+        0.045 + 0.18 * r + g + 0.1 * b,
+        0.055 + 0.08 * r + 0.15 * g + b
+      ];
+    }
+
+    function sampleEnvironment(preset, worldDirection, yaw, pitch) {
+      return sampleLocalEnvironment(
+        preset,
+        rotateLocal(worldDirection, yaw, pitch)
+      );
+    }
+
+    function projectEnvironment(preset, yaw, pitch, sampleCount) {
+      const coefficients = Array.from(
+        { length: 9 },
+        () => [0, 0, 0]
+      );
+      const weight = 4 * Math.PI / sampleCount;
+      for (let s = 0; s < sampleCount; s += 1) {
+        const direction = fibonacciDirection(s, sampleCount);
+        const radiance = sampleEnvironment(
+          preset,
+          direction,
+          yaw,
+          pitch
+        );
+        const Y = basis9(direction);
+        for (let i = 0; i < 9; i += 1) {
+          for (let channel = 0; channel < 3; channel += 1) {
+            coefficients[i][channel] +=
+              radiance[channel] * Y[i] * weight;
+          }
+        }
+      }
+      return coefficients;
+    }
+
+    function makeMatrix(rows, columns, value = 0) {
+      return Array.from(
+        { length: rows },
+        () => Array(columns).fill(value)
+      );
+    }
+
+    function addOuterProduct(matrix, column, row) {
+      for (let y = 0; y < matrix.length; y += 1) {
+        for (let x = 0; x < matrix[y].length; x += 1) {
+          matrix[y][x] += column[y] * row[x];
+        }
+      }
+    }
+
+    function multiplyMatrices(a, b) {
+      const output = makeMatrix(a.length, b[0].length, 0);
+      for (let row = 0; row < a.length; row += 1) {
+        for (let column = 0; column < b[0].length; column += 1) {
+          for (let k = 0; k < b.length; k += 1) {
+            output[row][column] += a[row][k] * b[k][column];
+          }
+        }
+      }
+      return output;
+    }
+
+    function transposeMatrix(matrix) {
+      return matrix[0].map(
+        (_, column) => matrix.map((row) => row[column])
+      );
+    }
+
+    function invertMatrix(matrix) {
+      const n = matrix.length;
+      const augmented = matrix.map((row, y) => [
+        ...row,
+        ...Array.from({ length: n }, (_, x) => x === y ? 1 : 0)
+      ]);
+      for (let column = 0; column < n; column += 1) {
+        let pivot = column;
+        for (let row = column + 1; row < n; row += 1) {
+          if (
+            Math.abs(augmented[row][column]) >
+            Math.abs(augmented[pivot][column])
+          ) {
+            pivot = row;
+          }
+        }
+        if (Math.abs(augmented[pivot][column]) < 1e-12) {
+          throw new Error('SH band fit matrix is singular');
+        }
+        [augmented[column], augmented[pivot]] =
+          [augmented[pivot], augmented[column]];
+        const divisor = augmented[column][column];
+        for (let x = 0; x < 2 * n; x += 1) {
+          augmented[column][x] /= divisor;
+        }
+        for (let row = 0; row < n; row += 1) {
+          if (row === column) continue;
+          const factor = augmented[row][column];
+          for (let x = 0; x < 2 * n; x += 1) {
+            augmented[row][x] -= factor * augmented[column][x];
+          }
+        }
+      }
+      return augmented.map((row) => row.slice(n));
+    }
+
+    function buildBandRotation(yaw, pitch, fitSamples = 96) {
+      const ranges = [[0, 1], [1, 4], [4, 9]];
+      const full = makeMatrix(9, 9, 0);
+      const bands = [];
+      for (const [begin, end] of ranges) {
+        const width = end - begin;
+        const G = makeMatrix(width, width, 0);
+        const C = makeMatrix(width, width, 0);
+        for (let s = 0; s < fitSamples; s += 1) {
+          const local = fibonacciDirection(s, fitSamples);
+          const world = rotateWorld(local, yaw, pitch);
+          const a = basis9(world).slice(begin, end);
+          const b = basis9(local).slice(begin, end);
+          addOuterProduct(C, a, b);
+          addOuterProduct(G, b, b);
+        }
+        const D = multiplyMatrices(C, invertMatrix(G));
+        bands.push(D);
+        for (let row = 0; row < width; row += 1) {
+          for (let column = 0; column < width; column += 1) {
+            full[begin + row][begin + column] = D[row][column];
+          }
+        }
+      }
+      return { full, bands };
+    }
+
+    function applyCoefficientRotation(base, D) {
+      const output = Array.from(
+        { length: 9 },
+        () => [0, 0, 0]
+      );
+      for (let row = 0; row < 9; row += 1) {
+        for (let column = 0; column < 9; column += 1) {
+          for (let channel = 0; channel < 3; channel += 1) {
+            output[row][channel] +=
+              D[row][column] * base[column][channel];
+          }
+        }
+      }
+      return output;
+    }
+
+    function coefficientLimit() {
+      return state.order === 0 ? 1 : state.order === 1 ? 4 : 9;
+    }
+
+    function reconstruct(coefficients, direction, limit = 9) {
+      const output = [0, 0, 0];
+      const Y = basis9(direction);
+      for (let i = 0; i < limit; i += 1) {
+        for (let channel = 0; channel < 3; channel += 1) {
+          output[channel] += coefficients[i][channel] * Y[i];
+        }
+      }
+      return output;
+    }
+
+    function windowedReconstruction(coefficients, direction, strength) {
+      const output = [0, 0, 0];
+      const Y = basis9(direction);
+      for (let i = 0; i < 9; i += 1) {
+        const band = i === 0 ? 0 : i < 4 ? 1 : 2;
+        const hann = 0.5 * (
+          1 + Math.cos(Math.PI * band / 3)
+        );
+        const weight = 1 + (hann - 1) * strength;
+        for (let channel = 0; channel < 3; channel += 1) {
+          output[channel] +=
+            weight * coefficients[i][channel] * Y[i];
+        }
+      }
+      return output;
+    }
+
+    function luminance(rgb) {
+      return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    }
+
+    function l1VectorFromCoefficients(coefficients) {
+      return [
+        luminance(coefficients[3]),
+        luminance(coefficients[1]),
+        luminance(coefficients[2])
+      ];
+    }
+
+    function rotationMatrix3(yaw, pitch) {
+      const x = rotateWorld([1, 0, 0], yaw, pitch);
+      const y = rotateWorld([0, 1, 0], yaw, pitch);
+      const z = rotateWorld([0, 0, 1], yaw, pitch);
+      return [
+        [x[0], y[0], z[0]],
+        [x[1], y[1], z[1]],
+        [x[2], y[2], z[2]]
+      ];
+    }
+
+    function l2CoefficientsToTensor(c) {
+      const K = 1.092548;
+      const C = 0.315392;
+      const D = 0.546274;
+      return [
+        [-C * c[2] + D * c[4], K * c[0] / 2, K * c[3] / 2],
+        [K * c[0] / 2, -C * c[2] - D * c[4], K * c[1] / 2],
+        [K * c[3] / 2, K * c[1] / 2, 2 * C * c[2]]
+      ];
+    }
+
+    function tensorToL2Coefficients(Q) {
+      const K = 1.092548;
+      const C = 0.315392;
+      const D = 0.546274;
+      return [
+        2 * Q[0][1] / K,
+        2 * Q[1][2] / K,
+        Q[2][2] / (2 * C),
+        2 * Q[0][2] / K,
+        (Q[0][0] - Q[1][1]) / (2 * D)
+      ];
+    }
+
+    function rotateTensor(Q, R) {
+      return multiplyMatrices(
+        multiplyMatrices(R, Q),
+        transposeMatrix(R)
+      );
+    }
+
+    function bandEnergies(coefficients) {
+      const ranges = [[0, 1], [1, 4], [4, 9]];
+      return ranges.map(([begin, end]) => {
+        let energy = 0;
+        for (let i = begin; i < end; i += 1) {
+          for (let channel = 0; channel < 3; channel += 1) {
+            energy += coefficients[i][channel] ** 2;
+          }
+        }
+        return energy;
+      });
+    }
+
+    function maxAbsDifference(a, b) {
+      let maximum = 0;
+      for (let i = 0; i < a.length; i += 1) {
+        if (Array.isArray(a[i])) {
+          maximum = Math.max(maximum, maxAbsDifference(a[i], b[i]));
+        } else {
+          maximum = Math.max(maximum, Math.abs(a[i] - b[i]));
+        }
+      }
+      return maximum;
+    }
+
+    function relativeCoefficientRms(a, b, limit = 9) {
+      let error = 0;
+      let denominator = 0;
+      for (let i = 0; i < limit; i += 1) {
+        for (let channel = 0; channel < 3; channel += 1) {
+          error += (a[i][channel] - b[i][channel]) ** 2;
+          denominator += a[i][channel] ** 2;
+        }
+      }
+      return Math.sqrt(error / Math.max(denominator, 1e-12));
+    }
+
+    function environmentReconstructionRms() {
+      const count = 512;
+      let error = 0;
+      let denominator = 0;
+      for (let i = 0; i < count; i += 1) {
+        const d = fibonacciDirection(i, count);
+        const truth = sampleEnvironment(
+          state.preset,
+          d,
+          state.yaw,
+          state.pitch
+        );
+        const approximation = reconstruct(
+          directCoefficients,
+          d,
+          coefficientLimit()
+        );
+        for (let channel = 0; channel < 3; channel += 1) {
+          error += (truth[channel] - approximation[channel]) ** 2;
+          denominator += truth[channel] ** 2;
+        }
+      }
+      return Math.sqrt(error / Math.max(denominator, 1e-12));
+    }
+
+    function orthogonalityError(bands) {
+      let maximum = 0;
+      for (const D of bands) {
+        const product = multiplyMatrices(
+          transposeMatrix(D),
+          D
+        );
+        for (let row = 0; row < product.length; row += 1) {
+          for (let column = 0; column < product.length; column += 1) {
+            const expected = row === column ? 1 : 0;
+            maximum = Math.max(
+              maximum,
+              Math.abs(product[row][column] - expected)
+            );
+          }
+        }
+      }
+      return maximum;
+    }
+
+    function formatVector(v, digits = 3) {
+      return `(${v.map((x) =>
+        `${x >= 0 ? '+' : ''}${x.toFixed(digits)}`
+      ).join(', ')})`;
+    }
+
+    function formatScientific(value) {
+      return Math.abs(value) < 0.001
+        ? value.toExponential(2)
+        : value.toFixed(5);
+    }
+
+    function getBaseCoefficients(preset) {
+      if (!baseCache.has(preset)) {
+        baseCache.set(
+          preset,
+          projectEnvironment(preset, 0, 0, 4096)
+        );
+      }
+      return baseCache.get(preset);
+    }
+
+    function resize2DCanvas(canvas) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      const width = Math.max(320, Math.round(canvas.clientWidth * dpr));
+      const cssHeight = parseFloat(getComputedStyle(canvas).height);
+      const height = Math.max(180, Math.round(cssHeight * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      const context = canvas.getContext('2d');
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return {
+        context,
+        width: width / dpr,
+        height: height / dpr
+      };
+    }
+
+    function clearPlot(context, width, height, title) {
+      const gradient = context.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, '#0b1925');
+      gradient.addColorStop(1, '#050b11');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, width, height);
+      context.fillStyle = '#dcebf2';
+      context.font = '600 13px Segoe UI';
+      context.fillText(title, 16, 22);
+    }
+
+    function drawL0() {
+      const { context, width, height } = resize2DCanvas($('l0Canvas'));
+      clearPlot(context, width, height, 'L0 RGB：base / 重投影 / 系数旋转');
+      const values = [
+        ['Base', baseCoefficients[0], '#728698'],
+        ['重投影', directCoefficients[0], '#5bd8ff'],
+        ['系数旋转', rotatedCoefficients[0], '#ffc66f']
+      ];
+      const maximum = Math.max(
+        ...values.flatMap((item) => item[1].map(Math.abs)),
+        1e-6
+      );
+      const colors = ['#ff737c', '#70e3a7', '#65a9ff'];
+      const left = 80;
+      const usable = width - left - 24;
+      values.forEach((item, row) => {
+        const y = 52 + row * 58;
+        context.fillStyle = '#9eb2c2';
+        context.font = '12px Segoe UI';
+        context.fillText(item[0], 15, y + 17);
+        item[1].forEach((value, channel) => {
+          const barWidth = Math.max(1, usable * value / maximum);
+          context.fillStyle = '#132432';
+          context.fillRect(left, y + channel * 12, usable, 8);
+          context.fillStyle = colors[channel];
+          context.fillRect(left, y + channel * 12, barWidth, 8);
+        });
+      });
+    }
+
+    function projectIso(v) {
+      return [
+        0.82 * v[0] - 0.42 * v[2],
+        -0.82 * v[1] + 0.28 * v[2]
+      ];
+    }
+
+    function drawArrow2D(context, origin, vector, scale, color, label) {
+      const p = projectIso(vector);
+      const end = [
+        origin[0] + p[0] * scale,
+        origin[1] + p[1] * scale
+      ];
+      context.strokeStyle = color;
+      context.fillStyle = color;
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(origin[0], origin[1]);
+      context.lineTo(end[0], end[1]);
+      context.stroke();
+      const angle = Math.atan2(end[1] - origin[1], end[0] - origin[0]);
+      context.beginPath();
+      context.moveTo(end[0], end[1]);
+      context.lineTo(
+        end[0] - 10 * Math.cos(angle - 0.45),
+        end[1] - 10 * Math.sin(angle - 0.45)
+      );
+      context.lineTo(
+        end[0] - 10 * Math.cos(angle + 0.45),
+        end[1] - 10 * Math.sin(angle + 0.45)
+      );
+      context.closePath();
+      context.fill();
+      context.font = '11px Segoe UI';
+      context.fillText(label, end[0] + 6, end[1] - 5);
+    }
+
+    function l1Data() {
+      const base = l1VectorFromCoefficients(baseCoefficients);
+      const expected = rotateWorld(base, state.yaw, state.pitch);
+      const actual = l1VectorFromCoefficients(rotatedCoefficients);
+      const baseLength = Math.max(length3(base), 1e-12);
+      const expectedLength = Math.max(length3(expected), 1e-12);
+      const actualLength = Math.max(length3(actual), 1e-12);
+      const cosine = Math.max(
+        -1,
+        Math.min(1, dot3(expected, actual) / (expectedLength * actualLength))
+      );
+      return {
+        base,
+        expected,
+        actual,
+        angle: Math.acos(cosine) / DEG,
+        lengthDrift: Math.abs(actualLength - baseLength) / baseLength
+      };
+    }
+
+    function drawL1() {
+      const { context, width, height } = resize2DCanvas($('l1Canvas'));
+      clearPlot(context, width, height, 'L1 luminance vector：Rv 与 D₁c');
+      const data = l1Data();
+      const maxLength = Math.max(
+        length3(data.base),
+        length3(data.expected),
+        1e-6
+      );
+      const origin = [width * 0.3, height * 0.58];
+      const scale = Math.min(width * 0.25, height * 0.33) / maxLength;
+      context.strokeStyle = '#ffffff24';
+      context.lineWidth = 1;
+      drawArrow2D(context, origin, [maxLength, 0, 0], scale, '#a34e55', '+X');
+      drawArrow2D(context, origin, [0, maxLength, 0], scale, '#478f6b', '+Y');
+      drawArrow2D(context, origin, [0, 0, maxLength], scale, '#4779ad', '+Z');
+      drawArrow2D(context, origin, data.base, scale, '#7c8c98', 'base');
+      drawArrow2D(context, origin, data.expected, scale, '#73e1aa', 'Rv');
+      drawArrow2D(context, origin, data.actual, scale * 0.96, '#b09cff', 'D₁c');
+
+      const rows = [
+        ['Base', data.base, '#7c8c98'],
+        ['Rv', data.expected, '#73e1aa'],
+        ['D₁c', data.actual, '#b09cff']
+      ];
+      const panelX = width * 0.58;
+      context.font = '12px ui-monospace, Consolas';
+      rows.forEach((row, index) => {
+        const y = 70 + index * 62;
+        context.fillStyle = row[2];
+        context.fillText(row[0], panelX, y);
+        context.fillStyle = '#c8d7df';
+        context.fillText(
+          `X ${row[1][0].toFixed(4)}`,
+          panelX,
+          y + 17
+        );
+        context.fillText(
+          `Y ${row[1][1].toFixed(4)}`,
+          panelX,
+          y + 33
+        );
+        context.fillText(
+          `Z ${row[1][2].toFixed(4)}`,
+          panelX,
+          y + 49
+        );
+      });
+    }
+
+    function l2Data() {
+      const base = baseCoefficients
+        .slice(4, 9)
+        .map(luminance);
+      const numeric = rotatedCoefficients
+        .slice(4, 9)
+        .map(luminance);
+      const direct = directCoefficients
+        .slice(4, 9)
+        .map(luminance);
+      const Q = l2CoefficientsToTensor(base);
+      const R = rotationMatrix3(state.yaw, state.pitch);
+      const rotatedQ = rotateTensor(Q, R);
+      const tensor = tensorToL2Coefficients(rotatedQ);
+      return {
+        base,
+        numeric,
+        direct,
+        tensor,
+        Q,
+        rotatedQ,
+        error: maxAbsDifference(numeric, tensor),
+        trace: rotatedQ[0][0] + rotatedQ[1][1] + rotatedQ[2][2]
+      };
+    }
+
+    function drawL2() {
+      const { context, width, height } = resize2DCanvas($('l2Canvas'));
+      clearPlot(context, width, height, 'L2 五项：重投影 / D₂c / RQRᵀ');
+      const data = l2Data();
+      const labels = ['XY', 'YZ', '3Z²−1', 'XZ', 'X²−Y²'];
+      const series = [
+        ['重投影', data.direct, '#5bd8ff'],
+        ['D₂c', data.numeric, '#ffc66f'],
+        ['RQRᵀ', data.tensor, '#73e1aa']
+      ];
+      const maximum = Math.max(
+        ...series.flatMap((item) => item[1].map(Math.abs)),
+        1e-6
+      );
+      const left = 42;
+      const right = 18;
+      const top = 48;
+      const bottom = 42;
+      const plotWidth = width - left - right;
+      const centerY = top + (height - top - bottom) / 2;
+      context.strokeStyle = '#ffffff35';
+      context.beginPath();
+      context.moveTo(left, centerY);
+      context.lineTo(width - right, centerY);
+      context.stroke();
+      const groupWidth = plotWidth / 5;
+      const barWidth = Math.min(14, groupWidth / 5);
+      labels.forEach((label, group) => {
+        const centerX = left + (group + 0.5) * groupWidth;
+        context.fillStyle = '#9eb2c2';
+        context.font = '11px Segoe UI';
+        context.textAlign = 'center';
+        context.fillText(label, centerX, height - 15);
+        series.forEach((item, index) => {
+          const value = item[1][group];
+          const h = value / maximum * (height - top - bottom) * 0.43;
+          context.fillStyle = item[2];
+          const x = centerX + (index - 1) * (barWidth + 3) - barWidth / 2;
+          context.fillRect(x, centerY - Math.max(h, 0), barWidth, Math.abs(h));
+        });
+      });
+      context.textAlign = 'left';
+      series.forEach((item, index) => {
+        context.fillStyle = item[2];
+        context.fillRect(left + index * 110, 30, 12, 4);
+        context.fillStyle = '#b9c9d4';
+        context.fillText(item[0], left + 17 + index * 110, 35);
+      });
+    }
+
+    function drawEnergy() {
+      const { context, width, height } = resize2DCanvas($('energyCanvas'));
+      clearPlot(context, width, height, 'Band energy：base / 重投影 / 系数旋转');
+      const series = [
+        ['Base', bandEnergies(baseCoefficients), '#748896'],
+        ['重投影', bandEnergies(directCoefficients), '#5bd8ff'],
+        ['系数旋转', bandEnergies(rotatedCoefficients), '#ffc66f']
+      ];
+      const maximum = Math.max(
+        ...series.flatMap((item) => item[1]),
+        1e-9
+      );
+      const labels = ['L0', 'L1', 'L2'];
+      const left = 46;
+      const top = 52;
+      const bottom = 38;
+      const plotHeight = height - top - bottom;
+      const groupWidth = (width - left - 20) / 3;
+      labels.forEach((label, group) => {
+        const cx = left + (group + 0.5) * groupWidth;
+        series.forEach((item, index) => {
+          const barWidth = Math.min(24, groupWidth / 5);
+          const h = item[1][group] / maximum * plotHeight;
+          context.fillStyle = item[2];
+          context.fillRect(
+            cx + (index - 1) * (barWidth + 5) - barWidth / 2,
+            top + plotHeight - h,
+            barWidth,
+            h
+          );
+        });
+        context.fillStyle = '#b9cad4';
+        context.textAlign = 'center';
+        context.fillText(label, cx, height - 14);
+      });
+      context.textAlign = 'left';
+      series.forEach((item, index) => {
+        context.fillStyle = item[2];
+        context.fillRect(left + index * 112, 31, 12, 4);
+        context.fillStyle = '#b9c9d4';
+        context.fillText(item[0], left + 17 + index * 112, 36);
+      });
+    }
+
+    function drawDiffuse() {
+      const { context, width, height } = resize2DCanvas($('diffuseCanvas'));
+      clearPlot(context, width, height, 'Radiance coefficients → Lambert-convolved irradiance');
+      const raw = bandEnergies(directCoefficients);
+      const scales = [Math.PI, 2 * Math.PI / 3, Math.PI / 4];
+      const convolved = raw.map(
+        (energy, band) => energy * scales[band] ** 2
+      );
+      const maximum = Math.max(...raw, ...convolved, 1e-9);
+      const left = 58;
+      const top = 45;
+      const plotHeight = height - top - 35;
+      const groupWidth = (width - left - 20) / 3;
+      ['L0 × π', 'L1 × 2π/3', 'L2 × π/4'].forEach((label, band) => {
+        const center = left + (band + 0.5) * groupWidth;
+        const barWidth = Math.min(34, groupWidth / 4);
+        const rawHeight = raw[band] / maximum * plotHeight;
+        const convolvedHeight = convolved[band] / maximum * plotHeight;
+        context.fillStyle = '#6f8493';
+        context.fillRect(
+          center - barWidth - 3,
+          top + plotHeight - rawHeight,
+          barWidth,
+          rawHeight
+        );
+        context.fillStyle = '#73e1aa';
+        context.fillRect(
+          center + 3,
+          top + plotHeight - convolvedHeight,
+          barWidth,
+          convolvedHeight
+        );
+        context.fillStyle = '#b8c8d3';
+        context.textAlign = 'center';
+        context.fillText(label, center, height - 12);
+      });
+      context.textAlign = 'left';
+    }
+
+    function ringingData() {
+      const coefficients = getBaseCoefficients(1);
+      const axis = normalize3(presetInfo[1].axis);
+      let tangent = normalize3(cross3([0, 1, 0], axis));
+      if (length3(tangent) < 1e-5) tangent = [1, 0, 0];
+      const samples = [];
+      let minRaw = Infinity;
+      let minWindow = Infinity;
+      let rawError = 0;
+      let windowError = 0;
+      let denominator = 0;
+      for (let i = 0; i <= 360; i += 1) {
+        const angle = -Math.PI + TAU * i / 360;
+        const direction = normalize3([
+          axis[0] * Math.cos(angle) + tangent[0] * Math.sin(angle),
+          axis[1] * Math.cos(angle) + tangent[1] * Math.sin(angle),
+          axis[2] * Math.cos(angle) + tangent[2] * Math.sin(angle)
+        ]);
+        const truth = luminance(sampleLocalEnvironment(1, direction));
+        const raw = luminance(reconstruct(coefficients, direction, 9));
+        const windowed = luminance(windowedReconstruction(
+          coefficients,
+          direction,
+          state.windowStrength
+        ));
+        samples.push({ angle, truth, raw, windowed });
+        minRaw = Math.min(minRaw, raw);
+        minWindow = Math.min(minWindow, windowed);
+        rawError += (truth - raw) ** 2;
+        windowError += (truth - windowed) ** 2;
+        denominator += truth ** 2;
+      }
+      return {
+        samples,
+        minRaw,
+        minWindow,
+        rawRms: Math.sqrt(rawError / Math.max(denominator, 1e-12)),
+        windowRms: Math.sqrt(windowError / Math.max(denominator, 1e-12))
+      };
+    }
+
+    function drawRinging() {
+      const { context, width, height } = resize2DCanvas($('ringingCanvas'));
+      clearPlot(context, width, height, 'Sharp Window 大圆切片（中心 0° 对准亮窗）');
+      const data = ringingData();
+      const allValues = data.samples.flatMap(
+        (sample) => [sample.truth, sample.raw, sample.windowed]
+      );
+      const minValue = Math.min(-0.08, ...allValues);
+      const maxValue = Math.max(0.3, ...allValues);
+      const left = 48;
+      const right = 18;
+      const top = 37;
+      const bottom = 35;
+      const xFor = (angle) =>
+        left + (angle + Math.PI) / TAU * (width - left - right);
+      const yFor = (value) =>
+        top + (maxValue - value) / (maxValue - minValue) *
+          (height - top - bottom);
+      context.strokeStyle = '#ffffff2d';
+      context.setLineDash([5, 5]);
+      context.beginPath();
+      context.moveTo(left, yFor(0));
+      context.lineTo(width - right, yFor(0));
+      context.stroke();
+      context.setLineDash([]);
+      const curves = [
+        ['truth', '#f0f5f8', 2.2],
+        ['raw', '#ff7d89', 2],
+        ['windowed', '#73e1aa', 2]
+      ];
+      curves.forEach(([key, color, lineWidth]) => {
+        context.strokeStyle = color;
+        context.lineWidth = lineWidth;
+        context.beginPath();
+        data.samples.forEach((sample, index) => {
+          const x = xFor(sample.angle);
+          const y = yFor(sample[key]);
+          if (index === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        });
+        context.stroke();
+      });
+      context.fillStyle = '#aebfca';
+      context.font = '11px Segoe UI';
+      context.textAlign = 'center';
+      [-180, -90, 0, 90, 180].forEach((degree) => {
+        context.fillText(
+          `${degree}°`,
+          xFor(degree * DEG),
+          height - 12
+        );
+      });
+      context.textAlign = 'left';
+      const legends = [
+        ['真实尖窗', '#f0f5f8'],
+        ['L2 未加窗', '#ff7d89'],
+        ['L2 Hann', '#73e1aa']
+      ];
+      legends.forEach((item, index) => {
+        context.fillStyle = item[1];
+        context.fillRect(left + index * 105, 27, 13, 3);
+        context.fillStyle = '#bdcbd4';
+        context.fillText(item[0], left + 18 + index * 105, 31);
+      });
+      $('ringMinRaw').textContent = data.minRaw.toFixed(4);
+      $('ringMinWindow').textContent = data.minWindow.toFixed(4);
+      $('ringRmsRaw').textContent = `${(data.rawRms * 100).toFixed(1)}%`;
+      $('ringRmsWindow').textContent = `${(data.windowRms * 100).toFixed(1)}%`;
+      $('windowValues').textContent =
+        `strength=${state.windowStrength.toFixed(2)}；` +
+        `min ${data.minRaw.toFixed(4)} → ${data.minWindow.toFixed(4)}；` +
+        `RMS ${(data.rawRms * 100).toFixed(1)}% → ` +
+        `${(data.windowRms * 100).toFixed(1)}%。`;
+    }
+
+    function updateOrientationOverlay() {
+      const main = normalize3(rotateWorld(
+        presetInfo[state.preset].axis,
+        state.yaw,
+        state.pitch
+      ));
+      const projected = projectIso(main);
+      const scale = 67;
+      const x = 88 + projected[0] * scale;
+      const y = 430 + projected[1] * scale;
+      $('lobeArrow').setAttribute('x2', x.toFixed(1));
+      $('lobeArrow').setAttribute('y2', y.toFixed(1));
+      $('lobeArrowLabel').setAttribute('x', (x + 7).toFixed(1));
+      $('lobeArrowLabel').setAttribute('y', (y - 6).toFixed(1));
+      $('mainDirReadout').textContent = formatVector(main, 2);
+      $('lightDirection').textContent = `ω = ${formatVector(main, 2)}`;
+      $('lightName').textContent = presetInfo[state.preset].name;
+      return main;
+    }
+
+    function updateMatrixGrid() {
+      const matrix = rotationData.bands[2];
+      const maximum = Math.max(
+        ...matrix.flat().map(Math.abs),
+        1e-9
+      );
+      $('l2Matrix').innerHTML = '';
+      matrix.forEach((row) => {
+        row.forEach((value) => {
+          const cell = document.createElement('span');
+          const alpha = 0.12 + 0.72 * Math.abs(value) / maximum;
+          cell.style.background = value >= 0
+            ? `rgba(91,216,255,${alpha})`
+            : `rgba(255,125,137,${alpha})`;
+          cell.textContent = value.toFixed(2);
+          cell.title = value.toFixed(7);
+          $('l2Matrix').append(cell);
+        });
+      });
+    }
+
+    function updateCoefficientGrid() {
+      $('coeffGrid').innerHTML = '';
+      coefficientMeta.forEach((meta, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `coeff${state.selected === index ? ' active' : ''}`;
+        const direct = luminance(directCoefficients[index]);
+        const rotated = luminance(rotatedCoefficients[index]);
+        button.innerHTML =
+          `<span class="head"><code>${meta[0]}</code><b>${meta[1]}</b></span>` +
+          `<small>${meta[2]}</small>` +
+          `<span class="values">重投影 ${direct.toFixed(4)}<br>` +
+          `系数旋转 ${rotated.toFixed(4)}<br>` +
+          `差 ${Math.abs(direct - rotated).toExponential(2)}</span>`;
+        button.addEventListener('click', () => {
+          state.selected = index;
+          updateCoefficientGrid();
+          updateViewLabels();
+          renderWebGL();
+        });
+        $('coeffGrid').append(button);
+      });
+    }
+
+    function updateTextAndMetrics(reprojectTime, rotationTime) {
+      const coefficientRms = relativeCoefficientRms(
+        directCoefficients,
+        rotatedCoefficients,
+        coefficientLimit()
+      );
+      const reconstructionRms = environmentReconstructionRms();
+      $('reconstructionRms').textContent =
+        `${(reconstructionRms * 100).toFixed(1)}%`;
+      $('coefficientRms').textContent =
+        `${(coefficientRms * 100).toFixed(3)}%`;
+      $('reprojectMs').textContent = `${reprojectTime.toFixed(2)} ms`;
+      $('rotateMs').textContent = `${rotationTime.toFixed(2)} ms`;
+      $('routeAResult').textContent =
+        `${state.samples} samples · ${reprojectTime.toFixed(2)} ms`;
+      $('routeBResult').textContent =
+        `105 MAC 应用；教学拟合共 ${rotationTime.toFixed(2)} ms`;
+
+      const degreesYaw = state.yaw / DEG;
+      const degreesPitch = state.pitch / DEG;
+      $('yawReadout').textContent = `${degreesYaw.toFixed(1)}°`;
+      $('pitchReadout').textContent = `${degreesPitch.toFixed(1)}°`;
+      $('yawOut').value = `${degreesYaw.toFixed(1)}°`;
+      $('pitchOut').value = `${degreesPitch.toFixed(1)}°`;
+      $('projectionValues').textContent =
+        `N=${state.samples}；每方向权重 4π/N≈` +
+        `${(4 * Math.PI / state.samples).toFixed(6)}；` +
+        `读取 ${state.samples} 次环境，计算 ${state.samples * 9} 个基函数值。`;
+      $('rotationValues').textContent =
+        `当前 yaw=${degreesYaw.toFixed(1)}°、pitch=${degreesPitch.toFixed(1)}°；` +
+        `重投影与 D(R)c 的相对 RMS=${(coefficientRms * 100).toFixed(4)}%。`;
+
+      const l0Drift = Math.max(
+        ...baseCoefficients[0].map(
+          (value, channel) =>
+            Math.abs(value - rotatedCoefficients[0][channel])
+        )
+      );
+      $('l0Drift').textContent = l0Drift.toExponential(2);
+      $('l0Values').textContent =
+        `base=${formatVector(baseCoefficients[0], 5)}；` +
+        `D₀c=${formatVector(rotatedCoefficients[0], 5)}；` +
+        `最大通道漂移=${l0Drift.toExponential(2)}。`;
+
+      const l1 = l1Data();
+      $('l1AngleError').textContent = `${l1.angle.toExponential(2)}°`;
+      $('l1LengthDrift').textContent =
+        `${(l1.lengthDrift * 100).toExponential(2)}%`;
+      $('l1Values').textContent =
+        `base=${formatVector(l1.base, 4)}；` +
+        `Rv=${formatVector(l1.expected, 4)}；` +
+        `D₁c=${formatVector(l1.actual, 4)}。`;
+
+      const l2 = l2Data();
+      $('l2TensorError').textContent = l2.error.toExponential(2);
+      $('l2Trace').textContent = l2.trace.toExponential(2);
+      $('l2Values').textContent =
+        `D₂c=[${l2.numeric.map((x) => x.toFixed(4)).join(', ')}]；` +
+        `RQRᵀ=[${l2.tensor.map((x) => x.toFixed(4)).join(', ')}]；` +
+        `最大差=${l2.error.toExponential(2)}。`;
+
+      const baseEnergy = bandEnergies(baseCoefficients);
+      const rotatedEnergy = bandEnergies(rotatedCoefficients);
+      const energyDrift = Math.max(
+        ...baseEnergy.map(
+          (value, band) =>
+            Math.abs(rotatedEnergy[band] - value) /
+            Math.max(value, 1e-12)
+        )
+      );
+      const ortho = orthogonalityError(rotationData.bands);
+      $('energyDrift').textContent =
+        `${(energyDrift * 100).toExponential(2)}%`;
+      $('orthogonalityError').textContent = ortho.toExponential(2);
+      $('energyValues').textContent =
+        `base=[${baseEnergy.map((x) => x.toFixed(5)).join(', ')}]；` +
+        `rotated=[${rotatedEnergy.map((x) => x.toFixed(5)).join(', ')}]。`;
+      $('costReproject').textContent =
+        `${state.samples}×9=${state.samples * 9} 次系数加权，` +
+        `读取 ${state.samples} 次环境；本机 ${reprojectTime.toFixed(2)} ms。`;
+    }
+
+    const canvas = $('shDemo');
+    const gl = canvas.getContext('webgl2', {
+      antialias: true,
+      alpha: false,
+      preserveDrawingBuffer: true
+    });
+    let webGLProgram = null;
+    let webGLUniforms = null;
+
+    const vertexSource = `#version 300 es
+precision highp float;
+out vec2 vUv;
+void main() {
+  vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+  vUv = p;
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+    const fragmentSource = `#version 300 es
+precision highp float;
+in vec2 vUv;
+out vec4 outColor;
+uniform vec3 uDirect[9];
+uniform vec3 uRotated[9];
+uniform int uPreset;
+uniform int uOrder;
+uniform int uView;
+uniform int uSelected;
+uniform float uYaw;
+uniform float uPitch;
+uniform float uAspect;
+uniform vec3 uMainDirection;
+
+float shBasis(int i, vec3 d) {
+  float x = d.x;
+  float y = d.y;
+  float z = d.z;
+  if (i == 0) return 0.282095;
+  if (i == 1) return 0.488603 * y;
+  if (i == 2) return 0.488603 * z;
+  if (i == 3) return 0.488603 * x;
+  if (i == 4) return 1.092548 * x * y;
+  if (i == 5) return 1.092548 * y * z;
+  if (i == 6) return 0.315392 * (3.0 * z * z - 1.0);
+  if (i == 7) return 1.092548 * x * z;
+  return 0.546274 * (x * x - y * y);
+}
+
+vec3 localDirection(vec3 d) {
+  float c = cos(-uYaw);
+  float s = sin(-uYaw);
+  d = vec3(c * d.x + s * d.z, d.y, -s * d.x + c * d.z);
+  c = cos(-uPitch);
+  s = sin(-uPitch);
+  return vec3(d.x, c * d.y - s * d.z, s * d.y + c * d.z);
+}
+
+float lobe(vec3 d, vec3 axis, float sharpness) {
+  return exp((dot(d, normalize(axis)) - 1.0) * sharpness);
+}
+
+vec3 environment(vec3 worldDirection) {
+  vec3 d = localDirection(worldDirection);
+  if (uPreset == 0) {
+    float sky = max(0.0, d.y);
+    float ground = max(0.0, -d.y);
+    float q = lobe(d, vec3(0.45, 0.68, 0.58), 18.0) * 2.8;
+    return vec3(
+      0.12 + 0.18 * ground + 0.18 * sky + q,
+      0.15 + 0.25 * sky + 0.72 * q,
+      0.19 + 0.50 * sky + 0.38 * q
+    );
+  }
+  if (uPreset == 1) {
+    float q = lobe(d, vec3(-0.55, 0.18, 0.82), 55.0) * 5.2;
+    return vec3(0.035 + q, 0.045 + 0.64 * q, 0.06 + 0.32 * q);
+  }
+  if (uPreset == 2) {
+    float a = lobe(d, vec3(-0.7, 0.45, 0.35), 8.0) * 1.8;
+    float b = lobe(d, vec3(0.7, -0.05, 0.7), 10.0) * 1.6;
+    return vec3(
+      0.05 + 0.25 * a + b,
+      0.055 + 0.75 * a + 0.28 * b,
+      0.07 + a + 0.2 * b
+    );
+  }
+  float r = lobe(d, vec3(0.72, 0.18, 0.55), 7.0) * 1.55;
+  float g = lobe(d, vec3(-0.62, 0.48, 0.35), 7.0) * 1.5;
+  float b = lobe(d, vec3(0.05, -0.5, 0.86), 7.0) * 1.65;
+  return vec3(
+    0.045 + r + 0.12 * g,
+    0.045 + 0.18 * r + g + 0.1 * b,
+    0.055 + 0.08 * r + 0.15 * g + b
+  );
+}
+
+int activeCount() {
+  return uOrder == 0 ? 1 : uOrder == 1 ? 4 : 9;
+}
+
+vec3 reconstructDirect(vec3 d) {
+  vec3 value = vec3(0.0);
+  for (int i = 0; i < 9; i += 1) {
+    if (i >= activeCount()) break;
+    value += uDirect[i] * shBasis(i, d);
+  }
+  return value;
+}
+
+vec3 reconstructRotated(vec3 d) {
+  vec3 value = vec3(0.0);
+  for (int i = 0; i < 9; i += 1) {
+    if (i >= activeCount()) break;
+    value += uRotated[i] * shBasis(i, d);
+  }
+  return value;
+}
+
+vec3 diffuseIrradiance(vec3 normal) {
+  vec3 irradiance = vec3(0.0);
+  for (int i = 0; i < 9; i += 1) {
+    if (i >= activeCount()) break;
+    float bandScale =
+      i == 0 ? 3.14159265 :
+      i < 4 ? 2.09439510 :
+              0.78539816;
+    irradiance += uDirect[i] * shBasis(i, normal) * bandScale;
+  }
+  return max(irradiance, vec3(0.0));
+}
+
+vec3 toneMap(vec3 color) {
+  return pow(
+    1.0 - exp(-max(color, vec3(0.0))),
+    vec3(1.0 / 2.2)
+  );
+}
+
+void main() {
+  float panel = floor(vUv.x * 3.0);
+  float localX = fract(vUv.x * 3.0);
+  vec2 q = vec2(
+    localX * 2.0 - 1.0,
+    (vUv.y * 2.0 - 1.0) * 3.0 / uAspect
+  );
+  float radiusSquared = dot(q, q);
+  vec3 background = mix(
+    vec3(0.015, 0.025, 0.042),
+    vec3(0.045, 0.07, 0.10),
+    vUv.y
+  );
+  if (radiusSquared > 1.0) {
+    outColor = vec4(background, 1.0);
+    return;
+  }
+  vec3 normal = normalize(vec3(
+    q,
+    sqrt(max(0.0, 1.0 - radiusSquared))
+  ));
+  vec3 color;
+  if (uView == 0) {
+    if (panel < 0.5) color = environment(normal);
+    else if (panel < 1.5) color = reconstructDirect(normal);
+    else color = reconstructRotated(normal);
+  } else {
+    if (panel < 0.5) color = environment(normal);
+    else if (panel < 1.5) {
+      color = 0.68 / 3.14159265 * diffuseIrradiance(normal);
+    } else {
+      float value = shBasis(uSelected, normal);
+      float magnitude = min(abs(value) * 2.4, 1.0);
+      color = value >= 0.0
+        ? mix(vec3(0.12, 0.07, 0.02), vec3(1.0, 0.42, 0.07), magnitude)
+        : mix(vec3(0.02, 0.07, 0.13), vec3(0.08, 0.5, 1.0), magnitude);
+    }
+  }
+  float marker = uView == 0 && panel < 0.5 && uMainDirection.z > 0.0
+    ? 1.0 - smoothstep(0.025, 0.052, length(q - uMainDirection.xy))
+    : 0.0;
+  color = toneMap(color);
+  color = mix(color, vec3(1.0, 0.82, 0.28), marker);
+  color += pow(1.0 - normal.z, 3.0) * vec3(0.07, 0.09, 0.13);
+  outColor = vec4(color, 1.0);
+}`;
+
+    function compileShader(type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const log = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
+        throw new Error(log);
+      }
+      return shader;
+    }
+
+    function initWebGL() {
+      if (!gl) {
+        $('glStatus').textContent =
+          'WebGL2 不可用；下方 CPU 数值实验仍可运行。';
+        $('glStatus').style.color = 'var(--red)';
+        return;
+      }
+      try {
+        const vertex = compileShader(gl.VERTEX_SHADER, vertexSource);
+        const fragment = compileShader(gl.FRAGMENT_SHADER, fragmentSource);
+        webGLProgram = gl.createProgram();
+        gl.attachShader(webGLProgram, vertex);
+        gl.attachShader(webGLProgram, fragment);
+        gl.linkProgram(webGLProgram);
+        if (!gl.getProgramParameter(webGLProgram, gl.LINK_STATUS)) {
+          throw new Error(gl.getProgramInfoLog(webGLProgram));
+        }
+        gl.deleteShader(vertex);
+        gl.deleteShader(fragment);
+        const names = [
+          'uDirect[0]', 'uRotated[0]', 'uPreset', 'uOrder',
+          'uView', 'uSelected', 'uYaw', 'uPitch', 'uAspect',
+          'uMainDirection'
+        ];
+        webGLUniforms = Object.fromEntries(
+          names.map((name) => [
+            name,
+            gl.getUniformLocation(webGLProgram, name)
+          ])
+        );
+        gl.bindVertexArray(gl.createVertexArray());
+        $('glStatus').textContent =
+          'WebGL2 正常 · 2 个 vec3[9] uniform · glError 0';
+        $('glStatus').style.color = 'var(--green)';
+      } catch (error) {
+        console.error(error);
+        webGLProgram = null;
+        $('glStatus').textContent = `WebGL2 shader 失败：${error.message}`;
+        $('glStatus').style.color = 'var(--red)';
+      }
+    }
+
+    function renderWebGL() {
+      if (!gl || !webGLProgram) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+      const width = Math.max(600, Math.round(canvas.clientWidth * dpr));
+      const height = Math.max(280, Math.round(width * 7 / 15));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      const main = normalize3(rotateWorld(
+        presetInfo[state.preset].axis,
+        state.yaw,
+        state.pitch
+      ));
+      gl.viewport(0, 0, width, height);
+      gl.useProgram(webGLProgram);
+      gl.uniform3fv(
+        webGLUniforms['uDirect[0]'],
+        new Float32Array(directCoefficients.flat())
+      );
+      gl.uniform3fv(
+        webGLUniforms['uRotated[0]'],
+        new Float32Array(rotatedCoefficients.flat())
+      );
+      gl.uniform1i(webGLUniforms.uPreset, state.preset);
+      gl.uniform1i(webGLUniforms.uOrder, state.order);
+      gl.uniform1i(webGLUniforms.uView, state.view === 'rotation' ? 0 : 1);
+      gl.uniform1i(webGLUniforms.uSelected, state.selected);
+      gl.uniform1f(webGLUniforms.uYaw, state.yaw);
+      gl.uniform1f(webGLUniforms.uPitch, state.pitch);
+      gl.uniform1f(webGLUniforms.uAspect, width / height);
+      gl.uniform3fv(webGLUniforms.uMainDirection, main);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      const error = gl.getError();
+      if (error !== gl.NO_ERROR) {
+        $('glStatus').textContent = `WebGL2 glError ${error}`;
+        $('glStatus').style.color = 'var(--red)';
+      }
+    }
+
+    function updateViewLabels() {
+      document.querySelectorAll('[data-view]').forEach((button) => {
+        button.classList.toggle(
+          'active',
+          button.dataset.view === state.view
+        );
+      });
+      if (state.view === 'rotation') {
+        $('panel0Label').textContent = '① 旋转后的真实环境';
+        $('panel1Label').textContent = '② 重新采样并投影';
+        $('panel2Label').textContent = '③ 只旋转已有系数';
+        $('stageLegend').textContent =
+          '旋转验证：中球每次重新访问环境函数；右球不再访问环境，只执行 L0/L1/L2 三个 band 的矩阵乘法。';
+      } else {
+        $('panel0Label').textContent = '① 旋转后的真实环境';
+        $('panel1Label').textContent = '② Lambert 漫反射';
+        $('panel2Label').textContent =
+          `③ ${coefficientMeta[state.selected][0]} · ${coefficientMeta[state.selected][1]}`;
+        $('stageLegend').textContent =
+          '基函数模式：中球对直接投影系数按 band 乘 Lambert kernel；右球橙色为所选基函数正值，蓝色为负值。';
+      }
+    }
+
+    let scheduled = false;
+    function scheduleRecompute() {
+      if (scheduled) return;
+      scheduled = true;
+      let finished = false;
+      const run = () => {
+        if (finished) return;
+        finished = true;
+        scheduled = false;
+        recompute();
+      };
+      requestAnimationFrame(run);
+      // Headless、后台标签页或省电模式可能暂停 requestAnimationFrame。
+      // 50 ms 的后备定时器保证控件与数值实验仍会更新。
+      setTimeout(run, 50);
+    }
+
+    function recompute() {
+      baseCoefficients = getBaseCoefficients(state.preset);
+      const startProjection = performance.now();
+      directCoefficients = projectEnvironment(
+        state.preset,
+        state.yaw,
+        state.pitch,
+        state.samples
+      );
+      const reprojectTime = performance.now() - startProjection;
+      const startRotation = performance.now();
+      rotationData = buildBandRotation(
+        state.yaw,
+        state.pitch,
+        96
+      );
+      rotatedCoefficients = applyCoefficientRotation(
+        baseCoefficients,
+        rotationData.full
+      );
+      const rotationTime = performance.now() - startRotation;
+
+      updateOrientationOverlay();
+      updateTextAndMetrics(reprojectTime, rotationTime);
+      updateMatrixGrid();
+      updateCoefficientGrid();
+      drawL0();
+      drawL1();
+      drawL2();
+      drawEnergy();
+      drawDiffuse();
+      drawRinging();
+      updateViewLabels();
+      renderWebGL();
+    }
+
+    function setAngles(yawDegrees, pitchDegrees) {
+      let wrappedYaw = ((yawDegrees + 180) % 360 + 360) % 360 - 180;
+      if (Math.abs(wrappedYaw + 180) < 1e-8 && yawDegrees > 0) {
+        wrappedYaw = 180;
+      }
+      const clampedPitch = Math.max(-70, Math.min(70, pitchDegrees));
+      state.yaw = wrappedYaw * DEG;
+      state.pitch = clampedPitch * DEG;
+      $('yaw').value = String(wrappedYaw);
+      $('pitch').value = String(clampedPitch);
+      scheduleRecompute();
+    }
+
+    document.querySelectorAll('[data-view]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.view = button.dataset.view;
+        updateViewLabels();
+        renderWebGL();
+      });
+    });
+    document.querySelectorAll('[data-order]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.order = Number(button.dataset.order);
+        document.querySelectorAll('[data-order]').forEach((item) => {
+          item.classList.toggle(
+            'active',
+            Number(item.dataset.order) === state.order
+          );
+        });
+        updateTextAndMetrics(0, 0);
+        renderWebGL();
+      });
+    });
+    $('preset').addEventListener('change', (event) => {
+      state.preset = Number(event.target.value);
+      scheduleRecompute();
+    });
+    $('sampleCount').addEventListener('change', (event) => {
+      state.samples = Number(event.target.value);
+      scheduleRecompute();
+    });
+    $('yaw').addEventListener('input', (event) => {
+      setAngles(Number(event.target.value), state.pitch / DEG);
+    });
+    $('pitch').addEventListener('input', (event) => {
+      setAngles(state.yaw / DEG, Number(event.target.value));
+    });
+    $('quarterTurn').addEventListener('click', () => {
+      setAngles(state.yaw / DEG + 90, state.pitch / DEG);
+    });
+    $('randomTurn').addEventListener('click', () => {
+      const choices = [
+        [37, 22],
+        [-68, 31],
+        [124, -28],
+        [-143, -12]
+      ];
+      const current = Math.floor(
+        Math.abs(state.yaw / DEG + state.pitch / DEG)
+      ) % choices.length;
+      setAngles(choices[(current + 1) % choices.length][0],
+        choices[(current + 1) % choices.length][1]);
+    });
+    $('reset').addEventListener('click', () => setAngles(0, 0));
+    $('windowStrength').addEventListener('input', (event) => {
+      state.windowStrength = Number(event.target.value);
+      $('windowOut').value = state.windowStrength.toFixed(2);
+      drawRinging();
+    });
+
+    let dragging = false;
+    let previousX = 0;
+    let previousY = 0;
+    canvas.addEventListener('pointerdown', (event) => {
+      dragging = true;
+      previousX = event.clientX;
+      previousY = event.clientY;
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener('pointermove', (event) => {
+      if (!dragging) return;
+      const yaw = state.yaw / DEG + (event.clientX - previousX) * 0.42;
+      const pitch = state.pitch / DEG + (event.clientY - previousY) * 0.34;
+      previousX = event.clientX;
+      previousY = event.clientY;
+      setAngles(yaw, pitch);
+    });
+    canvas.addEventListener('pointerup', () => {
+      dragging = false;
+    });
+    canvas.addEventListener('pointercancel', () => {
+      dragging = false;
+    });
+    canvas.addEventListener('dblclick', () => setAngles(0, 0));
+    window.addEventListener('resize', () => {
+      renderWebGL();
+      drawL0();
+      drawL1();
+      drawL2();
+      drawEnergy();
+      drawDiffuse();
+      drawRinging();
+    });
+
+    initWebGL();
+    recompute();
+  })();
+  </script>
+</body>
+</html>

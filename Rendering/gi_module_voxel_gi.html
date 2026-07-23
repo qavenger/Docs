@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GI 方案实验 · 把 Voxelization 与 Cone Tracing 组装成 Voxel GI</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root{--bg:#061018;--panel:#0a1822;--panel2:#102431;--ink:#eefaff;--muted:#a5bbc6;--line:#294a59;--cyan:#61ded7;--violet:#ad96ff;--amber:#ffc45f;--green:#76e7a7;--red:#ff8293;--max:1220px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 18% -12%,#173e49 0,transparent 31%),var(--bg);color:var(--ink);font:15px/1.72 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}code{font-family:"Cascadia Code",Consolas,monospace}.wrap{width:min(var(--max),calc(100% - 34px));margin:auto}.top{position:sticky;top:0;z-index:20;background:#061018ea;border-bottom:1px solid #27404c;backdrop-filter:blur(12px)}.top nav{height:58px;display:flex;justify-content:space-between;align-items:center}.brand{font-weight:780;color:var(--ink)}.navs{display:flex;gap:16px;font-size:13px}.hero{padding:68px 0 44px;border-bottom:1px solid #1c3440}.eyebrow,.k{color:var(--cyan);font:700 12px/1.2 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}.hero h1{max-width:1040px;margin:13px 0 17px;font-size:clamp(38px,6vw,68px);line-height:1.04}.hero p{max-width:930px;color:#bdd2dc;font-size:18px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.chip{border:1px solid #385a68;border-radius:99px;padding:5px 10px;color:#c3d8df;background:#0a1b24;font-size:12px}.chip.hot{border-color:#7666b0;color:#d0c3ff}.global{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin-top:18px;padding:14px 16px;border:1px solid #3a5c69;border-radius:14px;background:#0b1c26}.global-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.global label{font-size:12px;color:#c3d7de}.global input[type=range]{width:145px;accent-color:var(--cyan)}select,button{font:inherit;color:#e0edf2;background:#102b37;border:1px solid #3c6576;border-radius:8px;padding:6px 9px}button{cursor:pointer}button:hover,button.active{border-color:var(--cyan);background:#175265}.frame{border:1px solid #456071;border-radius:9px;padding:7px 10px;color:#9fd5d4;font:11px ui-monospace}section{padding:52px 0;border-bottom:1px solid #1b333e}.head{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:end;margin-bottom:22px}.head h2{margin:7px 0 0;font-size:clamp(27px,4vw,41px);line-height:1.14}.head>p{margin:0;color:var(--muted)}.stage-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.artifact{overflow:hidden;border:1px solid #315363;border-radius:14px;background:#07131b}.artifact-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:11px 13px;border-bottom:1px solid #284553;background:#0e202a}.artifact-head b{font-size:13px}.badge{border:1px solid #476777;border-radius:99px;padding:3px 7px;color:#a9c2cc;font:10px/1.2 ui-monospace}.artifact canvas{display:block;width:100%;height:auto;background:#02080c}.artifact-copy{padding:9px 13px;color:#9fb4be;font-size:11px}.artifact-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:9px 13px;border-top:1px solid #26424f}.artifact-controls label{font-size:11px;color:#b5cad2}.artifact-controls input[type=range]{width:120px;accent-color:var(--cyan)}.readout{margin-left:auto;color:var(--amber);font:11px ui-monospace}.stage-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stage-summary div{padding:10px;border:1px solid #2d4c5b;border-radius:9px;background:#081720}.stage-summary b{display:block;color:#e8f7fa;font-size:11px}.stage-summary span{color:#92aab4;font:10px/1.4 ui-monospace}.callout{padding:14px 16px;border-left:3px solid var(--amber);border-radius:0 11px 11px 0;background:#201a0d;color:#d8c9a8}.warning{border-left-color:var(--red);background:#21131a}.trace-layout{display:grid;grid-template-columns:290px 1fr;gap:14px}.trace-side{padding:14px;border:1px solid #31515f;border-radius:13px;background:#091922}.trace-side label{display:block;margin:8px 0;color:#bdd0d8;font-size:12px}.trace-side input[type=range]{width:100%;accent-color:var(--violet)}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{padding:8px;border:1px solid #294957;border-radius:8px;background:#06131b}.stat strong{display:block;font:700 14px ui-monospace}.stat span{font-size:10px;color:var(--muted)}.rg-wrap{position:relative}.rg-svg{position:absolute;inset:0;min-width:1000px;width:100%;height:100%;pointer-events:none}.rg-note{margin-top:9px;color:#93aab4;font-size:11px}.pass-table{width:100%;border-collapse:collapse;font-size:12px}.pass-table th,.pass-table td{padding:9px 10px;border-top:1px solid #294754;text-align:left}.pass-table th{color:#e8f5f8}.pass-table td{color:#a7bbc3}.foot{padding:28px 0;display:flex;justify-content:space-between;color:#8da4ad}.next{display:flex;gap:16px}@media(max-width:920px){.head,.trace-layout{grid-template-columns:1fr}.stage-pair{grid-template-columns:1fr}.stage-summary{grid-template-columns:1fr 1fr}.global{grid-template-columns:1fr}.navs{display:none}}@media(max-width:570px){.stage-summary{grid-template-columns:1fr}.foot{display:block}.next{margin-top:8px;flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+  <header class="top"><nav class="wrap"><a class="brand" href="index.html">GI 学习地图 / Voxel GI Assembly</a><div class="navs"><a href="#graph">RenderGraph</a><a href="#build">Build field</a><a href="#gather">Gather</a><a href="#composite">Composite</a><a href="#limits">边界</a></div></nav></header>
+  <main>
+    <section class="hero"><div class="wrap">
+      <div class="eyebrow">Integrated scheme · 8 observable stages</div>
+      <h1>把基础模块组装成一条可调试的 Voxel GI 管线</h1>
+      <p>这页不跳过中间产物。修改同一个明确光源后，Voxelize、Attributes、Inject、Mip、Cone Gather、Direct、Composite 会在当前 JavaScript tick 依次重算；没有历史帧，也没有把噪点藏进 temporal accumulation。</p>
+      <div class="chips"><span class="chip">8 stages</span><span class="chip">7 个独立 Canvas</span><span class="chip">共享 course-voxel-field-v2</span><span class="chip hot">CURRENT FRAME · NO HISTORY</span><span class="chip">RenderGraph 资源连线</span></div>
+      <div class="gi-prereq"><span class="gi-stage-num">PRE</span><div><strong>建议先完成两个基础模块</strong><p>本页负责组装，不重复所有覆盖证明。Voxelization 解释数据产生；Cone Tracing 解释查询与误差。</p></div><span><a href="gi_module_voxelization.html">Voxelization</a> · <a href="gi_module_cone_tracing.html">Cone</a></span></div>
+      <div class="global">
+        <div class="global-controls">
+          <label>光源 <select id="globalLightType"><option value="directional">方向光</option><option value="point">点光源</option></select></label>
+          <label>方位 <input id="globalLightAngle" type="range" min="-180" max="180" value="-38"><output id="globalLightOut">-38°</output></label>
+          <label>分辨率 <select id="globalResolution"><option>12</option><option selected>16</option><option>20</option></select></label>
+          <button id="animateLight">播放高速移动光</button>
+          <button id="resetLab">重置</button>
+        </div>
+        <span class="frame" id="frameStatus">frame 1 · rebuilt current field</span>
+      </div>
+      <div class="gi-light-card"><div class="gi-light-icon" id="lightIcon">☀</div><div><strong id="lightTitle">方向光 gizmo</strong><div id="lightDescription">toLight=normalize(0.45,0.82,-0.35)，黄色箭头绘制光线传播方向 -toLight。</div><div class="gi-light-meta"><span>+X right</span><span>+Y up</span><span>+Z back</span><span id="lightCoordinate">directional</span></div></div></div>
+    </div></section>
+
+    <section id="graph"><div class="wrap">
+      <div class="head"><div><div class="k">RenderGraph view</div><h2>Pass 之间传递资源，不传“模糊的 GI 状态”</h2></div><p>节点名对齐下方 8 stages。虚线资源可跨帧复用，但本 Demo 每次光源变化都在当前帧重建 radiance 与 mip，不读取上一帧颜色。</p></div>
+      <div class="rg-wrap"><div class="gi-rg" style="min-width:1000px;min-height:410px">
+        <svg class="rg-svg" viewBox="0 0 1100 410" preserveAspectRatio="none"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#61ded7"/></marker></defs><g fill="none" stroke="#61ded7" stroke-width="2" marker-end="url(#arrow)"><path d="M180 85 H255"/><path d="M425 85 H500"/><path d="M670 85 H745"/><path d="M915 85 C970 85 970 220 900 220"/><path d="M730 220 H660"/><path d="M490 220 H420"/><path d="M250 220 H180"/><path d="M500 220 C450 220 450 350 500 350"/></g><g fill="#ffc45f" font-family="monospace" font-size="10"><text x="190" y="75">SceneSurfaces</text><text x="432" y="75">VoxelAttr</text><text x="677" y="75">Level0</text><text x="935" y="150">MipChain</text><text x="675" y="210">Indirect</text><text x="435" y="210">Direct</text><text x="190" y="210">HDR</text><text x="455" y="340">Debug</text></g>
+        </svg>
+        <div class="gi-rg-node" style="left:10px;top:45px"><b>01 Frame Inputs</b><span>Scene + Light + Domain</span></div>
+        <div class="gi-rg-node" style="left:255px;top:45px"><b>02 Voxelize</b><span>Occupancy UAV</span></div>
+        <div class="gi-rg-node" style="left:500px;top:45px"><b>03 Merge Attributes</b><span>Normal + Albedo + α</span></div>
+        <div class="gi-rg-node" style="left:745px;top:45px"><b>04 Inject Radiance</b><span>RGBA Level 0</span></div>
+        <div class="gi-rg-node" style="left:900px;top:180px"><b>05 Build 3D Mips</b><span>RGBA mip chain</span></div>
+        <div class="gi-rg-node" style="left:660px;top:180px"><b>06 Cone Gather</b><span>Indirect buffer</span></div>
+        <div class="gi-rg-node" style="left:420px;top:180px"><b>07 Direct Lighting</b><span>Direct buffer</span></div>
+        <div class="gi-rg-node" style="left:10px;top:180px"><b>08 Composite / Debug</b><span>Direct + Indirect</span></div>
+        <div class="gi-rg-node" style="left:500px;top:310px"><b>Readback Labels</b><span>counts + sample path</span></div>
+      </div></div>
+      <div class="rg-note">这是可映射到 RenderGraph 的教学资源图；当前 HTML 用 CPU 数组模拟资源生命周期，不声称已调用 <code>F:\RenderGraph</code> 工程或创建真实 DX12 barriers。</div>
+    </div></section>
+
+    <section id="inputs"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 01 · frame inputs</div><h2>先锁定坐标、域与当前光源</h2></div><p>若 gizmo 与计算使用的 position/direction 不一致，之后每一张 radiance 图都会误导。</p></div>
+      <article class="artifact"><div class="artifact-head"><b>Demo 01 · Scene + domain + light gizmo</b><span class="badge">INDEPENDENT CANVAS</span></div><canvas id="sceneCanvas" width="1100" height="430"></canvas><div class="artifact-copy">黄色球表示点光位置；黄色箭头表示方向光的传播方向。红/绿/蓝箭头分别是 +X/+Y/+Z。</div></article>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">坐标规则</button><button data-gi-tab="numbers">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>方向光没有有限位置，只需要方向；点光有位置，且每个 voxel 指向它的方向都不同。页面不会画一个位置球却暗中按方向光计算。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">directional: toLight = constant<br>point: toLight = normalize(lightPosition − surfacePosition)<br>attenuation = 1 / max(distance², minimumDistance²)</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula" id="lightNumbers">directional toLight=(0.45,0.82,-0.35)</div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">如果是方向光：所有表面使用同一个 toLight
+如果是点光：从表面位置指向 lightPosition
+用同一份 light 对象绘制 gizmo 与计算 injection</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 makeLight()">
+function makeLight(type, degrees) {
+  const angle = degrees * Math.PI / 180;
+
+  if (type === "point") {
+    return {
+      type,
+      position: [
+        Math.cos(angle) * 0.62,
+        0.58,
+        Math.sin(angle) * 0.62
+      ],
+      strength: 1.5
+    };
+  }
+
+  return {
+    type,
+    toLight: normalize([
+      Math.cos(angle) * 0.58,
+      0.82,
+      Math.sin(angle) * 0.58
+    ]),
+    strength: 2.2
+  };
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="build"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 02–05 · build queryable field</div><h2>四张画布逐层证明输入数据</h2></div><p>所有切片使用同一 Z 层。分辨率或光源变化时独立重绘；occupancy/attributes 不应随光源动，radiance/mips 必须动。</p></div>
+      <div class="stage-pair">
+        <article class="artifact"><div class="artifact-head"><b>Demo 02 · Voxelize / Occupancy</b><span class="badge">STAGE 02</span></div><canvas id="occupancyCanvas" width="540" height="350"></canvas><div class="artifact-controls"><label>Z slice <input id="sharedSlice" type="range" min="0" max="15" value="8"></label><span class="readout" id="occupancyReadout"></span></div><div class="artifact-copy">只显示 A 通道。灰格不代表“亮”，只代表解析 surface proxy 在 cell 附近。</div></article>
+        <article class="artifact"><div class="artifact-head"><b>Demo 03 · Attributes A/B</b><span class="badge">STAGE 03</span></div><canvas id="attributeCanvas" width="540" height="350"></canvas><div class="artifact-controls"><button class="active" data-attribute="normal">Normal</button><button data-attribute="albedo">Albedo</button><button data-attribute="opacity">Opacity</button><span class="readout" id="attributeReadout"></span></div><div class="artifact-copy">normal 映射到 RGB；albedo 是材质输入；opacity 决定 front-to-back 遮挡。</div></article>
+        <article class="artifact"><div class="artifact-head"><b>Demo 04 · Radiance Injection</b><span class="badge">STAGE 04</span></div><canvas id="injectCanvas" width="540" height="350"></canvas><div class="artifact-controls"><button id="injectOcc">显示 occupancy</button><button id="injectRad" class="active">显示 radiance</button><span class="readout" id="injectReadout"></span></div><div class="artifact-copy">黄色 mini-gizmo 使用同一 light 对象。切换 occupancy 证明光源变化没有重新定义几何。</div></article>
+        <article class="artifact"><div class="artifact-head"><b>Demo 05 · 3D Mip Chain</b><span class="badge">STAGE 05</span></div><canvas id="mipCanvas" width="540" height="350"></canvas><div class="artifact-controls"><label>level <input id="mipLevel" type="range" min="0" max="4" value="2"></label><span class="readout" id="mipReadout"></span></div><div class="artifact-copy">每级 2×2×2 分量平均。RGB 已 premultiply，因此 front-to-back 不应再乘一次 sample.a。</div></article>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition" style="margin-top:17px">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">Injection 公式</button><button data-gi-tab="numbers">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>Stage 2/3 是静态表示；Stage 4 把“当前灯照到每个贴片多少”写进 Level 0；Stage 5 让一次粗采样近似一个更大的空间 footprint。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">NdotL=max(dot(normal,toLight),0)<br>outgoing=albedo×(ambient+strength×NdotL/π)<br>Level0.rgb=outgoing×opacity</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">floor normal=(0,1,0), directional toLight.y≈0.82<br>NdotL≈<span class="gi-number">0.82</span>；背墙 normal=(0,0,-1)，结果取决于 toLight.z</div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">Voxelize 输出 occupancy + surface attributes
+对 occupied cells 计算当前光源直接出射 radiance
+写 premultiplied RGB 与 opacity 到 Level 0
+重复 2×2×2 过滤，直到 1³</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 rebuildPipeline() 节选">
+function rebuildPipeline() {
+  const light = makeLight(state.lightType, state.lightAngle);
+  FIELD = buildLevel0(state.resolution, light);
+  MIPS = buildMipChain(FIELD);
+  RECEIVERS = buildReceivers(FIELD);
+
+  drawOccupancy();
+  drawAttributes();
+  drawInjection();
+  drawMip();
+  runGather();
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="gather"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 06 · cone gather</div><h2>选择一个 receiver，逐条看多个 cone 的样本轨迹</h2></div><p>为了让 CPU 离线页面保持流畅，最终图每个 receiver 使用 3 个 diffuse cones；选中 receiver 的调试画布会完整画出每条轨迹与 footprint。</p></div>
+      <div class="trace-layout">
+        <aside class="trace-side">
+          <label>receiver <input id="receiverIndex" type="range" min="0" max="95" value="42"><output id="receiverOut">42</output></label>
+          <label>aperture <input id="gatherAperture" type="range" min="16" max="68" value="42"><output id="gatherApertureOut">42°</output></label>
+          <label>cone count <input id="gatherCount" type="range" min="1" max="5" value="3"><output id="gatherCountOut">3</output></label>
+          <label><input id="gatherForceLod0" type="checkbox"> 强制 LOD 0</label>
+          <div class="stat-grid"><div class="stat"><strong id="gatherSamples">0</strong><span>total samples</span></div><div class="stat"><strong id="gatherMaxLod">0.00</strong><span>max LOD</span></div><div class="stat"><strong id="gatherIndirect">0/0/0</strong><span>indirect RGB</span></div><div class="stat"><strong id="gatherHistory">0</strong><span>history frames</span></div></div>
+          <div class="callout" style="font-size:11px"><b>读图：</b>白点是 receiver，彩色线是不同 cone，圆环是 footprint。切换 LOD0 后粗 footprint 仍会画出，但读取固定细层，用来隔离 mip 引发的模糊/漏光。</div>
+        </aside>
+        <article class="artifact"><div class="artifact-head"><b>Demo 06 · Actual cone sample tracks</b><span class="badge">STAGE 06</span></div><canvas id="gatherCanvas" width="820" height="500"></canvas><div class="artifact-copy">顶部黄色 gizmo 与 Stage 01 相同；trace 读取 Stage 05 的 MIPS，而不是 mesh。</div></article>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">单步代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>每个 cone 返回一束方向范围内的近似 radiance。多个 cone 只是在半球上换方向重复同一查询，再按 cosine 权重平均。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">diameter=2t·tan(aperture/2)<br>lod=log₂(max(diameter/voxelSize,1))<br>color += (1−opacity) × sample.rgb</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">t=0.50, aperture=42°, voxelSize=0.125<br>diameter≈<span class="gi-number">0.384</span>，lod≈<span class="gi-number">1.62</span></div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">对 receiver 半球上的每个 cone：
+  沿方向前进
+  用 footprint 选小数 LOD
+  trilinear + 层间插值读取 mip
+  front-to-back 累计
+按 normal·coneDirection 加权合并各 cone</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 gatherReceiver()">
+function gatherReceiver(receiver, coneCount, aperture, forceLevel0) {
+  const directions = diffuseDirections(coneCount);
+  const traces = directions.map((direction) =>
+    traceCone(
+      receiver.position,
+      direction,
+      aperture,
+      forceLevel0
+    )
+  );
+  const weight = 1 / traces.length;
+  const indirect = [0, 1, 2].map((channel) =>
+    traces.reduce(
+      (sum, trace) => sum + trace.color[channel] * weight,
+      0
+    )
+  );
+
+  return { indirect, traces };
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="composite"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 07–08 · direct + indirect + A/B</div><h2>最终图必须能一键退回 direct-only</h2></div><p>同一批 floor receivers 左右对比。Direct-only 不读取 mip；Final 添加当前帧 cone gather。拖动全局光源时两边同帧更新。</p></div>
+      <article class="artifact"><div class="artifact-head"><b>Demo 07 · Direct-only / Final Voxel GI</b><span class="badge">STAGE 07–08</span></div><canvas id="compositeCanvas" width="1100" height="560"></canvas><div class="artifact-controls"><button id="splitView" class="active">Split A/B</button><button id="directView">Direct only</button><button id="finalView">Final</button><label>indirect gain <input id="indirectGain" type="range" min="0" max="250" value="135"></label><span class="readout" id="compositeReadout"></span></div><div class="artifact-copy">每个小 patch 是一个实际 receiver 结果。教学分辨率很低，目的是追踪数据而非充当高质量渲染器。</div></article>
+      <div class="stage-summary" style="margin-top:12px"><div><b>Frame dependency</b><span>Light → Inject → Mip → Gather → Composite</span></div><div><b>No history</b><span>historyFrames=0<br>temporalWeight=0</span></div><div><b>Geometry change</b><span>重新执行 Voxelize + Attributes</span></div><div><b>Light-only change</b><span>可复用 occupancy/attributes；本教学页为清晰全部重建</span></div></div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition" style="margin-top:17px">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>Direct 是灯直接照到 receiver 的结果；Indirect 是其他表面先被灯照亮，再经 voxel field 被 cone 收集回来的结果。Final 只是两者在同一线性 HDR 空间相加。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">finalLinear = directLinear + indirectGain × indirectLinear<br>display = 1 − exp(−exposure × finalLinear)</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">direct=(0.30,0.28,0.25), indirect=(0.08,0.10,0.14), gain=1.35<br>final=(<span class="gi-number">0.408,0.415,0.439</span>)</div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">在 linear HDR 空间读取 direct 与 indirect
+乘用户调试用 indirect gain
+相加后统一 tone map
+不要分别 tone map 后再相加</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 compositeReceiver()">
+function compositeReceiver(receiver, indirect, gain) {
+  const finalLinear = receiver.direct.map(
+    (value, channel) => value + indirect[channel] * gain
+  );
+
+  return finalLinear.map(
+    (value) => 1 - Math.exp(-value * 1.45)
+  );
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="limits"><div class="wrap">
+      <div class="head"><div><div class="k">Completion gate · what this proves</div><h2>能跑通不等于没有误差</h2></div><p>下面明确区分“本页已经真实执行的部分”和“生产 RenderGraph 仍需补齐的部分”。</p></div>
+      <table class="pass-table"><thead><tr><th>项目</th><th>本页证据</th><th>生产实现边界</th></tr></thead><tbody>
+        <tr><td>当前帧动态灯</td><td>播放高速移动光时，Inject/Mip/Gather/Composite 每 tick 更新；history=0。</td><td>真实 GPU 仍受 3D volume 写入和 mip 带宽限制，需灯光裁剪。</td></tr>
+        <tr><td>Voxelization</td><td>CPU 解析 surface proxy，输出可检查 occupancy/attributes。</td><td>不是硬件 conservative raster；mesh triangle、alpha test、skinning 需独立 pass。</td></tr>
+        <tr><td>Cone 查询</td><td>实际 Float32 mip chain、三线性、层间插值、front-to-back。</td><td>各向同性 mip 会跨墙混色；尖锐 specular 不可靠。</td></tr>
+        <tr><td>RenderGraph</td><td>资源/Pass DAG 与独立中间产物。</td><td>HTML 未接入 <code>F:\RenderGraph</code>，没有真实 UAV barrier、descriptor 或 compute dispatch。</td></tr>
+        <tr><td>画质</td><td>Direct-only / Final A/B，能定位间接光来自何处。</td><td>低分辨率 receiver 与 1–5 cones 仅教学；生产需更密集 shading pixels、抗漏与性能预算。</td></tr>
+      </tbody></table>
+      <div class="callout warning" style="margin-top:14px"><b>最重要的限制：</b>“无 history”意味着光源响应没有 temporal lag，但不会自动消除空间离散误差。体素锯齿、mip 漏光、cone 欠采样仍要靠空间分辨率、方向相关存储、更多 cones 或其他可见性方案处理。</div>
+    </div></section>
+  </main>
+  <footer><div class="wrap foot"><span>GI Course · Integrated Voxel GI · <code>course-voxel-field-v2</code></span><div class="next"><a href="gi_module_voxelization.html">Voxelization</a><a href="gi_module_cone_tracing.html">Cone Tracing</a><a href="Realtime_GI_Field_Guide.html">方案总览 →</a></div></div></footer>
+  <script src="gi_course.js"></script>
+  <script>
+  (() => {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
+    const mix = (a,b,t) => a+(b-a)*t;
+    const dot = (a,b) => a.reduce((sum,value,index)=>sum+value*b[index],0);
+    const normalize = (v) => { const length=Math.hypot(...v)||1; return v.map(value=>value/length); };
+    const VOXEL_SPEC = Object.freeze({ id:"course-voxel-field-v2", min:[-1,-1,-1], max:[1,1,1] });
+    const state = { lightType:"directional", lightAngle:-38, resolution:16, attribute:"normal", inject:"radiance", composite:"split", frame:0, animation:null, gather:null };
+    let FIELD=null, MIPS=null, RECEIVERS=null;
+
+    function voxelCenter(cell,resolution){return cell.map((index,axis)=>VOXEL_SPEC.min[axis]+(index+.5)*(VOXEL_SPEC.max[axis]-VOXEL_SPEC.min[axis])/resolution)}
+    function boxSurface(position,center,extent,threshold){const distance=position.map((value,axis)=>Math.abs(value-center[axis])-extent[axis]);if(distance.some(value=>value>threshold))return null;let axis=0;if(distance[1]>distance[axis])axis=1;if(distance[2]>distance[axis])axis=2;const normal=[0,0,0];normal[axis]=position[axis]>=center[axis]?1:-1;return normal}
+    function classifySurface(position,cellSize){const threshold=cellSize*.62;if(Math.abs(position[1]+.72)<threshold&&Math.abs(position[0])<.92&&Math.abs(position[2])<.92)return{normal:[0,1,0],albedo:[.44,.50,.54],opacity:.78,kind:"floor"};if(Math.abs(position[2]-.68)<threshold&&Math.abs(position[0])<.92&&position[1]>-.72&&position[1]<.82)return{normal:[0,0,-1],albedo:[.30,.46,.62],opacity:.82,kind:"wall"};let normal=boxSurface(position,[-.22,-.34,.04],[.30,.38,.25],threshold);if(normal)return{normal,albedo:[.18,.48,.68],opacity:.88,kind:"blueBox"};normal=boxSurface(position,[.55,-.43,-.18],[.14,.20,.16],threshold);if(normal)return{normal,albedo:[.92,.20,.08],opacity:.90,kind:"redBlock"};return null}
+    function makeLight(type,degrees){const angle=degrees*Math.PI/180;if(type==="point")return{type,position:[Math.cos(angle)*.62,.58,Math.sin(angle)*.62],strength:1.5};return{type,toLight:normalize([Math.cos(angle)*.58,.82,Math.sin(angle)*.58]),strength:2.2}}
+    function evaluateLight(position,light){if(light.type==="directional")return{toLight:light.toLight,strength:light.strength};const delta=light.position.map((value,axis)=>value-position[axis]);const distanceSquared=Math.max(.10,dot(delta,delta));return{toLight:normalize(delta),strength:light.strength/distanceSquared}}
+    function injectRadiance(surface,light){const sample=evaluateLight(surface.position,light),nDotL=Math.max(0,dot(surface.normal,sample.toLight)),scale=.045+sample.strength*nDotL/Math.PI,outgoing=surface.albedo.map(channel=>channel*scale);return{rgb:outgoing.map(channel=>channel*surface.opacity),opacity:surface.opacity,nDotL}}
+    function buildLevel0(resolution,light){const voxels=[],cellSize=2/resolution,data=new Float32Array(resolution**3*4);for(let z=0;z<resolution;z++)for(let y=0;y<resolution;y++)for(let x=0;x<resolution;x++){const position=voxelCenter([x,y,z],resolution),surface=classifySurface(position,cellSize);if(!surface)continue;surface.position=position;const injected=injectRadiance(surface,light),voxel={x,y,z,...surface,...injected};voxels.push(voxel);data.set([...injected.rgb,injected.opacity],((z*resolution+y)*resolution+x)*4)}return{id:VOXEL_SPEC.id,resolution,cellSize,light,voxels,data}}
+    function buildMipChain(field){const mips=[{size:field.resolution,data:field.data}];while(mips.at(-1).size>1){const source=mips.at(-1),size=Math.max(1,Math.floor(source.size/2)),data=new Float32Array(size**3*4);for(let z=0;z<size;z++)for(let y=0;y<size;y++)for(let x=0;x<size;x++)for(let channel=0;channel<4;channel++){let sum=0;for(let dz=0;dz<2;dz++)for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){const sx=Math.min(source.size-1,x*2+dx),sy=Math.min(source.size-1,y*2+dy),sz=Math.min(source.size-1,z*2+dz);sum+=source.data[((sz*source.size+sy)*source.size+sx)*4+channel]}data[((z*size+y)*size+x)*4+channel]=sum/8}mips.push({size,data})}return mips}
+    function sampleTrilinear(level,position){const coordinate=position.map(value=>clamp((value+1)*.5*level.size-.5,0,level.size-1)),minimum=coordinate.map(Math.floor),maximum=minimum.map(value=>Math.min(value+1,level.size-1)),fraction=coordinate.map((value,axis)=>value-minimum[axis]),result=[0,0,0,0];for(let dz=0;dz<2;dz++)for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){const x=dx?maximum[0]:minimum[0],y=dy?maximum[1]:minimum[1],z=dz?maximum[2]:minimum[2],weight=(dx?fraction[0]:1-fraction[0])*(dy?fraction[1]:1-fraction[1])*(dz?fraction[2]:1-fraction[2]),index=((z*level.size+y)*level.size+x)*4;for(let channel=0;channel<4;channel++)result[channel]+=level.data[index+channel]*weight}return result}
+    function sampleMipChain(position,lod){const maximum=MIPS.length-1,clamped=clamp(lod,0,maximum),level0=Math.floor(clamped),level1=Math.min(level0+1,maximum),fraction=clamped-level0,a=sampleTrilinear(MIPS[level0],position),b=sampleTrilinear(MIPS[level1],position);return a.map((value,channel)=>mix(value,b[channel],fraction))}
+    function coneFootprint(distance,aperture){const diameter=Math.max(FIELD.cellSize,2*distance*Math.tan(aperture*.5));return{diameter,lod:Math.log2(diameter/FIELD.cellSize)}}
+    function traceCone(origin,direction,aperture,forceLevel0){const color=[0,0,0],samples=[];let opacity=0,distance=FIELD.cellSize*.8;while(samples.length<48&&distance<2.5&&opacity<.98){const footprint=coneFootprint(distance,aperture),position=origin.map((value,axis)=>value+direction[axis]*distance);if(position.some(value=>value<-1||value>=1))break;const lod=forceLevel0?0:footprint.lod,sample=sampleMipChain(position,lod),remaining=1-opacity;for(let channel=0;channel<3;channel++)color[channel]+=remaining*sample[channel];opacity+=remaining*sample[3];samples.push({position,distance,sample,remaining,...footprint,lod});distance+=Math.max(FIELD.cellSize*.62,footprint.diameter*.72)}return{color,opacity,samples,direction}}
+    function diffuseDirections(count){const candidates=[normalize([0,.95,.32]),normalize([.65,.72,.22]),normalize([-.62,.75,.20]),normalize([.28,.70,-.66]),normalize([-.32,.70,-.62])];return candidates.slice(0,count)}
+    function gatherReceiver(receiver,coneCount,aperture,forceLevel0){const traces=diffuseDirections(coneCount).map(direction=>traceCone(receiver.position,direction,aperture,forceLevel0)),weight=1/traces.length,indirect=[0,1,2].map(channel=>traces.reduce((sum,trace)=>sum+trace.color[channel]*weight,0));return{indirect,traces}}
+    function buildReceivers(field){const receivers=[];for(let z=0;z<8;z++)for(let x=0;x<12;x++){const position=[-.84+x/11*1.68,-.665,-.78+z/7*1.38],surface={position,normal:[0,1,0],albedo:[.44,.50,.54],opacity:1},light=evaluateLight(position,field.light),nDotL=Math.max(0,dot(surface.normal,light.toLight)),direct=surface.albedo.map(channel=>channel*(.025+light.strength*nDotL/Math.PI));receivers.push({position,normal:surface.normal,direct})}return receivers}
+    function compositeReceiver(receiver,indirect,gain){return receiver.direct.map((value,channel)=>1-Math.exp(-(value+indirect[channel]*gain)*1.45))}
+    function rgbLinear(color,exposure=1.5){return`rgb(${color.map(value=>Math.round(clamp(1-Math.exp(-value*exposure),0,1)*255)).join(",")})`}
+    function rgbDisplay(color){return`rgb(${color.map(value=>Math.round(clamp(value,0,1)*255)).join(",")})`}
+    function drawArrow(ctx,a,b,color){ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();const angle=Math.atan2(b[1]-a[1],b[0]-a[0]);ctx.beginPath();ctx.moveTo(...b);ctx.lineTo(b[0]-Math.cos(angle-.55)*11,b[1]-Math.sin(angle-.55)*11);ctx.lineTo(b[0]-Math.cos(angle+.55)*11,b[1]-Math.sin(angle+.55)*11);ctx.closePath();ctx.fill()}
+    function isoProject(position,canvas,offset=0,scale=.31){return[canvas.width*.5+offset+(position[0]-position[2])*(canvas.width*scale*.45),canvas.height*.64-(position[1]*canvas.height*scale)+(position[0]+position[2])*canvas.height*scale*.20]}
+    function drawLightGizmo(ctx,canvas,light,offset=0){if(light.type==="point"){const p=isoProject(light.position,canvas,offset),g=ctx.createRadialGradient(p[0],p[1],2,p[0],p[1],25);g.addColorStop(0,"#fff8c7");g.addColorStop(.35,"#ffd05d");g.addColorStop(1,"#ffc43b00");ctx.fillStyle=g;ctx.beginPath();ctx.arc(p[0],p[1],25,0,Math.PI*2);ctx.fill()}else{const c=isoProject([0,.5,0],canvas,offset),s=isoProject(light.toLight.map((value,axis)=>[0,.5,0][axis]+value*.72),canvas,offset);drawArrow(ctx,s,c,"#ffd263")}}
+    function drawScene(){const canvas=$("sceneCanvas"),ctx=canvas.getContext("2d");ctx.fillStyle="#02080c";ctx.fillRect(0,0,canvas.width,canvas.height);const surfaces=[{c:[0,-.72,0],e:[.92,.035,.92],color:"#657985"},{c:[0,.02,.68],e:[.92,.74,.035],color:"#42637a"},{c:[-.22,-.34,.04],e:[.30,.38,.25],color:"#267da7"},{c:[.55,-.43,-.18],e:[.14,.20,.16],color:"#d6482b"}];surfaces.forEach(s=>{const p=isoProject(s.c,canvas),w=(s.e[0]+s.e[2])*canvas.width*.14,h=Math.max(8,s.e[1]*canvas.height*.35);ctx.fillStyle=s.color;ctx.globalAlpha=.9;ctx.fillRect(p[0]-w/2,p[1]-h/2,w,h);ctx.strokeStyle="#d6edf3";ctx.strokeRect(p[0]-w/2,p[1]-h/2,w,h)});ctx.globalAlpha=1;const o=isoProject([0,0,0],canvas);[["X",[.62,0,0],"#ff7585"],["Y",[0,.62,0],"#74e6a5"],["Z",[0,0,.62],"#6fa6ff"]].forEach(([n,p,c])=>{const e=isoProject(p,canvas);drawArrow(ctx,o,e,c);ctx.fillStyle=c;ctx.fillText(`+${n}`,e[0]+4,e[1])});drawLightGizmo(ctx,canvas,FIELD.light);ctx.strokeStyle="#61ded777";ctx.setLineDash([6,4]);const corners=[[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1],[-1,-1,-1]];ctx.beginPath();corners.forEach((p,i)=>{const q=isoProject(p,canvas);if(i===0)ctx.moveTo(...q);else ctx.lineTo(...q)});ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#a9c0c8";ctx.fillText("world domain [-1,1]³",18,25)}
+    function drawGridCanvas(canvas,level,slice,pixelFn,label){const ctx=canvas.getContext("2d"),size=level.size,cell=Math.min(canvas.width*.82,canvas.height*.78)/size,left=(canvas.width-cell*size)/2,top=(canvas.height-cell*size)/2,z=clamp(slice,0,size-1);ctx.fillStyle="#02080c";ctx.fillRect(0,0,canvas.width,canvas.height);for(let y=0;y<size;y++)for(let x=0;x<size;x++){const index=((z*size+y)*size+x)*4,sample=Array.from(level.data.slice(index,index+4));ctx.fillStyle=pixelFn(sample,x,y,z);ctx.fillRect(left+x*cell,top+(size-1-y)*cell,Math.ceil(cell),Math.ceil(cell));ctx.strokeStyle="#ffffff0c";ctx.strokeRect(left+x*cell,top+(size-1-y)*cell,cell,cell)}ctx.fillStyle="#b3c7ce";ctx.font="11px ui-monospace";ctx.fillText(`${label} · Z=${z} · ${size}³`,8,16)}
+    function drawOccupancy(){const slice=Number($("sharedSlice").value);drawGridCanvas($("occupancyCanvas"),MIPS[0],slice,s=>s[3]>.02?"#778f99":"#07131b","Occupancy A");$("occupancyReadout").textContent=`occupied=${FIELD.voxels.length}`}
+    function drawAttributes(){const canvas=$("attributeCanvas"),ctx=canvas.getContext("2d"),size=FIELD.resolution,slice=Number($("sharedSlice").value),cell=Math.min(canvas.width*.82,canvas.height*.78)/size,left=(canvas.width-cell*size)/2,top=(canvas.height-cell*size)/2,map=new Map(FIELD.voxels.filter(v=>v.z===slice).map(v=>[`${v.x},${v.y}`,v]));ctx.fillStyle="#02080c";ctx.fillRect(0,0,canvas.width,canvas.height);for(let y=0;y<size;y++)for(let x=0;x<size;x++){const voxel=map.get(`${x},${y}`);let color="#07131b";if(voxel){if(state.attribute==="normal")color=rgbDisplay(voxel.normal.map(value=>value*.5+.5));else if(state.attribute==="albedo")color=rgbDisplay(voxel.albedo);else{const g=Math.round(voxel.opacity*255);color=`rgb(${g},${g},${g})`}}ctx.fillStyle=color;ctx.fillRect(left+x*cell,top+(size-1-y)*cell,Math.ceil(cell),Math.ceil(cell))}ctx.fillStyle="#b3c7ce";ctx.fillText(`${state.attribute} · Z=${slice}`,8,16);$("attributeReadout").textContent=state.attribute}
+    function drawInjection(){const slice=Number($("sharedSlice").value);drawGridCanvas($("injectCanvas"),MIPS[0],slice,s=>state.inject==="occupancy"?(s[3]>.02?"#778f99":"#07131b"):rgbLinear(s.slice(0,3),1.8),state.inject==="occupancy"?"Occupancy":"Injected radiance");const ctx=$("injectCanvas").getContext("2d");drawLightGizmo(ctx,$("injectCanvas"),FIELD.light,150);$("injectReadout").textContent=`lit=${FIELD.voxels.filter(v=>v.nDotL>0).length}`}
+    function drawMip(){const level=clamp(Number($("mipLevel").value),0,MIPS.length-1),slice=Math.floor(MIPS[level].size*.5);drawGridCanvas($("mipCanvas"),MIPS[level],slice,s=>rgbLinear(s.slice(0,3),1.8),`Mip L${level}`);$("mipReadout").textContent=`L${level} · ${MIPS[level].size}³`}
+    function runGather(){const index=clamp(Number($("receiverIndex").value),0,RECEIVERS.length-1),count=Number($("gatherCount").value),aperture=Number($("gatherAperture").value)*Math.PI/180,force=$("gatherForceLod0").checked;state.gather=gatherReceiver(RECEIVERS[index],count,aperture,force);$("receiverOut").value=index;$("gatherApertureOut").value=`${$("gatherAperture").value}°`;$("gatherCountOut").value=count;const samples=state.gather.traces.flatMap(t=>t.samples);$("gatherSamples").textContent=samples.length;$("gatherMaxLod").textContent=Math.max(0,...samples.map(s=>s.lod)).toFixed(2);$("gatherIndirect").textContent=state.gather.indirect.map(v=>v.toFixed(2)).join("/");drawGather();drawComposite()}
+    function drawGather(){const canvas=$("gatherCanvas"),ctx=canvas.getContext("2d"),receiver=RECEIVERS[Number($("receiverIndex").value)];ctx.fillStyle="#02080c";ctx.fillRect(0,0,canvas.width,canvas.height);FIELD.voxels.forEach(v=>{const p=isoProject(v.position,canvas),size=Math.max(2,FIELD.cellSize*canvas.width*.15);ctx.globalAlpha=.55;ctx.fillStyle=rgbLinear(v.rgb,1.7);ctx.fillRect(p[0]-size/2,p[1]-size/2,size,size)});ctx.globalAlpha=1;drawLightGizmo(ctx,canvas,FIELD.light);const colors=["#b49cff","#61ded7","#ffc45f","#ff8293","#75e7a5"],origin=isoProject(receiver.position,canvas);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(...origin,7,0,Math.PI*2);ctx.fill();state.gather.traces.forEach((trace,ti)=>{ctx.strokeStyle=colors[ti];ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(...origin);trace.samples.forEach(s=>{const p=isoProject(s.position,canvas);ctx.lineTo(...p)});ctx.stroke();trace.samples.forEach(s=>{const p=isoProject(s.position,canvas),radius=Math.max(2,s.diameter*canvas.width*.07);ctx.strokeStyle=colors[ti];ctx.globalAlpha=.7;ctx.beginPath();ctx.ellipse(p[0],p[1],radius*.45,radius,0,0,Math.PI*2);ctx.stroke()})});ctx.globalAlpha=1}
+    function computeAllIndirect(){const count=Number($("gatherCount").value),aperture=Number($("gatherAperture").value)*Math.PI/180,force=$("gatherForceLod0").checked;return RECEIVERS.map(receiver=>gatherReceiver(receiver,count,aperture,force).indirect)}
+    function drawComposite(){if(!FIELD||!state.gather)return;const canvas=$("compositeCanvas"),ctx=canvas.getContext("2d"),gain=Number($("indirectGain").value)/100,allIndirect=computeAllIndirect(),modes=state.composite==="split"?["direct","final"]:[state.composite],panels=modes.length,panelWidth=canvas.width/panels;ctx.fillStyle="#02080c";ctx.fillRect(0,0,canvas.width,canvas.height);modes.forEach((mode,panel)=>{const offset=panel*panelWidth;ctx.save();ctx.beginPath();ctx.rect(offset,0,panelWidth,canvas.height);ctx.clip();RECEIVERS.forEach((receiver,index)=>{const local=[receiver.position[0],receiver.position[1],receiver.position[2]],p=isoProject(local,canvas,offset+panelWidth/2-canvas.width/2,panels===2?.25:.33),color=mode==="direct"?receiver.direct.map(value=>1-Math.exp(-value*1.45)):compositeReceiver(receiver,allIndirect[index],gain);ctx.fillStyle=rgbDisplay(color);ctx.fillRect(p[0]-13,p[1]-9,26,18)});drawLightGizmo(ctx,canvas,FIELD.light,offset+panelWidth/2-canvas.width/2);ctx.restore();ctx.fillStyle="#e6f4f6";ctx.font="14px Segoe UI";ctx.fillText(mode==="direct"?"A · Direct only":"B · Direct + Voxel GI",offset+14,25)});if(panels===2){ctx.strokeStyle="#41606d";ctx.beginPath();ctx.moveTo(panelWidth,0);ctx.lineTo(panelWidth,canvas.height);ctx.stroke()}$("compositeReadout").textContent=`gain=${gain.toFixed(2)} · history=0`}
+    function updateLightCopy(){const light=FIELD.light;if(light.type==="point"){$("lightIcon").textContent="●";$("lightTitle").textContent="点光源 gizmo";$("lightDescription").textContent=`position=(${light.position.map(v=>v.toFixed(2)).join(",")})；每个 surface 使用 position−surfacePosition。`;$("lightCoordinate").textContent=`P=(${light.position.map(v=>v.toFixed(2)).join(",")})`;$("lightNumbers").textContent=`point position=(${light.position.map(v=>v.toFixed(3)).join(",")})` }else{$("lightIcon").textContent="☀";$("lightTitle").textContent="方向光 gizmo";$("lightDescription").textContent=`toLight=(${light.toLight.map(v=>v.toFixed(2)).join(",")})；黄色箭头绘制传播方向 -toLight。`;$("lightCoordinate").textContent=`toLight=(${light.toLight.map(v=>v.toFixed(2)).join(",")})`;$("lightNumbers").textContent=`directional toLight=(${light.toLight.map(v=>v.toFixed(3)).join(",")})`}}
+    function rebuildPipeline(){state.lightType=$("globalLightType").value;state.lightAngle=Number($("globalLightAngle").value);state.resolution=Number($("globalResolution").value);const light=makeLight(state.lightType,state.lightAngle);FIELD=buildLevel0(state.resolution,light);MIPS=buildMipChain(FIELD);RECEIVERS=buildReceivers(FIELD);state.frame+=1;$("globalLightOut").value=`${state.lightAngle}°`;$("frameStatus").textContent=`frame ${state.frame} · ${FIELD.voxels.length} voxels · ${MIPS.length} mips · history 0`;$("sharedSlice").max=state.resolution-1;if(Number($("sharedSlice").value)>=state.resolution)$("sharedSlice").value=Math.floor(state.resolution/2);$("mipLevel").max=MIPS.length-1;$("receiverIndex").max=RECEIVERS.length-1;updateLightCopy();drawScene();drawOccupancy();drawAttributes();drawInjection();drawMip();runGather()}
+    ["globalLightType","globalLightAngle","globalResolution"].forEach(id=>$(id).addEventListener("input",rebuildPipeline));$("sharedSlice").addEventListener("input",()=>{drawOccupancy();drawAttributes();drawInjection()});document.querySelectorAll("[data-attribute]").forEach(button=>button.addEventListener("click",()=>{state.attribute=button.dataset.attribute;document.querySelectorAll("[data-attribute]").forEach(item=>item.classList.toggle("active",item===button));drawAttributes()}));$("injectOcc").addEventListener("click",()=>{state.inject="occupancy";$("injectOcc").classList.add("active");$("injectRad").classList.remove("active");drawInjection()});$("injectRad").addEventListener("click",()=>{state.inject="radiance";$("injectRad").classList.add("active");$("injectOcc").classList.remove("active");drawInjection()});$("mipLevel").addEventListener("input",drawMip);["receiverIndex","gatherAperture","gatherCount","gatherForceLod0"].forEach(id=>$(id).addEventListener("input",runGather));$("indirectGain").addEventListener("input",drawComposite);[["splitView","split"],["directView","direct"],["finalView","final"]].forEach(([id,mode])=>$(id).addEventListener("click",()=>{state.composite=mode;["splitView","directView","finalView"].forEach(buttonId=>$(buttonId).classList.toggle("active",buttonId===id));drawComposite()}));$("resetLab").addEventListener("click",()=>{if(state.animation){clearInterval(state.animation);state.animation=null;$("animateLight").textContent="播放高速移动光"}$("globalLightType").value="directional";$("globalLightAngle").value=-38;$("globalResolution").value=16;$("gatherAperture").value=42;$("gatherCount").value=3;rebuildPipeline()});$("animateLight").addEventListener("click",()=>{if(state.animation){clearInterval(state.animation);state.animation=null;$("animateLight").textContent="播放高速移动光";return}$("animateLight").textContent="停止移动光";state.animation=setInterval(()=>{let angle=Number($("globalLightAngle").value)+9;if(angle>180)angle=-180;$("globalLightAngle").value=angle;rebuildPipeline()},100)});
+    rebuildPipeline();
+    window.__GI_PAGE__={ready:true,module:"voxel_gi",dataContract:VOXEL_SPEC.id,stages:8,demos:7,historyFrames:0,field:()=>FIELD,mips:()=>MIPS,stopAnimation:()=>{if(state.animation){clearInterval(state.animation);state.animation=null}}};
+  })();
+  </script>
+</body>
+</html>

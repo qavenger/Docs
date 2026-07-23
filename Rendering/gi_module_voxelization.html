@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GI 基础模块 · 从世界坐标到可查询的 Voxel Level 0</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root{--bg:#061019;--panel:#0b1823;--panel2:#102331;--ink:#eef8fc;--muted:#a4bac8;--line:#29485b;--cyan:#63e0dc;--violet:#ad98ff;--amber:#ffc86c;--green:#79e4aa;--red:#ff8597;--max:1180px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 18% -10%,#17374a 0,transparent 31%),var(--bg);color:var(--ink);font:15px/1.72 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}code{font-family:"Cascadia Code",Consolas,monospace}.wrap{width:min(var(--max),calc(100% - 34px));margin:auto}.top{position:sticky;top:0;z-index:20;background:#061019e8;border-bottom:1px solid #263d4c;backdrop-filter:blur(12px)}.top nav{height:58px;display:flex;justify-content:space-between;align-items:center}.brand{color:var(--ink);font-weight:760}.navs{display:flex;gap:17px;font-size:13px}.hero{padding:70px 0 44px;border-bottom:1px solid #1d3443}.eyebrow,.k{color:var(--cyan);font:700 12px/1.2 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}.hero h1{max-width:1000px;margin:13px 0 17px;font-size:clamp(38px,6vw,68px);line-height:1.04}.hero p{max-width:880px;color:#bed0dc;font-size:18px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.chip{border:1px solid #39586b;border-radius:99px;padding:5px 10px;color:#c2d4df;background:#0b1a25;font-size:12px}.chip.hot{border-color:#7a6ab8;color:#cfc3ff}section{padding:54px 0;border-bottom:1px solid #19303d}.head{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:end;margin-bottom:22px}.head h2{margin:7px 0 0;font-size:clamp(27px,4vw,41px);line-height:1.14}.head>p{margin:0;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{grid-column:span 4;padding:19px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#102331,#09151f)}.card.half{grid-column:span 6}.card.wide{grid-column:span 8}.card.full{grid-column:1/-1}.card h3{margin:0 0 7px}.card p{color:#b4c6d1}.callout{padding:14px 16px;border-left:3px solid var(--amber);border-radius:0 11px 11px 0;background:#201b10;color:#d7c9aa}.warning{border-left-color:var(--red);background:#21151c}.stage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.lab{border:1px solid #315268;border-radius:15px;background:#08131c;overflow:hidden}.lab-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:11px 13px;border-bottom:1px solid #263f50;background:#0e202d}.lab-head b{font-size:14px}.badge{border:1px solid #456478;border-radius:99px;padding:3px 7px;color:#9fc3d5;font:10px/1.2 ui-monospace}.lab canvas{display:block;width:100%;height:auto;background:#03090e}.lab-copy{padding:10px 13px;color:var(--muted);font-size:12px}.controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:10px 13px;border-top:1px solid #243c4c}.controls label{color:#b8ccd7;font-size:12px}.controls input[type=range]{width:150px;accent-color:var(--cyan)}select,button{font:inherit;color:#dcebf3;background:#102534;border:1px solid #365a70;border-radius:8px;padding:6px 9px}button{cursor:pointer}button:hover,button.active{border-color:var(--cyan);background:#174154}.readout{margin-left:auto;color:var(--amber);font:12px ui-monospace,monospace}.steps{display:grid;gap:9px}.step{padding:12px 13px;border-left:3px solid var(--cyan);border-radius:0 9px 9px 0;background:#0e202c}.step b{display:block}.step span{color:var(--muted);font-size:12px}.manifest{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.manifest div{padding:10px;border:1px solid #2b4658;border-radius:9px;background:#07131c}.manifest b{display:block;color:#eaf7fb;font-size:12px}.manifest span{color:#91a9b8;font:11px/1.45 ui-monospace,monospace}.split{display:grid;grid-template-columns:320px 1fr;gap:14px}.stage-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px}.stage-buttons button{font-size:12px}.viewer canvas{display:block;width:100%;height:auto;border-radius:12px;background:#02070b;touch-action:none}.legend{display:flex;flex-wrap:wrap;gap:13px;margin-top:8px;color:#95adbb;font-size:11px}.legend i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:2px}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{padding:9px;border:1px solid #284556;border-radius:8px;background:#071722}.stat strong{display:block;color:#effaff;font:700 15px ui-monospace}.stat span{font-size:10px;color:var(--muted)}.num{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--cyan);color:#041018;font:800 12px ui-monospace}.foot{padding:28px 0;display:flex;justify-content:space-between;color:#87a0af}.next{display:flex;gap:16px}@media(max-width:900px){.head,.split{grid-template-columns:1fr}.stage-grid{grid-template-columns:1fr}.card,.card.half,.card.wide{grid-column:1/-1}.manifest{grid-template-columns:1fr 1fr}.navs{display:none}}@media(max-width:570px){.manifest{grid-template-columns:1fr}.foot{display:block}.next{margin-top:8px;flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+  <header class="top"><nav class="wrap"><a class="brand" href="index.html">GI 学习地图 / Voxelization</a><div class="navs"><a href="#coordinates">坐标</a><a href="#coverage">覆盖</a><a href="#attributes">属性</a><a href="#radiance">辐射</a><a href="gi_module_cone_tracing.html">下一课</a></div></nav></header>
+  <main>
+    <section class="hero"><div class="wrap">
+      <div class="eyebrow">Representation · Current-frame data</div>
+      <h1>Voxelization：先把“世界”翻译成可查询的格子</h1>
+      <p>这页不要求你先懂保守光栅化。我们从一个世界坐标开始，逐步看它落入哪个 cell、为何中心采样会漏写、主轴投影做了什么、多个表面如何合并，最后才把当前光源注入 Level 0。</p>
+      <div class="chips"><span class="chip">7 个独立实验</span><span class="chip">公式 ⇄ 代值 ⇄ 伪代码 ⇄ 实际 JS</span><span class="chip hot">CPU 教学解析采样，绝不冒充 GPU conservative raster</span><span class="chip">共享数据规则 course-voxel-field-v2</span></div>
+      <div class="gi-light-card"><div class="gi-light-icon">☀</div><div><strong>当前光源（与下方类型、方位角滑杆同步）</strong><div>坐标系：+X 向右、+Y 向上、+Z 朝场景后方。方向光使用“表面指向光”的 <code>toLight</code>；它的光线传播方向是 <code>−toLight</code>。</div><div class="gi-light-meta"><span>world domain = [-1,1]³</span><span id="heroCurrentLight">当前方向光 toLight = (+0.455,+0.816,-0.356)</span><span id="heroAlternateLight">同角度点光 position = (+0.489,+0.580,-0.382)</span><span>Level 0 = premultiplied RGB + opacity</span></div></div></div>
+    </div></section>
+
+    <section id="contract"><div class="wrap">
+      <div class="head"><div><div class="k">Shared contract</div><h2>后续 Cone 与 Voxel GI 都消费这一份规则</h2></div><p>“同一数据”不是指复制一张截图，而是三页都声明相同的域、场景、光源、Level 0 通道和 mip 规则。版本号不一致时，结果不能直接对比。</p></div>
+      <div class="manifest">
+        <div><b>场景域</b><span>min=(-1,-1,-1)<br>max=( 1, 1, 1)</span></div>
+        <div><b>Level 0</b><span>RGB = outgoing radiance × opacity<br>A = opacity</span></div>
+        <div><b>表面代理</b><span>floor + back wall + blue box + red block</span></div>
+        <div><b>教学采样器</b><span>CPU analytic surface test<br>threshold=0.62×cell</span></div>
+      </div>
+      <div class="callout" style="margin-top:12px"><b>实现边界：</b>本页用 CPU 在 cell center 附近测试解析平面/盒表面，目的是展示数据语义与可重复中间结果。二维“保守覆盖”实验执行的是 triangle–cell 几何相交测试；它不是 D3D12/Vulkan 的硬件 conservative rasterization，也不声称具备其精确覆盖规则。</div>
+    </div></section>
+
+    <section id="coordinates"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 01 · world → voxel</div><h2>连续坐标，先归一化，再离散化</h2></div><p>不要直接把 world position 乘分辨率。必须先减去 volumeMin，再除以 volumeExtent；域外点要拒绝，不能 clamp 回边界。</p></div>
+      <div class="stage-grid">
+        <article class="lab">
+          <div class="lab-head"><b>实验 1A · 移动世界坐标</b><span class="badge">2D XZ SLICE</span></div>
+          <canvas id="mapCanvas" width="560" height="300" aria-label="世界坐标到体素坐标映射"></canvas>
+          <div class="controls"><label>world.x <input id="worldX" type="range" min="-120" max="120" value="28"></label><label>world.z <input id="worldZ" type="range" min="-120" max="120" value="-36"></label><span class="readout" id="mapReadout"></span></div>
+          <div class="lab-copy">白点是连续世界位置；高亮格是整数 cell。把点拖到 ±1 外，观察结果从索引变成“域外拒绝”。</div>
+        </article>
+        <div class="steps"><div class="step"><b>① 减去 volumeMin</b><span>把任意世界 AABB 的左下角移到原点。</span></div><div class="step"><b>② 除以 extent</b><span>得到 0..1 的无量纲坐标 uvw。</span></div><div class="step"><b>③ 乘 N 并 floor</b><span>得到整数 cell；最大边界采用半开区间 [min,max)。</span></div><div class="step"><b>④ 域外直接返回 null</b><span>clamp 会把域外几何粘到边墙，制造假遮挡。</span></div></div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">代入本例</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>把 2 米宽的盒子切成 16 份，每格宽 0.125 米。世界 x=0.28 距离左边界 -1 共 1.28 米，所以它大约在第 10 格。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula"><span data-gi-symbol="uvw">uvw</span> = (p − volumeMin) / (volumeMax − volumeMin)<br>cell = floor(<span data-gi-symbol="uvw">uvw</span> × N)</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">uvw.x = (0.28 − (−1)) / 2 = <span class="gi-number">0.64</span><br>cell.x = floor(0.64 × 16) = <span class="gi-number">10</span></div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="概念映射">如果 p 不在半开区间 [min,max)，返回“域外”
+uvw = (p - min) / (max - min)
+返回 floor(uvw * resolution)</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 worldToVoxel()">
+function worldToVoxel(position, resolution) {
+  const uvw = position.map((value, axis) =>
+    (value - VOXEL_SPEC.min[axis]) /
+    (VOXEL_SPEC.max[axis] - VOXEL_SPEC.min[axis])
+  );
+
+  const outside = uvw.some((value) => value &lt; 0 || value >= 1);
+  if (outside) return null;
+
+  return uvw.map((value) => Math.floor(value * resolution));
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="coverage"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 02–04 · coverage</div><h2>中心漏写 → 主轴投影 → 保守 A/B</h2></div><p>这三步回答不同问题：中心漏写说明“为什么需要更宽覆盖”；主轴选择减少投影退化；保守相交测试决定哪些 cell 至少与三角形相交。</p></div>
+      <div class="stage-grid">
+        <article class="lab">
+          <div class="lab-head"><b>实验 2 · Center sample 为什么漏</b><span class="badge">CPU 2D GEOMETRY TEST</span></div>
+          <canvas id="coverageCanvas" width="560" height="320" aria-label="中心采样与三角形格子相交测试对比"></canvas>
+          <div class="controls"><button id="centerMode" class="active">A · 只测中心</button><button id="overlapMode">B · triangle-cell 相交</button><span class="readout" id="coverageReadout"></span></div>
+          <div class="lab-copy">红色描边格：三角形穿过但中心没命中。B 模式包含它们，因此略“厚”但不会像 A 那样直接漏空。</div>
+        </article>
+        <article class="lab">
+          <div class="lab-head"><b>实验 3 · Dominant-axis 投影</b><span class="badge">3D NORMAL → 2D PLANE</span></div>
+          <canvas id="axisCanvas" width="560" height="320" aria-label="三角形主轴投影示意"></canvas>
+          <div class="controls"><label>三角形法线 <select id="normalPreset"><option value="x">n=(0.88,0.25,0.40)</option><option value="y" selected>n=(0.18,0.95,0.25)</option><option value="z">n=(0.20,0.35,0.92)</option></select></label><span class="readout" id="axisReadout"></span></div>
+          <div class="lab-copy">删除绝对法线最大分量对应的轴，相当于沿该轴看三角形，通常能得到面积最大的投影，减少退化细线。</div>
+        </article>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">规则</button><button data-gi-tab="numbers">代入本例</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>像用三个相机分别从 X/Y/Z 方向拍三角形。选择看起来“最正”的那张，而不是几乎只剩一条线的侧视图。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">axis = argmax(|n.x|, |n.y|, |n.z|)<br>projectX → 保留 yz；projectY → 保留 xz；projectZ → 保留 xy</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">n=(0.18, <span class="gi-number">0.95</span>, 0.25)<br>最大绝对分量是 y → 沿 Y 看 → 投影到 XZ</div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">取三角形法线三个分量的绝对值
+找最大分量的索引
+删除这个坐标，得到二维投影坐标
+在投影平面执行覆盖测试</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 dominantAxis()">
+function dominantAxis(normal) {
+  const magnitude = normal.map(Math.abs);
+  let axis = 0;
+
+  if (magnitude[1] > magnitude[axis]) axis = 1;
+  if (magnitude[2] > magnitude[axis]) axis = 2;
+
+  return axis;
+}</code></pre></div>
+      </div>
+      <div class="callout warning"><b>生产实现提醒：</b>主轴投影不等于 conservative rasterization。D3D12 的 Conservative Rasterization、Vulkan 的 <code>VK_EXT_conservative_rasterization</code> 有明确覆盖与 overestimation 规则；本实验只在 CPU 上用“角点、顶点、边相交”判断 2D triangle-cell overlap。</div>
+    </div></section>
+
+    <section id="attributes"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 05 · attribute merge</div><h2>一个 cell 收到多个 surface，不能靠最后写入者</h2></div><p>occupancy 可以用 OR 合并；normal、albedo、radiance 却需要可解释的策略。这里把三次并发候选写入画出来。</p></div>
+      <div class="stage-grid">
+        <article class="lab">
+          <div class="lab-head"><b>实验 4 · 三个候选如何合并</b><span class="badge">DETERMINISTIC CPU MODEL</span></div>
+          <canvas id="mergeCanvas" width="560" height="300" aria-label="体素属性合并策略对比"></canvas>
+          <div class="controls"><label>策略 <select id="mergeMode"><option value="last">最后写入者</option><option value="average" selected>opacity 加权平均</option><option value="nearest">离 cell center 最近</option></select></label><span class="readout" id="mergeReadout"></span></div>
+          <div class="lab-copy">“最后写入者”会随并发顺序闪烁；平均更稳定但会把不相关表面混在一起；最近表面保方向，却可能丢掉另一层。</div>
+        </article>
+        <div class="steps"><div class="step"><b>occupancy</b><span>位 OR 或原子计数，回答“是否有表面”。</span></div><div class="step"><b>normal</b><span>先加权求和，最后 normalize；相反法线可能抵消。</span></div><div class="step"><b>albedo / opacity</b><span>可加权平均或 fragment list；策略必须与薄片/透明政策一致。</span></div><div class="step"><b>radiance</b><span>不要在未知竞争顺序下直接覆盖；常见做法是原子打包、独立注入 pass 或唯一 writer。</span></div></div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>把每个候选看作一票，opacity 是票重。颜色可以加权平均；法线先平均向量再归一化，否则长度不再是 1。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">attribute = Σ(wᵢ × attributeᵢ) / Σwᵢ<br>normal = normalize(Σ(wᵢ × normalᵢ))</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">red=0.8, blue=0.6 → R=(0.8×1+0.6×0.1)/1.4=<span class="gi-number">0.614</span></div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">累计 每个候选颜色 × opacity
+累计 opacity
+颜色除以 opacity 总和
+法线向量加权后重新归一化</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 mergeAttributes()">
+function mergeAttributes(candidates, mode) {
+  if (mode === "last") return candidates.at(-1);
+
+  if (mode === "nearest") {
+    return candidates.reduce((best, item) =>
+      item.distance < best.distance ? item : best
+    );
+  }
+
+  const weight = candidates.reduce(
+    (sum, item) => sum + item.opacity,
+    0
+  );
+  const color = [0, 1, 2].map((channel) =>
+    candidates.reduce(
+      (sum, item) => sum + item.color[channel] * item.opacity,
+      0
+    ) / weight
+  );
+
+  return { color, opacity: Math.min(1, weight) };
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="radiance"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 06–07 · inject + inspect Level 0</div><h2>占用不动，当前光源只改 radiance</h2></div><p>最后这个 3D 实验不是 GPU voxelization：JavaScript 按共享解析规则生成 Level 0，再用 Canvas 2D 做可旋转投影。黄色 gizmo 永远表示真实光源位置或方向。</p></div>
+      <div class="split">
+        <aside class="card full">
+          <div class="stage-buttons" id="volumeViews"><button class="active" data-view="scene">① Surface</button><button data-view="occupancy">② Occupancy</button><button data-view="normal">③ Normal</button><button data-view="radiance">④ Radiance</button><button data-view="slice">⑤ Level-0 Slice</button><button data-view="light">⑥ Light A/B</button></div>
+          <p id="volumeExplain">先认出地面、后墙、蓝盒和红块。坐标轴原点在 volume 中心。</p>
+          <label>分辨率 <input id="volumeRes" type="range" min="10" max="22" step="4" value="14"> <output id="volumeResOut">14³</output></label><br>
+          <label>光源 <select id="lightType"><option value="directional">方向光</option><option value="point">点光源</option></select></label><br>
+          <label>方向/位置方位 <input id="lightAngle" type="range" min="-180" max="180" value="-38"> <output id="lightAngleOut">-38°</output></label><br>
+          <label>切片 Z <input id="sliceIndex" type="range" min="0" max="13" value="7"> <output id="sliceIndexOut">7</output></label>
+          <div class="stat-grid" style="margin-top:12px"><div class="stat"><strong id="occupiedCount">0</strong><span>occupied</span></div><div class="stat"><strong id="litCount">0</strong><span>N·L &gt; 0</span></div><div class="stat"><strong id="cellSizeOut">0.143</strong><span>cell size</span></div><div class="stat"><strong id="fieldId">v2</strong><span>data contract</span></div></div>
+          <div class="callout" style="margin-top:12px;font-size:12px"><b>拖拽画布旋转。</b>切换方向光/点光时，占用和 normal 不变；radiance 会按当前帧光源重新计算。红块在本课中是普通红色表面，不是自发光体，避免把 emission 与 injection 混为一谈。</div>
+        </aside>
+        <div class="viewer"><canvas id="volumeCanvas" width="900" height="540" aria-label="共享体素场 Level 0 三维投影"></canvas><div class="legend"><span><i style="background:#ffcc62"></i>光源/方向 gizmo</span><span><i style="background:#64ddd7"></i>高 radiance</span><span><i style="background:#708695"></i>occupancy</span><span><i style="background:#ff7f61"></i>red surface</span></div></div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>每个表面 voxel 像一个很小的漫反射贴片。先算它面向光多少，再乘颜色与光强。Level 0 存“这个贴片当前向外发出的近似 radiance”。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">NdotL = max(dot(normal, toLight), 0)<br>outgoing = albedo × (ambient + irradiance × NdotL / π)<br>stored.rgb = outgoing × opacity</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">normal=(0,1,0), toLight=(0.45,0.82,-0.35) normalized<br>NdotL≈<span class="gi-number">0.82</span>；灰地板得到比背墙更高的当前 radiance</div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">对每个 occupied voxel：
+  求表面指向光的方向
+  点光源额外计算 1 / distance² 衰减
+  计算 max(normal · toLight, 0)
+  写入 outgoingRadiance × opacity 与 opacity</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 injectRadiance()">
+function injectRadiance(surface, light) {
+  const sample = evaluateLight(surface.position, light);
+  const nDotL = Math.max(0, dot(surface.normal, sample.toLight));
+  const scale = 0.045 + sample.strength * nDotL / Math.PI;
+  const outgoing = surface.albedo.map(
+    (channel) => channel * scale
+  );
+
+  return {
+    rgb: outgoing.map((channel) => channel * surface.opacity),
+    opacity: surface.opacity,
+    nDotL
+  };
+}</code></pre></div>
+      </div>
+      <div class="callout warning"><b>Level 0 还不是 Voxel GI：</b>它只是一份空间数据。下一课会建立 3D mip，并用 cone 读取它；若只有 occupancy 没有 radiance，cone 只能做遮挡，不能返回间接光。</div>
+    </div></section>
+
+    <section id="debug"><div class="wrap">
+      <div class="head"><div><div class="k">Debug order</div><h2>从 Level 0 向后排查，不从最终 GI 猜</h2></div><p>每一项都能在上面的独立视图中被直接证明。</p></div>
+      <div class="grid">
+        <article class="card"><span class="num">1</span><h3>Domain</h3><p>边界是否为半开区间？域外点有没有被错误 clamp 到墙上？</p></article>
+        <article class="card"><span class="num">2</span><h3>Coverage</h3><p>斜三角形有没有中心漏写？所谓“保守”究竟是硬件覆盖还是教学近似？</p></article>
+        <article class="card"><span class="num">3</span><h3>Attributes</h3><p>normal/albedo 冲突是否确定性合并？normal 是否重新 normalize？</p></article>
+        <article class="card"><span class="num">4</span><h3>Light gizmo</h3><p>toLight 与光传播方向是否写反？点光位置是否和实际计算一致？</p></article>
+        <article class="card"><span class="num">5</span><h3>Injection</h3><p>固定几何转动光源，occupancy 应不变，Level 0 radiance 应立即变化。</p></article>
+        <article class="card"><span class="num">6</span><h3>Only then mip</h3><p>Level 0 正确后再看 mip。否则粗层只是把错误平均得更难定位。</p></article>
+      </div>
+    </div></section>
+  </main>
+  <footer><div class="wrap foot"><span>GI Course · Voxel data contract <code>course-voxel-field-v2</code></span><div class="next"><a href="gi_module_foundations.html">← Foundations</a><a href="gi_module_cone_tracing.html">下一课：Cone Tracing →</a><a href="gi_module_voxel_gi.html">组装：Voxel GI →</a></div></div></footer>
+  <script src="gi_course.js"></script>
+  <script>
+  (() => {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+    const dot = (a, b) => a.reduce((sum, value, index) => sum + value * b[index], 0);
+    const length3 = (v) => Math.hypot(v[0], v[1], v[2]);
+    const normalize = (v) => {
+      const length = length3(v) || 1;
+      return v.map((value) => value / length);
+    };
+    const mix = (a, b, t) => a + (b - a) * t;
+    const VOXEL_SPEC = Object.freeze({
+      id: "course-voxel-field-v2",
+      min: [-1, -1, -1],
+      max: [1, 1, 1],
+      defaultResolution: 14
+    });
+
+    function worldToVoxel(position, resolution) {
+      const uvw = position.map((value, axis) =>
+        (value - VOXEL_SPEC.min[axis]) /
+        (VOXEL_SPEC.max[axis] - VOXEL_SPEC.min[axis])
+      );
+      const outside = uvw.some((value) => value < 0 || value >= 1);
+      if (outside) return null;
+      return uvw.map((value) => Math.floor(value * resolution));
+    }
+
+    function voxelCenter(cell, resolution) {
+      return cell.map((index, axis) =>
+        VOXEL_SPEC.min[axis] +
+        (index + 0.5) *
+        (VOXEL_SPEC.max[axis] - VOXEL_SPEC.min[axis]) /
+        resolution
+      );
+    }
+
+    function dominantAxis(normal) {
+      const magnitude = normal.map(Math.abs);
+      let axis = 0;
+      if (magnitude[1] > magnitude[axis]) axis = 1;
+      if (magnitude[2] > magnitude[axis]) axis = 2;
+      return axis;
+    }
+
+    function pointInTriangle(point, triangle) {
+      const [a, b, c] = triangle;
+      const sign = (p1, p2, p3) =>
+        (p1[0] - p3[0]) * (p2[1] - p3[1]) -
+        (p2[0] - p3[0]) * (p1[1] - p3[1]);
+      const d1 = sign(point, a, b);
+      const d2 = sign(point, b, c);
+      const d3 = sign(point, c, a);
+      const hasNegative = d1 < 0 || d2 < 0 || d3 < 0;
+      const hasPositive = d1 > 0 || d2 > 0 || d3 > 0;
+      return !(hasNegative && hasPositive);
+    }
+
+    function segmentsIntersect(a, b, c, d) {
+      const cross = (p, q, r) =>
+        (q[0] - p[0]) * (r[1] - p[1]) -
+        (q[1] - p[1]) * (r[0] - p[0]);
+      const abC = cross(a, b, c);
+      const abD = cross(a, b, d);
+      const cdA = cross(c, d, a);
+      const cdB = cross(c, d, b);
+      return abC * abD <= 0 && cdA * cdB <= 0;
+    }
+
+    function triangleCellOverlap2D(triangle, minimum, maximum) {
+      const corners = [
+        [minimum[0], minimum[1]],
+        [maximum[0], minimum[1]],
+        [maximum[0], maximum[1]],
+        [minimum[0], maximum[1]]
+      ];
+      if (corners.some((point) => pointInTriangle(point, triangle))) return true;
+      if (triangle.some((point) =>
+        point[0] >= minimum[0] && point[0] <= maximum[0] &&
+        point[1] >= minimum[1] && point[1] <= maximum[1]
+      )) return true;
+      const triEdges = [[0, 1], [1, 2], [2, 0]];
+      const boxEdges = [[0, 1], [1, 2], [2, 3], [3, 0]];
+      return triEdges.some(([i, j]) =>
+        boxEdges.some(([k, l]) =>
+          segmentsIntersect(triangle[i], triangle[j], corners[k], corners[l])
+        )
+      );
+    }
+
+    function boxSurface(position, center, extent, threshold) {
+      const distance = position.map((value, axis) =>
+        Math.abs(value - center[axis]) - extent[axis]
+      );
+      if (distance.some((value) => value > threshold)) return null;
+      let axis = 0;
+      if (distance[1] > distance[axis]) axis = 1;
+      if (distance[2] > distance[axis]) axis = 2;
+      const normal = [0, 0, 0];
+      normal[axis] = position[axis] >= center[axis] ? 1 : -1;
+      return normal;
+    }
+
+    function classifySurface(position, cellSize) {
+      const threshold = cellSize * 0.62;
+      if (
+        Math.abs(position[1] + 0.72) < threshold &&
+        Math.abs(position[0]) < 0.92 &&
+        Math.abs(position[2]) < 0.92
+      ) return { normal: [0, 1, 0], albedo: [0.44, 0.50, 0.54], opacity: 0.78, kind: "floor" };
+      if (
+        Math.abs(position[2] - 0.68) < threshold &&
+        Math.abs(position[0]) < 0.92 &&
+        position[1] > -0.72 &&
+        position[1] < 0.82
+      ) return { normal: [0, 0, -1], albedo: [0.30, 0.46, 0.62], opacity: 0.82, kind: "wall" };
+      let normal = boxSurface(position, [-0.22, -0.34, 0.04], [0.30, 0.38, 0.25], threshold);
+      if (normal) return { normal, albedo: [0.18, 0.48, 0.68], opacity: 0.88, kind: "blueBox" };
+      normal = boxSurface(position, [0.55, -0.43, -0.18], [0.14, 0.20, 0.16], threshold);
+      if (normal) return { normal, albedo: [0.92, 0.20, 0.08], opacity: 0.90, kind: "redBlock" };
+      return null;
+    }
+
+    function makeLight(type, degrees) {
+      const angle = degrees * Math.PI / 180;
+      if (type === "point") {
+        return {
+          type,
+          position: [
+            Math.cos(angle) * 0.62,
+            0.58,
+            Math.sin(angle) * 0.62
+          ],
+          strength: 1.5
+        };
+      }
+      return {
+        type,
+        toLight: normalize([
+          Math.cos(angle) * 0.58,
+          0.82,
+          Math.sin(angle) * 0.58
+        ]),
+        strength: 2.2
+      };
+    }
+
+    function evaluateLight(position, light) {
+      if (light.type === "directional") {
+        return { toLight: light.toLight, strength: light.strength };
+      }
+      const delta = light.position.map((value, axis) => value - position[axis]);
+      const distanceSquared = Math.max(0.10, dot(delta, delta));
+      return {
+        toLight: normalize(delta),
+        strength: light.strength / distanceSquared
+      };
+    }
+
+    function injectRadiance(surface, light) {
+      const sample = evaluateLight(surface.position, light);
+      const nDotL = Math.max(0, dot(surface.normal, sample.toLight));
+      const scale = 0.045 + sample.strength * nDotL / Math.PI;
+      const outgoing = surface.albedo.map((channel) => channel * scale);
+      return {
+        rgb: outgoing.map((channel) => channel * surface.opacity),
+        opacity: surface.opacity,
+        nDotL
+      };
+    }
+
+    function buildLevel0(resolution, light) {
+      const voxels = [];
+      const extent = VOXEL_SPEC.max[0] - VOXEL_SPEC.min[0];
+      const cellSize = extent / resolution;
+      for (let z = 0; z < resolution; z += 1) {
+        for (let y = 0; y < resolution; y += 1) {
+          for (let x = 0; x < resolution; x += 1) {
+            const position = voxelCenter([x, y, z], resolution);
+            const surface = classifySurface(position, cellSize);
+            if (!surface) continue;
+            surface.position = position;
+            const injected = injectRadiance(surface, light);
+            voxels.push({ x, y, z, ...surface, ...injected });
+          }
+        }
+      }
+      return { id: VOXEL_SPEC.id, resolution, cellSize, light, voxels };
+    }
+
+    function mergeAttributes(candidates, mode) {
+      if (mode === "last") return candidates.at(-1);
+      if (mode === "nearest") {
+        return candidates.reduce((best, item) =>
+          item.distance < best.distance ? item : best
+        );
+      }
+      const weight = candidates.reduce((sum, item) => sum + item.opacity, 0);
+      const color = [0, 1, 2].map((channel) =>
+        candidates.reduce(
+          (sum, item) => sum + item.color[channel] * item.opacity,
+          0
+        ) / weight
+      );
+      return { color, opacity: Math.min(1, weight), distance: 0 };
+    }
+
+    function setupCanvas(canvas) {
+      const context = canvas.getContext("2d");
+      return { canvas, context };
+    }
+
+    const map = setupCanvas($("mapCanvas"));
+    function drawMap() {
+      const { context: ctx, canvas } = map;
+      const x = Number($("worldX").value) / 100;
+      const z = Number($("worldZ").value) / 100;
+      const resolution = 8;
+      const margin = 32;
+      const size = Math.min(canvas.width - margin * 2, canvas.height - margin * 2);
+      const left = (canvas.width - size) / 2;
+      const top = (canvas.height - size) / 2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#050c12";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#274455";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= resolution; i += 1) {
+        const p = i / resolution * size;
+        ctx.beginPath(); ctx.moveTo(left + p, top); ctx.lineTo(left + p, top + size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(left, top + p); ctx.lineTo(left + size, top + p); ctx.stroke();
+      }
+      const cell = worldToVoxel([x, 0, z], resolution);
+      if (cell) {
+        ctx.fillStyle = "#63e0dc33";
+        ctx.fillRect(
+          left + cell[0] / resolution * size,
+          top + (resolution - 1 - cell[2]) / resolution * size,
+          size / resolution,
+          size / resolution
+        );
+      }
+      const px = left + (x + 1) * 0.5 * size;
+      const py = top + (1 - (z + 1) * 0.5) * size;
+      ctx.strokeStyle = cell ? "#ffffff" : "#ff8597";
+      ctx.fillStyle = cell ? "#ffffff" : "#ff8597";
+      ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(px - 13, py); ctx.lineTo(px + 13, py); ctx.moveTo(px, py - 13); ctx.lineTo(px, py + 13); ctx.stroke();
+      ctx.fillStyle = "#9fb8c6";
+      ctx.font = "12px Segoe UI";
+      ctx.fillText("-1", left - 7, top + size + 18);
+      ctx.fillText("+X", left + size + 8, top + size + 4);
+      ctx.fillText("+Z", left + 5, top - 8);
+      $("mapReadout").textContent = cell
+        ? `p=(${x.toFixed(2)},${z.toFixed(2)}) → cell=(${cell[0]},${cell[2]})`
+        : `p=(${x.toFixed(2)},${z.toFixed(2)}) → 域外`;
+    }
+
+    let coverageMode = "center";
+    const coverage = setupCanvas($("coverageCanvas"));
+    function drawCoverage() {
+      const { context: ctx, canvas } = coverage;
+      const columns = 10;
+      const rows = 6;
+      const cell = 46;
+      const left = 48;
+      const top = 22;
+      const triangle = [[0.45, 4.8], [9.1, 0.65], [8.65, 1.55]];
+      let centerHits = 0;
+      let overlapHits = 0;
+      let missed = 0;
+      ctx.fillStyle = "#050c12"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < rows; y += 1) {
+        for (let x = 0; x < columns; x += 1) {
+          const center = [x + 0.5, y + 0.5];
+          const centerHit = pointInTriangle(center, triangle);
+          const overlapHit = triangleCellOverlap2D(triangle, [x, y], [x + 1, y + 1]);
+          if (centerHit) centerHits += 1;
+          if (overlapHit) overlapHits += 1;
+          if (overlapHit && !centerHit) missed += 1;
+          const selected = coverageMode === "center" ? centerHit : overlapHit;
+          ctx.fillStyle = selected ? "#63e0dc40" : "#08141d";
+          ctx.fillRect(left + x * cell, top + y * cell, cell, cell);
+          ctx.strokeStyle = overlapHit && !centerHit ? "#ff8597" : "#294859";
+          ctx.strokeRect(left + x * cell, top + y * cell, cell, cell);
+          ctx.fillStyle = centerHit ? "#ffc86c" : "#466271";
+          ctx.beginPath(); ctx.arc(left + (x + 0.5) * cell, top + (y + 0.5) * cell, 2.5, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      ctx.beginPath();
+      triangle.forEach((point, index) => {
+        const px = left + point[0] * cell;
+        const py = top + point[1] * cell;
+        if (index === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+      ctx.fillStyle = "#63e0dc20"; ctx.fill();
+      ctx.strokeStyle = "#7cf4ef"; ctx.lineWidth = 3; ctx.stroke();
+      $("coverageReadout").textContent = coverageMode === "center"
+        ? `center=${centerHits}，漏写=${missed}`
+        : `overlap=${overlapHits}，补回=${missed}`;
+    }
+
+    const axisDemo = setupCanvas($("axisCanvas"));
+    const normalPresets = {
+      x: [0.88, 0.25, 0.40],
+      y: [0.18, 0.95, 0.25],
+      z: [0.20, 0.35, 0.92]
+    };
+    function drawAxis() {
+      const { context: ctx, canvas } = axisDemo;
+      const normal = normalPresets[$("normalPreset").value];
+      const axis = dominantAxis(normal);
+      const names = ["X → YZ", "Y → XZ", "Z → XY"];
+      ctx.fillStyle = "#050c12"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const origins = [[95, 160], [280, 160], [465, 160]];
+      origins.forEach((origin, index) => {
+        ctx.fillStyle = index === axis ? "#63e0dc20" : "#0b1b26";
+        ctx.strokeStyle = index === axis ? "#63e0dc" : "#294859";
+        ctx.lineWidth = index === axis ? 3 : 1;
+        ctx.beginPath(); ctx.arc(origin[0], origin[1], 67, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        const scale = index === axis ? 1 : 0.28 + Math.abs(normal[index]) * 0.18;
+        ctx.beginPath();
+        ctx.moveTo(origin[0] - 47, origin[1] + 32 * scale);
+        ctx.lineTo(origin[0] + 50, origin[1] + 15 * scale);
+        ctx.lineTo(origin[0] + 5, origin[1] - 47 * scale);
+        ctx.closePath();
+        ctx.fillStyle = index === axis ? "#ad98ff55" : "#647c8b35";
+        ctx.fill();
+        ctx.strokeStyle = index === axis ? "#c5b8ff" : "#6d8796";
+        ctx.stroke();
+        ctx.fillStyle = "#b5cad6";
+        ctx.font = "13px Segoe UI";
+        ctx.fillText(`沿 ${["X","Y","Z"][index]} 看`, origin[0] - 25, 257);
+      });
+      $("axisReadout").textContent = `dominant=${names[axis]}`;
+    }
+
+    const mergeDemo = setupCanvas($("mergeCanvas"));
+    const mergeCandidates = [
+      { color: [0.95, 0.18, 0.10], opacity: 0.80, distance: 0.18, label: "red face" },
+      { color: [0.10, 0.38, 0.95], opacity: 0.60, distance: 0.07, label: "blue face" },
+      { color: [0.16, 0.85, 0.42], opacity: 0.35, distance: 0.12, label: "green leaf" }
+    ];
+    function rgb(color) {
+      return `rgb(${color.map((value) => Math.round(clamp(value, 0, 1) * 255)).join(",")})`;
+    }
+    function drawMerge() {
+      const { context: ctx, canvas } = mergeDemo;
+      const mode = $("mergeMode").value;
+      const result = mergeAttributes(mergeCandidates, mode);
+      ctx.fillStyle = "#050c12"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      mergeCandidates.forEach((candidate, index) => {
+        const x = 50 + index * 130;
+        ctx.fillStyle = rgb(candidate.color); ctx.fillRect(x, 62, 76, 76);
+        ctx.strokeStyle = "#dbeef7"; ctx.strokeRect(x, 62, 76, 76);
+        ctx.fillStyle = "#aac0cd"; ctx.font = "11px Segoe UI";
+        ctx.fillText(candidate.label, x, 157);
+        ctx.fillText(`α=${candidate.opacity} d=${candidate.distance}`, x, 174);
+        ctx.strokeStyle = "#567384"; ctx.beginPath(); ctx.moveTo(x + 76, 100); ctx.lineTo(430, 100); ctx.stroke();
+      });
+      ctx.fillStyle = "#ffc86c"; ctx.font = "24px Segoe UI"; ctx.fillText("→", 421, 108);
+      ctx.fillStyle = rgb(result.color); ctx.fillRect(465, 62, 76, 76);
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.strokeRect(465, 62, 76, 76);
+      ctx.fillStyle = "#d9e9f1"; ctx.font = "12px Segoe UI"; ctx.fillText("merged cell", 465, 158);
+      $("mergeReadout").textContent = `RGB=${result.color.map((v) => v.toFixed(2)).join("/")}`;
+    }
+
+    const volume = setupCanvas($("volumeCanvas"));
+    const volumeState = { view: "scene", yaw: -0.62, pitch: 0.34, drag: false, lastX: 0, lastY: 0, field: null };
+    const viewCopy = {
+      scene: "先认出地面、后墙、蓝盒和红块。坐标轴原点在 volume 中心。",
+      occupancy: "只看哪些 cell 有表面。颜色统一，避免 radiance 掩盖覆盖洞。",
+      normal: "RGB 映射 normal×0.5+0.5；相邻面应呈稳定的轴向颜色。",
+      radiance: "显示当前帧注入后的 premultiplied radiance；黄色 gizmo 就是实际计算使用的光。",
+      slice: "只保留选定 Z 层，检查 Level 0 的空间连续性与薄墙厚度。",
+      light: "左半按默认方向光、右半按当前光源；几何相同，只比较 radiance。"
+    };
+    function rotatePoint(point) {
+      const cy = Math.cos(volumeState.yaw);
+      const sy = Math.sin(volumeState.yaw);
+      const cp = Math.cos(volumeState.pitch);
+      const sp = Math.sin(volumeState.pitch);
+      const x = point[0] * cy - point[2] * sy;
+      const z0 = point[0] * sy + point[2] * cy;
+      const y = point[1] * cp - z0 * sp;
+      const z = point[1] * sp + z0 * cp;
+      return [x, y, z];
+    }
+    function project(point, canvas, offsetX = 0, scaleX = 1) {
+      const rotated = rotatePoint(point);
+      const scale = Math.min(canvas.width * scaleX, canvas.height) * 0.34 / (2.9 + rotated[2] * 0.28);
+      return [
+        offsetX + canvas.width * scaleX * 0.5 + rotated[0] * scale,
+        canvas.height * 0.52 - rotated[1] * scale,
+        rotated[2],
+        scale
+      ];
+    }
+    function drawArrow(ctx, from, to, color) {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(from[0], from[1]); ctx.lineTo(to[0], to[1]); ctx.stroke();
+      const angle = Math.atan2(to[1] - from[1], to[0] - from[0]);
+      ctx.beginPath(); ctx.moveTo(to[0], to[1]); ctx.lineTo(to[0] - Math.cos(angle - 0.55) * 12, to[1] - Math.sin(angle - 0.55) * 12); ctx.lineTo(to[0] - Math.cos(angle + 0.55) * 12, to[1] - Math.sin(angle + 0.55) * 12); ctx.closePath(); ctx.fill();
+    }
+    function voxelColor(voxel, view) {
+      if (view === "occupancy") return [0.40, 0.58, 0.66];
+      if (view === "normal") return voxel.normal.map((value) => value * 0.5 + 0.5);
+      if (view === "scene") return voxel.albedo;
+      const exposure = 1.35;
+      return voxel.rgb.map((value) => 1 - Math.exp(-value * exposure));
+    }
+    function drawLightGizmo(ctx, light, canvas, offsetX = 0, scaleX = 1) {
+      if (light.type === "point") {
+        const p = project(light.position, canvas, offsetX, scaleX);
+        const gradient = ctx.createRadialGradient(p[0], p[1], 2, p[0], p[1], 25);
+        gradient.addColorStop(0, "#fff8c7"); gradient.addColorStop(0.35, "#ffd262"); gradient.addColorStop(1, "#ffbb3300");
+        ctx.fillStyle = gradient; ctx.beginPath(); ctx.arc(p[0], p[1], 25, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#ffdf7a"; ctx.font = "11px ui-monospace"; ctx.fillText(`point ${light.position.map(v => v.toFixed(2)).join(",")}`, p[0] + 14, p[1] - 13);
+      } else {
+        const center = project([0, 0.35, 0], canvas, offsetX, scaleX);
+        const startWorld = light.toLight.map((value, axis) => [0,0.35,0][axis] + value * 0.75);
+        const start = project(startWorld, canvas, offsetX, scaleX);
+        drawArrow(ctx, start, center, "#ffd263");
+        ctx.fillStyle = "#ffdf7a"; ctx.font = "11px ui-monospace"; ctx.fillText(`rays = -toLight`, start[0] + 6, start[1] - 5);
+      }
+    }
+    function drawField(field, view, offsetX = 0, scaleX = 1, overrideLight = null) {
+      const { context: ctx, canvas } = volume;
+      const slice = Number($("sliceIndex").value);
+      let voxels = field.voxels;
+      if (view === "slice") voxels = voxels.filter((voxel) => voxel.z === slice);
+      const transformed = voxels.map((voxel) => ({
+        voxel,
+        projection: project(voxel.position, canvas, offsetX, scaleX)
+      })).sort((a, b) => b.projection[2] - a.projection[2]);
+      const pixelSize = Math.max(2.2, transformed[0]?.projection[3] * field.cellSize * 0.66 || 3);
+      transformed.forEach(({ voxel, projection }) => {
+        let color = voxelColor(voxel, view);
+        if (overrideLight) {
+          const surface = { ...voxel, position: voxel.position };
+          const reinjected = injectRadiance(surface, overrideLight);
+          color = reinjected.rgb.map((value) => 1 - Math.exp(-value * 1.35));
+        }
+        ctx.fillStyle = rgb(color);
+        ctx.globalAlpha = view === "occupancy" ? 0.78 : 0.92;
+        ctx.fillRect(projection[0] - pixelSize * 0.5, projection[1] - pixelSize * 0.5, pixelSize, pixelSize);
+      });
+      ctx.globalAlpha = 1;
+      drawLightGizmo(ctx, overrideLight || field.light, canvas, offsetX, scaleX);
+    }
+    function drawAxes(ctx, canvas) {
+      const origin = project([0, 0, 0], canvas);
+      [["X",[0.52,0,0],"#ff7d88"],["Y",[0,0.52,0],"#75e5a1"],["Z",[0,0,0.52],"#72aaff"]].forEach(([name, point, color]) => {
+        const end = project(point, canvas);
+        drawArrow(ctx, origin, end, color);
+        ctx.fillStyle = color; ctx.fillText(`+${name}`, end[0] + 4, end[1]);
+      });
+    }
+    function rebuildVolume() {
+      const resolution = Number($("volumeRes").value);
+      const angle = Number($("lightAngle").value);
+      const light = makeLight($("lightType").value, angle);
+      const pointAtAngle = makeLight("point", angle);
+      const directionalAtAngle = makeLight("directional", angle);
+      const formatVector = (vector) => `(${vector.map((value) =>
+        `${value >= 0 ? "+" : ""}${value.toFixed(3)}`
+      ).join(",")})`;
+      volumeState.field = buildLevel0(resolution, light);
+      $("volumeResOut").value = `${resolution}³`;
+      $("lightAngleOut").value = `${angle}°`;
+      $("heroCurrentLight").textContent = light.type === "point"
+        ? `当前点光 position = ${formatVector(light.position)}`
+        : `当前方向光 toLight = ${formatVector(light.toLight)}`;
+      $("heroAlternateLight").textContent = light.type === "point"
+        ? `同角度方向光 toLight = ${formatVector(directionalAtAngle.toLight)}`
+        : `同角度点光 position = ${formatVector(pointAtAngle.position)}`;
+      $("sliceIndex").max = resolution - 1;
+      if (Number($("sliceIndex").value) >= resolution) $("sliceIndex").value = Math.floor(resolution / 2);
+      $("sliceIndexOut").value = $("sliceIndex").value;
+      $("occupiedCount").textContent = volumeState.field.voxels.length.toLocaleString();
+      $("litCount").textContent = volumeState.field.voxels.filter((v) => v.nDotL > 0.001).length.toLocaleString();
+      $("cellSizeOut").textContent = volumeState.field.cellSize.toFixed(3);
+      drawVolume();
+    }
+    function drawVolume() {
+      const { context: ctx, canvas } = volume;
+      ctx.fillStyle = "#02070b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (volumeState.view === "light") {
+        ctx.strokeStyle = "#314b5b"; ctx.beginPath(); ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height); ctx.stroke();
+        const defaultLight = makeLight("directional", -38);
+        drawField(volumeState.field, "radiance", 0, 0.5, defaultLight);
+        drawField(volumeState.field, "radiance", canvas.width / 2, 0.5);
+        ctx.fillStyle = "#a9beca"; ctx.font = "13px Segoe UI"; ctx.fillText("A · 默认方向光", 14, 24); ctx.fillText("B · 当前光源", canvas.width / 2 + 14, 24);
+      } else {
+        drawAxes(ctx, canvas);
+        drawField(volumeState.field, volumeState.view);
+      }
+    }
+
+    $("worldX").addEventListener("input", drawMap);
+    $("worldZ").addEventListener("input", drawMap);
+    $("centerMode").addEventListener("click", () => {
+      coverageMode = "center";
+      $("centerMode").classList.add("active");
+      $("overlapMode").classList.remove("active");
+      drawCoverage();
+    });
+    $("overlapMode").addEventListener("click", () => {
+      coverageMode = "overlap";
+      $("overlapMode").classList.add("active");
+      $("centerMode").classList.remove("active");
+      drawCoverage();
+    });
+    $("normalPreset").addEventListener("change", drawAxis);
+    $("mergeMode").addEventListener("change", drawMerge);
+    ["volumeRes", "lightType", "lightAngle"].forEach((id) =>
+      $(id).addEventListener("input", rebuildVolume)
+    );
+    $("sliceIndex").addEventListener("input", () => {
+      $("sliceIndexOut").value = $("sliceIndex").value;
+      drawVolume();
+    });
+    $("volumeViews").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-view]");
+      if (!button) return;
+      volumeState.view = button.dataset.view;
+      document.querySelectorAll("#volumeViews button").forEach((item) =>
+        item.classList.toggle("active", item === button)
+      );
+      $("volumeExplain").textContent = viewCopy[volumeState.view];
+      drawVolume();
+    });
+    volume.canvas.addEventListener("pointerdown", (event) => {
+      volumeState.drag = true;
+      volumeState.lastX = event.clientX;
+      volumeState.lastY = event.clientY;
+      volume.canvas.setPointerCapture(event.pointerId);
+    });
+    volume.canvas.addEventListener("pointermove", (event) => {
+      if (!volumeState.drag) return;
+      volumeState.yaw += (event.clientX - volumeState.lastX) * 0.008;
+      volumeState.pitch = clamp(
+        volumeState.pitch + (event.clientY - volumeState.lastY) * 0.006,
+        -0.9,
+        1.0
+      );
+      volumeState.lastX = event.clientX;
+      volumeState.lastY = event.clientY;
+      drawVolume();
+    });
+    volume.canvas.addEventListener("pointerup", () => { volumeState.drag = false; });
+    volume.canvas.addEventListener("pointercancel", () => { volumeState.drag = false; });
+
+    drawMap();
+    drawCoverage();
+    drawAxis();
+    drawMerge();
+    rebuildVolume();
+    window.__GI_PAGE__ = {
+      ready: true,
+      module: "voxelization",
+      dataContract: VOXEL_SPEC.id,
+      demos: 7,
+      generator: "CPU analytic surface sampling",
+      field: () => volumeState.field
+    };
+  })();
+  </script>
+</body>
+</html>

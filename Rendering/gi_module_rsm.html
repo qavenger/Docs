@@ -1,0 +1,4335 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RSM：从一张光源照片，到可稳定的一次反弹</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root {
+      --bg: #060d13;
+      --panel: #0b1720;
+      --panel-2: #10222d;
+      --line: #263f4e;
+      --text: #e9f5fa;
+      --muted: #9db2be;
+      --cyan: #55d7ff;
+      --amber: #ffc45f;
+      --red: #ff6f67;
+      --green: #75e49e;
+      --violet: #c09cff;
+      --shadow: 0 18px 58px #0009;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 82% -7%, #17394b 0, transparent 31rem),
+        var(--bg);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.7;
+    }
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button, input, select { font: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+    }
+    .wrap { width: min(1200px, calc(100% - 30px)); margin-inline: auto; }
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid #203846;
+      background: #060d13e8;
+      backdrop-filter: blur(14px);
+    }
+    .top .wrap {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand { color: #fff; font-weight: 900; letter-spacing: .09em; }
+    .top nav {
+      margin-left: auto;
+      display: flex;
+      gap: 15px;
+      overflow-x: auto;
+      color: #bad0dc;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .hero { padding: 68px 0 28px; }
+    .eyebrow {
+      color: var(--amber);
+      font: 800 13px/1.3 ui-monospace, Consolas, monospace;
+      letter-spacing: .12em;
+    }
+    .hero h1 {
+      max-width: 1080px;
+      margin: 12px 0 18px;
+      font-size: clamp(40px, 6.8vw, 76px);
+      line-height: 1.02;
+    }
+    .hero > p { max-width: 920px; color: var(--muted); font-size: 18px; }
+    .chips, .legend, .inline-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      padding: 6px 11px;
+      border: 1px solid #315061;
+      border-radius: 999px;
+      color: #cce3ee;
+      background: #0b1b25;
+    }
+    .notice {
+      margin: 18px 0;
+      padding: 15px 18px;
+      border: 1px solid #5d4927;
+      border-left: 4px solid var(--amber);
+      border-radius: 12px;
+      color: #dbe4e7;
+      background: #17170f;
+    }
+    .course-map {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 24px 0 34px;
+    }
+    .course-map a {
+      min-height: 74px;
+      padding: 11px;
+      border: 1px solid #2c4858;
+      border-radius: 10px;
+      color: #c5d7e1;
+      background: #0a1720;
+      font-size: 12px;
+    }
+    .course-map b { display: block; color: #eef8fc; font-size: 13px; }
+    .stage-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #294351;
+      border-radius: 10px;
+      background: #040b10;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(290px, .75fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .stack { display: grid; gap: 12px; }
+    .panel-card {
+      padding: 15px;
+      border: 1px solid #2c4656;
+      border-radius: 11px;
+      background: #08151e;
+    }
+    .panel-card h4 { margin: 0 0 6px; color: #eef8fc; }
+    .panel-card p { margin: 0; color: var(--muted); }
+    .step-nav, .view-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .step-btn, .view-btn, .action, .choice-btn {
+      border: 1px solid #345465;
+      border-radius: 9px;
+      padding: 8px 11px;
+      color: #cce1eb;
+      background: #0c1d27;
+      cursor: pointer;
+    }
+    .step-btn:hover, .view-btn:hover, .action:hover, .choice-btn:hover {
+      border-color: var(--cyan);
+    }
+    .step-btn.active, .view-btn.active, .choice-btn.active {
+      border-color: var(--cyan);
+      color: #fff;
+      background: #15415a;
+    }
+    .readout-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .readout {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid #2b4352;
+      border-radius: 8px;
+      background: #061018;
+    }
+    .readout b { display: block; color: var(--amber); font-size: 11px; }
+    .readout code {
+      display: block;
+      overflow: hidden;
+      color: #d5e8ef;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .control {
+      display: grid;
+      grid-template-columns: minmax(130px, 190px) 1fr 78px;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .control output {
+      color: var(--amber);
+      font: 700 12px/1.2 ui-monospace, Consolas, monospace;
+      text-align: right;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--cyan); }
+    select {
+      min-width: 0;
+      border: 1px solid #355568;
+      border-radius: 8px;
+      padding: 7px;
+      color: #e8f4fa;
+      background: #0b1e29;
+    }
+    .viewport {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #294351;
+      border-radius: 12px;
+      background: #02070a;
+    }
+    .viewport canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+    }
+    #rsm3D { cursor: grab; }
+    #rsm3D:active { cursor: grabbing; }
+    #lightOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hud {
+      position: absolute;
+      left: 11px;
+      top: 11px;
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      pointer-events: none;
+    }
+    .badge {
+      padding: 5px 8px;
+      border: 1px solid #325165;
+      border-radius: 7px;
+      color: #d7e7ee;
+      background: #061018e8;
+      font-size: 11px;
+    }
+    .badge b { color: var(--amber); }
+    .view-help {
+      margin: 10px 0 0;
+      padding: 11px 13px;
+      border-left: 3px solid var(--cyan);
+      border-radius: 8px;
+      color: #c5d7df;
+      background: #0a161e;
+    }
+    .buffer-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .buffer-card {
+      padding: 14px;
+      border: 1px solid #2a4453;
+      border-radius: 10px;
+      background: #091720;
+      cursor: pointer;
+    }
+    .buffer-card:hover { border-color: var(--cyan); }
+    .buffer-card h4 { margin: 8px 0 3px; }
+    .buffer-card p { margin: 0; color: var(--muted); font-size: 12px; }
+    .swatch { height: 58px; border-radius: 8px; border: 1px solid #ffffff1b; }
+    .swatch.depth { background: linear-gradient(135deg, #eee, #111); }
+    .swatch.position { background: linear-gradient(135deg, #26345b, #a55b62, #74a25c); }
+    .swatch.normal { background: linear-gradient(135deg, #7d7dff, #7dff7d, #ff7d7d); }
+    .swatch.flux { background: radial-gradient(circle at 65% 40%, #fff8a0, #ff603b 25%, #240c0b 65%); }
+    .formula-value {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 7px;
+      margin: 10px 0;
+    }
+    .formula-value > span {
+      padding: 8px;
+      border: 1px solid #2c4656;
+      border-radius: 7px;
+      color: #abc0cc;
+      background: #07131c;
+      font-size: 11px;
+    }
+    .formula-value b { display: block; color: var(--amber); font-size: 12px; }
+    .artifact-lead {
+      margin: 38px auto 18px;
+      padding: 22px;
+      border: 1px solid #584a2b;
+      border-radius: 15px;
+      background: linear-gradient(130deg, #19170f, #0b1720);
+    }
+    .artifact-lead h2 { margin: 0 0 7px; font-size: clamp(27px, 4vw, 45px); }
+    .artifact-lead p { margin: 0; color: #c0d0d7; }
+    .artifact-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 18px;
+      padding: 14px;
+      border: 1px solid #2c4858;
+      border-radius: 10px;
+      background: #08151e;
+    }
+    .artifact-caption {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 10px 0;
+      color: #a9bdc8;
+      font-size: 12px;
+    }
+    .artifact-caption output {
+      color: var(--amber);
+      font: 700 12px/1.3 ui-monospace, Consolas, monospace;
+    }
+    .artifact-wide { grid-column: 1 / -1; }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .metric {
+      padding: 9px;
+      border: 1px solid #2b4352;
+      border-radius: 8px;
+      background: #061018;
+    }
+    .metric b { display: block; color: #eaf5fa; font-size: 11px; }
+    .metric output {
+      color: var(--amber);
+      font: 700 13px/1.4 ui-monospace, Consolas, monospace;
+    }
+    .warning-chain {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .warning-chain > div {
+      position: relative;
+      padding: 12px;
+      border: 1px solid #334b59;
+      border-radius: 9px;
+      color: #b7c9d2;
+      background: #0a1720;
+      font-size: 12px;
+    }
+    .warning-chain b { display: block; color: #f0f8fb; }
+    .warning-chain > div:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -10px;
+      top: 36%;
+      z-index: 2;
+      color: var(--cyan);
+      font-size: 18px;
+    }
+    .compare {
+      width: 100%;
+      border-collapse: collapse;
+      background: #0a1720;
+      font-size: 13px;
+    }
+    .compare th, .compare td {
+      padding: 10px 11px;
+      border: 1px solid #294453;
+      text-align: left;
+      vertical-align: top;
+    }
+    .compare th { color: #edf7fb; background: #102632; }
+    .compare td { color: #b9ced8; }
+    .term {
+      position: relative;
+      border-bottom: 1px dashed currentColor;
+      color: var(--amber);
+      cursor: help;
+    }
+    .term:hover::after, .term:focus::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 0;
+      bottom: 125%;
+      z-index: 60;
+      width: min(330px, 75vw);
+      padding: 10px;
+      border: 1px solid #4b6878;
+      border-radius: 9px;
+      color: #d5e8ef;
+      background: #061018;
+      box-shadow: var(--shadow);
+      font: 13px/1.55 "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    .source-index {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+    .source-index > div {
+      padding: 11px;
+      border: 1px solid #2b4352;
+      border-radius: 9px;
+      color: #abc0cb;
+      background: #07131c;
+      font-size: 12px;
+    }
+    .source-index code { color: #88e1ff; }
+    .footer {
+      margin-top: 45px;
+      padding: 38px 0 64px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .footer .wrap { display: flex; justify-content: space-between; gap: 18px; }
+    @media (max-width: 920px) {
+      .course-map, .warning-chain { grid-template-columns: repeat(2, 1fr); }
+      .split { grid-template-columns: 1fr; }
+      .buffer-grid { grid-template-columns: repeat(2, 1fr); }
+      .formula-value { grid-template-columns: repeat(3, 1fr); }
+      .warning-chain > div::after { display: none; }
+      .artifact-controls { grid-template-columns: 1fr; }
+      .top nav a:nth-child(n+4) { display: none; }
+    }
+    @media (max-width: 620px) {
+      .course-map, .buffer-grid, .source-index, .metric-grid { grid-template-columns: 1fr; }
+      .readout-grid, .formula-value { grid-template-columns: 1fr 1fr; }
+      .control { grid-template-columns: 1fr; }
+      .control output { text-align: left; }
+      .gi-artifact-grid { grid-template-columns: 1fr; }
+      .footer .wrap { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="index.html">GI FIELD GUIDE</a>
+      <nav aria-label="章节导航">
+        <a href="gi_module_foundations.html">← 基础</a>
+        <a href="#experiment-3d">真实 3D</a>
+        <a href="#artifact-lab">Artifact Lab</a>
+        <a href="#source-ledger">实际代码</a>
+        <a href="gi_module_ssao_ssgi.html">下一章 →</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <div class="eyebrow">01 · REFLECTIVE SHADOW MAPS · REBUILT COURSE</div>
+      <h1>先看见一条反弹，再把 64 样本的瑕疵逐层拆掉。</h1>
+      <p>本章不要求你先会积分。我们先追踪一个 RSM texel，再认识聚光灯的相机与视锥，随后进入真实 WebGL2 MRT。最后用独立的低分辨率 Artifact Lab，亲手区分采样方差、时序拖影与缺少次级可见性造成的偏差。</p>
+      <div class="chips">
+        <span class="chip">9 个独立实验</span>
+        <span class="chip">真实 WebGL2 MRT 3D</span>
+        <span class="chip">8 / 24 / 64 / 256 样本</span>
+        <span class="chip">空间 + 时序 + rejection</span>
+        <span class="chip">公式 / 代值 / 伪代码 / 实际代码</span>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <div class="notice">
+        <b>先记住两个不同的问题：</b>
+        颗粒与闪烁通常是有限样本造成的<strong>方差</strong>，增加样本、蓝噪分布、空间滤波和时序积累都能降低它；
+        墙后持续发亮是缺少 <code>VPL → receiver</code> 可见性造成的<strong>偏差</strong>，滤波只会把错误抹得更平滑，不能把它变正确。
+      </div>
+      <div class="course-map" aria-label="本章实验地图">
+        <a href="#experiment-texel"><b>01 · 单个 texel</b>光 → RSM → VPL → 接收点</a>
+        <a href="#experiment-light"><b>02 · 聚光相机</b>位置、forward、target、frustum</a>
+        <a href="#experiment-3d"><b>03 · 真实 MRT</b>同一几何写三张纹理</a>
+        <a href="#experiment-buffers"><b>04 · Buffer 诊断</b>Position / Normal / Flux / Depth</a>
+        <a href="#experiment-vpl"><b>05 · 单 VPL 计算器</b>把每个乘数变成可见量</a>
+        <a href="#experiment-sampling"><b>06 · Sampling</b>8 / 24 / 64 / 256 与三种分布</a>
+        <a href="#experiment-spatial"><b>07 · Spatial</b>bilateral 与 à-trous</a>
+        <a href="#experiment-temporal"><b>08 · Temporal</b>history、rejection、disocclusion</a>
+        <a href="#experiment-bias"><b>09 · Bias</b>reference 与 error heatmap</a>
+        <a href="#solution-chain"><b>最后 · 解决链</b>从 estimator 到 visibility</a>
+      </div>
+    </div>
+
+    <section class="wrap gi-stage" id="experiment-texel" data-experiment="texel">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">01</span>
+        <div>
+          <h3>实验 01 · 跟着一个 texel 走完一次反弹</h3>
+          <p>先不看公式。每次只增加一个事实，并明确哪条可见性已经知道、哪条还不知道。</p>
+        </div>
+        <span class="gi-stage-tag">2D STEPPER</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io">
+          <div><b>输入</b><span>聚光灯、红色反射面、蓝色接收点、挡板</span></div>
+          <span class="gi-stage-arrow">→</span>
+          <div><b>输出</b><span>一个 VPL 候选以及一条尚未验证的第二段路径</span></div>
+        </div>
+        <div class="split">
+          <canvas class="stage-canvas" id="warmCanvas" width="760" height="430" aria-label="RSM 单个 texel 的二维路径"></canvas>
+          <div class="stack">
+            <div class="step-nav" aria-label="texel 步骤">
+              <button class="step-btn active" data-warm-step="0">1. 光命中表面</button>
+              <button class="step-btn" data-warm-step="1">2. 写入 MRT</button>
+              <button class="step-btn" data-warm-step="2">3. 成为 VPL</button>
+              <button class="step-btn" data-warm-step="3">4. 汇聚到接收点</button>
+            </div>
+            <article class="panel-card" id="warmCopy">
+              <h4>光源先拍一张照片</h4>
+              <p>黄色光线击中红色面。深度附件已经证明“光源 → 反射点”没有被挡住。</p>
+            </article>
+            <article class="panel-card" id="warmKnown">
+              <h4>当前已知 / 未知</h4>
+              <p>已知第一段可见；还没有选择接收点，也没有检查第二段。</p>
+            </article>
+          </div>
+        </div>
+        <div class="gi-task-grid">
+          <div class="gi-task do"><b>你来做</b><span>依次点击四步，注意挡板只影响最后一段。</span></div>
+          <div class="gi-task watch"><b>观察</b><span>RSM 深度无法回答 VPL 到接收点是否可见。</span></div>
+          <div class="gi-task expect"><b>应得到</b><span>“样本不足”与“模型缺项”是两种不同错误。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-light" data-experiment="light">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">02</span>
+        <div>
+          <h3>实验 02 · RSM 使用的是一台聚光灯相机</h3>
+          <p>明确位置、朝向、目标与视锥；后续每一个 RSM texel 都属于这个坐标系。</p>
+        </div>
+        <span class="gi-stage-tag">LIGHT ANATOMY</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="split">
+          <canvas class="stage-canvas" id="lightDiagram" width="760" height="390" aria-label="聚光灯位置、方向、目标和视锥示意"></canvas>
+          <div class="stack">
+            <div class="panel-card">
+              <div class="control">
+                <label for="lightAngle">光源绕房间旋转</label>
+                <input id="lightAngle" type="range" min="-130" max="130" value="28">
+                <output id="lightAngleOut">28°</output>
+              </div>
+              <label><input id="showFrustum" type="checkbox" checked> 在 3D 视图绘制 forward、target 与 frustum</label>
+            </div>
+            <div class="readout-grid" aria-label="聚光灯精确参数">
+              <div class="readout"><b>类型</b><code>Spot light / 单 RSM</code></div>
+              <div class="readout"><b>Position</b><code id="lightPositionReadout">—</code></div>
+              <div class="readout"><b>Target</b><code id="lightTargetReadout">—</code></div>
+              <div class="readout"><b>Forward</b><code id="lightForwardReadout">—</code></div>
+              <div class="readout"><b>Frustum</b><code>FOV 72° · near .15 · far 14</code></div>
+              <div class="readout"><b>RSM</b><code>128 × 128 · 3 MRT + Depth24</code></div>
+            </div>
+            <div class="panel-card">
+              <h4>如果换成点光源？</h4>
+              <p>点光源没有唯一 forward，也没有单一视锥。最直接的做法是像 point-light shadow map 一样渲染六个 cubemap face：每个 face 都有自己的 view-projection 与一套 RSM。成本因此近似放大六倍。</p>
+            </div>
+          </div>
+        </div>
+        <div class="gi-task-grid">
+          <div class="gi-task do"><b>你来做</b><span>拖动角度；观察 position 与 forward 同时变化，target 保持固定。</span></div>
+          <div class="gi-task watch"><b>观察</b><span>视锥之外的反射面永远不会进入 RSM。</span></div>
+          <div class="gi-task expect"><b>应得到</b><span>“RSM 漏掉贡献”也可能是 light frustum 覆盖问题。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-3d" data-experiment="webgl-mrt">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">03</span>
+        <div>
+          <h3>实验 03 · 真实 WebGL2 MRT：从光源视角写三张纹理</h3>
+          <p>这不是预烘焙图片。拖动相机、滚轮缩放、移动光源；Position、Normal、Flux 与 Depth 每次都会重画。</p>
+        </div>
+        <span class="gi-stage-tag">REAL WEBGL2</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="view-toolbar" aria-label="3D 观察模式">
+          <button class="view-btn active" data-view="final">最终合成</button>
+          <button class="view-btn" data-view="direct">仅直接光</button>
+          <button class="view-btn" data-view="indirect">仅间接光</button>
+          <button class="view-btn" data-view="light">光源视角</button>
+          <button class="view-btn" data-view="position">RSM Position</button>
+          <button class="view-btn" data-view="normal">RSM Normal</button>
+          <button class="view-btn" data-view="flux">RSM Flux</button>
+          <button class="view-btn" data-view="vpl">VPL 点</button>
+          <button class="action" id="resetCamera">重置相机</button>
+        </div>
+        <div class="viewport">
+          <canvas id="rsm3D" width="1120" height="630" aria-label="Reflective Shadow Map 三维实时演示"></canvas>
+          <canvas id="lightOverlay" width="1120" height="630" aria-hidden="true"></canvas>
+          <div class="hud">
+            <span class="badge" id="viewBadge"><b>Camera</b> · direct + indirect</span>
+            <span class="badge" id="gpuBadge">初始化 WebGL2…</span>
+          </div>
+        </div>
+        <p class="view-help" id="viewHelp"><b>现在看什么：</b>直接光与一次间接光共同显示。切到“仅直接光”，用 A/B 确认彩色反弹来自 RSM。</p>
+        <div class="split" style="margin-top:12px">
+          <div class="panel-card">
+            <div class="control">
+              <label for="sampleCount">3D 每像素 VPL 样本</label>
+              <select id="sampleCount">
+                <option>8</option>
+                <option>24</option>
+                <option selected>40</option>
+                <option>64</option>
+              </select>
+              <output id="sampleCountOut">40</output>
+            </div>
+            <div class="control">
+              <label for="sampleRadius">光空间圆盘半径</label>
+              <input id="sampleRadius" type="range" min="6" max="48" value="28">
+              <output id="sampleRadiusOut">0.28</output>
+            </div>
+            <div class="control">
+              <label for="indirectStrength">教学显示增益</label>
+              <input id="indirectStrength" type="range" min="10" max="100" value="30">
+              <output id="indirectStrengthOut">0.30</output>
+            </div>
+            <p style="color:var(--muted);margin:8px 0 0">3D shader 故意保留 64 上限，让你看见基础 gather 的限制。256 样本、滤波、时序与 reference 对照放在实验 06–09 的低分辨率 CPU Lab 中，避免把不同变量混在一起。</p>
+          </div>
+          <div class="gi-checks" id="glChecks" aria-label="WebGL 运行检查">
+            <div class="gi-check" data-gi-check="context"><b>WebGL2 context</b><span data-gi-check-detail>等待初始化</span></div>
+            <div class="gi-check" data-gi-check="fbo"><b>MRT framebuffer</b><span data-gi-check-detail>等待创建</span></div>
+            <div class="gi-check" data-gi-check="draw"><b>GL error</b><span data-gi-check-detail>尚未绘制</span></div>
+          </div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs">
+            <button data-gi-tab="intuition">直觉</button>
+            <button data-gi-tab="formula">公式</button>
+            <button data-gi-tab="values">代值</button>
+            <button data-gi-tab="pseudo">伪代码</button>
+            <button data-gi-tab="actual">本页实际代码</button>
+          </div>
+          <div class="gi-panel" data-gi-panel="intuition">
+            <h4>Flux 不是“最终亮度”</h4>
+            <p>它记录这个 texel 所在表面接到了多少灯光，并乘上表面颜色。后续接收点是否面对它、距离多远、第二段是否被挡住，都还没有计算。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="formula">
+            <div class="gi-formula">Φₚ = ρₚ · I · max(0, nₚ · l)</div>
+            <p><code>ρₚ</code> 是反照率，<code>I</code> 是本页教学光强，<code>nₚ·l</code> 是光命中表面的入射余弦。本页省略真实灯具的立体角和 texel 面积标定，因此 Flux 是教学近似量。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="values">
+            <div class="gi-formula">ρₚ=(0.76,0.15,0.11), I=0.82, nₚ·l=0.70<br>Φₚ≈(0.436,0.086,0.063)</div>
+          </div>
+          <div class="gi-panel" data-gi-panel="pseudo">
+            <pre><code data-gi-code data-gi-status="pseudo" data-gi-source="RSM flux write · 等价伪代码">normal = normalize(surface.normal)
+toLight = normalize(light.position - surface.position)
+incoming = max(dot(normal, toLight), 0)
+flux = surface.albedo * light.power * incoming</code></pre>
+          </div>
+          <div class="gi-panel" data-gi-panel="actual">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · rsmFragmentSource">vec3 normal = normalize(vNormal);
+vec3 toLight = normalize(uLightPosition - vPosition);
+float incoming = max(dot(normal, toLight), 0.0);
+
+outPosition = vec4(
+  clamp((vPosition + 6.0) / 12.0, 0.0, 1.0),
+  1.0
+);
+outNormal = vec4(normal * 0.5 + 0.5, 1.0);
+outFlux = vec4(
+  clamp(vAlbedo * incoming * uLightPower, 0.0, 1.0),
+  1.0
+);</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-buffers" data-experiment="buffers">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">04</span>
+        <div>
+          <h3>实验 04 · Buffer Inspector：先确认数据，再怀疑公式</h3>
+          <p>点击卡片会把上方真实 3D 视图切到对应 attachment；每张图只回答一个问题。</p>
+        </div>
+        <span class="gi-stage-tag">DIAGNOSTICS</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="buffer-grid">
+          <article class="buffer-card" data-inspect-view="light" tabindex="0">
+            <div class="swatch depth"></div>
+            <h4>Light view / Depth</h4>
+            <p>聚光相机能看见哪些第一层表面？视锥是否覆盖目标区域？</p>
+          </article>
+          <article class="buffer-card" data-inspect-view="position" tabindex="0">
+            <div class="swatch position"></div>
+            <h4>World Position</h4>
+            <p>VPL 在哪里？本页把世界坐标 [-6,6] 编码到 RGBA8。</p>
+          </article>
+          <article class="buffer-card" data-inspect-view="normal" tabindex="0">
+            <div class="swatch normal"></div>
+            <h4>World Normal</h4>
+            <p>法线方向是否正确？显示编码为 RGB = 0.5n + 0.5。</p>
+          </article>
+          <article class="buffer-card" data-inspect-view="flux" tabindex="0">
+            <div class="swatch flux"></div>
+            <h4>Reflected Flux</h4>
+            <p>哪些 texel 更可能成为强 VPL？它还不是最终间接光。</p>
+          </article>
+        </div>
+        <div class="gi-task-grid">
+          <div class="gi-task do"><b>你来做</b><span>移动光源后依次检查四张图；确认变化来自同一次 MRT 重绘。</span></div>
+          <div class="gi-task watch"><b>观察</b><span>黑 texel 是无几何；Normal 错误会让两个余弦之一反号。</span></div>
+          <div class="gi-task expect"><b>应得到</b><span>Position / Normal / Flux 是后续 gather 的最小输入。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-vpl" data-experiment="single-vpl">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">05</span>
+        <div>
+          <h3>实验 05 · 单个 VPL 计算器：四个乘数逐个关掉</h3>
+          <p>没有积分背景也能读：VPL 有能量、两端都要面对彼此、距离越远越弱；可见性是独立开关。</p>
+        </div>
+        <span class="gi-stage-tag">ONE SAMPLE</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="split">
+          <canvas class="stage-canvas" id="vplCanvas" width="760" height="390" aria-label="单个虚拟点光源贡献示意"></canvas>
+          <div class="panel-card">
+            <div class="control">
+              <label for="vplDistance">VPL 到接收点距离</label>
+              <input id="vplDistance" type="range" min="35" max="260" value="145">
+              <output id="vplDistanceOut">1.45</output>
+            </div>
+            <div class="control">
+              <label for="receiverTilt">接收面转角</label>
+              <input id="receiverTilt" type="range" min="-82" max="82" value="-12">
+              <output id="receiverTiltOut">-12°</output>
+            </div>
+            <div class="control">
+              <label for="vplTilt">VPL 面转角</label>
+              <input id="vplTilt" type="range" min="-82" max="82" value="18">
+              <output id="vplTiltOut">18°</output>
+            </div>
+            <label><input id="vplVisibility" type="checkbox" checked> 第二段可见（关闭后贡献应立即归零）</label>
+            <div class="formula-value">
+              <span><b id="vplFluxValue">0.78</b>Flux</span>
+              <span><b id="receiverCosValue">—</b>receiver cos</span>
+              <span><b id="vplCosValue">—</b>VPL cos</span>
+              <span><b id="distance2Value">—</b>r²</span>
+              <span><b id="contributionValue">—</b>贡献 C</span>
+            </div>
+          </div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs">
+            <button data-gi-tab="intuition">直觉</button>
+            <button data-gi-tab="formula">公式</button>
+            <button data-gi-tab="values">代值</button>
+            <button data-gi-tab="pseudo">伪代码</button>
+            <button data-gi-tab="actual">本页实际代码</button>
+          </div>
+          <div class="gi-panel" data-gi-panel="intuition">
+            <h4>把它当作一盏“贴在表面上的小灯”</h4>
+            <p>它只能朝表面上半球发光；接收面也只接收正面来的光。两者任意一个背对，点积被夹到 0。距离平方控制扩散；visibility 为 0 时，前面所有项再大也不该穿墙。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="formula">
+            <div class="gi-formula">Cₚ→ₓ = V(p,x) · Φₚ · max(0,nₓ·ω) · max(0,nₚ·−ω) / max(r², ε)</div>
+            <p>基础 RSM gather 常把 <code>V(p,x)</code> 当作 1，这就是墙后漏光的来源。用未归一化连接向量写成两个点积除以 <code>r⁴</code> 与这里等价。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="values">
+            <div class="gi-formula" id="vplSubstitution">等待交互参数…</div>
+          </div>
+          <div class="gi-panel" data-gi-panel="pseudo">
+            <pre><code data-gi-code data-gi-status="pseudo" data-gi-source="单 VPL 贡献 · 等价伪代码">delta = vpl.position - receiver.position
+distanceSquared = dot(delta, delta)
+direction = delta / sqrt(distanceSquared)
+
+receiverCosine = max(dot(receiver.normal, direction), 0)
+vplCosine = max(dot(vpl.normal, -direction), 0)
+
+contribution =
+  visibility *
+  vpl.flux *
+  receiverCosine *
+  vplCosine /
+  max(distanceSquared, epsilon)</code></pre>
+          </div>
+          <div class="gi-panel" data-gi-panel="actual">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · singleVplContribution">function singleVplContribution(receiver, vpl, visible) {
+  const delta = subtract3(vpl.position, receiver.position);
+  const distanceSquared = dot3(delta, delta);
+  const direction = scale3(
+    delta,
+    1 / Math.sqrt(Math.max(distanceSquared, 1e-6))
+  );
+
+  const receiverCosine = Math.max(
+    dot3(receiver.normal, direction),
+    0
+  );
+  const vplCosine = Math.max(
+    dot3(vpl.normal, scale3(direction, -1)),
+    0
+  );
+  const visibility = visible ? 1 : 0;
+
+  return scale3(
+    vpl.flux,
+    visibility *
+      receiverCosine *
+      vplCosine /
+      Math.max(distanceSquared, 0.08)
+  );
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap artifact-lead" id="artifact-lab">
+      <div class="eyebrow">ARTIFACT LAB · SAME LOW-RES SCENE, ONE VARIABLE AT A TIME</div>
+      <h2>为什么 64 样本仍然难看？</h2>
+      <p>下面四个实验共享一套 96×54 receiver buffer 与 512 个 VPL。Reference 始终遍历全部 VPL 并检查次级可见性；Raw 则只抽有限样本。低分辨率是刻意的：它让 256 样本、重复滤波和历史缓冲在 <code>file://</code> 页面中仍可实时操作。</p>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-sampling" data-experiment="sampling">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">06</span>
+        <div>
+          <h3>实验 06 · Sampling：样本数与分布只解决方差</h3>
+          <p>对照 Raw、Reference 与 Error Heatmap。切换 8 / 24 / 64 / 256，再比较固定、每帧随机与蓝噪排序。</p>
+        </div>
+        <span class="gi-stage-tag">CPU ARTIFACT LAB</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="artifact-controls">
+          <div class="control">
+            <label for="labSampleCount">每像素样本</label>
+            <select id="labSampleCount">
+              <option>8</option>
+              <option>24</option>
+              <option selected>64</option>
+              <option>256</option>
+            </select>
+            <output id="labSampleCountOut">64</output>
+          </div>
+          <div class="control">
+            <label for="labDistribution">样本分布</label>
+            <select id="labDistribution">
+              <option value="fixed">固定序列</option>
+              <option value="random">每帧随机</option>
+              <option value="blue" selected>蓝噪排序 tile</option>
+            </select>
+            <output id="labFrameOut">frame 0</output>
+          </div>
+          <div class="artifact-wide inline-controls">
+            <button class="action" id="newSampleFrame">生成下一帧样本</button>
+            <label><input id="labVisibility" type="checkbox" checked> Raw 也检查次级可见性（关闭即可制造稳定漏光偏差）</label>
+          </div>
+        </div>
+        <div class="artifact-caption">
+          <span>蓝噪排序说明：本页启动时用 toroidal farthest-point 贪心生成 16×16 rank tile，作为教学用空间去相关序列；生产项目通常使用离线优化的蓝噪纹理。</span>
+          <output id="samplingStatus">等待计算…</output>
+        </div>
+        <div class="gi-artifact-grid">
+          <article class="gi-artifact">
+            <canvas id="artifactSamples" width="384" height="216" aria-label="样本分布"></canvas>
+            <h4>Sample pattern</h4>
+            <p>每个点代表一个被选中的 VPL 索引；颜色表示序列前后。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="artifactRaw" width="384" height="216" aria-label="有限样本原始结果"></canvas>
+            <h4>Raw estimate</h4>
+            <p>只抽 N 个 VPL；颗粒与结构噪声属于 sampling variance。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="artifactReference" width="384" height="216" aria-label="全样本可见性参考结果"></canvas>
+            <h4>Reference</h4>
+            <p>512 个 VPL 全遍历，并检查 VPL → receiver 可见性。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="artifactError" width="384" height="216" aria-label="采样误差热图"></canvas>
+            <h4>Error heatmap</h4>
+            <p>黑/蓝低误差，黄/红高误差；不是“好看程度”，而是相对 Reference 的绝对差。</p>
+          </article>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><b>Raw RMSE</b><output id="rawRmse">—</output></div>
+          <div class="metric"><b>采样波动代理</b><output id="varianceProxy">—</output></div>
+          <div class="metric"><b>模型偏差 RMSE</b><output id="biasRmse">—</output></div>
+          <div class="metric"><b>CPU 更新时间</b><output id="labTime">—</output></div>
+        </div>
+        <table class="compare" style="margin-top:12px">
+          <thead><tr><th>分布</th><th>跨帧表现</th><th>空间表现</th><th>什么时候用</th></tr></thead>
+          <tbody>
+            <tr><td>固定序列</td><td>同一像素每帧取相同 VPL，稳定但不会自行收敛。</td><td>相邻像素可能形成固定条纹或重复图案。</td><td>便于调试单帧 estimator；最终画面通常还要 pixel scramble。</td></tr>
+            <tr><td>每帧随机</td><td>无偏但闪烁明显；history 可把不同帧当作更多样本。</td><td>近似白噪声，低频也有能量，视觉上“砂砾感”强。</td><td>作为基线或配合强时序积累。</td></tr>
+            <tr><td>蓝噪排序 tile</td><td>配合每帧 rotation/scramble 后逐帧变化。</td><td>把误差推向高频并降低局部聚团，更适合边缘感知滤波。</td><td>实时低样本渲染常见选择；必须保持采样概率与权重一致。</td></tr>
+          </tbody>
+        </table>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs">
+            <button data-gi-tab="intuition">直觉</button>
+            <button data-gi-tab="formula">公式</button>
+            <button data-gi-tab="values">代值</button>
+            <button data-gi-tab="pseudo">伪代码</button>
+            <button data-gi-tab="actual">本页实际代码</button>
+          </div>
+          <div class="gi-panel" data-gi-panel="intuition">
+            <h4>抽查 N 个 VPL，再用平均值猜全部</h4>
+            <p>8 个样本像只问 8 个人；64 个更稳，但强贡献可能仍被偶然命中或漏掉。256 会继续降噪，却不会修复“所有样本都错误地认为墙后可见”这种模型偏差。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="formula">
+            <div class="gi-formula">Ē(x) = (1/N) Σᵢ [ C(x,pᵢ) / q(pᵢ) ]</div>
+            <p><code>N</code> 是样本数，<code>q(pᵢ)</code> 是选到 VPL 的概率。若均匀从 512 个 VPL 抽样，概率为 <code>1/512</code>；本页把常量缩放合并在显示增益中。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="values">
+            <div class="gi-formula">N=64, q=1/512<br>一次像素估计 = 64 个加权贡献的平均值<br>把 N 改为 256：标准差理想情况下约缩到原来的 √(64/256)=1/2</div>
+          </div>
+          <div class="gi-panel" data-gi-panel="pseudo">
+            <pre><code data-gi-code data-gi-status="pseudo" data-gi-source="有限 VPL 汇聚 · 等价伪代码">sum = 0
+for sampleIndex in 0 .. sampleCount - 1:
+  vplIndex = chooseVpl(
+    pixel,
+    sampleIndex,
+    frame,
+    distribution
+  )
+  sum += evaluateVpl(receiver, vpls[vplIndex])
+
+estimate = sum / sampleCount</code></pre>
+          </div>
+          <div class="gi-panel" data-gi-panel="actual">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · estimateReceiver">function estimateReceiver(
+  receiver,
+  pixelIndex,
+  sampleCount,
+  distribution,
+  frame,
+  useVisibility
+) {
+  const sum = [0, 0, 0];
+
+  for (let sampleIndex = 0; sampleIndex &lt; sampleCount; sampleIndex += 1) {
+    const vplIndex = chooseVplIndex(
+      pixelIndex,
+      sampleIndex,
+      sampleCount,
+      distribution,
+      frame
+    );
+    const vpl = labVpls[vplIndex];
+    const visible = useVisibility
+      ? secondaryVisible(receiver.position, vpl.position)
+      : true;
+    const contribution = singleVplContribution(
+      receiver,
+      vpl,
+      visible
+    );
+
+    sum[0] += contribution[0];
+    sum[1] += contribution[1];
+    sum[2] += contribution[2];
+  }
+
+  return scale3(sum, LAB_DISPLAY_GAIN / sampleCount);
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-spatial" data-experiment="spatial-filter">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">07</span>
+        <div>
+          <h3>实验 07 · Spatial：bilateral 与 à-trous 如何避开几何边缘</h3>
+          <p>普通模糊会把前景颜色抹到背景。深度与对象法线作为 guidance，让相似表面互相借样本。</p>
+        </div>
+        <span class="gi-stage-tag">EDGE-AWARE</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="artifact-controls">
+          <div class="control">
+            <label for="spatialMode">空间滤波</label>
+            <select id="spatialMode">
+              <option value="none">关闭</option>
+              <option value="bilateral">Bilateral 5×5</option>
+              <option value="atrous" selected>À-trous</option>
+            </select>
+            <output id="spatialModeOut">À-trous</output>
+          </div>
+          <div class="control">
+            <label for="atrousIterations">À-trous 迭代</label>
+            <input id="atrousIterations" type="range" min="1" max="4" value="3">
+            <output id="atrousIterationsOut">3</output>
+          </div>
+        </div>
+        <div class="gi-artifact-grid">
+          <article class="gi-artifact">
+            <canvas id="spatialInput" width="384" height="216" aria-label="空间滤波输入"></canvas>
+            <h4>Raw input</h4>
+            <p>来自实验 06 当前 N 与分布。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="spatialOutput" width="384" height="216" aria-label="空间滤波输出"></canvas>
+            <h4>Filtered output</h4>
+            <p>深度/法线相差越大，邻居权重越低。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="spatialError" width="384" height="216" aria-label="空间滤波误差"></canvas>
+            <h4>Filtered error</h4>
+            <p>比较误差热图，而不是只凭“看起来更顺”。</p>
+          </article>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><b>滤波前 RMSE</b><output id="spatialBeforeRmse">—</output></div>
+          <div class="metric"><b>滤波后 RMSE</b><output id="spatialAfterRmse">—</output></div>
+          <div class="metric"><b>边缘拒绝</b><output>Depth + normal + object ID</output></div>
+          <div class="metric"><b>核跨度</b><output id="spatialFootprint">—</output></div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs">
+            <button data-gi-tab="intuition">直觉</button>
+            <button data-gi-tab="formula">公式</button>
+            <button data-gi-tab="values">代值</button>
+            <button data-gi-tab="pseudo">伪代码</button>
+            <button data-gi-tab="actual">本页实际代码</button>
+          </div>
+          <div class="gi-panel" data-gi-panel="intuition">
+            <h4>只向“像自己”的邻居借光</h4>
+            <p>空间距离近只是第一关；深度差大或对象法线不同，说明邻居很可能属于另一表面，权重接近 0。À-trous 每轮扩大采样间隔，因此用很少 taps 获得更大感受野。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="formula">
+            <div class="gi-formula">w(x,y)=k(|x−y|) · exp(−|zₓ−zᵧ|/σz) · max(0,nₓ·nᵧ)^σn · s(idₓ,idᵧ)<br>Ē′(x)=Σᵧ w(x,y)Ē(y) / Σᵧ w(x,y)</div>
+            <p>本页的 <code>s(idₓ,idᵧ)</code> 在对象 ID 相同时为 1，否则为 0.015；它代表生产中常见的材质/实例边界拒绝。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="values">
+            <div class="gi-formula">空间核权重 k=1/16，深度差 |0.35−0.95|=0.60<br>σz=0.035 → exp(−0.60/0.035)≈3.6×10⁻⁸<br>前景几乎不会借用背景样本</div>
+          </div>
+          <div class="gi-panel" data-gi-panel="pseudo">
+            <pre><code data-gi-code data-gi-status="pseudo" data-gi-source="À-trous · 等价伪代码">for iteration in 0 .. iterationCount - 1:
+  step = 2 ^ iteration
+  for each pixel:
+    weightedSum = 0
+    weightSum = 0
+    for each 5x5 tap:
+      neighbor = pixel + tap * step
+      weight =
+        kernel[tap] *
+        depthSimilarity(pixel, neighbor) *
+        normalSimilarity(pixel, neighbor)
+      weightedSum += image[neighbor] * weight
+      weightSum += weight
+    output[pixel] = weightedSum / weightSum
+  swap(input, output)</code></pre>
+          </div>
+          <div class="gi-panel" data-gi-panel="actual">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · edgeAwarePass">function edgeAwarePass(source, stepWidth) {
+  const result = new Float32Array(source.length);
+  const kernel = [1, 4, 6, 4, 1];
+
+  for (let y = 0; y &lt; LAB_HEIGHT; y += 1) {
+    for (let x = 0; x &lt; LAB_WIDTH; x += 1) {
+      const center = y * LAB_WIDTH + x;
+      let weightSum = 0;
+      const sum = [0, 0, 0];
+
+      for (let ky = -2; ky &lt;= 2; ky += 1) {
+        for (let kx = -2; kx &lt;= 2; kx += 1) {
+          const sampleX = clampInt(
+            x + kx * stepWidth,
+            0,
+            LAB_WIDTH - 1
+          );
+          const sampleY = clampInt(
+            y + ky * stepWidth,
+            0,
+            LAB_HEIGHT - 1
+          );
+          const sample = sampleY * LAB_WIDTH + sampleX;
+          const spatialWeight = kernel[kx + 2] * kernel[ky + 2];
+          const depthDelta = Math.abs(
+            labGBuffer.depth[center] - labGBuffer.depth[sample]
+          );
+          const centerNormal = readRgb(labGBuffer.normal, center);
+          const sampleNormal = readRgb(labGBuffer.normal, sample);
+          const normalWeight = Math.pow(
+            Math.max(dot3(centerNormal, sampleNormal), 0),
+            16
+          );
+          const sameObject =
+            labGBuffer.objectId[center] === labGBuffer.objectId[sample]
+              ? 1
+              : 0.015;
+          const weight =
+            spatialWeight *
+            Math.exp(-depthDelta / 0.035) *
+            normalWeight *
+            sameObject;
+
+          accumulateRgb(sum, source, sample, weight);
+          weightSum += weight;
+        }
+      }
+
+      storeRgb(result, center, scale3(sum, 1 / Math.max(weightSum, 1e-6)));
+    }
+  }
+
+  return result;
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-temporal" data-experiment="temporal">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">08</span>
+        <div>
+          <h3>实验 08 · Temporal：history 会降噪，也会拖影</h3>
+          <p>移动亮区或前景盒子，比较关闭/开启 rejection。这个 Lab 使用同像素历史，生产版本还必须先用 motion vector 重投影。</p>
+        </div>
+        <span class="gi-stage-tag">HISTORY LAB</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="artifact-controls">
+          <div class="control">
+            <label for="historyAlpha">当前帧权重 α</label>
+            <input id="historyAlpha" type="range" min="5" max="100" value="18">
+            <output id="historyAlphaOut">0.18</output>
+          </div>
+          <div class="control">
+            <label for="labLightPhase">VPL 亮区位置</label>
+            <input id="labLightPhase" type="range" min="0" max="100" value="28">
+            <output id="labLightPhaseOut">0.28</output>
+          </div>
+          <div class="control">
+            <label for="labObjectOffset">前景盒子位置</label>
+            <input id="labObjectOffset" type="range" min="-32" max="32" value="0">
+            <output id="labObjectOffsetOut">0.00</output>
+          </div>
+          <div class="inline-controls">
+            <label><input id="temporalEnabled" type="checkbox" checked> 启用 history</label>
+            <label><input id="historyRejection" type="checkbox" checked> depth / object-ID rejection</label>
+          </div>
+          <div class="artifact-wide inline-controls">
+            <button class="action" id="advanceTemporal">累积下一帧</button>
+            <button class="action" id="toggleTemporalPlay">连续播放</button>
+            <button class="action" id="resetHistory">清空 history</button>
+          </div>
+        </div>
+        <div class="gi-artifact-grid">
+          <article class="gi-artifact">
+            <canvas id="temporalCurrent" width="384" height="216" aria-label="当前帧空间滤波结果"></canvas>
+            <h4>Current frame</h4>
+            <p>当前帧空间滤波结果；每次样本帧变化仍有细小噪声。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="temporalHistory" width="384" height="216" aria-label="时序累积结果"></canvas>
+            <h4>Accumulated history</h4>
+            <p>低 α 更稳但更容易保留过时照明。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="temporalError" width="384" height="216" aria-label="时序结果误差"></canvas>
+            <h4>History error</h4>
+            <p>移动盒子后，旧前景露出的区域就是 disocclusion。</p>
+          </article>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><b>历史帧数</b><output id="historyFrameCount">0</output></div>
+          <div class="metric"><b>本帧 rejected</b><output id="historyRejected">0</output></div>
+          <div class="metric"><b>Current RMSE</b><output id="currentRmse">—</output></div>
+          <div class="metric"><b>History RMSE</b><output id="historyRmse">—</output></div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs">
+            <button data-gi-tab="intuition">直觉</button>
+            <button data-gi-tab="formula">公式</button>
+            <button data-gi-tab="values">代值</button>
+            <button data-gi-tab="pseudo">伪代码</button>
+            <button data-gi-tab="actual">本页实际代码</button>
+          </div>
+          <div class="gi-panel" data-gi-panel="intuition">
+            <h4>大部分像素借昨天的答案，变化像素重来</h4>
+            <p>稳定表面可以复用 history。若深度或对象 ID 改变，旧样本来自另一表面，必须拒绝；这就是 disocclusion handling 的最小模型。真实引擎还要 motion vectors、法线/材质验证、邻域 clamp 与 luminance moments。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="formula">
+            <div class="gi-formula">Hₜ(x) = reject ? Cₜ(x) : (1−α)Hₜ₋₁(x) + αCₜ(x)<br>reject = |zₜ−zₜ₋₁| &gt; τz  OR  objectIdₜ ≠ objectIdₜ₋₁</div>
+          </div>
+          <div class="gi-panel" data-gi-panel="values">
+            <div class="gi-formula">α=0.18, Hₜ₋₁=0.40, Cₜ=0.70<br>未拒绝：Hₜ=0.82×0.40+0.18×0.70=0.454<br>若 objectId 改变：Hₜ=Cₜ=0.70</div>
+          </div>
+          <div class="gi-panel" data-gi-panel="pseudo">
+            <pre><code data-gi-code data-gi-status="pseudo" data-gi-source="History accumulation · 等价伪代码">reprojectedHistory = sampleHistory(previousUv)
+reject =
+  abs(currentDepth - historyDepth) > depthThreshold or
+  currentObjectId != historyObjectId
+
+if reject:
+  output = current
+else:
+  output = lerp(reprojectedHistory, current, alpha)</code></pre>
+          </div>
+          <div class="gi-panel" data-gi-panel="actual">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · accumulateTemporal">function accumulateTemporal(current) {
+  const output = new Float32Array(current.length);
+  let rejected = 0;
+
+  if (!labState.temporalEnabled) {
+    output.set(current);
+    labHistory.color.set(current);
+    labHistory.depth.set(labGBuffer.depth);
+    labHistory.objectId.set(labGBuffer.objectId);
+    labHistory.valid = true;
+    labHistory.frameCount = 1;
+    return { output, rejected: LAB_PIXEL_COUNT };
+  }
+
+  for (let pixel = 0; pixel &lt; LAB_PIXEL_COUNT; pixel += 1) {
+    const depthChanged =
+      Math.abs(
+        labGBuffer.depth[pixel] - labHistory.depth[pixel]
+      ) > 0.05;
+    const objectChanged =
+      labGBuffer.objectId[pixel] !== labHistory.objectId[pixel];
+    const reject =
+      !labHistory.valid ||
+      (labState.historyRejection &amp;&amp; (depthChanged || objectChanged));
+    const currentWeight = reject ? 1 : labState.historyAlpha;
+
+    if (reject) rejected += 1;
+    for (let channel = 0; channel &lt; 3; channel += 1) {
+      const index = pixel * 3 + channel;
+      output[index] =
+        labHistory.color[index] * (1 - currentWeight) +
+        current[index] * currentWeight;
+    }
+  }
+
+  labHistory.color.set(output);
+  labHistory.depth.set(labGBuffer.depth);
+  labHistory.objectId.set(labGBuffer.objectId);
+  labHistory.valid = true;
+  labHistory.frameCount += 1;
+  return { output, rejected };
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="experiment-bias" data-experiment="bias-visibility">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">09</span>
+        <div>
+          <h3>实验 09 · Bias：滤波不能补回缺失的 visibility</h3>
+          <p>这里固定 64 个蓝噪样本，同时显示“不检查可见性”“检查可见性”和“对错误结果做 à-trous”。</p>
+        </div>
+        <span class="gi-stage-tag">REFERENCE TEST</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="gi-artifact-grid">
+          <article class="gi-artifact">
+            <canvas id="biasNoVisibility" width="384" height="216" aria-label="缺少次级可见性的 RSM 估计"></canvas>
+            <h4>64 samples · V=1</h4>
+            <p>挡板后的能量被错误累加；样本更多只会更稳定地收敛到错误答案。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="biasFiltered" width="384" height="216" aria-label="缺少可见性后再滤波"></canvas>
+            <h4>V=1 + à-trous</h4>
+            <p>噪声减少，漏光边缘更柔和，但错误能量没有消失。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="biasWithVisibility" width="384" height="216" aria-label="带次级可见性的参考"></canvas>
+            <h4>Reference · tested V</h4>
+            <p>挡板后的 VPL 路径被拒绝；这是模型项变化，不是滤镜参数变化。</p>
+          </article>
+          <article class="gi-artifact">
+            <canvas id="biasError" width="384" height="216" aria-label="缺少可见性的偏差热图"></canvas>
+            <h4>Filtered bias heatmap</h4>
+            <p>持续亮区就是系统偏差。对应生产修复是 ray/SDF/voxel/screen-space visibility。</p>
+          </article>
+        </div>
+        <div class="metric-grid">
+          <div class="metric"><b>V=1 全量偏差</b><output id="fullBiasRmse">—</output></div>
+          <div class="metric"><b>64 样本 V=1</b><output id="noVisRmse">—</output></div>
+          <div class="metric"><b>滤波后 V=1</b><output id="filteredBiasRmse">—</output></div>
+          <div class="metric"><b>可见性来源</b><output>教学 CPU ray-box</output></div>
+        </div>
+        <div class="notice">
+          <b>结论：</b>
+          spatial 与 temporal filter 估计的是“当前 estimator 的低噪版本”。如果 estimator 从一开始就漏了 <code>V(p,x)</code>，它们没有信息判断哪部分能量应该删除。可见性必须来自额外几何查询，例如屏幕空间短射线、SDF、voxel、hardware ray query，或面向大量 VPL 的 Imperfect Shadow Maps。
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="solution-chain">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">✓</span>
+        <div>
+          <h3>64 样本仍有瑕疵：按问题类型走完整解决链</h3>
+          <p>不要把所有问题都交给“再模糊一点”。下面顺序能让每一步都有可验证输入与失败边界。</p>
+        </div>
+        <span class="gi-stage-tag">PRODUCTION CHAIN</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="warning-chain" aria-label="RSM 生产解决链">
+          <div><b>1 · Estimator</b>重要性/分层采样、正确 PDF、VPL 聚类，先减少 firefly 与无效样本。</div>
+          <div><b>2 · Distribution</b>蓝噪 + 每帧 scramble，把低频结构噪声推到更易滤波的频段。</div>
+          <div><b>3 · Spatial</b>深度/法线/材质 guidance；低分辨率 gather 后边缘感知上采样。</div>
+          <div><b>4 · Temporal</b>motion-vector 重投影、history rejection、neighborhood clamp、moments。</div>
+          <div><b>5 · Visibility</b>ray/SDF/voxel/ISM；这是修偏差，不是降方差。</div>
+        </div>
+        <table class="compare">
+          <thead>
+            <tr>
+              <th>64 样本看到的现象</th>
+              <th>错误类型</th>
+              <th>为什么 64 不够 / 不相关</th>
+              <th>正确处理</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>零散亮点、彩色火花</td>
+              <td>高方差 / 高动态贡献</td>
+              <td>少数近距离或高 Flux VPL 权重远大于其它样本。</td>
+              <td>重要性采样、VPL 聚类、robust clamp（承认会引入少量偏差）、再做空间/时序。</td>
+            </tr>
+            <tr>
+              <td>固定条纹或规则花纹</td>
+              <td>相关采样误差</td>
+              <td>黄金角或固定序列跨像素同步，误差呈低频结构。</td>
+              <td>像素级 scramble、蓝噪排序、随机旋转；保持 PDF 正确。</td>
+            </tr>
+            <tr>
+              <td>相机/光源移动时闪烁</td>
+              <td>帧间方差</td>
+              <td>每帧抽到不同 VPL；64 仍只覆盖 512/16384 等很小比例。</td>
+              <td>时序积累 + motion vectors + rejection；动态光强变化要缩短 history。</td>
+            </tr>
+            <tr>
+              <td>几何边缘被抹开</td>
+              <td>滤波跨表面</td>
+              <td>普通 Gaussian 不知道两像素来自不同深度/法线。</td>
+              <td>bilateral / à-trous guidance，必要时按材质和 roughness 进一步拒绝。</td>
+            </tr>
+            <tr>
+              <td>墙后稳定发亮</td>
+              <td>模型偏差</td>
+              <td>基础 RSM 从未查询第二段 visibility；64、256、无限样本都会收敛到错误值。</td>
+              <td>显式次级 visibility：screen ray、SDF、voxel、ray query 或 ISM。</td>
+            </tr>
+            <tr>
+              <td>视锥外永远没有反弹</td>
+              <td>支持域偏差</td>
+              <td>RSM 只含光源相机可见的第一层表面。</td>
+              <td>扩大/分割光源视锥、多 RSM、点光 cubemap，或换用场景空间 GI 表示。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="source-ledger">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">{ }</span>
+        <div>
+          <h3>实现账本：没有凭空出现的 helper，也不再从运行对象临时压缩源码</h3>
+          <p>关键函数都以 canonical 多行源码维护。绿色徽标表示当前页实际执行；伪代码会明确标注。</p>
+        </div>
+        <span class="gi-stage-tag">SOURCE STATUS</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="source-index">
+          <div><code>renderRsmPass</code>：实际 WebGL2 MRT pass，依赖 <code>lightPosition</code>、矩阵 helper、<code>bindMesh</code>。</div>
+          <div><code>gatherIndirect</code>：实际 GLSL，最多 64 samples，读取 Position / Normal / Flux / Depth。</div>
+          <div><code>singleVplContribution</code>：实际 CPU Lab，与实验 05 的公式逐项对应。</div>
+          <div><code>estimateReceiver</code>：实际 CPU Lab，支持 8 / 24 / 64 / 256 与三种分布。</div>
+          <div><code>edgeAwarePass</code>：实际 CPU Lab，5×5 guidance；à-trous 通过 stepWidth 扩张。</div>
+          <div><code>accumulateTemporal</code>：实际 CPU Lab，depth/object-ID rejection 与 disocclusion 计数。</div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="mrt">
+          <div class="gi-tabs">
+            <button data-gi-tab="mrt">MRT Pass</button>
+            <button data-gi-tab="gather">GLSL Gather</button>
+            <button data-gi-tab="visibility">CPU Visibility</button>
+            <button data-gi-tab="graph">RenderGraph 映射</button>
+          </div>
+          <div class="gi-panel" data-gi-panel="mrt">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · renderRsmPass">function renderRsmPass() {
+  const position = lightPosition();
+  const view = mat4LookAt(position, LIGHT_TARGET, [0, 1, 0]);
+  const projection = mat4Perspective(
+    LIGHT_FOV_RADIANS,
+    1,
+    LIGHT_NEAR,
+    LIGHT_FAR
+  );
+  currentLightViewProjection = mat4Multiply(projection, view);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, rsmTarget.framebuffer);
+  gl.drawBuffers([
+    gl.COLOR_ATTACHMENT0,
+    gl.COLOR_ATTACHMENT1,
+    gl.COLOR_ATTACHMENT2
+  ]);
+  gl.viewport(0, 0, RSM_SIZE, RSM_SIZE);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  gl.useProgram(rsmProgram);
+  bindMesh();
+  gl.uniformMatrix4fv(
+    gl.getUniformLocation(rsmProgram, "uViewProjection"),
+    false,
+    currentLightViewProjection
+  );
+  gl.uniform3fv(
+    gl.getUniformLocation(rsmProgram, "uLightPosition"),
+    position
+  );
+  gl.uniform1f(
+    gl.getUniformLocation(rsmProgram, "uLightPower"),
+    0.82
+  );
+  gl.enable(gl.POLYGON_OFFSET_FILL);
+  gl.polygonOffset(1.5, 4.0);
+  gl.drawArrays(gl.TRIANGLES, 0, meshVertexCount);
+  gl.disable(gl.POLYGON_OFFSET_FILL);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  recordGlError("RSM MRT");
+}</code></pre>
+          </div>
+          <div class="gi-panel" data-gi-panel="gather">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · gatherIndirectSource">vec3 gatherIndirect(vec3 receiverPosition, vec3 receiverNormal) {
+  vec4 lightClip =
+    uLightViewProjection * vec4(receiverPosition, 1.0);
+  vec2 centerUv =
+    lightClip.xy / lightClip.w * 0.5 + 0.5;
+  vec3 sum = vec3(0.0);
+
+  for (int sampleIndex = 0; sampleIndex &lt; 64; sampleIndex += 1) {
+    if (sampleIndex >= uSampleCount) {
+      break;
+    }
+    float fi = float(sampleIndex) + 0.5;
+    float radius =
+      sqrt(fi / float(uSampleCount)) * uSampleRadius;
+    float angle = fi * 2.39996323;
+    vec2 uv =
+      centerUv + vec2(cos(angle), sin(angle)) * radius;
+
+    if (
+      any(lessThan(uv, vec2(0.0))) ||
+      any(greaterThan(uv, vec2(1.0)))
+    ) {
+      continue;
+    }
+
+    vec4 encodedPosition = texture(uRsmPosition, uv);
+    if (encodedPosition.a &lt; 0.5) {
+      continue;
+    }
+    vec3 vplPosition = decodePosition(encodedPosition);
+    vec3 vplNormal = normalize(
+      texture(uRsmNormal, uv).xyz * 2.0 - 1.0
+    );
+    vec3 delta = vplPosition - receiverPosition;
+    float distanceSquared = dot(delta, delta);
+    if (distanceSquared &lt; 0.02) {
+      continue;
+    }
+
+    vec3 direction = delta * inversesqrt(distanceSquared);
+    float receiverCosine = max(
+      dot(receiverNormal, direction),
+      0.0
+    );
+    float vplCosine = max(
+      dot(vplNormal, -direction),
+      0.0
+    );
+    vec3 flux = texture(uRsmFlux, uv).rgb;
+    sum +=
+      flux *
+      receiverCosine *
+      vplCosine /
+      max(distanceSquared, 0.08);
+  }
+
+  return sum * (
+    uIndirectStrength *
+    8.0 /
+    float(uSampleCount)
+  );
+}</code></pre>
+          </div>
+          <div class="gi-panel" data-gi-panel="visibility">
+            <pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_rsm.html · secondaryVisible">function secondaryVisible(receiverPosition, vplPosition) {
+  if (receiverPosition[1] >= 1.049) {
+    return true;
+  }
+  const direction = subtract3(vplPosition, receiverPosition);
+  const minimum = [
+    labState.objectOffset - 0.20,
+    0.0,
+    -0.17
+  ];
+  const maximum = [
+    labState.objectOffset + 0.20,
+    1.05,
+    0.17
+  ];
+
+  const hit = segmentIntersectsBox(
+    receiverPosition,
+    direction,
+    minimum,
+    maximum
+  );
+  return !hit;
+}</code></pre>
+            <p>这是 Artifact Lab 的教学 CPU ray-box，只用于证明“visibility 是独立信息”。真实 RSM 实现不会靠这个二维小场景函数。</p>
+          </div>
+          <div class="gi-panel" data-gi-panel="graph">
+            <pre><code data-gi-code data-gi-status="pseudo" data-gi-source="RenderGraph pass contract · 框架无关伪代码">RsmMrtPass:
+  writes RsmPosition, RsmNormal, RsmFlux, RsmDepth
+
+RsmGatherPass:
+  reads CameraDepth, CameraNormal
+  reads RsmPosition, RsmNormal, RsmFlux, RsmDepth
+  writes IndirectRaw
+
+RsmSpatialPass:
+  reads IndirectRaw, CameraDepth, CameraNormal
+  writes IndirectFiltered
+
+RsmTemporalPass:
+  reads IndirectFiltered, MotionVectors, PreviousHistory
+  writes IndirectHistory, HistoryMoments
+
+CompositePass:
+  reads DirectLighting, IndirectHistory
+  writes SceneColor</code></pre>
+            <p>这里给的是资源契约，不假设存在某个名为 <code>AddRsmPass()</code> 的框架函数。映射到 DX12/Vulkan 时，RenderGraph 负责从这些 read/write 声明推导资源状态转换与同步。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap gi-stage" id="tradeoffs">
+      <header class="gi-stage-head">
+        <span class="gi-stage-num">±</span>
+        <div>
+          <h3>工程边界与继续阅读</h3>
+          <p>RSM 是动态一次反弹估计器，不是完整路径追踪器。</p>
+        </div>
+        <span class="gi-stage-tag">BOUNDARIES</span>
+      </header>
+      <div class="gi-stage-body">
+        <div class="split">
+          <article class="panel-card">
+            <h4 style="color:var(--green)">适合</h4>
+            <ul>
+              <li>聚光灯、手电筒等有明确 light frustum 的动态局部光源。</li>
+              <li>没有硬件光追、但可复用 shadow-map 光栅路径的 GPU。</li>
+              <li>以一次漫反射为主，并接受低分辨率 gather + filtering 的场景。</li>
+              <li>需要 Position / Normal / Flux 可视化调试的教学或工程原型。</li>
+            </ul>
+          </article>
+          <article class="panel-card">
+            <h4 style="color:var(--red)">不适合 / 需要混合</h4>
+            <ul>
+              <li>大量动态灯：每盏 spot 一张 RSM，point light 常要六张。</li>
+              <li>视锥外、光源看不见的反射面；RSM 支持域天然不完整。</li>
+              <li>镜面、多次反弹、长距离跨房间传播。</li>
+              <li>不能接受漏光时，必须补 visibility 或改用场景空间/射线方案。</li>
+            </ul>
+          </article>
+        </div>
+        <div class="source-index" style="margin-top:12px">
+          <div><b>原始方法</b><br><a href="https://doi.org/10.1145/1053427.1053460" target="_blank" rel="noreferrer">Dachsbacher &amp; Stamminger · Reflective Shadow Maps</a></div>
+          <div><b>大量 VPL 可见性</b><br><a href="https://resources.mpi-inf.mpg.de/ImperfectShadowMaps/" target="_blank" rel="noreferrer">Ritschel et al. · Imperfect Shadow Maps</a></div>
+          <div><b>采样基础</b><br><a href="https://pbr-book.org/4ed/Sampling_and_Reconstruction/Sampling_and_Integration" target="_blank" rel="noreferrer">PBRT · Sampling and Integration</a></div>
+          <div><b>WebGL2 规范</b><br><a href="https://registry.khronos.org/webgl/specs/latest/2.0/" target="_blank" rel="noreferrer">Khronos · WebGL 2.0 Specification</a></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>RSM · staged lab · all runtime assets are local</span>
+      <span><a href="gi_module_foundations.html">← Foundations</a> · <a href="gi_module_ssao_ssgi.html">SSAO / SSGI →</a></span>
+    </div>
+  </footer>
+
+  <script src="gi_course.js"></script>
+  <script>
+(() => {
+  'use strict';
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const clamp = (value, minimum, maximum) =>
+    Math.max(minimum, Math.min(maximum, value));
+  const clampInt = (value, minimum, maximum) =>
+    Math.max(minimum, Math.min(maximum, value | 0));
+  const fract = (value) => value - Math.floor(value);
+
+  const diagnostics = {
+    initialized: false,
+    webgl2: false,
+    framebufferComplete: false,
+    glErrors: [],
+    labRenders: 0,
+    lastLabMilliseconds: 0,
+    runtimeErrors: []
+  };
+  window.__rsmDiagnostics = diagnostics;
+  window.addEventListener('error', (event) => {
+    diagnostics.runtimeErrors.push(String(event.error || event.message));
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    diagnostics.runtimeErrors.push(String(event.reason));
+  });
+
+  function subtract3(a, b) {
+    return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  }
+
+  function add3(a, b) {
+    return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  }
+
+  function scale3(vector, scalar) {
+    return [
+      vector[0] * scalar,
+      vector[1] * scalar,
+      vector[2] * scalar
+    ];
+  }
+
+  function dot3(a, b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  }
+
+  function cross3(a, b) {
+    return [
+      a[1] * b[2] - a[2] * b[1],
+      a[2] * b[0] - a[0] * b[2],
+      a[0] * b[1] - a[1] * b[0]
+    ];
+  }
+
+  function normalize3(vector) {
+    const length = Math.hypot(vector[0], vector[1], vector[2]) || 1;
+    return scale3(vector, 1 / length);
+  }
+
+  function formatVector(vector) {
+    return `(${vector.map((value) => value.toFixed(2)).join(', ')})`;
+  }
+
+  function drawArrow(context, start, end, color, width = 3) {
+    const angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
+    context.strokeStyle = color;
+    context.fillStyle = color;
+    context.lineWidth = width;
+    context.beginPath();
+    context.moveTo(start[0], start[1]);
+    context.lineTo(end[0], end[1]);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(end[0], end[1]);
+    context.lineTo(
+      end[0] - 13 * Math.cos(angle - 0.45),
+      end[1] - 13 * Math.sin(angle - 0.45)
+    );
+    context.lineTo(
+      end[0] - 13 * Math.cos(angle + 0.45),
+      end[1] - 13 * Math.sin(angle + 0.45)
+    );
+    context.closePath();
+    context.fill();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Experiment 01: one texel stepper
+  // ---------------------------------------------------------------------------
+
+  const warmCanvas = $('#warmCanvas');
+  const warmContext = warmCanvas.getContext('2d');
+  const warmSteps = [
+    {
+      title: '光源先拍一张照片',
+      body: '黄色光线击中红色面。深度附件已经证明“光源 → 反射点”没有被挡住。',
+      known: '已知第一段可见；还没有选择接收点，也没有检查第二段。'
+    },
+    {
+      title: '同一个 fragment 写三张颜色附件',
+      body: 'Position 说明反射点在哪里，Normal 说明它朝哪里，Flux 近似记录它接到并反射了多少能量。',
+      known: '已知一个 texel 的位置、朝向、颜色能量与光源深度；仍没有接收点信息。'
+    },
+    {
+      title: 'texel 被解释成 VPL',
+      body: '它不是凭空新增的灯，而是“光已经命中的一小块表面”。VPL 法线限制它只能朝表面上半球发光。',
+      known: '可以评估几何项；但“VPL → receiver”这条线段是否穿过挡板仍未知。'
+    },
+    {
+      title: '接收点汇聚 VPL',
+      body: '蓝色接收点累加 VPL 的 Flux、两端余弦与距离衰减。图中的挡板证明：基础公式即使有很多样本，也会稳定累加一条错误路径。',
+      known: '基础 RSM 常默认第二段可见。要消除墙后漏光，必须增加独立 visibility 查询。'
+    }
+  ];
+  let warmStep = 0;
+
+  function drawWarmup() {
+    const context = warmContext;
+    const width = warmCanvas.width;
+    const height = warmCanvas.height;
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = '#071018';
+    context.fillRect(0, 0, width, height);
+
+    context.fillStyle = '#182b34';
+    context.fillRect(0, 330, width, 100);
+    context.fillStyle = '#ff6f67';
+    context.fillRect(220, 322, 118, 10);
+    context.fillStyle = '#33515d';
+    context.fillRect(470, 218, 26, 114);
+    context.fillStyle = '#55d7ff';
+    context.beginPath();
+    context.arc(620, 321, 11, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#ffc45f';
+    context.beginPath();
+    context.arc(130, 74, 16, 0, Math.PI * 2);
+    context.fill();
+
+    context.font = '14px "Segoe UI", sans-serif';
+    context.fillStyle = '#ffc45f';
+    context.fillText('聚光灯', 98, 43);
+    context.fillStyle = '#ff8a84';
+    context.fillText('反射点 / RSM texel', 215, 363);
+    context.fillStyle = '#55d7ff';
+    context.fillText('receiver', 590, 363);
+    context.fillStyle = '#829ba7';
+    context.fillText('挡板', 465, 204);
+    drawArrow(context, [143, 88], [278, 322], '#ffc45f', 4);
+
+    if (warmStep >= 1) {
+      const attachments = [
+        ['Position', 212, '#a776ff'],
+        ['Normal', 329, '#75e49e'],
+        ['Flux', 446, '#ff805e']
+      ];
+      for (const [label, x, color] of attachments) {
+        context.fillStyle = '#0d1c25';
+        context.strokeStyle = color;
+        context.lineWidth = 2;
+        context.fillRect(x, 35, 101, 54);
+        context.strokeRect(x, 35, 101, 54);
+        context.fillStyle = color;
+        context.fillText(label, x + 16, 68);
+      }
+      context.setLineDash([5, 4]);
+      context.strokeStyle = '#8aa4af';
+      context.beginPath();
+      context.moveTo(279, 316);
+      context.lineTo(330, 91);
+      context.stroke();
+      context.setLineDash([]);
+    }
+
+    if (warmStep >= 2) {
+      context.strokeStyle = '#ff6f67';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(279, 317, 25, Math.PI, 0);
+      context.stroke();
+      for (let index = 0; index < 5; index += 1) {
+        const angle = -Math.PI + 0.22 + index * (Math.PI - 0.44) / 4;
+        drawArrow(
+          context,
+          [279, 314],
+          [
+            279 + Math.cos(angle) * 54,
+            314 + Math.sin(angle) * 54
+          ],
+          '#ff6f67',
+          2
+        );
+      }
+    }
+
+    if (warmStep >= 3) {
+      drawArrow(context, [292, 314], [609, 320], '#ff7777', 4);
+      context.strokeStyle = '#75e49e';
+      context.lineWidth = 4;
+      context.setLineDash([7, 6]);
+      context.beginPath();
+      context.moveTo(483, 219);
+      context.lineTo(483, 332);
+      context.stroke();
+      context.setLineDash([]);
+      context.fillStyle = '#ffc45f';
+      context.fillText(
+        '基础 RSM 仍会累加这条穿过挡板的路径',
+        376,
+        401
+      );
+    }
+  }
+
+  function setWarmStep(nextStep) {
+    warmStep = nextStep;
+    $$('[data-warm-step]').forEach((button) => {
+      button.classList.toggle(
+        'active',
+        Number(button.dataset.warmStep) === warmStep
+      );
+    });
+    const step = warmSteps[warmStep];
+    $('#warmCopy').innerHTML = `<h4>${step.title}</h4><p>${step.body}</p>`;
+    $('#warmKnown').innerHTML =
+      `<h4>当前已知 / 未知</h4><p>${step.known}</p>`;
+    drawWarmup();
+  }
+
+  $$('[data-warm-step]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setWarmStep(Number(button.dataset.warmStep));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Experiment 02 / 03: spotlight anatomy and real WebGL2 RSM
+  // ---------------------------------------------------------------------------
+
+  const LIGHT_TARGET = [0, 0.75, -0.75];
+  const LIGHT_FOV_RADIANS = 72 * Math.PI / 180;
+  const LIGHT_NEAR = 0.15;
+  const LIGHT_FAR = 14;
+  const RSM_SIZE = 128;
+  const rsmState = {
+    lightAngle: 28,
+    view: 'final',
+    samples: 40,
+    radius: 0.28,
+    strength: 0.30,
+    yaw: 0.65,
+    pitch: 0.34,
+    zoom: 8.7,
+    showFrustum: true
+  };
+
+  function lightPosition() {
+    const angle = rsmState.lightAngle * Math.PI / 180;
+    return [
+      Math.sin(angle) * 2.25,
+      3.55,
+      0.15 + Math.cos(angle) * 1.8
+    ];
+  }
+
+  function lightForward() {
+    return normalize3(subtract3(LIGHT_TARGET, lightPosition()));
+  }
+
+  function cameraEye() {
+    const cosinePitch = Math.cos(rsmState.pitch);
+    return [
+      Math.sin(rsmState.yaw) * cosinePitch * rsmState.zoom,
+      1.45 + Math.sin(rsmState.pitch) * rsmState.zoom * 0.62,
+      Math.cos(rsmState.yaw) * cosinePitch * rsmState.zoom - 0.3
+    ];
+  }
+
+  function updateLightReadouts() {
+    $('#lightPositionReadout').textContent = formatVector(lightPosition());
+    $('#lightTargetReadout').textContent = formatVector(LIGHT_TARGET);
+    $('#lightForwardReadout').textContent = formatVector(lightForward());
+    drawLightDiagram();
+  }
+
+  const lightDiagram = $('#lightDiagram');
+  const lightDiagramContext = lightDiagram.getContext('2d');
+
+  function planPoint(worldPosition) {
+    const x = 380 + worldPosition[0] * 86;
+    const y = 208 + worldPosition[2] * 53;
+    return [x, y];
+  }
+
+  function drawLightDiagram() {
+    const context = lightDiagramContext;
+    const width = lightDiagram.width;
+    const height = lightDiagram.height;
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = '#061018';
+    context.fillRect(0, 0, width, height);
+
+    context.fillStyle = '#0e202a';
+    context.strokeStyle = '#395362';
+    context.lineWidth = 2;
+    const topLeft = planPoint([-3, 0, -3.4]);
+    const bottomRight = planPoint([3, 0, 2.4]);
+    context.fillRect(
+      topLeft[0],
+      topLeft[1],
+      bottomRight[0] - topLeft[0],
+      bottomRight[1] - topLeft[1]
+    );
+    context.strokeRect(
+      topLeft[0],
+      topLeft[1],
+      bottomRight[0] - topLeft[0],
+      bottomRight[1] - topLeft[1]
+    );
+
+    const position = lightPosition();
+    const target = LIGHT_TARGET;
+    const position2d = planPoint(position);
+    const target2d = planPoint(target);
+    const forward = normalize3(subtract3(target, position));
+    const planAngle = Math.atan2(forward[2], forward[0]);
+    const halfFov = LIGHT_FOV_RADIANS * 0.5;
+    const rayLength = 240;
+    const leftRay = [
+      position2d[0] + Math.cos(planAngle - halfFov) * rayLength,
+      position2d[1] + Math.sin(planAngle - halfFov) * rayLength * 0.62
+    ];
+    const rightRay = [
+      position2d[0] + Math.cos(planAngle + halfFov) * rayLength,
+      position2d[1] + Math.sin(planAngle + halfFov) * rayLength * 0.62
+    ];
+
+    context.fillStyle = '#ffc45f18';
+    context.strokeStyle = '#ffc45f';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(position2d[0], position2d[1]);
+    context.lineTo(leftRay[0], leftRay[1]);
+    context.lineTo(rightRay[0], rightRay[1]);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    drawArrow(context, position2d, target2d, '#ffc45f', 4);
+
+    context.fillStyle = '#ffc45f';
+    context.beginPath();
+    context.arc(position2d[0], position2d[1], 11, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#55d7ff';
+    context.beginPath();
+    context.arc(target2d[0], target2d[1], 7, 0, Math.PI * 2);
+    context.fill();
+
+    context.font = '14px "Segoe UI", sans-serif';
+    context.fillStyle = '#ffe2a3';
+    context.fillText(
+      `Position ${formatVector(position)}`,
+      20,
+      30
+    );
+    context.fillStyle = '#9bdfff';
+    context.fillText(
+      `Target ${formatVector(target)}`,
+      20,
+      55
+    );
+    context.fillStyle = '#c5d7df';
+    context.fillText(
+      `Forward ${formatVector(forward)}`,
+      20,
+      80
+    );
+    context.fillText(
+      '俯视图 · 扇形只表示水平切片，真实 frustum 还包含垂直 FOV',
+      20,
+      height - 20
+    );
+    context.fillStyle = '#ffc45f';
+    context.fillText('Spot', position2d[0] + 14, position2d[1] - 10);
+    context.fillStyle = '#55d7ff';
+    context.fillText('target', target2d[0] + 12, target2d[1] - 8);
+  }
+
+  function mat4Multiply(a, b) {
+    const output = new Float32Array(16);
+    for (let column = 0; column < 4; column += 1) {
+      for (let row = 0; row < 4; row += 1) {
+        let sum = 0;
+        for (let index = 0; index < 4; index += 1) {
+          sum += a[index * 4 + row] * b[column * 4 + index];
+        }
+        output[column * 4 + row] = sum;
+      }
+    }
+    return output;
+  }
+
+  function mat4Perspective(fieldOfView, aspect, near, far) {
+    const focal = 1 / Math.tan(fieldOfView / 2);
+    const inverseRange = 1 / (near - far);
+    return new Float32Array([
+      focal / aspect, 0, 0, 0,
+      0, focal, 0, 0,
+      0, 0, (far + near) * inverseRange, -1,
+      0, 0, 2 * far * near * inverseRange, 0
+    ]);
+  }
+
+  function mat4LookAt(eye, target, up) {
+    const zAxis = normalize3(subtract3(eye, target));
+    const xAxis = normalize3(cross3(up, zAxis));
+    const yAxis = cross3(zAxis, xAxis);
+    return new Float32Array([
+      xAxis[0], yAxis[0], zAxis[0], 0,
+      xAxis[1], yAxis[1], zAxis[1], 0,
+      xAxis[2], yAxis[2], zAxis[2], 0,
+      -dot3(xAxis, eye), -dot3(yAxis, eye), -dot3(zAxis, eye), 1
+    ]);
+  }
+
+  function transformHomogeneous(matrix, point) {
+    const x = point[0];
+    const y = point[1];
+    const z = point[2];
+    return [
+      matrix[0] * x + matrix[4] * y + matrix[8] * z + matrix[12],
+      matrix[1] * x + matrix[5] * y + matrix[9] * z + matrix[13],
+      matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14],
+      matrix[3] * x + matrix[7] * y + matrix[11] * z + matrix[15]
+    ];
+  }
+
+  function appendTriangle(output, a, b, c, normal, albedo) {
+    for (const position of [a, b, c]) {
+      output.push(...position, ...normal, ...albedo);
+    }
+  }
+
+  function appendQuad(output, a, b, c, d, normal, albedo) {
+    appendTriangle(output, a, b, c, normal, albedo);
+    appendTriangle(output, a, c, d, normal, albedo);
+  }
+
+  function appendBox(output, center, size, albedo) {
+    const [x, y, z] = center;
+    const half = size.map((value) => value / 2);
+    const point = (sx, sy, sz) => [
+      x + sx * half[0],
+      y + sy * half[1],
+      z + sz * half[2]
+    ];
+
+    appendQuad(
+      output,
+      point(-1, -1, 1),
+      point(1, -1, 1),
+      point(1, 1, 1),
+      point(-1, 1, 1),
+      [0, 0, 1],
+      albedo
+    );
+    appendQuad(
+      output,
+      point(1, -1, -1),
+      point(-1, -1, -1),
+      point(-1, 1, -1),
+      point(1, 1, -1),
+      [0, 0, -1],
+      albedo
+    );
+    appendQuad(
+      output,
+      point(-1, -1, -1),
+      point(-1, -1, 1),
+      point(-1, 1, 1),
+      point(-1, 1, -1),
+      [-1, 0, 0],
+      albedo
+    );
+    appendQuad(
+      output,
+      point(1, -1, 1),
+      point(1, -1, -1),
+      point(1, 1, -1),
+      point(1, 1, 1),
+      [1, 0, 0],
+      albedo
+    );
+    appendQuad(
+      output,
+      point(-1, 1, 1),
+      point(1, 1, 1),
+      point(1, 1, -1),
+      point(-1, 1, -1),
+      [0, 1, 0],
+      albedo
+    );
+    appendQuad(
+      output,
+      point(-1, -1, -1),
+      point(1, -1, -1),
+      point(1, -1, 1),
+      point(-1, -1, 1),
+      [0, -1, 0],
+      albedo
+    );
+  }
+
+  function buildRoomVertices() {
+    const output = [];
+    appendQuad(
+      output,
+      [-3, 0, 2.4],
+      [3, 0, 2.4],
+      [3, 0, -3.4],
+      [-3, 0, -3.4],
+      [0, 1, 0],
+      [0.62, 0.63, 0.60]
+    );
+    appendQuad(
+      output,
+      [-3, 0, -3.4],
+      [3, 0, -3.4],
+      [3, 4, -3.4],
+      [-3, 4, -3.4],
+      [0, 0, 1],
+      [0.68, 0.68, 0.64]
+    );
+    appendQuad(
+      output,
+      [-3, 0, 2.4],
+      [-3, 0, -3.4],
+      [-3, 4, -3.4],
+      [-3, 4, 2.4],
+      [1, 0, 0],
+      [0.76, 0.15, 0.11]
+    );
+    appendQuad(
+      output,
+      [3, 0, -3.4],
+      [3, 0, 2.4],
+      [3, 4, 2.4],
+      [3, 4, -3.4],
+      [-1, 0, 0],
+      [0.10, 0.68, 0.25]
+    );
+    appendQuad(
+      output,
+      [-3, 4, -3.4],
+      [3, 4, -3.4],
+      [3, 4, 2.4],
+      [-3, 4, 2.4],
+      [0, -1, 0],
+      [0.56, 0.58, 0.58]
+    );
+    appendBox(
+      output,
+      [0, 0.67, -0.75],
+      [1.25, 1.34, 1.35],
+      [0.65, 0.62, 0.53]
+    );
+    appendBox(
+      output,
+      [-1.65, 0.38, 0.35],
+      [0.62, 0.76, 0.62],
+      [0.23, 0.35, 0.72]
+    );
+    return new Float32Array(output);
+  }
+
+  function compileShader(context, type, source) {
+    const shader = context.createShader(type);
+    context.shaderSource(shader, source);
+    context.compileShader(shader);
+    if (!context.getShaderParameter(shader, context.COMPILE_STATUS)) {
+      throw new Error(context.getShaderInfoLog(shader));
+    }
+    return shader;
+  }
+
+  function linkProgram(context, vertexSource, fragmentSource) {
+    const program = context.createProgram();
+    context.attachShader(
+      program,
+      compileShader(context, context.VERTEX_SHADER, vertexSource)
+    );
+    context.attachShader(
+      program,
+      compileShader(context, context.FRAGMENT_SHADER, fragmentSource)
+    );
+    context.linkProgram(program);
+    if (!context.getProgramParameter(program, context.LINK_STATUS)) {
+      throw new Error(context.getProgramInfoLog(program));
+    }
+    return program;
+  }
+
+  const commonVertexSource = `#version 300 es
+precision highp float;
+
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec3 aAlbedo;
+
+uniform mat4 uViewProjection;
+
+out vec3 vPosition;
+out vec3 vNormal;
+out vec3 vAlbedo;
+
+void main() {
+  vPosition = aPosition;
+  vNormal = aNormal;
+  vAlbedo = aAlbedo;
+  gl_Position = uViewProjection * vec4(aPosition, 1.0);
+}`;
+
+  const rsmFragmentSource = `#version 300 es
+precision highp float;
+
+in vec3 vPosition;
+in vec3 vNormal;
+in vec3 vAlbedo;
+
+uniform vec3 uLightPosition;
+uniform float uLightPower;
+
+layout(location = 0) out vec4 outPosition;
+layout(location = 1) out vec4 outNormal;
+layout(location = 2) out vec4 outFlux;
+
+void main() {
+  vec3 normal = normalize(vNormal);
+  vec3 toLight = normalize(uLightPosition - vPosition);
+  float incoming = max(dot(normal, toLight), 0.0);
+
+  outPosition = vec4(
+    clamp((vPosition + 6.0) / 12.0, 0.0, 1.0),
+    1.0
+  );
+  outNormal = vec4(normal * 0.5 + 0.5, 1.0);
+  outFlux = vec4(
+    clamp(vAlbedo * incoming * uLightPower, 0.0, 1.0),
+    1.0
+  );
+}`;
+
+  const gatherIndirectSource = `
+vec3 decodePosition(vec4 encoded) {
+  return encoded.xyz * 12.0 - 6.0;
+}
+
+float directVisibility(vec3 position) {
+  vec4 lightClip =
+    uLightViewProjection * vec4(position, 1.0);
+  if (lightClip.w <= 0.0) {
+    return 0.0;
+  }
+  vec3 ndc = lightClip.xyz / lightClip.w;
+  vec2 uv = ndc.xy * 0.5 + 0.5;
+  if (
+    any(lessThan(uv, vec2(0.0))) ||
+    any(greaterThan(uv, vec2(1.0)))
+  ) {
+    return 0.0;
+  }
+  float storedDepth = texture(uRsmDepth, uv).r;
+  return ndc.z * 0.5 + 0.5 - 0.015 <= storedDepth
+    ? 1.0
+    : 0.0;
+}
+
+vec3 gatherIndirect(vec3 receiverPosition, vec3 receiverNormal) {
+  vec4 lightClip =
+    uLightViewProjection * vec4(receiverPosition, 1.0);
+  if (lightClip.w <= 0.0) {
+    return vec3(0.0);
+  }
+  vec2 centerUv =
+    lightClip.xy / lightClip.w * 0.5 + 0.5;
+  vec3 sum = vec3(0.0);
+
+  for (int sampleIndex = 0; sampleIndex < 64; sampleIndex += 1) {
+    if (sampleIndex >= uSampleCount) {
+      break;
+    }
+    float fi = float(sampleIndex) + 0.5;
+    float radius =
+      sqrt(fi / float(uSampleCount)) * uSampleRadius;
+    float angle = fi * 2.39996323;
+    vec2 uv =
+      centerUv + vec2(cos(angle), sin(angle)) * radius;
+
+    if (
+      any(lessThan(uv, vec2(0.0))) ||
+      any(greaterThan(uv, vec2(1.0)))
+    ) {
+      continue;
+    }
+
+    vec4 encodedPosition = texture(uRsmPosition, uv);
+    if (encodedPosition.a < 0.5) {
+      continue;
+    }
+    vec3 vplPosition = decodePosition(encodedPosition);
+    vec3 vplNormal = normalize(
+      texture(uRsmNormal, uv).xyz * 2.0 - 1.0
+    );
+    vec3 delta = vplPosition - receiverPosition;
+    float distanceSquared = dot(delta, delta);
+    if (distanceSquared < 0.02) {
+      continue;
+    }
+
+    vec3 direction = delta * inversesqrt(distanceSquared);
+    float receiverCosine = max(
+      dot(receiverNormal, direction),
+      0.0
+    );
+    float vplCosine = max(
+      dot(vplNormal, -direction),
+      0.0
+    );
+    vec3 flux = texture(uRsmFlux, uv).rgb;
+    sum +=
+      flux *
+      receiverCosine *
+      vplCosine /
+      max(distanceSquared, 0.08);
+  }
+
+  return sum * (
+    uIndirectStrength *
+    8.0 /
+    float(uSampleCount)
+  );
+}`;
+
+  const cameraFragmentSource = `#version 300 es
+precision highp float;
+
+in vec3 vPosition;
+in vec3 vNormal;
+in vec3 vAlbedo;
+
+uniform vec3 uLightPosition;
+uniform float uLightPower;
+uniform mat4 uLightViewProjection;
+uniform sampler2D uRsmPosition;
+uniform sampler2D uRsmNormal;
+uniform sampler2D uRsmFlux;
+uniform sampler2D uRsmDepth;
+uniform int uSampleCount;
+uniform float uSampleRadius;
+uniform float uIndirectStrength;
+uniform int uViewMode;
+
+out vec4 outColor;
+
+${gatherIndirectSource}
+
+void main() {
+  vec3 normal = normalize(vNormal);
+  vec3 toLight = uLightPosition - vPosition;
+  float distanceSquared = max(dot(toLight, toLight), 0.3);
+  float cosine = max(dot(normal, normalize(toLight)), 0.0);
+  vec3 direct =
+    vAlbedo *
+    (
+      0.035 +
+      uLightPower *
+      17.0 *
+      cosine /
+      distanceSquared *
+      directVisibility(vPosition)
+    );
+  vec3 indirect =
+    vAlbedo * gatherIndirect(vPosition, normal);
+  vec3 color =
+    uViewMode == 1
+      ? direct
+      : (uViewMode == 2 ? indirect : direct + indirect);
+  if (uViewMode == 7) {
+    color = 0.12 * direct + 0.72 * indirect;
+  }
+  outColor = vec4(
+    pow(max(color, vec3(0.0)), vec3(1.0 / 2.2)),
+    1.0
+  );
+}`;
+
+  const fullscreenVertexSource = `#version 300 es
+precision highp float;
+out vec2 vUv;
+void main() {
+  vec2 position = vec2(
+    (gl_VertexID << 1) & 2,
+    gl_VertexID & 2
+  );
+  vUv = position;
+  gl_Position = vec4(position * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+  const fullscreenFragmentSource = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uTexture;
+uniform int uMode;
+out vec4 outColor;
+void main() {
+  vec4 value = texture(uTexture, vUv);
+  if (value.a < 0.5) {
+    outColor = vec4(0.015, 0.025, 0.03, 1.0);
+    return;
+  }
+  vec3 color = value.rgb;
+  if (uMode == 2) {
+    color = pow(color, vec3(1.0 / 2.2));
+  }
+  outColor = vec4(color, 1.0);
+}`;
+
+  const pointVertexSource = `#version 300 es
+precision highp float;
+uniform sampler2D uPosition;
+uniform sampler2D uFlux;
+uniform mat4 uViewProjection;
+out vec3 vColor;
+void main() {
+  int side = 64;
+  ivec2 texel = ivec2(
+    (gl_VertexID % side) * 2 + 1,
+    (gl_VertexID / side) * 2 + 1
+  );
+  vec4 encodedPosition = texelFetch(uPosition, texel, 0);
+  if (encodedPosition.a < 0.5) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    gl_PointSize = 0.0;
+    vColor = vec3(0.0);
+    return;
+  }
+  vec3 position = encodedPosition.xyz * 12.0 - 6.0;
+  vColor = 0.2 + texelFetch(uFlux, texel, 0).rgb;
+  gl_Position =
+    uViewProjection *
+    vec4(position + vec3(0.018), 1.0);
+  gl_PointSize = 3.2;
+}`;
+
+  const pointFragmentSource = `#version 300 es
+precision highp float;
+in vec3 vColor;
+out vec4 outColor;
+void main() {
+  vec2 offset = gl_PointCoord - 0.5;
+  if (dot(offset, offset) > 0.25) {
+    discard;
+  }
+  outColor = vec4(
+    mix(vec3(0.15, 0.8, 1.0), vColor, 0.35),
+    1.0
+  );
+}`;
+
+  const glCanvas = $('#rsm3D');
+  const overlayCanvas = $('#lightOverlay');
+  const overlayContext = overlayCanvas.getContext('2d');
+  let gl = null;
+  let rsmProgram = null;
+  let cameraProgram = null;
+  let fullscreenProgram = null;
+  let pointProgram = null;
+  let meshBuffer = null;
+  let meshVertexCount = 0;
+  let rsmTarget = null;
+  let currentLightViewProjection = null;
+  let currentCameraViewProjection = null;
+
+  function recordGlError(stage) {
+    if (!gl) {
+      return;
+    }
+    let error = gl.getError();
+    let found = false;
+    while (error !== gl.NO_ERROR) {
+      found = true;
+      diagnostics.glErrors.push({ stage, error });
+      error = gl.getError();
+    }
+    if (found) {
+      GICourse.setCheck(
+        $('#glChecks'),
+        'draw',
+        'fail',
+        `${stage}: ${diagnostics.glErrors.at(-1).error}`
+      );
+    } else {
+      GICourse.setCheck(
+        $('#glChecks'),
+        'draw',
+        'pass',
+        `0 · last pass: ${stage}`
+      );
+    }
+  }
+
+  function createColorTexture() {
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA8,
+      RSM_SIZE,
+      RSM_SIZE,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      null
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return texture;
+  }
+
+  function createRsmTarget() {
+    const framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    const position = createColorTexture();
+    const normal = createColorTexture();
+    const flux = createColorTexture();
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      position,
+      0
+    );
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT1,
+      gl.TEXTURE_2D,
+      normal,
+      0
+    );
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT2,
+      gl.TEXTURE_2D,
+      flux,
+      0
+    );
+
+    const depth = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, depth);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.DEPTH_COMPONENT24,
+      RSM_SIZE,
+      RSM_SIZE,
+      0,
+      gl.DEPTH_COMPONENT,
+      gl.UNSIGNED_INT,
+      null
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.DEPTH_ATTACHMENT,
+      gl.TEXTURE_2D,
+      depth,
+      0
+    );
+    gl.drawBuffers([
+      gl.COLOR_ATTACHMENT0,
+      gl.COLOR_ATTACHMENT1,
+      gl.COLOR_ATTACHMENT2
+    ]);
+    const complete =
+      gl.checkFramebufferStatus(gl.FRAMEBUFFER) ===
+      gl.FRAMEBUFFER_COMPLETE;
+    diagnostics.framebufferComplete = complete;
+    GICourse.setCheck(
+      $('#glChecks'),
+      'fbo',
+      complete ? 'pass' : 'fail',
+      complete ? '3 × RGBA8 + Depth24 · complete' : 'incomplete'
+    );
+    if (!complete) {
+      throw new Error('RSM framebuffer incomplete');
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { framebuffer, position, normal, flux, depth };
+  }
+
+  function bindMesh() {
+    gl.bindBuffer(gl.ARRAY_BUFFER, meshBuffer);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 36, 0);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 36, 12);
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 36, 24);
+  }
+
+  function bindTexture(program, uniformName, texture, unit) {
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(gl.getUniformLocation(program, uniformName), unit);
+  }
+
+  function renderRsmPass() {
+    const position = lightPosition();
+    const view = mat4LookAt(position, LIGHT_TARGET, [0, 1, 0]);
+    const projection = mat4Perspective(
+      LIGHT_FOV_RADIANS,
+      1,
+      LIGHT_NEAR,
+      LIGHT_FAR
+    );
+    currentLightViewProjection = mat4Multiply(projection, view);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, rsmTarget.framebuffer);
+    gl.drawBuffers([
+      gl.COLOR_ATTACHMENT0,
+      gl.COLOR_ATTACHMENT1,
+      gl.COLOR_ATTACHMENT2
+    ]);
+    gl.viewport(0, 0, RSM_SIZE, RSM_SIZE);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(rsmProgram);
+    bindMesh();
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(rsmProgram, 'uViewProjection'),
+      false,
+      currentLightViewProjection
+    );
+    gl.uniform3fv(
+      gl.getUniformLocation(rsmProgram, 'uLightPosition'),
+      position
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(rsmProgram, 'uLightPower'),
+      0.82
+    );
+    gl.enable(gl.POLYGON_OFFSET_FILL);
+    gl.polygonOffset(1.5, 4.0);
+    gl.drawArrays(gl.TRIANGLES, 0, meshVertexCount);
+    gl.disable(gl.POLYGON_OFFSET_FILL);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    recordGlError('RSM MRT');
+  }
+
+  function resizeGlCanvas() {
+    const rectangle = glCanvas.getBoundingClientRect();
+    const width = Math.max(
+      320,
+      Math.min(1120, Math.round(rectangle.width))
+    );
+    const height = Math.round(width * 9 / 16);
+    if (glCanvas.width !== width || glCanvas.height !== height) {
+      glCanvas.width = width;
+      glCanvas.height = height;
+      overlayCanvas.width = width;
+      overlayCanvas.height = height;
+    }
+    gl.viewport(0, 0, width, height);
+  }
+
+  function renderCamera(viewMode = 0, useLightCamera = false) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    resizeGlCanvas();
+    gl.clearColor(0.012, 0.023, 0.03, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    const aspect = glCanvas.width / glCanvas.height;
+    if (useLightCamera) {
+      currentCameraViewProjection = currentLightViewProjection;
+    } else {
+      const view = mat4LookAt(
+        cameraEye(),
+        [0, 1, -0.75],
+        [0, 1, 0]
+      );
+      const projection = mat4Perspective(
+        43 * Math.PI / 180,
+        aspect,
+        0.1,
+        30
+      );
+      currentCameraViewProjection = mat4Multiply(projection, view);
+    }
+
+    gl.useProgram(cameraProgram);
+    bindMesh();
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(cameraProgram, 'uViewProjection'),
+      false,
+      currentCameraViewProjection
+    );
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(cameraProgram, 'uLightViewProjection'),
+      false,
+      currentLightViewProjection
+    );
+    gl.uniform3fv(
+      gl.getUniformLocation(cameraProgram, 'uLightPosition'),
+      lightPosition()
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(cameraProgram, 'uLightPower'),
+      0.82
+    );
+    gl.uniform1i(
+      gl.getUniformLocation(cameraProgram, 'uSampleCount'),
+      rsmState.samples
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(cameraProgram, 'uSampleRadius'),
+      rsmState.radius
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(cameraProgram, 'uIndirectStrength'),
+      rsmState.strength
+    );
+    gl.uniform1i(
+      gl.getUniformLocation(cameraProgram, 'uViewMode'),
+      viewMode
+    );
+    bindTexture(
+      cameraProgram,
+      'uRsmPosition',
+      rsmTarget.position,
+      0
+    );
+    bindTexture(
+      cameraProgram,
+      'uRsmNormal',
+      rsmTarget.normal,
+      1
+    );
+    bindTexture(
+      cameraProgram,
+      'uRsmFlux',
+      rsmTarget.flux,
+      2
+    );
+    bindTexture(
+      cameraProgram,
+      'uRsmDepth',
+      rsmTarget.depth,
+      3
+    );
+    gl.drawArrays(gl.TRIANGLES, 0, meshVertexCount);
+    recordGlError('camera gather');
+  }
+
+  function drawFullscreenAttachment(texture, mode) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    resizeGlCanvas();
+    gl.disable(gl.DEPTH_TEST);
+    gl.useProgram(fullscreenProgram);
+    bindTexture(fullscreenProgram, 'uTexture', texture, 0);
+    gl.uniform1i(
+      gl.getUniformLocation(fullscreenProgram, 'uMode'),
+      mode
+    );
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.enable(gl.DEPTH_TEST);
+    recordGlError('attachment inspect');
+  }
+
+  function drawVplPoints() {
+    gl.useProgram(pointProgram);
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(pointProgram, 'uViewProjection'),
+      false,
+      currentCameraViewProjection
+    );
+    bindTexture(pointProgram, 'uPosition', rsmTarget.position, 0);
+    bindTexture(pointProgram, 'uFlux', rsmTarget.flux, 1);
+    gl.drawArrays(gl.POINTS, 0, 4096);
+    recordGlError('VPL point overlay');
+  }
+
+  function projectWorldPoint(point) {
+    if (!currentCameraViewProjection) {
+      return null;
+    }
+    const clip = transformHomogeneous(currentCameraViewProjection, point);
+    if (clip[3] <= 0.0001) {
+      return null;
+    }
+    const ndcX = clip[0] / clip[3];
+    const ndcY = clip[1] / clip[3];
+    const ndcZ = clip[2] / clip[3];
+    if (ndcZ < -1.5 || ndcZ > 1.5) {
+      return null;
+    }
+    return [
+      (ndcX * 0.5 + 0.5) * overlayCanvas.width,
+      (-ndcY * 0.5 + 0.5) * overlayCanvas.height
+    ];
+  }
+
+  function drawWorldLine(context, a, b, color, width = 1.5) {
+    const projectedA = projectWorldPoint(a);
+    const projectedB = projectWorldPoint(b);
+    if (!projectedA || !projectedB) {
+      return;
+    }
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    context.beginPath();
+    context.moveTo(projectedA[0], projectedA[1]);
+    context.lineTo(projectedB[0], projectedB[1]);
+    context.stroke();
+  }
+
+  function drawLightOverlay() {
+    const context = overlayContext;
+    context.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    if (
+      !rsmState.showFrustum ||
+      ['position', 'normal', 'flux'].includes(rsmState.view)
+    ) {
+      return;
+    }
+    if (rsmState.view === 'light') {
+      context.strokeStyle = '#ffc45f';
+      context.lineWidth = 1.5;
+      const centerX = overlayCanvas.width / 2;
+      const centerY = overlayCanvas.height / 2;
+      context.beginPath();
+      context.moveTo(centerX - 18, centerY);
+      context.lineTo(centerX + 18, centerY);
+      context.moveTo(centerX, centerY - 18);
+      context.lineTo(centerX, centerY + 18);
+      context.stroke();
+      context.fillStyle = '#ffc45f';
+      context.font = '12px "Segoe UI", sans-serif';
+      context.fillText(
+        `LIGHT CAMERA · forward ${formatVector(lightForward())}`,
+        14,
+        overlayCanvas.height - 16
+      );
+      return;
+    }
+
+    const position = lightPosition();
+    const forward = lightForward();
+    const right = normalize3(cross3(forward, [0, 1, 0]));
+    const up = normalize3(cross3(right, forward));
+    const frustumDistance = 3.2;
+    const radius =
+      Math.tan(LIGHT_FOV_RADIANS * 0.5) * frustumDistance;
+    const center = add3(position, scale3(forward, frustumDistance));
+    const corners = [
+      add3(add3(center, scale3(right, radius)), scale3(up, radius)),
+      add3(add3(center, scale3(right, -radius)), scale3(up, radius)),
+      add3(add3(center, scale3(right, -radius)), scale3(up, -radius)),
+      add3(add3(center, scale3(right, radius)), scale3(up, -radius))
+    ];
+
+    drawWorldLine(context, position, LIGHT_TARGET, '#ffc45f', 2.5);
+    for (const corner of corners) {
+      drawWorldLine(context, position, corner, '#ffc45f99');
+    }
+    for (let index = 0; index < 4; index += 1) {
+      drawWorldLine(
+        context,
+        corners[index],
+        corners[(index + 1) % 4],
+        '#ffc45f70'
+      );
+    }
+
+    const projectedPosition = projectWorldPoint(position);
+    const projectedTarget = projectWorldPoint(LIGHT_TARGET);
+    if (projectedPosition) {
+      context.fillStyle = '#ffc45f';
+      context.beginPath();
+      context.arc(
+        projectedPosition[0],
+        projectedPosition[1],
+        7,
+        0,
+        Math.PI * 2
+      );
+      context.fill();
+      context.font = '12px "Segoe UI", sans-serif';
+      context.fillText(
+        `spot ${formatVector(position)}`,
+        projectedPosition[0] + 10,
+        projectedPosition[1] - 9
+      );
+    }
+    if (projectedTarget) {
+      context.strokeStyle = '#55d7ff';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(projectedTarget[0] - 6, projectedTarget[1]);
+      context.lineTo(projectedTarget[0] + 6, projectedTarget[1]);
+      context.moveTo(projectedTarget[0], projectedTarget[1] - 6);
+      context.lineTo(projectedTarget[0], projectedTarget[1] + 6);
+      context.stroke();
+      context.fillStyle = '#55d7ff';
+      context.fillText(
+        'target',
+        projectedTarget[0] + 9,
+        projectedTarget[1] - 7
+      );
+    }
+  }
+
+  const viewDescriptions = {
+    final: [
+      'Camera · direct + indirect',
+      '直接光与一次间接光共同显示。切到“仅直接光”，用 A/B 确认彩色反弹来自 RSM。'
+    ],
+    direct: [
+      'Camera · direct only',
+      '这里只保留 shadow-map 直接光；与最终合成的差就是当前 RSM 间接项。'
+    ],
+    indirect: [
+      'Camera · indirect only',
+      '只看 gather 结果。墙后漏光来自缺少第二段可见性，不会被增加样本自动修复。'
+    ],
+    light: [
+      'Light camera · depth view',
+      '你正在聚光灯位置沿 forward 看向 target；视锥外表面不会写入 RSM。'
+    ],
+    position: [
+      'MRT 0 · world position',
+      'RGB 编码世界坐标；黑色 texel 没有第一层几何。'
+    ],
+    normal: [
+      'MRT 1 · world normal',
+      'RGB = normal × 0.5 + 0.5。若方向翻转，VPL 余弦会错误归零或背面发光。'
+    ],
+    flux: [
+      'MRT 2 · reflected flux',
+      '亮 texel 是强 VPL 候选；它还没有乘接收端余弦、距离或第二段 visibility。'
+    ],
+    vpl: [
+      'Camera · sampled VPL points',
+      '蓝点直接从 128² RSM texel 解码；不是在房间里手摆的小灯。'
+    ]
+  };
+
+  function renderDisplay() {
+    if (!gl) {
+      return;
+    }
+    const view = rsmState.view;
+    if (view === 'position') {
+      drawFullscreenAttachment(rsmTarget.position, 0);
+    } else if (view === 'normal') {
+      drawFullscreenAttachment(rsmTarget.normal, 1);
+    } else if (view === 'flux') {
+      drawFullscreenAttachment(rsmTarget.flux, 2);
+    } else if (view === 'light') {
+      renderCamera(1, true);
+    } else {
+      const mode =
+        view === 'direct'
+          ? 1
+          : (view === 'indirect' ? 2 : (view === 'vpl' ? 7 : 0));
+      renderCamera(mode, false);
+      if (view === 'vpl') {
+        drawVplPoints();
+      }
+    }
+    drawLightOverlay();
+  }
+
+  function renderAll3d() {
+    if (!gl) {
+      return;
+    }
+    renderRsmPass();
+    renderDisplay();
+  }
+
+  function setView(view) {
+    rsmState.view = view;
+    $$('.view-btn').forEach((button) => {
+      button.classList.toggle('active', button.dataset.view === view);
+    });
+    const description = viewDescriptions[view];
+    $('#viewBadge').innerHTML =
+      `<b>${description[0].split(' · ')[0]}</b> · ` +
+      `${description[0].split(' · ').slice(1).join(' · ')}`;
+    $('#viewHelp').innerHTML = `<b>现在看什么：</b>${description[1]}`;
+    renderDisplay();
+  }
+
+  function drawWebglFallback() {
+    const context = glCanvas.getContext('2d');
+    context.fillStyle = '#071018';
+    context.fillRect(0, 0, glCanvas.width, glCanvas.height);
+    context.fillStyle = '#e4f0f5';
+    context.font = '20px "Segoe UI", sans-serif';
+    context.fillText(
+      '当前浏览器不支持 WebGL2；请使用 Edge 等现代浏览器查看 MRT 3D。',
+      40,
+      64
+    );
+    drawArrow(context, [160, 120], [420, 310], '#ffc45f', 4);
+    drawArrow(context, [420, 310], [720, 430], '#ff6f67', 4);
+    $('#gpuBadge').textContent = 'WebGL2 unavailable · static fallback';
+  }
+
+  function initializeWebgl() {
+    gl = glCanvas.getContext('webgl2', {
+      antialias: true,
+      preserveDrawingBuffer: true
+    });
+    diagnostics.webgl2 = Boolean(gl);
+    GICourse.setCheck(
+      $('#glChecks'),
+      'context',
+      gl ? 'pass' : 'fail',
+      gl ? 'WebGL 2.0' : 'unavailable'
+    );
+    if (!gl) {
+      drawWebglFallback();
+      return false;
+    }
+
+    rsmProgram = linkProgram(
+      gl,
+      commonVertexSource,
+      rsmFragmentSource
+    );
+    cameraProgram = linkProgram(
+      gl,
+      commonVertexSource,
+      cameraFragmentSource
+    );
+    fullscreenProgram = linkProgram(
+      gl,
+      fullscreenVertexSource,
+      fullscreenFragmentSource
+    );
+    pointProgram = linkProgram(
+      gl,
+      pointVertexSource,
+      pointFragmentSource
+    );
+    meshBuffer = gl.createBuffer();
+    const mesh = buildRoomVertices();
+    meshVertexCount = mesh.length / 9;
+    gl.bindBuffer(gl.ARRAY_BUFFER, meshBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh, gl.STATIC_DRAW);
+    rsmTarget = createRsmTarget();
+    gl.enable(gl.DEPTH_TEST);
+    $('#gpuBadge').textContent =
+      'WebGL2 · 3 MRT + Depth24 · 128² · live';
+    return true;
+  }
+
+  $('#lightAngle').addEventListener('input', (event) => {
+    rsmState.lightAngle = Number(event.target.value);
+    $('#lightAngleOut').textContent = `${rsmState.lightAngle}°`;
+    updateLightReadouts();
+    renderAll3d();
+  });
+  $('#showFrustum').addEventListener('change', (event) => {
+    rsmState.showFrustum = event.target.checked;
+    drawLightOverlay();
+  });
+  $('#sampleCount').addEventListener('change', (event) => {
+    rsmState.samples = Number(event.target.value);
+    $('#sampleCountOut').textContent = String(rsmState.samples);
+    renderDisplay();
+  });
+  $('#sampleRadius').addEventListener('input', (event) => {
+    rsmState.radius = Number(event.target.value) / 100;
+    $('#sampleRadiusOut').textContent = rsmState.radius.toFixed(2);
+    renderDisplay();
+  });
+  $('#indirectStrength').addEventListener('input', (event) => {
+    rsmState.strength = Number(event.target.value) / 100;
+    $('#indirectStrengthOut').textContent =
+      rsmState.strength.toFixed(2);
+    renderDisplay();
+  });
+  $('#resetCamera').addEventListener('click', () => {
+    rsmState.yaw = 0.65;
+    rsmState.pitch = 0.34;
+    rsmState.zoom = 8.7;
+    renderDisplay();
+  });
+  $$('.view-btn').forEach((button) => {
+    button.addEventListener('click', () => setView(button.dataset.view));
+  });
+  $$('[data-inspect-view]').forEach((card) => {
+    const activate = () => {
+      setView(card.dataset.inspectView);
+      $('#experiment-3d').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    };
+    card.addEventListener('click', activate);
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        activate();
+      }
+    });
+  });
+
+  let dragging = false;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  glCanvas.addEventListener('pointerdown', (event) => {
+    dragging = true;
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+    glCanvas.setPointerCapture(event.pointerId);
+  });
+  glCanvas.addEventListener('pointermove', (event) => {
+    if (!dragging) {
+      return;
+    }
+    rsmState.yaw += (event.clientX - lastPointerX) * 0.008;
+    rsmState.pitch = clamp(
+      rsmState.pitch + (event.clientY - lastPointerY) * 0.006,
+      -0.02,
+      1.08
+    );
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+    renderDisplay();
+  });
+  glCanvas.addEventListener('pointerup', () => {
+    dragging = false;
+  });
+  glCanvas.addEventListener('pointercancel', () => {
+    dragging = false;
+  });
+  glCanvas.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      rsmState.zoom = clamp(
+        rsmState.zoom + event.deltaY * 0.008,
+        5.5,
+        13
+      );
+      renderDisplay();
+    },
+    { passive: false }
+  );
+  window.addEventListener('resize', () => {
+    renderAll3d();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Experiment 05: one-VPL calculator
+  // ---------------------------------------------------------------------------
+
+  const vplCanvas = $('#vplCanvas');
+  const vplContext = vplCanvas.getContext('2d');
+  const vplCalculatorState = {
+    distance: 1.45,
+    receiverTilt: -12,
+    vplTilt: 18,
+    visible: true
+  };
+
+  function singleVplContribution(receiver, vpl, visible) {
+    const delta = subtract3(vpl.position, receiver.position);
+    const distanceSquared = dot3(delta, delta);
+    const direction = scale3(
+      delta,
+      1 / Math.sqrt(Math.max(distanceSquared, 1e-6))
+    );
+    const receiverCosine = Math.max(
+      dot3(receiver.normal, direction),
+      0
+    );
+    const vplCosine = Math.max(
+      dot3(vpl.normal, scale3(direction, -1)),
+      0
+    );
+    const visibility = visible ? 1 : 0;
+    return scale3(
+      vpl.flux,
+      visibility *
+        receiverCosine *
+        vplCosine /
+        Math.max(distanceSquared, 0.08)
+    );
+  }
+
+  function drawNormal(context, origin, normal, color, label) {
+    const end = [
+      origin[0] + normal[0] * 64,
+      origin[1] - normal[1] * 64
+    ];
+    drawArrow(context, origin, end, color, 3);
+    context.fillStyle = color;
+    context.font = '13px "Segoe UI", sans-serif';
+    context.fillText(label, end[0] + 6, end[1] - 4);
+  }
+
+  function updateVplCalculator() {
+    const distance = vplCalculatorState.distance;
+    const receiverRadians =
+      vplCalculatorState.receiverTilt * Math.PI / 180;
+    const vplRadians =
+      vplCalculatorState.vplTilt * Math.PI / 180;
+    const receiver = {
+      position: [distance, 0, 0],
+      normal: [
+        -Math.cos(receiverRadians),
+        Math.sin(receiverRadians),
+        0
+      ]
+    };
+    const vpl = {
+      position: [0, 0, 0],
+      normal: [
+        Math.cos(vplRadians),
+        Math.sin(vplRadians),
+        0
+      ],
+      flux: [0.78, 0.42, 0.18]
+    };
+    const delta = subtract3(vpl.position, receiver.position);
+    const distanceSquared = dot3(delta, delta);
+    const direction = normalize3(delta);
+    const receiverCosine = Math.max(
+      dot3(receiver.normal, direction),
+      0
+    );
+    const vplCosine = Math.max(
+      dot3(vpl.normal, scale3(direction, -1)),
+      0
+    );
+    const contribution = singleVplContribution(
+      receiver,
+      vpl,
+      vplCalculatorState.visible
+    );
+    const scalarContribution =
+      0.2126 * contribution[0] +
+      0.7152 * contribution[1] +
+      0.0722 * contribution[2];
+
+    $('#receiverCosValue').textContent = receiverCosine.toFixed(3);
+    $('#vplCosValue').textContent = vplCosine.toFixed(3);
+    $('#distance2Value').textContent = distanceSquared.toFixed(3);
+    $('#contributionValue').textContent =
+      scalarContribution.toFixed(4);
+    $('#vplSubstitution').innerHTML =
+      `V=${vplCalculatorState.visible ? 1 : 0}, ` +
+      `Φ≈0.48(luma), cosₓ=${receiverCosine.toFixed(3)}, ` +
+      `cosₚ=${vplCosine.toFixed(3)}, r²=${distanceSquared.toFixed(3)}<br>` +
+      `C≈${vplCalculatorState.visible ? 1 : 0} × 0.48 × ` +
+      `${receiverCosine.toFixed(3)} × ${vplCosine.toFixed(3)} / ` +
+      `${Math.max(distanceSquared, 0.08).toFixed(3)} = ` +
+      `${scalarContribution.toFixed(4)}`;
+
+    const context = vplContext;
+    const width = vplCanvas.width;
+    const height = vplCanvas.height;
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = '#061018';
+    context.fillRect(0, 0, width, height);
+    const vplScreen = [150, 205];
+    const receiverScreen = [150 + distance * 260, 205];
+
+    context.strokeStyle = vplCalculatorState.visible
+      ? '#ff806c'
+      : '#677982';
+    context.lineWidth = 4;
+    context.setLineDash(
+      vplCalculatorState.visible ? [] : [8, 7]
+    );
+    context.beginPath();
+    context.moveTo(vplScreen[0], vplScreen[1]);
+    context.lineTo(receiverScreen[0], receiverScreen[1]);
+    context.stroke();
+    context.setLineDash([]);
+
+    context.fillStyle = '#ff806c';
+    context.beginPath();
+    context.arc(vplScreen[0], vplScreen[1], 13, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#55d7ff';
+    context.beginPath();
+    context.arc(
+      receiverScreen[0],
+      receiverScreen[1],
+      13,
+      0,
+      Math.PI * 2
+    );
+    context.fill();
+
+    drawNormal(
+      context,
+      vplScreen,
+      vpl.normal,
+      '#75e49e',
+      'nₚ'
+    );
+    drawNormal(
+      context,
+      receiverScreen,
+      receiver.normal,
+      '#c09cff',
+      'nₓ'
+    );
+    context.font = '14px "Segoe UI", sans-serif';
+    context.fillStyle = '#ffae8e';
+    context.fillText('VPL / p', vplScreen[0] - 30, 250);
+    context.fillStyle = '#9be6ff';
+    context.fillText(
+      'receiver / x',
+      receiverScreen[0] - 42,
+      250
+    );
+    context.fillStyle = '#c4d6de';
+    context.fillText(
+      `r = ${distance.toFixed(2)}`,
+      (vplScreen[0] + receiverScreen[0]) / 2 - 28,
+      185
+    );
+    if (!vplCalculatorState.visible) {
+      context.fillStyle = '#ff6f67';
+      context.fillRect(
+        (vplScreen[0] + receiverScreen[0]) / 2 - 11,
+        132,
+        22,
+        120
+      );
+      context.fillStyle = '#ffc45f';
+      context.fillText(
+        'visibility = 0',
+        width / 2 - 45,
+        315
+      );
+    }
+  }
+
+  $('#vplDistance').addEventListener('input', (event) => {
+    vplCalculatorState.distance = Number(event.target.value) / 100;
+    $('#vplDistanceOut').textContent =
+      vplCalculatorState.distance.toFixed(2);
+    updateVplCalculator();
+  });
+  $('#receiverTilt').addEventListener('input', (event) => {
+    vplCalculatorState.receiverTilt = Number(event.target.value);
+    $('#receiverTiltOut').textContent =
+      `${vplCalculatorState.receiverTilt}°`;
+    updateVplCalculator();
+  });
+  $('#vplTilt').addEventListener('input', (event) => {
+    vplCalculatorState.vplTilt = Number(event.target.value);
+    $('#vplTiltOut').textContent =
+      `${vplCalculatorState.vplTilt}°`;
+    updateVplCalculator();
+  });
+  $('#vplVisibility').addEventListener('change', (event) => {
+    vplCalculatorState.visible = event.target.checked;
+    updateVplCalculator();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Experiment 06-09: CPU Artifact Lab
+  // ---------------------------------------------------------------------------
+
+  const LAB_WIDTH = 96;
+  const LAB_HEIGHT = 54;
+  const LAB_PIXEL_COUNT = LAB_WIDTH * LAB_HEIGHT;
+  const LAB_VPL_COUNT = 512;
+  const LAB_DISPLAY_GAIN = 6.0;
+  const labState = {
+    sampleCount: 64,
+    distribution: 'blue',
+    useVisibility: true,
+    frame: 0,
+    spatialMode: 'atrous',
+    atrousIterations: 3,
+    temporalEnabled: true,
+    historyAlpha: 0.18,
+    historyRejection: true,
+    lightPhase: 0.28,
+    objectOffset: 0
+  };
+  const labGBuffer = {
+    position: new Float32Array(LAB_PIXEL_COUNT * 3),
+    normal: new Float32Array(LAB_PIXEL_COUNT * 3),
+    depth: new Float32Array(LAB_PIXEL_COUNT),
+    objectId: new Uint8Array(LAB_PIXEL_COUNT)
+  };
+  const labHistory = {
+    color: new Float32Array(LAB_PIXEL_COUNT * 3),
+    depth: new Float32Array(LAB_PIXEL_COUNT),
+    objectId: new Uint8Array(LAB_PIXEL_COUNT),
+    valid: false,
+    frameCount: 0
+  };
+  const labVpls = [];
+  let blueNoiseRanks = null;
+  let labVplPermutation = null;
+  let referenceCacheKey = '';
+  let referenceVisible = null;
+  let referenceNoVisibility = null;
+  let temporalTimer = null;
+
+  function hash32(value) {
+    let hash = value >>> 0;
+    hash ^= hash >>> 16;
+    hash = Math.imul(hash, 0x7feb352d);
+    hash ^= hash >>> 15;
+    hash = Math.imul(hash, 0x846ca68b);
+    hash ^= hash >>> 16;
+    return hash >>> 0;
+  }
+
+  function radicalInverseBase2(value) {
+    let bits = value >>> 0;
+    bits = ((bits << 16) | (bits >>> 16)) >>> 0;
+    bits = (
+      ((bits & 0x55555555) << 1) |
+      ((bits & 0xaaaaaaaa) >>> 1)
+    ) >>> 0;
+    bits = (
+      ((bits & 0x33333333) << 2) |
+      ((bits & 0xcccccccc) >>> 2)
+    ) >>> 0;
+    bits = (
+      ((bits & 0x0f0f0f0f) << 4) |
+      ((bits & 0xf0f0f0f0) >>> 4)
+    ) >>> 0;
+    bits = (
+      ((bits & 0x00ff00ff) << 8) |
+      ((bits & 0xff00ff00) >>> 8)
+    ) >>> 0;
+    return bits * 2.3283064365386963e-10;
+  }
+
+  function buildBlueNoiseRankMap(size) {
+    const count = size * size;
+    const rankMap = new Int32Array(count);
+    rankMap.fill(-1);
+    const selected = [];
+    let seed = hash32(0x51f15e) % count;
+
+    for (let rank = 0; rank < count; rank += 1) {
+      if (rank === 0) {
+        rankMap[seed] = rank;
+        selected.push(seed);
+        continue;
+      }
+      let bestIndex = -1;
+      let bestDistance = -1;
+      let bestTie = -1;
+      for (let candidate = 0; candidate < count; candidate += 1) {
+        if (rankMap[candidate] >= 0) {
+          continue;
+        }
+        const candidateX = candidate % size;
+        const candidateY = Math.floor(candidate / size);
+        let minimumDistance = Infinity;
+        for (const chosen of selected) {
+          const chosenX = chosen % size;
+          const chosenY = Math.floor(chosen / size);
+          const rawX = Math.abs(candidateX - chosenX);
+          const rawY = Math.abs(candidateY - chosenY);
+          const dx = Math.min(rawX, size - rawX);
+          const dy = Math.min(rawY, size - rawY);
+          minimumDistance = Math.min(
+            minimumDistance,
+            dx * dx + dy * dy
+          );
+        }
+        const tie = hash32(candidate * 977 + rank * 131);
+        if (
+          minimumDistance > bestDistance ||
+          (
+            minimumDistance === bestDistance &&
+            tie > bestTie
+          )
+        ) {
+          bestDistance = minimumDistance;
+          bestTie = tie;
+          bestIndex = candidate;
+        }
+      }
+      seed = bestIndex;
+      rankMap[seed] = rank;
+      selected.push(seed);
+    }
+    return rankMap;
+  }
+
+  function buildLabVpls() {
+    labVpls.length = 0;
+    for (let index = 0; index < LAB_VPL_COUNT; index += 1) {
+      const u = radicalInverseBase2(index + 1);
+      const v = fract((index + 0.5) * 0.6180339887498949);
+      if (index < 320) {
+        labVpls.push({
+          kind: 'redWall',
+          coordinate: v,
+          position: [-1.18, 0.12 + u * 1.65, -0.72 + v * 1.44],
+          normal: [1, 0, 0],
+          flux: [0, 0, 0]
+        });
+      } else {
+        labVpls.push({
+          kind: 'greenWall',
+          coordinate: v,
+          position: [-1.0 + v * 2.0, 0.12 + u * 1.65, -0.74],
+          normal: [0, 0, 1],
+          flux: [0, 0, 0]
+        });
+      }
+    }
+  }
+
+  function buildVplPermutation() {
+    const permutation = new Uint16Array(LAB_VPL_COUNT);
+    for (let index = 0; index < LAB_VPL_COUNT; index += 1) {
+      permutation[index] = index;
+    }
+    for (let index = LAB_VPL_COUNT - 1; index > 0; index -= 1) {
+      const swapIndex =
+        hash32(index * 0x9e3779b1 + 0x68bc21eb) % (index + 1);
+      const temporary = permutation[index];
+      permutation[index] = permutation[swapIndex];
+      permutation[swapIndex] = temporary;
+    }
+    return permutation;
+  }
+
+  function updateLabVplFlux() {
+    for (let index = 0; index < labVpls.length; index += 1) {
+      const vpl = labVpls[index];
+      const wrapped =
+        Math.abs(vpl.coordinate - labState.lightPhase);
+      const distance = Math.min(wrapped, 1 - wrapped);
+      const lobe = 0.10 + 1.35 * Math.exp(
+        -(distance * distance) / 0.018
+      );
+      const microVariation =
+        0.72 + 0.28 * fract(Math.sin(index * 91.17) * 43758.5453);
+      if (vpl.kind === 'redWall') {
+        vpl.flux = [
+          1.00 * lobe * microVariation,
+          0.18 * lobe * microVariation,
+          0.09 * lobe * microVariation
+        ];
+      } else {
+        vpl.flux = [
+          0.10 * lobe * microVariation,
+          0.78 * lobe * microVariation,
+          0.20 * lobe * microVariation
+        ];
+      }
+    }
+  }
+
+  function storeRgb(array, pixel, color) {
+    const base = pixel * 3;
+    array[base] = color[0];
+    array[base + 1] = color[1];
+    array[base + 2] = color[2];
+  }
+
+  function readRgb(array, pixel) {
+    const base = pixel * 3;
+    return [array[base], array[base + 1], array[base + 2]];
+  }
+
+  function accumulateRgb(sum, array, pixel, weight) {
+    const base = pixel * 3;
+    sum[0] += array[base] * weight;
+    sum[1] += array[base + 1] * weight;
+    sum[2] += array[base + 2] * weight;
+  }
+
+  function buildLabGBuffer() {
+    for (let y = 0; y < LAB_HEIGHT; y += 1) {
+      for (let x = 0; x < LAB_WIDTH; x += 1) {
+        const pixel = y * LAB_WIDTH + x;
+        const worldX = -1.10 + (x + 0.5) / LAB_WIDTH * 2.20;
+        const worldZ = -0.68 + (y + 0.5) / LAB_HEIGHT * 1.36;
+        const insideObject =
+          Math.abs(worldX - labState.objectOffset) <= 0.20 &&
+          Math.abs(worldZ) <= 0.17;
+        const worldY = insideObject ? 1.05 : 0;
+        storeRgb(
+          labGBuffer.position,
+          pixel,
+          [worldX, worldY, worldZ]
+        );
+        storeRgb(labGBuffer.normal, pixel, [0, 1, 0]);
+        labGBuffer.depth[pixel] = insideObject ? 0.35 : 0.95;
+        labGBuffer.objectId[pixel] = insideObject ? 1 : 0;
+      }
+    }
+  }
+
+  function segmentIntersectsBox(origin, direction, minimum, maximum) {
+    let minimumTime = 0.001;
+    let maximumTime = 0.999;
+    for (let axis = 0; axis < 3; axis += 1) {
+      if (Math.abs(direction[axis]) < 1e-7) {
+        if (
+          origin[axis] < minimum[axis] ||
+          origin[axis] > maximum[axis]
+        ) {
+          return false;
+        }
+        continue;
+      }
+      const inverse = 1 / direction[axis];
+      let nearTime = (minimum[axis] - origin[axis]) * inverse;
+      let farTime = (maximum[axis] - origin[axis]) * inverse;
+      if (nearTime > farTime) {
+        [nearTime, farTime] = [farTime, nearTime];
+      }
+      minimumTime = Math.max(minimumTime, nearTime);
+      maximumTime = Math.min(maximumTime, farTime);
+      if (maximumTime < minimumTime) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function secondaryVisible(receiverPosition, vplPosition) {
+    if (receiverPosition[1] >= 1.049) {
+      return true;
+    }
+    const direction = subtract3(vplPosition, receiverPosition);
+    const minimum = [
+      labState.objectOffset - 0.20,
+      0.0,
+      -0.17
+    ];
+    const maximum = [
+      labState.objectOffset + 0.20,
+      1.05,
+      0.17
+    ];
+    return !segmentIntersectsBox(
+      receiverPosition,
+      direction,
+      minimum,
+      maximum
+    );
+  }
+
+  function receiverAt(pixel) {
+    return {
+      position: readRgb(labGBuffer.position, pixel),
+      normal: readRgb(labGBuffer.normal, pixel)
+    };
+  }
+
+  function chooseVplIndex(
+    pixelIndex,
+    sampleIndex,
+    sampleCount,
+    distribution,
+    frame
+  ) {
+    if (distribution === 'random') {
+      return hash32(
+        pixelIndex * 0x9e3779b1 +
+        sampleIndex * 0x85ebca6b +
+        frame * 0xc2b2ae35
+      ) % LAB_VPL_COUNT;
+    }
+    if (distribution === 'fixed') {
+      const stratum = LAB_VPL_COUNT / sampleCount;
+      const offset = (
+        hash32(pixelIndex * 92821) /
+        4294967296
+      ) * stratum;
+      const logicalIndex = Math.floor(
+        (sampleIndex + 0.5) * stratum + offset
+      ) % LAB_VPL_COUNT;
+      return labVplPermutation[logicalIndex];
+    }
+
+    const pixelX = pixelIndex % LAB_WIDTH;
+    const pixelY = Math.floor(pixelIndex / LAB_WIDTH);
+    const tileIndex =
+      (pixelY % 16) * 16 + (pixelX % 16);
+    const rank = blueNoiseRanks[tileIndex] / 256;
+    const frameRotation =
+      radicalInverseBase2(frame + 1) * 0.37;
+    const samplePosition = fract(
+      (sampleIndex + 0.5) / sampleCount +
+      rank +
+      frameRotation
+    );
+    const logicalIndex =
+      Math.floor(samplePosition * LAB_VPL_COUNT);
+    return labVplPermutation[logicalIndex];
+  }
+
+  function estimateReceiver(
+    receiver,
+    pixelIndex,
+    sampleCount,
+    distribution,
+    frame,
+    useVisibility
+  ) {
+    const sum = [0, 0, 0];
+    for (
+      let sampleIndex = 0;
+      sampleIndex < sampleCount;
+      sampleIndex += 1
+    ) {
+      const vplIndex = chooseVplIndex(
+        pixelIndex,
+        sampleIndex,
+        sampleCount,
+        distribution,
+        frame
+      );
+      const vpl = labVpls[vplIndex];
+      const visible = useVisibility
+        ? secondaryVisible(receiver.position, vpl.position)
+        : true;
+      const contribution = singleVplContribution(
+        receiver,
+        vpl,
+        visible
+      );
+      sum[0] += contribution[0];
+      sum[1] += contribution[1];
+      sum[2] += contribution[2];
+    }
+    return scale3(sum, LAB_DISPLAY_GAIN / sampleCount);
+  }
+
+  function estimateImage(
+    sampleCount,
+    distribution,
+    frame,
+    useVisibility
+  ) {
+    const output = new Float32Array(LAB_PIXEL_COUNT * 3);
+    for (let pixel = 0; pixel < LAB_PIXEL_COUNT; pixel += 1) {
+      storeRgb(
+        output,
+        pixel,
+        estimateReceiver(
+          receiverAt(pixel),
+          pixel,
+          sampleCount,
+          distribution,
+          frame,
+          useVisibility
+        )
+      );
+    }
+    return output;
+  }
+
+  function computeFullReference(useVisibility) {
+    const output = new Float32Array(LAB_PIXEL_COUNT * 3);
+    for (let pixel = 0; pixel < LAB_PIXEL_COUNT; pixel += 1) {
+      const receiver = receiverAt(pixel);
+      const sum = [0, 0, 0];
+      for (const vpl of labVpls) {
+        const visible = useVisibility
+          ? secondaryVisible(receiver.position, vpl.position)
+          : true;
+        const contribution = singleVplContribution(
+          receiver,
+          vpl,
+          visible
+        );
+        sum[0] += contribution[0];
+        sum[1] += contribution[1];
+        sum[2] += contribution[2];
+      }
+      storeRgb(
+        output,
+        pixel,
+        scale3(sum, LAB_DISPLAY_GAIN / LAB_VPL_COUNT)
+      );
+    }
+    return output;
+  }
+
+  function ensureReferences() {
+    const key =
+      `${labState.lightPhase.toFixed(4)}|` +
+      `${labState.objectOffset.toFixed(4)}`;
+    if (key === referenceCacheKey) {
+      return;
+    }
+    buildLabGBuffer();
+    updateLabVplFlux();
+    referenceVisible = computeFullReference(true);
+    referenceNoVisibility = computeFullReference(false);
+    referenceCacheKey = key;
+  }
+
+  function edgeAwarePass(source, stepWidth) {
+    const result = new Float32Array(source.length);
+    const kernel = [1, 4, 6, 4, 1];
+    for (let y = 0; y < LAB_HEIGHT; y += 1) {
+      for (let x = 0; x < LAB_WIDTH; x += 1) {
+        const center = y * LAB_WIDTH + x;
+        let weightSum = 0;
+        const sum = [0, 0, 0];
+        for (let ky = -2; ky <= 2; ky += 1) {
+          for (let kx = -2; kx <= 2; kx += 1) {
+            const sampleX = clampInt(
+              x + kx * stepWidth,
+              0,
+              LAB_WIDTH - 1
+            );
+            const sampleY = clampInt(
+              y + ky * stepWidth,
+              0,
+              LAB_HEIGHT - 1
+            );
+            const sample = sampleY * LAB_WIDTH + sampleX;
+            const spatialWeight =
+              kernel[kx + 2] * kernel[ky + 2];
+            const depthDelta = Math.abs(
+              labGBuffer.depth[center] -
+              labGBuffer.depth[sample]
+            );
+            const centerNormal = readRgb(
+              labGBuffer.normal,
+              center
+            );
+            const sampleNormal = readRgb(
+              labGBuffer.normal,
+              sample
+            );
+            const normalWeight = Math.pow(
+              Math.max(dot3(centerNormal, sampleNormal), 0),
+              16
+            );
+            const sameObject =
+              labGBuffer.objectId[center] ===
+              labGBuffer.objectId[sample]
+                ? 1
+                : 0.015;
+            const weight =
+              spatialWeight *
+              Math.exp(-depthDelta / 0.035) *
+              normalWeight *
+              sameObject;
+            accumulateRgb(sum, source, sample, weight);
+            weightSum += weight;
+          }
+        }
+        storeRgb(
+          result,
+          center,
+          scale3(sum, 1 / Math.max(weightSum, 1e-6))
+        );
+      }
+    }
+    return result;
+  }
+
+  function runSpatialFilter(source, mode, iterations) {
+    if (mode === 'none') {
+      return new Float32Array(source);
+    }
+    if (mode === 'bilateral') {
+      return edgeAwarePass(source, 1);
+    }
+    let current = new Float32Array(source);
+    for (let iteration = 0; iteration < iterations; iteration += 1) {
+      current = edgeAwarePass(current, 2 ** iteration);
+    }
+    return current;
+  }
+
+  function accumulateTemporal(current) {
+    const output = new Float32Array(current.length);
+    let rejected = 0;
+    if (!labState.temporalEnabled) {
+      output.set(current);
+      labHistory.color.set(current);
+      labHistory.depth.set(labGBuffer.depth);
+      labHistory.objectId.set(labGBuffer.objectId);
+      labHistory.valid = true;
+      labHistory.frameCount = 1;
+      return { output, rejected: LAB_PIXEL_COUNT };
+    }
+
+    for (let pixel = 0; pixel < LAB_PIXEL_COUNT; pixel += 1) {
+      const depthChanged =
+        Math.abs(
+          labGBuffer.depth[pixel] - labHistory.depth[pixel]
+        ) > 0.05;
+      const objectChanged =
+        labGBuffer.objectId[pixel] !==
+        labHistory.objectId[pixel];
+      const reject =
+        !labHistory.valid ||
+        (
+          labState.historyRejection &&
+          (depthChanged || objectChanged)
+        );
+      const currentWeight = reject
+        ? 1
+        : labState.historyAlpha;
+      if (reject) {
+        rejected += 1;
+      }
+      for (let channel = 0; channel < 3; channel += 1) {
+        const index = pixel * 3 + channel;
+        output[index] =
+          labHistory.color[index] * (1 - currentWeight) +
+          current[index] * currentWeight;
+      }
+    }
+    labHistory.color.set(output);
+    labHistory.depth.set(labGBuffer.depth);
+    labHistory.objectId.set(labGBuffer.objectId);
+    labHistory.valid = true;
+    labHistory.frameCount += 1;
+    return { output, rejected };
+  }
+
+  function resetLabHistory() {
+    labHistory.valid = false;
+    labHistory.frameCount = 0;
+    labHistory.color.fill(0);
+    labHistory.depth.fill(0);
+    labHistory.objectId.fill(255);
+  }
+
+  function luminance(array, pixel) {
+    const base = pixel * 3;
+    return (
+      array[base] * 0.2126 +
+      array[base + 1] * 0.7152 +
+      array[base + 2] * 0.0722
+    );
+  }
+
+  function rmse(a, b) {
+    let sum = 0;
+    for (let index = 0; index < a.length; index += 1) {
+      const difference = a[index] - b[index];
+      sum += difference * difference;
+    }
+    return Math.sqrt(sum / a.length);
+  }
+
+  const lowResolutionCanvas = document.createElement('canvas');
+  lowResolutionCanvas.width = LAB_WIDTH;
+  lowResolutionCanvas.height = LAB_HEIGHT;
+  const lowResolutionContext =
+    lowResolutionCanvas.getContext('2d', { alpha: false });
+
+  function heatColor(value) {
+    const t = clamp(value, 0, 1);
+    if (t < 0.25) {
+      const u = t / 0.25;
+      return [0, 20 + 70 * u, 50 + 155 * u];
+    }
+    if (t < 0.5) {
+      const u = (t - 0.25) / 0.25;
+      return [0, 90 + 165 * u, 205 - 90 * u];
+    }
+    if (t < 0.75) {
+      const u = (t - 0.5) / 0.25;
+      return [255, 255 - 75 * u, 115 - 105 * u];
+    }
+    const u = (t - 0.75) / 0.25;
+    return [255, 180 - 150 * u, 10];
+  }
+
+  function drawLabImage(canvas, source, reference = null) {
+    const image = lowResolutionContext.createImageData(
+      LAB_WIDTH,
+      LAB_HEIGHT
+    );
+    for (let pixel = 0; pixel < LAB_PIXEL_COUNT; pixel += 1) {
+      const target = pixel * 4;
+      if (reference) {
+        const difference = Math.abs(
+          luminance(source, pixel) -
+          luminance(reference, pixel)
+        );
+        const color = heatColor(difference * 5.2);
+        image.data[target] = color[0];
+        image.data[target + 1] = color[1];
+        image.data[target + 2] = color[2];
+      } else {
+        const sourceBase = pixel * 3;
+        for (let channel = 0; channel < 3; channel += 1) {
+          const value = Math.max(source[sourceBase + channel], 0);
+          const mapped = value / (1 + value);
+          image.data[target + channel] =
+            Math.round(Math.pow(mapped, 1 / 2.2) * 255);
+        }
+      }
+      image.data[target + 3] = 255;
+    }
+    lowResolutionContext.putImageData(image, 0, 0);
+    const context = canvas.getContext('2d', {
+      willReadFrequently: true
+    });
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(
+      lowResolutionCanvas,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+  }
+
+  function drawSamplePattern() {
+    const canvas = $('#artifactSamples');
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#040b10';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = '#334b59';
+    context.strokeRect(24, 18, canvas.width - 48, canvas.height - 36);
+
+    const centerPixel =
+      Math.floor(LAB_HEIGHT / 2) * LAB_WIDTH +
+      Math.floor(LAB_WIDTH / 2);
+    for (
+      let sampleIndex = 0;
+      sampleIndex < labState.sampleCount;
+      sampleIndex += 1
+    ) {
+      const vplIndex = chooseVplIndex(
+        centerPixel,
+        sampleIndex,
+        labState.sampleCount,
+        labState.distribution,
+        labState.frame
+      );
+      const vpl = labVpls[vplIndex];
+      const x = 24 + (vpl.position[0] + 1.25) / 2.5 *
+        (canvas.width - 48);
+      const y = 18 + (vpl.position[2] + 0.8) / 1.6 *
+        (canvas.height - 36);
+      const t = sampleIndex / Math.max(labState.sampleCount - 1, 1);
+      context.fillStyle = `hsl(${195 - 150 * t} 90% 65%)`;
+      context.beginPath();
+      context.arc(
+        x,
+        y,
+        labState.sampleCount > 128 ? 1.4 : 2.5,
+        0,
+        Math.PI * 2
+      );
+      context.fill();
+    }
+    const blockerX = 24 + (labState.objectOffset + 1.25) / 2.5 *
+      (canvas.width - 48);
+    context.fillStyle = '#d6dfe555';
+    context.fillRect(blockerX - 14, canvas.height / 2 - 22, 28, 44);
+    context.fillStyle = '#b8cbd4';
+    context.font = '11px "Segoe UI", sans-serif';
+    context.fillText(
+      `${labState.distribution} · ${labState.sampleCount} indices`,
+      30,
+      canvas.height - 6
+    );
+  }
+
+  function updateArtifactLab() {
+    const start = performance.now();
+    ensureReferences();
+    const raw = estimateImage(
+      labState.sampleCount,
+      labState.distribution,
+      labState.frame,
+      labState.useVisibility
+    );
+    const modelReference = labState.useVisibility
+      ? referenceVisible
+      : referenceNoVisibility;
+    const comparisonRaw = estimateImage(
+      labState.sampleCount,
+      labState.distribution,
+      labState.frame + 7919,
+      labState.useVisibility
+    );
+    const spatial = runSpatialFilter(
+      raw,
+      labState.spatialMode,
+      labState.atrousIterations
+    );
+    const temporal = accumulateTemporal(spatial);
+    const noVisibilityRaw = estimateImage(
+      64,
+      'blue',
+      labState.frame,
+      false
+    );
+    const noVisibilityFiltered = runSpatialFilter(
+      noVisibilityRaw,
+      'atrous',
+      3
+    );
+
+    drawSamplePattern();
+    drawLabImage($('#artifactRaw'), raw);
+    drawLabImage($('#artifactReference'), referenceVisible);
+    drawLabImage($('#artifactError'), raw, referenceVisible);
+    drawLabImage($('#spatialInput'), raw);
+    drawLabImage($('#spatialOutput'), spatial);
+    drawLabImage($('#spatialError'), spatial, referenceVisible);
+    drawLabImage($('#temporalCurrent'), spatial);
+    drawLabImage($('#temporalHistory'), temporal.output);
+    drawLabImage(
+      $('#temporalError'),
+      temporal.output,
+      referenceVisible
+    );
+    drawLabImage($('#biasNoVisibility'), noVisibilityRaw);
+    drawLabImage($('#biasFiltered'), noVisibilityFiltered);
+    drawLabImage($('#biasWithVisibility'), referenceVisible);
+    drawLabImage(
+      $('#biasError'),
+      noVisibilityFiltered,
+      referenceVisible
+    );
+
+    const rawError = rmse(raw, referenceVisible);
+    const variance = rmse(raw, comparisonRaw) / Math.sqrt(2);
+    const bias = rmse(modelReference, referenceVisible);
+    const spatialError = rmse(spatial, referenceVisible);
+    const historyError = rmse(temporal.output, referenceVisible);
+    const elapsed = performance.now() - start;
+
+    $('#samplingStatus').textContent =
+      `${labState.sampleCount} samples · ` +
+      `${labState.distribution} · ` +
+      `${labState.useVisibility ? 'tested V' : 'V=1'}`;
+    $('#rawRmse').textContent = rawError.toFixed(4);
+    $('#varianceProxy').textContent = variance.toFixed(4);
+    $('#biasRmse').textContent = bias.toFixed(4);
+    $('#labTime').textContent = `${elapsed.toFixed(1)} ms`;
+    $('#spatialBeforeRmse').textContent = rawError.toFixed(4);
+    $('#spatialAfterRmse').textContent = spatialError.toFixed(4);
+    $('#spatialFootprint').textContent =
+      labState.spatialMode === 'atrous'
+        ? `${2 ** (labState.atrousIterations - 1)} px final step`
+        : (labState.spatialMode === 'bilateral' ? '5 × 5' : 'off');
+    $('#historyFrameCount').textContent =
+      String(labHistory.frameCount);
+    $('#historyRejected').textContent =
+      `${temporal.rejected} / ${LAB_PIXEL_COUNT}`;
+    $('#currentRmse').textContent = spatialError.toFixed(4);
+    $('#historyRmse').textContent = historyError.toFixed(4);
+    $('#fullBiasRmse').textContent =
+      rmse(referenceNoVisibility, referenceVisible).toFixed(4);
+    $('#noVisRmse').textContent =
+      rmse(noVisibilityRaw, referenceVisible).toFixed(4);
+    $('#filteredBiasRmse').textContent =
+      rmse(noVisibilityFiltered, referenceVisible).toFixed(4);
+
+    $('#labFrameOut').textContent = `frame ${labState.frame}`;
+    diagnostics.labRenders += 1;
+    diagnostics.lastLabMilliseconds = elapsed;
+  }
+
+  function updateArtifactAndResetHistory() {
+    resetLabHistory();
+    updateArtifactLab();
+  }
+
+  $('#labSampleCount').addEventListener('change', (event) => {
+    labState.sampleCount = Number(event.target.value);
+    $('#labSampleCountOut').textContent =
+      String(labState.sampleCount);
+    updateArtifactAndResetHistory();
+  });
+  $('#labDistribution').addEventListener('change', (event) => {
+    labState.distribution = event.target.value;
+    updateArtifactAndResetHistory();
+  });
+  $('#newSampleFrame').addEventListener('click', () => {
+    labState.frame += 1;
+    updateArtifactLab();
+  });
+  $('#labVisibility').addEventListener('change', (event) => {
+    labState.useVisibility = event.target.checked;
+    updateArtifactAndResetHistory();
+  });
+  $('#spatialMode').addEventListener('change', (event) => {
+    labState.spatialMode = event.target.value;
+    $('#spatialModeOut').textContent = {
+      none: '关闭',
+      bilateral: 'Bilateral',
+      atrous: 'À-trous'
+    }[labState.spatialMode];
+    updateArtifactAndResetHistory();
+  });
+  $('#atrousIterations').addEventListener('input', (event) => {
+    labState.atrousIterations = Number(event.target.value);
+    $('#atrousIterationsOut').textContent =
+      String(labState.atrousIterations);
+    updateArtifactAndResetHistory();
+  });
+  $('#historyAlpha').addEventListener('input', (event) => {
+    labState.historyAlpha = Number(event.target.value) / 100;
+    $('#historyAlphaOut').textContent =
+      labState.historyAlpha.toFixed(2);
+    updateArtifactLab();
+  });
+  $('#temporalEnabled').addEventListener('change', (event) => {
+    labState.temporalEnabled = event.target.checked;
+    updateArtifactAndResetHistory();
+  });
+  $('#historyRejection').addEventListener('change', (event) => {
+    labState.historyRejection = event.target.checked;
+    updateArtifactLab();
+  });
+  $('#labLightPhase').addEventListener('input', (event) => {
+    labState.lightPhase = Number(event.target.value) / 100;
+    $('#labLightPhaseOut').textContent =
+      labState.lightPhase.toFixed(2);
+    labState.frame += 1;
+    referenceCacheKey = '';
+    updateArtifactLab();
+  });
+  $('#labObjectOffset').addEventListener('input', (event) => {
+    labState.objectOffset = Number(event.target.value) / 100;
+    $('#labObjectOffsetOut').textContent =
+      labState.objectOffset.toFixed(2);
+    labState.frame += 1;
+    referenceCacheKey = '';
+    updateArtifactLab();
+  });
+  $('#advanceTemporal').addEventListener('click', () => {
+    labState.frame += 1;
+    updateArtifactLab();
+  });
+  $('#resetHistory').addEventListener('click', () => {
+    updateArtifactAndResetHistory();
+  });
+  $('#toggleTemporalPlay').addEventListener('click', (event) => {
+    if (temporalTimer) {
+      clearInterval(temporalTimer);
+      temporalTimer = null;
+      event.currentTarget.textContent = '连续播放';
+      return;
+    }
+    event.currentTarget.textContent = '停止播放';
+    temporalTimer = setInterval(() => {
+      labState.frame += 1;
+      labState.lightPhase = fract(labState.lightPhase + 0.018);
+      labState.objectOffset =
+        Math.sin(labState.frame * 0.13) * 0.28;
+      $('#labLightPhase').value =
+        String(Math.round(labState.lightPhase * 100));
+      $('#labLightPhaseOut').textContent =
+        labState.lightPhase.toFixed(2);
+      $('#labObjectOffset').value =
+        String(Math.round(labState.objectOffset * 100));
+      $('#labObjectOffsetOut').textContent =
+        labState.objectOffset.toFixed(2);
+      referenceCacheKey = '';
+      updateArtifactLab();
+    }, 420);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Initialize all experiments
+  // ---------------------------------------------------------------------------
+
+  function initialize() {
+    setWarmStep(0);
+    updateLightReadouts();
+    updateVplCalculator();
+    blueNoiseRanks = buildBlueNoiseRankMap(16);
+    labVplPermutation = buildVplPermutation();
+    buildLabVpls();
+    buildLabGBuffer();
+    updateLabVplFlux();
+    resetLabHistory();
+    updateArtifactLab();
+
+    try {
+      if (initializeWebgl()) {
+        renderAll3d();
+      }
+    } catch (error) {
+      diagnostics.runtimeErrors.push(String(error.stack || error));
+      console.error(error);
+      $('#gpuBadge').textContent =
+        `WebGL2 initialization failed · ${error.message}`;
+      GICourse.setCheck(
+        $('#glChecks'),
+        'draw',
+        'fail',
+        error.message
+      );
+    }
+    diagnostics.initialized = true;
+  }
+
+  initialize();
+})();
+  </script>
+</body>
+</html>

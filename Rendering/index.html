@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>实时 GI 交互课程中心</title>
+  <style>
+    :root{
+      --bg:#070a11;--panel:#101722;--panel2:#0c121c;--line:#283244;
+      --text:#eef4ff;--muted:#99a8bd;--cyan:#4ee0d5;--blue:#73aaff;
+      --violet:#ae94ff;--amber:#ffcb78;--green:#72e4a0;--red:#ff8092
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;min-width:320px;color:var(--text);line-height:1.7;
+      font-family:Inter,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+      background:
+        radial-gradient(circle at 78% -4%,rgba(115,170,255,.16),transparent 34rem),
+        radial-gradient(circle at -8% 32%,rgba(78,224,213,.1),transparent 30rem),
+        var(--bg)
+    }
+    a{color:var(--cyan);text-decoration:none}
+    a:hover{text-decoration:underline}
+    button,input{font:inherit}
+    code{font-family:"Cascadia Code",Consolas,monospace;color:#c7f4ee}
+    .progress{position:fixed;inset:0 auto auto 0;z-index:100;width:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--blue),var(--violet))}
+    .top{position:sticky;top:0;z-index:30;background:rgba(7,10,17,.86);backdrop-filter:blur(17px);border-bottom:1px solid rgba(255,255,255,.09)}
+    nav{width:min(1180px,calc(100% - 32px));height:62px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:780}
+    .mark{width:31px;height:31px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#061017;font-size:11px}
+    .navs{display:flex;gap:18px;font-size:12px}
+    .navs a{color:var(--muted)}
+    .wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+    .hero{padding:92px 0 68px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid rgba(78,224,213,.28);border-radius:999px;background:rgba(78,224,213,.06);color:#a7f5ef;font:10px ui-monospace,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase}
+    .eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 0 5px rgba(78,224,213,.1)}
+    .hero h1{max-width:930px;margin:22px 0 18px;font-size:clamp(42px,7vw,78px);line-height:1.02;letter-spacing:-.055em}
+    .grad{background:linear-gradient(100deg,#fff 0,#9ce9e4 46%,#91baff 80%);-webkit-background-clip:text;color:transparent}
+    .hero p{max-width:910px;color:#b9c5d8;font-size:18px}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 15px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.025);color:var(--text);cursor:pointer}
+    .btn:hover{text-decoration:none;transform:translateY(-1px);border-color:#48546a}
+    .btn.primary{border:0;background:linear-gradient(135deg,var(--cyan),#7dc5ff);color:#051116;font-weight:750}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:48px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--line)}
+    .stats div{padding:19px;background:#0c131e}
+    .stats strong{display:block;font-size:25px;letter-spacing:-.03em}
+    .stats span{color:var(--muted);font-size:10px}
+    section{padding:74px 0;border-top:1px solid rgba(255,255,255,.08);scroll-margin-top:62px}
+    .head{display:grid;grid-template-columns:.82fr 1.18fr;gap:34px;align-items:end;margin-bottom:30px}
+    .head h2{margin:6px 0 0;font-size:clamp(29px,4vw,44px);line-height:1.13;letter-spacing:-.04em}
+    .head p{margin:0;color:var(--muted)}
+    .k{color:var(--cyan);font:10px ui-monospace,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}
+    .overview{display:grid;grid-template-columns:1.18fr .82fr;gap:16px}
+    .feature{padding:27px;border:1px solid rgba(78,224,213,.26);border-radius:19px;background:linear-gradient(140deg,rgba(78,224,213,.075),rgba(16,23,34,.82))}
+    .feature h3{margin:6px 0 10px;font-size:25px}
+    .feature p{color:#b7c4d5}
+    .route{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:20px;color:var(--muted);font-size:11px}
+    .route b{padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:#0b121c;color:#d5e2f1}
+    .side{display:grid;gap:12px}
+    .mini{padding:19px;border:1px solid var(--line);border-radius:15px;background:rgba(16,23,34,.72)}
+    .mini strong{display:block;margin-bottom:5px}
+    .mini p{margin:0;color:var(--muted);font-size:11px}
+    .callout{padding:22px;border:1px solid rgba(255,203,120,.32);border-radius:15px;background:linear-gradient(135deg,rgba(255,203,120,.07),rgba(16,23,34,.75))}
+    .callout strong{color:#ffe1ab}
+    .distinction{display:grid;grid-template-columns:1fr auto 1fr;gap:15px;align-items:stretch;margin-top:17px}
+    .distinction article{padding:18px;border:1px solid var(--line);border-radius:13px;background:#0c121c}
+    .distinction h3{margin:4px 0 8px;font-size:17px}
+    .distinction p{margin:0;color:var(--muted);font-size:11px}
+    .distinction .versus{display:grid;place-items:center;color:var(--amber);font:800 11px ui-monospace,monospace}
+    .basis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .base{padding:19px;border:1px solid var(--line);border-radius:13px;background:#0c121c}
+    .base b{color:var(--green);font-size:11px}
+    .base h3{margin:7px 0;font-size:17px}
+    .base p{margin:0;color:var(--muted);font-size:11px}
+    .base ul{margin:10px 0 0;padding-left:18px;color:#b7c4d5;font-size:10px}
+    .base .actions{margin-top:14px}
+    .toolbar{display:grid;grid-template-columns:1fr auto;gap:14px;margin-bottom:15px}
+    .search{position:relative}
+    .search input{width:100%;min-height:44px;padding:0 14px 0 41px;border:1px solid var(--line);border-radius:11px;background:#0d141f;color:var(--text);outline:none}
+    .search:before{content:"⌕";position:absolute;left:15px;top:6px;color:var(--muted);font-size:20px}
+    .search input:focus{border-color:rgba(78,224,213,.5)}
+    .filters{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+    .filter,.goal{padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--muted);cursor:pointer;font-size:11px}
+    .filter.active{border-color:rgba(78,224,213,.45);background:rgba(78,224,213,.08);color:var(--text)}
+    .count{align-self:center;color:var(--muted);font-size:11px}
+    .modules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .module{position:relative;min-height:350px;padding:21px 21px 74px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(155deg,rgba(255,255,255,.034),rgba(255,255,255,.012));transition:.18s ease}
+    .module:hover{transform:translateY(-3px);border-color:rgba(115,170,255,.38)}
+    .module.featured{border-color:rgba(255,203,120,.35);background:linear-gradient(155deg,rgba(255,203,120,.06),rgba(255,255,255,.012))}
+    .modtop{display:flex;justify-content:space-between;gap:10px}
+    .num{color:#6f8096;font:10px ui-monospace,monospace}
+    .state{padding:3px 7px;border-radius:7px;background:rgba(114,228,160,.08);color:#a9f0c0;font-size:9px}
+    .module.featured .state{background:rgba(255,203,120,.1);color:#ffe1ab}
+    .module h3{margin:15px 0 4px;font-size:20px}
+    .family{color:var(--cyan);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+    .module p{color:var(--muted);font-size:11px}
+    .module-route{padding:8px 9px;border-left:2px solid var(--amber);background:rgba(255,203,120,.045);color:#d9c59d!important;font:9px ui-monospace,Consolas,monospace!important;line-height:1.55!important}
+    .tags{display:flex;flex-wrap:wrap;gap:5px}
+    .tag{padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.04);color:#bcc9d9;font-size:9px}
+    .modfoot{position:absolute;left:21px;right:21px;bottom:17px;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .open{color:#dce7f5;font-size:11px}
+    .done{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:10px;cursor:pointer}
+    .done input{accent-color:var(--cyan)}
+    .empty{grid-column:1/-1;padding:40px;border:1px dashed var(--line);border-radius:15px;color:var(--muted);text-align:center}
+    .goals{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+    .goal.active{border-color:var(--amber);color:#ffe2ab;background:rgba(255,203,120,.07)}
+    .graph-shell{padding:18px;border:1px solid var(--line);border-radius:19px;background:rgba(12,18,28,.78);overflow:auto}
+    .graph-shell svg{display:block;min-width:1040px;width:100%;height:auto}
+    .edge{fill:none;stroke:#344055;stroke-width:2;marker-end:url(#arrow);transition:.18s}
+    .edge.assembly{stroke-dasharray:6 5}
+    .edge.active{stroke:var(--amber);stroke-width:3}
+    .edge.muted{opacity:.12}
+    .gnode{cursor:pointer}
+    .gnode rect{fill:#101827;stroke:#354258;stroke-width:1.5;rx:12;transition:.18s}
+    .gnode text{fill:#dce7f5;font-size:12px;text-anchor:middle;pointer-events:none}
+    .gnode .sub{fill:#7f8da3;font-size:9px}
+    .gnode.assembly rect{stroke:var(--violet);fill:rgba(174,148,255,.06)}
+    .gnode.active rect{stroke:var(--amber);fill:rgba(255,203,120,.1);stroke-width:2}
+    .gnode.muted{opacity:.23}
+    .legend{display:flex;flex-wrap:wrap;gap:15px;margin-top:12px;color:var(--muted);font-size:10px}
+    .legend i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:3px}
+    .paths,.solutions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .path,.solution{padding:19px;border:1px solid var(--line);border-radius:14px;background:#0c131d}
+    .path small,.solution small{color:var(--cyan);font:10px ui-monospace,monospace}
+    .path h3,.solution h3{margin:8px 0;font-size:17px}
+    .path p,.solution p{margin:0;color:var(--muted);font-size:11px}
+    .solution .btn{margin-top:15px}
+    .warning{margin-top:16px;padding:14px 16px;border-left:3px solid var(--amber);background:rgba(255,203,120,.055);color:#d9c9a8;font-size:11px}
+    footer{padding:29px 0 48px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
+    .foot{display:flex;justify-content:space-between;gap:20px}
+    @media(max-width:960px){
+      .modules{grid-template-columns:repeat(2,1fr)}
+      .overview,.head{grid-template-columns:1fr}
+      .paths,.solutions,.basis{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:650px){
+      .navs{display:none}
+      .modules{grid-template-columns:1fr}
+      .toolbar{grid-template-columns:1fr}
+      .distinction{grid-template-columns:1fr}
+      .distinction .versus{min-height:28px}
+      .foot{display:block}
+      .hero{padding-top:66px}
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="top">
+    <nav>
+      <a class="brand" href="#top"><span class="mark">GI</span><span>交互课程中心</span></a>
+      <div class="navs">
+        <a href="#modules">12 模块</a>
+        <a href="#graph">依赖图</a>
+        <a href="#route">学习路线</a>
+        <a href="#solutions">算法组装</a>
+        <a href="Realtime_GI_Field_Guide.html">方案选型</a>
+      </div>
+    </nav>
+  </div>
+
+  <header class="hero" id="top">
+    <div class="wrap">
+      <div class="eyebrow"><i></i>Edge file:// · Interactive Lessons · Native RenderGraph</div>
+      <h1><span class="grad">把 GI 拆成可操作步骤，再组为端到端教学链路</span></h1>
+      <p>课程由同一份清单驱动，共 12 个模块。每个复杂概念先解释“它解决什么”，再用独立 Demo 观察输入、中间量和失败方式；公式旁给出直觉、代值、伪代码或本页实际代码。RCGI、VoxelGI 与 DDGI 已提供端到端教学交互或算法组装示例，最后可进入 D3D12 / Vulkan RenderGraph 原生路径连接 Pass。</p>
+      <div class="actions">
+        <a class="btn primary" href="gi_module_foundations.html">从共同基础开始</a>
+        <a class="btn" href="#modules">浏览全部模块</a>
+        <a class="btn" href="RenderGraph_GI_Lab/index.html">打开 RenderGraph GI Lab</a>
+        <a class="btn" href="Realtime_GI_Field_Guide.html">比较工程方案</a>
+      </div>
+      <div class="stats">
+        <div><strong id="lessonCount">12</strong><span>渐进式模块</span></div>
+        <div><strong id="stageCount">91</strong><span>独立步骤 / Demo</span></div>
+        <div><strong>3</strong><span>已组装 GI 交互实例</span></div>
+        <div><strong>D3D12 / Vulkan</strong><span>RenderGraph 原生路径</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="wrap">
+        <div class="head">
+          <div><div class="k">How to use</div><h2>先建立因果，再看公式与代码</h2></div>
+          <p>建议直接用 Edge 打开本页。每一阶段只引入一个新变量，并明确它从哪个 Pass 来、写到哪个资源、下一步如何消费。页面里的“本页代码”表示 Demo 真正执行的实现；“伪代码”只解释控制流，两者会明确标记。</p>
+        </div>
+        <div class="overview">
+          <article class="feature">
+            <div class="k">推荐入口</div>
+            <h3>Module 00：沿一束光走完一次漫反射反弹</h3>
+            <p>不用先会积分。先观察光源位置与方向、两次距离衰减、接收面余弦和 Lambert 反射，再把这些因子组装成一次反弹。后续 RSM、Voxel、Probe 与 PRT 都复用这套能量账本。</p>
+            <div class="route"><b>直觉</b><span>→</span><b>逐项代值</b><span>→</span><b>伪代码 / 实际代码</b><span>→</span><b>独立 Demo</b><span>→</span><b>验收项</b></div>
+            <a class="btn primary" style="margin-top:20px" href="gi_module_foundations.html">进入共同基础 →</a>
+          </article>
+          <div class="side">
+            <article class="mini"><strong>屏幕与光源空间</strong><p>基础 → RSM / SSAO / SSGI。逐步观察 MRT、VPL、ray hit、空间滤波与 history rejection。</p></article>
+            <article class="mini"><strong>世界空间、当前帧 GI</strong><p>基础 → Voxelization → Cone Tracing → VoxelGI。Cone 严格消费 Voxel 输出，不能跳过体素数据语义。</p></article>
+            <article class="mini"><strong>方向、缓存与传输</strong><p>基础 → SH → Irradiance Probe → PRT / DDGI。重点区分“缓存当前答案”和“缓存固定传输算子”。</p></article>
+            <article class="mini"><strong>多尺度区间传播</strong><p>基础 → RCGI。这里的 RCGI 指 Radiance Cascades GI；其他资料也可能用该缩写表示 Radiance Cache GI，阅读时必须先核对全称。</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="probe-prt">
+      <div class="wrap">
+        <div class="head">
+          <div><div class="k">Do not confuse</div><h2>PRT Probe 不是 Irradiance Probe 的别名</h2></div>
+          <p>两者都可能放在空间点上，也都可能用 SH 压缩方向函数；真正的分界是“Probe 内存的量，能否随新光照直接重算”。</p>
+        </div>
+        <div class="callout">
+          <strong>一句话：</strong> Irradiance Probe 缓存某次光照求解后的结果；PRT / Transfer Probe 缓存固定几何对光照的响应算子。前者需要重新追踪或更新才能适应新灯，后者可把新光照投影系数与预计算传输做点积，但几何或遮挡关系变化会让传输失效。
+          <div class="distinction">
+            <article>
+              <div class="k">Module 06</div>
+              <h3>Irradiance Probe：缓存答案</h3>
+              <p>典型内容是当前 irradiance、distance moments、validity。DDGI 每帧只更新一部分，并依靠 hysteresis 跨帧收敛。</p>
+              <a class="btn" style="margin-top:14px" href="gi_module_probes.html">打开 Probe 基础 →</a>
+            </article>
+            <div class="versus">≠</div>
+            <article>
+              <div class="k">Module 07 · Featured</div>
+              <h3>PRT / Transfer Probe：缓存算子</h3>
+              <p>典型内容是 visibility / BRDF / transport 在某组基底下的系数或矩阵。换光照可快速 relight；换几何通常需要重烘。</p>
+              <a class="btn primary" style="margin-top:14px" href="gi_module_prt_probes.html">打开 PRT 专题 →</a>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="runtime">
+      <div class="wrap">
+        <div class="head">
+          <div><div class="k">Runtime paths</div><h2>网页教学与原生 RenderGraph 各自负责什么</h2></div>
+          <p>HTML 页面用于逐步拆解算法和即时切换调试视图；原生工程用于验证资源声明、Pass 依赖、barrier、dispatch 与中间纹理预览。两条路径都不依赖绝对站内路径，整套目录复制后仍可导航。</p>
+        </div>
+        <div class="basis">
+          <article class="base">
+            <b>DEFAULT · EDGE FILE://</b><h3>离线交互课程</h3>
+            <p>直接双击 HTML，不依赖 CDN 或 npm。Canvas / WebGL2 Demo 负责显示光源位置、方向、采样路径与中间数据。</p>
+            <ul><li>每步可以单独运行和复位</li><li>公式、伪代码与实际代码分栏标记</li><li>所有内部链接使用相对路径</li></ul>
+          </article>
+          <article class="base">
+            <b>ASSEMBLY · 3 TEACHING EXAMPLES</b><h3>把基础模块组回 GI</h3>
+            <p>RCGI 展示 cascade interval / merge；VoxelGI 串起 Voxelize → Inject → Mip → Cone Gather；DDGI 串起 rays → atlases → history → gather。</p>
+            <div class="actions"><a class="btn" href="gi_module_rcgi.html">RCGI</a><a class="btn" href="gi_module_voxel_gi.html">VoxelGI</a><a class="btn" href="gi_module_ddgi.html">DDGI</a></div>
+          </article>
+          <article class="base">
+            <b>NATIVE · RENDERGRAPH</b><h3>D3D12 / Vulkan GI Workbench</h3>
+            <p>原生路径在 RenderGraph 中连接 GI Pass，并预览中间资源。它用于加强前面的 DX12 资源与同步流程，不把教学用 SDF / Voxel ray marcher 冒充硬件 RT。</p>
+            <div class="actions"><a class="btn primary" href="RenderGraph_GI_Lab/index.html">打开 Workbench →</a><a class="btn" href="DX12_GI_Lab/index.html">旧 PRT DX12 Lab</a></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="modules">
+      <div class="wrap">
+        <div class="head">
+          <div><div class="k">Module library</div><h2>12 个渐进式交互文档</h2></div>
+          <p>卡片来自 <code>gi_lesson_manifest.js</code>。阶段数、前置依赖与链接使用同一份数据；“已掌握”只保存在当前浏览器。</p>
+        </div>
+        <div class="toolbar">
+          <div class="search"><input id="search" type="search" placeholder="搜索：PRT / history rejection / voxel mip / Radiance Cascades / RenderGraph" aria-label="搜索模块" /></div>
+          <div class="count" id="count"></div>
+        </div>
+        <div class="filters" id="filters"></div>
+        <div class="modules" id="moduleGrid"></div>
+      </div>
+    </section>
+
+    <section id="graph">
+      <div class="wrap">
+        <div class="head">
+          <div><div class="k">Dependency graph</div><h2>选择目标，查看不能跳过的前置</h2></div>
+          <p>依赖直接读取课程清单。特别是 Cone Tracing 必须先理解 Voxelization；VoxelGI 教学组装同时依赖两者。点击节点可打开相应页面。</p>
+        </div>
+        <div class="goals" id="goalButtons"></div>
+        <div class="graph-shell">
+          <svg id="depGraph" viewBox="0 0 1120 620" role="img" aria-label="12 个实时 GI 模块依赖图">
+            <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#58677d" /></marker></defs>
+            <g id="edges"></g><g id="nodes"></g>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><i style="border:1px solid #4ee0d5;background:rgba(78,224,213,.08)"></i>教学 / 方案模块</span>
+          <span><i style="border:1px solid #ae94ff;background:rgba(174,148,255,.06)"></i>原生组装与预览</span>
+          <span><i style="border:1px solid #ffcb78;background:rgba(255,203,120,.1)"></i>当前依赖闭包</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="route">
+      <div class="wrap">
+        <div class="head">
+          <div><div class="k">Dependency-first route</div><h2>按数据表示分支学习</h2></div>
+          <p>编号表示依赖层级，不表示周数。完成共同基础后可并行选择分支；进入算法组装示例前，再补齐它消费的所有模块。</p>
+        </div>
+        <div class="paths">
+          <article class="path"><small>LEVEL 0 · 必经</small><h3>共同基础</h3><p>距离、余弦、Lambert、两表面几何项、采样 / PDF、坐标与 GBuffer。</p></article>
+          <article class="path"><small>LEVEL 1A · 屏幕 / 光源空间</small><h3>RSM ＋ SSAO / SSGI</h3><p>MRT / VPL 与屏幕 ray march；重点观察有限样本、空间滤波、时序复用及 history 拒绝。</p></article>
+          <article class="path"><small>LEVEL 1B · 方向与缓存</small><h3>SH → Probe → PRT / DDGI</h3><p>SH 是表示工具；Probe 缓存当前结果；PRT 缓存传输；DDGI 用新射线更新 Probe 结果。</p></article>
+          <article class="path"><small>LEVEL 1C · 世界空间场</small><h3>Voxel → Cone → VoxelGI</h3><p>先构建 occupancy/material/radiance volume，再理解 footprint / mip / compositing，最后组装端到端当前帧 GI 教学链路。</p></article>
+          <article class="path"><small>LEVEL 1D · 多尺度区间</small><h3>Radiance Cascades GI</h3><p>以 2D 成熟用法拆解空间 / 角分辨率交换、interval march 与由远至近 merge；明确 3D 尚有工程边界。</p></article>
+          <article class="path"><small>LEVEL 2 · 原生整合</small><h3>RenderGraph GI Workbench</h3><p>把 RSM、PRT 与已组装 GI 的资源和 Pass 放进 D3D12 / Vulkan RenderGraph，检查依赖和中间输出。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="solutions">
+      <div class="wrap">
+        <div class="head">
+          <div><div class="k">Implemented assemblies</div><h2>三条端到端教学交互 / 算法组装示例已可进入</h2></div>
+          <p>这些页面已经是可运行交互内容，而非待办占位。它们把前面的基础概念连接成端到端教学数据流，同时明确教学实现与生产级实现之间的边界。</p>
+        </div>
+        <div class="solutions">
+          <article class="solution"><small>MODULE 08 · CURRENT FRAME</small><h3>Radiance Cascades 核心交互</h3><p>逐级构建 radiance intervals、合并远近级联，并与高采样参考和误差图对照。本课程实现单次传输核心交互，不等同完整多次反弹 GI。</p><a class="btn" href="gi_module_rcgi.html">打开 RCGI 核心示例 →</a></article>
+          <article class="solution"><small>MODULE 09 · NO LIGHTING HISTORY</small><h3>VoxelGI 端到端教学组装</h3><p>Voxelize → 当前帧多灯注入 → 方向 mip → diffuse/specular cones → composite。适合研究大量高速运动灯的确定性世界空间路径。</p><a class="btn primary" href="gi_module_voxel_gi.html">打开 VoxelGI 教学示例 →</a></article>
+          <article class="solution"><small>MODULE 10 · TEMPORAL PROBES</small><h3>DDGI teaching-lite 组装</h3><p>Probe rays → octahedral irradiance / distance atlases → hysteresis → visibility gather → relocation / scrolling，实际观察响应延迟与漏光修复。</p><a class="btn" href="gi_module_ddgi.html">打开 DDGI teaching-lite 示例 →</a></article>
+        </div>
+        <div class="warning"><strong>高速大量移动光结论：</strong>如果需求明确禁止光照历史，优先评估“Clustered / Tiled 多灯剔除 + 当前帧 Voxel radiance injection + VCT gather”。Radiance Cascades 的 single-shot 路径在 2D / 等距视角也值得评估；DDGI 则有意展示时序 Probe 的延迟与收益，不能归为零历史方案。详见 <a href="Realtime_GI_Field_Guide.html#decision">方案选型结论</a>。</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <span>Realtime GI Learning Center · Edge file:// · 12-module manifest</span>
+      <span>站内相对路径 · 可整体复制 · 教学 Demo 与生产边界分开标记</span>
+    </div>
+  </footer>
+
+  <script src="gi_lesson_manifest.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const lessons = Array.isArray(window.GI_LESSONS) ? window.GI_LESSONS : [];
+      const metadata = {
+        foundation:{family:'光传输与采样',tags:['距离','余弦','Lambert','PDF'],state:'逐步拆解'},
+        rsm:{family:'光源空间 · VPL',tags:['MRT','VPL','64 samples','Artifact Lab'],state:'实际 MRT'},
+        ssgi:{family:'屏幕空间积分',tags:['Depth','Ray Hit','Filtering','History'],state:'分步 Demo'},
+        sh:{family:'方向函数压缩',tags:['SH9','Rotation','Convolution','Ringing'],state:'高级用法'},
+        voxel:{family:'世界空间离散化',tags:['Occupancy','Conservative','Injection','Light Gizmo'],state:'Voxel 前置'},
+        cone:{family:'预过滤方向查询',tags:['Voxel 输入','Footprint','Mip','Compositing'],state:'依赖 Voxel'},
+        probes:{family:'缓存当前辐照度',tags:['Interpolation','Visibility','Leakage','Answer Cache'],state:'Probe 基础'},
+        prt:{family:'缓存固定传输算子',tags:['PRT','Transfer Matrix','SH Transport','Relighting'],state:'重点区别'},
+        rcgi:{family:'多尺度 Radiance Intervals',tags:['Radiance Cascades','Single-shot','Merge','Reference'],state:'单次传输核心交互'},
+        voxelgi:{family:'当前帧世界空间 GI',tags:['Voxelize','Inject','Mip','Cone Gather'],state:'端到端教学组装'},
+        ddgi:{family:'时序 Irradiance Field',tags:['Probe Rays','Atlases','Moments','Hysteresis'],state:'teaching-lite 组装'},
+        rendergraph:{family:'D3D12 / Vulkan 原生组装',tags:['RenderGraph','Pass','Barrier','Preview'],state:'原生可运行'}
+      };
+      const groupLabels = {
+        all:'全部',base:'共同基础',screen:'屏幕 / 光源空间',direction:'SH / Probe / PRT',
+        volume:'Voxel / Cone',scheme:'算法组装示例',assembly:'RenderGraph'
+      };
+      let activeFilter = 'all';
+      let query = '';
+
+      function loadDone(){
+        try{return JSON.parse(localStorage.getItem('gi-module-progress') || '{}')}
+        catch{return {}}
+      }
+      let done = loadDone();
+      if(done.foundations && !done.foundation) done.foundation = true;
+      if(done.probe && !done.probes) done.probes = true;
+      function saveDone(){
+        try{localStorage.setItem('gi-module-progress',JSON.stringify(done))}
+        catch{}
+      }
+      function routeText(lesson){
+        if(!lesson.prerequisites.length) return '从这里开始';
+        const names = lesson.prerequisites.map(id => {
+          const item = lessons.find(x => x.id === id);
+          return item ? `M${item.number} ${item.title.split('：')[0]}` : id;
+        });
+        return `前置：${names.join(' + ')}`;
+      }
+      function renderFilters(){
+        const groups = ['all',...new Set(lessons.map(x => x.group))];
+        document.getElementById('filters').innerHTML = groups.map(id =>
+          `<button class="filter ${id===activeFilter?'active':''}" data-filter="${id}">${groupLabels[id] || id}</button>`
+        ).join('');
+      }
+      function renderModules(){
+        const q = query.trim().toLowerCase();
+        const list = lessons.filter(lesson => {
+          const meta = metadata[lesson.id] || {family:lesson.group,tags:[],state:'交互课程'};
+          const haystack = [lesson.title,lesson.summary,meta.family,meta.state,...meta.tags].join(' ').toLowerCase();
+          return (activeFilter === 'all' || lesson.group === activeFilter) && (!q || haystack.includes(q));
+        });
+        const learned = lessons.filter(x => done[x.id]).length;
+        document.getElementById('count').textContent = `${learned} / ${lessons.length} 已标记掌握 · 当前显示 ${list.length}`;
+        document.getElementById('moduleGrid').innerHTML = list.length ? list.map(lesson => {
+          const meta = metadata[lesson.id] || {family:lesson.group,tags:[],state:'交互课程'};
+          const featured = ['prt','rcgi','voxelgi','ddgi','rendergraph'].includes(lesson.id);
+          return `<article class="module ${featured?'featured':''}">
+            <div class="modtop"><span class="num">MODULE ${lesson.number} · ${lesson.stages} STAGES</span><span class="state">${meta.state}</span></div>
+            <h3>${lesson.title}</h3>
+            <div class="family">${meta.family}</div>
+            <p>${lesson.summary}</p>
+            <p class="module-route">${routeText(lesson)}</p>
+            <div class="tags">${meta.tags.map(tag=>`<span class="tag">${tag}</span>`).join('')}</div>
+            <div class="modfoot"><a class="open" href="${lesson.file}">打开模块 →</a><label class="done"><input type="checkbox" data-done="${lesson.id}" ${done[lesson.id]?'checked':''}/> 已掌握</label></div>
+          </article>`;
+        }).join('') : '<div class="empty">没有匹配模块。试试更短的关键词。</div>';
+      }
+
+      const positions = {
+        foundation:{x:480,y:18,w:160,h:56},
+        rsm:{x:20,y:140,w:145,h:56},
+        ssgi:{x:190,y:140,w:150,h:56},
+        sh:{x:375,y:140,w:145,h:56},
+        voxel:{x:600,y:140,w:150,h:56},
+        rcgi:{x:895,y:140,w:185,h:56},
+        probes:{x:335,y:270,w:180,h:56},
+        cone:{x:620,y:270,w:180,h:56},
+        prt:{x:250,y:398,w:180,h:56},
+        ddgi:{x:465,y:398,w:170,h:56},
+        voxelgi:{x:680,y:398,w:170,h:56},
+        rendergraph:{x:455,y:540,w:220,h:56}
+      };
+      const lessonMap = new Map(lessons.map(x => [x.id,x]));
+      const deps = Object.fromEntries(lessons.map(x => [x.id,[...x.prerequisites]]));
+      const edges = lessons.flatMap(lesson => lesson.prerequisites.map(parent => [parent,lesson.id]));
+      let graphGoal = 'rendergraph';
+      function closure(id,set=new Set([id])){
+        (deps[id] || []).forEach(parent => {
+          if(!set.has(parent)){set.add(parent);closure(parent,set)}
+        });
+        return set;
+      }
+      function edgePath(from,to){
+        const a=positions[from],b=positions[to];
+        if(!a || !b) return '';
+        const x1=a.x+a.w/2,y1=a.y+a.h,x2=b.x+b.w/2,y2=b.y;
+        return `M${x1},${y1} C${x1},${(y1+y2)/2} ${x2},${(y1+y2)/2} ${x2},${y2}`;
+      }
+      function renderGraph(){
+        const active = closure(graphGoal);
+        document.getElementById('edges').innerHTML = edges.map(([from,to]) =>
+          `<path class="edge ${to==='rendergraph'?'assembly':''} ${active.has(from)&&active.has(to)?'active':'muted'}" d="${edgePath(from,to)}"/>`
+        ).join('');
+        document.getElementById('nodes').innerHTML = lessons.map(lesson => {
+          const p=positions[lesson.id];
+          if(!p) return '';
+          const label=lesson.id==='foundation'?'共同基础':lesson.id==='probes'?'Irradiance Probe':lesson.id==='rendergraph'?'RenderGraph GI Lab':lesson.title.replace('：采样、瑕疵与修复','');
+          return `<g class="gnode ${lesson.group==='assembly'?'assembly':''} ${active.has(lesson.id)?'active':'muted'}" data-node="${lesson.id}" transform="translate(${p.x} ${p.y})">
+            <rect width="${p.w}" height="${p.h}"></rect>
+            <text x="${p.w/2}" y="24">${label}</text>
+            <text class="sub" x="${p.w/2}" y="42">Module ${lesson.number} · ${lesson.stages} stages</text>
+          </g>`;
+        }).join('');
+        const goals=['prt','rcgi','voxelgi','ddgi','rendergraph'];
+        document.getElementById('goalButtons').innerHTML=goals.filter(id=>lessonMap.has(id)).map(id =>
+          `<button class="goal ${graphGoal===id?'active':''}" data-goal="${id}">${lessonMap.get(id).title}</button>`
+        ).join('');
+      }
+
+      document.getElementById('lessonCount').textContent = lessons.length || '12';
+      document.getElementById('stageCount').textContent = lessons.reduce((sum,x)=>sum+x.stages,0) || '91';
+      document.getElementById('filters').addEventListener('click',event=>{
+        const button=event.target.closest('[data-filter]');
+        if(!button)return;
+        activeFilter=button.dataset.filter;
+        renderFilters();
+        renderModules();
+      });
+      document.getElementById('search').addEventListener('input',event=>{
+        query=event.target.value;
+        renderModules();
+      });
+      document.getElementById('moduleGrid').addEventListener('change',event=>{
+        if(!event.target.matches('[data-done]'))return;
+        done[event.target.dataset.done]=event.target.checked;
+        saveDone();
+        renderModules();
+      });
+      document.getElementById('goalButtons').addEventListener('click',event=>{
+        const button=event.target.closest('[data-goal]');
+        if(!button)return;
+        graphGoal=button.dataset.goal;
+        renderGraph();
+      });
+      document.getElementById('depGraph').addEventListener('click',event=>{
+        const node=event.target.closest('[data-node]');
+        if(!node)return;
+        const lesson=lessonMap.get(node.dataset.node);
+        if(lesson) location.href=lesson.file;
+      });
+      window.addEventListener('scroll',()=>{
+        const height=document.documentElement.scrollHeight-innerHeight;
+        document.getElementById('progress').style.width=(height?scrollY/height*100:0)+'%';
+      },{passive:true});
+      renderFilters();
+      renderModules();
+      renderGraph();
+    })();
+  </script>
+</body>
+</html>

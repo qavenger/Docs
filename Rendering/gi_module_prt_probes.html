@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>PRT / Radiance Transfer Probes · 从墙面反弹到 Probe</title>
+  <link rel="stylesheet" href="gi_course.css" />
+  <style>
+    .prt-family-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.prt-kind{padding:16px;border:1px solid #34465e;border-radius:13px;background:#0b1420}.prt-kind h3{margin:0 0 7px}.prt-kind p{margin:5px 0;color:#aebdce}
+    .prt-demo-grid{display:grid;grid-template-columns:minmax(260px,.72fr) minmax(0,1.28fr);gap:15px;align-items:start}.prt-mini-controls{display:grid;gap:10px;padding:13px;border:1px solid #34465e;border-radius:12px;background:#080f18}
+    .prt-mini-controls label{display:grid;grid-template-columns:1fr auto;gap:5px;color:#cbd6e3;font-size:12px}.prt-mini-controls input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--violet)}.prt-mini-controls output{color:var(--amber);font-family:ui-monospace,Consolas,monospace}
+    .prt-demo-canvas{display:block;width:100%;height:auto;border:1px solid #34465e;border-radius:12px;background:#05080d}.prt-readout{padding:10px 12px;border:1px solid #34465e;border-radius:10px;background:#0b1420;color:#b5c3d2;font:12px/1.65 ui-monospace,Consolas,monospace}.prt-readout b{color:var(--amber)}
+    .prt-boundary{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}.prt-boundary>div{padding:13px;border:1px solid #34465e;border-radius:11px;background:#0b1420}.prt-boundary b{display:block;color:#edf2fa}.prt-boundary span{color:#aebdce;font-size:12px}.prt-boundary-arrow{display:grid!important;place-items:center;background:transparent!important;border:0!important;color:var(--amber);font-size:25px}
+    @media(max-width:850px){.prt-family-grid,.prt-demo-grid{grid-template-columns:1fr}.prt-boundary{grid-template-columns:1fr}.prt-boundary-arrow{transform:rotate(90deg)}}
+  </style>
+  <style>
+    :root{--bg:#070a10;--panel:#101824;--panel2:#0b121c;--line:#2c3b50;--text:#edf4ff;--muted:#9eacbe;--cyan:#51dfd4;--blue:#76aaff;--violet:#b195ff;--amber:#ffcb76;--green:#79e2a7;--red:#ff8290;--shadow:0 24px 75px #0009}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;color:var(--text);background:radial-gradient(circle at 80% -7%,rgba(177,149,255,.17),transparent 34rem),radial-gradient(circle at -5% 26%,rgba(81,223,212,.1),transparent 28rem),linear-gradient(#070a10,#090d16 70%);font:15px/1.72 Inter,system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}a{color:#78e8de;text-decoration:none}a:hover{text-decoration:underline}button,input,select{font:inherit}.wrap{width:min(1200px,calc(100% - 32px));margin:auto}.progress{position:fixed;left:0;top:0;z-index:60;width:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--blue),var(--violet))}.topbar{position:sticky;top:0;z-index:40;background:#070a10e9;backdrop-filter:blur(15px);border-bottom:1px solid #263448}.topbar .wrap{min-height:60px;display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{font-weight:820}.navlinks{display:flex;gap:8px;flex-wrap:wrap}.navlinks a,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:#111a27;color:var(--text)}.navlinks a:hover,.btn:hover{text-decoration:none;border-color:var(--violet)}.hero{padding:78px 0 46px}.eyebrow{color:#c8b7ff;font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}.hero h1{max-width:1060px;margin:11px 0 18px;font-size:clamp(38px,6.2vw,68px);line-height:1.02;letter-spacing:-.05em}.hero h1 span{background:linear-gradient(100deg,#fff,#9cf0e8 46%,#bcaaff 89%);-webkit-background-clip:text;color:transparent}.hero p{max-width:940px;margin:0;color:#bdc9d8;font-size:18px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px}.chip{padding:5px 10px;border:1px solid #40516a;border-radius:999px;background:#131d2a;color:#ccd7e5;font-size:12px}.chip.hot{border-color:var(--violet);background:rgba(177,149,255,.14);color:#e0d7ff}.toc{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;padding:17px 0 35px}.toc a{padding:9px 7px;border:1px solid var(--line);border-radius:10px;background:#0f1722;color:#c7d2e0;text-align:center;font-size:12px}.toc a:hover{border-color:var(--violet);background:#171d2d;text-decoration:none}.section{padding:37px 0 45px;scroll-margin-top:70px;border-top:1px solid rgba(255,255,255,.07)}.kicker{color:var(--amber);font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}.section h2{margin:4px 0 8px;font-size:clamp(26px,4vw,40px);line-height:1.18;letter-spacing:-.035em}.lead{max-width:950px;margin:0 0 23px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:15px}.card{grid-column:span 4;padding:19px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#121c29,#0d141e);box-shadow:0 9px 30px #0002}.card.half{grid-column:span 6}.card.wide{grid-column:span 8}.card.full{grid-column:1/-1}.card h3{margin:0 0 7px;font-size:18px}.card p{margin:7px 0;color:#c4cfdd}.mini{color:var(--muted);font-size:13px}.note,.warn,.good{margin:14px 0;padding:14px 16px;border:1px solid #3a506a;border-radius:12px;background:#121e2c}.warn{border-color:#71434b;background:#291d22}.good{border-color:#376b56;background:#12261f}.math{margin:12px 0;padding:14px 16px;overflow:auto;border-left:3px solid var(--violet);border-radius:0 10px 10px 0;background:#080d15;color:#e4ddff;font:14px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}.table-wrap{overflow:auto}.table{width:100%;min-width:800px;border-collapse:collapse;font-size:13px}.table th,.table td{padding:11px 10px;border-bottom:1px solid #2a394e;text-align:left;vertical-align:top}.table th{color:#a8b6c8;font-size:11px;letter-spacing:.06em;text-transform:uppercase}.clean{margin:8px 0;padding-left:20px}.clean li{margin:6px 0}.pipeline{display:flex;align-items:stretch;gap:8px;overflow:auto;padding:6px 0}.stage{min-width:168px;flex:1;padding:14px;border:1px solid var(--line);border-radius:12px;background:#101a27}.stage b{display:block;margin-bottom:5px}.arrow{display:grid;place-items:center;color:var(--violet);font-size:23px}.compare{display:grid;grid-template-columns:1fr 1fr;gap:15px}.pros,.cons{padding:18px;border-radius:15px}.pros{border:1px solid #376b56;background:#12261f}.cons{border:1px solid #71434b;background:#291d22}.pros h3,.cons h3{margin-top:0}
+    .warmup{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.warm-step{position:relative;padding:16px;border:1px solid var(--line);border-radius:14px;background:#0e1722;cursor:pointer;transition:.18s}.warm-step:after{content:'→';position:absolute;right:-10px;top:42%;z-index:2;color:var(--violet);font-size:19px}.warm-step:last-child:after{display:none}.warm-step.active{border-color:var(--amber);background:rgba(255,203,118,.07)}.warm-step small{display:block;color:var(--amber);font:10px ui-monospace,Consolas,monospace}.warm-step b{display:block;margin:5px 0}.warm-step span{color:var(--muted);font-size:12px}.warm-data{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}.matrix-panel{padding:15px;border:1px solid var(--line);border-radius:14px;background:#080d14}.matrix-panel canvas{width:100%;height:auto;display:block;border-radius:9px;background:#060a10}.plain-panel{padding:18px;border:1px solid var(--line);border-radius:14px;background:#101824}.plain-panel h3{margin-top:0}.equation-stack{display:grid;gap:8px}.eq-row{display:grid;grid-template-columns:95px 1fr;gap:10px;padding:9px;border-radius:9px;background:#0a111a}.eq-row b{color:var(--cyan)}
+    .lab{overflow:hidden;border:1px solid #505a7c;border-radius:21px;background:linear-gradient(145deg,#171d31,#0d141e);box-shadow:var(--shadow)}.lab-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid #354359}.lab-head h3{margin:0;font-size:22px}.runtime{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.runtime span{padding:4px 8px;border:1px solid #3c4c62;border-radius:999px;color:#bfcbd9;font-size:10px}.runtime .ok{border-color:#3c745d;color:#aaf0cc;background:#18362d}.runtime .warn-badge{border-color:#74545b;color:#ffc0ca;background:#321f25}.guide{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#2b384d;border-bottom:1px solid #354359}.guide button{min-height:68px;padding:10px 12px;border:0;background:#0f1824;color:#aab8ca;text-align:left;cursor:pointer}.guide button b{display:block;color:#dce7f4;font-size:12px}.guide button.active{background:linear-gradient(135deg,rgba(177,149,255,.18),rgba(81,223,212,.08));box-shadow:inset 0 -3px var(--amber)}.guide button small{font-size:10px}.controls{display:grid;grid-template-columns:1.2fr .9fr .9fr auto auto;gap:13px;padding:15px 20px;background:#0c141e;align-items:end}.control label{display:flex;justify-content:space-between;gap:8px;color:#b6c3d2;font-size:12px}.control input[type=range],.control select{width:100%;accent-color:var(--violet)}.control select{height:34px;border:1px solid #35465c;border-radius:8px;background:#111b28;color:var(--text)}.toggle{display:flex;align-items:center;gap:7px;min-height:37px;color:#d8e1ec;font-size:12px}.toggle input{accent-color:var(--violet)}.viewport{position:relative;background:#05080d}.viewport canvas{display:block;width:100%;height:auto;min-height:480px;touch-action:none;cursor:grab}.viewport canvas:active{cursor:grabbing}.view-label{position:absolute;top:13px;padding:7px 10px;border:1px solid #ffffff22;border-radius:9px;background:#050913d9;color:#e8effa;font-size:11px;pointer-events:none}.view-label.left{left:14px}.view-label.right{left:calc(50% + 14px)}.view-label.single{left:14px}.view-label em{display:block;color:#8fa0b6;font-style:normal;font-size:9px}.hint-overlay{position:absolute;right:14px;bottom:13px;max-width:310px;padding:9px 11px;border:1px solid #ffffff1c;border-radius:9px;background:#050913d9;color:#aebbc9;font-size:10px;pointer-events:none}.lab-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;padding:14px 19px 19px}.stat{padding:10px;border:1px solid #314258;border-radius:10px;background:#0c151f}.stat span{display:block;color:var(--muted);font-size:10px}.stat b{display:block;color:var(--amber);font-size:16px}.explain-now{padding:13px 20px;border-top:1px solid #2f3d51;background:#111a27;color:#cbd6e3}.explain-now b{color:var(--amber)}
+    [data-tip]{position:relative;text-decoration:underline dotted #8394aa;text-underline-offset:3px;cursor:help}[data-tip]:hover:after,[data-tip]:focus:after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 9px);z-index:30;width:min(340px,75vw);padding:10px 12px;border:1px solid #52627a;border-radius:9px;background:#080d15;color:#e7eef8;box-shadow:0 14px 35px #000b;font:12px/1.55 system-ui;white-space:normal}.code{padding:17px;overflow:auto;border:1px solid #26364a;border-radius:14px;background:#060a10;color:#d0dbea;font:13px/1.68 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre}.fn{display:inline;color:#c6b7ff;border:0;background:transparent;padding:0;text-decoration:underline dotted;cursor:help;font:inherit}.fn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.fn-card{padding:14px;border:1px solid var(--line);border-radius:12px;background:#0d1621}.fn-card code{color:#c9baff}.fn-card p{margin:6px 0;color:var(--muted);font-size:12px}.source-code summary{cursor:pointer;color:#dbe6f3;font-weight:700}.source-code pre{max-height:540px;margin-top:12px}.sources a{display:block;padding:11px 0;border-bottom:1px solid #2b3a4d}.footer-nav{display:flex;justify-content:space-between;gap:10px;padding:35px 0 60px}.footer-nav a{padding:12px 15px;border:1px solid var(--line);border-radius:12px;background:#101925}@media(max-width:960px){.toc{grid-template-columns:repeat(4,1fr)}.card,.card.half,.card.wide{grid-column:1/-1}.warmup{grid-template-columns:repeat(2,1fr)}.warm-step:nth-child(2):after{display:none}.warm-data,.compare{grid-template-columns:1fr}.controls{grid-template-columns:repeat(2,1fr)}.lab-stats{grid-template-columns:repeat(3,1fr)}.fn-grid{grid-template-columns:1fr}.brand{display:none}}@media(max-width:590px){.wrap{width:calc(100% - 20px)}.hero{padding-top:47px}.toc{grid-template-columns:repeat(2,1fr)}.warmup,.guide,.controls,.lab-stats{grid-template-columns:1fr}.warm-step:after{display:none}.lab-head,.footer-nav{flex-direction:column}.runtime{justify-content:flex-start}.view-label.right{top:48px;left:14px}.viewport canvas{min-height:420px}.navlinks a{font-size:11px;padding:6px 8px}}
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <header class="topbar"><div class="wrap"><div class="brand">GI 学习地图 / PRT Probes</div><nav class="navlinks" aria-label="模块导航"><a href="index.html">⌂ 主文档</a><a href="gi_module_probes.html">← Irradiance Probes</a><a href="Realtime_GI_Field_Guide.html">方案总览 →</a></nav></div></header>
+
+  <main>
+    <section class="hero"><div class="wrap">
+      <div class="eyebrow">Module 07 · 从可见结果到传输算子</div>
+      <h1><span>别先背 SH：先看一束动态光怎样经过墙面，抵达 Probe</span></h1>
+      <p>本页用一个真正可旋转的 3D 房间解释 PRT Probe。动态灯每帧重新照亮墙面砖块；固定几何的传输矩阵负责把砖块 radiance 送到地面 probes。你会同时看到“旧 Irradiance 答案”和“当前帧 PRT 结果”，再回头理解公式。</p>
+      <div class="chips"><span class="chip hot">3D WebGL2 主 Demo</span><span class="chip">1-bounce diffuse</span><span class="chip">真实矩阵 W</span><span class="chip">0 history reads</span><span class="chip">实际源码可展开</span><span class="chip">WebGPU compute 对照</span></div>
+    </div></section>
+
+    <div class="wrap"><nav class="toc" aria-label="页内目录"><a href="#answer">1. 先分清</a><a href="#warmup">2. 2D 热身</a><a href="#lab">3. 3D 实验</a><a href="#prt-families">4. 三类 PRT</a><a href="#math">5. 公式</a><a href="#code">6. 真实函数</a><a href="#boundary">7. 边界</a><a href="#sources">8. 资料</a></nav></div>
+
+    <section class="section" id="answer"><div class="wrap">
+      <div class="kicker">01 / one question first</div><h2>移动灯以后，缓存要不要重建？</h2>
+      <p class="lead">这是区分 Irradiance Probe 和 PRT 最简单、也最不容易错的方法。二者最后都可能给出 probe irradiance，甚至都可能用 SH；不同的是缓存的语义。</p>
+      <div class="grid">
+        <article class="card half"><h3>Irradiance Probe：缓存“上次的答案”</h3><p>烘焙时，墙面哪些位置亮、地面 Probe 收到多少光，已经被积分成最终结果。移动灯后旧值不会自己改变；必须重新烘焙、切换预制场景，或像 DDGI 那样重新追踪并逐帧更新。</p><p class="mini">对应关系已并入 <a href="#transport-equations">运行时 transport 可切换工作台</a> 的“公式 / 代值 / 伪代码 / 实际代码”四个标签。</p></article>
+        <article class="card half"><h3>PRT：缓存“固定场景怎样传光”</h3><p>离线只保存墙面 brick 到 Probe 的固定权重 W。运行时先求当前灯下每个 brick 的 radiance R，再执行 W·R。灯变了只更新 R；几何不变时 W 无需重建。</p><p class="mini">完整的 <code>W·R</code> 与 baked answer 对照已并入 <a href="#transport-equations">运行时 transport 可切换工作台</a>，不再在这里重复一块孤立公式。</p></article>
+        <article class="card"><h3>动态的是</h3><p>灯的位置、颜色、强度，以及它们让静态 surfels/bricks 产生的本帧 radiance。</p></article>
+        <article class="card"><h3>预计算的是</h3><p>brick 与 receiver 之间由距离、两个余弦、面积和可见性决定的几何 transport。brick 的静态反照率在运行时 relight 阶段写进 R，不在本 Demo 的 W 中重复保存。</p></article>
+        <article class="card"><h3>输出仍然是</h3><p>本帧 Probe irradiance。也就是说，“PRT Probe 最终产出 irradiance”并不等于“缓存本身就是 Irradiance Probe”。</p></article>
+      </div>
+      <div class="warn"><b>术语边界：</b>“PRT Probe”不是定义唯一的标准术语。本页 3D Demo 采用《The Division》Radiance Transfer Probes 的教学化一跳结构：动态重光照 bricks，再用预计算权重生成 Probe Irradiance。经典 Sloan PRT 常把 transfer 直接绑定到 vertex / texel，而不一定有空间 Probe。</div>
+      <div class="note"><b>本 Demo 的 120 个点严格说是 surface receivers：</b>每个点绑定地面位置与朝上的表面法线，所以 W 里才有 <code>cosθ_receiver</code>；它们更接近 lightmap texel / vertex receiver，不是能向任意方向查询的通用体积 Irradiance Probe。本文保留“Probe”标签，是为了直观对比“旧 irradiance answer”与“当前 transfer answer”。生产中的 Radiance Transfer Probe 可以改存方向分布、SH 或局部重建系数；那时 probe payload 与插值规则必须另外定义。</div>
+    </div></section>
+
+    <section class="section" id="warmup"><div class="wrap">
+      <div class="kicker">02 / 2D warm-up</div><h2>先只跟踪四个数据对象</h2>
+      <p class="lead">点击下面四步。热图不是抽象函数曲线：每个格子就是 3D 房间后墙上的一个真实 brick；颜色越亮，表示选中 Probe 从该 brick 接收的固定传输权重越大。边框颜色表示 brick 在当前灯下的 radiance。</p>
+      <div class="warmup" id="warmSteps">
+        <button class="warm-step active" data-warm="0"><small>INPUT</small><b>① 当前动态灯 L</b><span>移动位置或改变颜色；它不是缓存。</span></button>
+        <button class="warm-step" data-warm="1"><small>RUNTIME</small><b>② 墙面 radiance R</b><span>每帧用 N·L、距离衰减和反照率计算。</span></button>
+        <button class="warm-step" data-warm="2"><small>PRECOMPUTED</small><b>③ 固定权重 W</b><span>只由静态几何、距离、余弦与可见性决定。</span></button>
+        <button class="warm-step" data-warm="3"><small>OUTPUT</small><b>④ Probe irradiance E</b><span>对每个 Probe 做 dot(W row, R)。</span></button>
+      </div>
+      <div class="warm-data">
+        <div class="matrix-panel"><canvas id="matrixCanvas" width="650" height="360" aria-label="选中 Probe 对墙面 bricks 的传输权重热图"></canvas></div>
+        <div class="plain-panel"><h3 id="warmTitle">① 当前动态灯 L</h3><p id="warmExplain">灯是这一帧的输入。先不要想 SH 或矩阵：只看灯移动后，后墙上被照亮的位置如何变化。</p><div class="equation-stack"><div class="eq-row"><b>L</b><span id="lightRead">—</span></div><div class="eq-row"><b>R[brick]</b><span id="brickRead">—</span></div><div class="eq-row"><b>W[probe,brick]</b><span id="weightRead">—</span></div><div class="eq-row"><b>E[probe]</b><span id="probeRead">—</span></div></div><p class="mini">热图和 3D Demo 读取同一组数组，不是另外画的示意数据。</p></div>
+      </div>
+    </div></section>
+
+    <section class="section" id="lab"><div class="wrap">
+      <div class="kicker">03 / interactive 3D lab</div><h2>按四步看完整一跳传输</h2>
+      <p class="lead">拖动画面旋转视角，滚轮缩放。第一次请按 ①→④ 顺序操作；到第 ④ 步后移动灯，直接比较左右两侧地面。整个运行时不读取上一帧 GI。</p>
+      <div class="lab">
+        <div class="lab-head"><div><h3>Radiance Transfer Probe Room</h3><div class="mini">教学场景：40 个墙面 bricks × 120 个地面 receivers；固定 AABB 遮挡参与 W 预计算。</div></div><div class="runtime"><span id="webglBadge">WebGL2 检测中</span><span id="webgpuBadge">WebGPU 检测中</span><span class="ok">无外部库</span></div></div>
+        <div class="guide" id="guide">
+          <button class="active" data-step="1"><b>① 看静态几何</b><small>谁会影响 W？</small></button>
+          <button data-step="2"><b>② 看墙面重光照</b><small>灯只更新 R</small></button>
+          <button data-step="3"><b>③ 看固定传输</b><small>Probe ← bricks</small></button>
+          <button data-step="4"><b>④ 比较两种缓存</b><small>旧答案 vs 当前算子</small></button>
+        </div>
+        <div class="controls">
+          <div class="control"><label for="lightAngle"><span>灯绕房间移动</span><b id="lightAngleOut">35°</b></label><input id="lightAngle" type="range" min="-150" max="150" value="35" step="1" /></div>
+          <div class="control"><label for="lightColor"><span>灯光颜色</span></label><select id="lightColor"><option value="warm">暖白</option><option value="cyan">青蓝</option><option value="magenta">洋红</option></select></div>
+          <div class="control"><label for="probeSelect"><span>观察哪个 Probe</span></label><select id="probeSelect"><option value="near">近墙中央</option><option value="left">箱子左侧</option><option value="right">箱子右侧</option><option value="far">远处中央</option></select></div>
+          <label class="toggle"><input id="animateLight" type="checkbox" /> 自动移动灯</label>
+          <button class="btn" id="rebakeButton" type="button">把左侧重新烘焙</button>
+        </div>
+        <div class="viewport"><canvas id="prt3d" width="1180" height="620" aria-label="PRT Probe 3D 房间对比"></canvas><div class="view-label single" id="singleLabel">步骤 ① · 静态几何<em>拖动旋转，滚轮缩放</em></div><div class="view-label left" id="leftLabel" hidden>左 · Irradiance Probe<em>保存上次烘焙答案</em></div><div class="view-label right" id="rightLabel" hidden>右 · PRT Probe<em>当前 R × 固定 W</em></div><div class="hint-overlay">地面小格 = receivers；后墙彩色格 = radiance bricks；青色八面体 = 当前选中 Probe；黄色连线 = 最大传输权重。</div></div>
+        <div class="explain-now"><b id="stepTitle">步骤 ①：</b><span id="stepExplain">先认几何。后墙、地面和箱子都固定，因此可以离线计算墙面 brick 到地面 Probe 的可见性与几何项。</span></div>
+        <div class="lab-stats"><div class="stat"><span>固定矩阵尺寸</span><b id="matrixSize">—</b></div><div class="stat"><span>W 预计算</span><b id="precomputeMs">—</b></div><div class="stat"><span>本帧更新</span><b id="updateMs">—</b></div><div class="stat"><span>选中 Probe：旧值</span><b id="oldValue">—</b></div><div class="stat"><span>选中 Probe：当前值</span><b id="currentValue">—</b></div></div>
+      </div>
+      <div class="good"><b>建议操作：</b>进入步骤 ④，把灯从左拖到右，再把灯色切为“青蓝”。墙面亮区和右侧 PRT 地面会立即移动并变色，左侧仍保持暖色旧答案。点击“把左侧重新烘焙”后两边重新一致。这就是 answer cache 与 transfer cache 的区别。</div>
+    </div></section>
+
+    <section class="section" id="prt-families"><div class="wrap">
+      <div class="kicker">04 / three concrete PRT payloads</div><h2>Surface、Volume、SH PRT：共同点是 transfer，不是“都叫 Probe”</h2>
+      <p class="lead">下面三个实验完全独立。每个实验先生成只依赖静态几何的 transfer，再让显式光源变化并在运行时点积。你可以直接看到“哪些数组固定、哪些数组每帧更新”。</p>
+      <div class="prt-family-grid">
+        <article class="prt-kind"><h3>Surface PRT</h3><p>transfer 绑定 vertex / texel / surface receiver；有固定法线，天然出现 visibility × cosine。</p><p><b>缓存：</b>T[surface, direction]</p></article>
+        <article class="prt-kind"><h3>Volume / Probe-grid PRT</h3><p>transfer 输出到空间 probe，再为动态接收者做网格插值；payload 可以是 RGB、方向 bins 或 SH。</p><p><b>缓存：</b>W[probe, brick]</p></article>
+        <article class="prt-kind"><h3>SH PRT</h3><p>把入射光和 transfer 投影到同一组 SH 基。运行时不采方向积分，只做系数 dot。</p><p><b>缓存：</b>T<sub>lm</sub>[receiver]</p></article>
+      </div>
+      <div class="gi-prereq"><span class="gi-stage-num">SH</span><div><strong>SH PRT 的“旋转”依赖系数空间知识。</strong><p>本页展示真实 l≤2 系数 dot；band rotation、卷积和旋转误差的完整推导在 SH 模块。</p></div><a href="gi_module_sh.html">先读 SH 旋转 →</a></div>
+
+      <article class="gi-stage" id="surface-prt-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">S</span><div><h3>Surface PRT：离线烘 visibility × cosine</h3><p>白点是固定 receiver；灰色挡板属于静态几何。点光移动时只重建 lighting vector，不重建 transfer。</p></div><span class="gi-stage-tag">SURFACE</span></div>
+        <div class="gi-stage-body">
+          <div class="gi-light-card"><span class="gi-light-icon">●</span><div><strong>显式点光</strong><div class="gi-light-meta"><span id="surfaceLightPosition">position = (0.58, 0.62)</span><span id="surfaceLightDirection">direction(receiver→light) = normalize(...)</span><span>intensity = 2.0</span><span>color = warm</span></div></div></div>
+          <div class="gi-stage-io"><div><b>离线输入</b><span>静态 receiver normal、静态挡板、方向 bins</span></div><span class="gi-stage-arrow">→</span><div><b>运行时输入</b><span>光源 position → direction / attenuation</span></div></div>
+          <div class="prt-demo-grid">
+            <div class="prt-mini-controls">
+              <label>点光 X <output id="surfaceLightXOut">+0.58</output><input id="surfaceLightX" type="range" min="-90" max="90" value="58" /></label>
+              <label>点光 Y <output id="surfaceLightYOut">+0.62</output><input id="surfaceLightY" type="range" min="18" max="92" value="62" /></label>
+              <label>receiver 法线 <output id="surfaceNormalOut">90°</output><input id="surfaceNormal" type="range" min="15" max="165" value="90" /></label>
+              <label><span><input id="surfaceOccluder" type="checkbox" checked /> 使用静态挡板</span><output id="surfacePrtOut">0.000</output></label>
+              <div class="prt-readout" id="surfaceReadout">离线 transfer 与本帧 lighting dot 将显示在这里。</div>
+            </div>
+            <canvas class="prt-demo-canvas" id="surfacePrtCanvas" width="760" height="390" aria-label="Surface PRT visibility cosine 方向 bins"></canvas>
+          </div>
+          <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+            <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="value">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+            <div class="gi-panel" data-gi-panel="intuition"><p>离线阶段从 receiver 向半球方向发射可见性 ray：看得到就保留该方向的 cosine，看不到就写 0。运行时把当前灯落到相同方向 bins，再逐项相乘。</p></div>
+            <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula"><span data-gi-symbol="transfer">Tₖ</span> = <span data-gi-symbol="visibility">V(x,ωₖ)</span> · <span data-gi-symbol="cosine">max(0,n·ωₖ)</span> · Δω<br>E(x) ≈ Σₖ Tₖ · Lₖ</div><table class="gi-symbols"><tr><th>Tₖ</th><td>静态 surface receiver 对方向 bin k 的 transfer</td></tr><tr><th>Lₖ</th><td>当前帧光源在方向 bin k 的 radiance</td></tr></table></div>
+            <div class="gi-panel" data-gi-panel="value"><p id="surfaceValuePanel">当前代值将在这里更新。</p></div>
+            <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="surface PRT pseudocode">offline for each receiver and direction:
+  transfer[direction] =
+    staticVisibility(receiver, direction) *
+    max(dot(receiver.normal, direction), 0) *
+    solidAngle
+
+runtime:
+  lighting = binCurrentLight(light.position, receiver.position)
+  irradiance = dot(transfer, lighting)</code></pre></div>
+            <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_prt_probes.html · buildSurfaceTransfer()/evaluateSurfacePrt()">function buildSurfaceTransfer(receiver, normal, useOccluder) {
+  return surfaceDirections.map((direction) => {
+    const cosine = Math.max(0, dot2(normal, direction));
+    const visible = !useOccluder ||
+      !rayHitsStaticBoard(receiver, direction);
+    return visible ? cosine * surfaceSolidAngle : 0;
+  });
+}
+
+function evaluateSurfacePrt(transfer, receiver, lightPosition) {
+  const toLight = subtract2(lightPosition, receiver);
+  const distance2 = Math.max(0.02, dot2(toLight, toLight));
+  const direction = normalize2(toLight);
+  const lighting = binDirectionalImpulse(direction, 2 / distance2);
+  return dotArray(transfer, lighting);
+}</code></pre></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="gi-stage" id="volume-prt-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">V</span><div><h3>Volume PRT：先 relight bricks，再对 probe-grid 插值</h3><p>这是主 3D Demo 的小型俯视切片：4×3 probes 各自保存一行固定 W；动态灯每帧只更新 6 个 bricks 的 R。</p></div><span class="gi-stage-tag">PROBE GRID</span></div>
+        <div class="gi-stage-body">
+          <div class="gi-light-card"><span class="gi-light-icon">◆</span><div><strong>显式局部点光</strong><div class="gi-light-meta"><span id="volumeLightPosition">position = (-0.55, +0.58)</span><span>direction(brick→light) = normalize(position − brick)</span><span>range = 2.4</span><span>history = none</span></div></div></div>
+          <div class="prt-demo-grid">
+            <div class="prt-mini-controls">
+              <label>点光 X <output id="volumeLightXOut">-0.55</output><input id="volumeLightX" type="range" min="-90" max="90" value="-55" /></label>
+              <label>点光 Y <output id="volumeLightYOut">+0.58</output><input id="volumeLightY" type="range" min="15" max="90" value="58" /></label>
+              <label>查询点 X <output id="volumeQueryXOut">+0.22</output><input id="volumeQueryX" type="range" min="-88" max="88" value="22" /></label>
+              <label>查询点 Y <output id="volumeQueryYOut">-0.28</output><input id="volumeQueryY" type="range" min="-70" max="65" value="-28" /></label>
+              <label><span><input id="volumeShowLinks" type="checkbox" checked /> 显示四邻居权重</span><output id="volumeQueryOut">0.000</output></label>
+              <div class="prt-readout" id="volumeReadout">W 固定性与四邻居权重将在这里更新。</div>
+            </div>
+            <canvas class="prt-demo-canvas" id="volumePrtCanvas" width="760" height="430" aria-label="Volume PRT brick relight probe grid interpolation"></canvas>
+          </div>
+          <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+            <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="value">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+            <div class="gi-panel" data-gi-panel="intuition"><p>每个 probe 不保存“某盏灯照出来的旧颜色”，而保存每个静态 brick 对它的连接强度。灯移动后，brick radiance R 会变，固定 W 与插值拓扑不变。</p></div>
+            <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">Eₚ(current) = Σᵦ Wₚᵦ · Rᵦ(current light)<br>E(query) = Σₚ wₚ,trilinear · Eₚ / Σₚwₚ</div></div>
+            <div class="gi-panel" data-gi-panel="value"><p id="volumeValuePanel">当前代值将在这里更新。</p></div>
+            <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">offline:
+  W = buildSparseTransport(staticBricks, probeGrid)
+
+runtime each frame:
+  R = relightBricks(currentLights)
+  probeIrradiance = sparseMatrixVectorMultiply(W, R)
+  receiverIrradiance = trilinearSample(probeIrradiance, worldPosition)</code></pre></div>
+            <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_prt_probes.html · evaluateVolumePrt()">function evaluateVolumePrt(lightPosition, queryPosition) {
+  const brickRadiance = volumeBricks.map((brick) =>
+    shadeBrick(brick, lightPosition)
+  );
+  const probeIrradiance = volumeProbes.map((probe) =>
+    dotArray(probe.transport, brickRadiance)
+  );
+  const neighbors = findFourGridNeighbors(queryPosition);
+  return neighbors.reduce(
+    (sum, neighbor) =>
+      sum + neighbor.weight * probeIrradiance[neighbor.index],
+    0
+  );
+}</code></pre></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="gi-stage" id="sh-prt-stage">
+        <div class="gi-stage-head"><span class="gi-stage-num">H</span><div><h3>SH PRT：T<sub>lm</sub> · L<sub>lm</sub>，并旋转当前照明</h3><p>256 个确定性球面样本离线投影 transfer；运行时把移动方向光投影到真实 9 个 real-SH 基并点积。</p></div><span class="gi-stage-tag">SH l≤2</span></div>
+        <div class="gi-stage-body">
+          <div class="gi-light-card"><span class="gi-light-icon">➜</span><div><strong>显式方向光</strong><div class="gi-light-meta"><span>position = ∞（方向光无有限位置）</span><span id="shLightDirection">direction(light→scene) = (...)</span><span>radiance = 1.0</span><span>rotation = yaw / elevation</span></div></div></div>
+          <div class="prt-demo-grid">
+            <div class="prt-mini-controls">
+              <label>light yaw <output id="shYawOut">35°</output><input id="shYaw" type="range" min="-180" max="180" value="35" /></label>
+              <label>light elevation <output id="shElevationOut">42°</output><input id="shElevation" type="range" min="5" max="88" value="42" /></label>
+              <label>使用 bands <output id="shBandsOut">l≤2 · 9 coeffs</output><input id="shBands" type="range" min="0" max="2" value="2" /></label>
+              <label><span><input id="shVisibility" type="checkbox" checked /> 离线 transfer 含遮挡</span><output id="shPrtOut">0.000</output></label>
+              <div class="prt-readout" id="shReadout">系数 dot、数值积分 reference 与误差将在这里更新。</div>
+            </div>
+            <canvas class="prt-demo-canvas" id="shPrtCanvas" width="760" height="450" aria-label="SH PRT coefficient dot rotation and error"></canvas>
+          </div>
+          <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+            <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="value">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+            <div class="gi-panel" data-gi-panel="intuition"><p>transfer 系数描述固定接收点“从各方向接光的能力”；lighting 系数描述这一帧“各方向有多少光”。旋转灯只改变 L，不改 T。降低 band 会更平滑但误差更大。</p></div>
+            <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">Tⱼ = ∫ V(ω)·max(0,n·ω)·Yⱼ(ω)dω<br>Lⱼ = ∫ L(ω)·Yⱼ(ω)dω<br>E ≈ Σⱼ₌₀⁸ TⱼLⱼ</div></div>
+            <div class="gi-panel" data-gi-panel="value"><p id="shValuePanel">当前 9 项 dot 将在这里更新。</p></div>
+            <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">offline:
+  for each sphere sample direction:
+    transferValue = visibility * max(dot(normal, direction), 0)
+    transferSH += transferValue * SH9(direction) * sampleWeight
+
+runtime:
+  rotatedLightDirection = rotate(originalDirection, yaw, elevation)
+  lightingSH = projectDirectionalLight(rotatedLightDirection)
+  irradiance = dot(transferSH, lightingSH)</code></pre></div>
+            <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_prt_probes.html · realSh9()/evaluateShPrt()">function realSh9(direction) {
+  const [x, y, z] = direction;
+  return [
+    0.282095,
+    0.488603 * y,
+    0.488603 * z,
+    0.488603 * x,
+    1.092548 * x * y,
+    1.092548 * y * z,
+    0.315392 * (3 * z * z - 1),
+    1.092548 * x * z,
+    0.546274 * (x * x - y * y)
+  ];
+}
+
+function evaluateShPrt(transferSh, lightDirection, coefficientCount) {
+  const lightingSh = realSh9(lightDirection);
+  let irradiance = 0;
+  for (let index = 0; index < coefficientCount; index += 1) {
+    irradiance += transferSh[index] * lightingSh[index];
+  }
+  return irradiance;
+}</code></pre></div>
+          </div>
+          <div class="prt-boundary">
+            <div><b>静态：必须重建 / 重烘</b><span>geometry、visibility、receiver position/normal、transfer basis 与离线压缩结构。</span></div>
+            <div class="prt-boundary-arrow">×</div>
+            <div><b>动态：可每帧变化</b><span>lighting SH、方向光 rotation、局部灯 relight 的 R、最终 dot 与 probe-grid interpolation。</span></div>
+          </div>
+          <p class="note"><b>旋转的两条路线：</b>本 Demo 直接用旋转后的光方向重新求 <code>L<sub>lm</sub></code>，适合少量解析灯；环境贴图已有 SH 系数时，应在各 band 内旋转系数。详见 <a href="gi_module_sh.html#rotation">SH 页面旋转章节</a>。</p>
+        </div>
+      </article>
+    </div></section>
+
+    <section class="section" id="math"><div class="wrap">
+      <div class="kicker">05 / math after observation</div><h2>现在再看公式：每一项都能在 3D 场景里指出来</h2>
+      <div class="grid">
+        <article class="card half"><h3>运行时：灯先照亮墙面 brick</h3><p>Demo 的 <button class="fn" data-tip="实际运行函数：输入 bricks、灯位置和 RGB，返回每个 brick 的 RGB radiance。完整源码见下一节。">shadeWallBricks</button> 每次滑杆变化都会执行。这里没有历史，也没有预烘焙灯光。</p></article>
+        <article class="card half"><h3>离线：固定几何决定 W</h3><p>R 已经是墙面出射 radiance（<code>albedo/π × incident</code>），所以 radiance→irradiance 的几何项不再除 π。Demo 的 <button class="fn" data-tip="实际运行函数：逐 receiver×brick 计算几何项，并用 slab ray/AABB 测试静态箱子遮挡。">buildTransferMatrix</button> 只在初始化时执行。黄色连线显示选中 receiver 的最大 W。</p></article>
+        <article class="card half"><h3>运行时：矩阵行与当前 radiance 点积</h3><p><button class="fn" data-tip="实际运行函数：三重循环 receiver×brick×RGB；输出所有地面 receiver 的本帧 irradiance。">evaluateTransfer</button> 是一个真实的 matrix-vector multiply。场景很小，教学版用 CPU 便于查看；GPU 版见第 ⑥ 节。</p></article>
+        <article class="card half"><h3>左侧为什么不动？</h3><p>左侧保存的是上次调用 <button class="fn" data-tip="实际按钮行为：复制 currentIrradiance 到 bakedIrradiance；不保存 W 的新副本。">rebakeCurrentAnswer</button> 时的最终 RGB 数组。移动灯不会再经过 W，因此它只能保持旧答案。</p></article>
+      </div>
+      <div class="gi-workbench" id="transport-equations" data-gi-workbench data-gi-default="formula">
+        <div class="gi-tabs"><button data-gi-tab="formula">公式</button><button data-gi-tab="value">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+        <div class="gi-panel" data-gi-panel="formula">
+          <div class="gi-formula">当前 brick radiance：
+Rᵦ = albedoᵦ · lightColor · [5.6·max(0,nᵦ·l)/(1+0.12·distance²)] / π + 0.006·albedoᵦ
+
+固定 transport：
+Wₚ,ᵦ = visibility · cosθ_receiver · cosθ_brick · area_brick / distance²
+
+当前 PRT 输出：
+Eₚ.rgb = Σᵦ Wₚ,ᵦ · Rᵦ.rgb
+
+普通烘焙缓存：
+bakedEₚ = Eₚ(light at bake time)</div>
+        </div>
+        <div class="gi-panel" data-gi-panel="value">
+          <p>取 <code>cos_receiver=0.80</code>、<code>cos_brick=0.60</code>、<code>area=0.04</code>、<code>distance²=0.25</code> 且可见，则 <code>W=0.0768</code>。</p>
+          <p>再取 brick <code>albedo=0.60</code>、灯通道值 <code>1.00</code>、<code>n·l=0.75</code>、<code>distance²=4.00</code>，本页实际式得到 <code>power=2.83784</code>、<code>R=0.545587</code>；若只有这一条连接，则 <code>E=0.0768×0.545587=0.041901</code>。灯移动后 R 与 E 同帧改变，而 bakedE 仍保留 0.041901，直到再次烘焙。</p>
+        </div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="PRT brick transport 四步">offline:
+  W = buildTransferMatrix(staticReceivers, staticBricks, staticOccluders)
+
+runtime each frame:
+  R = shadeWallBricks(staticBricks, currentLight)
+  currentE = matrixVectorMultiply(W, R)
+
+when user explicitly rebakes:
+  bakedE = copy(currentE)</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual">
+          <p>这是主 3D Demo 正在执行的两处核心语句摘录；完整函数可继续展开 <a href="#realSource">下一节源码</a>。</p>
+          <pre><code data-gi-code data-gi-status="excerpt" data-gi-source="gi_module_prt_probes.html · shadeWallBricks()/evaluateTransfer() 实际摘录">const power =
+  5.6 * receiverCosine /
+  (1 + 0.12 * distanceSquared);
+
+radiance[brickIndex * 3 + channel] =
+  brick.albedo[channel] *
+  lightRgb[channel] *
+  power / Math.PI +
+  0.006 * brick.albedo[channel];
+
+const weight =
+  matrix[receiverIndex * brickCount + brickIndex];
+
+irradiance[receiverIndex * 3 + channel] +=
+  weight * radiance[brickIndex * 3 + channel];</code></pre>
+        </div>
+      </div>
+      <div class="note"><b>与经典 SH PRT 的关系：</b>这里选用“brick radiance 向量”作为输入基，因此公式是 W·R；经典远场 PRT 常把入射方向函数投影到 SH，公式是 T·l。二者都在预计算固定场景的线性响应，只是输入坐标系不同。</div>
+    </div></section>
+
+    <section class="section" id="code"><div class="wrap">
+      <div class="kicker">06 / no mystery helpers</div><h2>核心算法与渲染依赖，都能追到实际函数体</h2>
+      <p class="lead">下面不是“类似代码”。3D Demo 直接调用这些函数；展开源码会按“transport / 小型数学 helper / WebGL2 可视化”三组列出浏览器当前执行的函数体。较简单的函数也可悬停名称查看输入、输出与算法。</p>
+      <div class="fn-grid">
+        <article class="fn-card"><code>segmentIntersectsAabb(a,b,min,max)</code><p>真实 slab test。把线段写成 a+t(b−a)，逐轴收紧 t∈[0,1]；区间为空即 miss。用于判断 brick→Probe 是否被静态箱子挡住。</p></article>
+        <article class="fn-card"><code>buildTransferMatrix(receivers,bricks,aabb)</code><p>生成 Float32Array，行是 receiver，列是 brick。计算两个余弦、距离平方、brick 面积和 visibility。</p></article>
+        <article class="fn-card"><code>shadeWallBricks(bricks,lightPosition,lightRgb)</code><p>计算当前帧 brick radiance。只依赖动态灯和静态 brick 属性；每次移动灯都会执行。</p></article>
+        <article class="fn-card"><code>evaluateTransfer(W,R,receiverCount,brickCount)</code><p>计算 E=W·R。R 与 E 都是 RGB，所以对每个 W 标量分别累加三通道。</p></article>
+        <article class="fn-card"><code>createProgram(gl,vsSource,fsSource)</code><p>编译两个真实 GLSL ES 3.00 shader，检查 COMPILE_STATUS / LINK_STATUS，失败时抛出浏览器给出的日志。</p></article>
+        <article class="fn-card"><code>renderScene(viewport,mode)</code><p>设置 viewport/scissor、上传 view-projection 矩阵，依次绘制房间、bricks、地面结果、灯、Probe 与传输线。它调用的矩阵、mesh 更新与 draw helper 也都收录在源码包。</p></article>
+      </div>
+      <details class="card full source-code" style="margin-top:15px"><summary>展开：主 3D Demo 当前执行的 transport 核心</summary><pre><code id="realSource" data-gi-code data-gi-status="actual" data-gi-source="gi_module_prt_probes.html · 主 3D Demo transport">function buildTransferMatrix(receiverList, brickList, occluderAabb) {
+  const matrix = new Float32Array(receiverList.length * brickList.length);
+  for (let receiverIndex = 0; receiverIndex < receiverList.length; receiverIndex += 1) {
+    const receiver = receiverList[receiverIndex];
+    for (let brickIndex = 0; brickIndex < brickList.length; brickIndex += 1) {
+      const brick = brickList[brickIndex];
+      const receiverToBrick = sub(brick.position, receiver.position);
+      const distanceSquared = Math.max(0.001, dot(receiverToBrick, receiverToBrick));
+      const direction = norm(receiverToBrick);
+      const receiverCosine = Math.max(0, dot(receiver.normal, direction));
+      const brickCosine = Math.max(0, dot(brick.normal, direction.map((value) => -value)));
+      const blocked = segmentIntersectsAabb(
+        receiver.position,
+        brick.position,
+        occluderAabb.min,
+        occluderAabb.max
+      );
+      matrix[receiverIndex * brickList.length + brickIndex] = blocked
+        ? 0
+        : receiverCosine * brickCosine * brick.area / distanceSquared;
+    }
+  }
+  return matrix;
+}
+
+function shadeWallBricks(brickList, lightPosition, lightRgb) {
+  const radiance = new Float32Array(brickList.length * 3);
+  for (let brickIndex = 0; brickIndex < brickList.length; brickIndex += 1) {
+    const brick = brickList[brickIndex];
+    const toLight = sub(lightPosition, brick.position);
+    const distanceSquared = Math.max(0.1, dot(toLight, toLight));
+    const receiverCosine = Math.max(0, dot(brick.normal, norm(toLight)));
+    const power = 5.6 * receiverCosine / (1 + 0.12 * distanceSquared);
+    for (let channel = 0; channel < 3; channel += 1) {
+      radiance[brickIndex * 3 + channel] =
+        brick.albedo[channel] * lightRgb[channel] * power / Math.PI +
+        0.006 * brick.albedo[channel];
+    }
+  }
+  return radiance;
+}
+
+function evaluateTransfer(matrix, radiance, receiverCount, brickCount) {
+  const irradiance = new Float32Array(receiverCount * 3);
+  for (let receiverIndex = 0; receiverIndex < receiverCount; receiverIndex += 1) {
+    for (let brickIndex = 0; brickIndex < brickCount; brickIndex += 1) {
+      const weight = matrix[receiverIndex * brickCount + brickIndex];
+      for (let channel = 0; channel < 3; channel += 1) {
+        irradiance[receiverIndex * 3 + channel] +=
+          weight * radiance[brickIndex * 3 + channel];
+      }
+    }
+  }
+  return irradiance;
+}</code></pre></details>
+      <div class="warn"><b>阅读代码时先分层：</b>transport 算法只有前四个函数；<code>createProgram</code> 和 <code>renderScene</code> 是可视化基础设施，不属于 PRT 数学。文档不会把渲染器 helper 混写成算法步骤。</div>
+    </div></section>
+
+    <section class="section" id="gpu"><div class="wrap">
+      <div class="kicker">07 / webgpu, d3d12, vulkan</div><h2>为什么主 Demo 用 WebGL2，生产乘法可以进 compute shader</h2>
+      <p class="lead">HTML 需要双击即可离线运行，而 WebGPU 的浏览器可用性和安全上下文仍需检测。因此本页用 WebGL2 负责可移植 3D 显示，并把小矩阵乘保留为可逐行阅读的 CPU 代码。真正的大规模 receiver×brick 运算可直接映射到 WebGPU compute；浏览器实现再映射到 Windows D3D12、Linux/Android Vulkan 或 macOS Metal。</p>
+      <div class="grid">
+        <article class="card wide"><h3>WGSL compute 核心摘录（每个 invocation 处理一个 receiver）</h3><p class="mini">本页没有创建 <code>GPUDevice</code>、compute pipeline 或提交 dispatch；因此下面是与 CPU 矩阵乘等价的生产迁移摘录，不标成“已在此页执行”。</p><pre class="code"><code data-gi-code data-gi-status="excerpt" data-gi-source="WGSL 迁移摘录 · 本页未 dispatch">struct Params { receiverCount:u32, brickCount:u32, _pad0:u32, _pad1:u32 }
+@group(0) @binding(0) var&lt;storage, read&gt; W : array&lt;f32&gt;;
+@group(0) @binding(1) var&lt;storage, read&gt; R : array&lt;vec4f&gt;;
+@group(0) @binding(2) var&lt;storage, read_write&gt; E : array&lt;vec4f&gt;;
+@group(0) @binding(3) var&lt;uniform&gt; params : Params;
+
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid:vec3u) {
+  let p=gid.x;
+  if (p&gt;=params.receiverCount) { return; }
+  var sum=vec3f(0.0);
+  for (var b=0u; b&lt;params.brickCount; b++) {
+    sum += W[p*params.brickCount+b] * R[b].rgb;
+  }
+  E[p]=vec4f(sum,1.0);
+}</code></pre><p class="mini">R/E 使用 vec4f 是为了满足 storage buffer 中自然的 16-byte 对齐。若接入 WebGPU，dispatch 数量应为 ceil(receiverCount/64)；本页当前实际执行路径仍是 CPU dot + WebGL2 显示。</p></article>
+        <article class="card"><h3>浏览器与原生路径</h3><ul class="clean"><li>若 <code>navigator.gpu</code> 可用：可创建 <code>GPUComputePipeline</code>。</li><li>Windows Edge/Chromium 通常由 Dawn 映射到 D3D12。</li><li>其他平台可能映射到 Vulkan 或 Metal。</li><li>若不可用：本页真实 CPU dot + WebGL2 仍完整工作。</li></ul><p><a class="btn" href="DX12_GI_Lab/index.html">打开对应的 DX12 + HLSL Compute 工程 →</a></p><p><a href="https://gpuweb.github.io/gpuweb/explainer/" target="_blank" rel="noreferrer">GPU for the Web 官方 Explainer →</a></p></article>
+      </div>
+    </div></section>
+
+    <section class="section" id="boundary"><div class="wrap">
+      <div class="kicker">08 / advantages and limits</div><h2>什么时候它很合适，什么时候必须换方案？</h2>
+      <div class="compare"><div class="pros"><h3>优势</h3><ul class="clean"><li><b>动态灯同帧响应：</b>核心一跳只读当前 R 与固定 W。</li><li><b>无采样噪声和拖尾：</b>没有 history rejection 或 hysteresis。</li><li><b>复杂静态传输可离线：</b>生产版可把更多遮挡与反弹烘入 W/T。</li><li><b>动态接收者友好：</b>角色可查询本帧 Probe Irradiance。</li><li><b>成本可预测：</b>主要是 relight、稀疏矩阵乘、插值与带宽。</li></ul></div><div class="cons"><h3>限制</h3><ul class="clean"><li><b>几何变化会让 W 失效：</b>移动墙、开门、破坏场景需要新 transport。</li><li><b>输出通常低频 diffuse：</b>锐利间接阴影和镜面另走反射/RT 路径。</li><li><b>大量局部灯仍要 culling：</b>重光照所有 surfels 不是免费。</li><li><b>存储随连接数增长：</b>生产实现需 bricks、稀疏索引、压缩和流送。</li><li><b>可选多跳反馈会重新引入时序：</b>一跳无历史不代表任意 bounce 都无历史。</li></ul></div></div>
+      <div class="table-wrap" style="margin-top:16px"><table class="table"><thead><tr><th>场景问题</th><th>PRT Probe</th><th>建议</th></tr></thead><tbody><tr><td>静态城市，太阳/天气/局部灯频繁改变</td><td>很匹配</td><td>Radiance Transfer Probes、bricks、sector streaming</td></tr><tr><td>旋转 HDRI 下的静态物体</td><td>很匹配</td><td>经典 SH PRT，T·l</td></tr><tr><td>动态角色只接收间接光</td><td>可行</td><td>从本帧 Probe volume 采样；角色通常不反向遮挡 W</td></tr><tr><td>大量高速灯 + 动态门/破坏</td><td>固定 W 不完整</td><td>当前帧 Voxel/RSM/RT 或混合系统</td></tr><tr><td>只需固定烘焙答案</td><td>过度设计</td><td>普通 Irradiance Probes / APV</td></tr></tbody></table></div>
+    </div></section>
+
+    <section class="section" id="sources"><div class="wrap">
+      <div class="kicker">09 / primary and official sources</div><h2>继续阅读</h2>
+      <div class="card full sources">
+        <a href="https://www.microsoft.com/en-us/research/?p=345614" target="_blank" rel="noreferrer"><b>Sloan, Kautz, Snyder 2002 — Precomputed Radiance Transfer</b><br><span class="mini">经典 PRT：固定物体表面的 transfer functions 与动态低频入射光。</span></a>
+        <a href="https://www.gdcvault.com/play/1023273/Global-Illumination-in-Tom-Clancy" target="_blank" rel="noreferrer"><b>Stefanov 2016 — Global Illumination in Tom Clancy's The Division</b><br><span class="mini">GDC 官方生产演讲：Radiance Transfer Probes、surfels、bricks、动态灯与漏光处理。</span></a>
+        <a href="https://arisilvennoinen.github.io/Publications/Real-time_Global_Illumination_by_Precomputed_Local_Reconstruction_from_Sparse_Radiance_Probes.pdf" target="_blank" rel="noreferrer"><b>Silvennoinen &amp; Lehtinen 2017 — Precomputed Local Reconstruction</b><br><span class="mini">稀疏 radiance probes 作为动态输入，预计算局部重建间接光。</span></a>
+        <a href="https://gene.greger-weltin.org/professional/publications/irradiance_volume_ieee.html" target="_blank" rel="noreferrer"><b>Greger et al. 1998 — The Irradiance Volume</b><br><span class="mini">对照“在空间中缓存 illumination result”的经典思路。</span></a>
+        <a href="https://gpuweb.github.io/gpuweb/" target="_blank" rel="noreferrer"><b>GPU for the Web — WebGPU Specification</b><br><span class="mini">GPUDevice、render/compute pipeline、WGSL 与跨 D3D12/Vulkan/Metal 的 Web API。</span></a>
+      </div>
+    </div></section>
+  </main>
+
+  <div class="wrap"><nav class="footer-nav" aria-label="底部模块导航"><a href="gi_module_probes.html">← 上一模块：Irradiance Probes</a><a href="index.html">返回主文档</a><a href="Realtime_GI_Field_Guide.html">方案总览 →</a></nav></div>
+
+  <script>
+  (()=>{
+    'use strict';
+    const $=id=>document.getElementById(id),clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+    const v3=(x=0,y=0,z=0)=>[x,y,z],sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],len=a=>Math.hypot(a[0],a[1],a[2]),norm=a=>{const l=len(a)||1;return[a[0]/l,a[1]/l,a[2]/l]};
+    const canvas=$('prt3d'),matrixCanvas=$('matrixCanvas'),matrixCtx=matrixCanvas.getContext('2d');
+    const COLS=8,ROWS=5,NX=12,NZ=10,BRICK_COUNT=COLS*ROWS,RECEIVER_COUNT=NX*NZ;
+    const STATIC_AABB={min:[-.65,0,-.55],max:[.65,1.65,.65]};
+    let gl=null,program=null,attrib={},uniform={},step=1,warmStep=0,yaw=.58,pitch=.47,zoom=11.8,drag=null,animate=false,lastT=0;
+    let receivers=[],bricks=[],transfer=null,brickRadiance=null,currentIrradiance=null,bakedIrradiance=null,bakeAngle=35,selected=0,precomputeMs=0,updateMs=0;
+    let staticMesh,floorMesh,brickMesh,markerMesh,lightMesh,lineMesh;
+    const lightColors={warm:[1,.74,.42],cyan:[.32,.86,1],magenta:[1,.38,.82]};
+
+    function makeSceneSamples(){
+      receivers=[];for(let z=0;z<NZ;z++)for(let x=0;x<NX;x++)receivers.push({position:[-3.65+(x+.5)*7.3/NX,.025,-3.05+(z+.5)*6.05/NZ],normal:[0,1,0],x,z});
+      bricks=[];const bw=7.1/COLS,bh=3.25/ROWS;for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const blue=(x===1&&y>1)||(x===6&&y<3);bricks.push({position:[-3.55+(x+.5)*bw,.28+(y+.5)*bh,-3.47],normal:[0,0,1],area:bw*bh*.86,albedo:blue?[.18,.42,.75]:[.78,.25+.04*y,.16+.03*x],x,y,bw,bh})}
+      selectProbe('near');
+    }
+
+    function segmentIntersectsAabb(a,b,min,max){
+      const d=sub(b,a);let tMin=0,tMax=1;
+      for(let axis=0;axis<3;axis++){
+        if(Math.abs(d[axis])<1e-8){if(a[axis]<min[axis]||a[axis]>max[axis])return false;continue}
+        let t0=(min[axis]-a[axis])/d[axis],t1=(max[axis]-a[axis])/d[axis];if(t0>t1){const q=t0;t0=t1;t1=q}
+        tMin=Math.max(tMin,t0);tMax=Math.min(tMax,t1);if(tMin>tMax)return false;
+      }
+      return tMax>.001&&tMin<.999;
+    }
+
+    function buildTransferMatrix(receiverList,brickList,aabb){
+      const W=new Float32Array(receiverList.length*brickList.length),start=performance.now();
+      for(let p=0;p<receiverList.length;p++)for(let b=0;b<brickList.length;b++){
+        const receiver=receiverList[p],brick=brickList[b],toBrick=sub(brick.position,receiver.position),distance=len(toBrick),dir=norm(toBrick);
+        const cosReceiver=Math.max(0,dot(receiver.normal,dir)),cosBrick=Math.max(0,dot(brick.normal,[-dir[0],-dir[1],-dir[2]]));
+        const blocked=segmentIntersectsAabb(receiver.position,brick.position,aabb.min,aabb.max);
+        W[p*brickList.length+b]=blocked?0:(cosReceiver*cosBrick*brick.area)/(distance*distance);
+      }
+      precomputeMs=performance.now()-start;return W;
+    }
+
+    function shadeWallBricks(brickList,lightPosition,lightRgb){
+      const R=new Float32Array(brickList.length*3),start=performance.now();
+      for(let b=0;b<brickList.length;b++){
+        const brick=brickList[b],toLight=sub(lightPosition,brick.position),d2=Math.max(.1,dot(toLight,toLight)),ndotl=Math.max(0,dot(brick.normal,norm(toLight))),power=5.6*ndotl/(1+.12*d2);
+        for(let c=0;c<3;c++)R[b*3+c]=brick.albedo[c]*lightRgb[c]*power/Math.PI+.006*brick.albedo[c];
+      }
+      updateMs=performance.now()-start;return R;
+    }
+
+    function evaluateTransfer(W,R,receiverCount,brickCount){
+      const E=new Float32Array(receiverCount*3),start=performance.now();
+      for(let p=0;p<receiverCount;p++)for(let b=0;b<brickCount;b++){const w=W[p*brickCount+b];E[p*3]+=w*R[b*3];E[p*3+1]+=w*R[b*3+1];E[p*3+2]+=w*R[b*3+2]}
+      updateMs+=performance.now()-start;return E;
+    }
+
+    function lightPosition(deg){const a=deg*Math.PI/180;return[3.15*Math.sin(a),2.75,-.90+.45*Math.cos(a)]}
+    function tone(rgb,boost=2.9){return rgb.map(x=>clamp(1-Math.exp(-x*boost),0,1))}
+    function luminance(arr,index){return .2126*arr[index*3]+.7152*arr[index*3+1]+.0722*arr[index*3+2]}
+    function updateLighting(){
+      const deg=+$('lightAngle').value,rgb=lightColors[$('lightColor').value],pos=lightPosition(deg);brickRadiance=shadeWallBricks(bricks,pos,rgb);currentIrradiance=evaluateTransfer(transfer,brickRadiance,RECEIVER_COUNT,BRICK_COUNT);buildDynamicMeshes(pos);updateReadouts();drawMatrix();
+    }
+    function rebakeCurrentAnswer(){bakedIrradiance=new Float32Array(currentIrradiance);bakeAngle=+$('lightAngle').value;updateReadouts();buildDynamicMeshes(lightPosition(+$('lightAngle').value))}
+
+    function pushVertex(a,p,n,c){a.push(p[0],p[1],p[2],n[0],n[1],n[2],c[0],c[1],c[2])}
+    function pushQuad(a,p0,p1,p2,p3,n,c){pushVertex(a,p0,n,c);pushVertex(a,p1,n,c);pushVertex(a,p2,n,c);pushVertex(a,p0,n,c);pushVertex(a,p2,n,c);pushVertex(a,p3,n,c)}
+    function pushBox(a,min,max,c){const[x0,y0,z0]=min,[x1,y1,z1]=max;pushQuad(a,[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1],[0,0,1],c);pushQuad(a,[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0],[0,0,-1],c);pushQuad(a,[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0],[-1,0,0],c);pushQuad(a,[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1],[1,0,0],c);pushQuad(a,[x0,y1,z1],[x1,y1,z1],[x1,y1,z0],[x0,y1,z0],[0,1,0],c);pushQuad(a,[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],[0,-1,0],c)}
+    function pushOcta(a,p,r,c){const t=[p[0],p[1]+r,p[2]],d=[p[0],p[1]-r,p[2]],v=[[p[0]+r,p[1],p[2]],[p[0],p[1],p[2]+r],[p[0]-r,p[1],p[2]],[p[0],p[1],p[2]-r]];for(let i=0;i<4;i++){const j=(i+1)%4;pushTri(a,t,v[i],v[j],c);pushTri(a,d,v[j],v[i],c)}}
+    function pushTri(a,p0,p1,p2,c){const n=norm(cross(sub(p1,p0),sub(p2,p0)));pushVertex(a,p0,n,c);pushVertex(a,p1,n,c);pushVertex(a,p2,n,c)}
+    function makeStaticMesh(){const a=[];pushQuad(a,[-4,-.04,3.4],[4,-.04,3.4],[4,-.04,-3.55],[-4,-.04,-3.55],[0,1,0],[.12,.15,.19]);pushQuad(a,[-4,0,-3.55],[4,0,-3.55],[4,4,-3.55],[-4,4,-3.55],[0,0,1],[.18,.15,.17]);pushQuad(a,[-4,0,3.4],[-4,0,-3.55],[-4,4,-3.55],[-4,4,3.4],[1,0,0],[.11,.15,.19]);pushQuad(a,[4,0,-3.55],[4,0,3.4],[4,4,3.4],[4,4,-3.55],[-1,0,0],[.11,.15,.19]);pushBox(a,STATIC_AABB.min,STATIC_AABB.max,[.2,.23,.29]);return a}
+    function makeFloorMesh(values,neutral=false){const a=[],sx=7.3/NX,sz=6.05/NZ;for(let i=0;i<receivers.length;i++){const p=receivers[i].position,g=.035,c=neutral?[.15,.18,.22]:tone([values[i*3],values[i*3+1],values[i*3+2]],4.5);pushQuad(a,[p[0]-sx/2+g,p[1],p[2]+sz/2-g],[p[0]+sx/2-g,p[1],p[2]+sz/2-g],[p[0]+sx/2-g,p[1],p[2]-sz/2+g],[p[0]-sx/2+g,p[1],p[2]-sz/2+g],[0,1,0],c)}return a}
+    function makeBrickMesh(showRadiance){const a=[];for(let i=0;i<bricks.length;i++){const b=bricks[i],g=.035,c=showRadiance?tone([brickRadiance[i*3],brickRadiance[i*3+1],brickRadiance[i*3+2]],2.2):b.albedo,x0=b.position[0]-b.bw*.5+g,x1=b.position[0]+b.bw*.5-g,y0=b.position[1]-b.bh*.5+g,y1=b.position[1]+b.bh*.5-g,z=b.position[2];pushQuad(a,[x0,y0,z],[x1,y0,z],[x1,y1,z],[x0,y1,z],[0,0,1],c)}return a}
+    function makeMarkerMesh(){const a=[],p=receivers[selected].position;pushOcta(a,[p[0],p[1]+.19,p[2]],.15,[.15,1,.92]);return a}
+    function makeLightMesh(pos){const a=[];pushBox(a,[pos[0]-.12,pos[1]-.12,pos[2]-.12],[pos[0]+.12,pos[1]+.12,pos[2]+.12],lightColors[$('lightColor').value]);return a}
+    function makeTransferLines(){const a=[],weights=[];for(let b=0;b<BRICK_COUNT;b++)weights.push([transfer[selected*BRICK_COUNT+b],b]);weights.sort((x,y)=>y[0]-x[0]);const p=receivers[selected].position;for(const[,b]of weights.slice(0,6)){const q=bricks[b].position,c=[1,.72,.18];pushVertex(a,[p[0],p[1]+.2,p[2]],[0,1,0],c);pushVertex(a,q,[0,1,0],c)}return a}
+
+    function compileShader(gl,type,source){const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(shader));return shader}
+    function createProgram(gl,vsSource,fsSource){const p=gl.createProgram(),vs=compileShader(gl,gl.VERTEX_SHADER,vsSource),fs=compileShader(gl,gl.FRAGMENT_SHADER,fsSource);gl.attachShader(p,vs);gl.attachShader(p,fs);gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));gl.deleteShader(vs);gl.deleteShader(fs);return p}
+    function createMesh(data,primitive){const vao=gl.createVertexArray(),buffer=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.DYNAMIC_DRAW);const stride=9*4;gl.enableVertexAttribArray(attrib.position);gl.vertexAttribPointer(attrib.position,3,gl.FLOAT,false,stride,0);gl.enableVertexAttribArray(attrib.normal);gl.vertexAttribPointer(attrib.normal,3,gl.FLOAT,false,stride,12);gl.enableVertexAttribArray(attrib.color);gl.vertexAttribPointer(attrib.color,3,gl.FLOAT,false,stride,24);gl.bindVertexArray(null);return{vao,buffer,count:data.length/9,primitive:primitive||gl.TRIANGLES}}
+    function updateMesh(mesh,data){gl.bindBuffer(gl.ARRAY_BUFFER,mesh.buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.DYNAMIC_DRAW);mesh.count=data.length/9}
+    function m4Perspective(fovy,aspect,near,far){const f=1/Math.tan(fovy/2),nf=1/(near-far);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0])}
+    function m4LookAt(eye,target,up){const z=norm(sub(eye,target)),x=norm(cross(up,z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1])}
+    function m4Mul(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
+    function drawMesh(mesh,emissive=false){gl.uniform1f(uniform.emissive,emissive?1:0);gl.bindVertexArray(mesh.vao);gl.drawArrays(mesh.primitive,0,mesh.count)}
+    function renderScene(viewport,mode){
+      gl.viewport(viewport.x,viewport.y,viewport.w,viewport.h);gl.scissor(viewport.x,viewport.y,viewport.w,viewport.h);const eye=[zoom*Math.cos(pitch)*Math.sin(yaw),zoom*Math.sin(pitch)+1.1,zoom*Math.cos(pitch)*Math.cos(yaw)],vp=m4Mul(m4Perspective(.79,viewport.w/viewport.h,.1,60),m4LookAt(eye,[0,1.35,-.2],[0,1,0]));gl.uniformMatrix4fv(uniform.mvp,false,vp);drawMesh(staticMesh,false);drawMesh(brickMesh,step>=2);if(mode==='baked')updateMesh(floorMesh,makeFloorMesh(bakedIrradiance,false));else if(mode==='current')updateMesh(floorMesh,makeFloorMesh(currentIrradiance,false));else updateMesh(floorMesh,makeFloorMesh(currentIrradiance,true));drawMesh(floorMesh,mode!=='neutral');drawMesh(lightMesh,true);drawMesh(markerMesh,true);if(step>=3)drawMesh(lineMesh,true)
+    }
+    function render3d(){if(!gl)return;const dpr=Math.min(2,devicePixelRatio||1),w=Math.max(320,canvas.clientWidth),h=Math.max(480,Math.min(650,w*.53));if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}gl.clearColor(.018,.027,.044,1);gl.enable(gl.DEPTH_TEST);gl.enable(gl.SCISSOR_TEST);gl.scissor(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);if(step===4){const half=Math.floor(canvas.width/2);renderScene({x:0,y:0,w:half,h:canvas.height},'baked');renderScene({x:half,y:0,w:canvas.width-half,h:canvas.height},'current')}else renderScene({x:0,y:0,w:canvas.width,h:canvas.height},step===1?'neutral':'current')}
+    function buildDynamicMeshes(pos){if(!gl)return;updateMesh(brickMesh,makeBrickMesh(step>=2));updateMesh(markerMesh,makeMarkerMesh());updateMesh(lightMesh,makeLightMesh(pos));updateMesh(lineMesh,makeTransferLines());updateMesh(floorMesh,makeFloorMesh(currentIrradiance,step===1))}
+    function initWebGL(){
+      gl=canvas.getContext('webgl2',{antialias:true,alpha:false});if(!gl){$('webglBadge').textContent='WebGL2 不可用';$('webglBadge').className='warn-badge';return}
+      $('webglBadge').textContent='WebGL2 3D 正在运行';$('webglBadge').className='ok';
+      const vs=`#version 300 es\nprecision highp float;layout(location=0)in vec3 aPosition;layout(location=1)in vec3 aNormal;layout(location=2)in vec3 aColor;uniform mat4 uMVP;out vec3 vNormal;out vec3 vColor;void main(){vNormal=aNormal;vColor=aColor;gl_Position=uMVP*vec4(aPosition,1.0);}`;
+      const fs=`#version 300 es\nprecision highp float;in vec3 vNormal;in vec3 vColor;uniform float uEmissive;out vec4 outColor;void main(){float ndl=max(dot(normalize(vNormal),normalize(vec3(-.3,.85,.45))),0.0);float shade=mix(.32+.68*ndl,1.0,uEmissive);outColor=vec4(pow(max(vColor*shade,vec3(0.0)),vec3(1.0/2.2)),1.0);}`;
+      program=createProgram(gl,vs,fs);gl.useProgram(program);attrib={position:0,normal:1,color:2};uniform={mvp:gl.getUniformLocation(program,'uMVP'),emissive:gl.getUniformLocation(program,'uEmissive')};gl.disable(gl.CULL_FACE);staticMesh=createMesh(makeStaticMesh());floorMesh=createMesh(makeFloorMesh(currentIrradiance,true));brickMesh=createMesh(makeBrickMesh(false));markerMesh=createMesh(makeMarkerMesh());lightMesh=createMesh(makeLightMesh(lightPosition(+$('lightAngle').value)));lineMesh=createMesh(makeTransferLines(),gl.LINES);
+    }
+
+    function selectProbe(name){const map={near:[Math.floor(NX/2),1],left:[Math.floor(NX/2)-2,4],right:[Math.floor(NX/2)+2,4],far:[Math.floor(NX/2),NZ-2]},q=map[name]||map.near;selected=q[1]*NX+q[0]}
+    function drawMatrix(){
+      const c=matrixCtx,W=matrixCanvas.width,H=matrixCanvas.height;c.clearRect(0,0,W,H);c.fillStyle='#060a10';c.fillRect(0,0,W,H);c.fillStyle='#aebdce';c.font='14px Segoe UI,Microsoft YaHei,sans-serif';c.fillText('选中 Probe 的 W 行：40 个格子 = 后墙 40 个 bricks',22,26);const ox=45,oy=52,cw=(W-80)/COLS,ch=(H-94)/ROWS;let maxW=0,maxR=0;for(let b=0;b<BRICK_COUNT;b++){maxW=Math.max(maxW,transfer[selected*BRICK_COUNT+b]);maxR=Math.max(maxR,luminance(brickRadiance,b))}for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const b=y*COLS+x,w=transfer[selected*BRICK_COUNT+b]/Math.max(maxW,1e-8),r=luminance(brickRadiance,b)/Math.max(maxR,1e-8),px=ox+x*cw,py=oy+(ROWS-1-y)*ch;c.fillStyle=`rgba(${Math.round(45+210*w)},${Math.round(55+145*w)},${Math.round(70+45*w)},1)`;c.fillRect(px+2,py+2,cw-4,ch-4);const rgb=tone([brickRadiance[b*3],brickRadiance[b*3+1],brickRadiance[b*3+2]],2);c.strokeStyle=`rgb(${rgb.map(v=>Math.round(v*255)).join(',')})`;c.lineWidth=2+3*r;c.strokeRect(px+3,py+3,cw-6,ch-6);if(w===0){c.strokeStyle='#ff829088';c.lineWidth=1;c.beginPath();c.moveTo(px+8,py+8);c.lineTo(px+cw-8,py+ch-8);c.moveTo(px+cw-8,py+8);c.lineTo(px+8,py+ch-8);c.stroke()}}
+      c.fillStyle='#8191a6';c.font='11px Segoe UI,Microsoft YaHei,sans-serif';c.fillText('填充亮度 = 固定 W；边框颜色/粗细 = 当前 R；红叉 = 被箱子遮挡',22,H-18);
+    }
+    function updateReadouts(){const deg=+$('lightAngle').value,pos=lightPosition(deg),old=luminance(bakedIrradiance,selected),now=luminance(currentIrradiance,selected);$('lightAngleOut').textContent=deg+'°';$('matrixSize').textContent=`${RECEIVER_COUNT} × ${BRICK_COUNT}`;$('precomputeMs').textContent=precomputeMs.toFixed(2)+' ms';$('updateMs').textContent=updateMs.toFixed(2)+' ms';$('oldValue').textContent=old.toFixed(4);$('currentValue').textContent=now.toFixed(4);$('lightRead').textContent=`位置 (${pos.map(v=>v.toFixed(1)).join(', ')})，颜色 ${$('lightColor').selectedOptions[0].text}`;let hottest=0;for(let b=1;b<BRICK_COUNT;b++)if(luminance(brickRadiance,b)>luminance(brickRadiance,hottest))hottest=b;$('brickRead').textContent=`最亮 brick #${hottest}，R=${luminance(brickRadiance,hottest).toFixed(3)}`;let maxW=0,maxB=0;for(let b=0;b<BRICK_COUNT;b++){const w=transfer[selected*BRICK_COUNT+b];if(w>maxW){maxW=w;maxB=b}}$('weightRead').textContent=`最大 W[${selected},${maxB}]=${maxW.toFixed(5)}（移动灯后不变）`;$('probeRead').textContent=`旧 ${old.toFixed(4)} / 当前 ${now.toFixed(4)}`}
+    function setWarm(i){warmStep=i;document.querySelectorAll('[data-warm]').forEach(b=>b.classList.toggle('active',+b.dataset.warm===i));const data=[['① 当前动态灯 L','灯是这一帧的输入。先不要想 SH 或矩阵：只看灯移动后，后墙上被照亮的位置如何变化。'],['② 墙面 radiance R','每个边框就是该 brick 的当前 radiance。移动灯时它们每帧重算；这一步相当于 relight surfels / bricks。'],['③ 固定传输 W','格子填充亮度来自固定矩阵的一行：选中 Probe 从每个 brick 接收多少能量。移动灯不会改变填充；箱子挡住的连接为 0。'],['④ Probe irradiance E','把每格固定 W 与该格当前 RGB radiance 相乘再求和，得到选中 Probe 的本帧 irradiance：E = W·R。']][i];$('warmTitle').textContent=data[0];$('warmExplain').textContent=data[1]}
+    function setStep(s){step=s;document.querySelectorAll('[data-step]').forEach(b=>b.classList.toggle('active',+b.dataset.step===s));const info={1:['步骤 ①：','先认几何。后墙、地面和箱子都固定，因此可以离线计算墙面 brick 到地面 Probe 的可见性与几何项。'],2:['步骤 ②：','墙面格子的颜色是当前 radiance R。移动灯：只有灯和墙面亮区发生变化，固定传输矩阵 W 不会重算。'],3:['步骤 ③：','黄色连线连接选中 Probe 与 W 最大的六个 bricks。换 Probe 会换成矩阵的另一行；移动灯不会改变连线。'],4:['步骤 ④：','左右几何和当前灯相同。左侧地面读取上次 bakedE；右侧地面执行 currentE = W·R。移动灯观察差异。']}[s];$('stepTitle').textContent=info[0];$('stepExplain').textContent=info[1];$('singleLabel').hidden=s===4;$('leftLabel').hidden=s!==4;$('rightLabel').hidden=s!==4;if(s!==4)$('singleLabel').innerHTML=`步骤 0${s} · ${['静态几何','当前墙面 radiance','固定 transfer links'][s-1]}<em>拖动旋转，滚轮缩放</em>`;buildDynamicMeshes(lightPosition(+$('lightAngle').value))}
+    function bindEvents(){
+      $('warmSteps').addEventListener('click',e=>{const b=e.target.closest('[data-warm]');if(b)setWarm(+b.dataset.warm)});$('guide').addEventListener('click',e=>{const b=e.target.closest('[data-step]');if(b)setStep(+b.dataset.step)});$('lightAngle').addEventListener('input',updateLighting);$('lightColor').addEventListener('change',updateLighting);$('probeSelect').addEventListener('change',e=>{selectProbe(e.target.value);buildDynamicMeshes(lightPosition(+$('lightAngle').value));updateReadouts();drawMatrix()});$('animateLight').addEventListener('change',e=>animate=e.target.checked);$('rebakeButton').addEventListener('click',rebakeCurrentAnswer);
+      canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,yaw,pitch};canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw=drag.yaw+(e.clientX-drag.x)*.008;pitch=clamp(drag.pitch+(e.clientY-drag.y)*.006,.14,1.18)});canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom*Math.exp(e.deltaY*.001),7.2,18)},{passive:false});
+    }
+    function frame(t){if(animate&&t-lastT>28){let a=+$('lightAngle').value+.7;if(a>150)a=-150;$('lightAngle').value=a;updateLighting();lastT=t}render3d();requestAnimationFrame(frame)}
+    function showRealSource(){
+      // 源码以静态、多行、可复制文本直接写在文档中。
+      // 页面初始化不会再动态拼接函数源码。
+    }
+    function init(){makeSceneSamples();transfer=buildTransferMatrix(receivers,bricks,STATIC_AABB);brickRadiance=shadeWallBricks(bricks,lightPosition(35),lightColors.warm);currentIrradiance=evaluateTransfer(transfer,brickRadiance,RECEIVER_COUNT,BRICK_COUNT);bakedIrradiance=new Float32Array(currentIrradiance);initWebGL();bindEvents();setWarm(0);setStep(1);updateReadouts();drawMatrix();showRealSource();$('webgpuBadge').textContent=navigator.gpu&&isSecureContext?'WebGPU 可用 · 此页保留可读 CPU 路径':'WebGPU 不可用 · 已回退 WebGL2/CPU';$('webgpuBadge').className=navigator.gpu&&isSecureContext?'ok':'warn-badge';requestAnimationFrame(frame)}
+    window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-innerHeight;$('progress').style.width=(h?scrollY/h*100:0)+'%'},{passive:true});window.addEventListener('resize',render3d);init();
+  })();
+  </script>
+  <script src="gi_course.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const byId = (id) => document.getElementById(id);
+    const clamp01 = (value) => Math.max(0, Math.min(1, value));
+    const subtract2 = (a, b) => [a[0] - b[0], a[1] - b[1]];
+    const dot2 = (a, b) => a[0] * b[0] + a[1] * b[1];
+    const normalize2 = (v) => {
+      const length = Math.hypot(v[0], v[1]) || 1;
+      return [v[0] / length, v[1] / length];
+    };
+    const dotArray = (a, b) => a.reduce((sum, value, index) => sum + value * b[index], 0);
+    const cross2 = (a, b) => a[0] * b[1] - a[1] * b[0];
+    const worldToCanvas = (canvas, point) => [
+      (point[0] * 0.43 + 0.5) * canvas.width,
+      (0.5 - point[1] * 0.43) * canvas.height
+    ];
+
+    function raySegmentIntersection(origin, direction, a, b) {
+      const edge = subtract2(b, a);
+      const delta = subtract2(a, origin);
+      const denominator = cross2(direction, edge);
+      if (Math.abs(denominator) < 1e-7) return null;
+      const rayT = cross2(delta, edge) / denominator;
+      const edgeT = cross2(delta, direction) / denominator;
+      return rayT > 0.001 && edgeT >= 0 && edgeT <= 1 ? rayT : null;
+    }
+
+    function segmentIntersection(a, b, c, d) {
+      const ab = subtract2(b, a);
+      const cd = subtract2(d, c);
+      const denominator = cross2(ab, cd);
+      if (Math.abs(denominator) < 1e-7) return false;
+      const ac = subtract2(c, a);
+      const t = cross2(ac, cd) / denominator;
+      const u = cross2(ac, ab) / denominator;
+      return t > 0.001 && t < 0.999 && u >= 0 && u <= 1;
+    }
+
+    const surfaceReceiver = [0, -0.58];
+    const surfaceBoard = { a: [0.16, -0.16], b: [0.16, 0.58] };
+    const surfaceBinCount = 48;
+    const surfaceSolidAngle = Math.PI * 2 / surfaceBinCount;
+    const surfaceDirections = Array.from({ length: surfaceBinCount }, (_, index) => {
+      const angle = index / surfaceBinCount * Math.PI * 2;
+      return [Math.cos(angle), Math.sin(angle)];
+    });
+    let surfaceTransferGeneration = 0;
+    let surfaceTransferCache = { key: '', value: null };
+
+    function rayHitsStaticBoard(origin, direction) {
+      return raySegmentIntersection(origin, direction, surfaceBoard.a, surfaceBoard.b) !== null;
+    }
+
+    function buildSurfaceTransfer(receiver, normal, useOccluder) {
+      surfaceTransferGeneration += 1;
+      return surfaceDirections.map((direction) => {
+        const cosine = Math.max(0, dot2(normal, direction));
+        const visible = !useOccluder ||
+          !rayHitsStaticBoard(receiver, direction);
+        return visible ? cosine * surfaceSolidAngle : 0;
+      });
+    }
+
+    function getSurfaceTransfer(normal, useOccluder) {
+      const key = `${normal[0].toFixed(6)}:${normal[1].toFixed(6)}:${useOccluder}`;
+      if (surfaceTransferCache.key !== key) {
+        surfaceTransferCache = {
+          key,
+          value: buildSurfaceTransfer(surfaceReceiver, normal, useOccluder)
+        };
+      }
+      return surfaceTransferCache.value;
+    }
+
+    function binDirectionalImpulse(direction, intensity) {
+      const angle = Math.atan2(direction[1], direction[0]);
+      const wrapped = (angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      const coordinate = wrapped / (Math.PI * 2) * surfaceBinCount;
+      const lower = Math.floor(coordinate) % surfaceBinCount;
+      const upper = (lower + 1) % surfaceBinCount;
+      const fraction = coordinate - Math.floor(coordinate);
+      const bins = new Array(surfaceBinCount).fill(0);
+      bins[lower] = intensity * (1 - fraction) / surfaceSolidAngle;
+      bins[upper] = intensity * fraction / surfaceSolidAngle;
+      return bins;
+    }
+
+    function evaluateSurfacePrt(transfer, receiver, lightPosition) {
+      const toLight = subtract2(lightPosition, receiver);
+      const distance2 = Math.max(0.02, dot2(toLight, toLight));
+      const direction = normalize2(toLight);
+      const lighting = binDirectionalImpulse(direction, 2 / distance2);
+      return dotArray(transfer, lighting);
+    }
+
+    function drawSurfacePrt() {
+      const canvas = byId('surfacePrtCanvas');
+      const context = canvas.getContext('2d');
+      const light = [
+        Number(byId('surfaceLightX').value) / 100,
+        Number(byId('surfaceLightY').value) / 100
+      ];
+      const normalAngle = Number(byId('surfaceNormal').value) * Math.PI / 180;
+      const normal = [Math.cos(normalAngle), Math.sin(normalAngle)];
+      const useOccluder = byId('surfaceOccluder').checked;
+      const transfer = getSurfaceTransfer(normal, useOccluder);
+      const value = evaluateSurfacePrt(transfer, surfaceReceiver, light);
+      const toLight = subtract2(light, surfaceReceiver);
+      const distance2 = dot2(toLight, toLight);
+      const incomingDirection = normalize2(toLight);
+      const exactVisible = !useOccluder ||
+        !segmentIntersection(surfaceReceiver, light, surfaceBoard.a, surfaceBoard.b);
+      const exact = exactVisible
+        ? Math.max(0, dot2(normal, incomingDirection)) * 2 / Math.max(0.02, distance2)
+        : 0;
+      const error = Math.abs(value - exact);
+
+      context.fillStyle = '#05080d';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const receiverPixel = worldToCanvas(canvas, surfaceReceiver);
+      transfer.forEach((weight, index) => {
+        const direction = surfaceDirections[index];
+        const length = 22 + 104 * weight / Math.max(surfaceSolidAngle, 1e-6);
+        context.strokeStyle = weight > 0 ? 'rgba(92,225,207,.42)' : 'rgba(255,102,124,.22)';
+        context.lineWidth = weight > 0 ? 2 : 1;
+        context.beginPath();
+        context.moveTo(receiverPixel[0], receiverPixel[1]);
+        context.lineTo(
+          receiverPixel[0] + direction[0] * length,
+          receiverPixel[1] - direction[1] * length
+        );
+        context.stroke();
+      });
+      const boardA = worldToCanvas(canvas, surfaceBoard.a);
+      const boardB = worldToCanvas(canvas, surfaceBoard.b);
+      if (useOccluder) {
+        context.strokeStyle = '#778398';
+        context.lineWidth = 12;
+        context.beginPath();
+        context.moveTo(boardA[0], boardA[1]);
+        context.lineTo(boardB[0], boardB[1]);
+        context.stroke();
+      }
+      const lightPixel = worldToCanvas(canvas, light);
+      context.strokeStyle = exactVisible ? '#ffcf79' : '#ff6d82';
+      context.lineWidth = 3;
+      context.setLineDash(exactVisible ? [] : [8, 6]);
+      context.beginPath();
+      context.moveTo(receiverPixel[0], receiverPixel[1]);
+      context.lineTo(lightPixel[0], lightPixel[1]);
+      context.stroke();
+      context.setLineDash([]);
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(receiverPixel[0], receiverPixel[1]);
+      context.lineTo(
+        receiverPixel[0] + normal[0] * 70,
+        receiverPixel[1] - normal[1] * 70
+      );
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(receiverPixel[0], receiverPixel[1], 8, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#ffca72';
+      context.shadowColor = '#ffb14f';
+      context.shadowBlur = 20;
+      context.beginPath();
+      context.arc(lightPixel[0], lightPixel[1], 11, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      context.fillStyle = '#b8c5d3';
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillText('离线 T bins', 20, 26);
+      context.fillText(`运行时 light position (${light[0].toFixed(2)}, ${light[1].toFixed(2)})`, 430, 26);
+      context.fillText(`PRT ${value.toFixed(3)} / exact ${exact.toFixed(3)}`, 430, 50);
+
+      const angleDegrees = Math.atan2(incomingDirection[1], incomingDirection[0]) * 180 / Math.PI;
+      byId('surfaceLightXOut').value = `${light[0] >= 0 ? '+' : ''}${light[0].toFixed(2)}`;
+      byId('surfaceLightYOut').value = `${light[1] >= 0 ? '+' : ''}${light[1].toFixed(2)}`;
+      byId('surfaceNormalOut').value = `${Math.round(normalAngle * 180 / Math.PI)}°`;
+      byId('surfacePrtOut').value = value.toFixed(3);
+      byId('surfaceLightPosition').textContent = `position = (${light[0].toFixed(2)}, ${light[1].toFixed(2)})`;
+      byId('surfaceLightDirection').textContent =
+        `direction(receiver→light) = (${incomingDirection[0].toFixed(2)}, ${incomingDirection[1].toFixed(2)})`;
+      byId('surfaceReadout').innerHTML =
+        `T generation <b>${surfaceTransferGeneration}</b> · light direction <b>${angleDegrees.toFixed(1)}°</b> · error <b>${error.toFixed(4)}</b>`;
+      byId('surfaceValuePanel').textContent =
+        `当前光：distance²=${distance2.toFixed(3)}，n·l=${Math.max(0, dot2(normal, incomingDirection)).toFixed(3)}，` +
+        `visible=${exactVisible ? 1 : 0}；ΣTₖLₖ=${value.toFixed(4)}，数值 reference=${exact.toFixed(4)}。` +
+        ` 调 receiver normal 或挡板相当于重新烘 T；只移动点光只重建 L。`;
+    }
+
+    const volumeBricks = Array.from({ length: 6 }, (_, index) => ({
+      position: [-0.78 + index * 0.312, 0.78],
+      normal: [0, -1],
+      albedo: index % 2 ? 0.55 : 0.86
+    }));
+    const volumeGridX = [-0.75, -0.25, 0.25, 0.75];
+    const volumeGridY = [-0.54, 0, 0.54];
+    const volumeBlocker = { min: [-0.14, -0.34], max: [0.14, 0.26] };
+
+    function segmentHitsBox(a, b, box) {
+      const edges = [
+        [[box.min[0], box.min[1]], [box.max[0], box.min[1]]],
+        [[box.max[0], box.min[1]], [box.max[0], box.max[1]]],
+        [[box.max[0], box.max[1]], [box.min[0], box.max[1]]],
+        [[box.min[0], box.max[1]], [box.min[0], box.min[1]]]
+      ];
+      return edges.some(([edgeA, edgeB]) => segmentIntersection(a, b, edgeA, edgeB));
+    }
+
+    const volumeProbes = [];
+    for (const y of volumeGridY) {
+      for (const x of volumeGridX) {
+        const position = [x, y];
+        const transport = volumeBricks.map((brick) => {
+          if (segmentHitsBox(brick.position, position, volumeBlocker)) return 0;
+          const brickToProbe = subtract2(position, brick.position);
+          const distance2 = Math.max(0.02, dot2(brickToProbe, brickToProbe));
+          const direction = normalize2(brickToProbe);
+          const brickCosine = Math.max(0, dot2(brick.normal, direction));
+          return brickCosine * 0.15 / distance2;
+        });
+        volumeProbes.push({ position, transport });
+      }
+    }
+    let volumeLastEvaluation = null;
+
+    function shadeBrick(brick, lightPosition) {
+      const toLight = subtract2(lightPosition, brick.position);
+      const distance2 = Math.max(0.03, dot2(toLight, toLight));
+      const direction = normalize2(toLight);
+      const receiverCosine = Math.max(0, dot2(brick.normal, direction));
+      const blocked = segmentHitsBox(brick.position, lightPosition, volumeBlocker);
+      return blocked ? 0.006 : brick.albedo * receiverCosine * 2.2 / (1 + 1.8 * distance2);
+    }
+
+    function axisNeighbors(value, axis) {
+      let lower = 0;
+      while (lower < axis.length - 2 && value > axis[lower + 1]) lower += 1;
+      const upper = lower + 1;
+      const fraction = clamp01((value - axis[lower]) / (axis[upper] - axis[lower]));
+      return { lower, upper, fraction };
+    }
+
+    function findFourGridNeighbors(queryPosition) {
+      const x = axisNeighbors(queryPosition[0], volumeGridX);
+      const y = axisNeighbors(queryPosition[1], volumeGridY);
+      const rowWidth = volumeGridX.length;
+      return [
+        { index: y.lower * rowWidth + x.lower, weight: (1 - x.fraction) * (1 - y.fraction) },
+        { index: y.lower * rowWidth + x.upper, weight: x.fraction * (1 - y.fraction) },
+        { index: y.upper * rowWidth + x.lower, weight: (1 - x.fraction) * y.fraction },
+        { index: y.upper * rowWidth + x.upper, weight: x.fraction * y.fraction }
+      ];
+    }
+
+    function evaluateVolumePrt(lightPosition, queryPosition) {
+      const brickRadiance = volumeBricks.map((brick) =>
+        shadeBrick(brick, lightPosition)
+      );
+      const probeIrradiance = volumeProbes.map((probe) =>
+        dotArray(probe.transport, brickRadiance)
+      );
+      const neighbors = findFourGridNeighbors(queryPosition);
+      volumeLastEvaluation = { brickRadiance, probeIrradiance, neighbors };
+      return neighbors.reduce(
+        (sum, neighbor) =>
+          sum + neighbor.weight * probeIrradiance[neighbor.index],
+        0
+      );
+    }
+
+    function drawVolumePrt() {
+      const canvas = byId('volumePrtCanvas');
+      const context = canvas.getContext('2d');
+      const light = [
+        Number(byId('volumeLightX').value) / 100,
+        Number(byId('volumeLightY').value) / 100
+      ];
+      const query = [
+        Number(byId('volumeQueryX').value) / 100,
+        Number(byId('volumeQueryY').value) / 100
+      ];
+      const result = evaluateVolumePrt(light, query);
+      const { brickRadiance, probeIrradiance, neighbors } = volumeLastEvaluation;
+      const showLinks = byId('volumeShowLinks').checked;
+      context.fillStyle = '#05080d';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const boxMin = worldToCanvas(canvas, [volumeBlocker.min[0], volumeBlocker.max[1]]);
+      const boxMax = worldToCanvas(canvas, [volumeBlocker.max[0], volumeBlocker.min[1]]);
+      context.fillStyle = '#677184';
+      context.fillRect(boxMin[0], boxMin[1], boxMax[0] - boxMin[0], boxMax[1] - boxMin[1]);
+      volumeBricks.forEach((brick, index) => {
+        const pixel = worldToCanvas(canvas, brick.position);
+        const value = clamp01(brickRadiance[index]);
+        context.fillStyle = `rgb(${Math.round(55 + 200 * value)},${Math.round(55 + 125 * value)},${Math.round(65 + 45 * value)})`;
+        context.fillRect(pixel[0] - 24, pixel[1] - 10, 48, 20);
+      });
+      volumeProbes.forEach((probe, index) => {
+        const pixel = worldToCanvas(canvas, probe.position);
+        const value = clamp01(probeIrradiance[index] * 1.8);
+        context.fillStyle = `rgb(${Math.round(35 + 220 * value)},${Math.round(65 + 150 * value)},${Math.round(75 + 95 * value)})`;
+        context.beginPath();
+        context.arc(pixel[0], pixel[1], 11, 0, Math.PI * 2);
+        context.fill();
+      });
+      const queryPixel = worldToCanvas(canvas, query);
+      if (showLinks) {
+        for (const neighbor of neighbors) {
+          const probePixel = worldToCanvas(canvas, volumeProbes[neighbor.index].position);
+          context.strokeStyle = `rgba(120,232,218,${0.25 + 0.75 * neighbor.weight})`;
+          context.lineWidth = 1 + neighbor.weight * 7;
+          context.beginPath();
+          context.moveTo(queryPixel[0], queryPixel[1]);
+          context.lineTo(probePixel[0], probePixel[1]);
+          context.stroke();
+        }
+      }
+      const lightPixel = worldToCanvas(canvas, light);
+      context.fillStyle = '#ffca72';
+      context.shadowColor = '#ffb34f';
+      context.shadowBlur = 20;
+      context.beginPath();
+      context.arc(lightPixel[0], lightPixel[1], 11, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      context.fillStyle = '#ffffff';
+      context.fillRect(queryPixel[0] - 7, queryPixel[1] - 7, 14, 14);
+      context.fillStyle = '#b8c5d3';
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillText('上方矩形：6 个 relit bricks', 18, 24);
+      context.fillText('圆点：4×3 PRT probes　白方块：query', 18, canvas.height - 18);
+      context.fillStyle = '#ffcf7d';
+      context.fillText(`light (${light[0].toFixed(2)}, ${light[1].toFixed(2)})`, lightPixel[0] + 14, lightPixel[1] - 10);
+
+      byId('volumeLightXOut').value = `${light[0] >= 0 ? '+' : ''}${light[0].toFixed(2)}`;
+      byId('volumeLightYOut').value = `${light[1] >= 0 ? '+' : ''}${light[1].toFixed(2)}`;
+      byId('volumeQueryXOut').value = `${query[0] >= 0 ? '+' : ''}${query[0].toFixed(2)}`;
+      byId('volumeQueryYOut').value = `${query[1] >= 0 ? '+' : ''}${query[1].toFixed(2)}`;
+      byId('volumeQueryOut').value = result.toFixed(3);
+      byId('volumeLightPosition').textContent = `position = (${light[0].toFixed(2)}, ${light[1].toFixed(2)})`;
+      byId('volumeReadout').innerHTML =
+        `fixed W = <b>${volumeProbes.length}×${volumeBricks.length}</b> · runtime R = <b>${brickRadiance.length}</b> · output <b>${result.toFixed(4)}</b>`;
+      byId('volumeValuePanel').textContent =
+        `本帧 R=[${brickRadiance.map((value) => value.toFixed(2)).join(', ')}]；` +
+        `四邻居 ${neighbors.map((neighbor) => `P${neighbor.index}:${neighbor.weight.toFixed(2)}`).join('，')}；` +
+        `插值结果=${result.toFixed(4)}。移动灯只改变 R 与 E；W 数组没有重建。`;
+    }
+
+    function realSh9(direction) {
+      const [x, y, z] = direction;
+      return [
+        0.282095,
+        0.488603 * y,
+        0.488603 * z,
+        0.488603 * x,
+        1.092548 * x * y,
+        1.092548 * y * z,
+        0.315392 * (3 * z * z - 1),
+        1.092548 * x * z,
+        0.546274 * (x * x - y * y)
+      ];
+    }
+
+    const shSampleCount = 256;
+    const shSphereSamples = Array.from({ length: shSampleCount }, (_, index) => {
+      const y = 1 - 2 * (index + 0.5) / shSampleCount;
+      const radius = Math.sqrt(Math.max(0, 1 - y * y));
+      const angle = index * Math.PI * (3 - Math.sqrt(5));
+      return [Math.cos(angle) * radius, y, Math.sin(angle) * radius];
+    });
+    const shTransferCache = new Map();
+
+    function shStaticVisibility(direction, useOccluder) {
+      if (!useOccluder) return 1;
+      return direction[0] > 0.18 && direction[1] > 0.22 ? 0 : 1;
+    }
+
+    function buildShTransfer(useOccluder) {
+      const coefficients = new Array(9).fill(0);
+      const sampleWeight = Math.PI * 4 / shSampleCount;
+      for (const direction of shSphereSamples) {
+        const transferValue =
+          shStaticVisibility(direction, useOccluder) *
+          Math.max(0, direction[1]);
+        const basis = realSh9(direction);
+        for (let index = 0; index < 9; index += 1) {
+          coefficients[index] += transferValue * basis[index] * sampleWeight;
+        }
+      }
+      return coefficients;
+    }
+
+    function getShTransfer(useOccluder) {
+      const key = String(useOccluder);
+      if (!shTransferCache.has(key)) {
+        shTransferCache.set(key, buildShTransfer(useOccluder));
+      }
+      return shTransferCache.get(key);
+    }
+
+    function evaluateShPrt(transferSh, lightDirection, coefficientCount) {
+      const lightingSh = realSh9(lightDirection);
+      let irradiance = 0;
+      for (let index = 0; index < coefficientCount; index += 1) {
+        irradiance += transferSh[index] * lightingSh[index];
+      }
+      return irradiance;
+    }
+
+    function drawShPrt() {
+      const canvas = byId('shPrtCanvas');
+      const context = canvas.getContext('2d');
+      const yaw = Number(byId('shYaw').value) * Math.PI / 180;
+      const elevation = Number(byId('shElevation').value) * Math.PI / 180;
+      const band = Number(byId('shBands').value);
+      const coefficientCount = [1, 4, 9][band];
+      const useOccluder = byId('shVisibility').checked;
+      const incomingDirection = [
+        Math.cos(elevation) * Math.cos(yaw),
+        Math.sin(elevation),
+        Math.cos(elevation) * Math.sin(yaw)
+      ];
+      const travelDirection = incomingDirection.map((value) => -value);
+      const transferSh = getShTransfer(useOccluder);
+      const lightingSh = realSh9(incomingDirection);
+      const prtValue = evaluateShPrt(transferSh, incomingDirection, coefficientCount);
+      const reference =
+        shStaticVisibility(incomingDirection, useOccluder) *
+        Math.max(0, incomingDirection[1]);
+      const error = Math.abs(prtValue - reference);
+
+      context.fillStyle = '#05080d';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#b8c5d3';
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillText('左：exact transfer（灰）与 SH 重建（青）', 18, 24);
+      context.fillText('右：Tⱼ（紫）与当前 Lⱼ（黄）', 405, 24);
+
+      const center = [190, 220];
+      const radius = 145;
+      context.strokeStyle = '#34465e';
+      context.beginPath();
+      context.arc(center[0], center[1], radius, 0, Math.PI * 2);
+      context.stroke();
+      const points = 180;
+      context.strokeStyle = '#778398';
+      context.lineWidth = 2;
+      context.beginPath();
+      for (let index = 0; index <= points; index += 1) {
+        const angle = index / points * Math.PI * 2;
+        const direction = [Math.cos(angle), Math.sin(angle), 0];
+        const exact = shStaticVisibility(direction, useOccluder) * Math.max(0, direction[1]);
+        const r = radius * exact;
+        const x = center[0] + Math.cos(angle) * r;
+        const y = center[1] - Math.sin(angle) * r;
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.stroke();
+      context.strokeStyle = '#69e3d5';
+      context.lineWidth = 3;
+      context.beginPath();
+      for (let index = 0; index <= points; index += 1) {
+        const angle = index / points * Math.PI * 2;
+        const direction = [Math.cos(angle), Math.sin(angle), 0];
+        const basis = realSh9(direction);
+        let reconstructed = 0;
+        for (let coefficient = 0; coefficient < coefficientCount; coefficient += 1) {
+          reconstructed += transferSh[coefficient] * basis[coefficient];
+        }
+        const r = radius * clamp01(reconstructed);
+        const x = center[0] + Math.cos(angle) * r;
+        const y = center[1] - Math.sin(angle) * r;
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.stroke();
+      const incoming2d = normalize2([incomingDirection[0], incomingDirection[1]]);
+      context.strokeStyle = '#ffca72';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(center[0], center[1]);
+      context.lineTo(center[0] + incoming2d[0] * 120, center[1] - incoming2d[1] * 120);
+      context.stroke();
+
+      const barLeft = 455;
+      const zeroX = 575;
+      context.strokeStyle = '#45556b';
+      context.beginPath();
+      context.moveTo(zeroX, 48);
+      context.lineTo(zeroX, 355);
+      context.stroke();
+      for (let index = 0; index < 9; index += 1) {
+        const y = 62 + index * 32;
+        const transferWidth = transferSh[index] * 78;
+        const lightingWidth = lightingSh[index] * 105;
+        context.fillStyle = '#b49dff';
+        context.fillRect(zeroX + Math.min(0, transferWidth), y, Math.abs(transferWidth), 9);
+        context.fillStyle = '#ffca72';
+        context.fillRect(zeroX + Math.min(0, lightingWidth), y + 11, Math.abs(lightingWidth), 9);
+        context.fillStyle = index < coefficientCount ? '#dce5ef' : '#667385';
+        context.fillText(`c${index}`, barLeft, y + 12);
+      }
+      context.fillStyle = '#dce5ef';
+      context.fillText(`dot = ${prtValue.toFixed(4)}`, 455, 385);
+      context.fillText(`reference = ${reference.toFixed(4)}`, 455, 406);
+      context.fillStyle = error < 0.08 ? '#70e8c1' : '#ff7d8b';
+      context.fillText(`|error| = ${error.toFixed(4)}`, 455, 427);
+
+      byId('shYawOut').value = `${Math.round(yaw * 180 / Math.PI)}°`;
+      byId('shElevationOut').value = `${Math.round(elevation * 180 / Math.PI)}°`;
+      byId('shBandsOut').value = `l≤${band} · ${coefficientCount} coeffs`;
+      byId('shPrtOut').value = prtValue.toFixed(3);
+      byId('shLightDirection').textContent =
+        `direction(light→scene) = (${travelDirection.map((value) => value.toFixed(2)).join(', ')})`;
+      byId('shReadout').innerHTML =
+        `dot <b>${prtValue.toFixed(4)}</b> · reference <b>${reference.toFixed(4)}</b> · absolute error <b>${error.toFixed(4)}</b>`;
+      const terms = transferSh.slice(0, coefficientCount).map(
+        (coefficient, index) => `${coefficient.toFixed(3)}×${lightingSh[index].toFixed(3)}`
+      );
+      byId('shValuePanel').textContent =
+        `incoming direction(receiver→source)=(${incomingDirection.map((value) => value.toFixed(3)).join(', ')})；` +
+        `ΣTⱼLⱼ = ${terms.join(' + ')} = ${prtValue.toFixed(4)}。` +
+        ` 当前方向的数值 reference=${reference.toFixed(4)}。`;
+    }
+
+    function bindPrtFamilyLabs() {
+      ['surfaceLightX', 'surfaceLightY', 'surfaceNormal'].forEach((id) => {
+        byId(id).addEventListener('input', drawSurfacePrt);
+      });
+      byId('surfaceOccluder').addEventListener('change', drawSurfacePrt);
+      ['volumeLightX', 'volumeLightY', 'volumeQueryX', 'volumeQueryY'].forEach((id) => {
+        byId(id).addEventListener('input', drawVolumePrt);
+      });
+      byId('volumeShowLinks').addEventListener('change', drawVolumePrt);
+      ['shYaw', 'shElevation', 'shBands'].forEach((id) => {
+        byId(id).addEventListener('input', drawShPrt);
+      });
+      byId('shVisibility').addEventListener('change', drawShPrt);
+    }
+
+    bindPrtFamilyLabs();
+    drawSurfacePrt();
+    drawVolumePrt();
+    drawShPrt();
+  })();
+  </script>
+</body>
+</html>

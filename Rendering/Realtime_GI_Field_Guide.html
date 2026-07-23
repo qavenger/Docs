@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>实时与半实时 GI 方案图谱</title>
+  <link rel="stylesheet" href="gi_course.css" />
+  <style>
+    :root {
+      --bg: #070a12;
+      --bg-soft: #0c111d;
+      --panel: rgba(17, 24, 39, .72);
+      --panel-solid: #111827;
+      --line: rgba(255, 255, 255, .105);
+      --line-strong: rgba(255, 255, 255, .2);
+      --text: #eef2ff;
+      --muted: #9ca8bf;
+      --cyan: #44d7d0;
+      --blue: #69a8ff;
+      --violet: #a78bfa;
+      --amber: #fbbf72;
+      --green: #6ee7a8;
+      --red: #fb7185;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .36);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 82% -5%, rgba(105, 168, 255, .16), transparent 31rem),
+        radial-gradient(circle at 5% 24%, rgba(68, 215, 208, .12), transparent 28rem),
+        var(--bg);
+      font-family: Inter, "SF Pro Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    code { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+
+    .progress {
+      position: fixed; inset: 0 auto auto 0; z-index: 100;
+      width: 0; height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--blue), var(--violet));
+      box-shadow: 0 0 18px rgba(68, 215, 208, .8);
+    }
+
+    .nav-shell {
+      position: sticky; top: 0; z-index: 40;
+      backdrop-filter: blur(18px);
+      background: rgba(7, 10, 18, .74);
+      border-bottom: 1px solid var(--line);
+    }
+    nav {
+      width: min(1180px, calc(100% - 32px));
+      height: 64px; margin: auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 760; letter-spacing: -.02em; }
+    .brand-mark {
+      width: 30px; height: 30px; border-radius: 9px;
+      display: grid; place-items: center;
+      color: #051016; font-weight: 900;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      box-shadow: 0 0 28px rgba(68, 215, 208, .25);
+    }
+    .nav-links { display: flex; gap: 20px; font-size: 13px; }
+    .nav-links a { color: var(--muted); }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    main { overflow: hidden; }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin: auto; }
+    section { padding: 88px 0; scroll-margin-top: 62px; }
+    section + section { border-top: 1px solid var(--line); }
+
+    .hero { padding: 94px 0 74px; position: relative; }
+    .hero::after {
+      content: ""; position: absolute; width: 520px; height: 520px; right: -180px; top: -80px;
+      border-radius: 50%; border: 1px solid rgba(105,168,255,.13);
+      box-shadow: inset 0 0 90px rgba(105,168,255,.05), 0 0 0 64px rgba(105,168,255,.025), 0 0 0 128px rgba(68,215,208,.016);
+      pointer-events: none;
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 11px; border: 1px solid rgba(68, 215, 208, .25); border-radius: 999px;
+      color: #aaf5ef; background: rgba(68, 215, 208, .07);
+      font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 5px rgba(68,215,208,.1); }
+    h1 { max-width: 830px; margin: 24px 0 18px; font-size: clamp(42px, 7.2vw, 82px); line-height: 1.02; letter-spacing: -.055em; }
+    .gradient-text { background: linear-gradient(100deg, #fff, #9be7e2 46%, #8dbbff); -webkit-background-clip: text; color: transparent; }
+    .hero-copy { max-width: 760px; margin: 0; color: #b8c2d8; font-size: clamp(17px, 2vw, 21px); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      min-height: 46px; padding: 0 17px; border: 1px solid var(--line-strong); border-radius: 12px;
+      color: var(--text); background: rgba(255,255,255,.035); cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .button:hover { text-decoration: none; transform: translateY(-2px); background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.3); }
+    .button.primary { color: #061015; font-weight: 740; border-color: transparent; background: linear-gradient(135deg, var(--cyan), #7dd3fc); }
+    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 64px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--line); }
+    .stat { padding: 22px; background: rgba(10,15,26,.86); }
+    .stat strong { display: block; font-size: 28px; line-height: 1.2; letter-spacing: -.04em; }
+    .stat span { color: var(--muted); font-size: 12px; }
+
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 32px; margin-bottom: 34px; }
+    .section-kicker { color: var(--cyan); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    h2 { margin: 7px 0 0; font-size: clamp(28px, 4vw, 44px); line-height: 1.14; letter-spacing: -.04em; }
+    .section-lead { max-width: 580px; margin: 0; color: var(--muted); }
+
+    .thesis-grid { display: grid; grid-template-columns: 1.35fr .65fr; gap: 18px; }
+    .feature {
+      position: relative; padding: 32px; border: 1px solid rgba(68,215,208,.26); border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(68,215,208,.105), rgba(17,24,39,.7) 48%, rgba(105,168,255,.07));
+      box-shadow: var(--shadow); overflow: hidden;
+    }
+    .feature::before { content:""; position:absolute; inset:0 auto 0 0; width:3px; background: linear-gradient(var(--cyan), var(--blue)); }
+    .feature h3 { margin: 8px 0 10px; font-size: 28px; letter-spacing: -.03em; }
+    .feature p { color: #bfc8d9; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 19px 0; }
+    .badge { padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; color: #cbd5e1; background: rgba(255,255,255,.04); font-size: 11px; }
+    .badge.good { color: #a7f3d0; border-color: rgba(110,231,168,.25); background: rgba(110,231,168,.075); }
+    .badge.warn { color: #fed7aa; border-color: rgba(251,191,114,.25); background: rgba(251,191,114,.075); }
+    .mini-stack { display: grid; gap: 14px; }
+    .mini-card { padding: 23px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+    .mini-card strong { display:block; margin-bottom: 7px; }
+    .mini-card p { margin:0; color: var(--muted); font-size: 13px; }
+    .definition { margin-top: 18px; padding: 17px 19px; border-left: 2px solid var(--amber); background: rgba(251,191,114,.055); color: #cbd5e1; font-size: 13px; }
+
+    .controls { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; margin-bottom: 22px; }
+    .search { position: relative; }
+    .search input { width: 100%; min-height: 46px; padding: 0 16px 0 43px; color: var(--text); border: 1px solid var(--line); border-radius: 13px; outline: none; background: rgba(255,255,255,.035); }
+    .search input:focus { border-color: rgba(68,215,208,.5); box-shadow: 0 0 0 4px rgba(68,215,208,.07); }
+    .search::before { content: "⌕"; position: absolute; left: 16px; top: 7px; color: var(--muted); font-size: 21px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .filter { padding: 8px 11px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+    .filter.active, .filter:hover { color: var(--text); background: rgba(105,168,255,.1); border-color: rgba(105,168,255,.35); }
+    .result-count { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .scheme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .scheme-card {
+      position: relative; min-height: 368px; padding: 22px; border: 1px solid var(--line); border-radius: 18px;
+      background: linear-gradient(160deg, rgba(255,255,255,.038), rgba(255,255,255,.014)); cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+    .scheme-card:hover { transform: translateY(-4px); border-color: rgba(105,168,255,.33); background: linear-gradient(160deg, rgba(105,168,255,.075), rgba(255,255,255,.018)); }
+    .scheme-top { display:flex; justify-content:space-between; gap:12px; align-items:start; }
+    .scheme-index { color: #6f7c94; font: 12px "Cascadia Code", monospace; }
+    .scheme-card h3 { margin: 15px 0 4px; font-size: 21px; letter-spacing: -.025em; }
+    .scheme-family { color: var(--cyan); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+    .scheme-card p { margin: 16px 0; color: var(--muted); font-size: 13px; }
+    .tag-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .tag { padding: 4px 7px; border-radius: 7px; color: #bdc7d8; background: rgba(255,255,255,.045); font-size: 10px; }
+    .lesson-link { display:inline-flex; margin-top:13px; padding:6px 9px; border:1px solid rgba(68,215,208,.3); border-radius:8px; color:#aef2ed; background:rgba(68,215,208,.06); font-size:11px; }
+    .lesson-link.related { color:#c5cfdd; border-color:var(--line); background:rgba(255,255,255,.025); }
+    .card-footer { position: absolute; inset: auto 22px 19px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+    .temporal { display: inline-flex; align-items: center; gap: 7px; color: #cbd5e1; font-size: 11px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); }
+    .dot.none { background: var(--green); box-shadow: 0 0 10px rgba(110,231,168,.45); }
+    .dot.inherent { background: var(--red); box-shadow: 0 0 10px rgba(251,113,133,.35); }
+    .compare-check { display: flex; align-items:center; gap:6px; color: var(--muted); font-size: 11px; cursor:pointer; }
+    .compare-check input { accent-color: var(--cyan); }
+    .empty { grid-column: 1/-1; padding: 50px; text-align:center; color: var(--muted); border:1px dashed var(--line); border-radius:18px; }
+
+    .scenario-box { display:grid; grid-template-columns: .78fr 1.22fr; gap: 18px; }
+    .scenario-menu { display:grid; gap:9px; }
+    .scenario-btn { width:100%; padding: 15px 17px; text-align:left; border:1px solid var(--line); border-radius:13px; color:var(--muted); background:rgba(255,255,255,.025); cursor:pointer; }
+    .scenario-btn strong { display:block; color:var(--text); margin-bottom:2px; }
+    .scenario-btn.active { border-color:rgba(68,215,208,.4); background:rgba(68,215,208,.075); color:#bed1d4; }
+    .ranking { padding:25px; border:1px solid var(--line); border-radius:18px; background:var(--panel); }
+    .ranking-head { display:flex; justify-content:space-between; gap:16px; align-items:start; margin-bottom:18px; }
+    .ranking h3 { margin:0; font-size:23px; }
+    .rank-list { display:grid; gap:10px; }
+    .rank-item { display:grid; grid-template-columns: 28px 1fr auto; gap:12px; align-items:center; padding:13px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.025); }
+    .rank-num { display:grid; place-items:center; width:28px; height:28px; border-radius:9px; background:rgba(105,168,255,.12); color:#bcd7ff; font-weight:800; }
+    .rank-item small { display:block; color:var(--muted); }
+    .rank-score { color:var(--cyan); font: 700 13px "Cascadia Code", monospace; }
+
+    .pipeline { margin-top: 26px; padding: 29px; border: 1px solid rgba(68,215,208,.23); border-radius: var(--radius); background: linear-gradient(140deg, rgba(68,215,208,.075), rgba(17,24,39,.72)); }
+    .pipeline h3 { margin:0 0 7px; font-size:26px; }
+    .pipeline > p { color:var(--muted); margin-top:0; }
+    .flow { display:grid; grid-template-columns: repeat(5, 1fr); gap: 24px; margin: 28px 0; counter-reset: flow; }
+    .flow-step { position:relative; padding:17px; min-height:130px; border:1px solid var(--line); border-radius:14px; background:rgba(7,10,18,.56); counter-increment:flow; }
+    .flow-step::before { content: counter(flow, decimal-leading-zero); display:block; color:var(--cyan); font:11px "Cascadia Code",monospace; margin-bottom:9px; }
+    .flow-step:not(:last-child)::after { content:"→"; position:absolute; right:-18px; top:50%; color:#617088; }
+    .flow-step strong { display:block; margin-bottom:6px; font-size:13px; }
+    .flow-step span { color:var(--muted); font-size:11px; line-height:1.5; }
+    .formula { padding:15px 17px; border:1px solid var(--line); border-radius:12px; background:#080d17; color:#a9b5c9; font-size:12px; overflow:auto; }
+    .formula code { color:#bdeeea; }
+    .columns { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px; }
+    .proscons { padding:21px; border:1px solid var(--line); border-radius:15px; background:rgba(255,255,255,.02); }
+    .proscons h4 { margin:0 0 10px; }
+    .proscons ul { margin:0; padding-left:19px; color:var(--muted); font-size:13px; }
+    .proscons.good h4 { color:var(--green); }
+    .proscons.bad h4 { color:#fda4af; }
+    .probe-compare { display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:stretch; margin-top:18px; }
+    .probe-compare article { padding:21px; border:1px solid var(--line); border-radius:15px; background:rgba(255,255,255,.022); }
+    .probe-compare h3 { margin:6px 0 8px; font-size:18px; }
+    .probe-compare p { margin:0; color:var(--muted); font-size:13px; }
+    .probe-compare .versus { display:grid; place-items:center; color:var(--amber); font:800 13px "Cascadia Code",monospace; }
+
+    .compare-shell { display:grid; grid-template-columns: 1fr .9fr; gap:18px; align-items:stretch; }
+    .radar-card, .selected-card { padding:24px; border:1px solid var(--line); border-radius:18px; background:var(--panel); }
+    #radar { display:block; width:100%; height:auto; max-height:390px; }
+    .selected-list { display:grid; gap:10px; margin-top:16px; }
+    .selected-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px; border:1px solid var(--line); border-radius:12px; }
+    .selected-row span { display:flex; align-items:center; gap:9px; }
+    .swatch { width:9px; height:9px; border-radius:50%; }
+    .selected-row button { border:0; color:var(--muted); background:transparent; cursor:pointer; }
+    .table-wrap { overflow:auto; margin-top:18px; border:1px solid var(--line); border-radius:16px; }
+    table { width:100%; border-collapse:collapse; min-width:900px; font-size:12px; }
+    th, td { padding:13px 14px; text-align:left; border-bottom:1px solid var(--line); }
+    th { position:sticky; top:0; z-index:1; color:#d8e1f1; background:#101725; font-size:11px; letter-spacing:.04em; }
+    td { color:var(--muted); }
+    tr:last-child td { border-bottom:0; }
+    tbody tr:hover { background:rgba(105,168,255,.035); }
+    .yes { color:var(--green); } .mid { color:var(--amber); } .no { color:var(--red); }
+
+    .common-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:14px; }
+    .principle { padding:22px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.024); }
+    .principle .num { color:var(--cyan); font:11px "Cascadia Code",monospace; }
+    .principle h3 { margin:9px 0 7px; font-size:17px; }
+    .principle p { margin:0; color:var(--muted); font-size:12px; }
+    .split-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:28px; }
+    .split { display:grid; grid-template-columns: 120px 1fr; gap:18px; padding:19px; border:1px solid var(--line); border-radius:15px; }
+    .split strong { color:#cdd8ec; }
+    .split span { color:var(--muted); font-size:12px; }
+
+    .learning { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; border:1px solid var(--line); border-radius:18px; overflow:hidden; background:var(--line); }
+    .learning-step { padding:24px; background:#0c121f; }
+    .learning-step small { color:var(--cyan); font:11px "Cascadia Code",monospace; }
+    .learning-step h3 { margin:10px 0 8px; font-size:17px; }
+    .learning-step p { margin:0; color:var(--muted); font-size:12px; }
+    .lab { margin-top:18px; padding:24px; border:1px solid rgba(167,139,250,.25); border-radius:18px; background:rgba(167,139,250,.055); }
+    .lab h3 { margin:0 0 10px; }
+    .lab ol { margin:0; color:#b9c3d6; font-size:13px; }
+
+    .sources { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .source { display:grid; grid-template-columns:32px 1fr auto; gap:12px; align-items:center; padding:14px; border:1px solid var(--line); border-radius:13px; background:rgba(255,255,255,.02); }
+    .source-num { color:#718097; font:11px "Cascadia Code",monospace; }
+    .source strong { display:block; font-size:12px; }
+    .source small { color:var(--muted); }
+    .source-arrow { color:var(--cyan); }
+    .note { margin-top:18px; color:#77849a; font-size:11px; }
+
+    footer { padding:30px 0 54px; color:#748197; border-top:1px solid var(--line); font-size:11px; }
+    footer .wrap { display:flex; justify-content:space-between; gap:20px; }
+
+    .modal-backdrop { position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(2,5,10,.78); backdrop-filter:blur(10px); }
+    .modal-backdrop.open { display:flex; }
+    .modal { position:relative; width:min(760px,100%); max-height:min(86vh,860px); overflow:auto; padding:30px; border:1px solid var(--line-strong); border-radius:22px; background:#0d1422; box-shadow:var(--shadow); }
+    .modal-close { position:absolute; right:18px; top:16px; width:36px; height:36px; border:1px solid var(--line); border-radius:10px; color:var(--muted); background:rgba(255,255,255,.03); cursor:pointer; }
+    .modal h2 { padding-right:45px; }
+    .modal-summary { color:#b7c1d3; }
+    .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; }
+    .modal-block { padding:18px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.02); }
+    .modal-block h4 { margin:0 0 8px; color:#dfe7f5; }
+    .modal-block ul { margin:0; padding-left:18px; color:var(--muted); font-size:13px; }
+    .modal-wide { grid-column:1/-1; }
+
+    @media (max-width: 980px) {
+      .scheme-grid { grid-template-columns: repeat(2,1fr); }
+      .thesis-grid, .scenario-box, .compare-shell { grid-template-columns:1fr; }
+      .flow { grid-template-columns:1fr; gap:10px; }
+      .flow-step { min-height:0; }
+      .flow-step:not(:last-child)::after { content:"↓"; top:auto; right:50%; bottom:-13px; }
+      .common-grid { grid-template-columns:repeat(2,1fr); }
+      .learning { grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width: 680px) {
+      .nav-links { display:none; }
+      .hero { padding-top:70px; }
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .section-head { display:block; }
+      .section-lead { margin-top:14px; }
+      .controls { grid-template-columns:1fr; }
+      .scheme-grid, .common-grid, .split-grid, .sources, .columns, .modal-grid { grid-template-columns:1fr; }
+      .modal-wide { grid-column:auto; }
+      .split { grid-template-columns:1fr; gap:6px; }
+      .probe-compare { grid-template-columns:1fr; }
+      .learning { grid-template-columns:1fr; }
+      footer .wrap { display:block; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior:auto; }
+      *, *::before, *::after { transition:none !important; animation:none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="nav-shell">
+    <nav>
+      <a class="brand" href="#top"><span class="brand-mark">GI</span><span>实时光照方案图谱</span></a>
+      <div class="nav-links">
+        <a href="index.html">12 模块</a><a href="#labs">运行路径</a><a href="#probe-prt">Probe ≠ PRT</a><a href="#decision">高速光结论</a><a href="#atlas">方案库</a><a href="#scenario">选型器</a><a href="#compare">矩阵</a><a href="#principles">共性与分歧</a><a href="#sources">资料</a>
+      </div>
+    </nav>
+  </div>
+
+  <main id="top">
+    <header class="hero">
+      <div class="wrap">
+        <div class="eyebrow"><span class="pulse"></span> Rendering Field Guide · 2026</div>
+        <h1><span class="gradient-text">实时与半实时 GI</span><br />从方案名词到工程决策</h1>
+        <p class="hero-copy">这页审计 11 类架构的表示、更新、时序依赖、优势与代价；配套学习中心把算法拆成 12 个模块与 91 个独立步骤。RCGI、VoxelGI、DDGI 已提供端到端教学交互或算法组装示例，最终可进入 D3D12 / Vulkan RenderGraph 原生路径连接 Pass。所有内部引用均为相对路径，整套目录复制后仍可导航。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#decision">先看高速动态光结论 <span>↓</span></a>
+          <a class="button" href="index.html">进入 12 个交互模块</a>
+          <a class="button" href="RenderGraph_GI_Lab/index.html">打开 RenderGraph GI Lab</a>
+          <a class="button" href="#atlas">浏览 11 类方案</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><strong>11</strong><span>类方案 / 架构族</span></div>
+          <div class="stat"><strong id="courseLessonStats">12 / 91</strong><span>交互模块 / 独立步骤</span></div>
+          <div class="stat"><strong>3</strong><span>端到端教学组装示例</span></div>
+          <div class="stat"><strong>D3D12 / Vulkan</strong><span>RenderGraph 原生路径</span></div>
+        </div>
+      </div>
+    </header>
+
+    <section id="labs">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Learning and runtime paths</div><h2>先用独立步骤看懂，再在 RenderGraph 中组装</h2></div>
+          <p class="section-lead">网页实验负责显示光源位置 / 方向、输入资源、中间结果与伪影；原生 Workbench 负责把同类数据落到 D3D12 / Vulkan 资源、Pass 依赖、barrier 和 dispatch。教学实现与生产边界会明确标记，不用一段看似 HLSL 的伪代码冒充实际执行代码。</p>
+        </div>
+        <div class="thesis-grid">
+          <article class="feature">
+            <div class="section-kicker">Default · Edge + file:// + WebGL2</div>
+            <h3>12 页、91 个步骤，不需要服务器</h3>
+            <p>直接双击 <code>index.html</code>。复杂概念先拆成独立 Demo；公式区可切到直觉、代值、符号表、伪代码或本页实际代码。代码块会标明“实际执行 / 教学伪代码 / DX12 对照”，并保持多行可读。站内导航全部使用相对路径。</p>
+            <div class="badge-row"><span class="badge good">Microsoft Edge 基线</span><span class="badge good">0 外部运行库</span><span class="badge">公式 ↔ 代码</span><span class="badge">逐步输入 / 输出</span></div>
+            <div class="definition"><strong>为什么不是强制 WebGPU：</strong>WebGPU 必须先检测 <code>navigator.gpu</code> 和浏览器上下文能力，本地文件上的策略也可能随环境而异。为了让资料拷贝后仍能直接打开，WebGL2 是确定主路径；WebGPU 只在能力存在时作可选 compute 增强。WebGPU 是浏览器抽象，常由实现映射到 Windows D3D12、Linux/Android Vulkan 或 macOS Metal，并不等于网页直接调用这些原生 API。</div>
+            <a class="button primary" style="margin-top:20px" href="index.html">进入学习中心 →</a>
+          </article>
+          <div class="mini-stack">
+            <article class="mini-card"><strong>Native RenderGraph GI Workbench</strong><p>D3D12 / Vulkan 路径把 GI 工作拆成可追踪 Pass，并提供中间资源预览。教学版 DDGI / RCGI 若使用 SDF 或 voxel ray march，会明确标成 teaching-lite，不宣称已经实现 DXR / ray query。</p><p style="margin-top:12px"><a href="RenderGraph_GI_Lab/index.html">打开原生 Workbench →</a></p></article>
+            <article class="mini-card"><strong>三个端到端教学组装示例</strong><p><a href="gi_module_rcgi.html">RCGI</a> 展示单次传输的 interval / merge 核心，<a href="gi_module_voxel_gi.html">VoxelGI</a> 展示当前帧注入与 cone gather 的教学组装，<a href="gi_module_ddgi.html">DDGI</a> 展示 teaching-lite 的 atlas、hysteresis 与 visibility gather 链路。</p></article>
+            <article class="mini-card"><strong>旧 PRT DX12 Lab 仍保留</strong><p>它继续用于核对固定传输矩阵 <code>E = W · R</code>、GPU readback 与 CPU 参考的一致性；这是 PRT 专项验证，不代表完整通用 GI 引擎。</p><p style="margin-top:12px"><a href="DX12_GI_Lab/index.html">打开旧 Lab →</a>　<a href="DX12_GI_Lab/README.md">README →</a></p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="probe-prt">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">A required distinction</div><h2>Irradiance Probe 与 PRT Probe 存的不是同一种东西</h2></div>
+          <p class="section-lead">“都叫 Probe、都可能存 SH”只是外形相似。判断它们的可靠方法是追问：缓存的是某次求解后的光照答案，还是固定场景对任意输入光照的传输响应？</p>
+        </div>
+        <article class="feature">
+          <div class="section-kicker">Answer cache versus operator cache</div>
+          <h3>同一个空间点，两种完全不同的更新契约</h3>
+          <p>Irradiance Probe 保存当前或烘焙光照下的 irradiance / radiance 结果；灯光改变后，要重新追踪、重烘或预算化刷新。PRT / Transfer Probe 保存 visibility、余弦、BRDF 与多次传输在某组基底下的系数或矩阵；固定几何下，只需把新光照投影系数与传输做点积即可 relight，但几何或遮挡关系改变会让预计算算子失效。</p>
+          <div class="probe-compare">
+            <article>
+              <div class="section-kicker">Module 06 · Irradiance Probe</div>
+              <h3>缓存“这次光照的答案”</h3>
+              <p>典型内容：irradiance atlas、distance moments、validity。DDGI 用新射线更新答案，并常借助 hysteresis 跨帧收敛。</p>
+              <a class="button" style="margin-top:15px" href="gi_module_probes.html">先学 Probe 基础 →</a>
+            </article>
+            <div class="versus">≠</div>
+            <article>
+              <div class="section-kicker">Module 07 · PRT / Transfer Probe</div>
+              <h3>缓存“固定场景的响应算子”</h3>
+              <p>典型内容：transfer vector / matrix、SH transport。运行时换低维光照很快；动态几何、未包含在基底里的局部光和高频遮挡是主要边界。</p>
+              <a class="button primary" style="margin-top:15px" href="gi_module_prt_probes.html">打开 PRT 专题 →</a>
+            </article>
+          </div>
+          <div class="definition"><strong>不要用更新时间区分：</strong>一个静态 Irradiance Probe 可以是烘焙的，一个 PRT Probe 也可以每帧 relight。真正分歧是数据语义：前者是结果场，后者是线性传输近似。SH 只是二者都可能采用的方向基底。</div>
+        </article>
+      </div>
+    </section>
+
+    <section id="decision">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Executive answer</div><h2>先给结论：高速运动光源怎么选</h2></div>
+          <p class="section-lead">“全动态”不等于“当前帧就收敛”。快速光源最怕的不是平均误差，而是历史帧拖影、能量滞后与 disocclusion 闪烁。</p>
+        </div>
+        <div class="thesis-grid">
+          <article class="feature">
+            <div class="section-kicker">首选候选 · 3D / 自研管线</div>
+            <h3>无时序 Voxel GI / VCT<br />＋ Clustered 光照注入</h3>
+            <p>每帧用当前光照重建体素辐射度，再做锥体追踪；GI 核心不读取上一帧辐照度。将大量光源先按空间簇剔除，体素只遍历影响自己的局部光源列表，避免成本直接等于“全场灯数 × 全部体素”。</p>
+            <div class="badge-row">
+              <span class="badge good">GI 历史依赖：无</span>
+              <span class="badge good">高速光响应：当前帧</span>
+              <span class="badge">离屏覆盖：世界空间</span>
+              <span class="badge warn">代价：体素分辨率 / 漏光</span>
+            </div>
+            <div class="definition"><strong>边界条件：</strong>推荐先做“一次反弹、全帧更新”。二次反弹若用跨帧反馈，就重新引入时序延迟；若在同一帧固定迭代，则增加 GPU 成本。静态几何的占据体素可以缓存——这属于空间缓存，不是光照历史。</div>
+            <p style="margin-top:17px"><a href="gi_module_voxel_gi.html">打开 VoxelGI 端到端教学组装 →</a>　<a href="gi_module_voxelization.html">先看 Voxelization →</a>　<a href="gi_module_cone_tracing.html">再看 Cone Tracing →</a></p>
+          </article>
+          <div class="mini-stack">
+            <article class="mini-card"><strong>2D / 等距视角的探索项</strong><p>Radiance Cascades 可做 single-shot 当前帧传播；2D 已很有吸引力，但通用 3D 仍不是成熟的即插即用方案。本页的 RCGI 明确指 <em>Radiance Cascades GI</em>；其他资料也可能用 RCGI 指 Radiance Cache GI，必须先核对全称。</p><p style="margin-top:12px"><a href="gi_module_rcgi.html">打开 RCGI interval / merge 示例 →</a></p></article>
+            <article class="mini-card"><strong>轻量备选</strong><p>LPV 可从当前帧 RSM 初始化并传播，天然无历史；但一个 RSM 通常绑定一个主光源，面对大量局部光时扩展性不如 clustered voxel injection。</p><p style="margin-top:12px"><a href="gi_module_rsm.html">打开 RSM 的 VPL 与伪影实验 →</a></p></article>
+            <article class="mini-card"><strong>不作为零历史首选</strong><p>DDGI、Lumen、ReSTIR GI 都能支持动态灯，但依赖时序累积或跨帧摊销。画质上限更高，极速灯光下却要管理响应延迟与历史失效。</p><p style="margin-top:12px"><a href="gi_module_ddgi.html">在 DDGI 示例中观察 hysteresis 与硬切响应 →</a></p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="atlas">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Technique atlas</div><h2>11 类方案库</h2></div>
+          <p class="section-lead">点击卡片查看完整优缺点、适用边界与资料；带“实际交互示例”的方案可直接进入对应课程。可搜索、筛选，并勾选最多 3 项进入雷达图对比。</p>
+        </div>
+        <div class="controls">
+          <div class="search"><input id="search" type="search" placeholder="搜索方案、引擎、特性，例如：体素 / Unreal / 无时序" aria-label="搜索 GI 方案" /></div>
+          <div class="result-count" id="resultCount"></div>
+        </div>
+        <div class="filters" id="filters"></div>
+        <div class="scheme-grid" id="schemeGrid"></div>
+      </div>
+    </section>
+
+    <section id="scenario">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Scenario picker</div><h2>按场景选，而不是按名气选</h2></div>
+          <p class="section-lead">下方是启发式排序，不是跨项目 benchmark。真正落地前仍要用目标场景、目标分辨率和目标 GPU 做测量。</p>
+        </div>
+        <div class="scenario-box">
+          <div class="scenario-menu" id="scenarioMenu"></div>
+          <div class="ranking" id="ranking"></div>
+        </div>
+
+        <article class="pipeline">
+          <div class="section-kicker">Reference architecture</div>
+          <h3>大量高速运动光源：建议的数据流</h3>
+          <p>核心思路是让 GI 消费“当前帧已经合并好的局部直接辐射度”，并把光源总数问题转化为局部空间密度问题。</p>
+          <div class="flow">
+            <div class="flow-step"><strong>构建光源簇</strong><span>Forward+ / Clustered culling；快速更新光源包围体与 cluster 索引。</span></div>
+            <div class="flow-step"><strong>准备体素几何</strong><span>静态 occupancy 缓存；动态物体写入独立低分辨率层并与静态层合并。</span></div>
+            <div class="flow-step"><strong>当前帧注入</strong><span>每个体素只评估其 cluster 的光。写入方向性辐射度与不透明度。</span></div>
+            <div class="flow-step"><strong>空间预滤波</strong><span>生成各向异性 mip / octree 层级，让一次 cone sample 代表一束方向。</span></div>
+            <div class="flow-step"><strong>单帧 gather</strong><span>每像素 4–6 个漫反射锥；必要时仅做空间双边上采样，不采历史帧。</span></div>
+          </div>
+          <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+            <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">容量公式</button><button data-gi-tab="pseudo">等价伪代码</button><button data-gi-tab="implementation">实际实现入口</button></div>
+            <div class="gi-panel" data-gi-panel="intuition"><p>不要让每个体素遍历全场所有灯。先用 Clustered Culling 给体素一张“附近灯名单”，再只处理名单；Cone Gather 的另一半成本来自屏幕像素、锥数量和每锥步数。</p></div>
+            <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">近似成本 ≈ O(受影响体素数 × 每簇平均灯数)<br />＋ O(着色像素数 × 锥数量 × 步数)</div><p>这是容量估算，不是可执行着色公式；必须同时限制局部灯密度、体素分辨率、cone 数与最大距离。</p></div>
+            <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="Clustered Voxel GI · capacity pseudocode">for 每个 dirty voxel:
+  cluster = 查找 voxel 所在的光源簇
+  radiance = 0
+  for cluster 中真正影响该 voxel 的灯:
+    radiance += 评估当前灯的可见性与直接光
+  写入当前帧 voxel radiance
+
+for 每个需要 GI 的着色像素:
+  for 每个 diffuse cone:
+    沿锥按 footprint 选择 volume LOD
+    累计不超过最大步数与最大距离</code></pre></div>
+            <div class="gi-panel" data-gi-panel="implementation"><p>逐 Pass 可执行案例见 <a href="gi_module_voxel_gi.html">VoxelGI 页面</a>；真实 D3D12/Vulkan 资源链、Texture3D 与 barrier 见 <a href="RenderGraph_GI_Lab/index.html">RenderGraph Workbench</a>。原生样例目前用一个高速移动点光验证 <code>history=0</code>；大量灯版本仍需接入框架尚未提供的 clustered light-list buffer。</p></div>
+          </div>
+          <div class="columns">
+            <div class="proscons good"><h4>工程优势</h4><ul><li>灯光变化同帧进入 GI，不产生历史拖尾</li><li>间接光成本对全局灯数弱敏感，更关心局部重叠</li><li>世界空间覆盖，不会因光源离开屏幕立刻消失</li><li>不强制 RT 硬件，可用计算 / 光栅体素化实现</li></ul></div>
+            <div class="proscons bad"><h4>必须接受的代价</h4><ul><li>低分辨率体素会漏光、吞薄墙、模糊小光源</li><li>全动态几何体素化和 mip 构建可能成为瓶颈</li><li>无时序时只能靠更多空间样本换稳定细节</li><li>在 Unreal 中更像自研 RDG / 插件路线，不是 Lumen 开关</li></ul></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="compare">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Interactive comparison</div><h2>把差异放到同一把尺子上</h2></div>
+          <p class="section-lead">评分 1–5 表示相对倾向，越大越有利；“运行效率”指典型实时预算内的相对友好度，而非绝对毫秒数。</p>
+        </div>
+        <div class="compare-shell">
+          <div class="radar-card"><svg id="radar" viewBox="0 0 420 390" role="img" aria-label="已选 GI 方案雷达图"></svg></div>
+          <div class="selected-card"><h3 style="margin:0">已选方案 <small style="color:var(--muted);font-weight:400">最多 3 项</small></h3><div class="selected-list" id="selectedList"></div></div>
+        </div>
+        <div class="table-wrap"><table id="matrix"></table></div>
+      </div>
+    </section>
+
+    <section id="principles">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Shared DNA & fault lines</div><h2>共同点与分歧点</h2></div>
+          <p class="section-lead">看懂这些共性后，新方案通常只是换了一种“采样、压缩、复用与可见性”的组合。</p>
+        </div>
+        <div class="common-grid">
+          <article class="principle"><span class="num">01</span><h3>都在近似渲染方程</h3><p>实时预算无法穷举所有路径，方案差别在于丢掉哪些维度、如何复用有限样本。</p></article>
+          <article class="principle"><span class="num">02</span><h3>都先分离直接与间接光</h3><p>直接光通常由 shadow map / RT shadow / clustered shading 完成，GI 再传播已着色表面的能量。</p></article>
+          <article class="principle"><span class="num">03</span><h3>都在压缩辐射场</h3><p>光照贴图压到纹理；探针压到 SH；VCT 压到体素 mip；Lumen 压到 Surface Cache；ReSTIR 压到 reservoir。</p></article>
+          <article class="principle"><span class="num">04</span><h3>可见性始终最难</h3><p>屏幕空间缺失离屏信息；探针与体素会穿墙；低样本射线有噪声。多数伪影都能追溯到可见性近似。</p></article>
+          <article class="principle"><span class="num">05</span><h3>漫反射比高光更容易</h3><p>低频 irradiance 很适合探针与 SH；镜面、高光、焦散需要更高方向频率，常被拆给反射或路径追踪。</p></article>
+          <article class="principle"><span class="num">06</span><h3>混合方案才是常态</h3><p>SSGI 补近场细节、探针给离屏底色、RT 解决关键可见性、烘焙承担静态远场——工程上很少只用单一算法。</p></article>
+        </div>
+        <div class="split-grid">
+          <div class="split"><strong>场景表示</strong><span>屏幕深度 / 光照贴图 / 探针网格 / 体素或 SDF / 三角形 BVH / Surface Cache。</span></div>
+          <div class="split"><strong>更新时机</strong><span>离线烘焙、事件触发、级联滚动、预算化探针更新、每帧全量、跨帧 reservoir。</span></div>
+          <div class="split"><strong>时序策略</strong><span>完全不读历史、历史仅降噪、历史承担收敛、跨帧摊销真实工作量。它们的运动表现完全不同。</span></div>
+          <div class="split"><strong>覆盖范围</strong><span>仅屏幕、相机周围级联、局部 volume、全世界流送。覆盖越完整，内存与更新越贵。</span></div>
+          <div class="split"><strong>动态性边界</strong><span>动态灯、动态遮挡物、蒙皮几何、动态 emissive 是四件不同的事；文档里的“dynamic”必须逐项核对。</span></div>
+          <div class="split"><strong>能表达的频率</strong><span>SH / probes 偏低频；体素锥中频；射线 + 路径样本可保留高频，但需要采样和降噪。</span></div>
+          <div class="split"><strong>缓存的数据语义</strong><span>Irradiance Probe 缓存光照结果；PRT / Transfer Probe 缓存固定传输算子；同样使用 SH 并不代表更新方式相同。</span></div>
+          <div class="split"><strong>模块耦合</strong><span>Cone Tracing 不是独立 GI：它必须消费可靠的 occupancy / radiance volume 与 mip；可用的 VoxelGI 系统还需要当前帧注光、合成和可见性策略。</span></div>
+          <div class="split"><strong>成本主导项</strong><span>灯数、像素数、体素数、probe×ray、BVH 更新、缓存内存或时序收敛速度，各方案瓶颈不同。</span></div>
+          <div class="split"><strong>失败方式</strong><span>漏光、遮挡缺失、能量滞后、ghosting、噪点、disocclusion、距离裁切、内存爆炸。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="learning">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Learning route</div><h2>建议学习顺序</h2></div>
+          <p class="section-lead">按“信息存储位置”递进，比从某个大型引擎的开关反推原理更容易形成稳定认知。</p>
+        </div>
+        <div class="learning">
+          <article class="learning-step"><small>STEP 01 · 必经</small><h3><a href="gi_module_foundations.html">基线与一束光</a></h3><p>沿直接光与间接反弹理解 radiance、irradiance、BRDF、坐标、GBuffer 与抽样权重。</p></article>
+          <article class="learning-step"><small>STEP 02 · 屏幕 / 光源空间</small><h3><a href="gi_module_rsm.html">RSM</a> ＋ <a href="gi_module_ssao_ssgi.html">SSAO / SSGI</a></h3><p>从 MRT 和 GBuffer 调试视图出发，能解释 VPL、离屏缺失与 depth thickness 问题。</p></article>
+          <article class="learning-step"><small>STEP 03 · 世界空间 · 严格依赖</small><h3><a href="gi_module_voxelization.html">Voxelization</a> → <a href="gi_module_cone_tracing.html">Cone Tracing</a> → <a href="gi_module_voxel_gi.html">VoxelGI</a></h3><p>先确认 occupancy / radiance / mip 的语义，再让 Cone 消费这些输出，最后组装当前帧注光与合成。不要从 Cone 页面跳过 Voxel 前置。</p></article>
+          <article class="learning-step"><small>STEP 04 · 方向与缓存</small><h3><a href="gi_module_sh.html">SH</a> → <a href="gi_module_probes.html">Irradiance Probe</a> → <a href="gi_module_prt_probes.html">PRT</a></h3><p>先学 SH 投影、卷积与旋转，再明确 Probe 是“结果缓存”、PRT 是“传输算子缓存”。</p></article>
+          <article class="learning-step"><small>STEP 05 · 算法组装</small><h3><a href="gi_module_rcgi.html">RCGI</a> ＋ <a href="gi_module_ddgi.html">DDGI</a></h3><p>在 RCGI 中观察 single-shot interval merge 核心；在 DDGI teaching-lite 中观察 rays、atlas、hysteresis、visibility、relocation 与 scrolling。</p></article>
+          <article class="learning-step"><small>STEP 06 · 原生组装</small><h3><a href="RenderGraph_GI_Lab/index.html">RenderGraph GI Workbench</a></h3><p>把基础 Pass 放入 D3D12 / Vulkan RenderGraph，核对资源依赖、barrier、dispatch 和中间纹理预览。</p></article>
+        </div>
+        <div class="lab"><h3>最有价值的对照实验</h3><ol><li>同一封闭房间放置 64 / 256 / 1024 个移动点光，速度覆盖 1–30 m/s。</li><li>每 0.5 秒随机切换 20% 灯光颜色和强度；同时做一次硬切镜头。</li><li>逐帧抓取 indirect-only、history weight、voxel/probe debug view 与 GPU profile。</li><li>记录“光源变化到间接光达到 90% 新稳态”的帧数；它比静止截图更能揭示时序问题。</li></ol></div>
+      </div>
+    </section>
+
+    <section id="sources">
+      <div class="wrap">
+        <div class="section-head">
+          <div><div class="section-kicker">Primary sources</div><h2>继续阅读</h2></div>
+          <p class="section-lead">优先列论文、引擎官方文档与官方仓库。页面中的工程判断是对这些材料的归纳，不等同于厂商承诺。</p>
+        </div>
+        <div class="sources" id="sourceList"></div>
+        <p class="note">资料核对日期：2026-07-23。性能数字只保留原论文/官方文档的语境，不直接横向比较跨年代 GPU。本页 RCGI 专指 Radiance Cascades GI；该缩写在其他资料中也可能表示 Radiance Cache GI。Radiance Cascades 的通用 3D 成熟度仍有限。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap"><span>Realtime GI Field Guide</span><span>Edge file:// · 站内相对路径 · 12 模块 · Native D3D12 / Vulkan RenderGraph</span></div></footer>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <article class="modal" id="modal"></article>
+  </div>
+
+  <script src="gi_lesson_manifest.js"></script>
+  <script src="gi_course.js"></script>
+  <script>
+    const courseLessons = Array.isArray(window.GI_LESSONS) ? window.GI_LESSONS : [];
+    const courseLessonCount = courseLessons.length || 12;
+    const courseStageCount = courseLessons.reduce((sum,lesson)=>sum+lesson.stages,0) || 91;
+    document.getElementById('courseLessonStats').textContent = `${courseLessonCount} / ${courseStageCount}`;
+    const sources = [
+      {id:'S1', title:'Global Illumination in Unreal Engine', org:'Epic Games 官方文档', url:'https://dev.epicgames.com/documentation/en-us/unreal-engine/global-illumination-in-unreal-engine'},
+      {id:'S2', title:'GPU Lightmass Global Illumination', org:'Epic Games 官方文档', url:'https://dev.epicgames.com/documentation/en-us/unreal-engine/gpu-lightmass-global-illumination-in-unreal-engine'},
+      {id:'S3', title:'Adaptive Probe Volumes', org:'Unity 6 官方手册', url:'https://docs.unity3d.com/6000.0/Documentation/Manual/urp/probevolumes-use.html'},
+      {id:'S4', title:'Screen Space Global Illumination', org:'Epic Games 官方文档', url:'https://dev.epicgames.com/documentation/en-us/unreal-engine/screen-space-global-illumination?application_version=4.27'},
+      {id:'S5', title:'Cascaded Light Propagation Volumes', org:'Kaplanyan & Dachsbacher · I3D 2010', url:'https://cg.ivd.kit.edu/publications/p2010/CLPVFRII_Kaplanyan_2010/CLPVFRII_Kaplanyan_2010.pdf'},
+      {id:'S6', title:'Interactive Indirect Illumination Using Voxel Cone Tracing', org:'Crassin et al. · 2011', url:'https://research.nvidia.com/labs/rtr/publication/crassin2011givoxels/'},
+      {id:'S7', title:'Using Voxel Global Illumination', org:'Godot Engine 官方文档', url:'https://docs.godotengine.org/en/stable/tutorials/3d/global_illumination/using_voxel_gi.html'},
+      {id:'S8', title:'Signed Distance Field Global Illumination', org:'Godot Engine 官方文档', url:'https://docs.godotengine.org/en/4.0/tutorials/3d/global_illumination/using_sdfgi.html'},
+      {id:'S9', title:'RTXGI / DDGI Algorithms', org:'NVIDIA GameWorks 官方仓库', url:'https://github.com/NVIDIAGameWorks/RTXGI-DDGI/blob/main/docs/Algorithms.md'},
+      {id:'S10', title:'Lumen Technical Details', org:'Epic Games 官方文档', url:'https://dev.epicgames.com/documentation/en-us/unreal-engine/lumen-technical-details-in-unreal-engine'},
+      {id:'S11', title:'ReSTIR GI: Path Resampling for Real-Time Path Tracing', org:'Ouyang et al. · HPG 2021', url:'https://research.nvidia.com/publication/2021-06_restir-gi-path-resampling-real-time-path-tracing'},
+      {id:'S12', title:'Clustered Deferred and Forward Shading', org:'Olsson et al. · HPG 2012', url:'https://diglib7.eg.org/items/6342d4d6-5220-4376-a5c6-a153058f4a3c/full'},
+      {id:'S13', title:'Holographic Radiance Cascades for 2D GI', org:'Freeman, Sannikov & Margel · 2025', url:'https://arxiv.org/abs/2505.02041'},
+      {id:'S14', title:'Radiance Cascades: formal solution', org:'Osborne & Sannikov · RASTI 2025', url:'https://academic.oup.com/rasti/article/doi/10.1093/rasti/rzae062/7929002'},
+      {id:'S15', title:'Precomputed Radiance Transfer for Real-Time Rendering in Dynamic, Low-Frequency Lighting Environments', org:'Sloan, Kautz & Snyder · SIGGRAPH 2002', url:'https://www.microsoft.com/en-us/research/?p=345614'}
+    ];
+
+    const schemes = [
+      {
+        id:'lightmap', name:'烘焙 Lightmap / GPU Lightmass', family:'纹理空间 · 预计算', mode:'半实时制作 / 静态运行', temporal:'运行时无时序，但不响应动态灯', temporalClass:'precomputed', maturity:5,
+        short:'离线或编辑器内渐进求解，将高质量间接光写入纹理；运行时极省，但光照状态基本冻结。',
+        tags:['半实时制作','高质量','低运行成本','静态灯光'], filters:['semi','world'],
+        metrics:{light:1,geo:1,coverage:5,detail:5,perf:5,stability:5,hardware:5},
+        pipeline:'路径追踪 / radiosity → texel 积分与降噪 → lightmap / volumetric lightmap → 运行时采样。',
+        pros:['运行时成本与噪声最低，静态质量上限高','低端与移动平台友好','可用 GPU Lightmass 做交互式制作预览'],
+        cons:['灯光、遮挡和 emissive 变化需重烘','需要 lightmap UV、磁盘与流送内存','动态物体通常只采体积探针，接触细节有限'],
+        best:'建筑可视化、静态室内、移动端、固定灯光关卡。', avoid:'昼夜循环、可破坏场景、大量移动灯。', engine:'UE Lightmass / Unity Progressive Lightmapper', refs:['S1','S2']
+      },
+      {
+        id:'apv', name:'预计算 Probe Volume / APV', family:'探针 · 预计算', mode:'半实时 / Lighting Scenario', temporal:'运行时无历史；动态灯通常靠场景切换', temporalClass:'precomputed', maturity:5,
+        short:'把低频 irradiance 存在自适应空间探针中，动态物体可获得世界空间间接光；光照本身多为烘焙。',
+        tags:['半实时','动态接收者','低频','场景混合'], filters:['semi','world'],
+        metrics:{light:2,geo:2,coverage:5,detail:2,perf:5,stability:5,hardware:5},
+        pipeline:'离线布点与烘焙 → SH / validity / sky occlusion → 运行时探针插值 → 可选 lighting scenario 混合。',
+        pros:['动态物体间接受光稳定且便宜','自适应细分比手摆 probes 更省人力','适合大世界分区与流送'],
+        cons:['低频，墙角和薄墙易漏光','任意高速灯光不会自动得到新 GI','多场景状态增加烘焙数据体积'],
+        best:'静态环境＋移动角色、多个预设昼夜状态。', avoid:'灯光状态连续且不可预知的玩法。', engine:'Unity APV / UE Volumetric Lightmap', refs:['S3','S1']
+      },
+      {
+        id:'ssgi', name:'SSGI / SSIL', family:'屏幕空间 · 光线步进', mode:'实时', temporal:'核心可单帧；常用历史帧补质量', temporalClass:'optional', maturity:5,
+        short:'沿屏幕深度追踪当前帧可见表面的辐射度。便宜、接入快，但看不到屏幕外和被遮挡的信息。',
+        tags:['实时','屏幕空间','可选时序','近场补充'], filters:['realtime','screen'],
+        metrics:{light:4,geo:4,coverage:1,detail:3,perf:4,stability:3,hardware:5},
+        pipeline:'GBuffer + scene color → 屏幕空间 ray march → 辐射度采样 → 空间 / 时空滤波 → 合成。',
+        pros:['对当前帧动态灯和 emissive 反应快','无需世界空间加速结构或 RT 硬件','适合作为 baked/probe GI 的近场细节层'],
+        cons:['离屏贡献消失；遮挡与厚度判断不可靠','镜头边缘、disocclusion 易闪烁','无时序模式更粗糙、有带状噪声'],
+        best:'预算敏感、镜头受控、已有稳定环境底色。', avoid:'需要完整离屏传播或镜头高速切换。', engine:'UE SSGI / Godot SSIL / 自研', refs:['S4']
+      },
+      {
+        id:'lpv', name:'LPV / Cascaded LPV', family:'体积网格 · SH 传播', mode:'实时', temporal:'无：可从当前帧重新初始化', temporalClass:'none', maturity:3,
+        short:'用 RSM 生成虚拟点光并注入低阶 SH 网格，再在网格中迭代传播。快而稳定，但非常低频。',
+        tags:['实时','无时序','动态几何','低频'], filters:['realtime','noTemporal','world'],
+        metrics:{light:3,geo:4,coverage:4,detail:1,perf:4,stability:4,hardware:5},
+        pipeline:'每主光源 RSM → VPL 注入 SH lattice → 若干轮邻域传播 → 三线性采样与遮挡近似。',
+        pros:['当前帧重建，无历史拖尾','无需硬件 RT，计算结构规整','级联可覆盖较大场景，也能扩展体积散射'],
+        cons:['低阶 SH 与粗网格导致漏光、能量扩散','RSM 通常按灯生成，大量局部灯扩展性差','主要适合一次漫反射，已较少作为现代主 GI'],
+        best:'少量主光源、风格化低频 GI、教学原型。', avoid:'大量独立移动点光、高频几何或硬边间接阴影。', engine:'CryEngine 历史方案 / 研究原型', refs:['S5']
+      },
+      {
+        id:'vct', name:'Voxel GI / VCT / SVOGI', family:'世界空间体素 · 锥体追踪', mode:'实时', temporal:'核心可完全无时序', temporalClass:'none', maturity:4,
+        short:'把几何、opacity 与当前光照写进稀疏或稠密体素，并用预过滤锥体近似大量射线。',
+        tags:['实时','无时序','世界空间','高速动态灯'], filters:['realtime','noTemporal','world'],
+        metrics:{light:5,geo:4,coverage:5,detail:3,perf:3,stability:5,hardware:4},
+        pipeline:'体素化 occupancy/material → 当前帧 radiance injection → anisotropic mip → diffuse / specular cone tracing。',
+        pros:['世界空间、离屏有效，可同帧响应动态灯','核心是确定性空间滤波，不必时序降噪','VCT 论文展示动态内容与漫反射 / glossy 多反弹潜力'],
+        cons:['体素分辨率决定薄墙漏光与小光源丢失','大世界需要 clipmap / sparse structure 与流送','动态几何体素化、注光和 mip 都占 GPU 带宽'],
+        best:'低延迟动态灯、可接受中频 GI、自研或可控场景规模。', avoid:'要求像素级间接阴影、超薄复杂几何且内存紧张。', engine:'CryEngine SVOGI / Godot VoxelGI / 自研', refs:['S6','S7','S12']
+      },
+      {
+        id:'sdfgi', name:'SDFGI / Cascaded Radiance Field', family:'SDF 级联 · 半动态', mode:'半实时', temporal:'级联滚动 / 分帧更新，存在响应预算', temporalClass:'inherent', maturity:4,
+        short:'以相机为中心维护级联 SDF 与低频辐射场，覆盖大世界；动态灯可更新，但动态遮挡与 emissive 常受限。',
+        tags:['半实时','大世界','动态灯','静态遮挡'], filters:['semi','world'],
+        metrics:{light:4,geo:2,coverage:5,detail:2,perf:3,stability:3,hardware:4},
+        pipeline:'静态几何 SDF → 相机跟随 cascades → 动态灯注入 / probe 更新 → occlusion rays → irradiance gather。',
+        pros:['非屏幕空间，可随相机扩展到任意世界尺寸','不要求 RT 硬件','比烘焙更能响应动态灯与程序化关卡'],
+        cons:['动态遮挡物和动态 emissive 支持常有限','快速移动相机会提高 cascade 更新成本','低频、可能漏光；光照变化有更新延迟'],
+        best:'大世界、静态主体几何、动态日光或局部灯。', avoid:'大量高速动态遮挡物和严格零帧响应。', engine:'Godot SDFGI / 类似 clipmap radiance field', refs:['S8']
+      },
+      {
+        id:'ddgi', name:'DDGI / RTXGI', family:'世界空间探针 · RT 更新', mode:'实时 / 预算化更新', temporal:'强：探针 irradiance 明确时序累积', temporalClass:'inherent', maturity:5,
+        short:'每个探针发射少量硬件射线，累积 irradiance 与距离统计，并用 relocation / classification 降低漏光。',
+        tags:['实时','硬件 RT','探针','时序累积'], filters:['realtime','hardwareRT','world'],
+        metrics:{light:4,geo:4,coverage:5,detail:2,perf:3,stability:2,hardware:2},
+        pipeline:'probe rays → hit shading → irradiance / distance atlas → temporal hysteresis → visibility-weighted trilinear gather。',
+        pros:['全动态漫反射 GI，无 lightmap UV','离屏有效，运行成本可按 probe/ray 预算缩放','动态几何可通过 RT visibility 参与遮挡'],
+        cons:['官方文档明确指出存在不可避免的最小光照延迟','低频，不能重现高频几何与辐射细节','大场景探针数据占内存，且通常依赖 RT 硬件'],
+        best:'中高端 GPU、漫反射为主、灯光变化速度可控。', avoid:'高速闪变光且不能接受历史滞后。', engine:'NVIDIA RTXGI / 自研 DDGI', refs:['S9']
+      },
+      {
+        id:'lumen', name:'Lumen', family:'混合追踪 · Surface Cache', mode:'实时', temporal:'是：Surface Cache 更新跨多帧摊销', temporalClass:'inherent', maturity:5,
+        short:'屏幕追踪优先，未命中再走 SDF 软件追踪或三角形硬件追踪，并在 Surface Cache / probes 中复用辐射度。',
+        tags:['实时','混合追踪','UE5','多帧摊销'], filters:['realtime','hardwareRT','screen','world'],
+        metrics:{light:4,geo:4,coverage:5,detail:4,perf:3,stability:3,hardware:3},
+        pipeline:'Screen Traces → Software SDF / Hardware RT fallback → Surface Cache lighting → Screen Probe Gather → 时空滤波。',
+        pros:['UE5 集成度高，兼顾大世界、动态灯、emissive 与反射','软件 / 硬件 RT 两条路径可伸缩','多种表示互补，综合画质与覆盖成熟'],
+        cons:['不是零历史方案；灯光更新会跨多帧摊销','Screen Trace 具有视角依赖，Surface Cache 有 coverage 限制','硬件 RT 的动态蒙皮与大量实例更新昂贵'],
+        best:'UE5 次世代主机 / PC，大世界与综合动态效果。', avoid:'对高速灯要求绝对当前帧响应、不能容忍 ghosting 的专用场景。', engine:'Unreal Engine 5', refs:['S10']
+      },
+      {
+        id:'restir', name:'RTGI / ReSTIR GI', family:'路径空间 · 时空重采样', mode:'高端实时', temporal:'强：跨像素与跨帧复用路径', temporalClass:'inherent', maturity:4,
+        short:'每像素只追踪极少路径，用 reservoir 在空间与时间重采样重要间接路径，再配合降噪器。',
+        tags:['高端实时','硬件 RT','路径追踪','强时序'], filters:['realtime','hardwareRT','screen','world'],
+        metrics:{light:5,geo:5,coverage:5,detail:5,perf:1,stability:2,hardware:1},
+        pipeline:'低 spp path tracing → temporal reservoir reuse → spatial reuse → visibility / shift mapping → denoiser。',
+        pros:['物理一致性与材质频率上限最高','ReSTIR 家族能处理极复杂光源分布并显著降方差','可统一更多直接 / 间接 / 反射效果'],
+        cons:['依赖 RT 硬件、BVH 更新与复杂降噪','历史失效会暴露噪声和 disocclusion','关闭 temporal reuse 后，实时样本数通常不足以保持同等画质'],
+        best:'高端 PC、照片级目标、能投入大量渲染研发。', avoid:'宽硬件覆盖、严格无历史、固定低毫秒预算。', engine:'自研 path tracer / RTX 路线', refs:['S11']
+      },
+      {
+        id:'prt', name:'PRT / Transfer Probes', family:'预计算传输 · 算子缓存', mode:'预计算 + 实时重光照', temporal:'运行时无历史；几何变化需重烘传输', temporalClass:'precomputed', maturity:4,
+        short:'把固定几何的 visibility / BRDF / 多次传输投影到 SH 等基底，运行时用新光照系数与传输向量或矩阵做快速 relighting。',
+        tags:['PRT','Transfer Probe','无时序重光照','固定几何'], filters:['semi','noTemporal','world'],
+        metrics:{light:3,geo:1,coverage:4,detail:3,perf:5,stability:5,hardware:5},
+        pipeline:'离线计算 transport coefficients / matrix → 运行时投影低维光照 → coefficient dot product / matrix multiply → receiver shading。',
+        pros:['固定场景下换环境光或低维灯光可同帧响应','运行时确定、稳定，不依赖历史收敛','可预计算多跳与软阴影，并在大量 receiver 上复用'],
+        cons:['它缓存的是传输算子，不是任意动态几何的当前 irradiance','局部点光若不在预设光照基底内，不能自动得到正确响应','高频可见性需要更多系数，存储和烘焙成本快速增长'],
+        best:'静态几何、环境光 / 远场光重光照、角色或物体的低频传输。', avoid:'可破坏几何、任意局部高速多灯且光源基底未知。', engine:'自研 PRT / SH transport / transfer matrices', refs:['S15']
+      },
+      {
+        id:'rc', name:'RCGI · Radiance Cascades GI', family:'多尺度探针 · Radiance Intervals', mode:'实时研究前沿', temporal:'single-shot 版本可无时序', temporalClass:'none', maturity:2,
+        short:'近处高空间分辨率、远处高角分辨率，通过级联合并 radiance intervals；这里的 RCGI 不是 Radiance Cache GI。2D 结果突出，通用 3D 仍在探索。',
+        tags:['实时前沿','无时序','2D 强项','3D 未成熟'], filters:['realtime','noTemporal','screen'],
+        metrics:{light:5,geo:3,coverage:3,detail:4,perf:4,stability:4,hardware:4},
+        pipeline:'构建距离 / 遮挡表示 → 各级 probe interval ray march → 由远至近 merge → 当前帧 radiance resolve。',
+        pros:['single-shot，不依赖随机噪声与历史收敛','对给定图像 / 网格尺寸成本更接近固定','2D 场景可表现清晰半影与多尺度光传输'],
+        cons:['公开成熟证据主要集中在 2D','3D 存储、方向维度、遮挡与插值难度显著上升','工程生态和调试经验远少于 Lumen / DDGI / VCT'],
+        best:'2D、等距视角、研究原型、愿意承担算法研发。', avoid:'需要立即交付的通用 3D AAA 管线。', engine:'Path of Exile 2 思路 / 社区与论文原型', refs:['S13','S14']
+      }
+    ];
+
+    const lessonLinks = {
+      apv:{file:'gi_module_probes.html',label:'相关基础：Irradiance Probe',kind:'related'},
+      ssgi:{file:'gi_module_ssao_ssgi.html',label:'实际交互示例：SSAO / SSGI',kind:'actual'},
+      lpv:{file:'gi_module_rsm.html',label:'相关前置：RSM / VPL',kind:'related'},
+      vct:{file:'gi_module_voxel_gi.html',label:'算法组装示例：VoxelGI',kind:'actual'},
+      sdfgi:{file:'gi_module_voxelization.html',label:'相关基础：Voxelization',kind:'related'},
+      ddgi:{file:'gi_module_ddgi.html',label:'算法组装示例：DDGI teaching-lite',kind:'actual'},
+      prt:{file:'gi_module_prt_probes.html',label:'实际交互示例：PRT / Transfer Probe',kind:'actual'},
+      rc:{file:'gi_module_rcgi.html',label:'实际交互示例：Radiance Cascades GI',kind:'actual'}
+    };
+    schemes.forEach(scheme => { scheme.lesson = lessonLinks[scheme.id] || null; });
+
+    const filterDefs = [
+      ['all','全部'],['realtime','实时'],['semi','半实时 / 烘焙'],['noTemporal','无时序核心'],['hardwareRT','硬件 RT'],['screen','屏幕空间'],['world','世界空间']
+    ];
+    const metricLabels = {light:'动态光响应',geo:'动态几何',coverage:'场景覆盖',detail:'间接细节',perf:'运行效率',stability:'运动稳定'};
+    const radarColors = ['#44d7d0','#a78bfa','#fbbf72'];
+    let activeFilter = 'all';
+    let query = '';
+    let selected = ['vct','lumen','ddgi'];
+
+    function temporalDot(cls){ return cls === 'none' ? 'none' : cls === 'inherent' ? 'inherent' : ''; }
+    function cardHTML(s, i){
+      const checked = selected.includes(s.id) ? 'checked' : '';
+      return `<article class="scheme-card" data-id="${s.id}" tabindex="0" aria-label="查看 ${s.name} 详情">
+        <div class="scheme-top"><span class="scheme-index">${String(i+1).padStart(2,'0')}</span><span class="badge">成熟度 ${s.maturity}/5</span></div>
+        <h3>${s.name}</h3><div class="scheme-family">${s.family}</div><p>${s.short}</p>
+        <div class="tag-row">${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        ${s.lesson?`<a class="lesson-link ${s.lesson.kind==='related'?'related':''}" href="${s.lesson.file}">${s.lesson.label} →</a>`:''}
+        <div class="card-footer"><span class="temporal"><i class="dot ${temporalDot(s.temporalClass)}"></i>${s.temporal}</span>
+        <label class="compare-check"><input type="checkbox" data-compare="${s.id}" ${checked}/> 对比</label></div>
+      </article>`;
+    }
+
+    function renderFilters(){
+      document.getElementById('filters').innerHTML = filterDefs.map(([id,label]) => `<button class="filter ${id===activeFilter?'active':''}" data-filter="${id}">${label}</button>`).join('');
+    }
+    function renderCards(){
+      const q = query.trim().toLowerCase();
+      const list = schemes.filter(s => (activeFilter==='all' || s.filters.includes(activeFilter)) && (!q || [s.name,s.family,s.mode,s.temporal,s.short,s.engine,...s.tags].join(' ').toLowerCase().includes(q)));
+      document.getElementById('resultCount').textContent = `显示 ${list.length} / ${schemes.length}`;
+      document.getElementById('schemeGrid').innerHTML = list.length ? list.map((s,i)=>cardHTML(s,i)).join('') : '<div class="empty">没有匹配方案，试试更短的关键词。</div>';
+    }
+
+    function openModal(id){
+      const s = schemes.find(x=>x.id===id); if(!s) return;
+      const refs = s.refs.map(id=>sources.find(x=>x.id===id)).filter(Boolean);
+      document.getElementById('modal').innerHTML = `<button class="modal-close" aria-label="关闭">×</button>
+        <div class="section-kicker">${s.family}</div><h2 id="modalTitle">${s.name}</h2><p class="modal-summary">${s.short}</p>
+        <div class="badge-row"><span class="badge">${s.mode}</span><span class="badge ${s.temporalClass==='none'?'good':s.temporalClass==='inherent'?'warn':''}">${s.temporal}</span><span class="badge">成熟度 ${s.maturity}/5</span></div>
+        <div class="modal-grid">
+          <div class="modal-block modal-wide"><h4>核心管线</h4><div style="color:var(--muted);font-size:13px">${s.pipeline}</div></div>
+          <div class="modal-block"><h4 style="color:var(--green)">优势</h4><ul>${s.pros.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+          <div class="modal-block"><h4 style="color:#fda4af">劣势</h4><ul>${s.cons.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+          <div class="modal-block"><h4>适合</h4><div style="color:var(--muted);font-size:13px">${s.best}</div></div>
+          <div class="modal-block"><h4>慎用</h4><div style="color:var(--muted);font-size:13px">${s.avoid}</div></div>
+          ${s.lesson?`<div class="modal-block modal-wide"><h4>${s.lesson.kind==='actual'?'实际交互示例':'相关课程前置'}</h4><div style="color:var(--muted);font-size:13px"><a href="${s.lesson.file}">${s.lesson.label} →</a></div></div>`:''}
+          <div class="modal-block modal-wide"><h4>实现 / 资料</h4><div style="color:var(--muted);font-size:13px">${s.engine}<br>${refs.map(r=>`<a href="${r.url}" target="_blank" rel="noreferrer">[${r.id}] ${r.title}</a>`).join(' · ')}</div></div>
+        </div>`;
+      document.getElementById('modalBackdrop').classList.add('open');
+      document.body.style.overflow='hidden';
+      document.querySelector('.modal-close').focus();
+    }
+    function closeModal(){ document.getElementById('modalBackdrop').classList.remove('open'); document.body.style.overflow=''; }
+
+    function toggleCompare(id, checked){
+      if(checked){
+        if(!selected.includes(id) && selected.length>=3){ alert('最多同时对比 3 个方案。'); renderCards(); return; }
+        if(!selected.includes(id)) selected.push(id);
+      } else selected = selected.filter(x=>x!==id);
+      renderCompare(); renderCards();
+    }
+
+    function polar(cx,cy,r,i,n){ const a=-Math.PI/2 + i*Math.PI*2/n; return [cx+Math.cos(a)*r,cy+Math.sin(a)*r]; }
+    function renderRadar(){
+      const svg=document.getElementById('radar'), keys=Object.keys(metricLabels), cx=210, cy=188, radius=128;
+      let out='';
+      for(let level=1;level<=5;level++){
+        const pts=keys.map((_,i)=>polar(cx,cy,radius*level/5,i,keys.length).join(',')).join(' ');
+        out+=`<polygon points="${pts}" fill="${level%2?'rgba(255,255,255,.012)':'transparent'}" stroke="rgba(255,255,255,.1)"/>`;
+      }
+      keys.forEach((k,i)=>{ const [x,y]=polar(cx,cy,radius,i,keys.length), [lx,ly]=polar(cx,cy,radius+31,i,keys.length); out+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,.1)"/><text x="${lx}" y="${ly}" fill="#97a4b9" font-size="11" text-anchor="middle" dominant-baseline="middle">${metricLabels[k]}</text>`; });
+      selected.forEach((id,idx)=>{ const s=schemes.find(x=>x.id===id); if(!s)return; const pts=keys.map((k,i)=>polar(cx,cy,radius*s.metrics[k]/5,i,keys.length).join(',')).join(' '); out+=`<polygon points="${pts}" fill="${radarColors[idx]}18" stroke="${radarColors[idx]}" stroke-width="2"/>`; });
+      if(!selected.length) out+=`<text x="210" y="190" fill="#7f8ba0" text-anchor="middle" font-size="13">从上方方案卡片勾选对比项</text>`;
+      svg.innerHTML=out;
+    }
+    function renderCompare(){
+      renderRadar();
+      const box=document.getElementById('selectedList');
+      box.innerHTML=selected.length ? selected.map((id,i)=>{ const s=schemes.find(x=>x.id===id); return `<div class="selected-row"><span><i class="swatch" style="background:${radarColors[i]}"></i>${s.name}</span><button data-remove="${id}" aria-label="移除 ${s.name}">×</button></div>`; }).join('') : '<div class="empty" style="padding:28px">尚未选择</div>';
+    }
+
+    function grade(v){ return v>=4?'yes':v>=3?'mid':'no'; }
+    function renderMatrix(){
+      const rows=schemes.map(s=>`<tr><td><strong style="color:#dbe4f3">${s.name}</strong></td><td>${s.mode}</td><td class="${s.temporalClass==='none'?'yes':s.temporalClass==='inherent'?'no':'mid'}">${s.temporal}</td><td class="${grade(s.metrics.light)}">${s.metrics.light}/5</td><td class="${grade(s.metrics.geo)}">${s.metrics.geo}/5</td><td class="${grade(s.metrics.coverage)}">${s.metrics.coverage}/5</td><td class="${grade(s.metrics.detail)}">${s.metrics.detail}/5</td><td class="${grade(s.metrics.perf)}">${s.metrics.perf}/5</td><td>${s.engine}</td><td>${s.lesson?`<a href="${s.lesson.file}">${s.lesson.kind==='actual'?'实际示例':'相关基础'}</a>`:'—'}</td></tr>`).join('');
+      document.getElementById('matrix').innerHTML=`<thead><tr><th>方案</th><th>模式</th><th>时序依赖</th><th>动态光</th><th>动态几何</th><th>覆盖</th><th>细节</th><th>效率</th><th>常见落点</th><th>本地课程</th></tr></thead><tbody>${rows}</tbody>`;
+    }
+
+    const scenarios = [
+      {id:'fast', name:'高速移动灯 / 零历史', desc:'强调当前帧响应、运动稳定与局部多灯扩展。', weights:{light:.28,stability:.28,perf:.16,coverage:.14,geo:.07,maturity:.07}, note:'3D 首选候选是 Clustered 多灯注入的 VoxelGI / VCT；LPV 是更低频备选。RCGI（Radiance Cascades GI）仅在 2D / 等距视角与可承担研发成本时考虑。PRT 虽无历史，但只适合预计算光照基底与固定传输，不能替代任意局部多灯 GI。'},
+      {id:'open', name:'大型开放世界', desc:'强调世界空间覆盖、流送、动态性与成熟度。', weights:{coverage:.28,geo:.17,perf:.18,light:.12,stability:.1,maturity:.15}, note:'成熟引擎优先 Lumen / SDFGI / DDGI；体素方案需要 clipmap 或 sparse structure。'},
+      {id:'mobile', name:'移动端 / 宽硬件', desc:'强调运行效率、硬件兼容和确定性。', weights:{perf:.32,hardware:.25,stability:.18,coverage:.1,detail:.05,maturity:.1}, note:'Lightmap + APV 仍是最稳妥基线，SSGI 只适合作为受控的近场补充。'},
+      {id:'quality', name:'高端画质 / 照片级', desc:'强调路径频率、动态几何和完整覆盖。', weights:{detail:.31,geo:.18,coverage:.16,light:.14,stability:.06,maturity:.15}, note:'ReSTIR GI / RTGI 上限最高；Lumen 是成熟的混合实时折中。'},
+      {id:'prototype', name:'教学 / 快速原型', desc:'强调原理清晰、依赖少、容易可视化调试。', weights:{hardware:.22,perf:.2,stability:.18,maturity:.1,detail:.1,coverage:.1,light:.1}, note:'从 SSGI 与 LPV 入手最容易看见“采样空间”和“低频传播”的差异。'}
+    ];
+    let activeScenario='fast';
+    function score(s,sc){ let total=0; for(const [k,w] of Object.entries(sc.weights)){ total += (k==='maturity'?s.maturity:s.metrics[k])*w; } if(sc.id==='fast' && s.temporalClass==='inherent') total-=.9; if(sc.id==='fast' && s.temporalClass==='precomputed') total-=1.2; return Math.max(0,total); }
+    function renderScenarios(){
+      document.getElementById('scenarioMenu').innerHTML=scenarios.map(s=>`<button class="scenario-btn ${s.id===activeScenario?'active':''}" data-scenario="${s.id}"><strong>${s.name}</strong>${s.desc}</button>`).join('');
+      const sc=scenarios.find(s=>s.id===activeScenario), ranked=schemes.map(s=>({s,val:score(s,sc)})).sort((a,b)=>b.val-a.val).slice(0,5);
+      document.getElementById('ranking').innerHTML=`<div class="ranking-head"><div><div class="section-kicker">推荐倾向</div><h3>${sc.name}</h3></div><span class="badge">启发式评分</span></div><div class="rank-list">${ranked.map((x,i)=>`<div class="rank-item"><span class="rank-num">${i+1}</span><div><strong>${x.s.name}</strong><small>${x.s.temporal}</small></div><span class="rank-score">${x.val.toFixed(2)}</span></div>`).join('')}</div><div class="definition" style="margin-bottom:0">${sc.note}</div>`;
+    }
+
+    function renderSources(){ document.getElementById('sourceList').innerHTML=sources.map(s=>`<a class="source" href="${s.url}" target="_blank" rel="noreferrer"><span class="source-num">${s.id}</span><span><strong>${s.title}</strong><small>${s.org}</small></span><span class="source-arrow">↗</span></a>`).join(''); }
+
+    document.getElementById('search').addEventListener('input',e=>{query=e.target.value;renderCards();});
+    document.getElementById('filters').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;activeFilter=b.dataset.filter;renderFilters();renderCards();});
+    document.getElementById('schemeGrid').addEventListener('click',e=>{if(e.target.closest('a'))return;const c=e.target.closest('[data-compare]');if(c){e.stopPropagation();toggleCompare(c.dataset.compare,c.checked);return;}const card=e.target.closest('.scheme-card');if(card)openModal(card.dataset.id);});
+    document.getElementById('schemeGrid').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ') && e.target.classList.contains('scheme-card')){e.preventDefault();openModal(e.target.dataset.id);}});
+    document.getElementById('selectedList').addEventListener('click',e=>{const b=e.target.closest('[data-remove]');if(b)toggleCompare(b.dataset.remove,false);});
+    document.getElementById('scenarioMenu').addEventListener('click',e=>{const b=e.target.closest('[data-scenario]');if(!b)return;activeScenario=b.dataset.scenario;renderScenarios();});
+    document.getElementById('modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop'||e.target.closest('.modal-close'))closeModal();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+    window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-innerHeight;document.getElementById('progress').style.width=`${h>0?scrollY/h*100:0}%`;},{passive:true});
+
+    renderFilters(); renderCards(); renderScenarios(); renderCompare(); renderMatrix(); renderSources();
+  </script>
+</body>
+</html>

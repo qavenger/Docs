@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>GI 基础模块 · 在 3D 房间里看懂 Irradiance Probes 与 DDGI</title>
+  <link rel="stylesheet" href="gi_course.css" />
+  <style>
+    .probe-chain{display:grid;gap:18px}.probe-demo-grid{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr);gap:15px;align-items:start}
+    .probe-mini-controls{display:grid;gap:10px;padding:13px;border:1px solid #31574f;border-radius:12px;background:#091714}
+    .probe-mini-controls label{display:grid;grid-template-columns:1fr auto;gap:5px;color:#c7dad4;font-size:12px}.probe-mini-controls input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--mint)}
+    .probe-mini-controls output{color:var(--amber);font-family:ui-monospace,Consolas,monospace}.probe-mini-controls button{width:100%}
+    .probe-canvas{display:block;width:100%;height:auto;border:1px solid #31574f;border-radius:12px;background:#050c0b}
+    .probe-readout{padding:10px 12px;border:1px solid #31574f;border-radius:10px;background:#0b1a17;color:#b8cec7;font:12px/1.6 ui-monospace,Consolas,monospace}
+    .probe-readout b{color:var(--amber)}.probe-pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:12px 0}
+    .probe-pipeline div{padding:10px;border:1px solid #31574f;border-radius:9px;background:#0a1916;color:#afc6c0;font-size:12px}.probe-pipeline b{display:block;color:#edfff9}
+    @media(max-width:820px){.probe-demo-grid{grid-template-columns:1fr}.probe-pipeline{grid-template-columns:1fr}}
+  </style>
+  <style>
+    :root{--bg:#07110f;--panel:#0d1d1b;--panel2:#112724;--ink:#edfff9;--muted:#a2bbb4;--line:#2b4b45;--mint:#70e8c1;--cyan:#68ddef;--amber:#ffca72;--red:#ff7d8b;--violet:#b29cff;--green:#7ded9b;--max:1180px}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 72% -12%,#184038 0,transparent 34%),var(--bg);color:var(--ink);font:15px/1.72 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--mint);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(var(--max),calc(100% - 36px));margin:auto}.top{position:sticky;top:0;z-index:20;background:#07110fea;border-bottom:1px solid #25413b;backdrop-filter:blur(12px)}.top nav{height:58px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;gap:10px;align-items:center;color:var(--ink);font-weight:760}.mark{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--mint),#40a3aa);color:#05110e;font-size:12px}.navs{display:flex;gap:18px}.navs a{color:#bbd0ca;font-size:13px}.hero{padding:72px 0 48px;border-bottom:1px solid #1e3732}.eyebrow,.k{color:var(--mint);font:700 12px/1.2 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase}.hero h1{font-size:clamp(38px,6vw,70px);line-height:1.04;margin:14px 0 18px;max-width:980px}.hero p{max-width:870px;color:#b8d0c9;font-size:18px}.chips{display:flex;gap:9px;flex-wrap:wrap;margin-top:24px}.chip{border:1px solid #345c53;background:#102620;border-radius:99px;padding:6px 12px;color:#cce1da;font-size:13px}.chip.hot{border-color:#4fb897;color:#91f1d0}section{padding:62px 0;border-bottom:1px solid #1a312d}.head{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:end;margin-bottom:27px}.head h2{font-size:clamp(27px,4vw,42px);line-height:1.13;margin:8px 0 0}.head>p{color:var(--muted);margin:0}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:15px}.card{grid-column:span 4;background:linear-gradient(145deg,#0e211e,#091713);border:1px solid var(--line);border-radius:16px;padding:21px}.card.half{grid-column:span 6}.card.wide{grid-column:span 8}.card.full{grid-column:1/-1}.card h3{margin:0 0 8px;font-size:18px}.card p{margin:5px 0;color:#afc6c0}.warm{display:grid;grid-template-columns:1.25fr .75fr;gap:20px;align-items:center}.warm svg{width:100%;height:auto;background:#071310;border:1px solid #31564e;border-radius:14px}.steps{display:grid;gap:10px}.step{padding:13px 14px;border-left:3px solid var(--mint);background:#10231f;border-radius:0 10px 10px 0}.step b{display:block}.step span{color:var(--muted);font-size:13px}.equation{padding:15px 18px;border:1px solid #39665b;background:#0a1916;border-radius:12px;font:14px/1.75 ui-monospace,Consolas,monospace;color:#d7eee7}.equation b{color:var(--amber)}.compare{width:100%;border-collapse:collapse}.compare th,.compare td{padding:13px 14px;border-bottom:1px solid #2a4a43;text-align:left;vertical-align:top}.compare th{color:#8febcb}.compare td{color:#b4cac4}.compare tr:last-child td{border-bottom:0}.demo-tasks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.demo-task{padding:13px 15px;background:#0d211d;border:1px solid #30574e;border-radius:12px;color:#b8cec8}.demo-task b{display:block;color:var(--amber)}.demo-task span{font-size:12px}.demo{display:grid;grid-template-columns:305px 1fr;gap:16px;background:#091714;border:1px solid #37635a;border-radius:18px;padding:15px;box-shadow:0 20px 60px #0008}.controls{padding:8px 8px 8px 4px;display:flex;flex-direction:column;gap:13px}.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}.seg button{font-size:12px}.control label{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px;color:#c9ddd7;font-size:13px}.control output{color:var(--mint);font-family:ui-monospace,monospace}.control input[type=range]{width:100%;accent-color:var(--mint)}button{font:inherit;color:#dff1eb;background:#112a25;border:1px solid #37645a;border-radius:9px;padding:8px 9px;cursor:pointer}button:hover,button.active{background:#185044;border-color:#65d3b2}.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}.actions button{font-size:12px}.toggle{display:flex;align-items:center;gap:8px;color:#b8cec7;font-size:13px}.toggle input{accent-color:var(--mint)}.task-copy{padding:11px 12px;border-radius:10px;background:#122923;border:1px solid #3b685e}.task-copy b{color:var(--amber)}.task-copy p{margin:3px 0 0;color:#b5c9c4;font-size:12px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{padding:9px;background:#0c201c;border:1px solid #2b4b44;border-radius:9px}.stat strong{display:block;font:700 15px ui-monospace;color:#f0fff9}.stat span{font-size:11px;color:var(--muted)}.result{padding:11px;border-radius:10px;background:#0d201c;border:1px solid #31564e}.bar{height:13px;background:#07110f;border-radius:7px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#173f38,var(--amber));transition:width .15s}.viewport{position:relative;min-width:0}.viewport canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#040b09;border-radius:12px;touch-action:none}.fallback{display:none;padding:40px;text-align:center;background:#10231f;border-radius:12px;color:#c7dbd5}.view-label{position:absolute;top:12px;left:12px;background:#06120fe0;border:1px solid #3a665c;border-radius:8px;padding:6px 9px;color:#cce0da;font-size:12px;pointer-events:none}.view-label b{color:var(--mint)}.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:9px;color:#9eb7b0;font-size:12px}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}.weight-list{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:11px}.weight{padding:7px 8px;border:1px solid #2b4b44;border-radius:8px;background:#0c1b18;font:11px ui-monospace,monospace;color:#c8dad5}.weight.reject{border-color:#6f3b43;color:#ff9aa6}.weight b{display:block;color:#f2fff9}.code{overflow:auto;white-space:pre;color:#d0ebe2;background:#07130f;border:1px solid #2e5149;border-radius:12px;padding:16px;font:12.5px/1.65 ui-monospace,Consolas,monospace}.dict{margin-top:12px;border:1px solid #386158;border-radius:12px;background:#0c1c18}.dict summary{cursor:pointer;padding:13px 15px;color:var(--mint);font-weight:700}.dict table{width:100%;border-collapse:collapse}.dict th,.dict td{padding:11px 14px;border-top:1px solid #2a4942;text-align:left;vertical-align:top}.dict th{width:26%;color:#effff9;font-family:ui-monospace,monospace}.dict td{color:#b2c9c2}.callout{padding:16px 18px;border-left:3px solid var(--violet);border-radius:0 12px 12px 0;background:#171d27;color:#c4c7d3}.sources{display:grid;grid-template-columns:1fr 1fr;gap:10px}.source{display:flex;gap:12px;padding:15px;border:1px solid #31574f;border-radius:12px;background:#0d1d1a;color:#dcece7}.source:hover{text-decoration:none;border-color:#5ebf9f}.source b{color:var(--mint);font:700 12px ui-monospace}.source small{display:block;color:var(--muted);margin-top:3px}.foot{padding:30px 0;display:flex;justify-content:space-between;color:#91aaa3}.next{display:flex;gap:17px}.next a{color:#c8ddd6}@media(max-width:900px){.navs{display:none}.head,.warm,.demo{grid-template-columns:1fr}.card,.card.half,.card.wide{grid-column:1/-1}.demo-tasks{grid-template-columns:1fr}.sources{grid-template-columns:1fr}.controls{display:grid;grid-template-columns:1fr 1fr}.task-copy,.result{grid-column:1/-1}}@media(max-width:600px){.controls{grid-template-columns:1fr}.weight-list{grid-template-columns:1fr 1fr}.foot{display:block}.next{margin-top:10px;flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap"><nav><a class="brand" href="index.html"><span class="mark">PB</span><span>Irradiance Probes / APV / DDGI</span></a><div class="navs"><a href="#warmup">二维热身</a><a href="#families">系统差异</a><a href="#demo">3D 实验</a><a href="#ddgi-prerequisites">DDGI 五步</a><a href="gi_module_prt_probes.html">PRT 对照</a><a href="#boundary">边界</a></div></nav></div></header>
+  <main>
+    <section class="hero"><div class="wrap"><div class="eyebrow">GI Learning Module · 06</div><h1>Probe 不是发光点<br>而是“在这里测过光”的空间样本</h1><p>渲染像素通常不在 probe 上，所以要从附近样本重建照明。真正困难的不是“做平均”，而是墙体两侧的样本不能无条件混合。下面先用二维墙理解一次漏光，再进入 3D 房间观察八邻居权重、跨墙拒绝、烘焙数据过期和 DDGI 更新。</p><div class="chips"><span class="chip hot">可旋转 WebGL2 3D</span><span class="chip">八邻居权重可见</span><span class="chip">墙体漏光</span><span class="chip">Baked vs DDGI</span><span class="chip">SH 方向 payload</span></div></div></section>
+
+    <section id="warmup"><div class="wrap"><div class="head"><div><div class="k">Warm-up · One Wall, Two Probes</div><h2>距离近，不代表光可以穿墙</h2></div><p>二维图只解释“空间权重为什么不够”。生产 probe 可能存 SH、octahedral irradiance 和 distance moments；但无论 payload 多精确，错误的跨墙插值都会泄漏。</p></div><div class="card full warm"><svg viewBox="0 0 700 350" role="img" aria-label="墙两侧 probe 对查询点插值导致漏光"><rect width="700" height="350" fill="#071310"/><rect x="330" y="35" width="38" height="280" rx="4" fill="#58706a"/><rect x="42" y="35" width="288" height="280" fill="#ffb24c0d"/><rect x="368" y="35" width="290" height="280" fill="#68ddef0b"/><circle cx="275" cy="168" r="26" fill="#ffb24c"/><text x="245" y="216" fill="#ffca72" font-size="14">亮侧 Probe A</text><circle cx="430" cy="168" r="24" fill="#34534c" stroke="#70e8c1" stroke-width="3"/><text x="397" y="216" fill="#a8c8bd" font-size="14">暗侧 Probe B</text><circle cx="390" cy="112" r="10" fill="#fff"/><text x="403" y="105" fill="#fff" font-size="14">查询点 P</text><path d="M390 112 L275 168" stroke="#ff7d8b" stroke-width="5" stroke-dasharray="9 6"/><path d="M390 112 L430 168" stroke="#70e8c1" stroke-width="5"/><text x="164" y="80" fill="#ff9ca7" font-size="14">距离权重不为 0，但路径穿墙</text><text x="392" y="270" fill="#88e9cb" font-size="14">可见邻居</text></svg><div class="steps"><div class="step"><b>1 · 普通插值</b><span>P 离 A 不远，因此 A 的亮值进入结果，暗房出现不该有的橙光。</span></div><div class="step"><b>2 · 加入 visibility</b><span>检查 P→A 的路径或 probe 距离分布；穿墙权重被压低，再归一化。</span></div><div class="step"><b>3 · 仍需布点修复</b><span>若 P 周围所有 probe 都不可见，单纯归一化会不稳定，需要 relocation、classification 或更密采样。</span></div></div></div><div class="callout" style="margin-top:15px"><b>公式、当前代值、伪代码与本页实际 JavaScript 已合并到同一可切换工作台：</b>跳到 <a href="#probe-stage-gather">实验 04 · Gather</a>。其中 <code>wᵢ = trilinear × visibility × validity</code> 正是这张热身图的完整版本，且会展示重新归一化后的八邻居贡献。</div></div></section>
+
+    <section id="families"><div class="wrap"><div class="head"><div><div class="k">Three Families</div><h2>“Probe GI”至少有三种不同数据流</h2></div><p>它们可以共享网格与 SH，但灯变动时的行为不同。先问 payload 何时生成，再问如何插值。</p></div><article class="card full" style="padding:8px 18px"><table class="compare"><thead><tr><th>系统</th><th>probe 里存什么</th><th>灯光改变后</th><th>常见修复</th></tr></thead><tbody><tr><td><b>Baked Light Probes</b></td><td>烘焙时刻的 irradiance / SH</td><td>不会自行更新；需重烘焙、切 Lighting Scenario 或混合预设</td><td>四面体插值、有效性、手工布点</td></tr><tr><td><b>APV / Probe Volume</b></td><td>分层 brick 中的烘焙方向光照与 validity</td><td>通常仍是预计算结果；自适应密度、streaming 与场景切换更成熟</td><td>brick subdivision、dilation、virtual offset</td></tr><tr><td><b>DDGI</b></td><td>运行时更新的 irradiance 与距离分布</td><td>新 ray 逐批写入并与历史混合；会收敛，而非免费“立即正确”</td><td>distance moments、bias、relocation、classification、scrolling volumes</td></tr></tbody></table></article><div class="callout" style="margin-top:15px"><b>方向表示另有一层问题：</b>本页 3D Demo 为突出空间插值，只显示标量/RGB 强度；真实 diffuse probe 通常存低频方向分布。请先读 <a href="gi_module_sh.html">SH 模块</a>，再把本页的每个颜色想成一组 SH 系数。</div></div></section>
+
+    <section id="demo"><div class="wrap"><div class="head"><div><div class="k">Main Lab · 3D Probe Room</div><h2>亲眼看八个邻居如何把光带过墙</h2></div><p>白色方块是查询点，黄色方块是当前灯，彩色小块是 probe。与查询点相连的八条线就是三线性邻居：青线参与，红色虚拟含义是“跨墙，应拒绝”（WebGL 线本身连续显示）。拖拽旋转、滚轮缩放。</p></div><div class="demo-tasks"><div class="demo-task"><b>A · 复现漏光</b><span>点“漏光预设”，保持 Baked + 普通插值。看白点在右房却收到左侧橙光。</span></div><div class="demo-task"><b>B · 只改权重</b><span>切到 Visibility。红色跨墙邻居变为几乎零权重，输出接近参考值。</span></div><div class="demo-task"><b>C · 让灯动起来</b><span>移动灯位置。Baked 不动；切 DDGI 后点“单步更新”观察 probe 分批收敛。</span></div></div><div class="demo"><aside class="controls"><div class="seg" id="sourceButtons"><button class="active" data-source="baked">Baked 数据</button><button data-source="ddgi">DDGI 数据</button></div><div class="seg" id="weightButtons"><button class="active" data-weight="naive">普通插值</button><button data-weight="visibility">Visibility</button></div><div class="task-copy"><b id="modeTitle">现在看：烘焙结果会过期</b><p id="modeText">移动黄色灯，probe 颜色保持在烘焙时刻；“当前参考”改变而插值输出不跟随。</p></div><div class="control"><label>查询点 X（墙在 0） <output id="qxOut">+0.09</output></label><input id="qx" type="range" min="-85" max="85" value="9" /></div><div class="control"><label>查询点 Y <output id="qyOut">-0.20</output></label><input id="qy" type="range" min="-65" max="55" value="-20" /></div><div class="control"><label>查询点 Z <output id="qzOut">-0.18</output></label><input id="qz" type="range" min="-80" max="80" value="-18" /></div><div class="control"><label>当前灯 X <output id="lxOut">-0.68</output></label><input id="lx" type="range" min="-82" max="82" value="-68" /></div><div class="control"><label>当前灯 Z <output id="lzOut">-0.28</output></label><input id="lz" type="range" min="-75" max="75" value="-28" /></div><div class="actions"><button id="leakPreset">漏光预设</button><button id="rebake">重新烘焙</button><button id="stepDDGI">DDGI 单步</button><button id="resetDDGI">重置 DDGI</button></div><label class="toggle"><input id="autoDDGI" type="checkbox" />DDGI 自动分批更新</label><div class="stats"><div class="stat"><strong id="outputValue">0.00</strong><span>插值输出亮度</span></div><div class="stat"><strong id="truthValue">0.00</strong><span>当前参考亮度</span></div><div class="stat"><strong id="errorValue">0%</strong><span>相对误差</span></div><div class="stat"><strong id="rejectedValue">0%</strong><span>被 visibility 拒绝</span></div></div><div class="result"><b id="dataAge">Baked：灯与烘焙位置一致</b><div class="bar"><i id="convergenceBar"></i></div><small id="convergenceText" style="color:#a8beb8">数据新鲜度 100%</small></div></aside><div class="viewport"><canvas id="glCanvas" width="960" height="540" aria-label="三维 Probe 网格、跨墙权重和动态更新演示"></canvas><div id="fallback" class="fallback">浏览器未提供 WebGL2。正文仍可阅读；请用支持 WebGL2 的桌面浏览器打开此离线文件。</div><div class="view-label"><b>白：query　黄：light</b> · 线：八邻居权重 · 拖拽旋转</div><div class="legend"><span><i style="background:#ffca72"></i>高 irradiance probe</span><span><i style="background:#315a51"></i>暗 probe</span><span><i style="background:#68ddef"></i>参与权重</span><span><i style="background:#ff7d8b"></i>跨墙候选</span></div><div id="weightList" class="weight-list" aria-label="八邻居最终权重"></div></div></div></div></section>
+
+    <section id="ddgi-prerequisites"><div class="wrap">
+      <div class="head"><div><div class="k">DDGI Prerequisites · Five Independent Labs</div><h2>这里拆开“发射、落盘、积累、查询、修复”</h2></div><p>上面的 3D 房间把多个步骤连在一起。下面每一步都有自己的画布、控制器和数值；上一块看懂之后再进入下一块。</p></div>
+      <div class="gi-prereq"><span class="gi-stage-num">DD</span><div><strong>本页只提供 DDGI 前置概念，不冒充完整 DDGI。</strong><p>真实系统还要处理八面体贴图边界复制、ray tracing/material shading、probe scrolling、资源同步与更新调度。</p></div><a href="gi_module_ddgi.html">完整 DDGI 实例 →</a></div>
+      <div class="probe-pipeline" aria-label="DDGI 数据流">
+        <div><b>① Trace</b>Probe 发 ray</div><div><b>② Pack</b>写 irradiance / moments atlas</div><div><b>③ Blend</b>与有效历史融合</div><div><b>④ Gather</b>可见性加权重建</div><div><b>⑤ Maintain</b>relocate / classify / scroll</div>
+      </div>
+      <div class="gi-light-card">
+        <span class="gi-light-icon">☀</span>
+        <div><strong>本组 Demo 的显式点光</strong><div class="gi-light-meta"><span id="preLightPosition">position = (-0.62, +0.24)</span><span>direction = normalize(hit − position)</span><span>range = 2.2</span><span>color = (1.00, 0.61, 0.25)</span></div></div>
+      </div>
+
+      <div class="probe-chain">
+        <article class="gi-stage" id="probe-stage-trace">
+          <div class="gi-stage-head"><span class="gi-stage-num">01</span><div><h3>Probe ray：一条 ray 最终提供什么？</h3><p>每条 ray 同时带回方向 radiance 与 hit distance；miss 写环境距离上限。</p></div><span class="gi-stage-tag">ACTUAL CANVAS</span></div>
+          <div class="gi-stage-body">
+            <div class="gi-stage-io"><div><b>输入</b><span>probe P、ray direction ω、当前灯位置</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>radiance L(P,ω)、distance d(P,ω)</span></div></div>
+            <div class="probe-demo-grid">
+              <div class="probe-mini-controls">
+                <label>ray 数量 <output id="traceRayCountOut">24</output><input id="traceRayCount" type="range" min="8" max="64" step="8" value="24" /></label>
+                <label>点光 X <output id="traceLightOut">-0.62</output><input id="traceLight" type="range" min="-90" max="90" value="-62" /></label>
+                <label>ray 旋转 <output id="traceRotationOut">0°</output><input id="traceRotation" type="range" min="0" max="359" value="0" /></label>
+                <div class="probe-readout" id="traceReadout">选择参数后显示命中统计。</div>
+              </div>
+              <canvas class="probe-canvas" id="traceCanvas" width="720" height="360" aria-label="Probe ray fan 与显式点光"></canvas>
+            </div>
+            <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+              <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="value">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+              <div class="gi-panel" data-gi-panel="intuition"><p>把 probe 想成站在房间里转一圈的照度计：ray 命中哪一面，就记录那一方向看到的颜色；同时记录“多远才碰到东西”，供查询阶段判断墙体。</p></div>
+              <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula"><span data-gi-symbol="radiance">Lᵣ</span> = visible(hit, light) · albedo / π · <span data-gi-symbol="cosine">max(0, n·l)</span> · I / (1 + d_light²)</div><table class="gi-symbols"><tr><th>Lᵣ</th><td>ray 命中点返回的 diffuse radiance</td></tr><tr><th>n·l</th><td>表面朝向灯的 receiver cosine</td></tr></table></div>
+              <div class="gi-panel" data-gi-panel="value"><p id="traceValuePanel">当前代值将在这里更新。</p></div>
+              <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="probe trace / teaching pseudocode">for each ray direction:
+  hit = traceScene(probePosition, direction)
+  if hit:
+    radiance = shadeDiffuse(hit, pointLight)
+    distance = hit.t
+  else:
+    radiance = environment(direction)
+    distance = maxDistance</code></pre></div>
+              <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_probes.html · traceProbeRay()">function traceProbeRay(origin, angle, light) {
+  const direction = [Math.cos(angle), Math.sin(angle)];
+  const hit = nearestSceneHit(origin, direction);
+  if (!hit) return { radiance: 0.025, distance: 2.4 };
+
+  const toLight = subtract2(light, hit.position);
+  const lightDistance2 = dot2(toLight, toLight);
+  const lightDirection = normalize2(toLight);
+  const receiverCosine = Math.max(0, dot2(hit.normal, lightDirection));
+  const visible = !segmentHitsOccluder(hit.position, light);
+  const radiance = visible
+    ? 1.8 * hit.albedo * receiverCosine / (1 + 1.4 * lightDistance2)
+    : 0.008;
+  return { radiance, distance: hit.distance };
+}</code></pre></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="gi-stage" id="probe-stage-atlas">
+          <div class="gi-stage-head"><span class="gi-stage-num">02</span><div><h3>两个 atlas：颜色与几何证据分开存</h3><p>方向格子一一对应；上排是 irradiance，下排是 distance mean / second moment。</p></div><span class="gi-stage-tag">PACK</span></div>
+          <div class="gi-stage-body">
+            <div class="probe-demo-grid">
+              <div class="probe-mini-controls">
+                <label>查看方向 <output id="atlasDirectionOut">0°</output><input id="atlasDirection" type="range" min="0" max="359" value="0" /></label>
+                <label>距离方差 <output id="atlasVarianceOut">0.08</output><input id="atlasVariance" type="range" min="1" max="30" value="8" /></label>
+                <button id="atlasRegenerate" type="button">用 Stage 01 当前 rays 重新落盘</button>
+                <div class="probe-readout" id="atlasReadout">高亮格显示当前 direction 的 texel 与 moments。</div>
+              </div>
+              <canvas class="probe-canvas" id="atlasCanvas" width="720" height="360" aria-label="Irradiance 与 distance moments atlas"></canvas>
+            </div>
+            <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+              <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="value">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+              <div class="gi-panel" data-gi-panel="intuition"><p>颜色 atlas 回答“从这个方向来的光有多少”；distance atlas 回答“这个方向多远有墙，以及测量有多稳定”。两者职责不同，不能只存颜色。</p></div>
+              <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">m₁ = average(d)　　m₂ = average(d²)　　variance = max(m₂ − m₁², ε)</div></div>
+              <div class="gi-panel" data-gi-panel="value"><p id="atlasValuePanel">当前 texel 代值将在这里更新。</p></div>
+              <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="DDGI atlas packing pseudocode">texel = directionToAtlas(ray.direction)
+irradiance[texel] += ray.radiance * cosineKernel
+distanceMean[texel] += ray.distance
+distanceSecondMoment[texel] += ray.distance * ray.distance</code></pre></div>
+              <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_probes.html · rebuildAtlas()">function rebuildAtlas(samples, texelCount) {
+  const atlas = Array.from({ length: texelCount }, () => ({
+    irradiance: 0,
+    mean: 0,
+    secondMoment: 0,
+    count: 0
+  }));
+  for (const sample of samples) {
+    const texel = directionToAtlas(sample.angle, texelCount);
+    const cell = atlas[texel];
+    cell.irradiance += sample.radiance;
+    cell.mean += sample.distance;
+    cell.secondMoment += sample.distance * sample.distance;
+    cell.count += 1;
+  }
+  return atlas.map(normalizeAtlasCell);
+}</code></pre></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="gi-stage" id="probe-stage-history">
+          <div class="gi-stage-head"><span class="gi-stage-num">03</span><div><h3>History：hysteresis 是“旧值保留比例”</h3><p>换灯后逐帧单步，看响应速度与稳定性如何互换；hard reset 用于无效历史。</p></div><span class="gi-stage-tag">TEMPORAL</span></div>
+          <div class="gi-stage-body">
+            <div class="probe-demo-grid">
+              <div class="probe-mini-controls">
+                <label>hysteresis <output id="historyHOut">0.92</output><input id="historyH" type="range" min="0" max="99" value="92" /></label>
+                <label>新测量 <output id="historyMeasureOut">1.00</output><input id="historyMeasure" type="range" min="0" max="120" value="100" /></label>
+                <button id="historyStep" type="button">推进 1 帧</button><button id="historyReset" type="button">Hard reset（历史无效）</button>
+                <div class="probe-readout" id="historyReadout">frame 0 · history = 0.08</div>
+              </div>
+              <canvas class="probe-canvas" id="historyCanvas" width="720" height="330" aria-label="DDGI hysteresis 收敛曲线"></canvas>
+            </div>
+            <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+              <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="value">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+              <div class="gi-panel" data-gi-panel="intuition"><p><code>h=0.92</code> 意味着每帧保留 92% 旧答案，只接收 8% 新测量。噪声小但灯快速移动时明显滞后。</p></div>
+              <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">historyₙ₊₁ = h · historyₙ + (1 − h) · measurementₙ</div></div>
+              <div class="gi-panel" data-gi-panel="value"><p id="historyValuePanel">当前代值将在这里更新。</p></div>
+              <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">if historyIsValid:
+  next = old * hysteresis + measurement * (1 - hysteresis)
+else:
+  next = measurement</code></pre></div>
+              <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_probes.html · advanceHistory()">function advanceHistory() {
+  const hysteresis = Number(historyH.value) / 100;
+  const measurement = Number(historyMeasure.value) / 100;
+  historyValue =
+    hysteresis * historyValue +
+    (1 - hysteresis) * measurement;
+  historySamples.push(historyValue);
+}</code></pre></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="gi-stage" id="probe-stage-gather">
+          <div class="gi-stage-head"><span class="gi-stage-num">04</span><div><h3>Gather：三线性权重还要乘 visibility</h3><p>移动查询点跨墙，比较 naive 与 moments visibility；条形图显示每个邻居最终贡献。</p></div><span class="gi-stage-tag">SPATIAL</span></div>
+          <div class="gi-stage-body">
+            <div class="probe-demo-grid">
+              <div class="probe-mini-controls">
+                <label>查询点 X <output id="gatherQueryOut">+0.12</output><input id="gatherQuery" type="range" min="-90" max="90" value="12" /></label>
+                <label>normal bias <output id="gatherBiasOut">0.06</output><input id="gatherBias" type="range" min="0" max="30" value="6" /></label>
+                <label><span><input id="gatherVisibility" type="checkbox" checked /> 使用 distance moments visibility</span><output id="gatherResultOut">0.00</output></label>
+                <div class="probe-readout" id="gatherReadout">输出与 reference 的误差将在这里更新。</div>
+              </div>
+              <canvas class="probe-canvas" id="gatherCanvas" width="720" height="350" aria-label="Visibility weighted probe gather"></canvas>
+            </div>
+            <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+              <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="value">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际代码</button></div>
+              <div class="gi-panel" data-gi-panel="intuition"><p>trilinear 只知道“近不近”，distance moments 再问“这条 query→probe 路是否像是穿过了更近的墙”。最后必须重新归一化。</p></div>
+              <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">wᵢ = wᵢ,trilinear · wᵢ,visibility · validityᵢ<br>E = Σ(wᵢEᵢ) / max(Σwᵢ, ε)</div></div>
+              <div class="gi-panel" data-gi-panel="value"><p id="gatherValuePanel">当前权重代值将在这里更新。</p></div>
+              <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">for each of 8 neighboring probes:
+  direction = probe.position - biasedQuery
+  visibility = chebyshev(distanceMoments, length(direction))
+  weight = trilinear * visibility * validity
+return weightedIrradiance / max(weightSum, epsilon)</code></pre></div>
+              <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_probes.html · gatherTeachingCell()">function gatherTeachingCell(queryX, useVisibility) {
+  let weighted = 0;
+  let weightSum = 0;
+  for (const probe of gatherProbes) {
+    const trilinear = Math.max(0, 1 - Math.abs(queryX - probe.x));
+    const crossesWall = queryX * probe.x < 0;
+    const visibility = useVisibility && crossesWall ? 0.025 : 1;
+    const weight = trilinear * visibility * probe.validity;
+    weighted += weight * probe.irradiance;
+    weightSum += weight;
+  }
+  return weighted / Math.max(weightSum, 1e-5);
+}</code></pre></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="gi-stage" id="probe-stage-maintain">
+          <div class="gi-stage-head"><span class="gi-stage-num">05</span><div><h3>Relocation / classification：坏 probe 不是继续参与平均</h3><p>把 probe 拖入墙或墙边；比较原位、relocate 与 inactive 三种状态。</p></div><span class="gi-stage-tag">MAINTENANCE</span></div>
+          <div class="gi-stage-body">
+            <div class="probe-demo-grid">
+              <div class="probe-mini-controls">
+                <label>probe X <output id="relocateXOut">-0.04</output><input id="relocateX" type="range" min="-55" max="55" value="-4" /></label>
+                <label>最近命中距离阈值 <output id="relocateThresholdOut">0.12</output><input id="relocateThreshold" type="range" min="3" max="30" value="12" /></label>
+                <button id="relocateApply" type="button">执行一次 relocation / classification</button><button id="relocateReset" type="button">重置 probe</button>
+                <div class="probe-readout" id="relocateReadout">状态：尚未检查</div>
+              </div>
+              <canvas class="probe-canvas" id="relocateCanvas" width="720" height="330" aria-label="Probe relocation 与 classification"></canvas>
+            </div>
+            <div class="gi-task-grid"><div class="gi-task do"><b>操作</b><span>把 X 放到 −0.04（墙内），点执行。</span></div><div class="gi-task watch"><b>观察</b><span>probe 沿最空旷方向偏移；找不到安全点则 inactive。</span></div><div class="gi-task expect"><b>期望</b><span>参与插值的 probe 不再位于几何内部。</span></div></div>
+            <p class="callout"><b>还缺 scrolling：</b>相机移动时体积原点按 probe spacing 对齐，把离开窗口的层复用到前方并标记历史无效。这个完整调度在 <a href="gi_module_ddgi.html">DDGI 实例页</a>单独演示。</p>
+          </div>
+        </article>
+      </div>
+    </div></section>
+
+    <section id="implementation"><div class="wrap"><div class="head"><div><div class="k">No Mystery Functions</div><h2>Demo 的墙体测试与权重函数完整展开</h2></div><p>这里不用不存在的 <code>GetVisibility()</code> 一笔带过。生产 DDGI 会用每个 probe 的距离分布估计 visibility；本 Demo 的墙是解析平面，所以能给出精确线段测试。下面三段是与页面 JavaScript 对应的 HLSL 教学摘录，本页不会编译或派发它们。</p></div><div class="grid"><article class="card half"><h3>线段是否穿过本 Demo 的墙</h3><pre class="code"><code data-gi-code data-gi-status="excerpt" data-gi-source="HLSL 教学摘录 · 对应本页 segmentBlocked()">bool SegmentBlockedByDemoWall(float3 a, float3 b) {
+  if (a.x * b.x >= 0.0) return false; // 同侧
+  float t = -a.x / (b.x - a.x);       // x=0 交点
+  float3 hit = lerp(a, b, t);
+  return hit.y > -0.78 && hit.y < 0.68 &&
+         abs(hit.z) < 0.95;
+}</code></pre></article><article class="card half"><h3>最终权重：每一项都有来源</h3><pre class="code"><code data-gi-code data-gi-status="excerpt" data-gi-source="HLSL 教学摘录 · 对应本页 candidates()">float FinalWeight(float trilinearWeight,
+                  bool wallBlocked,
+                  float validity) {
+  float visibility = wallBlocked ? 0.02 : 1.0;
+  return trilinearWeight * visibility * validity;
+}
+
+// 对所有候选求和后除以 max(sum, 1e-5)。</code></pre></article><article class="card full"><h3>DDGI 历史更新，不隐藏“神奇采样函数”</h3><pre class="code"><code data-gi-code data-gi-status="excerpt" data-gi-source="HLSL 教学摘录 · 对应本页 stepDDGI()">float3 UpdateProbe(float3 previousIrradiance,
+                   float3 newlyMeasuredIrradiance,
+                   float hysteresis) {
+  return lerp(newlyMeasuredIrradiance,
+              previousIrradiance,
+              hysteresis);
+}
+
+// newlyMeasuredIrradiance 的来源不是一个通用 API：
+// DXR/Vulkan 实现会从 probe 发射一组 ray，命中后执行引擎自己的材质/光照求值，
+// 再按方向写入 octahedral irradiance 与 distance textures。</code></pre></article></div><details class="dict" open><summary>函数词典：本页简化与生产算法的准确对应</summary><table><tr><th>SegmentBlockedByDemoWall</th><td>本页完整定义，且与 3D Demo 的墙尺寸一致。生产 DDGI 不知道“墙平面”，而是从 probe distance moments 推断 query→probe 的可见概率。</td></tr><tr><th>FinalWeight</th><td>本页完整定义。<code>trilinearWeight</code> 来自查询点在规则 grid cell 内的三个线性坐标乘积；<code>validity</code> 在 Demo 中恒为 1。</td></tr><tr><th>UpdateProbe</th><td>本页完整定义。Demo 的 newlyMeasured 值由解析点光 + 精确墙测试生成；生产实现通过 ray tracing 与材质着色获得。</td></tr><tr><th>lerp(a,b,t)</th><td>HLSL 标准 intrinsic，不是自定义 helper；定义就是 <code>a + (b-a)*t</code>。参见 <a href="https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-lerp" target="_blank" rel="noreferrer">Microsoft HLSL lerp</a>。</td></tr><tr><th>RayQuery / TraceRay</th><td>真实 ray API，具体绑定依赖 DXR/Vulkan。DDGI 的完整 ray、blend、border copy、relocation 过程见 <a href="https://github.com/NVIDIAGameWorks/RTXGI-DDGI/blob/main/docs/Algorithms.md" target="_blank" rel="noreferrer">NVIDIA RTXGI 官方 Algorithms</a>。</td></tr><tr><th>SH irradiance</th><td>本 Demo 为突出空间问题只存 RGB 强度。方向 payload 的投影与 cosine convolution 在 <a href="gi_module_sh.html">SH 页面</a>解释。</td></tr></table></details></div></section>
+
+    <section id="boundary"><div class="wrap"><div class="head"><div><div class="k">Advantages / Limits</div><h2>Probe 省下的是密集空间求解，不是所有困难</h2></div><p>它把昂贵照明采样摊到稀疏位置，再依靠重建覆盖像素。质量取决于“场是否足够低频”与 visibility 是否可靠。</p></div><div class="grid"><article class="card"><h3>优势</h3><p>查询成本与场景三角形数弱相关；适合大空间 diffuse GI；Probe 数据可流式、级联或分 brick；DDGI 可支持动态灯和一定程度动态几何。</p></article><article class="card"><h3>空间限制</h3><p>墙、门缝、角落与小尺度遮挡不是平滑场。网格过稀时，再复杂的插值也不能恢复未采样信息。</p></article><article class="card"><h3>时间限制</h3><p>Baked 不响应任意动态灯；DDGI 要分批发 ray 并历史融合，快速变化会有延迟、拖影或更新预算尖峰。</p></article><article class="card full"><h3>与 PRT Probe 的分界</h3><p>Irradiance Probe 存某个光照状态下的结果；PRT 存固定几何对可变入射光的传输算子。两者都可能用 SH，但灯变化时一个需要重算/更新结果，另一个在适用假设内做系数点积。继续阅读：<a href="gi_module_prt_probes.html">PRT / Transport Probes →</a></p></article></div></div></section>
+
+    <section><div class="wrap"><div class="head"><div><div class="k">Primary / Official Sources</div><h2>从原始 DDGI 到生产 Probe Volumes</h2></div><p>站内导航是相对路径；外链仅指向论文、作者项目页或引擎官方文档。</p></div><div class="sources"><a class="source" href="https://jcgt.org/published/0008/02/01/" target="_blank" rel="noreferrer"><b>01</b><span><strong>Dynamic Diffuse GI with Ray-Traced Irradiance Fields</strong><small>Majercik et al. · JCGT 2019 · DDGI 原始论文与代码</small></span></a><a class="source" href="https://github.com/NVIDIAGameWorks/RTXGI-DDGI/blob/main/docs/Algorithms.md" target="_blank" rel="noreferrer"><b>02</b><span><strong>NVIDIA RTXGI DDGI · Algorithms</strong><small>官方 ray trace、blend、relocation 与 scrolling 流程</small></span></a><a class="source" href="https://docs.unity3d.com/Manual/probevolumes-concept.html" target="_blank" rel="noreferrer"><b>03</b><span><strong>Unity Manual · Adaptive Probe Volumes</strong><small>官方 bricks、per-pixel sampling 与 streaming 概念</small></span></a><a class="source" href="https://casual-effects.com/research/McGuire2017LightField/" target="_blank" rel="noreferrer"><b>04</b><span><strong>Precomputed Light Field Probes</strong><small>McGuire et al. · I3D 2017 · radiance 与 visibility 重建</small></span></a></div></div></section>
+  </main>
+  <footer><div class="wrap foot"><span>GI Learning Modules · 06 Probes</span><div class="next"><a href="gi_module_cone_tracing.html">← Cone Tracing</a><a href="index.html">主目录</a><a href="gi_module_prt_probes.html">PRT Probes →</a></div></div></footer>
+  <script>
+  (()=>{'use strict';
+    const $=id=>document.getElementById(id),canvas=$('glCanvas'),gl=canvas.getContext('webgl2',{antialias:true,alpha:false});if(!gl){canvas.style.display='none';$('fallback').style.display='block';return}
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t,dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l)},lum=c=>c[0]*.2126+c[1]*.7152+c[2]*.0722;
+    function makeProgram(vs,fs){function sh(t,s){const q=gl.createShader(t);gl.shaderSource(q,s);gl.compileShader(q);if(!gl.getShaderParameter(q,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(q));return q}const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,vs));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return p}
+    const cubeProg=makeProgram(`#version 300 es\nlayout(location=0)in vec3 aP;layout(location=1)in vec3 aN;layout(location=2)in vec3 iP;layout(location=3)in vec3 iS;layout(location=4)in vec4 iC;uniform mat4 uVP;out vec3 vN;out vec4 vC;void main(){gl_Position=uVP*vec4(iP+aP*iS,1);vN=aN;vC=iC;}`,`#version 300 es\nprecision highp float;in vec3 vN;in vec4 vC;out vec4 o;void main(){float l=.58+.42*max(dot(normalize(vN),normalize(vec3(.4,.8,.55))),0.);o=vec4(vC.rgb*l,vC.a);}`),lineProg=makeProgram(`#version 300 es\nlayout(location=0)in vec3 aP;layout(location=1)in vec4 aC;uniform mat4 uVP;out vec4 vC;void main(){gl_Position=uVP*vec4(aP,1);vC=aC;}`,`#version 300 es\nprecision highp float;in vec4 vC;out vec4 o;void main(){o=vC;}`);
+    const f=[[-1,-1,1,0,0,1],[1,-1,1,0,0,1],[1,1,1,0,0,1],[-1,1,1,0,0,1],[1,-1,-1,0,0,-1],[-1,-1,-1,0,0,-1],[-1,1,-1,0,0,-1],[1,1,-1,0,0,-1],[-1,1,1,0,1,0],[1,1,1,0,1,0],[1,1,-1,0,1,0],[-1,1,-1,0,1,0],[-1,-1,-1,0,-1,0],[1,-1,-1,0,-1,0],[1,-1,1,0,-1,0],[-1,-1,1,0,-1,0],[1,-1,1,1,0,0],[1,-1,-1,1,0,0],[1,1,-1,1,0,0],[1,1,1,1,0,0],[-1,-1,-1,-1,0,0],[-1,-1,1,-1,0,0],[-1,1,1,-1,0,0],[-1,1,-1,-1,0,0]],ind=[];for(let q=0;q<6;q++){let i=q*4;ind.push(i,i+1,i+2,i,i+2,i+3)}const vao=gl.createVertexArray();gl.bindVertexArray(vao);let b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(f.flat()),gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);b=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,b);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(ind),gl.STATIC_DRAW);const instBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,instBuf);for(const [loc,size,off] of [[2,3,0],[3,3,12],[4,4,24]]){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,40,off);gl.vertexAttribDivisor(loc,1)}gl.bindVertexArray(null);const lineVao=gl.createVertexArray();gl.bindVertexArray(lineVao);const lineBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,lineBuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,28,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,28,12);gl.bindVertexArray(null);
+    const xs=[-.75,-.45,-.15,.15,.45,.75],ys=[-.58,-.05,.48],zs=[-.65,-.2,.25,.7],probes=[];for(const x of xs)for(const y of ys)for(const z of zs)probes.push({p:[x,y,z],id:probes.length});
+    const state={source:'baked',weight:'naive',yaw:.77,pitch:.48,dist:4.1,drag:false,lastX:0,lastY:0,query:[.09,-.2,-.18],light:[-.68,.35,-.28],bakeLight:[-.68,.35,-.28],baked:[],ddgi:[],cursor:0,updated:new Set(),instances:[],lines:[]};
+    function segmentBlocked(a,b){if(a[0]*b[0]>=0)return false;const t=-a[0]/(b[0]-a[0]),y=mix(a[1],b[1],t),z=mix(a[2],b[2],t);return y>-.78&&y<.68&&Math.abs(z)<.95}
+    function evaluate(p,light){const d=light.map((v,i)=>v-p[i]),d2=dot(d,d),blocked=segmentBlocked(p,light),strength=blocked?0:1.6/(.12+d2),ambient=p[0]<0?[.045,.035,.03]:[.024,.04,.048];return[ambient[0]+strength*1.0,ambient[1]+strength*.46,ambient[2]+strength*.16]}
+    function capture(light){return probes.map(q=>evaluate(q.p,light))}state.baked=capture(state.bakeLight);state.ddgi=state.baked.map(c=>c.slice());
+    function axisPair(arr,v){let hi=1;while(hi<arr.length-1&&arr[hi]<v)hi++;const lo=hi-1,t=clamp((v-arr[lo])/(arr[hi]-arr[lo]),0,1);return{lo,hi,t}}
+    function candidates(){const ax=axisPair(xs,state.query[0]),ay=axisPair(ys,state.query[1]),az=axisPair(zs,state.query[2]),out=[];for(const ix of [ax.lo,ax.hi])for(const iy of [ay.lo,ay.hi])for(const iz of [az.lo,az.hi]){const p=[xs[ix],ys[iy],zs[iz]],id=(ix*ys.length+iy)*zs.length+iz,tri=(ix===ax.lo?1-ax.t:ax.t)*(iy===ay.lo?1-ay.t:ay.t)*(iz===az.lo?1-az.t:az.t),blocked=segmentBlocked(state.query,p),vis=state.weight==='visibility'&&blocked?.02:1;out.push({id,p,tri,blocked,raw:tri*vis})}let sum=out.reduce((s,q)=>s+q.raw,0)||1;out.forEach(q=>q.w=q.raw/sum);return out}
+    function solve(){const data=state.source==='baked'?state.baked:state.ddgi,cs=candidates(),out=[0,0,0];for(const q of cs)for(let c=0;c<3;c++)out[c]+=data[q.id][c]*q.w;return{out,cs}}
+    function stepDDGI(count=8){const target=capture(state.light);for(let n=0;n<count;n++){const id=state.cursor++%probes.length;for(let c=0;c<3;c++)state.ddgi[id][c]=mix(target[id][c],state.ddgi[id][c],.72);state.updated.add(id)}rebuild()}
+    function tone(c){return c.map(v=>Math.pow(clamp(v/1.65,0,1),1/2.2))}function push(a,p,s,c){a.push(...p,...s,...c)}
+    function rebuild(){state.query=[+$('qx').value/100,+$('qy').value/100,+$('qz').value/100];state.light=[+$('lx').value/100,.35,+$('lz').value/100];const data=state.source==='baked'?state.baked:state.ddgi,{out,cs}=solve(),truth=evaluate(state.query,state.light),a=[],lines=[];push(a,[0,-.80,0],[.98,.025,.98],[.27,.36,.33,1]);push(a,[0,-.05,0],[.03,.73,.95],[.38,.49,.46,1]);push(a,[-.5,.67,0],[.48,.02,.96],[.34,.26,.21,1]);push(a,[.5,.67,0],[.48,.02,.96],[.18,.28,.30,1]);for(const q of probes){const c=tone(data[q.id]),candidate=cs.find(x=>x.id===q.id),s=candidate?.w?(.031+.06*candidate.w):.026;push(a,q.p,[s,s,s],[c[0],c[1],c[2],1])}push(a,state.query,[.055,.055,.055],[1,1,1,1]);push(a,state.light,[.065,.065,.065],[1,.68,.12,1]);for(const q of cs){const col=q.blocked?[1,.28,.36,.78]:[.30,.87,.92,.8];lines.push(...state.query,...col,...q.p,...col)}state.instances=a;state.lines=lines;gl.bindBuffer(gl.ARRAY_BUFFER,instBuf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(a),gl.DYNAMIC_DRAW);gl.bindBuffer(gl.ARRAY_BUFFER,lineBuf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.DYNAMIC_DRAW);
+      $('qxOut').value=(state.query[0]>=0?'+':'')+state.query[0].toFixed(2);$('qyOut').value=state.query[1].toFixed(2);$('qzOut').value=state.query[2].toFixed(2);$('lxOut').value=(state.light[0]>=0?'+':'')+state.light[0].toFixed(2);$('lzOut').value=state.light[2].toFixed(2);const o=lum(out),t=lum(truth),err=Math.abs(o-t)/Math.max(t,.03),rejected=cs.filter(q=>q.blocked).reduce((s,q)=>s+q.tri,0);$('outputValue').textContent=o.toFixed(2);$('truthValue').textContent=t.toFixed(2);$('errorValue').textContent=Math.round(err*100)+'%';$('rejectedValue').textContent=Math.round(rejected*100)+'%';const lightMove=Math.hypot(state.light[0]-state.bakeLight[0],state.light[2]-state.bakeLight[2]),fresh=state.source==='baked'?clamp(1-lightMove/1.6,0,1):state.updated.size/probes.length;$('dataAge').textContent=state.source==='baked'?(lightMove<.02?'Baked：灯与烘焙位置一致':'Baked：当前灯已离开烘焙位置'):`DDGI：本轮已触及 ${state.updated.size}/${probes.length} probes`;$('convergenceBar').style.width=Math.round(fresh*100)+'%';$('convergenceText').textContent=(state.source==='baked'?'数据新鲜度 ':'本轮覆盖率 ')+Math.round(fresh*100)+'%';$('weightList').innerHTML=cs.map(q=>`<div class="weight ${q.blocked?'reject':''}"><b>P${q.id} · ${(q.w*100).toFixed(1)}%</b>${q.blocked?'跨墙候选':'可见候选'}</div>`).join('');render()}
+    function perspective(fovy,aspect,near,far){const f=1/Math.tan(fovy/2),nf=1/(near-far);return[f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0]}function lookAt(e,c,u){const z=norm(e.map((v,i)=>v-c[i])),x=norm(cross(u,z)),y=cross(z,x);return[x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,e),-dot(y,e),-dot(z,e),1]}function mul(a,b){const o=new Array(16).fill(0);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o}
+    function render(){const e=[Math.cos(state.yaw)*Math.cos(state.pitch)*state.dist,Math.sin(state.pitch)*state.dist,Math.sin(state.yaw)*Math.cos(state.pitch)*state.dist],vp=mul(perspective(Math.PI/4,canvas.width/canvas.height,.05,20),lookAt(e,[0,-.08,0],[0,1,0]));gl.viewport(0,0,canvas.width,canvas.height);gl.enable(gl.DEPTH_TEST);gl.clearColor(.016,.038,.033,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(cubeProg);gl.uniformMatrix4fv(gl.getUniformLocation(cubeProg,'uVP'),false,new Float32Array(vp));gl.bindVertexArray(vao);gl.drawElementsInstanced(gl.TRIANGLES,36,gl.UNSIGNED_SHORT,0,state.instances.length/10);gl.useProgram(lineProg);gl.uniformMatrix4fv(gl.getUniformLocation(lineProg,'uVP'),false,new Float32Array(vp));gl.bindVertexArray(lineVao);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.drawArrays(gl.LINES,0,state.lines.length/7);gl.disable(gl.BLEND);gl.bindVertexArray(null)}
+    function setSource(v){state.source=v;document.querySelectorAll('#sourceButtons button').forEach(b=>b.classList.toggle('active',b.dataset.source===v));$('modeTitle').textContent=v==='baked'?'现在看：烘焙结果会过期':'现在看：DDGI 不是瞬间完成';$('modeText').textContent=v==='baked'?'移动黄色灯，probe 颜色保持在烘焙时刻；“当前参考”改变而插值输出不跟随。':'点击单步更新：每步只处理 8 个 probe，并用 hysteresis=0.72 混合，所以颜色逐批接近当前灯。';rebuild()}
+    $('sourceButtons').addEventListener('click',e=>{const b=e.target.closest('button[data-source]');if(b)setSource(b.dataset.source)});$('weightButtons').addEventListener('click',e=>{const b=e.target.closest('button[data-weight]');if(!b)return;state.weight=b.dataset.weight;document.querySelectorAll('#weightButtons button').forEach(x=>x.classList.toggle('active',x===b));rebuild()});for(const id of ['qx','qy','qz','lx','lz'])$(id).addEventListener('input',rebuild);$('leakPreset').addEventListener('click',()=>{$('qx').value=9;$('qy').value=-20;$('qz').value=-18;$('lx').value=-68;$('lz').value=-28;state.weight='naive';document.querySelectorAll('#weightButtons button').forEach(x=>x.classList.toggle('active',x.dataset.weight==='naive'));setSource('baked')});$('rebake').addEventListener('click',()=>{state.bakeLight=state.light.slice();state.baked=capture(state.bakeLight);rebuild()});$('stepDDGI').addEventListener('click',()=>{setSource('ddgi');stepDDGI(8)});$('resetDDGI').addEventListener('click',()=>{state.ddgi=state.baked.map(c=>c.slice());state.updated.clear();state.cursor=0;rebuild()});
+    let last=0;function tick(t){if($('autoDDGI').checked&&t-last>120){if(state.source!=='ddgi')setSource('ddgi');stepDDGI(5);last=t}requestAnimationFrame(tick)}requestAnimationFrame(tick);
+    canvas.addEventListener('pointerdown',e=>{state.drag=true;state.lastX=e.clientX;state.lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!state.drag)return;state.yaw+=(e.clientX-state.lastX)*.008;state.pitch=clamp(state.pitch+(e.clientY-state.lastY)*.008,-1.1,1.2);state.lastX=e.clientX;state.lastY=e.clientY;render()});canvas.addEventListener('pointerup',()=>state.drag=false);canvas.addEventListener('pointercancel',()=>state.drag=false);canvas.addEventListener('wheel',e=>{e.preventDefault();state.dist=clamp(state.dist*Math.exp(e.deltaY*.001),2.5,7);render()},{passive:false});rebuild();
+  })();
+  </script>
+  <script src="gi_course.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const byId = (id) => document.getElementById(id);
+    const clamp01 = (value) => Math.max(0, Math.min(1, value));
+    const subtract2 = (a, b) => [a[0] - b[0], a[1] - b[1]];
+    const dot2 = (a, b) => a[0] * b[0] + a[1] * b[1];
+    const length2 = (v) => Math.hypot(v[0], v[1]);
+    const normalize2 = (v) => {
+      const length = length2(v) || 1;
+      return [v[0] / length, v[1] / length];
+    };
+    const worldToCanvas = (canvas, point) => [
+      (point[0] * 0.43 + 0.5) * canvas.width,
+      (0.5 - point[1] * 0.43) * canvas.height
+    ];
+
+    const wallSegment = { a: [0, -0.72], b: [0, 0.30] };
+    const sceneSegments = [
+      { a: [-1, -0.82], b: [1, -0.82], normal: [0, 1], albedo: 0.72 },
+      { a: [1, -0.82], b: [1, 0.82], normal: [-1, 0], albedo: 0.42 },
+      { a: [1, 0.82], b: [-1, 0.82], normal: [0, -1], albedo: 0.58 },
+      { a: [-1, 0.82], b: [-1, -0.82], normal: [1, 0], albedo: 0.82 },
+      { a: wallSegment.a, b: wallSegment.b, normal: [1, 0], albedo: 0.50 }
+    ];
+
+    function cross2(a, b) {
+      return a[0] * b[1] - a[1] * b[0];
+    }
+
+    function raySegmentHit(origin, direction, segment) {
+      const edge = subtract2(segment.b, segment.a);
+      const delta = subtract2(segment.a, origin);
+      const denominator = cross2(direction, edge);
+      if (Math.abs(denominator) < 1e-6) return null;
+      const rayT = cross2(delta, edge) / denominator;
+      const edgeT = cross2(delta, direction) / denominator;
+      if (rayT <= 0.0001 || edgeT < 0 || edgeT > 1) return null;
+      return {
+        distance: rayT,
+        position: [
+          origin[0] + direction[0] * rayT,
+          origin[1] + direction[1] * rayT
+        ],
+        normal: segment.normal,
+        albedo: segment.albedo
+      };
+    }
+
+    function nearestSceneHit(origin, direction) {
+      let nearest = null;
+      for (const segment of sceneSegments) {
+        const hit = raySegmentHit(origin, direction, segment);
+        if (hit && (!nearest || hit.distance < nearest.distance)) nearest = hit;
+      }
+      return nearest;
+    }
+
+    function segmentsIntersect(a, b, c, d) {
+      const ab = subtract2(b, a);
+      const cd = subtract2(d, c);
+      const denominator = cross2(ab, cd);
+      if (Math.abs(denominator) < 1e-6) return false;
+      const ac = subtract2(c, a);
+      const t = cross2(ac, cd) / denominator;
+      const u = cross2(ac, ab) / denominator;
+      return t > 0.001 && t < 0.999 && u >= 0 && u <= 1;
+    }
+
+    function segmentHitsOccluder(a, b) {
+      return segmentsIntersect(a, b, wallSegment.a, wallSegment.b);
+    }
+
+    function traceProbeRay(origin, angle, light) {
+      const direction = [Math.cos(angle), Math.sin(angle)];
+      const hit = nearestSceneHit(origin, direction);
+      if (!hit) return { angle, radiance: 0.025, distance: 2.4, hit: null };
+
+      const toLight = subtract2(light, hit.position);
+      const lightDistance2 = dot2(toLight, toLight);
+      const lightDirection = normalize2(toLight);
+      const receiverCosine = Math.max(0, dot2(hit.normal, lightDirection));
+      const visible = !segmentHitsOccluder(hit.position, light);
+      const radiance = visible
+        ? 1.8 * hit.albedo * receiverCosine / (1 + 1.4 * lightDistance2)
+        : 0.008;
+      return { angle, radiance, distance: hit.distance, hit, visible, receiverCosine };
+    }
+
+    const traceState = { origin: [0.42, -0.04], samples: [], light: [-0.62, 0.24] };
+
+    function drawSceneBase(context, canvas) {
+      context.fillStyle = '#050c0b';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.lineWidth = 8;
+      context.lineCap = 'round';
+      for (const segment of sceneSegments) {
+        const a = worldToCanvas(canvas, segment.a);
+        const b = worldToCanvas(canvas, segment.b);
+        context.strokeStyle = segment === sceneSegments[4] ? '#78918b' : '#38544e';
+        context.beginPath();
+        context.moveTo(a[0], a[1]);
+        context.lineTo(b[0], b[1]);
+        context.stroke();
+      }
+    }
+
+    function rebuildTrace() {
+      const canvas = byId('traceCanvas');
+      if (!canvas) return;
+      const context = canvas.getContext('2d');
+      const rayCount = Number(byId('traceRayCount').value);
+      const rotation = Number(byId('traceRotation').value) * Math.PI / 180;
+      traceState.light = [Number(byId('traceLight').value) / 100, 0.24];
+      traceState.samples = [];
+      drawSceneBase(context, canvas);
+
+      const originPixel = worldToCanvas(canvas, traceState.origin);
+      for (let rayIndex = 0; rayIndex < rayCount; rayIndex += 1) {
+        const angle = rotation + rayIndex / rayCount * Math.PI * 2;
+        const sample = traceProbeRay(traceState.origin, angle, traceState.light);
+        traceState.samples.push(sample);
+        const endpoint = sample.hit
+          ? sample.hit.position
+          : [
+              traceState.origin[0] + Math.cos(angle) * 2.2,
+              traceState.origin[1] + Math.sin(angle) * 2.2
+            ];
+        const endPixel = worldToCanvas(canvas, endpoint);
+        const lightness = Math.round(45 + 190 * clamp01(sample.radiance));
+        context.strokeStyle = `rgba(255, ${lightness}, 95, 0.58)`;
+        context.lineWidth = 1.5;
+        context.beginPath();
+        context.moveTo(originPixel[0], originPixel[1]);
+        context.lineTo(endPixel[0], endPixel[1]);
+        context.stroke();
+      }
+
+      const lightPixel = worldToCanvas(canvas, traceState.light);
+      context.fillStyle = '#ffca72';
+      context.shadowColor = '#ffb44c';
+      context.shadowBlur = 22;
+      context.beginPath();
+      context.arc(lightPixel[0], lightPixel[1], 10, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.arc(originPixel[0], originPixel[1], 7, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#a9c2bb';
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillText('Probe P', originPixel[0] + 12, originPixel[1] - 10);
+      context.fillStyle = '#ffd78b';
+      context.fillText(`Point light (${traceState.light[0].toFixed(2)}, 0.24)`, lightPixel[0] + 14, lightPixel[1] - 8);
+
+      const hits = traceState.samples.filter((sample) => sample.hit);
+      const visibleHits = hits.filter((sample) => sample.visible);
+      const meanDistance = hits.reduce((sum, sample) => sum + sample.distance, 0) / Math.max(1, hits.length);
+      const brightest = traceState.samples.reduce(
+        (best, sample) => sample.radiance > best.radiance ? sample : best,
+        traceState.samples[0]
+      );
+      byId('traceRayCountOut').value = String(rayCount);
+      byId('traceLightOut').value = traceState.light[0].toFixed(2);
+      byId('traceRotationOut').value = `${Math.round(rotation * 180 / Math.PI)}°`;
+      byId('preLightPosition').textContent = `position = (${traceState.light[0].toFixed(2)}, +0.24)`;
+      byId('traceReadout').innerHTML = `hit <b>${hits.length}/${rayCount}</b> · 可见灯光 <b>${visibleHits.length}</b> · mean distance <b>${meanDistance.toFixed(3)}</b>`;
+      byId('traceValuePanel').textContent =
+        `最亮 ray：ω=${Math.round(brightest.angle * 180 / Math.PI)}°，` +
+        `cos=${(brightest.receiverCosine || 0).toFixed(3)}，` +
+        `Lᵣ=${brightest.radiance.toFixed(4)}，distance=${brightest.distance.toFixed(3)}。`;
+      rebuildAtlas();
+    }
+
+    function directionToAtlas(angle, texelCount) {
+      const wrapped = (angle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      return Math.min(texelCount - 1, Math.floor(wrapped / (Math.PI * 2) * texelCount));
+    }
+
+    function normalizeAtlasCell(cell) {
+      if (!cell.count) return { irradiance: 0, mean: 2.4, secondMoment: 5.76, count: 0 };
+      return {
+        irradiance: cell.irradiance / cell.count,
+        mean: cell.mean / cell.count,
+        secondMoment: cell.secondMoment / cell.count,
+        count: cell.count
+      };
+    }
+
+    function rebuildAtlas() {
+      const canvas = byId('atlasCanvas');
+      if (!canvas || !traceState.samples.length) return;
+      const context = canvas.getContext('2d');
+      const texelCount = 16;
+      const atlas = Array.from({ length: texelCount }, () => ({
+        irradiance: 0,
+        mean: 0,
+        secondMoment: 0,
+        count: 0
+      }));
+      for (const sample of traceState.samples) {
+        const texel = directionToAtlas(sample.angle, texelCount);
+        const cell = atlas[texel];
+        cell.irradiance += sample.radiance;
+        cell.mean += sample.distance;
+        cell.secondMoment += sample.distance * sample.distance;
+        cell.count += 1;
+      }
+      const normalizedAtlas = atlas.map(normalizeAtlasCell);
+      const artificialVariance = Number(byId('atlasVariance').value) / 100;
+      const selectedAngle = Number(byId('atlasDirection').value) * Math.PI / 180;
+      const selectedTexel = directionToAtlas(selectedAngle, texelCount);
+
+      context.fillStyle = '#050c0b';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillStyle = '#b8cec7';
+      context.fillText('Irradiance atlas：方向 → 当前 radiance', 24, 28);
+      context.fillText('Distance moments atlas：mean / second moment', 24, 196);
+      const left = 24;
+      const width = (canvas.width - 48) / texelCount;
+      normalizedAtlas.forEach((cell, index) => {
+        const selected = index === selectedTexel;
+        const irradiance = clamp01(cell.irradiance * 1.7);
+        context.fillStyle = `rgb(${Math.round(30 + 225 * irradiance)},${Math.round(45 + 145 * irradiance)},${Math.round(55 + 55 * irradiance)})`;
+        context.fillRect(left + index * width + 1, 46, width - 2, 100);
+        const distanceTone = clamp01(cell.mean / 2.4);
+        context.fillStyle = `rgb(${Math.round(35 + 65 * distanceTone)},${Math.round(65 + 150 * distanceTone)},${Math.round(75 + 175 * distanceTone)})`;
+        context.fillRect(left + index * width + 1, 214, width - 2, 100);
+        if (selected) {
+          context.strokeStyle = '#ffffff';
+          context.lineWidth = 3;
+          context.strokeRect(left + index * width + 1, 46, width - 2, 100);
+          context.strokeRect(left + index * width + 1, 214, width - 2, 100);
+        }
+      });
+      const selectedCell = normalizedAtlas[selectedTexel];
+      const secondMoment = selectedCell.secondMoment + artificialVariance;
+      const variance = Math.max(0.0001, secondMoment - selectedCell.mean * selectedCell.mean);
+      byId('atlasDirectionOut').value = `${byId('atlasDirection').value}°`;
+      byId('atlasVarianceOut').value = artificialVariance.toFixed(2);
+      byId('atlasReadout').innerHTML = `texel <b>${selectedTexel}</b> · E <b>${selectedCell.irradiance.toFixed(3)}</b> · μ <b>${selectedCell.mean.toFixed(3)}</b> · σ² <b>${variance.toFixed(3)}</b>`;
+      byId('atlasValuePanel').textContent =
+        `texel=${selectedTexel}：m₁=${selectedCell.mean.toFixed(3)}，` +
+        `m₂=${secondMoment.toFixed(3)}，variance=max(${secondMoment.toFixed(3)}−${selectedCell.mean.toFixed(3)}², ε)=${variance.toFixed(3)}。`;
+    }
+
+    let historyValue = 0.08;
+    let historyFrame = 0;
+    let historySamples = [historyValue];
+
+    function drawHistory() {
+      const canvas = byId('historyCanvas');
+      const context = canvas.getContext('2d');
+      const hysteresis = Number(byId('historyH').value) / 100;
+      const measurement = Number(byId('historyMeasure').value) / 100;
+      context.fillStyle = '#050c0b';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const left = 55;
+      const bottom = canvas.height - 42;
+      const top = 24;
+      context.strokeStyle = '#35554e';
+      context.lineWidth = 1;
+      for (let i = 0; i <= 5; i += 1) {
+        const y = bottom - i / 5 * (bottom - top);
+        context.beginPath();
+        context.moveTo(left, y);
+        context.lineTo(canvas.width - 20, y);
+        context.stroke();
+      }
+      context.strokeStyle = '#ffca72';
+      context.setLineDash([8, 6]);
+      const measurementY = bottom - clamp01(measurement) * (bottom - top);
+      context.beginPath();
+      context.moveTo(left, measurementY);
+      context.lineTo(canvas.width - 20, measurementY);
+      context.stroke();
+      context.setLineDash([]);
+      context.strokeStyle = '#70e8c1';
+      context.lineWidth = 3;
+      context.beginPath();
+      historySamples.forEach((sample, index) => {
+        const x = left + index / Math.max(24, historySamples.length - 1) * (canvas.width - left - 22);
+        const y = bottom - clamp01(sample) * (bottom - top);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.stroke();
+      context.fillStyle = '#a8c1ba';
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillText('history', 10, 24);
+      context.fillStyle = '#ffca72';
+      context.fillText(`measurement ${measurement.toFixed(2)}`, canvas.width - 160, measurementY - 8);
+      byId('historyHOut').value = hysteresis.toFixed(2);
+      byId('historyMeasureOut').value = measurement.toFixed(2);
+      byId('historyReadout').innerHTML = `frame <b>${historyFrame}</b> · history <b>${historyValue.toFixed(4)}</b> · 每帧新信息 <b>${((1 - hysteresis) * 100).toFixed(0)}%</b>`;
+      byId('historyValuePanel').textContent =
+        `next = ${hysteresis.toFixed(2)} × ${historyValue.toFixed(4)} + ` +
+        `${(1 - hysteresis).toFixed(2)} × ${measurement.toFixed(2)}。`;
+    }
+
+    function advanceHistory() {
+      const hysteresis = Number(byId('historyH').value) / 100;
+      const measurement = Number(byId('historyMeasure').value) / 100;
+      historyValue =
+        hysteresis * historyValue +
+        (1 - hysteresis) * measurement;
+      historyFrame += 1;
+      historySamples.push(historyValue);
+      if (historySamples.length > 48) historySamples.shift();
+      drawHistory();
+    }
+
+    const gatherProbes = [
+      { x: -0.75, irradiance: 1.00, validity: 1 },
+      { x: -0.25, irradiance: 0.78, validity: 1 },
+      { x: 0.25, irradiance: 0.06, validity: 1 },
+      { x: 0.75, irradiance: 0.03, validity: 1 }
+    ];
+
+    function gatherTeachingCell(queryX, useVisibility) {
+      const contributions = [];
+      let weighted = 0;
+      let weightSum = 0;
+      for (const probe of gatherProbes) {
+        const trilinear = Math.max(0, 1 - Math.abs(queryX - probe.x) / 0.75);
+        const crossesWall = queryX * probe.x < 0;
+        const visibility = useVisibility && crossesWall ? 0.025 : 1;
+        const weight = trilinear * visibility * probe.validity;
+        weighted += weight * probe.irradiance;
+        weightSum += weight;
+        contributions.push({ ...probe, trilinear, visibility, weight, crossesWall });
+      }
+      return {
+        result: weighted / Math.max(weightSum, 1e-5),
+        weightSum,
+        contributions
+      };
+    }
+
+    function drawGather() {
+      const canvas = byId('gatherCanvas');
+      const context = canvas.getContext('2d');
+      const queryX = Number(byId('gatherQuery').value) / 100;
+      const bias = Number(byId('gatherBias').value) / 100;
+      const biasedQueryX = queryX + Math.sign(queryX || 1) * bias;
+      const useVisibility = byId('gatherVisibility').checked;
+      const gathered = gatherTeachingCell(biasedQueryX, useVisibility);
+      const reference = queryX < 0 ? 0.84 : 0.045;
+      const error = Math.abs(gathered.result - reference);
+
+      context.fillStyle = '#050c0b';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      const y = 92;
+      const mapX = (value) => (value * 0.44 + 0.5) * canvas.width;
+      context.fillStyle = '#6e827d';
+      context.fillRect(mapX(-0.035), 28, mapX(0.035) - mapX(-0.035), 160);
+      for (const contribution of gathered.contributions) {
+        const x = mapX(contribution.x);
+        const intensity = clamp01(contribution.irradiance);
+        context.fillStyle = `rgb(${Math.round(50 + 205 * intensity)},${Math.round(70 + 130 * intensity)},${Math.round(72 + 35 * intensity)})`;
+        context.beginPath();
+        context.arc(x, y, 14, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = contribution.crossesWall ? '#ff7d8b' : '#70e8c1';
+        context.lineWidth = 2 + contribution.weight * 6;
+        context.setLineDash(contribution.crossesWall ? [6, 5] : []);
+        context.beginPath();
+        context.moveTo(mapX(queryX), 155);
+        context.lineTo(x, y + 16);
+        context.stroke();
+        context.setLineDash([]);
+      }
+      context.fillStyle = '#ffffff';
+      context.fillRect(mapX(queryX) - 7, 148, 14, 14);
+      const barTop = 228;
+      gathered.contributions.forEach((contribution, index) => {
+        const barWidth = contribution.weight * 185;
+        context.fillStyle = contribution.crossesWall ? '#ff7d8b' : '#70e8c1';
+        context.fillRect(155, barTop + index * 26, barWidth, 14);
+        context.fillStyle = '#b8cec7';
+        context.font = '12px ui-monospace, Consolas';
+        context.fillText(`P${index} w=${contribution.weight.toFixed(3)}`, 24, barTop + 12 + index * 26);
+      });
+      context.fillStyle = '#e8fff8';
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillText(`query ${queryX.toFixed(2)} → output ${gathered.result.toFixed(3)} / reference ${reference.toFixed(3)}`, 400, 250);
+      context.fillStyle = error < 0.08 ? '#70e8c1' : '#ff7d8b';
+      context.fillText(`absolute error ${error.toFixed(3)}`, 400, 278);
+      byId('gatherQueryOut').value = `${queryX >= 0 ? '+' : ''}${queryX.toFixed(2)}`;
+      byId('gatherBiasOut').value = bias.toFixed(2);
+      byId('gatherResultOut').value = gathered.result.toFixed(3);
+      byId('gatherReadout').innerHTML = `biased query <b>${biasedQueryX.toFixed(2)}</b> · Σw <b>${gathered.weightSum.toFixed(3)}</b> · absolute error <b>${error.toFixed(3)}</b>`;
+      byId('gatherValuePanel').textContent = gathered.contributions.map(
+        (item, index) => `P${index}: tri=${item.trilinear.toFixed(2)} × visibility=${item.visibility.toFixed(3)} → w=${item.weight.toFixed(3)}`
+      ).join('；');
+    }
+
+    const relocationState = { checked: false, inactive: false, relocatedX: null };
+
+    function drawRelocation() {
+      const canvas = byId('relocateCanvas');
+      const context = canvas.getContext('2d');
+      const sourceX = Number(byId('relocateX').value) / 100;
+      const displayX = relocationState.relocatedX ?? sourceX;
+      const mapX = (value) => (value * 0.72 + 0.5) * canvas.width;
+      context.fillStyle = '#050c0b';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#6d817c';
+      context.fillRect(mapX(-0.08), 36, mapX(0.08) - mapX(-0.08), 245);
+      context.fillStyle = '#9db0ab';
+      context.font = '13px Segoe UI, Microsoft YaHei';
+      context.fillText('static wall volume', mapX(-0.08) - 45, 24);
+      const y = canvas.height / 2;
+      context.strokeStyle = '#ffca72';
+      context.setLineDash([6, 5]);
+      context.beginPath();
+      context.moveTo(mapX(sourceX), y);
+      context.lineTo(mapX(displayX), y);
+      context.stroke();
+      context.setLineDash([]);
+      context.fillStyle = relocationState.inactive ? '#ff7d8b' : relocationState.checked ? '#70e8c1' : '#ffffff';
+      context.beginPath();
+      context.arc(mapX(displayX), y, 15, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#dbece7';
+      context.fillText(`source x=${sourceX.toFixed(2)}`, 32, 304);
+      context.fillText(`active x=${displayX.toFixed(2)}`, 250, 304);
+      context.fillText(`classification=${relocationState.inactive ? 'inactive' : 'active'}`, 480, 304);
+      byId('relocateXOut').value = sourceX.toFixed(2);
+      byId('relocateThresholdOut').value = (Number(byId('relocateThreshold').value) / 100).toFixed(2);
+    }
+
+    function applyRelocation() {
+      const sourceX = Number(byId('relocateX').value) / 100;
+      const threshold = Number(byId('relocateThreshold').value) / 100;
+      const wallHalfWidth = 0.08;
+      relocationState.checked = true;
+      relocationState.inactive = false;
+      relocationState.relocatedX = sourceX;
+      if (Math.abs(sourceX) < wallHalfWidth + threshold) {
+        const direction = sourceX < 0 ? -1 : 1;
+        const candidate = direction * (wallHalfWidth + threshold);
+        if (Math.abs(candidate) > 0.34) {
+          relocationState.inactive = true;
+        } else {
+          relocationState.relocatedX = candidate;
+        }
+      }
+      byId('relocateReadout').innerHTML = relocationState.inactive
+        ? '状态：<b>inactive</b>，邻近没有安全采样位置'
+        : `状态：<b>active</b>，位置 ${sourceX.toFixed(2)} → ${relocationState.relocatedX.toFixed(2)}`;
+      drawRelocation();
+    }
+
+    function bindPreflightLabs() {
+      ['traceRayCount', 'traceLight', 'traceRotation'].forEach((id) => {
+        byId(id).addEventListener('input', rebuildTrace);
+      });
+      ['atlasDirection', 'atlasVariance'].forEach((id) => {
+        byId(id).addEventListener('input', rebuildAtlas);
+      });
+      byId('atlasRegenerate').addEventListener('click', rebuildTrace);
+      byId('historyH').addEventListener('input', drawHistory);
+      byId('historyMeasure').addEventListener('input', drawHistory);
+      byId('historyStep').addEventListener('click', advanceHistory);
+      byId('historyReset').addEventListener('click', () => {
+        historyValue = Number(byId('historyMeasure').value) / 100;
+        historyFrame = 0;
+        historySamples = [historyValue];
+        drawHistory();
+      });
+      ['gatherQuery', 'gatherBias'].forEach((id) => byId(id).addEventListener('input', drawGather));
+      byId('gatherVisibility').addEventListener('change', drawGather);
+      byId('relocateX').addEventListener('input', () => {
+        relocationState.checked = false;
+        relocationState.inactive = false;
+        relocationState.relocatedX = null;
+        byId('relocateReadout').textContent = '状态：参数已改变，尚未检查';
+        drawRelocation();
+      });
+      byId('relocateThreshold').addEventListener('input', drawRelocation);
+      byId('relocateApply').addEventListener('click', applyRelocation);
+      byId('relocateReset').addEventListener('click', () => {
+        byId('relocateX').value = '-4';
+        relocationState.checked = false;
+        relocationState.inactive = false;
+        relocationState.relocatedX = null;
+        byId('relocateReadout').textContent = '状态：尚未检查';
+        drawRelocation();
+      });
+    }
+
+    bindPreflightLabs();
+    rebuildTrace();
+    drawHistory();
+    drawGather();
+    drawRelocation();
+  })();
+  </script>
+</body></html>

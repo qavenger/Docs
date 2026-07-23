@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GI 基础实验室：从距离到一次反弹</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root{--bg:#071018;--panel:#0d1a24;--line:#294252;--text:#eaf7ff;--muted:#9bb5c4;--cyan:#54d7ff;--amber:#ffc96b;--red:#ff7777;--green:#78e6a3;--violet:#bd9cff}
+    *{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;color:var(--text);background:radial-gradient(circle at 70% -10%,#12364b 0,transparent 34rem),var(--bg);font-family:"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.68}
+    a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(1180px,calc(100% - 30px));margin:auto}
+    .top{position:sticky;top:0;z-index:20;border-bottom:1px solid #203949;background:#071018e8;backdrop-filter:blur(14px)}.top .wrap{min-height:58px;display:flex;align-items:center;gap:16px}.brand{font-weight:900;letter-spacing:.08em;color:#fff}.top nav{margin-left:auto;display:flex;gap:14px;font-size:13px}
+    .hero{padding:70px 0 32px}.eyebrow{color:var(--cyan);font:800 13px ui-monospace,Consolas;letter-spacing:.12em}.hero h1{max-width:980px;margin:11px 0 17px;font-size:clamp(38px,6vw,76px);line-height:1.03}.hero>p{max-width:860px;color:var(--muted);font-size:18px}.chips,.controls{display:flex;gap:9px;flex-wrap:wrap}.chip{padding:6px 10px;border:1px solid #315267;border-radius:99px;color:#c8e7f6;background:#0b1c27}
+    .route{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:18px 0 34px}.route a{padding:12px 9px;border:1px solid var(--line);border-radius:10px;background:#0a1721;color:#c9dde7;font-size:12px}.route b{display:block;color:#fff;font-size:13px}
+    section{scroll-margin-top:72px}.canvas-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#050b10}.canvas-card canvas{display:block;width:100%;height:auto}.canvas-caption{display:flex;justify-content:space-between;gap:10px;padding:8px 11px;border-top:1px solid #203846;color:var(--muted);font-size:12px}.canvas-caption b{color:var(--amber)}
+    .lab-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:14px}.control-stack{display:grid;gap:11px}.control{display:grid;grid-template-columns:125px 1fr 70px;gap:9px;align-items:center}.control label{color:#cde3ed;font-size:13px}.control output{color:var(--amber);font:700 12px ui-monospace,Consolas;text-align:right}input[type=range]{width:100%;accent-color:var(--cyan)}select,button{border:1px solid #3b5c70;border-radius:8px;padding:8px 10px;color:#dff1f9;background:#0c202c;font:inherit}button{cursor:pointer}button:hover{border-color:var(--cyan)}
+    .readout{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.metric{padding:10px;border:1px solid #294252;border-radius:9px;background:#08151e}.metric span{display:block;color:var(--muted);font-size:11px}.metric b{display:block;margin-top:3px;color:#fff;font:700 15px ui-monospace,Consolas}
+    .plain{padding:13px 14px;border-left:3px solid var(--amber);border-radius:8px;background:#191b17;color:#dbe8ed}.plain b{color:#ffe0a2}.note{padding:12px 14px;border:1px solid #385266;border-radius:10px;background:#0a1822;color:#b9ced9}.note.good{border-color:#36705a}.note.warn{border-color:#7b643d}.stage-links{display:flex;flex-wrap:wrap;gap:8px}.stage-links a{padding:8px 10px;border:1px solid #365268;border-radius:8px;background:#0b1b27}
+    .comparison{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.mini{padding:11px;border:1px solid #294252;border-radius:10px;background:#08151e}.mini b{display:block;color:#fff}.mini span{color:var(--muted);font-size:12px}
+    .footer{display:flex;justify-content:space-between;gap:12px;margin-top:42px;padding:28px 0 55px;border-top:1px solid var(--line)}
+    @media(max-width:850px){.route{grid-template-columns:repeat(3,1fr)}.lab-grid{grid-template-columns:1fr}.comparison{grid-template-columns:1fr 1fr}.top nav a:not(:last-child){display:none}}
+    @media(max-width:560px){.route,.comparison{grid-template-columns:1fr 1fr}.control{grid-template-columns:100px 1fr 58px}.gi-stage-body{padding:12px}.hero{padding-top:45px}}
+  </style>
+  <script src="gi_course.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="index.html">GI FIELD GUIDE</a>
+      <nav>
+        <a href="#distance">距离</a><a href="#cosine">夹角</a><a href="#two-surfaces">两表面</a><a href="#assemble">组装</a>
+        <a href="gi_module_rsm.html">下一章：RSM →</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="eyebrow">00 · FOUNDATIONS · ZERO-MATH ON-RAMP</div>
+      <h1>先把一束光拆开，<br>再把 GI 装回来。</h1>
+      <p>无需预先掌握微积分。每一节只引入一个旋钮：先动手、再看数值、最后才看公式和代码。所有图都由本页代码实时计算，不是预录动画。</p>
+      <div class="chips"><span class="chip">6 个独立实验</span><span class="chip">公式 ⇄ 代值 ⇄ 代码</span><span class="chip">固定随机种子</span><span class="chip">无网络依赖</span></div>
+      <div class="gi-prereq">
+        <span class="gi-stage-num">0</span>
+        <div><strong>唯一前置：会读三维坐标</strong><p><code>(x,y,z)</code> 是一个位置；单位向量是只表示方向、长度等于 1 的箭头。点积会在实验 2 用图形解释。</p></div>
+        <a href="#distance">从距离开始</a>
+      </div>
+      <div class="route" aria-label="本页学习路线">
+        <a href="#distance"><b>01 距离</b>为什么平方衰减</a>
+        <a href="#cosine"><b>02 接收夹角</b>表面转开会变暗</a>
+        <a href="#lambert"><b>03 Lambert</b>材质把光摊开</a>
+        <a href="#two-surfaces"><b>04 两表面</b>一次反弹的几何</a>
+        <a href="#sampling"><b>05 抽样</b>用少量方向估计</a>
+        <a href="#assemble"><b>06 组装</b>直接光 + 间接光</a>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="distance">
+      <header class="gi-stage-head"><span class="gi-stage-num">01</span><div><h3>距离平方衰减：能量被摊到更大的球面</h3><p>只移动灯；接收面始终正对灯，材质与功率不变。</p></div><span class="gi-stage-tag">ONE VARIABLE</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>点光源强度 I、距离 r</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>接收点辐照度 E</span></div></div>
+        <div class="gi-light-card"><span class="gi-light-icon">●</span><div><strong>本页统一点光源</strong><div class="gi-light-meta"><span>position = (<b data-light-x>0.00</b>, <b data-light-y>2.50</b>, 0.00) m</span><span>direction = 从灯指向接收点</span><span>I = <b data-power>80</b> 教学单位/sr</span></div></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="distanceCanvas" width="760" height="360" aria-label="距离平方衰减实验"></canvas><div class="canvas-caption"><span>左：光源与球面扩散；右：E 随 r 变化</span><b id="distanceCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="distanceRange">灯到表面 r</label><input id="distanceRange" type="range" min="100" max="600" value="250"><output id="distanceOut">2.50 m</output></div>
+            <div class="control"><label for="powerRange">光强 I</label><input id="powerRange" type="range" min="20" max="140" value="80"><output id="powerOut">80</output></div>
+            <div class="readout"><div class="metric"><span>距离平方 r²</span><b id="distanceSq">6.25</b></div><div class="metric"><span>辐照度 E = I/r²</span><b id="distanceE">12.80</b></div></div>
+            <div class="plain"><b>先不用背公式：</b>距离翻倍，同一份能量要铺在约 4 倍面积上，所以每平方米只剩约四分之一。</div>
+          </div>
+        </div>
+        <div class="gi-task-grid"><div class="gi-task do"><b>动手</b><span>把 r 从 2 m 拉到 4 m。</span></div><div class="gi-task watch"><b>观察</b><span>右侧亮点同时向右、向下移动。</span></div><div class="gi-task expect"><b>预期</b><span>E 变成原来的约 1/4，而不是 1/2。</span></div></div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>想象不断变大的透明球壳。球壳面积随半径平方增长；灯没有凭空增加能量，所以单位面积收到的量按平方下降。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula"><span data-gi-symbol="E">E</span> = <span data-gi-symbol="I">I</span> / <span data-gi-symbol="r">r</span>²</div><table class="gi-symbols"><tr><th><span data-gi-symbol="E">E</span></th><td>接收面的辐照度</td></tr><tr><th><span data-gi-symbol="I">I</span></th><td>点光源朝这个方向的辐射强度</td></tr><tr><th><span data-gi-symbol="r">r</span></th><td>光源到接收点的米制距离</td></tr></table></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="distanceSubstitution">80.00 / 2.50² = 12.80</div><p>拖动上面的滑杆，这一行会用当前输入重新计算。</p></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="距离实验的等价步骤">向量 = 灯位置 - 表面位置
+距离平方 = 点积(向量, 向量)
+辐照度 = 光强 / 距离平方</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_foundations.html · evaluateDistance">function evaluateDistance(intensity, distanceMeters) {
+  const distanceSquared = distanceMeters * distanceMeters;
+  return intensity / Math.max(distanceSquared, 0.0001);
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="cosine">
+      <header class="gi-stage-head"><span class="gi-stage-num">02</span><div><h3>接收面余弦：同一束光斜着照，会摊得更薄</h3><p>只旋转接收面；距离和灯功率固定。</p></div><span class="gi-stage-tag">DOT PRODUCT</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>表面法线 n、指向灯的方向 l</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>接收比例 max(0,n·l)</span></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="cosineCanvas" width="760" height="360" aria-label="接收面余弦实验"></canvas><div class="canvas-caption"><span>黄色箭头 l 指向灯；青色箭头 n 是表面正面</span><b id="cosineCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="angleRange">n 与 l 夹角</label><input id="angleRange" type="range" min="0" max="120" value="35"><output id="angleOut">35°</output></div>
+            <div class="readout"><div class="metric"><span>n·l = cosθ</span><b id="dotValue">0.819</b></div><div class="metric"><span>夹紧后接收比例</span><b id="clampedDot">81.9%</b></div></div>
+            <div class="plain"><b>点积就是“两个箭头有多同向”。</b>同向为 1，垂直为 0，转到背面会小于 0；光不会从不透明表面的背面贡献，所以最后夹到 0。</div>
+          </div>
+        </div>
+        <div class="gi-task-grid"><div class="gi-task do"><b>动手</b><span>依次停在 0°、60°、90°、110°。</span></div><div class="gi-task watch"><b>观察</b><span>蓝色“有效投影长度”逐渐缩短。</span></div><div class="gi-task expect"><b>预期</b><span>超过 90° 后贡献为 0，不会变成负光。</span></div></div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>正对手电筒时，光斑紧凑；把纸片转斜，同一束光铺到更大面积，每平方米变暗。法线箭头就是纸片“正面朝哪”。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula"><span data-gi-symbol="cosine">c</span> = max(0, <span data-gi-symbol="normal">n</span> · <span data-gi-symbol="lightdir">l</span>)</div><table class="gi-symbols"><tr><th><span data-gi-symbol="normal">n</span></th><td>归一化表面法线</td></tr><tr><th><span data-gi-symbol="lightdir">l</span></th><td>从表面指向灯的归一化方向</td></tr><tr><th><span data-gi-symbol="cosine">c</span></th><td>表面实际接收比例，范围 0～1</td></tr></table></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="cosineSubstitution">max(0, cos 35°) = 0.819</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="接收面余弦的等价步骤">表面法线 = 归一化(正面箭头)
+指向灯方向 = 归一化(灯位置 - 表面位置)
+接收比例 = 最大值(0, 点积(表面法线, 指向灯方向))</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_foundations.html · receiverCosine">function receiverCosine(angleDegrees) {
+  const angleRadians = angleDegrees * Math.PI / 180;
+  const dotNL = Math.cos(angleRadians);
+  return Math.max(0, dotNL);
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="lambert">
+      <header class="gi-stage-head"><span class="gi-stage-num">03</span><div><h3>Lambert 漫反射：材质把收到的光摊向上半球</h3><p>这里讨论“表面收到之后如何重新发出”，不要和上一步的接收余弦混成一项。</p></div><span class="gi-stage-tag">MATERIAL</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>入射辐照度 E、反照率 ρ</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>任一出射方向的漫反射辐射度 L</span></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="lambertCanvas" width="760" height="360" aria-label="Lambert 漫反射实验"></canvas><div class="canvas-caption"><span>箭头方向不同，但理想 Lambert 表面的辐射度相同</span><b id="lambertCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="albedoRange">反照率 ρ</label><input id="albedoRange" type="range" min="5" max="95" value="65"><output id="albedoOut">0.65</output></div>
+            <div class="control"><label for="incomingRange">入射 E</label><input id="incomingRange" type="range" min="10" max="120" value="64"><output id="incomingOut">64</output></div>
+            <div class="readout"><div class="metric"><span>保留下来的能量 ρE</span><b id="keptEnergy">41.60</b></div><div class="metric"><span>出射辐射度 L = ρE/π</span><b id="lambertL">13.24</b></div></div>
+            <div class="note warn">为什么除以 π？因为“每个方向相同的辐射度”投影到整个半球后总权重正好是 π；不除会凭空创造能量。</div>
+          </div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>反照率决定“留下多少颜色”；除以 π 决定“怎样在整个上半球分摊”。Lambert 是方向上均匀的理想漫反射，不是镜面高光。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula"><span data-gi-symbol="L">L</span> = <span data-gi-symbol="rho">ρ</span> · <span data-gi-symbol="E">E</span> / π</div><table class="gi-symbols"><tr><th><span data-gi-symbol="rho">ρ</span></th><td>反照率；0 全吸收，1 全保留</td></tr><tr><th><span data-gi-symbol="E">E</span></th><td>表面收到的总辐照度</td></tr><tr><th><span data-gi-symbol="L">L</span></th><td>表面朝某方向离开的漫反射辐射度</td></tr></table></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="lambertSubstitution">0.65 × 64.00 / 3.1416 = 13.24</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="Lambert 的等价步骤">保留能量 = 反照率 × 入射辐照度
+出射辐射度 = 保留能量 / 圆周率</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_foundations.html · lambertRadiance">function lambertRadiance(irradiance, albedo) {
+  const reflectedEnergy = irradiance * albedo;
+  return reflectedEnergy / Math.PI;
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="two-surfaces">
+      <header class="gi-stage-head"><span class="gi-stage-num">04</span><div><h3>两表面几何：灯 → 反射板 A → 接收面 B</h3><p>这才是“一次间接反弹”。两段距离、两个表面朝向和可见性缺一不可。</p></div><span class="gi-stage-tag">ONE BOUNCE</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>灯、A、B 的位置与法线；A 面积；可见性</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>B 从 A 收到的一次反弹 Eᵦ</span></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="geometryCanvas" width="760" height="410" aria-label="两个表面之间的一次反弹几何实验"></canvas><div class="canvas-caption"><span>虚线：方向；实线：实际传输；红色挡板可开关</span><b id="geometryCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="lightXRange">灯 X</label><input id="lightXRange" type="range" min="-200" max="200" value="40"><output id="lightXOut">0.40 m</output></div>
+            <div class="control"><label for="bounceAngleRange">A 法线角</label><input id="bounceAngleRange" type="range" min="-70" max="70" value="18"><output id="bounceAngleOut">18°</output></div>
+            <div class="control"><label for="receiverXRange">B 位置 X</label><input id="receiverXRange" type="range" min="80" max="400" value="260"><output id="receiverXOut">2.60 m</output></div>
+            <label><input id="visibilityToggle" type="checkbox" checked> A 与 B 互相可见</label>
+            <div class="readout"><div class="metric"><span>A 收到的 Eₐ</span><b id="bounceEa">—</b></div><div class="metric"><span>A 发出的 Lₐ</span><b id="bounceLa">—</b></div><div class="metric"><span>A→B 几何项 G</span><b id="geometryG">—</b></div><div class="metric"><span>B 的一次反弹 Eᵦ</span><b id="bounceEb">—</b></div></div>
+          </div>
+        </div>
+        <div class="gi-light-card"><span class="gi-light-icon">●</span><div><strong>位置和方向始终显式</strong><div class="gi-light-meta"><span>light.position = (<b id="geomLightPos">0.40, 3.60, 0.00</b>) m</span><span>A.position = (-1.20, 0.70, 0.00) m</span><span>B.position = (<b id="geomReceiverPos">2.60</b>, 0.00, 0.00) m</span><span>direction = normalize(target - source)</span></div></div></div>
+        <div class="gi-task-grid"><div class="gi-task do"><b>动手</b><span>先关闭可见性，再改变其它三个参数。</span></div><div class="gi-task watch"><b>观察</b><span>V=0 时，几何仍存在，但能量必须归零。</span></div><div class="gi-task expect"><b>预期</b><span>任何一个余弦变为负时，同样没有传输。</span></div></div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">分步公式</button><button data-gi-tab="values">当前账本</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>先算灯给 A 多少，再用 Lambert 把 A 变成“小面积面光源”，最后算 A 给 B 多少。拆成三步能避免漏掉某一段距离或把两个余弦用反。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">① Eₐ = I · max(0,nₐ·lₐ) / rₐ²<br>② Lₐ = ρₐ · Eₐ / π<br>③ Gₐᵦ = V · max(0,nₐ·ωₐᵦ) · max(0,nᵦ·ωᵦₐ) / rₐᵦ²<br>④ Eᵦ ≈ Lₐ · Aₐ · Gₐᵦ</div><p>第 ④ 步把 A 当成足够小的面片，因此是教学近似；真实面积较大时应在 A 上积分或抽样。</p></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="geometryLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="两表面传输的等价步骤">算出 灯到A 的方向、距离、A接收余弦
+A收到 = 光强 × A接收余弦 / 距离平方
+A发出 = A反照率 × A收到 / 圆周率
+
+算出 A到B 的方向、距离
+几何项 = 可见性 × A发射余弦 × B接收余弦 / 距离平方
+B收到的一次反弹 = A发出 × A面积 × 几何项</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_foundations.html · evaluateOneBounce">function evaluateOneBounce(scene) {
+  const toLight = subtract(scene.lightPosition, scene.bouncePosition);
+  const lightDistanceSquared = dot(toLight, toLight);
+  const lightDirection = normalize(toLight);
+  const bounceReceives = Math.max(0, dot(scene.bounceNormal, lightDirection));
+  const bounceIrradiance =
+    scene.lightIntensity * bounceReceives / lightDistanceSquared;
+
+  const bounceRadiance =
+    scene.bounceAlbedo * bounceIrradiance / Math.PI;
+
+  const bounceToReceiver =
+    subtract(scene.receiverPosition, scene.bouncePosition);
+  const transferDistanceSquared = dot(bounceToReceiver, bounceToReceiver);
+  const outgoingDirection = normalize(bounceToReceiver);
+  const emitterCosine = Math.max(0, dot(scene.bounceNormal, outgoingDirection));
+  const receiverCosineValue = Math.max(
+    0,
+    dot(scene.receiverNormal, scale(outgoingDirection, -1))
+  );
+  const geometry =
+    scene.visibility * emitterCosine * receiverCosineValue /
+    transferDistanceSquared;
+
+  return {
+    bounceIrradiance,
+    bounceRadiance,
+    geometry,
+    receiverIrradiance:
+      bounceRadiance * scene.bounceArea * geometry
+  };
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="sampling">
+      <header class="gi-stage-head"><span class="gi-stage-num">05</span><div><h3>抽样：不能问遍所有方向，就让少量方向代表整体</h3><p>固定随机种子后，误差变化只来自样本数和抽样策略，便于比较。</p></div><span class="gi-stage-tag">MONTE CARLO</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>入射光函数、抽样 PDF、样本数 N</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>半球积分估计值与误差</span></div></div>
+        <div class="lab-grid">
+          <div class="canvas-card"><canvas id="samplingCanvas" width="760" height="410" aria-label="方向抽样与收敛实验"></canvas><div class="canvas-caption"><span>上：抽到的方向；下：运行估计逐步靠近参考线</span><b id="samplingCaption">—</b></div></div>
+          <div class="control-stack">
+            <div class="control"><label for="sampleCountRange">样本数 N</label><input id="sampleCountRange" type="range" min="4" max="128" value="24"><output id="sampleCountOut">24</output></div>
+            <div class="control"><label for="samplerSelect">抽样策略</label><select id="samplerSelect"><option value="uniform">均匀角度</option><option value="cosine">余弦加权</option></select><output></output></div>
+            <button id="newSeed" type="button">换一个固定种子</button>
+            <div class="readout"><div class="metric"><span>当前估计 Ĵ</span><b id="sampleEstimate">—</b></div><div class="metric"><span>高精度参考 J</span><b id="sampleReference">—</b></div><div class="metric"><span>绝对误差</span><b id="sampleError">—</b></div><div class="metric"><span>样本标准差</span><b id="sampleSigma">—</b></div></div>
+            <div class="note">每个样本都要除以“它被选中的概率 PDF”。偏爱高贡献方向可以降噪，但漏掉 PDF 会让结果系统性变亮或变暗。</div>
+          </div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">投票直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>把所有方向当成无法全部统计的选民。随机问 N 个方向，每票按“它有多难被抽中”校正；问得越多，平均值越稳定。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">J = ∫ f(θ)dθ<br>Ĵ = (1/N) Σ [ f(θᵢ) / p(θᵢ) ]</div><p>这是便于画图的一维半圆实验；真实 GI 使用三维半球立体角 <code>dω</code>，思想相同。</p></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="samplingLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="Monte Carlo 的等价步骤">总票数 = 0
+重复 N 次:
+  按所选策略抽一个方向 θ
+  查询该方向的入射贡献 f(θ)
+  查询该方向被抽中的概率 p(θ)
+  总票数 += f(θ) / p(θ)
+最终估计 = 总票数 / N</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_foundations.html · estimateHemisphere">function estimateHemisphere(sampleCount, sampler, random) {
+  const votes = [];
+  for (let index = 0; index &lt; sampleCount; index += 1) {
+    const sample = sampleDirection(sampler, random);
+    const contribution = teachingIncoming(sample.angle);
+    votes.push(contribution / sample.pdf);
+  }
+  const estimate =
+    votes.reduce((sum, vote) => sum + vote, 0) / sampleCount;
+  return { estimate, votes };
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="assemble">
+      <header class="gi-stage-head"><span class="gi-stage-num">06</span><div><h3>最终组装：直接光 + 一次间接光，不再是一条神秘大公式</h3><p>同一场景同时显示直接项、低样本一次反弹、256 样本参考和误差。</p></div><span class="gi-stage-tag">FINAL ASSEMBLY</span></header>
+      <div class="gi-stage-body">
+        <div class="gi-stage-io"><div><b>输入</b><span>可见性、距离、余弦、材质、方向样本</span></div><span class="gi-stage-arrow">→</span><div><b>输出</b><span>Lₒ = 直接光 + 间接光</span></div></div>
+        <div class="canvas-card"><canvas id="assemblyCanvas" width="1080" height="350" aria-label="直接光、间接光、参考与误差对照"></canvas><div class="canvas-caption"><span>四张图使用完全相同的灯、表面与曝光</span><b id="assemblyCaption">—</b></div></div>
+        <div class="controls" style="margin-top:13px">
+          <div class="control" style="min-width:310px"><label for="assemblySamples">间接样本数</label><input id="assemblySamples" type="range" min="1" max="64" value="8"><output id="assemblySamplesOut">8</output></div>
+          <div class="control" style="min-width:310px"><label for="assemblyLightX">灯位置 X</label><input id="assemblyLightX" type="range" min="-80" max="80" value="-20"><output id="assemblyLightXOut">-0.20</output></div>
+          <button id="assemblySeed" type="button">换一帧随机数</button>
+        </div>
+        <div class="comparison" style="margin-top:12px"><div class="mini"><b>直接光</b><span>灯直接照到当前表面。</span></div><div class="mini"><b>一次间接</b><span>墙先接光，再把颜色反弹到地面。</span></div><div class="mini"><b>参考</b><span>相同估计器使用 256 样本。</span></div><div class="mini"><b>误差</b><span>低样本结果与参考的绝对差。</span></div></div>
+        <div class="gi-checks">
+          <div class="gi-check" data-gi-check="finite"><b>有限值</b><span data-gi-check-detail>等待计算</span></div>
+          <div class="gi-check" data-gi-check="energy"><b>能量不为负</b><span data-gi-check-detail>等待计算</span></div>
+          <div class="gi-check" data-gi-check="reference"><b>参考误差</b><span data-gi-check-detail>等待计算</span></div>
+        </div>
+        <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+          <div class="gi-tabs"><button data-gi-tab="intuition">组装直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="values">当前统计</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="code">本页实际代码</button></div>
+          <div class="gi-panel" data-gi-panel="intuition"><p>相机看到的颜色由“自己发光”“灯直接照到”“其它表面反弹来”三类相加。本实验没有自发光表面，所以只画后两类；间接项用少量墙面样本估计。</p></div>
+          <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">Lₒ = Lₑ + L_direct + L_indirect<br>L_indirect ≈ (1/N) Σ sampleBounce(i)</div><p>复杂 GI 方案的共同目标，就是更快、更稳定地近似最后一项。</p></div>
+          <div class="gi-panel" data-gi-panel="values"><div class="gi-formula" id="assemblyLedger">正在计算…</div></div>
+          <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo" data-gi-source="最终组装的等价步骤">对每个地面像素:
+  直接光 = 计算灯到该点
+  间接光 = 0
+  重复 N 次:
+    在左墙抽一个反弹位置
+    间接光 += 计算 灯→墙→地面
+  间接光 /= N
+  最终颜色 = 直接光 + 间接光</code></pre></div>
+          <div class="gi-panel" data-gi-panel="code"><pre><code data-gi-code data-gi-status="actual" data-gi-source="gi_module_foundations.html · estimateFloorBounce">function estimateFloorBounce(floorX, sampleCount, random, lightX) {
+  let sum = 0;
+  for (let index = 0; index &lt; sampleCount; index += 1) {
+    const wallY = 0.15 + random() * 2.7;
+    sum += transferThroughWall(lightX, floorX, wallY);
+  }
+  return sum / sampleCount;
+}</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gi-stage" id="handoff">
+      <header class="gi-stage-head"><span class="gi-stage-num">✓</span><div><h3>带着这张检查表进入任意 GI 方案</h3><p>先辨认算法在近似哪一项，再讨论缓存、时序和性能。</p></div><span class="gi-stage-tag">READY</span></header>
+      <div class="gi-stage-body">
+        <div class="comparison"><div class="mini"><b>光在哪里？</b><span>位置、方向、单位、范围是否显式。</span></div><div class="mini"><b>几何是否完整？</b><span>距离、两端余弦、可见性是否都有。</span></div><div class="mini"><b>积分怎么近似？</b><span>采样域、PDF、样本数、参考是谁。</span></div><div class="mini"><b>结果存在哪里？</b><span>屏幕、Voxel、Probe、缓存或历史帧。</span></div></div>
+        <div class="stage-links" style="margin-top:14px"><a href="gi_module_rsm.html">RSM：把可见表面变成 VPL →</a><a href="gi_module_ssao_ssgi.html">SSGI：在屏幕中追踪 →</a><a href="Realtime_GI_Field_Guide.html">返回总览比较</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer"><a href="index.html">← 学习主页</a><span>所有页面引用均为相对路径，可整体复制目录。</span><a href="gi_module_rsm.html">下一模块：RSM →</a></footer>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const $ = (id) => document.getElementById(id);
+    const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+    const setCheck = (container, key, checkState, detail) => {
+      if (window.GICourse) {
+        window.GICourse.setCheck(container, key, checkState, detail);
+        return;
+      }
+      const row = container.querySelector(`[data-gi-check="${key}"]`);
+      if (!row) return;
+      row.classList.remove('pass', 'fail', 'warn');
+      row.classList.add(checkState);
+      const detailNode = row.querySelector('[data-gi-check-detail]');
+      if (detailNode) detailNode.textContent = detail;
+    };
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const subtract = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+    const scale = (value, amount) => value.map((component) => component * amount);
+    const normalize = (value) => {
+      const length = Math.hypot(...value) || 1;
+      return value.map((component) => component / length);
+    };
+
+    const state = {
+      intensity: 80,
+      distance: 2.5,
+      angle: 35,
+      albedo: 0.65,
+      incoming: 64,
+      lightX: 0.4,
+      bounceAngle: 18,
+      receiverX: 2.6,
+      visibility: 1,
+      sampleCount: 24,
+      sampler: 'uniform',
+      sampleSeed: 7,
+      assemblySamples: 8,
+      assemblyLightX: -0.2,
+      assemblySeed: 11
+    };
+
+    function evaluateDistance(intensity, distanceMeters) {
+      const distanceSquared = distanceMeters * distanceMeters;
+      return intensity / Math.max(distanceSquared, 0.0001);
+    }
+
+    function receiverCosine(angleDegrees) {
+      const angleRadians = angleDegrees * Math.PI / 180;
+      const dotNL = Math.cos(angleRadians);
+      return Math.max(0, dotNL);
+    }
+
+    function lambertRadiance(irradiance, albedo) {
+      const reflectedEnergy = irradiance * albedo;
+      return reflectedEnergy / Math.PI;
+    }
+
+    function evaluateOneBounce(scene) {
+      const toLight = subtract(scene.lightPosition, scene.bouncePosition);
+      const lightDistanceSquared = dot(toLight, toLight);
+      const lightDirection = normalize(toLight);
+      const bounceReceives = Math.max(0, dot(scene.bounceNormal, lightDirection));
+      const bounceIrradiance =
+        scene.lightIntensity * bounceReceives / lightDistanceSquared;
+
+      const bounceRadiance =
+        scene.bounceAlbedo * bounceIrradiance / Math.PI;
+
+      const bounceToReceiver =
+        subtract(scene.receiverPosition, scene.bouncePosition);
+      const transferDistanceSquared = dot(bounceToReceiver, bounceToReceiver);
+      const outgoingDirection = normalize(bounceToReceiver);
+      const emitterCosine = Math.max(0, dot(scene.bounceNormal, outgoingDirection));
+      const receiverCosineValue = Math.max(
+        0,
+        dot(scene.receiverNormal, scale(outgoingDirection, -1))
+      );
+      const geometry =
+        scene.visibility * emitterCosine * receiverCosineValue /
+        transferDistanceSquared;
+
+      return {
+        bounceIrradiance,
+        bounceRadiance,
+        geometry,
+        receiverIrradiance:
+          bounceRadiance * scene.bounceArea * geometry
+      };
+    }
+
+    function makeRandom(seed) {
+      let value = seed >>> 0;
+      return () => {
+        value = (value * 1664525 + 1013904223) >>> 0;
+        return value / 4294967296;
+      };
+    }
+
+    function teachingIncoming(angle) {
+      const lobe = Math.max(0, Math.cos(angle - 0.52));
+      return 0.12 + 0.88 * Math.pow(lobe, 7);
+    }
+
+    function sampleDirection(sampler, random) {
+      const unit = clamp(random(), 0.000001, 0.999999);
+      if (sampler === 'cosine') {
+        const angle = Math.asin(2 * unit - 1);
+        return {
+          angle,
+          pdf: Math.max(Math.cos(angle) * 0.5, 0.000001)
+        };
+      }
+      return {
+        angle: -Math.PI * 0.5 + unit * Math.PI,
+        pdf: 1 / Math.PI
+      };
+    }
+
+    function estimateHemisphere(sampleCount, sampler, random) {
+      const votes = [];
+      const angles = [];
+      for (let index = 0; index < sampleCount; index += 1) {
+        const sample = sampleDirection(sampler, random);
+        const contribution = teachingIncoming(sample.angle);
+        votes.push(contribution / sample.pdf);
+        angles.push(sample.angle);
+      }
+      const estimate =
+        votes.reduce((sum, vote) => sum + vote, 0) / sampleCount;
+      return { estimate, votes, angles };
+    }
+
+    function highPrecisionReference() {
+      const steps = 20000;
+      const width = Math.PI / steps;
+      let sum = 0;
+      for (let index = 0; index < steps; index += 1) {
+        const angle = -Math.PI * 0.5 + (index + 0.5) * width;
+        sum += teachingIncoming(angle) * width;
+      }
+      return sum;
+    }
+
+    const referenceIntegral = highPrecisionReference();
+
+    function line(context, from, to, color, width = 2, dash = []) {
+      context.save();
+      context.strokeStyle = color;
+      context.lineWidth = width;
+      context.setLineDash(dash);
+      context.beginPath();
+      context.moveTo(from[0], from[1]);
+      context.lineTo(to[0], to[1]);
+      context.stroke();
+      context.restore();
+    }
+
+    function arrow(context, from, to, color, label) {
+      line(context, from, to, color, 3);
+      const angle = Math.atan2(to[1] - from[1], to[0] - from[0]);
+      context.fillStyle = color;
+      context.beginPath();
+      context.moveTo(to[0], to[1]);
+      context.lineTo(to[0] - Math.cos(angle - 0.5) * 10, to[1] - Math.sin(angle - 0.5) * 10);
+      context.lineTo(to[0] - Math.cos(angle + 0.5) * 10, to[1] - Math.sin(angle + 0.5) * 10);
+      context.fill();
+      context.font = '700 13px Segoe UI';
+      context.fillText(label, to[0] + 8, to[1] - 7);
+    }
+
+    function clearCanvas(canvas) {
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#050b10';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      return context;
+    }
+
+    function drawGrid(context, width, height) {
+      context.strokeStyle = '#173040';
+      context.lineWidth = 1;
+      for (let x = 0; x <= width; x += 40) line(context, [x, 0], [x, height], '#132b3a', 1);
+      for (let y = 0; y <= height; y += 40) line(context, [0, y], [width, y], '#132b3a', 1);
+    }
+
+    function renderDistance() {
+      const canvas = $('distanceCanvas');
+      const context = clearCanvas(canvas);
+      drawGrid(context, canvas.width, canvas.height);
+      const light = [125, 177];
+      const receiverX = 125 + state.distance * 55;
+      const irradiance = evaluateDistance(state.intensity, state.distance);
+
+      for (let ring = 1; ring <= 5; ring += 1) {
+        context.strokeStyle = `rgba(255,201,107,${0.48 - ring * 0.07})`;
+        context.beginPath();
+        context.arc(light[0], light[1], ring * state.distance * 9, -1.25, 1.25);
+        context.stroke();
+      }
+      context.fillStyle = '#ffc96b';
+      context.shadowColor = '#ffc96b';
+      context.shadowBlur = 20;
+      context.beginPath();
+      context.arc(light[0], light[1], 13, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      line(context, light, [receiverX, 177], '#ffc96b', 3);
+      line(context, [receiverX, 118], [receiverX, 236], '#54d7ff', 8);
+      context.fillStyle = '#dcecf4';
+      context.font = '13px Segoe UI';
+      context.fillText(`r = ${state.distance.toFixed(2)} m`, (light[0] + receiverX) * 0.5 - 28, 160);
+
+      const plot = { x: 445, y: 35, w: 275, h: 270 };
+      line(context, [plot.x, plot.y + plot.h], [plot.x + plot.w, plot.y + plot.h], '#668292', 1);
+      line(context, [plot.x, plot.y], [plot.x, plot.y + plot.h], '#668292', 1);
+      context.strokeStyle = '#54d7ff';
+      context.lineWidth = 2;
+      context.beginPath();
+      for (let step = 0; step <= 180; step += 1) {
+        const distance = 1 + step / 36;
+        const value = evaluateDistance(state.intensity, distance);
+        const x = plot.x + (distance - 1) / 5 * plot.w;
+        const y = plot.y + plot.h - clamp(value / state.intensity, 0, 1) * plot.h;
+        if (step === 0) context.moveTo(x, y); else context.lineTo(x, y);
+      }
+      context.stroke();
+      const px = plot.x + (state.distance - 1) / 5 * plot.w;
+      const py = plot.y + plot.h - clamp(irradiance / state.intensity, 0, 1) * plot.h;
+      context.fillStyle = '#ffc96b';
+      context.beginPath();
+      context.arc(px, py, 6, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#9bb5c4';
+      context.fillText('距离 r →', plot.x + plot.w - 55, plot.y + plot.h + 24);
+      context.save();
+      context.translate(plot.x - 25, plot.y + 70);
+      context.rotate(-Math.PI * 0.5);
+      context.fillText('辐照度 E →', 0, 0);
+      context.restore();
+
+      $('distanceOut').value = `${state.distance.toFixed(2)} m`;
+      $('powerOut').value = state.intensity.toFixed(0);
+      $('distanceSq').textContent = (state.distance * state.distance).toFixed(2);
+      $('distanceE').textContent = irradiance.toFixed(2);
+      $('distanceCaption').textContent = `E = ${irradiance.toFixed(2)}`;
+      $('distanceSubstitution').textContent =
+        `${state.intensity.toFixed(2)} / ${state.distance.toFixed(2)}² = ${irradiance.toFixed(2)}`;
+      document.querySelectorAll('[data-light-y]').forEach((node) => {
+        node.textContent = state.distance.toFixed(2);
+      });
+      document.querySelectorAll('[data-power]').forEach((node) => {
+        node.textContent = state.intensity.toFixed(0);
+      });
+    }
+
+    function renderCosine() {
+      const canvas = $('cosineCanvas');
+      const context = clearCanvas(canvas);
+      drawGrid(context, canvas.width, canvas.height);
+      const center = [360, 235];
+      const radians = state.angle * Math.PI / 180;
+      const normal = [Math.sin(radians), -Math.cos(radians)];
+      const tangent = [Math.cos(radians), Math.sin(radians)];
+      const cosine = receiverCosine(state.angle);
+
+      for (let offset = -150; offset <= 150; offset += 30) {
+        line(context, [center[0] + offset, 35], [center[0] + offset, center[1]], '#ffc96b55', 2);
+      }
+      line(
+        context,
+        [center[0] - tangent[0] * 150, center[1] - tangent[1] * 150],
+        [center[0] + tangent[0] * 150, center[1] + tangent[1] * 150],
+        '#54d7ff',
+        9
+      );
+      arrow(context, center, [center[0] + normal[0] * 110, center[1] + normal[1] * 110], '#54d7ff', 'n');
+      arrow(context, center, [center[0], center[1] - 130], '#ffc96b', 'l');
+      line(context, [95, 305], [95 + cosine * 240, 305], '#78e6a3', 16);
+      line(context, [95, 305], [335, 305], '#34505f', 2);
+      context.fillStyle = '#dfeef5';
+      context.font = '14px Segoe UI';
+      context.fillText(`有效投影 = ${(cosine * 100).toFixed(1)}%`, 95, 338);
+      context.fillStyle = state.angle > 90 ? '#ff7777' : '#bd9cff';
+      context.font = '700 18px Segoe UI';
+      context.fillText(state.angle > 90 ? '光落在背面 → 贡献夹到 0' : '光落在正面', 485, 80);
+
+      $('angleOut').value = `${state.angle}°`;
+      $('dotValue').textContent = Math.cos(radians).toFixed(3);
+      $('clampedDot').textContent = `${(cosine * 100).toFixed(1)}%`;
+      $('cosineCaption').textContent = `max(0,n·l) = ${cosine.toFixed(3)}`;
+      $('cosineSubstitution').textContent =
+        `max(0, cos ${state.angle}°) = ${cosine.toFixed(3)}`;
+    }
+
+    function renderLambert() {
+      const canvas = $('lambertCanvas');
+      const context = clearCanvas(canvas);
+      drawGrid(context, canvas.width, canvas.height);
+      const center = [380, 275];
+      const radiance = lambertRadiance(state.incoming, state.albedo);
+      line(context, [100, center[1]], [660, center[1]], '#54d7ff', 9);
+      arrow(context, [200, 45], [330, 245], '#ffc96b', 'incoming E');
+      for (let index = 0; index <= 12; index += 1) {
+        const angle = Math.PI * (index / 12);
+        const direction = [Math.cos(angle), -Math.sin(angle)];
+        const length = 48 + radiance * 3.1;
+        arrow(
+          context,
+          center,
+          [center[0] + direction[0] * length, center[1] + direction[1] * length],
+          `rgba(189,156,255,${0.42 + 0.5 * Math.sin(angle)})`,
+          index === 6 ? 'same L' : ''
+        );
+      }
+      context.strokeStyle = '#bd9cff';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(center[0], center[1], 48 + radiance * 3.1, Math.PI, Math.PI * 2);
+      context.stroke();
+      context.fillStyle = '#dfeef5';
+      context.font = '14px Segoe UI';
+      context.fillText(`ρ = ${state.albedo.toFixed(2)}：保留 ${(state.albedo * 100).toFixed(0)}% 入射能量`, 25, 35);
+
+      $('albedoOut').value = state.albedo.toFixed(2);
+      $('incomingOut').value = state.incoming.toFixed(0);
+      $('keptEnergy').textContent = (state.incoming * state.albedo).toFixed(2);
+      $('lambertL').textContent = radiance.toFixed(2);
+      $('lambertCaption').textContent = `L = ${radiance.toFixed(2)}`;
+      $('lambertSubstitution').textContent =
+        `${state.albedo.toFixed(2)} × ${state.incoming.toFixed(2)} / 3.1416 = ${radiance.toFixed(2)}`;
+    }
+
+    function geometryScene() {
+      const radians = state.bounceAngle * Math.PI / 180;
+      return {
+        lightPosition: [state.lightX, 3.6, 0],
+        bouncePosition: [-1.2, 0.7, 0],
+        bounceNormal: [Math.sin(radians), Math.cos(radians), 0],
+        receiverPosition: [state.receiverX, 0, 0],
+        receiverNormal: [0, 1, 0],
+        lightIntensity: state.intensity,
+        bounceAlbedo: state.albedo,
+        bounceArea: 0.8,
+        visibility: state.visibility
+      };
+    }
+
+    function renderGeometry() {
+      const canvas = $('geometryCanvas');
+      const context = clearCanvas(canvas);
+      drawGrid(context, canvas.width, canvas.height);
+      const scene = geometryScene();
+      const result = evaluateOneBounce(scene);
+      const map = (position) => [380 + position[0] * 92, 360 - position[1] * 83];
+      const light = map(scene.lightPosition);
+      const bounce = map(scene.bouncePosition);
+      const receiver = map(scene.receiverPosition);
+      const normalEnd = [
+        bounce[0] + scene.bounceNormal[0] * 75,
+        bounce[1] - scene.bounceNormal[1] * 75
+      ];
+
+      line(context, [45, map([0, 0, 0])[1]], [715, map([0, 0, 0])[1]], '#63808e', 7);
+      line(context, [bounce[0] - 38, bounce[1] + 22], [bounce[0] + 38, bounce[1] - 22], '#ff7777', 10);
+      line(context, [receiver[0] - 48, receiver[1]], [receiver[0] + 48, receiver[1]], '#54d7ff', 10);
+      arrow(context, bounce, normalEnd, '#54d7ff', 'nA');
+      line(context, light, bounce, '#ffc96b', 4);
+      line(context, bounce, receiver, state.visibility ? '#bd9cff' : '#ff7777', 4, state.visibility ? [] : [9, 7]);
+      if (!state.visibility) {
+        const mid = [(bounce[0] + receiver[0]) * 0.5, (bounce[1] + receiver[1]) * 0.5];
+        line(context, [mid[0] - 7, mid[1] - 30], [mid[0] + 7, mid[1] + 30], '#ff7777', 8);
+      }
+      context.fillStyle = '#ffc96b';
+      context.beginPath();
+      context.arc(light[0], light[1], 13, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#eaf7ff';
+      context.font = '700 13px Segoe UI';
+      context.fillText('Light', light[0] + 17, light[1] - 8);
+      context.fillText('A 反射板', bounce[0] - 52, bounce[1] + 48);
+      context.fillText('B 接收面', receiver[0] - 36, receiver[1] + 34);
+
+      $('lightXOut').value = `${state.lightX.toFixed(2)} m`;
+      $('bounceAngleOut').value = `${state.bounceAngle}°`;
+      $('receiverXOut').value = `${state.receiverX.toFixed(2)} m`;
+      $('bounceEa').textContent = result.bounceIrradiance.toFixed(3);
+      $('bounceLa').textContent = result.bounceRadiance.toFixed(3);
+      $('geometryG').textContent = result.geometry.toFixed(4);
+      $('bounceEb').textContent = result.receiverIrradiance.toFixed(4);
+      $('geometryCaption').textContent =
+        `V=${state.visibility} · Eᵦ=${result.receiverIrradiance.toFixed(4)}`;
+      $('geomLightPos').textContent = `${state.lightX.toFixed(2)}, 3.60, 0.00`;
+      $('geomReceiverPos').textContent = state.receiverX.toFixed(2);
+      $('geometryLedger').textContent =
+        `Eₐ = ${result.bounceIrradiance.toFixed(3)}\n` +
+        `Lₐ = ${result.bounceRadiance.toFixed(3)}\n` +
+        `Gₐᵦ = ${result.geometry.toFixed(5)}\n` +
+        `Eᵦ = ${result.bounceRadiance.toFixed(3)} × 0.80 × ` +
+        `${result.geometry.toFixed(5)} = ${result.receiverIrradiance.toFixed(5)}`;
+    }
+
+    function renderSampling() {
+      const canvas = $('samplingCanvas');
+      const context = clearCanvas(canvas);
+      drawGrid(context, canvas.width, canvas.height);
+      const result = estimateHemisphere(
+        state.sampleCount,
+        state.sampler,
+        makeRandom(state.sampleSeed)
+      );
+      const center = [260, 185];
+      const radius = 130;
+      line(context, [center[0] - 165, center[1]], [center[0] + 165, center[1]], '#668292', 4);
+      context.strokeStyle = '#294e62';
+      context.beginPath();
+      context.arc(center[0], center[1], radius, Math.PI, Math.PI * 2);
+      context.stroke();
+      result.angles.forEach((angle, index) => {
+        const contribution = teachingIncoming(angle);
+        const end = [
+          center[0] + Math.sin(angle) * radius,
+          center[1] - Math.cos(angle) * radius
+        ];
+        line(
+          context,
+          center,
+          end,
+          `rgba(84,215,255,${0.18 + contribution * 0.7})`,
+          index === result.angles.length - 1 ? 3 : 1
+        );
+      });
+
+      const plot = { x: 410, y: 42, w: 300, h: 300 };
+      line(context, [plot.x, plot.y + plot.h], [plot.x + plot.w, plot.y + plot.h], '#668292', 1);
+      line(context, [plot.x, plot.y], [plot.x, plot.y + plot.h], '#668292', 1);
+      const maximum = referenceIntegral * 1.8;
+      const referenceY = plot.y + plot.h - referenceIntegral / maximum * plot.h;
+      line(context, [plot.x, referenceY], [plot.x + plot.w, referenceY], '#78e6a3', 2, [7, 6]);
+      context.strokeStyle = '#bd9cff';
+      context.lineWidth = 2;
+      context.beginPath();
+      let running = 0;
+      result.votes.forEach((vote, index) => {
+        running += vote;
+        const estimate = running / (index + 1);
+        const x = plot.x + index / Math.max(1, result.votes.length - 1) * plot.w;
+        const y = plot.y + plot.h - clamp(estimate / maximum, 0, 1) * plot.h;
+        if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
+      });
+      context.stroke();
+      context.fillStyle = '#9bb5c4';
+      context.font = '12px Segoe UI';
+      context.fillText('绿色虚线：高精度参考', plot.x + 8, referenceY - 8);
+      context.fillText('样本序号 →', plot.x + plot.w - 65, plot.y + plot.h + 23);
+
+      const mean = result.estimate;
+      const variance = result.votes.reduce(
+        (sum, vote) => sum + (vote - mean) * (vote - mean),
+        0
+      ) / Math.max(1, result.votes.length - 1);
+      const error = Math.abs(mean - referenceIntegral);
+      $('sampleCountOut').value = state.sampleCount;
+      $('sampleEstimate').textContent = mean.toFixed(4);
+      $('sampleReference').textContent = referenceIntegral.toFixed(4);
+      $('sampleError').textContent = error.toFixed(4);
+      $('sampleSigma').textContent = Math.sqrt(variance).toFixed(4);
+      $('samplingCaption').textContent =
+        `${state.sampler === 'uniform' ? '均匀角度' : '余弦加权'} · 误差 ${error.toFixed(4)}`;
+      $('samplingLedger').textContent =
+        `N = ${state.sampleCount}\n` +
+        `策略 = ${state.sampler === 'uniform' ? '均匀角度' : '余弦加权'}\n` +
+        `Ĵ = ${mean.toFixed(5)}\n` +
+        `J = ${referenceIntegral.toFixed(5)}\n` +
+        `|Ĵ-J| = ${error.toFixed(5)}`;
+    }
+
+    function hash2(a, b, seed) {
+      const value = Math.sin(a * 127.1 + b * 311.7 + seed * 74.7) * 43758.5453;
+      return value - Math.floor(value);
+    }
+
+    function transferThroughWall(lightX, floorX, wallY) {
+      const light = [lightX, 2.8];
+      const wall = [-1.6, wallY];
+      const floor = [floorX, 0];
+      const lightToWall = [light[0] - wall[0], light[1] - wall[1]];
+      const firstDistanceSquared = lightToWall[0] ** 2 + lightToWall[1] ** 2;
+      const wallReceives = Math.max(0, lightToWall[0] / Math.sqrt(firstDistanceSquared));
+      const wallIrradiance = 1.7 * wallReceives / Math.max(firstDistanceSquared, 0.01);
+      const wallRadiance = wallIrradiance * 0.72 / Math.PI;
+      const wallToFloor = [floor[0] - wall[0], floor[1] - wall[1]];
+      const secondDistanceSquared = wallToFloor[0] ** 2 + wallToFloor[1] ** 2;
+      const secondLength = Math.sqrt(secondDistanceSquared);
+      const wallEmits = Math.max(0, wallToFloor[0] / secondLength);
+      const floorReceives = Math.max(0, -wallToFloor[1] / secondLength);
+      return wallRadiance * wallEmits * floorReceives /
+        Math.max(secondDistanceSquared, 0.01) * 3.4;
+    }
+
+    function estimateFloorBounce(floorX, sampleCount, random, lightX) {
+      let sum = 0;
+      for (let index = 0; index < sampleCount; index += 1) {
+        const wallY = 0.15 + random() * 2.7;
+        sum += transferThroughWall(lightX, floorX, wallY);
+      }
+      return sum / sampleCount;
+    }
+
+    function directFloor(floorX, lightX) {
+      const dx = lightX - floorX;
+      const dy = 2.8;
+      const distanceSquared = dx * dx + dy * dy;
+      const cosine = dy / Math.sqrt(distanceSquared);
+      return 1.35 * cosine / distanceSquared;
+    }
+
+    function renderAssembly() {
+      const canvas = $('assemblyCanvas');
+      const context = clearCanvas(canvas);
+      const panels = [
+        { title: '直接光', mode: 'direct' },
+        { title: `${state.assemblySamples} spp 一次反弹`, mode: 'estimate' },
+        { title: '256 spp 参考', mode: 'reference' },
+        { title: '绝对误差 × 8', mode: 'error' }
+      ];
+      const gap = 10;
+      const panelWidth = (canvas.width - gap * 5) / 4;
+      const top = 42;
+      const height = 260;
+      let errorSum = 0;
+      let maximumError = 0;
+      let minimumValue = Infinity;
+
+      panels.forEach((panel, panelIndex) => {
+        const x0 = gap + panelIndex * (panelWidth + gap);
+        context.fillStyle = '#0b1822';
+        context.fillRect(x0, top, panelWidth, height);
+        context.fillStyle = '#eaf7ff';
+        context.font = '700 14px Segoe UI';
+        context.fillText(panel.title, x0 + 9, 28);
+        const cellsX = 52;
+        const cellsY = 26;
+        for (let y = 0; y < cellsY; y += 1) {
+          for (let x = 0; x < cellsX; x += 1) {
+            const floorX = -1.35 + x / (cellsX - 1) * 2.7;
+            const verticalFade = 1 - y / cellsY;
+            const direct = directFloor(floorX, state.assemblyLightX) * verticalFade;
+            const random = makeRandom(
+              state.assemblySeed + x * 9781 + y * 6271
+            );
+            const estimate = estimateFloorBounce(
+              floorX,
+              state.assemblySamples,
+              random,
+              state.assemblyLightX
+            ) * verticalFade;
+            const reference = estimateFloorBounce(
+              floorX,
+              256,
+              makeRandom(9001 + x * 9781 + y * 6271),
+              state.assemblyLightX
+            ) * verticalFade;
+            const error = Math.abs(estimate - reference);
+            errorSum += panel.mode === 'error' ? error : 0;
+            maximumError = Math.max(maximumError, error);
+            let rgb;
+            if (panel.mode === 'direct') {
+              const value = clamp(direct * 3.8, 0, 1);
+              rgb = [value * 1.0, value * 0.91, value * 0.72];
+            } else if (panel.mode === 'estimate') {
+              const value = clamp((direct + estimate) * 3.8, 0, 1);
+              rgb = [value, value * (0.84 + estimate * 1.2), value * 0.72];
+              minimumValue = Math.min(minimumValue, direct + estimate);
+            } else if (panel.mode === 'reference') {
+              const value = clamp((direct + reference) * 3.8, 0, 1);
+              rgb = [value, value * (0.84 + reference * 1.2), value * 0.72];
+            } else {
+              const value = clamp(error * 8, 0, 1);
+              rgb = [value, value * 0.18, value * 0.1];
+            }
+            context.fillStyle =
+              `rgb(${rgb.map((component) => Math.round(clamp(component, 0, 1) * 255)).join(',')})`;
+            const cellWidth = panelWidth / cellsX;
+            const cellHeight = height / cellsY;
+            context.fillRect(
+              x0 + x * cellWidth,
+              top + y * cellHeight,
+              Math.ceil(cellWidth),
+              Math.ceil(cellHeight)
+            );
+          }
+        }
+        context.strokeStyle = '#365266';
+        context.strokeRect(x0, top, panelWidth, height);
+      });
+
+      const meanError = errorSum / (52 * 26);
+      $('assemblySamplesOut').value = state.assemblySamples;
+      $('assemblyLightXOut').value = state.assemblyLightX.toFixed(2);
+      $('assemblyCaption').textContent =
+        `平均误差 ${meanError.toFixed(5)} · 最大误差 ${maximumError.toFixed(5)}`;
+      $('assemblyLedger').textContent =
+        `低样本 N = ${state.assemblySamples}\n` +
+        `参考 N = 256\n` +
+        `灯位置 = (${state.assemblyLightX.toFixed(2)}, 2.80, 0.00)\n` +
+        `平均 |低样本-参考| = ${meanError.toFixed(6)}\n` +
+        `最大 |低样本-参考| = ${maximumError.toFixed(6)}`;
+      setCheck(
+        document,
+        'finite',
+        Number.isFinite(meanError) ? 'pass' : 'fail',
+        Number.isFinite(meanError) ? '全部输出为有限值' : '发现 NaN/Infinity'
+      );
+      setCheck(
+        document,
+        'energy',
+        minimumValue >= 0 ? 'pass' : 'fail',
+        `最小光照值 ${minimumValue.toFixed(6)}`
+      );
+      setCheck(
+        document,
+        'reference',
+        meanError < 0.02 ? 'pass' : 'warn',
+        `平均绝对误差 ${meanError.toFixed(6)}；提高样本数会下降`
+      );
+    }
+
+    function bindRange(id, key, convert, render) {
+      $(id).addEventListener('input', (event) => {
+        state[key] = convert(Number(event.target.value));
+        render();
+      });
+    }
+
+    bindRange('distanceRange', 'distance', (value) => value / 100, renderDistance);
+    bindRange('powerRange', 'intensity', (value) => value, () => {
+      renderDistance();
+      renderGeometry();
+    });
+    bindRange('angleRange', 'angle', (value) => value, renderCosine);
+    bindRange('albedoRange', 'albedo', (value) => value / 100, () => {
+      renderLambert();
+      renderGeometry();
+    });
+    bindRange('incomingRange', 'incoming', (value) => value, renderLambert);
+    bindRange('lightXRange', 'lightX', (value) => value / 100, renderGeometry);
+    bindRange('bounceAngleRange', 'bounceAngle', (value) => value, renderGeometry);
+    bindRange('receiverXRange', 'receiverX', (value) => value / 100, renderGeometry);
+    bindRange('sampleCountRange', 'sampleCount', (value) => value, renderSampling);
+    bindRange('assemblySamples', 'assemblySamples', (value) => value, renderAssembly);
+    bindRange('assemblyLightX', 'assemblyLightX', (value) => value / 100, renderAssembly);
+
+    $('visibilityToggle').addEventListener('change', (event) => {
+      state.visibility = event.target.checked ? 1 : 0;
+      renderGeometry();
+    });
+    $('samplerSelect').addEventListener('change', (event) => {
+      state.sampler = event.target.value;
+      renderSampling();
+    });
+    $('newSeed').addEventListener('click', () => {
+      state.sampleSeed += 1;
+      renderSampling();
+    });
+    $('assemblySeed').addEventListener('click', () => {
+      state.assemblySeed += 1;
+      renderAssembly();
+    });
+
+    renderDistance();
+    renderCosine();
+    renderLambert();
+    renderGeometry();
+    renderSampling();
+    renderAssembly();
+
+    window.addEventListener('load', () => {
+      if (!location.hash) return;
+      const target = document.getElementById(
+        decodeURIComponent(location.hash.slice(1))
+      );
+      if (target) {
+        requestAnimationFrame(() =>
+          target.scrollIntoView({ behavior: 'auto', block: 'start' })
+        );
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GI 基础模块 · Voxel 之后如何做 Cone Tracing</title>
+  <link rel="stylesheet" href="gi_course.css">
+  <style>
+    :root{--bg:#070b15;--panel:#0e1624;--panel2:#121e31;--ink:#f2f4ff;--muted:#aab3c7;--line:#303e58;--cyan:#62deda;--violet:#ad96ff;--amber:#ffc36c;--green:#77e5a2;--red:#ff8197;--max:1180px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 22% -12%,#29244d 0,transparent 32%),var(--bg);color:var(--ink);font:15px/1.72 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}code{font-family:"Cascadia Code",Consolas,monospace}.wrap{width:min(var(--max),calc(100% - 34px));margin:auto}.top{position:sticky;top:0;z-index:20;background:#070b15e9;border-bottom:1px solid #28334a;backdrop-filter:blur(12px)}.top nav{height:58px;display:flex;align-items:center;justify-content:space-between}.brand{font-weight:760;color:var(--ink)}.navs{display:flex;gap:17px;font-size:13px}.hero{padding:68px 0 42px;border-bottom:1px solid #222d41}.eyebrow,.k{color:var(--violet);font:700 12px/1.2 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}.hero h1{max-width:980px;margin:13px 0 17px;font-size:clamp(38px,6vw,68px);line-height:1.04}.hero p{max-width:900px;color:#c3c8db;font-size:18px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.chip{border:1px solid #3a4764;border-radius:99px;padding:5px 10px;color:#c8cde0;background:#101725;font-size:12px}.chip.hot{border-color:#7768b3;color:#d1c5ff}section{padding:54px 0;border-bottom:1px solid #202a3d}.head{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:end;margin-bottom:22px}.head h2{margin:7px 0 0;font-size:clamp(27px,4vw,41px);line-height:1.14}.head>p{margin:0;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{grid-column:span 4;padding:19px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#121d2d,#0a111d)}.card.half{grid-column:span 6}.card.full{grid-column:1/-1}.card h3{margin:0 0 7px}.card p{color:#b5bdd0}.callout{padding:14px 16px;border-left:3px solid var(--amber);border-radius:0 11px 11px 0;background:#201a10;color:#d8c8aa}.warning{border-left-color:var(--red);background:#21131b}.artifact-note{margin-top:9px;color:#98a5ba;font-size:11px}.lab-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.lab{overflow:hidden;border:1px solid #394a67;border-radius:15px;background:#090f19}.lab-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 13px;border-bottom:1px solid #2a3851;background:#121c2c}.lab-head b{font-size:14px}.badge{border:1px solid #53617d;border-radius:99px;padding:3px 7px;color:#b4bfd5;font:10px/1.2 ui-monospace}.lab canvas{display:block;width:100%;height:auto;background:#03060c}.controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:10px 13px;border-top:1px solid #27364d}.controls label{font-size:12px;color:#c2c8da}.controls input[type=range]{width:135px;accent-color:var(--violet)}select,button{font:inherit;color:#e0e2ef;background:#151d2e;border:1px solid #475676;border-radius:8px;padding:6px 9px}button{cursor:pointer}button:hover,button.active{border-color:var(--violet);background:#302b5e}.readout{margin-left:auto;color:var(--amber);font:12px ui-monospace,monospace}.lab-copy{padding:10px 13px;color:#aab3c7;font-size:12px}.trace-layout{display:grid;grid-template-columns:300px 1fr;gap:14px}.trace-side{display:flex;flex-direction:column;gap:11px}.trace-side label{font-size:12px;color:#c4cada}.trace-side input[type=range]{width:100%;accent-color:var(--violet)}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{padding:9px;border:1px solid #34445f;border-radius:8px;background:#0a1220}.stat strong{display:block;font:700 15px ui-monospace}.stat span{font-size:10px;color:var(--muted)}.trace-view canvas{display:block;width:100%;height:auto;border-radius:12px;background:#02050a;touch-action:none}.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;color:#939eb5;font-size:11px}.legend i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:50%}.sample-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px}.sample-table th,.sample-table td{padding:6px 7px;border-top:1px solid #2b3850;text-align:right}.sample-table th:first-child,.sample-table td:first-child{text-align:left}.sample-table td{font-family:ui-monospace,monospace}.steps{display:grid;gap:9px}.step{padding:12px 13px;border-left:3px solid var(--violet);border-radius:0 9px 9px 0;background:#141b2b}.step b{display:block}.step span{color:var(--muted);font-size:12px}.foot{padding:28px 0;display:flex;justify-content:space-between;color:#8f99ae}.next{display:flex;gap:16px}@media(max-width:900px){.head,.trace-layout{grid-template-columns:1fr}.lab-grid{grid-template-columns:1fr}.card,.card.half{grid-column:1/-1}.navs{display:none}}@media(max-width:570px){.foot{display:block}.next{margin-top:8px;flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+  <header class="top"><nav class="wrap"><a class="brand" href="index.html">GI 学习地图 / Cone Tracing</a><div class="navs"><a href="#recap">Voxel 回顾</a><a href="#footprint">Footprint</a><a href="#filtering">过滤</a><a href="#trace">Trace</a><a href="#lobes">多锥</a></div></nav></header>
+  <main>
+    <section class="hero"><div class="wrap">
+      <div class="eyebrow">Consumer · filtered voxel field</div>
+      <h1>Cone Tracing 不是独立方案：它是 Voxel 数据的宽 footprint 查询</h1>
+      <p>先确认 Level 0 从哪里来，再学习 footprint、LOD、三线性与层间插值、front-to-back 累计。最后把多个 diffuse cones 与一个 roughness 控制的 specular cone 组合起来。</p>
+      <div class="chips"><span class="chip">6 个独立 Canvas 实验</span><span class="chip">共享 course-voxel-field-v2</span><span class="chip hot">强制前置：Voxelization</span><span class="chip">当前帧可用，不要求 history</span></div>
+      <div class="gi-prereq"><span class="gi-stage-num">PRE</span><div><strong>前置课程：Voxelization</strong><p>如果你还不能解释 occupancy、premultiplied radiance、Level 0 与 light injection，请先完成前置。Cone 不会读取 mesh，也不会自己产生 radiance。</p></div><a href="gi_module_voxelization.html">打开前置课程 →</a></div>
+      <div class="gi-light-card"><div class="gi-light-icon">☀</div><div><strong>本页输入光源与前置页一致</strong><div>方向光使用 <code>toLight=normalize(0.45,0.82,-0.35)</code>；黄色箭头指示光线传播方向 <code>-toLight</code>。所有 recap 和 trace 都由同一生成规则现场重建。</div><div class="gi-light-meta"><span>domain=[-1,1]³</span><span>N=16</span><span>RGBA=Li×α, α</span></div></div></div>
+    </div></section>
+
+    <section id="recap"><div class="wrap">
+      <div class="head"><div><div class="k">Mandatory recap · input provenance</div><h2>先亲眼看见 Voxel → Injection → Mip</h2></div><p>三个小画布不是预制图片。页面加载时先生成相同 Level 0，再逐层 2×2×2 平均；切片索引相同，方便逐项比对。</p></div>
+      <div class="gi-artifact-grid">
+        <article class="gi-artifact"><canvas id="recapOcc" width="320" height="240" aria-label="Level 0 occupancy 切片"></canvas><h4>① Voxelize / occupancy</h4><p>灰格只回答“这里有没有表面”。</p></article>
+        <article class="gi-artifact"><canvas id="recapRad" width="320" height="240" aria-label="Level 0 radiance 切片"></canvas><h4>② Inject / Level 0</h4><p>同样的格子，颜色来自明确方向光。</p></article>
+        <article class="gi-artifact"><canvas id="recapMip" width="320" height="240" aria-label="Level 0 到 Level 3 的 mip 对比"></canvas><h4>③ Build 3D mip</h4><p>粗层覆盖更大空间，也更容易跨墙混色。</p></article>
+      </div>
+      <div class="artifact-note">数据规则：<code>course-voxel-field-v2</code>。本页复制前置页相同的 <code>classifySurface → injectRadiance → buildLevel0</code> 规则，原因是离线 HTML 需可单文件运行；不是另造一套场景。</div>
+    </div></section>
+
+    <section id="footprint"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 01 · footprint and LOD</div><h2>距离越远，一个样本要代表越大的圆盘</h2></div><p>二维画布是 cone 的轴向截面。紫色竖线在三维中是垂直于 trace direction 的圆盘直径。</p></div>
+      <div class="lab-grid">
+        <article class="lab"><div class="lab-head"><b>实验 1 · 只改距离与张角</b><span class="badge">2D AXIAL SLICE</span></div><canvas id="footCanvas" width="600" height="330"></canvas><div class="controls"><label>distance <input id="footDistance" type="range" min="5" max="95" value="58"></label><label>aperture <input id="footAperture" type="range" min="6" max="70" value="34"></label><span class="readout" id="footReadout"></span></div><div class="lab-copy">保持距离，增大张角；再保持张角，增大距离。两种操作都会提高 footprint 和 LOD。</div></article>
+        <div class="steps"><div class="step"><b>① 先求 diameter</b><span>张角是完整锥角，公式里使用 halfAperture。</span></div><div class="step"><b>② 除以 voxelSize</b><span>得到 footprint 跨越多少个 Level-0 cells。</span></div><div class="step"><b>③ 取 log₂</b><span>跨 1 格→LOD0，2 格→LOD1，4 格→LOD2。</span></div><div class="step"><b>④ 不要立刻 round</b><span>保留小数 LOD，之后在相邻 mip 层间插值。</span></div></div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>把 cone 想成手电筒光束：离灯越远，光斑越大。粗 mip 是“提前把大光斑覆盖的许多小格平均好”，因此一次读取可近似宽查询。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">diameter = 2 × distance × tan(aperture / 2)<br>lod = log₂(max(diameter / voxelSize, 1))</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">distance=0.58, aperture=34°, voxelSize=0.125<br>diameter≈<span class="gi-number">0.354</span>，跨 2.83 格，lod≈<span class="gi-number">1.50</span></div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">半角 = 完整张角的一半
+直径 = 2 × 距离 × tan(半角)
+至少按一个 voxel 宽度采样
+LOD = log2(直径 / voxelSize)</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 coneFootprint()">
+function coneFootprint(distance, aperture, voxelSize) {
+  const halfAperture = aperture * 0.5;
+  const diameter = Math.max(
+    voxelSize,
+    2 * distance * Math.tan(halfAperture)
+  );
+  const lod = Math.log2(diameter / voxelSize);
+
+  return { diameter, lod };
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="filtering"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 02 · within-level + between-level</div><h2>一次“小数 LOD 采样”其实有两层插值</h2></div><p>先在每个 3D mip 内对 8 个邻居做 trilinear，再在 floor(lod) 与 ceil(lod) 之间做线性插值。漏掉第二层会出现 mip 跳变。</p></div>
+      <div class="lab-grid">
+        <article class="lab"><div class="lab-head"><b>实验 2 · 8 邻居三线性</b><span class="badge">TRILINEAR</span></div><canvas id="triCanvas" width="600" height="330"></canvas><div class="controls"><label>fraction x <input id="fracX" type="range" min="0" max="100" value="35"></label><label>fraction y <input id="fracY" type="range" min="0" max="100" value="62"></label><label>fraction z <input id="fracZ" type="range" min="0" max="100" value="42"></label><span class="readout" id="triReadout"></span></div><div class="lab-copy">点越靠近某个角，该角权重越大。八个权重之和应为 1。</div></article>
+        <article class="lab"><div class="lab-head"><b>实验 3 · Mip 层间插值</b><span class="badge">LOD BLEND</span></div><canvas id="lodCanvas" width="600" height="330"></canvas><div class="controls"><label>lod <input id="lodBlend" type="range" min="0" max="300" value="145"></label><span class="readout" id="lodReadout"></span></div><div class="lab-copy">LOD=1.45 表示先分别读取 Level 1 和 Level 2，再用 0.45 混合，而不是直接四舍五入。</div></article>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>三线性就是先沿 X 混 4 对，再沿 Y 混 2 对，最后沿 Z 混 1 对。层间插值把“刚好跨进下一层”的突变也抹平。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">w(x,y,z)=(x?fx:1−fx)(y?fy:1−fy)(z?fz:1−fz)<br>L=lerp(sample(level₀), sample(level₁), frac(lod))</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">lod=1.45 → l₀=1, l₁=2, t=<span class="gi-number">0.45</span><br>sample = 0.55×Level1 + 0.45×Level2</div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">A = 在 floor(LOD) 层做 8 邻居三线性
+B = 在 ceil(LOD) 层做 8 邻居三线性
+结果 = lerp(A, B, LOD 的小数部分)</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 sampleMipChain()">
+function sampleMipChain(position, lod, mips) {
+  const maximum = mips.length - 1;
+  const clamped = clamp(lod, 0, maximum);
+  const level0 = Math.floor(clamped);
+  const level1 = Math.min(level0 + 1, maximum);
+  const fraction = clamped - level0;
+  const a = sampleTrilinear(mips[level0], position);
+  const b = sampleTrilinear(mips[level1], position);
+
+  return a.map((value, channel) =>
+    mix(value, b[channel], fraction)
+  );
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="trace"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 03 · one cone, full trace</div><h2>看见每一个真实样本与 front-to-back 累计</h2></div><p>画布显示同一 16³ field 的可旋转投影。紫环是 footprint，白点是采样位置；表格来自本次实际 trace，而非说明性假数据。</p></div>
+      <div class="trace-layout">
+        <aside class="card full trace-side">
+          <label>aperture <input id="traceAperture" type="range" min="8" max="70" value="34"><output id="traceApertureOut">34°</output></label>
+          <label>yaw <input id="traceYaw" type="range" min="-65" max="65" value="20"><output id="traceYawOut">20°</output></label>
+          <label>pitch <input id="tracePitch" type="range" min="5" max="60" value="26"><output id="tracePitchOut">26°</output></label>
+          <label>step factor <input id="stepFactor" type="range" min="45" max="120" value="72"><output id="stepFactorOut">0.72</output></label>
+          <label><input id="forceLod0" type="checkbox"> 强制 LOD 0（A/B）</label>
+          <div class="stat-grid"><div class="stat"><strong id="traceSamples">0</strong><span>samples</span></div><div class="stat"><strong id="traceMaxLod">0.00</strong><span>max LOD</span></div><div class="stat"><strong id="traceOpacity">0.00</strong><span>accumulated α</span></div><div class="stat"><strong id="traceRgb">0/0/0</strong><span>premul RGB</span></div></div>
+          <div class="callout" style="font-size:12px"><b>实验：</b>先勾选强制 LOD0，看远处样本如何忽略 footprint；再恢复 mip。转动 cone 方向寻找亮墙，观察“先遇到的不透明体素”如何压低后方贡献。</div>
+        </aside>
+        <div class="trace-view"><canvas id="traceCanvas" width="900" height="540" aria-label="Voxel cone tracing 三维采样轨迹"></canvas><div class="legend"><span><i style="background:#fff"></i>receiver</span><span><i style="background:#b69cff"></i>footprint</span><span><i style="background:#64ded9"></i>radiance voxel</span><span><i style="background:#ffd262"></i>directional light</span></div><table class="sample-table"><thead><tr><th>#</th><th>distance</th><th>diameter</th><th>LOD</th><th>sample α</th><th>remaining</th></tr></thead><tbody id="sampleRows"></tbody></table></div>
+      </div>
+      <div class="gi-workbench" data-gi-workbench data-gi-default="intuition">
+        <div class="gi-tabs"><button data-gi-tab="intuition">直觉</button><button data-gi-tab="formula">公式</button><button data-gi-tab="numbers">单步代值</button><button data-gi-tab="pseudo">伪代码</button><button data-gi-tab="actual">实际 JS</button></div>
+        <div class="gi-panel" data-gi-panel="intuition"><p>像从前向后叠半透明玻璃。已累计 opacity 越高，后面的样本能穿过来的比例越低；接近全遮住时就可以提前结束。</p></div>
+        <div class="gi-panel" data-gi-panel="formula"><div class="gi-formula">remaining = 1 − accumulatedOpacity<br>color += remaining × sample.rgb<br>opacity += remaining × sample.a</div></div>
+        <div class="gi-panel" data-gi-panel="numbers"><div class="gi-formula">已有 α=0.40，当前 sample.a=0.50<br>remaining=<span class="gi-number">0.60</span>，新增 α=0.60×0.50=<span class="gi-number">0.30</span>，新 α=0.70</div></div>
+        <div class="gi-panel" data-gi-panel="pseudo"><pre><code data-gi-code data-gi-status="pseudo">从 receiver 沿 cone direction 前进：
+  由距离和张角得到 footprint 与 LOD
+  读取 3D mip chain
+  用 remaining transparency 累计 premultiplied RGB 与 opacity
+  步长随 footprint 增长
+  opacity 接近 1 或走出 volume 时停止</code></pre></div>
+        <div class="gi-panel" data-gi-panel="actual"><pre><code data-gi-code data-gi-status="actual" data-gi-source="本页 traceCone()">
+function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
+  const color = [0, 0, 0];
+  let opacity = 0;
+  let distance = FIELD.cellSize * 0.8;
+  const samples = [];
+
+  while (samples.length &lt; 64 && distance &lt; 2.6 && opacity &lt; 0.98) {
+    const footprint = coneFootprint(
+      distance,
+      aperture,
+      FIELD.cellSize
+    );
+    const position = origin.map(
+      (value, axis) => value + direction[axis] * distance
+    );
+    if (position.some((value) => value &lt; -1 || value >= 1)) break;
+
+    const lod = forceLevel0 ? 0 : footprint.lod;
+    const sample = sampleMipChain(position, lod, MIPS);
+    const remaining = 1 - opacity;
+    for (let channel = 0; channel &lt; 3; channel += 1) {
+      color[channel] += remaining * sample[channel];
+    }
+    opacity += remaining * sample[3];
+    samples.push({
+      position,
+      distance,
+      sample,
+      remaining,
+      ...footprint,
+      lod
+    });
+    distance += Math.max(FIELD.cellSize * 0.6, footprint.diameter * stepFactor);
+  }
+  return { color, opacity, samples };
+}</code></pre></div>
+      </div>
+    </div></section>
+
+    <section id="lobes"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 04–05 · diffuse + specular</div><h2>一个 cone 只是调试单位，不是完整 GI</h2></div><p>漫反射通常用多个宽 cone 覆盖半球；镜面 cone 围绕反射方向，roughness 越高张角越大。下面两个独立 Demo 只解释采样布局。</p></div>
+      <div class="lab-grid">
+        <article class="lab"><div class="lab-head"><b>实验 4 · 多个 diffuse cones</b><span class="badge">HEMISPHERE COVERAGE</span></div><canvas id="diffuseCanvas" width="600" height="330"></canvas><div class="controls"><label>cone count <input id="diffuseCount" type="range" min="1" max="9" value="5"></label><span class="readout" id="diffuseReadout"></span></div><div class="lab-copy">单锥会漏掉半球大部分方向；增加 cone 后覆盖更均匀，但查询次数与带宽近似线性增长。</div></article>
+        <article class="lab"><div class="lab-head"><b>实验 5 · roughness → specular aperture</b><span class="badge">SPECULAR LOBE</span></div><canvas id="specularCanvas" width="600" height="330"></canvas><div class="controls"><label>roughness <input id="roughness" type="range" min="3" max="100" value="28"></label><span class="readout" id="specularReadout"></span></div><div class="lab-copy">低 roughness 需要很窄的 cone，也更暴露体素分辨率与 mip 模糊；VCT 不擅长镜面级尖锐反射。</div></article>
+      </div>
+    </div></section>
+
+    <section id="leakage"><div class="wrap">
+      <div class="head"><div><div class="k">Stage 06 · known failure</div><h2>各向同性 mip 为什么把墙两侧混在一起</h2></div><p>粗 mip 只有一个 RGB/opacity，不知道能量来自哪个方向。一个粗 texel 同时覆盖亮室和暗室时，cone 从暗侧读取也可能得到亮色。</p></div>
+      <div class="lab-grid">
+        <article class="lab"><div class="lab-head"><b>实验 6 · Isotropic leakage A/B</b><span class="badge">ERROR EXPLAINER</span></div><canvas id="leakCanvas" width="600" height="330"></canvas><div class="controls"><button id="isoButton" class="active">A · isotropic mip</button><button id="dirButton">B · direction-aware 概念</button><label>粗层 footprint <input id="leakFootprint" type="range" min="18" max="95" value="68"></label><span class="readout" id="leakReadout"></span></div><div class="lab-copy">B 是方向分桶的教学示意，不是本页数据的实际 anisotropic volume。常见缓解还包括加厚 occupancy、提高分辨率、缩小 cone、边界权重和六方向 mip。</div></article>
+        <div class="steps"><div class="step"><b>根因</b><span>粗 cell 跨过薄墙，同时平均亮侧 radiance 与暗侧数据。</span></div><div class="step"><b>最直接的证据</b><span>固定 trace，只切换 LOD0 与 mip；漏光随粗 LOD 加强。</span></div><div class="step"><b>方向相关存储</b><span>按 ±X/±Y/±Z 或更细方向存 radiance，查询时选朝向相符的 lobe。</span></div><div class="step"><b>仍然不是精确 ray</b><span>cone 是宽查询近似；墙厚、分辨率与 filtering policy 仍决定质量。</span></div></div>
+      </div>
+      <div class="callout warning" style="margin-top:14px"><b>性能/质量边界：</b>每个像素 5–9 个 diffuse cones，再加 specular cone，会产生大量 3D texture 带宽。动态几何要重建 occupancy/attributes，动态灯要重注入 radiance 与更新 mip；它能在当前帧响应，但不等于“免费”。</div>
+    </div></section>
+  </main>
+  <footer><div class="wrap foot"><span>GI Course · Cone consumer of <code>course-voxel-field-v2</code></span><div class="next"><a href="gi_module_voxelization.html">← 前置：Voxelization</a><a href="gi_module_voxel_gi.html">组装：完整 Voxel GI →</a></div></div></footer>
+  <script src="gi_course.js"></script>
+  <script>
+  (() => {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+    const mix = (a, b, t) => a + (b - a) * t;
+    const dot = (a, b) => a.reduce((sum, value, index) => sum + value * b[index], 0);
+    const normalize = (v) => {
+      const length = Math.hypot(...v) || 1;
+      return v.map((value) => value / length);
+    };
+    const VOXEL_SPEC = Object.freeze({
+      id: "course-voxel-field-v2",
+      min: [-1, -1, -1],
+      max: [1, 1, 1],
+      defaultResolution: 16,
+      pointBase: [0.62, 0.58, -0.32],
+      directionalBase: [0.45, 0.82, -0.35]
+    });
+
+    function voxelCenter(cell, resolution) {
+      return cell.map((index, axis) =>
+        VOXEL_SPEC.min[axis] +
+        (index + 0.5) *
+        (VOXEL_SPEC.max[axis] - VOXEL_SPEC.min[axis]) /
+        resolution
+      );
+    }
+    function boxSurface(position, center, extent, threshold) {
+      const distance = position.map((value, axis) =>
+        Math.abs(value - center[axis]) - extent[axis]
+      );
+      if (distance.some((value) => value > threshold)) return null;
+      let axis = 0;
+      if (distance[1] > distance[axis]) axis = 1;
+      if (distance[2] > distance[axis]) axis = 2;
+      const normal = [0, 0, 0];
+      normal[axis] = position[axis] >= center[axis] ? 1 : -1;
+      return normal;
+    }
+    function classifySurface(position, cellSize) {
+      const threshold = cellSize * 0.62;
+      if (Math.abs(position[1] + 0.72) < threshold && Math.abs(position[0]) < 0.92 && Math.abs(position[2]) < 0.92) return { normal:[0,1,0], albedo:[0.44,0.50,0.54], opacity:0.78, kind:"floor" };
+      if (Math.abs(position[2] - 0.68) < threshold && Math.abs(position[0]) < 0.92 && position[1] > -0.72 && position[1] < 0.82) return { normal:[0,0,-1], albedo:[0.30,0.46,0.62], opacity:0.82, kind:"wall" };
+      let normal = boxSurface(position, [-0.22,-0.34,0.04], [0.30,0.38,0.25], threshold);
+      if (normal) return { normal, albedo:[0.18,0.48,0.68], opacity:0.88, kind:"blueBox" };
+      normal = boxSurface(position, [0.55,-0.43,-0.18], [0.14,0.20,0.16], threshold);
+      if (normal) return { normal, albedo:[0.92,0.20,0.08], opacity:0.90, kind:"redBlock" };
+      return null;
+    }
+    function makeLight() {
+      const angle = -38 * Math.PI / 180;
+      return {
+        type: "directional",
+        toLight: normalize([
+          Math.cos(angle) * 0.58,
+          0.82,
+          Math.sin(angle) * 0.58
+        ]),
+        strength: 2.2
+      };
+    }
+    function evaluateLight(position, light) {
+      if (light.type === "directional") return { toLight:light.toLight, strength:light.strength };
+      const delta = light.position.map((value, axis) => value - position[axis]);
+      const distanceSquared = Math.max(0.10, dot(delta, delta));
+      return { toLight:normalize(delta), strength:light.strength / distanceSquared };
+    }
+    function injectRadiance(surface, light) {
+      const sample = evaluateLight(surface.position, light);
+      const nDotL = Math.max(0, dot(surface.normal, sample.toLight));
+      const scale = 0.045 + sample.strength * nDotL / Math.PI;
+      const outgoing = surface.albedo.map((channel) => channel * scale);
+      return { rgb:outgoing.map((channel) => channel * surface.opacity), opacity:surface.opacity, nDotL };
+    }
+    function buildLevel0(resolution, light) {
+      const voxels = [];
+      const cellSize = 2 / resolution;
+      const data = new Float32Array(resolution * resolution * resolution * 4);
+      for (let z = 0; z < resolution; z += 1) {
+        for (let y = 0; y < resolution; y += 1) {
+          for (let x = 0; x < resolution; x += 1) {
+            const position = voxelCenter([x,y,z], resolution);
+            const surface = classifySurface(position, cellSize);
+            if (!surface) continue;
+            surface.position = position;
+            const injected = injectRadiance(surface, light);
+            const voxel = { x,y,z,...surface,...injected };
+            voxels.push(voxel);
+            const index = ((z * resolution + y) * resolution + x) * 4;
+            data.set([...injected.rgb, injected.opacity], index);
+          }
+        }
+      }
+      return { id:VOXEL_SPEC.id, resolution, cellSize, light, voxels, data };
+    }
+    function buildMipChain(field) {
+      const mips = [{ size:field.resolution, data:field.data }];
+      while (mips.at(-1).size > 1) {
+        const source = mips.at(-1);
+        const size = Math.max(1, Math.floor(source.size / 2));
+        const data = new Float32Array(size * size * size * 4);
+        for (let z = 0; z < size; z += 1) {
+          for (let y = 0; y < size; y += 1) {
+            for (let x = 0; x < size; x += 1) {
+              for (let channel = 0; channel < 4; channel += 1) {
+                let sum = 0;
+                for (let dz = 0; dz < 2; dz += 1) {
+                  for (let dy = 0; dy < 2; dy += 1) {
+                    for (let dx = 0; dx < 2; dx += 1) {
+                      const sx = Math.min(source.size - 1, x * 2 + dx);
+                      const sy = Math.min(source.size - 1, y * 2 + dy);
+                      const sz = Math.min(source.size - 1, z * 2 + dz);
+                      sum += source.data[((sz * source.size + sy) * source.size + sx) * 4 + channel];
+                    }
+                  }
+                }
+                data[((z * size + y) * size + x) * 4 + channel] = sum / 8;
+              }
+            }
+          }
+        }
+        mips.push({ size, data });
+      }
+      return mips;
+    }
+    function sampleTrilinear(level, position) {
+      const coordinate = position.map((value) =>
+        clamp((value + 1) * 0.5 * level.size - 0.5, 0, level.size - 1)
+      );
+      const minimum = coordinate.map(Math.floor);
+      const maximum = minimum.map((value) => Math.min(value + 1, level.size - 1));
+      const fraction = coordinate.map((value, axis) => value - minimum[axis]);
+      const result = [0,0,0,0];
+      for (let dz = 0; dz < 2; dz += 1) {
+        for (let dy = 0; dy < 2; dy += 1) {
+          for (let dx = 0; dx < 2; dx += 1) {
+            const x = dx ? maximum[0] : minimum[0];
+            const y = dy ? maximum[1] : minimum[1];
+            const z = dz ? maximum[2] : minimum[2];
+            const weight =
+              (dx ? fraction[0] : 1 - fraction[0]) *
+              (dy ? fraction[1] : 1 - fraction[1]) *
+              (dz ? fraction[2] : 1 - fraction[2]);
+            const index = ((z * level.size + y) * level.size + x) * 4;
+            for (let channel = 0; channel < 4; channel += 1) {
+              result[channel] += level.data[index + channel] * weight;
+            }
+          }
+        }
+      }
+      return result;
+    }
+    function sampleMipChain(position, lod, mips) {
+      const maximum = mips.length - 1;
+      const clamped = clamp(lod, 0, maximum);
+      const level0 = Math.floor(clamped);
+      const level1 = Math.min(level0 + 1, maximum);
+      const fraction = clamped - level0;
+      const a = sampleTrilinear(mips[level0], position);
+      const b = sampleTrilinear(mips[level1], position);
+      return a.map((value, channel) => mix(value, b[channel], fraction));
+    }
+    function coneFootprint(distance, aperture, voxelSize) {
+      const halfAperture = aperture * 0.5;
+      const diameter = Math.max(voxelSize, 2 * distance * Math.tan(halfAperture));
+      const lod = Math.log2(diameter / voxelSize);
+      return { diameter, lod };
+    }
+
+    const FIELD = buildLevel0(16, makeLight());
+    const MIPS = buildMipChain(FIELD);
+    const ORIGIN = [-0.72, -0.61, -0.28];
+    function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
+      const color = [0,0,0];
+      let opacity = 0;
+      let distance = FIELD.cellSize * 0.8;
+      const samples = [];
+      while (samples.length < 64 && distance < 2.6 && opacity < 0.98) {
+        const footprint = coneFootprint(distance, aperture, FIELD.cellSize);
+        const position = origin.map((value, axis) => value + direction[axis] * distance);
+        if (position.some((value) => value < -1 || value >= 1)) break;
+        const lod = forceLevel0 ? 0 : footprint.lod;
+        const sample = sampleMipChain(position, lod, MIPS);
+        const remaining = 1 - opacity;
+        for (let channel = 0; channel < 3; channel += 1) color[channel] += remaining * sample[channel];
+        opacity += remaining * sample[3];
+        samples.push({
+          position,
+          distance,
+          sample,
+          remaining,
+          ...footprint,
+          lod
+        });
+        distance += Math.max(FIELD.cellSize * 0.6, footprint.diameter * stepFactor);
+      }
+      return { color, opacity, samples };
+    }
+
+    function rgb(color, exposure = 1.3) {
+      const mapped = color.map((value) => Math.round(clamp(1 - Math.exp(-value * exposure), 0, 1) * 255));
+      return `rgb(${mapped.join(",")})`;
+    }
+    function drawSlice(canvas, level, slice, mode) {
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#03060c"; ctx.fillRect(0,0,canvas.width,canvas.height);
+      const size = level.size;
+      const cell = Math.min(canvas.width, canvas.height) * 0.78 / size;
+      const left = (canvas.width - cell * size) / 2;
+      const top = (canvas.height - cell * size) / 2;
+      const z = clamp(slice, 0, size - 1);
+      for (let y = 0; y < size; y += 1) {
+        for (let x = 0; x < size; x += 1) {
+          const index = ((z * size + y) * size + x) * 4;
+          const sample = Array.from(level.data.slice(index,index+4));
+          ctx.fillStyle = mode === "occupancy"
+            ? (sample[3] > 0.02 ? "#7892a3" : "#07101a")
+            : rgb(sample.slice(0,3), 1.7);
+          ctx.globalAlpha = mode === "occupancy" ? clamp(sample[3] + 0.2,0.15,1) : 1;
+          ctx.fillRect(left+x*cell, top+(size-1-y)*cell, Math.ceil(cell), Math.ceil(cell));
+          ctx.strokeStyle = "#ffffff0d"; ctx.strokeRect(left+x*cell, top+(size-1-y)*cell, cell, cell);
+        }
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#aab7cb"; ctx.font = "11px ui-monospace"; ctx.fillText(`Z=${z} · ${size}³`, 8, 16);
+    }
+    drawSlice($("recapOcc"), MIPS[0], 8, "occupancy");
+    drawSlice($("recapRad"), MIPS[0], 8, "radiance");
+    (() => {
+      const canvas = $("recapMip"), ctx = canvas.getContext("2d");
+      ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);
+      MIPS.slice(0,4).forEach((level,index)=>{
+        const temp=document.createElement("canvas");temp.width=150;temp.height=105;
+        drawSlice(temp,level,Math.floor(level.size/2),"radiance");
+        const x=(index%2)*160,y=Math.floor(index/2)*118;
+        ctx.drawImage(temp,x,y,150,105);ctx.fillStyle="#d5cfff";ctx.fillText(`L${index} ${level.size}³`,x+5,y+15);
+      });
+    })();
+
+    function drawFoot() {
+      const canvas=$("footCanvas"),ctx=canvas.getContext("2d");
+      const distance=Number($("footDistance").value)/100;
+      const aperture=Number($("footAperture").value)*Math.PI/180;
+      const result=coneFootprint(distance,aperture,FIELD.cellSize);
+      const origin=[65,165],endX=550,half=Math.tan(aperture/2)*(endX-origin[0]);
+      ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.strokeStyle="#29384f";for(let x=65;x<560;x+=30){ctx.beginPath();ctx.moveTo(x,28);ctx.lineTo(x,302);ctx.stroke()}
+      ctx.fillStyle="#ad96ff18";ctx.strokeStyle="#62deda";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(...origin);ctx.lineTo(endX,origin[1]-half);ctx.lineTo(endX,origin[1]+half);ctx.closePath();ctx.fill();ctx.stroke();
+      const sampleX=origin[0]+distance/1.0*(endX-origin[0]);const radius=result.diameter/2/1.0*(endX-origin[0]);
+      ctx.strokeStyle="#b69fff";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(sampleX,origin[1]-radius);ctx.lineTo(sampleX,origin[1]+radius);ctx.stroke();
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(origin[0],origin[1],6,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#c8d1e2";ctx.font="12px Segoe UI";ctx.fillText("receiver",35,190);ctx.fillText("3D 中是采样圆盘",sampleX-55,Math.max(20,origin[1]-radius-10));
+      $("footReadout").textContent=`d=${result.diameter.toFixed(3)} · LOD=${result.lod.toFixed(2)}`;
+    }
+
+    function drawTri() {
+      const canvas=$("triCanvas"),ctx=canvas.getContext("2d");
+      const f=[Number($("fracX").value),Number($("fracY").value),Number($("fracZ").value)].map(v=>v/100);
+      ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);
+      let sum=0;
+      for(let z=0;z<2;z++)for(let y=0;y<2;y++)for(let x=0;x<2;x++){
+        const weight=(x?f[0]:1-f[0])*(y?f[1]:1-f[1])*(z?f[2]:1-f[2]);sum+=weight;
+        const px=165+x*215+z*45,py=235-y*145-z*35;
+        ctx.fillStyle=`rgba(173,150,255,${0.18+weight*0.82})`;ctx.strokeStyle="#bcaaff";ctx.lineWidth=1+weight*7;
+        ctx.fillRect(px-23,py-23,46,46);ctx.strokeRect(px-23,py-23,46,46);
+        ctx.fillStyle="#eef";ctx.font="11px ui-monospace";ctx.fillText(weight.toFixed(3),px-19,py+4);
+      }
+      const px=165+f[0]*215+f[2]*45,py=235-f[1]*145-f[2]*35;
+      ctx.fillStyle="#ffc36c";ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);ctx.fill();
+      $("triReadout").textContent=`Σw=${sum.toFixed(3)}`;
+    }
+    function drawLod() {
+      const canvas=$("lodCanvas"),ctx=canvas.getContext("2d"),lod=Number($("lodBlend").value)/100,l0=Math.floor(lod),l1=Math.min(4,l0+1),t=lod-l0;
+      ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);
+      const colors=["#56d6dc","#739fff","#a783ff","#dd81d8","#ff8f9c"];
+      [[145,l0,1-t],[455,l1,t]].forEach(([x,l,w])=>{ctx.fillStyle=colors[l];ctx.globalAlpha=.25+w*.75;ctx.fillRect(x-75,90,150,150);ctx.globalAlpha=1;ctx.strokeStyle="#fff";ctx.lineWidth=2+w*7;ctx.strokeRect(x-75,90,150,150);ctx.fillStyle="#eef";ctx.font="16px ui-monospace";ctx.fillText(`Level ${l}`,x-34,70);ctx.fillText(`weight ${w.toFixed(2)}`,x-45,265)});
+      ctx.fillStyle="#ffc36c";ctx.font="25px Segoe UI";ctx.fillText("+",288,177);
+      $("lodReadout").textContent=`L${l0}×${(1-t).toFixed(2)} + L${l1}×${t.toFixed(2)}`;
+    }
+
+    const traceState={yaw:-.60,pitch:.32,drag:false,lastX:0,lastY:0,result:null};
+    function rotate3(point){const cy=Math.cos(traceState.yaw),sy=Math.sin(traceState.yaw),cp=Math.cos(traceState.pitch),sp=Math.sin(traceState.pitch),x=point[0]*cy-point[2]*sy,z0=point[0]*sy+point[2]*cy,y=point[1]*cp-z0*sp,z=point[1]*sp+z0*cp;return[x,y,z]}
+    function project3(point,canvas){const p=rotate3(point),scale=Math.min(canvas.width,canvas.height)*.34/(2.8+p[2]*.25);return[canvas.width*.5+p[0]*scale,canvas.height*.52-p[1]*scale,p[2],scale]}
+    function drawArrow(ctx,a,b,color){ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();const angle=Math.atan2(b[1]-a[1],b[0]-a[0]);ctx.beginPath();ctx.moveTo(b[0],b[1]);ctx.lineTo(b[0]-Math.cos(angle-.55)*12,b[1]-Math.sin(angle-.55)*12);ctx.lineTo(b[0]-Math.cos(angle+.55)*12,b[1]-Math.sin(angle+.55)*12);ctx.closePath();ctx.fill()}
+    function traceDirection(){const yaw=Number($("traceYaw").value)*Math.PI/180,pitch=Number($("tracePitch").value)*Math.PI/180;return normalize([Math.cos(pitch)*Math.cos(yaw),Math.sin(pitch),Math.cos(pitch)*Math.sin(yaw)])}
+    function runTrace(){
+      const aperture=Number($("traceAperture").value)*Math.PI/180,step=Number($("stepFactor").value)/100;
+      traceState.result=traceCone(ORIGIN,traceDirection(),aperture,step,$("forceLod0").checked);
+      $("traceApertureOut").value=`${$("traceAperture").value}°`;$("traceYawOut").value=`${$("traceYaw").value}°`;$("tracePitchOut").value=`${$("tracePitch").value}°`;$("stepFactorOut").value=step.toFixed(2);
+      $("traceSamples").textContent=traceState.result.samples.length;$("traceMaxLod").textContent=Math.max(0,...traceState.result.samples.map(s=>s.lod)).toFixed(2);$("traceOpacity").textContent=traceState.result.opacity.toFixed(2);$("traceRgb").textContent=traceState.result.color.map(v=>v.toFixed(2)).join("/");
+      $("sampleRows").innerHTML=traceState.result.samples.slice(0,8).map((s,i)=>`<tr><td>${i}</td><td>${s.distance.toFixed(3)}</td><td>${s.diameter.toFixed(3)}</td><td>${s.lod.toFixed(2)}</td><td>${s.sample[3].toFixed(3)}</td><td>${s.remaining.toFixed(3)}</td></tr>`).join("");
+      drawTrace();
+    }
+    function drawTrace(){
+      const canvas=$("traceCanvas"),ctx=canvas.getContext("2d");ctx.fillStyle="#02050a";ctx.fillRect(0,0,canvas.width,canvas.height);
+      const points=FIELD.voxels.map(v=>({v,p:project3(v.position,canvas)})).sort((a,b)=>b.p[2]-a.p[2]);
+      points.forEach(({v,p})=>{const size=Math.max(2,p[3]*FIELD.cellSize*.56);ctx.globalAlpha=.68;ctx.fillStyle=rgb(v.rgb,1.5);ctx.fillRect(p[0]-size/2,p[1]-size/2,size,size)});ctx.globalAlpha=1;
+      const light=FIELD.light,center=project3([0,.45,0],canvas),start=project3(light.toLight.map((v,i)=>[0,.45,0][i]+v*.75),canvas);drawArrow(ctx,start,center,"#ffd262");
+      const origin=project3(ORIGIN,canvas);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(origin[0],origin[1],7,0,Math.PI*2);ctx.fill();
+      const direction=traceDirection();traceState.result.samples.forEach((s,i)=>{const p=project3(s.position,canvas),edgeWorld=[s.position[0],s.position[1]+s.diameter*.5,s.position[2]],edge=project3(edgeWorld,canvas),radius=Math.max(3,Math.abs(edge[1]-p[1]));ctx.strokeStyle=`rgba(182,159,255,${.95-i*.02})`;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(p[0],p[1],Math.max(3,radius*.42),radius,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#fff";ctx.fillRect(p[0]-2,p[1]-2,4,4)});
+      if(traceState.result.samples.length){const end=project3(traceState.result.samples.at(-1).position,canvas);ctx.strokeStyle="#b69fff";ctx.beginPath();ctx.moveTo(origin[0],origin[1]);ctx.lineTo(end[0],end[1]);ctx.stroke()}
+    }
+
+    function drawDiffuse(){
+      const canvas=$("diffuseCanvas"),ctx=canvas.getContext("2d"),count=Number($("diffuseCount").value),origin=[300,270],radius=210;
+      ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle="#35435d";ctx.beginPath();ctx.arc(origin[0],origin[1],radius,Math.PI,Math.PI*2);ctx.stroke();drawArrow(ctx,origin,[300,42],"#79e5a0");
+      for(let i=0;i<count;i++){const t=count===1?.5:(i+.5)/count,angle=Math.PI+t*Math.PI,dir=[Math.cos(angle),Math.sin(angle)],spread=Math.PI/(count+1)*.82,end=[origin[0]+dir[0]*radius*.87,origin[1]+dir[1]*radius*.87],left=[origin[0]+Math.cos(angle-spread)*radius*.78,origin[1]+Math.sin(angle-spread)*radius*.78],right=[origin[0]+Math.cos(angle+spread)*radius*.78,origin[1]+Math.sin(angle+spread)*radius*.78];ctx.fillStyle="#ad96ff14";ctx.strokeStyle="#ad96ff";ctx.beginPath();ctx.moveTo(...origin);ctx.lineTo(...left);ctx.quadraticCurveTo(...end,...right);ctx.closePath();ctx.fill();ctx.stroke()}
+      $("diffuseReadout").textContent=`${count} cones · ≈${count}× trace cost`;
+    }
+    function drawSpecular(){
+      const canvas=$("specularCanvas"),ctx=canvas.getContext("2d"),rough=Number($("roughness").value)/100,aperture=mix(4,72,rough*rough),origin=[170,265],angle=-.82,len=330,spread=aperture*Math.PI/360,end=[origin[0]+Math.cos(angle)*len,origin[1]+Math.sin(angle)*len];
+      ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle="#50617a";ctx.beginPath();ctx.moveTo(40,265);ctx.lineTo(560,265);ctx.stroke();drawArrow(ctx,origin,end,"#ffc36c");
+      ctx.fillStyle="#62deda18";ctx.strokeStyle="#62deda";ctx.beginPath();ctx.moveTo(...origin);ctx.lineTo(origin[0]+Math.cos(angle-spread)*len,origin[1]+Math.sin(angle-spread)*len);ctx.arc(origin[0],origin[1],len,angle-spread,angle+spread);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle="#d7e3eb";ctx.fillText("reflection direction",end[0]-80,end[1]-10);
+      $("specularReadout").textContent=`roughness=${rough.toFixed(2)} → aperture≈${aperture.toFixed(1)}°`;
+    }
+    let leakMode="iso";
+    function drawLeak(){
+      const canvas=$("leakCanvas"),ctx=canvas.getContext("2d"),foot=Number($("leakFootprint").value),cx=300;
+      ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#ff9b4940";ctx.fillRect(30,35,cx-42,260);ctx.fillStyle="#192334";ctx.fillRect(cx+12,35,258,260);ctx.fillStyle="#8ca1b2";ctx.fillRect(cx-12,30,24,270);ctx.fillStyle="#ffb45f";ctx.fillText("亮室",80,60);ctx.fillStyle="#9babc0";ctx.fillText("暗室 receiver",430,60);
+      const x=340,r=foot;ctx.fillStyle=leakMode==="iso"?"#ffb86233":"#62deda22";ctx.strokeStyle=leakMode==="iso"?"#ffb862":"#62deda";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,165,r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(430,170,6,0,Math.PI*2);ctx.fill();
+      if(leakMode==="dir"){ctx.fillStyle="#03060ccc";ctx.fillRect(cx+12,35,258,260);ctx.strokeStyle="#62deda";ctx.strokeRect(cx+12,35,258,260);ctx.fillStyle="#79e7df";ctx.fillText("按查询方向读取暗侧 lobe",350,260)}
+      const crosses=x-r<cx-12;$("leakReadout").textContent=leakMode==="iso"&&crosses?"粗 footprint 跨墙 → 亮色泄漏":"方向/范围未把亮侧混入";
+    }
+
+    ["footDistance","footAperture"].forEach(id=>$(id).addEventListener("input",drawFoot));
+    ["fracX","fracY","fracZ"].forEach(id=>$(id).addEventListener("input",drawTri));
+    $("lodBlend").addEventListener("input",drawLod);
+    ["traceAperture","traceYaw","tracePitch","stepFactor","forceLod0"].forEach(id=>$(id).addEventListener("input",runTrace));
+    $("diffuseCount").addEventListener("input",drawDiffuse);$("roughness").addEventListener("input",drawSpecular);$("leakFootprint").addEventListener("input",drawLeak);
+    $("isoButton").addEventListener("click",()=>{leakMode="iso";$("isoButton").classList.add("active");$("dirButton").classList.remove("active");drawLeak()});
+    $("dirButton").addEventListener("click",()=>{leakMode="dir";$("dirButton").classList.add("active");$("isoButton").classList.remove("active");drawLeak()});
+    const traceCanvas=$("traceCanvas");
+    traceCanvas.addEventListener("pointerdown",e=>{traceState.drag=true;traceState.lastX=e.clientX;traceState.lastY=e.clientY;traceCanvas.setPointerCapture(e.pointerId)});
+    traceCanvas.addEventListener("pointermove",e=>{if(!traceState.drag)return;traceState.yaw+=(e.clientX-traceState.lastX)*.008;traceState.pitch=clamp(traceState.pitch+(e.clientY-traceState.lastY)*.006,-.9,1);traceState.lastX=e.clientX;traceState.lastY=e.clientY;drawTrace()});
+    traceCanvas.addEventListener("pointerup",()=>traceState.drag=false);traceCanvas.addEventListener("pointercancel",()=>traceState.drag=false);
+    drawFoot();drawTri();drawLod();runTrace();drawDiffuse();drawSpecular();drawLeak();
+    window.__GI_PAGE__={ready:true,module:"cone_tracing",dataContract:VOXEL_SPEC.id,demos:6,field:FIELD,mipCount:MIPS.length,trace:()=>traceState.result};
+  })();
+  </script>
+</body>
+</html>
