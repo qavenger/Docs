@@ -8,7 +8,7 @@
   :root{
     --bg:#14161a; --panel:#1d2126; --card:#1e2128; --card2:#232732;
     --border:#333845; --text:#e8eaf0; --muted:#9aa3b2; --accent:#f5b942;
-    --accent2:#5ab0f0; --good:#7ecb8f;
+    --accent2:#5ab0f0; --good:#7ecb8f; --warn:#e08f6a;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -21,24 +21,27 @@
   p.desc{color:var(--muted); font-size:13px; margin-bottom:24px; line-height:1.6;}
   h2{font-size:16px; margin:36px 0 12px; color:var(--accent); border-left:3px solid var(--accent); padding-left:10px;}
 
-  .selectors{display:flex; gap:24px; flex-wrap:wrap; margin-bottom:20px;}
+  .selectors{display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px; align-items:flex-end;}
   .sel-group{display:flex; flex-direction:column; gap:6px;}
   .sel-group label{font-size:13px; color:var(--muted);}
-  select{
+  select,input[type=number]{
     background:var(--card2); color:var(--text); border:1px solid var(--border);
-    border-radius:8px; padding:10px 14px; font-size:15px; min-width:220px; cursor:pointer;
+    border-radius:8px; padding:10px 14px; font-size:15px; cursor:pointer;
   }
-  select:focus{outline:1px solid var(--accent2);}
+  select{min-width:200px;}
+  input[type=number]{width:110px; cursor:text;}
+  select:focus,input[type=number]:focus{outline:1px solid var(--accent2);}
 
-  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-bottom:18px;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:18px;}
   .card{
     background:linear-gradient(160deg,var(--card),var(--card2));
     border:1px solid var(--border); border-radius:12px; padding:16px 18px;
   }
   .card .k{font-size:12px; color:var(--muted); margin-bottom:8px; letter-spacing:.5px;}
-  .card .v{font-size:24px; font-weight:600; color:var(--accent);}
+  .card .v{font-size:23px; font-weight:600; color:var(--accent);}
   .card .v.blue{color:var(--accent2);}
   .card .v.green{color:var(--good);}
+  .card .v.warn{color:var(--warn);}
   .card .u{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
 
   .settings{
@@ -49,9 +52,7 @@
   .settings table{width:100%; border-collapse:collapse; font-size:13px;}
   .settings td{padding:6px 8px; border-bottom:1px dashed #2c313c; vertical-align:top; line-height:1.55;}
   .settings td:first-child{color:var(--muted); width:220px; white-space:nowrap;}
-  .settings code{background:#12141a; padding:1px 6px; border-radius:4px; color:#ffd88a; font-size:12.5px;}
-  .note-line{font-size:13px; color:var(--muted); line-height:1.7; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:8px;}
-  .note-line b{color:var(--text);}
+  code{background:#12141a; padding:1px 6px; border-radius:4px; color:#ffd88a; font-size:12.5px;}
 
   table.full{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px;}
   table.full th{
@@ -63,6 +64,27 @@
   table.full tr.hl td{background:#2c3040; box-shadow:inset 3px 0 0 var(--accent);}
   table.full td.num{font-variant-numeric:tabular-nums;}
   .timecell{color:var(--accent2);}
+  .timecell small{color:var(--muted); display:block; margin-top:2px;}
+
+  /* 校准流程 */
+  .calib{display:grid; grid-template-columns:minmax(340px,1fr) minmax(320px,1.1fr); gap:18px; align-items:stretch;}
+  @media (max-width:900px){ .calib{grid-template-columns:1fr;} }
+  .calib-svg{
+    background:linear-gradient(180deg,#1a2030,#1e2128); border:1px solid var(--border);
+    border-radius:12px; padding:10px; display:flex; align-items:center; justify-content:center;
+  }
+  .steps{display:flex; flex-direction:column; gap:10px;}
+  .step{
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; font-size:13px; line-height:1.65; display:flex; gap:12px;
+  }
+  .step .n{
+    flex:0 0 26px; height:26px; border-radius:50%; background:var(--accent); color:#14161a;
+    font-weight:700; display:flex; align-items:center; justify-content:center; font-size:13px; margin-top:2px;
+  }
+  .step b{color:var(--accent2);}
+  .step .dyn{color:var(--accent); font-weight:600;}
+
   .footer-notes{margin-top:28px; font-size:12.5px; color:var(--muted); line-height:1.9;}
   .footer-notes li{margin-left:18px; margin-bottom:4px;}
   .footer-notes b{color:var(--text);}
@@ -86,11 +108,29 @@
     <label>气候</label>
     <select id="selWeather"></select>
   </div>
+  <div class="sel-group">
+    <label>纬度（°，影响正午/上下午 Pitch）</label>
+    <input type="number" id="inpLat" value="35" min="0" max="80" step="1">
+  </div>
+  <div class="sel-group">
+    <label>季节</label>
+    <select id="selSeason">
+      <option value="0" selected>春分 / 秋分</option>
+      <option value="23.44">夏至</option>
+      <option value="-23.44">冬至</option>
+    </select>
+  </div>
+  <div class="sel-group">
+    <label>HDRI 平均亮度 L₀（cd/m²）</label>
+    <input type="number" id="inpHdri" value="1" min="0.001" step="0.5">
+  </div>
 </div>
 
 <div class="cards">
   <div class="card"><div class="k">平行光强度（太阳/月亮）</div><div class="v" id="cSun">—</div><div class="u">lux（垂直于光线）· Directional Light Intensity</div></div>
+  <div class="card"><div class="k">平行光角度 Pitch</div><div class="v warn" id="cPitch">—</div><div class="u" id="cPitchNote">—</div></div>
   <div class="card"><div class="k">天光等效照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空亮度 <span id="cSkyLum">—</span> cd/m²</div></div>
+  <div class="card"><div class="k">SkyLight Intensity Scale</div><div class="v blue" id="cScale">—</div><div class="u">Real Time Capture 时恒为 <b>1.0</b>；HDRI 方案 = 天空亮度 ÷ L₀</div></div>
   <div class="card"><div class="k">光比（受光面 : 阴影面）</div><div class="v green" id="cRatio">—</div><div class="u" id="cRatioStops">—</div></div>
   <div class="card"><div class="k">EV100（无曝光补偿）</div><div class="v" id="cEV">—</div><div class="u">地面总照度约 <span id="cTotal">—</span> lux</div></div>
 </div>
@@ -106,44 +146,123 @@
   </table>
 </div>
 
+<h2>如何用平行光校准天光（灰球法）</h2>
+<div class="calib">
+  <div class="calib-svg">
+    <svg id="calibSvg" viewBox="0 0 420 300" width="100%" height="auto">
+      <!-- 天空渐变 -->
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2a3f63"/><stop offset="100%" stop-color="#1e2128"/>
+        </linearGradient>
+        <radialGradient id="ballGrad" cx="0.35" cy="0.35" r="1">
+          <stop offset="0%" stop-color="#b9bec7"/><stop offset="60%" stop-color="#6f757f"/><stop offset="100%" stop-color="#3a3f48"/>
+        </radialGradient>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 z" fill="#f5b942"/>
+        </marker>
+        <marker id="arrowB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 z" fill="#5ab0f0"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="420" height="240" fill="url(#skyGrad)"/>
+      <!-- 地面 -->
+      <rect x="0" y="240" width="420" height="60" fill="#262b33"/>
+      <line x1="0" y1="240" x2="420" y2="240" stroke="#3a4150" stroke-width="1.5"/>
+      <!-- 天光弧线（半球采样示意） -->
+      <path d="M 60 240 A 150 150 0 0 1 360 240" fill="none" stroke="#5ab0f0" stroke-width="1.2" stroke-dasharray="4 5" opacity="0.7"/>
+      <line x1="140" y1="140" x2="196" y2="196" stroke="#5ab0f0" stroke-width="1.2" marker-end="url(#arrowB)" opacity="0.8"/>
+      <line x1="280" y1="140" x2="228" y2="196" stroke="#5ab0f0" stroke-width="1.2" marker-end="url(#arrowB)" opacity="0.8"/>
+      <text x="210" y="86" fill="#5ab0f0" font-size="11" text-anchor="middle">SkyLight（半球天光）</text>
+      <!-- 太阳光线组（角度动态） -->
+      <g id="sunGroup">
+        <g id="sunRay">
+          <circle cx="0" cy="0" r="12" fill="#f5b942"/>
+          <line x1="16" y1="0" x2="118" y2="0" stroke="#f5b942" stroke-width="2.4" marker-end="url(#arrow)"/>
+        </g>
+      </g>
+      <text id="sunLabel" x="16" y="30" fill="#f5b942" font-size="11">太阳</text>
+      <!-- 灰球（受光/阴影两半） -->
+      <circle cx="212" cy="214" r="26" fill="url(#ballGrad)"/>
+      <path id="ballShadow" d="M212 188 A 26 26 0 0 1 212 240 Z" fill="#14161a" opacity="0.55"/>
+      <text x="212" y="272" fill="#9aa3b2" font-size="11" text-anchor="middle">18% 灰球 · Roughness = 1 · 非金属</text>
+      <!-- 读数标注 -->
+      <text id="litLabel" x="118" y="196" fill="#f5b942" font-size="11" text-anchor="end">受光面 ≈ — cd/m²</text>
+      <line x1="124" y1="200" x2="190" y2="208" stroke="#f5b942" stroke-width="1" opacity="0.6"/>
+      <text id="shdLabel" x="306" y="196" fill="#7ecb8f" font-size="11" text-anchor="start">阴影面 ≈ — cd/m²</text>
+      <line x1="300" y1="200" x2="236" y2="210" stroke="#7ecb8f" stroke-width="1" opacity="0.6"/>
+      <!-- Pitch 弧标 -->
+      <path id="pitchArc" d="" fill="none" stroke="#e08f6a" stroke-width="1.4"/>
+      <text id="pitchText" x="0" y="0" fill="#e08f6a" font-size="11">—</text>
+    </svg>
+  </div>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><div>
+      <b>先锁定平行光（唯一的绝对基准）</b>：Intensity = <span class="dyn" id="st1sun">—</span>、
+      Pitch = <span class="dyn" id="st1pitch">—</span>、色温同表。场景中保留 Sky Atmosphere / 物理天空。
+    </div></div>
+    <div class="step"><div class="n">2</div><div>
+      <b>锁定曝光</b>：Min EV100 = Max EV100 = <span class="dyn" id="st2ev">—</span>，Exposure Compensation = 0。
+      不锁曝光时任何目视对比都不可靠。
+    </div></div>
+    <div class="step"><div class="n">3</div><div>
+      <b>放置校准球</b>：18% 灰（BaseColor ≈ 0.18 线性值）、Roughness = 1、Metallic = 0，置于空旷地面。
+      若走 <b>Real Time Capture</b>（UE）或 <b>Physically Based Sky</b>（HDRP）：天光自动派生自太阳与大气，Intensity Scale 保持 <b>1.0</b>，跳到第 5 步验证即可。
+    </div></div>
+    <div class="step"><div class="n">4</div><div>
+      <b>HDRI / 手动天光才需要调</b>：暂时关掉平行光，用 UE 的 <b>Pixel Inspector</b>（或 <code>show VisualizeHDR</code> / HDRP 的 Light Explorer + Debug Exposure）读灰球亮度，
+      调 Intensity Scale 直到读数 ≈ <span class="dyn" id="st4target">—</span> cd/m²（= 0.18 × 天光照度 ÷ π）。
+      理论初值：Intensity Scale ≈ <span class="dyn" id="st4scale">—</span>（= 目标天空亮度 <span id="st4lum">—</span> cd/m² ÷ HDRI 平均亮度 L₀）。
+    </div></div>
+    <div class="step"><div class="n">5</div><div>
+      <b>开回平行光验证光比</b>：灰球受光面应读到 ≈ <span class="dyn" id="st5lit">—</span> cd/m²，阴影面 ≈ <span class="dyn" id="st5shd">—</span> cd/m²，
+      两者比值 ≈ <span class="dyn" id="st5ratio">—</span>（即表中光比）。偏差 &lt; ±1/3 档（×1.26）即算校准完成。
+    </div></div>
+  </div>
+</div>
+
 <h2>全组合速查表</h2>
 <div style="overflow-x:auto;">
 <table class="full" id="fullTable">
   <thead>
     <tr>
-      <th>时段</th><th>气候</th>
+      <th>时段（高度角 / Pitch）</th><th>气候</th>
       <th>平行光 (lux)</th><th>色温 (K)</th>
-      <th>天光 (lux)</th><th>天空亮度 (cd/m²)</th>
+      <th>天光 (lux)</th><th>Intensity Scale*</th>
       <th>光比</th><th>反差 (档)</th><th>EV100</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 </div>
+<p class="desc" style="margin-top:8px;">* Intensity Scale 按当前输入的 HDRI 平均亮度 L₀ 计算（= 天空平均亮度 ÷ L₀）；Real Time Capture / 物理天空方案恒为 1.0。</p>
 
 <h2>使用说明与换算约定</h2>
 <ul class="footer-notes">
   <li><b>平行光（太阳）</b>：数值 = 垂直于光线方向的照度（Direct Normal Illuminance）。UE5 Directional Light 的 Intensity（单位 lux）与 Unity HDRP Directional Light（单位 Lux）都采用此定义，可直接填入。</li>
-  <li><b>天光</b>：给出的是天空半球在水平面上产生的照度（lux）。UE5 推荐 Sky Light 开 <b>Real Time Capture</b> 并配合 Sky Atmosphere——只要太阳强度物理正确，天光会自动匹配，无需手填；若用 HDRI/Cubemap，请以「平均天空亮度 cd/m² ≈ 天光 lux ÷ π」为目标校准（Intensity Scale 乘到该量级）。Unity HDRP 的 Physically Based Sky 同理自动匹配，HDRI Sky 可用 Lux 模式直接填天光照度。</li>
+  <li><b>Pitch 约定</b>：UE 中 Directional Light 的 Rotation Pitch = <b>−太阳高度角</b>（−90° 为正头顶直射）；Unity 中为 Transform 的 X Rotation = 高度角。正午与上午/下午的高度角由上方「纬度 + 季节」计算；清晨/傍晚、黄金时刻、日出日落按定义取固定高度角（15° / 4° / 0.5°），纬度只影响它们出现的时刻和持续时长。月亮高度随月相变化，表中取 45° 作参考。</li>
+  <li><b>天光</b>：给出的是天空半球在水平面上产生的照度（lux），平均天空亮度 = 照度 ÷ π（cd/m²）。UE5 推荐 Sky Light 开 <b>Real Time Capture</b> + Sky Atmosphere，天光自动匹配太阳强度；HDRI/Cubemap 方案用上面的灰球流程校准 Intensity Scale。Unity HDRP 的 HDRI Sky 可切 Lux 模式直接填天光照度。</li>
+  <li><b>Intensity Scale 的含义</b>：SkyLight 最终亮度 = 源（Cubemap/捕获）自身亮度 × Intensity Scale。因此它<b>没有普适值</b>，取决于你的 HDRI 是否带绝对亮度标定——这正是需要灰球校准的原因。若 HDRI 平均亮度未知，先按 L₀ = 1 cd/m² 取理论初值，再用灰球读数微调。</li>
   <li><b>光比</b>：面向光源的受光面照度 ÷ 阴影面照度（阴影面 = 部分天光 + 地面弹射）。1 档 = 2 倍。晴天约 5–8:1（2.5–3 档），阴天趋近 1:1。</li>
-  <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；用自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
+  <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
   <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
   <li><b>阴天/雨天仍保留微弱平行光</b>（而非 0）：用大 Source Angle（5–10°）的软方向光维持体积感，这是行业常用做法；物理上对应云层透射的残余方向性。</li>
-  <li>数据基于 CIE 天空模型与实测照度范围（晴天正午地面约 10–12 万 lux、阴天 1–2.5 万 lux、日落约 400–700 lux、满月约 0.05–0.3 lux），做了适度取整，供关卡/灯光美术作为物理合理的起点。</li>
+  <li>照度数据基于 CIE 天空模型与实测范围（晴天正午地面约 10–12 万 lux、阴天 1–2.5 万 lux、日落约 400–700 lux、满月约 0.05–0.3 lux），以中纬度（约 35°）为基准做了取整；改纬度只更新 Pitch 几何参考，不重算照度。</li>
 </ul>
 
 <script>
 // ---------- 数据 ----------
 // sunPerp: 晴天基准·垂直于光线的照度 lux; sky: 晴天基准·天光水平照度 lux
 // elevSin: sin(太阳高度角), 用于地面照度与 EV 计算; temp: 晴天色温 K
+// pitch: 'noon' | 'mid' 由纬度计算; 数字 = 固定高度角(°); null = 无方向光
 const TIMES = [
-  { id:'noon',   name:'正午（11:00–14:00）',        sunPerp:110000, sky:15000, elevSin:0.91, temp:5500,  desc:'太阳高度约 60–70°' },
-  { id:'mid',    name:'上午 / 下午（9–10点 · 15–16点）', sunPerp:95000,  sky:12000, elevSin:0.64, temp:5200,  desc:'太阳高度约 40°' },
-  { id:'low',    name:'清晨 / 傍晚（低角度阳光）',    sunPerp:45000,  sky:8000,  elevSin:0.26, temp:4300,  desc:'太阳高度约 15°，长阴影' },
-  { id:'golden', name:'黄金时刻',                    sunPerp:16000,  sky:4000,  elevSin:0.09, temp:3200,  desc:'太阳高度 0–6°，暖调侧光' },
-  { id:'sunset', name:'日出 / 日落',                 sunPerp:600,    sky:500,   elevSin:0.03, temp:2300,  desc:'太阳贴地平线，大气衰减极强' },
-  { id:'blue',   name:'蓝调时刻（民用暮光）',         sunPerp:0,      sky:40,    elevSin:0,    temp:10000, desc:'太阳在地平线下，仅天空散射' },
-  { id:'night',  name:'夜晚（满月）',                sunPerp:0.32,   sky:0.008, elevSin:0.71, temp:4300,  desc:'月光为方向光，色温偏中性' },
+  { id:'noon',   name:'正午（11:00–14:00）',        sunPerp:110000, sky:15000, elevSin:0.91, temp:5500,  pitch:'noon', desc:'太阳高度由纬度/季节决定' },
+  { id:'mid',    name:'上午 / 下午（9–10点 · 15–16点）', sunPerp:95000,  sky:12000, elevSin:0.64, temp:5200,  pitch:'mid',  desc:'时角约 ±37.5°' },
+  { id:'low',    name:'清晨 / 傍晚（低角度阳光）',    sunPerp:45000,  sky:8000,  elevSin:0.26, temp:4300,  pitch:15,     desc:'定义性高度角 15°，长阴影' },
+  { id:'golden', name:'黄金时刻',                    sunPerp:16000,  sky:4000,  elevSin:0.09, temp:3200,  pitch:4,      desc:'定义性高度角 0–6°，暖调侧光' },
+  { id:'sunset', name:'日出 / 日落',                 sunPerp:600,    sky:500,   elevSin:0.03, temp:2300,  pitch:0.5,    desc:'太阳贴地平线，大气衰减极强' },
+  { id:'blue',   name:'蓝调时刻（民用暮光）',         sunPerp:0,      sky:40,    elevSin:0,    temp:10000, pitch:null,   desc:'太阳在地平线下 0–6°，仅天空散射' },
+  { id:'night',  name:'夜晚（满月）',                sunPerp:0.32,   sky:0.008, elevSin:0.71, temp:4300,  pitch:45,     desc:'月光方向光，高度随月相变化（取 45° 参考）' },
 ];
 
 // sunMul/skyMul: 对晴天基准的倍率; temp: 覆盖色温(null=沿用时段); bounce: 阴影内弹射系数
@@ -157,6 +276,19 @@ const WEATHERS = [
   { id:'snow',     name:'雪天（降雪）', sunMul:0.04,  skyMul:0.9,  temp:6500, bounce:0.18, srcAngle:'5–8°', note:'雪地反照率 0.8+，地面弹射极强，阴影被明显填亮、偏天空色。' },
 ];
 
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+
+// 太阳高度角(°): 由纬度 lat、赤纬 dec、时角 H 计算; 返回 null 表示无方向光
+function elevationFor(t, lat, dec){
+  if (t.pitch === null) return null;
+  if (t.pitch === 'noon') return 90 - Math.abs(lat - dec);           // 正午 H=0
+  if (t.pitch === 'mid'){                                            // 时角 ±37.5°
+    const s = Math.sin(lat*D2R)*Math.sin(dec*D2R) + Math.cos(lat*D2R)*Math.cos(dec*D2R)*Math.cos(37.5*D2R);
+    return Math.asin(s) * R2D;
+  }
+  return t.pitch;                                                    // 定义性固定高度角
+}
+
 // ---------- 计算 ----------
 function compute(t, w){
   const sun = t.sunPerp * w.sunMul;           // 平行光 lux（垂直于光线）
@@ -165,12 +297,15 @@ function compute(t, w){
   const ground = sun * t.elevSin + sky;       // 地面总照度
   const ev = Math.log2(Math.max(ground, 0.005) / 2.5);
   // 光比：面向光源的受光面 vs 阴影面（部分天光 + 弹射）
-  const lit = sun + 0.6 * sky;
-  const shadow = 0.6 * sky + w.bounce * sun;
-  const ratio = shadow > 0 ? lit / shadow : 1;
+  const litE = sun + 0.6 * sky;
+  const shadowE = 0.6 * sky + w.bounce * sun;
+  const ratio = shadowE > 0 ? litE / shadowE : 1;
   const stops = Math.log2(Math.max(ratio, 1));
   const temp = w.temp || t.temp;
-  return { sun, sky, skyLum, ground, ev, ratio, stops, temp };
+  // 18% 灰球读数目标 (cd/m²)
+  const litNits = 0.18 * litE / Math.PI;
+  const shdNits = 0.18 * shadowE / Math.PI;
+  return { sun, sky, skyLum, ground, ev, ratio, stops, temp, litNits, shdNits };
 }
 
 function fmtLux(v){
@@ -181,20 +316,81 @@ function fmtLux(v){
 }
 function fmtRatio(r){ return r < 1.05 ? '≈1 : 1' : r.toFixed(1) + ' : 1'; }
 function fmtEV(ev){ return (ev >= 0 ? '+' : '') + ev.toFixed(1); }
+function fmtScale(s){
+  if (s <= 0) return '0';
+  if (s < 0.01) return s.toExponential(1);
+  if (s < 10) return s.toPrecision(3).replace(/\.?0+$/,'');
+  return Math.round(s).toLocaleString('en-US');
+}
+function fmtPitch(elev){
+  if (elev === null) return { text:'—（无方向光）', short:'—' };
+  if (elev <= 0) return { text:'地平线下（极夜/未升起）', short:'地平线下' };
+  const e = elev.toFixed(elev < 10 ? 1 : 0);
+  return { text:`Pitch −${e}°`, short:`${e}° / −${e}°` };
+}
 
 // ---------- UI ----------
 const selTime = document.getElementById('selTime');
 const selWeather = document.getElementById('selWeather');
+const inpLat = document.getElementById('inpLat');
+const selSeason = document.getElementById('selSeason');
+const inpHdri = document.getElementById('inpHdri');
 TIMES.forEach((t,i)=> selTime.add(new Option(t.name, i)));
 WEATHERS.forEach((w,i)=> selWeather.add(new Option(w.name, i)));
+
+function currentLat(){ return Math.min(80, Math.max(0, parseFloat(inpLat.value) || 0)); }
+function currentDec(){ return parseFloat(selSeason.value); }
+function currentHdri(){ const v = parseFloat(inpHdri.value); return (v > 0 ? v : 1); }
+
+// SVG 太阳角度与读数
+function updateSvg(elev, r){
+  const cx = 212, cy = 214;               // 灰球中心
+  const a = (elev === null || elev <= 0) ? 30 : Math.max(4, Math.min(85, elev));
+  const rad = a * D2R;
+  const len = 150;
+  const sx = cx - Math.cos(rad) * len, sy = cy - Math.sin(rad) * len;
+  // 光线初始方向为 +x；SVG y 轴向下，rotate(a) 后指向右下方的灰球
+  const g = document.getElementById('sunRay');
+  g.setAttribute('transform', `translate(${sx.toFixed(1)} ${sy.toFixed(1)}) rotate(${a.toFixed(1)})`);
+  document.getElementById('sunLabel').setAttribute('x', (sx - 10).toFixed(1));
+  document.getElementById('sunLabel').setAttribute('y', (sy - 18).toFixed(1));
+  const hasSun = elev !== null && elev > 0 && r.sun > 0;
+  document.getElementById('sunGroup').setAttribute('opacity', hasSun ? '1' : '0.15');
+  document.getElementById('sunLabel').textContent = hasSun ? '太阳 / 月亮' : '（无方向光）';
+  document.getElementById('litLabel').textContent = `受光面 ≈ ${fmtLux(r.litNits)} cd/m²`;
+  document.getElementById('shdLabel').textContent = `阴影面 ≈ ${fmtLux(r.shdNits)} cd/m²`;
+  // Pitch 弧标
+  const arc = document.getElementById('pitchArc'), txt = document.getElementById('pitchText');
+  if (hasSun){
+    const r0 = 52;
+    const ex = cx - Math.cos(rad)*r0, ey = cy - Math.sin(rad)*r0;
+    arc.setAttribute('d', `M ${cx-r0} ${cy} A ${r0} ${r0} 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+    txt.setAttribute('x', (cx - r0 - 4).toFixed(1));
+    txt.setAttribute('y', (cy - 12).toFixed(1));
+    txt.setAttribute('text-anchor','end');
+    txt.textContent = `${a.toFixed(0)}°（Pitch −${a.toFixed(0)}°）`;
+    arc.style.display = txt.style.display = '';
+  } else {
+    arc.style.display = txt.style.display = 'none';
+  }
+}
 
 function update(){
   const t = TIMES[selTime.value], w = WEATHERS[selWeather.value];
   const r = compute(t, w);
+  const elev = elevationFor(t, currentLat(), currentDec());
+  const p = fmtPitch(elev);
+  const scale = r.skyLum / currentHdri();
 
   document.getElementById('cSun').textContent = fmtLux(r.sun) + ' lx';
+  document.getElementById('cPitch').textContent = p.text;
+  document.getElementById('cPitchNote').textContent =
+    elev === null ? '太阳在地平线下，关闭方向光'
+    : elev <= 0 ? '该纬度/季节此时段太阳未升起'
+    : `高度角 ${elev.toFixed(1)}°（UE Rotation Pitch = −高度角）`;
   document.getElementById('cSky').textContent = fmtLux(r.sky) + ' lx';
   document.getElementById('cSkyLum').textContent = fmtLux(r.skyLum);
+  document.getElementById('cScale').textContent = fmtScale(scale);
   document.getElementById('cRatio').textContent = fmtRatio(r.ratio);
   document.getElementById('cRatioStops').textContent =
     r.ratio < 1.05 ? '无可辨识阴影（全漫射）' : '反差约 ' + r.stops.toFixed(1) + ' 档';
@@ -204,42 +400,65 @@ function update(){
   const dirName = t.id === 'night' ? '月光方向光' : '太阳方向光';
   document.getElementById('sUEDir').innerHTML =
     r.sun > 0
-      ? `${dirName}：Intensity = <code>${fmtLux(r.sun)} lux</code> · Temperature ≈ <code>${r.temp} K</code>（勾选 Use Temperature）· Source Angle ≈ <code>${w.srcAngle}</code>`
+      ? `${dirName}：Intensity = <code>${fmtLux(r.sun)} lux</code> · Rotation Pitch ≈ <code>${elev !== null && elev > 0 ? '−' + elev.toFixed(1) + '°' : '—'}</code> · Temperature ≈ <code>${r.temp} K</code>（勾选 Use Temperature）· Source Angle ≈ <code>${w.srcAngle}</code>`
       : `关闭方向光（或保留 <code>&lt;0.5 lux</code> 的极弱软光），场景仅由天光驱动`;
   document.getElementById('sUESky').innerHTML =
-    `Sky Light 开 <code>Real Time Capture</code> + Sky Atmosphere（自动匹配）；手动/HDRI 方案：把平均天空亮度校准到 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>（水平照度 ${fmtLux(r.sky)} lux）`;
+    `首选 <code>Real Time Capture</code> + Sky Atmosphere（Intensity Scale = <code>1.0</code>，自动匹配）；HDRI/Cubemap 方案：Intensity Scale ≈ <code>${fmtScale(scale)}</code>（按 L₀ = ${currentHdri()} cd/m² 估算），再用灰球流程微调到天空亮度 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>`;
   document.getElementById('sUEExp').innerHTML =
     `锁定曝光：<code>Min EV100 = Max EV100 = ${fmtEV(r.ev)}</code>；自动曝光则确保区间覆盖 <code>${fmtEV(r.ev)}</code>，Exposure Compensation = <code>0</code>`;
   document.getElementById('sUnity').innerHTML =
-    `HDRP：Directional = <code>${fmtLux(r.sun)} Lux</code>，色温同左；PBS Sky 自动 / HDRI Sky（Lux 模式）= <code>${fmtLux(r.sky)} lux</code>；Exposure Fixed = <code>${fmtEV(r.ev)}</code>。URP/内置管线按比例缩放（见下方说明）。`;
+    `HDRP：Directional = <code>${fmtLux(r.sun)} Lux</code>，X Rotation = <code>${elev !== null && elev > 0 ? elev.toFixed(1) + '°' : '—'}</code>，色温同左；PBS Sky 自动 / HDRI Sky（Lux 模式）= <code>${fmtLux(r.sky)} lux</code>；Exposure Fixed = <code>${fmtEV(r.ev)}</code>。URP/内置管线按比例缩放（见下方说明）。`;
   document.getElementById('sNote').textContent = t.desc + '。' + w.note;
+
+  // 校准流程动态数字
+  document.getElementById('st1sun').textContent = fmtLux(r.sun) + ' lux';
+  document.getElementById('st1pitch').textContent = elev !== null && elev > 0 ? '−' + elev.toFixed(1) + '°' : '—';
+  document.getElementById('st2ev').textContent = fmtEV(r.ev);
+  document.getElementById('st4target').textContent = fmtLux(0.18 * r.sky / Math.PI);
+  document.getElementById('st4scale').textContent = fmtScale(scale);
+  document.getElementById('st4lum').textContent = fmtLux(r.skyLum);
+  document.getElementById('st5lit').textContent = fmtLux(r.litNits);
+  document.getElementById('st5shd').textContent = fmtLux(r.shdNits);
+  document.getElementById('st5ratio').textContent = fmtRatio(r.ratio);
+
+  updateSvg(elev, r);
 
   document.querySelectorAll('#fullTable tbody tr').forEach(tr=>{
     tr.classList.toggle('hl', tr.dataset.key === selTime.value + '-' + selWeather.value);
   });
 }
 
-// 全组合表
+// 全组合表（纬度/季节/L₀ 改变时重建）
 const tbody = document.querySelector('#fullTable tbody');
-TIMES.forEach((t,ti)=>{
-  WEATHERS.forEach((w,wi)=>{
-    const r = compute(t, w);
-    const tr = document.createElement('tr');
-    tr.dataset.key = ti + '-' + wi;
-    tr.innerHTML =
-      `<td class="timecell">${wi===0 ? t.name : ''}</td><td>${w.name}</td>` +
-      `<td class="num">${fmtLux(r.sun)}</td><td class="num">${r.temp}</td>` +
-      `<td class="num">${fmtLux(r.sky)}</td><td class="num">${fmtLux(r.skyLum)}</td>` +
-      `<td class="num">${fmtRatio(r.ratio)}</td><td class="num">${r.ratio<1.05?'—':r.stops.toFixed(1)}</td>` +
-      `<td class="num">${fmtEV(r.ev)}</td>`;
-    tr.style.cursor = 'pointer';
-    tr.onclick = ()=>{ selTime.value = ti; selWeather.value = wi; update(); window.scrollTo({top:0, behavior:'smooth'}); };
-    tbody.appendChild(tr);
+function renderTable(){
+  tbody.innerHTML = '';
+  const lat = currentLat(), dec = currentDec(), hdri = currentHdri();
+  TIMES.forEach((t,ti)=>{
+    const elev = elevationFor(t, lat, dec);
+    const p = fmtPitch(elev);
+    WEATHERS.forEach((w,wi)=>{
+      const r = compute(t, w);
+      const tr = document.createElement('tr');
+      tr.dataset.key = ti + '-' + wi;
+      tr.innerHTML =
+        `<td class="timecell">${wi===0 ? t.name + '<small>高度角/Pitch：' + p.short + '</small>' : ''}</td><td>${w.name}</td>` +
+        `<td class="num">${fmtLux(r.sun)}</td><td class="num">${r.temp}</td>` +
+        `<td class="num">${fmtLux(r.sky)}</td><td class="num">${fmtScale(r.skyLum / hdri)}</td>` +
+        `<td class="num">${fmtRatio(r.ratio)}</td><td class="num">${r.ratio<1.05?'—':r.stops.toFixed(1)}</td>` +
+        `<td class="num">${fmtEV(r.ev)}</td>`;
+      tr.style.cursor = 'pointer';
+      tr.onclick = ()=>{ selTime.value = ti; selWeather.value = wi; update(); window.scrollTo({top:0, behavior:'smooth'}); };
+      tbody.appendChild(tr);
+    });
   });
-});
+}
 
 selTime.onchange = update;
 selWeather.onchange = update;
+inpLat.oninput = ()=>{ renderTable(); update(); };
+selSeason.onchange = ()=>{ renderTable(); update(); };
+inpHdri.oninput = ()=>{ renderTable(); update(); };
+renderTable();
 update();
 </script>
 </body>
