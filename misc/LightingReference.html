@@ -180,7 +180,7 @@
 <section id="tab-setup" class="tabpane on">
 <div class="cards">
   <div class="card"><div class="k">到达地面的平行光</div><div class="v" id="cSun">—</div><div class="u"><span class="tip" data-tip="lux（勒克斯）= 照度 / illuminance，单位面积上接收到的光通量。描述「有多少光打过来」，与被照物体的材质无关。这是可以和公开实测数据、以及引擎光源参数直接对照的量。">lux</span> · 垂直于光线的照度（<span class="tip" data-tip="Direct Normal Illuminance，直射法向照度。垂直于光线方向的平面上接收到的照度。这正是 UE / HDRP 平行光 Intensity 字段的定义。注意它不等于水平地面照度，后者 = DNI × sin(太阳高度角)。">DNI</span>），非水平地面照度</div></div>
-  <div class="card"><div class="k">→ 填入 <span class="tip" data-tip="UE 平行光的 Intensity 字段（单位 lux）。勾选 Atmosphere Sun Light 后，引擎会按大气透射率再衰减一次，所以这里要填「到达地面值 ÷ 透射率」而不是直接填到达地面值。">Intensity</span></div><div class="v warn" id="cFill">—</div><div class="u" id="cFillNote">—</div></div>
+  <div class="card" style="border-color:var(--good)"><div class="k">→ 填入 <span class="tip" data-tip="UE 平行光的 Intensity 字段（单位 lux）。勾选 Atmosphere Sun Light 后引擎会自行施加大气透射率，因此这里填的是「光源在大气层顶的输出」——太阳常数约 128,000 lux，恒定不变，只随气候（云层遮挡）打折。">Intensity</span>（恒定）</div><div class="v green" id="cFill">—</div><div class="u" id="cFillNote">—</div></div>
   <div class="card"><div class="k"><span class="tip" data-tip="平行光的俯仰角。UE 的 Rotation Pitch = 负的太阳高度角（−90° 为正头顶直射）；Unity 用 Transform 的 X Rotation = 太阳高度角，符号相反。">Pitch</span>（平行光角度）</div><div class="v warn" id="cPitch">—</div><div class="u" id="cPitchNote">—</div></div>
   <div class="card"><div class="k">天光照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空<span class="tip" data-tip="cd/m²（坎德拉每平方米）= 亮度 / luminance，与 nit 是同一个单位的两种写法（1 nit ≡ 1 cd/m²）。描述「表面看起来有多亮」，含有反射率。这是引擎 Pixel Inspector 里能直接读到的量。">亮度</span> <span id="cSkyLum">—</span> cd/m² (nits)</div></div>
   <div class="card"><div class="k"><span class="tip" data-tip="光比 = 主体亮面照度 ÷ 主体暗面照度，两者都量在主体身上。行业所称「阴影部位／暗部」即主体的背光面，不是地面落影；地面落影不参与光比。">光比</span>（亮面 : 暗面）</div><div class="v green" id="cRatio">—</div><div class="u" id="cRatioNote">—</div></div>
@@ -305,9 +305,25 @@
 <section id="tab-atmo" class="tabpane">
 <h2>如何控制大气透射率</h2>
 <div class="warn-box">
-  <b>最重要的一条：不要去猜透射率，用 ① 亮面读数把 Intensity 反推到位。</b>
-  流程是——按表填入 Intensity → 量 ① 亮面 → 若读数低于表值，就把 Intensity 往上加直到对上。
-  这样无论你的大气参数是什么，到达地面的光都正确。只有当你想改变<b>天空外观</b>（颜色、霞光、通透感）时，才需要动下面的大气参数。
+  <b>太阳的输出是恒定的，所以 Intensity 不该随时段改。</b>
+  太阳常数 1361 W/m² ≈ <b>128,000 lux</b>（大气层顶、垂直于光线），全年只因地球轨道偏心率变化 ±3.4%。
+  随时段变化的不是太阳，而是<b>阳光穿过的大气路程</b>——太阳越低，路程越长、衰减越多、颜色越红。
+  <br><br>
+  勾选 <b>Atmosphere Sun Light</b> 时，Sky Atmosphere 会自己算这份衰减。所以正确做法是：
+  <b>Intensity 填 128,000 lux 并锁死，做时段动画时只旋转 Pitch。</b>
+  太阳自动变暗变红、天空自动变色、天光自动跟随——这正是用物理天空的意义。
+  云层遮挡（气候）不属于大气散射，需要另外按倍率打折，所以本页的填入值只随<b>气候</b>变，不随<b>时段</b>变。
+  <br><br>
+  取消勾选时引擎不做衰减，此时才需要按时段填「到达地面」那一列的值。
+</div>
+<div class="panel">
+  <h3>透射率的由来（本页如何保证自洽）</h3>
+  <table>
+    <tr><td>T 的定义</td><td>T = 到达地面的晴空 DNI ÷ 光源在大气层顶的输出。两者都是实测标定值，所以 <code>填入值 × T = 到达值</code> 恒成立。</td></tr>
+    <tr><td>为什么不用公式估算</td><td>早先版本用恒定浑浊度 τ 的 Beer-Lambert 估算 T，结果与实测 DNI 互相矛盾：反推出的「填入值」从 40,043 变到 129,534，只有正午接近太阳常数。原因是真实大气的气溶胶集中在近地层，低角度光程穿过的浓密层不成比例地长，恒定 τ 会严重低估衰减——15° 时乐观 1.7 倍，日落时 3.2 倍。改为直接反解后不再有这个问题。</td></tr>
+    <tr><td>各时段的 T（晴空）</td><td>正午 55° → <b>0.86</b>　上下午 40.5° → <b>0.74</b>　清晨傍晚 15° → <b>0.35</b>　黄金时刻 4° → <b>0.13</b>　日出日落 0.5° → <b>0.005</b>。这也解释了为什么日落时太阳看着那么弱：到达地面的只剩千分之五。</td></tr>
+    <tr><td>与 UE 实际大气的偏差</td><td>上面的 T 来自真实大气实测，而你项目里的 Sky Atmosphere 参数不一定相同。<b>校验方式：填 128,000 后量 ① 亮面</b>，若读数低于表值，说明你的大气比实测更浑浊；差异不大就直接接受（它是自洽的），要精确对齐就调下面的散射参数。<b>不要为此逐时段去改 Intensity</b>——那会把大气的活儿接过来自己干，失去物理天空的意义。</td></tr>
+  </table>
 </div>
 <div class="panel">
   <h3>Sky Atmosphere：哪些参数影响太阳被衰减多少</h3>
@@ -508,7 +524,8 @@
     <tr><td>档（stop）</td><td>光量翻倍为 1 档。档数 = log₂(光比)。比值有"亮:暗"与"暗:亮"两种书写习惯，档数无歧义，跨团队沟通建议用档数。</td></tr>
     <tr><td>ρ（反照率 / albedo）</td><td>漫反射率，即材质的 BaseColor 线性值。标准中灰 0.18、水泥约 0.35、沙地约 0.55、新雪 0.8+。<b>校准球与地面是两个独立的 ρ</b>，不要混用。</td></tr>
     <tr><td>T（透射率）</td><td>Transmittance。阳光穿过大气后剩下的比例。太阳越低光程越长、T 越小。勾选 Atmosphere Sun Light 时引擎会自动施加它，所以 Intensity 要填补偿后的值。</td></tr>
-    <tr><td>大气质量（AM）</td><td>Air Mass。阳光穿过的大气厚度，以垂直向上为 1。本页用 Kasten-Young 公式，低角度下比 1/sin(h) 准确得多。15° 时约 3.8。</td></tr>
+    <tr><td>太阳常数</td><td>太阳在大气层顶、垂直于光线方向的辐照度，1361 W/m² ≈ <b>128,000 lux</b>。全年仅因地球轨道偏心率变化 ±3.4%，可视为恒定。这就是勾选 Atmosphere Sun Light 时应填入 Intensity 的值——<b>不随时段变化</b>。</td></tr>
+    <tr><td>大气质量（AM）</td><td>Air Mass。阳光穿过的大气厚度，以垂直向上为 1，约等于 1/sin(太阳高度角)：15° 时约 3.8，日落时超过 30。它是透射率随时段变化的几何原因。</td></tr>
     <tr><td>Rayleigh / Mie 散射</td><td>Rayleigh 是空气分子散射（短波优先，天空之所以蓝）；Mie 是气溶胶／尘埃散射（偏前向，产生太阳光晕和霾感）。两者共同决定 T 与天空外观。</td></tr>
     <tr><td>GI / 弹射</td><td>Global Illumination，全局光照。这里主要指地面把阳光反射到物体暗部的间接光。UE5 由 Lumen 提供，关闭后暗部只剩天光。</td></tr>
     <tr><td>AO / DFAO</td><td>Ambient Occlusion 环境光遮蔽 / Distance Field AO。近似计算天光被附近几何遮挡的程度。DFAO 有世界空间作用半径（SkyLight 的 Occlusion Max Distance），是非物理的额外衰减，测量时需留意。</td></tr>
@@ -523,7 +540,8 @@
 <ul class="notes">
   <li><b>单位分工</b>：<b>cd/m² 与 nit 是同一个单位的两种写法</b>（1 nit ≡ 1 cd/m²），都指亮度 / luminance；lux 指照度 / illuminance，是不同的物理量。本页的分工是——<b>读数一律用 cd/m²</b>（引擎里能直接可靠读到的就是它），<b>lux 只用于填进引擎的光源参数</b>（平行光 Intensity、天光照度）。需要照度时按 <code>E = L × π ÷ 反射率</code> 换算。光比与 EV100 用哪个单位算都一样：比值里反射率被约掉，EV 本身由照度定义。</li>
   <li><b>不要用 Illuminance meter 的 lux 值做比较</b>：实测中它与同一点的 Luminance meter 相差约 176 倍（例如同一片正午投影读到 51 lux 与 510 cd/m²），而任何 ≤1 的反射率都无法弥合——两者不可能同时正确。判据是画面本身：按 51 lux 反推，该投影在锁定曝光下应渲染成纯黑（8bit ≈ 0.3），但实际画面里它是清晰可辨的深蓝，且 RGB 分量强烈偏蓝（晴空天光的光谱特征），说明天光确实在供光、只是那个表的绝对刻度不对。怀疑它把预曝光算进了读数——可用「保持采样点不动、转动相机改变画面整体亮度」来验证：真实照度不会变，含曝光因子的读数会变。要用它就先拿「开阔日照地面」标定出固定倍数，之后只取比值。</li>
-  <li><b>平行光的两个数不是一回事</b>。「到达地面」= 地面高度、垂直于光线方向的照度（DNI），是物理目标；水平地面照度 = DNI × sin(高度角)。UE / HDRP 的 Intensity 字段用同一定义，但勾选 <b>Atmosphere Sun Light</b> 后引擎会按大气透射率 T 再衰减一次，而 DNI 已含过一次衰减，直接填就衰减两次。所以有大气时填 DNI ÷ T，表格已给出该值。低角度影响极大，正午几乎无差别。T 由太阳高度角经 <span class="tip" data-tip="一个大气质量经验公式：AM = 1 / (sin h + 0.50572·(h+6.07995)^-1.6364)，h 为太阳高度角。比简单的 1/sin(h) 在低角度下准确得多，是太阳能工程的标准式。">Kasten-Young</span> 大气质量与 Beer-Lambert 算出。</li>
+  <li><b>平行光的两个数不是一回事</b>。「填入 Intensity」= 光源在<b>大气层顶</b>的输出（太阳常数 ≈ 128,000 lux），<b>不随时段变化</b>，只按气候的云层遮挡打折。「到达地面」= 地面高度、垂直于光线方向的照度（DNI），随时段变化，是校验目标；水平地面照度 = DNI × sin(高度角)，又是另一个数。<br>
+    勾选 <b>Atmosphere Sun Light</b> 时 Sky Atmosphere 自行施加透射率 T，所以填恒定值、只旋转 Pitch 即可——太阳自动变暗变红、天空自动变色。取消勾选时引擎不做衰减，此时才按时段填「到达地面」那一列。T = DNI ÷ 大气层顶输出，由两个实测标定值直接反解，因此「填入值 × T = 到达值」恒成立。</li>
   <li><b>Pitch</b>：UE 的 Rotation Pitch = −太阳高度角（−90° 为头顶直射）；Unity 为 Transform X Rotation = 高度角。正午与上午/下午的高度角由纬度与季节计算；清晨/傍晚、黄金时刻、日出日落按定义取固定高度角（15° / 4° / 0.5°），纬度只改变它们出现的时刻。满月取 45° 参考。</li>
   <li><b>天光</b>：给出的是天空半球在水平面上的照度（lux），平均天空亮度 = 照度 ÷ π。自动捕捉方案下天光由太阳与大气派生，Intensity Scale 保持 1.0；<span class="tip" data-tip="High Dynamic Range Image，高动态范围环境贴图。用一张全景图记录整个天空的亮度分布来充当环境光源；与物理天空不同，它的亮度存在贴图里，与太阳位置无关。">HDRI</span> 方案的 Intensity Scale = 目标天空亮度 ÷ HDRI 自身平均亮度；手动方案以阴影读数为准。<b>物理天空方案不要靠关闭平行光来看纯天光</b>：天空亮度本就来自太阳散射，关灯天即黑，Intensity Scale 乘 0 仍是 0。</li>
   <li><b>光照模型</b>：<br>
@@ -547,16 +565,22 @@
 
 <script>
 // ================== 数据 ==================
+// toa: 大气层顶、垂直于光线的照度 lux —— 这是「光源本身的输出」，与时段无关。
+//   太阳：太阳常数 1361 W/m² × 约 94 lm/W ≈ 128,000 lux，全年仅因轨道偏心率变化 ±3.4%。
+//   月亮：满月在大气层顶的等效值，由地面实测 0.32 lux 反推。
 // sunPerp: 到达地面、垂直于光线的照度 lux（晴天基准）; sky: 天光水平照度 lux（晴天基准）
+// 大气透射率 T = sunPerp / toa，直接由这两个实测标定值反解，因此天然自洽——
+// 不再用恒定 τ 的 Beer-Lambert 估算（那个模型在低太阳角会严重低估衰减）。
+const TOA_SUN = 128000, TOA_MOON = 0.38;
 // pitch: 'noon' | 'mid' 由纬度季节计算; 数字 = 定义性固定高度角(°); null = 无方向光
 const TIMES = [
-  { id:'noon',   name:'正午（11:00–14:00）',            sunPerp:110000, sky:15000, temp:5500,  pitch:'noon', desc:'高度角由纬度与季节决定' },
-  { id:'mid',    name:'上午 / 下午（9–10点 · 15–16点）', sunPerp:95000,  sky:12000, temp:5200,  pitch:'mid',  desc:'时角约 ±37.5°' },
-  { id:'low',    name:'清晨 / 傍晚（低角度阳光）',       sunPerp:45000,  sky:8000,  temp:4300,  pitch:15,     desc:'定义性高度角 15°，长阴影' },
-  { id:'golden', name:'黄金时刻',                        sunPerp:16000,  sky:4000,  temp:3200,  pitch:4,      desc:'定义性高度角 0–6°，暖调侧光' },
-  { id:'sunset', name:'日出 / 日落',                     sunPerp:600,    sky:500,   temp:2300,  pitch:0.5,    desc:'贴地平线，大气衰减极强' },
-  { id:'blue',   name:'蓝调时刻（民用暮光）',            sunPerp:0,      sky:40,    temp:10000, pitch:null,   desc:'太阳在地平线下，仅天空散射' },
-  { id:'night',  name:'夜晚（满月）',                    sunPerp:0.32,   sky:0.008, temp:4300,  pitch:45,     desc:'月光方向光，高度随月相变化' },
+  { id:'noon',   name:'正午（11:00–14:00）',            toa:TOA_SUN, sunPerp:110000, sky:15000, temp:5500,  pitch:'noon', desc:'高度角由纬度与季节决定' },
+  { id:'mid',    name:'上午 / 下午（9–10点 · 15–16点）', toa:TOA_SUN, sunPerp:95000,  sky:12000, temp:5200,  pitch:'mid',  desc:'时角约 ±37.5°' },
+  { id:'low',    name:'清晨 / 傍晚（低角度阳光）',       toa:TOA_SUN, sunPerp:45000,  sky:8000,  temp:4300,  pitch:15,     desc:'定义性高度角 15°，长阴影' },
+  { id:'golden', name:'黄金时刻',                        toa:TOA_SUN, sunPerp:16000,  sky:4000,  temp:3200,  pitch:4,      desc:'定义性高度角 0–6°，暖调侧光' },
+  { id:'sunset', name:'日出 / 日落',                     toa:TOA_SUN, sunPerp:600,    sky:500,   temp:2300,  pitch:0.5,    desc:'贴地平线，大气衰减极强' },
+  { id:'blue',   name:'蓝调时刻（民用暮光）',            toa:0, sunPerp:0,      sky:40,    temp:10000, pitch:null,   desc:'太阳在地平线下，仅天空散射' },
+  { id:'night',  name:'夜晚（满月）',                    toa:TOA_MOON, sunPerp:0.32,   sky:0.008, temp:4300,  pitch:45,     desc:'月光方向光，高度随月相变化' },
 ];
 
 // groundRec: 该气候建议的地面反照率（基准一律 0.18，此值仅作提示）
@@ -583,7 +607,6 @@ const WEATHERS = [
 const D2R = Math.PI/180, R2D = 180/Math.PI;
 const SKY_F_LIT = 0.55, SKY_F_SHD = 0.45;   // 垂直面的天空可见系数
 const BALL_ALBEDO = 0.18;                   // 校准球反射率（与地面反照率是两个表面）
-const TAU = 0.134;                          // 大气浑浊度：标定自 UE5 默认 Sky Atmosphere（15° 时 T≈0.60）
 
 // 可见地面中处于日照下的比例，按 5° 制表；由视角因子 dF = x·z/(π·r⁴)dA 数值积分并扣除自身投影窄带得出
 const SUNLIT_F = [0.500, 0.507, 0.511, 0.517, 0.526, 0.538, 0.553, 0.572, 0.596,
@@ -608,8 +631,9 @@ function elevationFor(t, lat, dec){
   return t.pitch;
 }
 function sinOf(elev){ return (elev === null || elev <= 0) ? 0 : Math.sin(elev*D2R); }
-function airMass(h){ return h <= 0 ? 40 : 1/(Math.sin(h*D2R) + 0.50572*Math.pow(h + 6.07995, -1.6364)); }
-function transmittance(h){ return (h === null || h <= 0) ? 1 : Math.exp(-TAU * airMass(h)); }
+// 大气透射率：直接由「到达地面的晴空 DNI ÷ 光源在大气层顶的输出」反解。
+// 两者都是实测标定值，所以「填入值 × T = 到达值」恒成立，不会自相矛盾。
+function transmittance(t){ return t.toa > 0 ? t.sunPerp / t.toa : 1; }
 function lerpTable(tab, elev, below){
   if (elev === null || elev <= 0) return below;
   const x = Math.min(90, elev)/5, i = Math.floor(x);
@@ -789,7 +813,7 @@ function update(){
   const rho = currentRho(), fSun = sunlitFraction(elev), skyVis = skyVisibility(elev);
   const r = compute(t, w, rho, sinOf(elev), fSun, skyVis);
   const p = fmtPitch(elev);
-  const T = hasAtmo() ? transmittance(elev) : 1;
+  const T = hasAtmo() ? transmittance(t) : 1;
   const fill = r.sun / T;
   const mode = currentMode();
   const pitchStr = (elev !== null && elev > 0) ? '−' + elev.toFixed(1) + '°' : '—';
@@ -803,10 +827,10 @@ function update(){
     fn.innerHTML = '无大气衰减，<b>与左侧相同</b>';
   } else {
     fv.textContent = fmtLux(fill) + ' lx';
-    fn.innerHTML = (elev !== null && elev > 0)
-      ? `= DNI ÷ T，T = <b>${T.toFixed(3)}</b>（大气质量 ${airMass(elev).toFixed(2)}）`
-        + (T < 0.2 ? '<br>⚠️ 高度角过低，T 误差大，建议以实测为准' : '')
-      : '太阳在地平线下，无需补偿';
+    fn.innerHTML = t.toa > 0
+      ? `<b>该值不随时段变化</b>——光源输出恒定，随时段变的是大气透射率 T = <b>${T.toFixed(3)}</b>`
+        + `（阳光穿过大气后剩下 ${(T*100).toFixed(0)}%）。做时段动画时只转 Pitch，不要动 Intensity。`
+      : '太阳在地平线下，关闭方向光';
   }
 
   document.getElementById('cPitch').textContent = p.text;
@@ -856,7 +880,7 @@ function update(){
   const dirName = t.id === 'night' ? '月光方向光' : '太阳方向光';
   document.getElementById('sUEDir').innerHTML = r.sun > 0
     ? `${dirName}：Intensity = <code>${fmtLux(fill)} lux</code>`
-      + (hasAtmo() && elev !== null && elev > 0 ? `（含大气补偿，到达地面 ≈ ${fmtLux(r.sun)} lux）` : '')
+      + (hasAtmo() && t.toa > 0 ? `（<b>各时段恒定</b>，大气自行衰减到 ≈ ${fmtLux(r.sun)} lux）` : '')
       + ` · Pitch <code>${pitchStr}</code> · Temperature <code>${r.temp} K</code>（勾选 Use Temperature） · <span class="tip" data-tip="平行光的光源角直径（度）。真实太阳约 0.54°，值越大阴影边缘越柔和。阴天用 5–10° 来模拟云层散射后的软方向性。">Source Angle</span> <code>${w.srcAngle}</code>`
     : `关闭方向光（或保留 <code>&lt;0.5 lux</code> 极弱软光），场景仅由天光驱动`;
 
@@ -925,11 +949,11 @@ function renderTable(){
   tbody.innerHTML = '';
   const lat = currentLat(), dec = currentDec(), rho = currentRho(), atmo = hasAtmo();
   document.getElementById('thFill').innerHTML = atmo
-    ? '填入 Intensity (lux)<br><small style="font-weight:400">÷ T 补偿</small>'
+    ? '填入 Intensity (lux)<br><small style="font-weight:400">各时段恒定</small>'
     : '填入 Intensity (lux)<br><small style="font-weight:400">同左</small>';
   TIMES.forEach((t,ti)=>{
     const elev = elevationFor(t, lat, dec), p = fmtPitch(elev);
-    const T = atmo ? transmittance(elev) : 1;
+    const T = atmo ? transmittance(t) : 1;
     const sinH = sinOf(elev), fSun = sunlitFraction(elev), skyVis = skyVisibility(elev);
     WEATHERS.forEach((w,wi)=>{
       const r = compute(t, w, rho, sinH, fSun, skyVis);
