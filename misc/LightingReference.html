@@ -132,10 +132,29 @@
     <label>HDRI 平均亮度 L₀（cd/m²）</label>
     <input type="number" id="inpHdri" value="1" min="0.001" step="0.5">
   </div>
+  <div class="sel-group">
+    <label>大气衰减（Atmosphere Sun Light）</label>
+    <select id="selAtmo">
+      <option value="atmo" selected>有大气 · 需补偿填入值</option>
+      <option value="none">无大气 · 表值直接填</option>
+    </select>
+  </div>
+  <div class="sel-group" id="grpTau">
+    <label>大气浑浊度 τ（可实测标定）</label>
+    <input type="number" id="inpTau" value="0.134" min="0.01" max="1" step="0.01">
+  </div>
+  <div class="sel-group">
+    <label>地面弹射（GI）</label>
+    <select id="selGI">
+      <option value="on" selected>有 · Lumen/GI + 亮地面</option>
+      <option value="off">无 · 浮空 / 暗地面 / GI 关闭</option>
+    </select>
+  </div>
 </div>
 
 <div class="cards">
-  <div class="card"><div class="k">平行光强度（太阳/月亮）</div><div class="v" id="cSun">—</div><div class="u">lux（垂直于光线）· Directional Light Intensity</div></div>
+  <div class="card"><div class="k">到达地面的平行光（物理目标）</div><div class="v" id="cSun">—</div><div class="u">lux · 垂直于光线的照度 DNI（<b>不是</b>水平地面照度）</div></div>
+  <div class="card" id="cardFill"><div class="k">→ 实际填入 Intensity</div><div class="v warn" id="cFill">—</div><div class="u" id="cFillNote">—</div></div>
   <div class="card"><div class="k">平行光角度 Pitch</div><div class="v warn" id="cPitch">—</div><div class="u" id="cPitchNote">—</div></div>
   <div class="card"><div class="k">天光等效照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空亮度 <span id="cSkyLum">—</span> cd/m²</div></div>
   <div class="card"><div class="k" id="cScaleTitle">SkyLight Intensity Scale</div><div class="v blue" id="cScale">—</div><div class="u" id="cScaleNote">—</div></div>
@@ -211,8 +230,8 @@
   </div>
   <div class="steps">
     <div class="step"><div class="n">1</div><div>
-      <b>先锁定平行光（唯一的绝对基准）</b>：Intensity = <span class="dyn" id="st1sun">—</span>、
-      Pitch = <span class="dyn" id="st1pitch">—</span>、色温同表。场景中保留 Sky Atmosphere / 物理天空。
+      <b>先锁定平行光（唯一的绝对基准）</b>：Intensity 填 <span class="dyn" id="st1sun">—</span>、
+      Pitch = <span class="dyn" id="st1pitch">—</span>、色温同表。<span id="st1atmo"></span>
     </div></div>
     <div class="step"><div class="n">2</div><div>
       <b>锁定曝光</b>：Min EV100 = Max EV100 = <span class="dyn" id="st2ev">—</span>，Exposure Compensation = 0。
@@ -235,7 +254,7 @@
   <thead>
     <tr>
       <th>时段（高度角 / Pitch）</th><th>气候</th>
-      <th>平行光 (lux)</th><th>色温 (K)</th>
+      <th>到达地面 (lux)</th><th id="thFill">填入 Intensity (lux)</th><th>色温 (K)</th>
       <th>天光 (lux)</th><th id="thScale">Intensity Scale*</th>
       <th>光比</th><th>反差 (档)</th><th>EV100</th>
     </tr>
@@ -247,11 +266,14 @@
 
 <h2>使用说明与换算约定</h2>
 <ul class="footer-notes">
-  <li><b>平行光（太阳）</b>：数值 = 垂直于光线方向的照度（Direct Normal Illuminance）。UE5 Directional Light 的 Intensity（单位 lux）与 Unity HDRP Directional Light（单位 Lux）都采用此定义，可直接填入。</li>
+  <li><b>「到达地面」与「填入 Intensity」是两个不同的数</b>：表中「到达地面」= 地面高度、<b>垂直于光线方向</b>的照度（DNI），这是物理目标，<b>不是</b>水平地面照度（水平面 = DNI × sin(高度角)）。UE5 Directional Light 的 Intensity 和 HDRP Directional Light 用的是同一个定义，但——见下一条——有大气时填进去的值会被再衰减一次。</li>
+  <li><b>大气衰减双重计算（最容易踩的坑）</b>：Directional Light 勾选 <b>Atmosphere Sun Light</b> 后，Sky Atmosphere 会按太阳方向的透射率 T 调制这盏灯，即你填的值被当作大气层顶的量。而表中 DNI 已经含过一次大气衰减，直接填入就衰减了两次，实际只到 DNI × T。用顶部「大气衰减」下拉切换：<b>有大气</b>时表格给出补偿后的填入值（DNI ÷ T）；<b>无大气</b>（取消勾选 / 非物理天空）时表值直接填。低角度时段影响极大（15° 时 T ≈ 0.6，黄金时刻/日落更低），正午几乎无差别。</li>
+  <li><b>τ 的标定方法</b>：默认 τ = 0.134 标定自 UE5 默认 Sky Atmosphere（15° 高度角实测 T ≈ 0.60），配合 Kasten-Young 大气质量按 Beer-Lambert 计算 T = e<sup>−τ·AM</sup>。你的大气参数（Rayleigh / Mie / 气溶胶）不同时可自行实测：固定一个高度角，读灰球受光面亮度求出实际 T，再按 <b>τ = −ln(T) ÷ AM</b> 反解填入。高度角低于约 5° 时该模型误差较大，建议改为艺术化调整而非硬套。</li>
   <li><b>Pitch 约定</b>：UE 中 Directional Light 的 Rotation Pitch = <b>−太阳高度角</b>（−90° 为正头顶直射）；Unity 中为 Transform 的 X Rotation = 高度角。正午与上午/下午的高度角由上方「纬度 + 季节」计算；清晨/傍晚、黄金时刻、日出日落按定义取固定高度角（15° / 4° / 0.5°），纬度只影响它们出现的时刻和持续时长。月亮高度随月相变化，表中取 45° 作参考。</li>
   <li><b>天光</b>：给出的是天空半球在水平面上产生的照度（lux），平均天空亮度 = 照度 ÷ π（cd/m²）。UE5 推荐 Sky Light 开 <b>Real Time Capture</b> + Sky Atmosphere，天光自动匹配太阳强度；HDRI/Cubemap 方案用上面的灰球流程校准 Intensity Scale。Unity HDRP 的 HDRI Sky 可切 Lux 模式直接填天光照度。</li>
   <li><b>Intensity Scale 的含义</b>：SkyLight 最终亮度 = 源（Cubemap/捕获）自身亮度 × Intensity Scale。因此它<b>没有普适值</b>，取决于你的 HDRI 是否带绝对亮度标定——这正是需要灰球校准的原因。用顶部「天光方案」下拉切换：<b>自动捕捉</b>恒为 1.0；<b>HDRI</b> 按 L₀ 算理论初值再微调（L₀ 未知时先按 1 cd/m²）；<b>手动</b>没有初值可算，直接以灰球读数为标尺。</li>
-  <li><b>光比</b>：面向光源的受光面照度 ÷ 阴影面照度（阴影面 = 部分天光 + 地面弹射）。1 档 = 2 倍。晴天约 5–8:1（2.5–3 档），阴天趋近 1:1。</li>
+  <li><b>光比与天空可见系数</b>：受光面照度 = 直射 + 0.55 × 天光；阴影面照度 = 0.45 × 天光 + 地面弹射。系数依据是开阔地无遮挡的垂直面只能看到半个天空半球（恰为水平面的 0.5），受光点法线朝太阳取 0.55、阴影点法线背向并略朝下取 0.45。1 档 = 2 倍。</li>
+  <li><b>地面弹射（GI）决定暗部能有多亮</b>：晴天时弹射项（约 8% × 直射）往往比阴影面的天光项还大，所以它<b>不是</b>可以忽略的修正。必须有足够大、反照率足够高的地面 + Lumen / GI 开启且质量够；球体浮空、地面很暗、或 GI 关闭时这一项直接归零，暗部会比表值低 2–3 倍、光比从约 6:1 拉到 10:1 以上。用顶部「地面弹射」下拉切换两档对照。另外 SkyLight 的遮蔽（DFAO / Lumen AO）还会再削暗部约 10–20%，属正常范围。</li>
   <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
   <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
   <li><b>为什么关掉平行光场景会全黑</b>：Sky Atmosphere / PBS Sky 的天空亮度全部来自太阳光的大气散射，太阳一关天空即黑，SkyLight（无论 Real Time Capture 还是重新捕捉）拿到的都是黑天。所以「关灯看纯天光」只对与太阳无关的 HDRI / Specified Cubemap 成立；物理天空方案请改读灰球阴影面，或用光照通道隔离太阳的直接光照。</li>
@@ -298,23 +320,43 @@ function elevationFor(t, lat, dec){
   return t.pitch;                                                    // 定义性固定高度角
 }
 
+// 天空可见系数（相对水平面天光照度）：
+//   受光点法线朝太阳（低角度时接近水平）→ 约 0.55
+//   阴影点法线背向太阳并略朝下         → 约 0.45
+// 物理依据：开阔地无遮挡的垂直面只能看到半个天空半球，恰为水平面的 0.5。
+const SKY_F_LIT = 0.55, SKY_F_SHD = 0.45;
+
+// Kasten-Young 大气质量（h = 太阳高度角，度）
+function airMass(h){
+  if (h <= 0) return 40;
+  return 1 / (Math.sin(h*D2R) + 0.50572 * Math.pow(h + 6.07995, -1.6364));
+}
+// 大气透射率（Beer-Lambert，luminance 加权）。τ 默认 0.134 标定自 UE5 默认
+// Sky Atmosphere 实测：15° 高度角时 T ≈ 0.60。
+function transmittance(h, tau){
+  if (h === null || h <= 0) return 1;
+  return Math.exp(-tau * airMass(h));
+}
+
 // ---------- 计算 ----------
-function compute(t, w){
-  const sun = t.sunPerp * w.sunMul;           // 平行光 lux（垂直于光线）
+// giOn: 阴影面是否计入地面弹射（需 Lumen/GI + 足够亮的大面积地面）
+function compute(t, w, giOn){
+  const sun = t.sunPerp * w.sunMul;           // 到达地面的平行光 lux（垂直于光线）
   const sky = t.sky * w.skyMul;               // 天光 lux（水平面）
   const skyLum = sky / Math.PI;               // 平均天空亮度 cd/m²
-  const ground = sun * t.elevSin + sky;       // 地面总照度
+  const ground = sun * t.elevSin + sky;       // 地面总照度（水平面）
   const ev = Math.log2(Math.max(ground, 0.005) / 2.5);
-  // 光比：面向光源的受光面 vs 阴影面（部分天光 + 弹射）
-  const litE = sun + 0.6 * sky;
-  const shadowE = 0.6 * sky + w.bounce * sun;
+  // 光比：面向光源的受光面 vs 阴影面（部分天光 + 地面弹射）
+  const bounce = giOn ? w.bounce : 0;
+  const litE = sun + SKY_F_LIT * sky;
+  const shadowE = SKY_F_SHD * sky + bounce * sun;
   const ratio = shadowE > 0 ? litE / shadowE : 1;
   const stops = Math.log2(Math.max(ratio, 1));
   const temp = w.temp || t.temp;
   // 18% 灰球读数目标 (cd/m²)
   const litNits = 0.18 * litE / Math.PI;
   const shdNits = 0.18 * shadowE / Math.PI;
-  return { sun, sky, skyLum, ground, ev, ratio, stops, temp, litNits, shdNits };
+  return { sun, sky, skyLum, ground, ev, ratio, stops, temp, litNits, shdNits, bounce };
 }
 
 function fmtLux(v){
@@ -346,6 +388,10 @@ const selSeason = document.getElementById('selSeason');
 const inpHdri = document.getElementById('inpHdri');
 const selSkyMode = document.getElementById('selSkyMode');
 const grpHdri = document.getElementById('grpHdri');
+const selAtmo = document.getElementById('selAtmo');
+const inpTau = document.getElementById('inpTau');
+const grpTau = document.getElementById('grpTau');
+const selGI = document.getElementById('selGI');
 TIMES.forEach((t,i)=> selTime.add(new Option(t.name, i)));
 WEATHERS.forEach((w,i)=> selWeather.add(new Option(w.name, i)));
 
@@ -353,6 +399,9 @@ function currentLat(){ return Math.min(80, Math.max(0, parseFloat(inpLat.value) 
 function currentDec(){ return parseFloat(selSeason.value); }
 function currentHdri(){ const v = parseFloat(inpHdri.value); return (v > 0 ? v : 1); }
 function currentMode(){ return selSkyMode.value; }   // 'auto' | 'hdri' | 'manual'
+function hasAtmo(){ return selAtmo.value === 'atmo'; }
+function currentTau(){ const v = parseFloat(inpTau.value); return (v > 0 ? v : 0.134); }
+function giOn(){ return selGI.value === 'on'; }
 
 // SVG 太阳角度与读数
 function updateSvg(elev, r){
@@ -389,12 +438,31 @@ function updateSvg(elev, r){
 
 function update(){
   const t = TIMES[selTime.value], w = WEATHERS[selWeather.value];
-  const r = compute(t, w);
+  const r = compute(t, w, giOn());
   const elev = elevationFor(t, currentLat(), currentDec());
   const p = fmtPitch(elev);
   const scale = r.skyLum / currentHdri();
+  const T = hasAtmo() ? transmittance(elev, currentTau()) : 1;
+  const fill = T > 0 ? r.sun / T : r.sun;     // 需填入 Directional Light 的 Intensity
 
   document.getElementById('cSun').textContent = fmtLux(r.sun) + ' lx';
+
+  // 大气衰减补偿
+  const fillV = document.getElementById('cFill'), fillN = document.getElementById('cFillNote');
+  if (r.sun <= 0){
+    fillV.textContent = '—';
+    fillN.textContent = '该组合无方向光';
+  } else if (!hasAtmo()){
+    fillV.textContent = fmtLux(r.sun) + ' lx';
+    fillN.innerHTML = '无大气衰减：<b>与左侧相同</b>，表值直接填入';
+  } else {
+    fillV.textContent = fmtLux(fill) + ' lx';
+    fillN.innerHTML = elev !== null && elev > 0
+      ? `= 表值 ÷ T，其中 T = <b>${T.toFixed(3)}</b>（大气质量 ${airMass(elev).toFixed(2)}，τ = ${currentTau()}）`
+        + (T < 0.2 ? '<br>⚠️ 高度角过低，T 模型误差大，建议以灰球实测为准或直接艺术化调整' : '')
+      : '太阳在地平线下，无需补偿';
+  }
+
   document.getElementById('cPitch').textContent = p.text;
   document.getElementById('cPitchNote').textContent =
     elev === null ? '太阳在地平线下，关闭方向光'
@@ -424,15 +492,19 @@ function update(){
   }
 
   document.getElementById('cRatio').textContent = fmtRatio(r.ratio);
-  document.getElementById('cRatioStops').textContent =
-    r.ratio < 1.05 ? '无可辨识阴影（全漫射）' : '反差约 ' + r.stops.toFixed(1) + ' 档';
+  document.getElementById('cRatioStops').innerHTML =
+    (r.ratio < 1.05 ? '无可辨识阴影（全漫射）' : '反差约 ' + r.stops.toFixed(1) + ' 档')
+    + (giOn() ? '' : ' · <b>无地面弹射</b>，光比明显拉大');
   document.getElementById('cEV').textContent = fmtEV(r.ev);
   document.getElementById('cTotal').textContent = fmtLux(r.ground);
 
   const dirName = t.id === 'night' ? '月光方向光' : '太阳方向光';
+  const atmoHint = hasAtmo() && r.sun > 0 && elev !== null && elev > 0
+    ? `（已按 T = ${T.toFixed(3)} 补偿；<b>Atmosphere Sun Light 勾选中</b>，到达地面 ≈ ${fmtLux(r.sun)} lux）`
+    : (r.sun > 0 ? '（Atmosphere Sun Light 未勾选，填入值即到达值）' : '');
   document.getElementById('sUEDir').innerHTML =
     r.sun > 0
-      ? `${dirName}：Intensity = <code>${fmtLux(r.sun)} lux</code> · Rotation Pitch ≈ <code>${elev !== null && elev > 0 ? '−' + elev.toFixed(1) + '°' : '—'}</code> · Temperature ≈ <code>${r.temp} K</code>（勾选 Use Temperature）· Source Angle ≈ <code>${w.srcAngle}</code>`
+      ? `${dirName}：Intensity = <code>${fmtLux(fill)} lux</code> ${atmoHint} · Rotation Pitch ≈ <code>${elev !== null && elev > 0 ? '−' + elev.toFixed(1) + '°' : '—'}</code> · Temperature ≈ <code>${r.temp} K</code>（勾选 Use Temperature）· Source Angle ≈ <code>${w.srcAngle}</code>`
       : `关闭方向光（或保留 <code>&lt;0.5 lux</code> 的极弱软光），场景仅由天光驱动`;
   let skyRow, unitySky;
   if (mode === 'auto'){
@@ -449,12 +521,15 @@ function update(){
   document.getElementById('sUEExp').innerHTML =
     `锁定曝光：<code>Min EV100 = Max EV100 = ${fmtEV(r.ev)}</code>；自动曝光则确保区间覆盖 <code>${fmtEV(r.ev)}</code>，Exposure Compensation = <code>0</code>`;
   document.getElementById('sUnity').innerHTML =
-    `HDRP：Directional = <code>${fmtLux(r.sun)} Lux</code>，X Rotation = <code>${elev !== null && elev > 0 ? elev.toFixed(1) + '°' : '—'}</code>，色温同左；天光：${unitySky}；Exposure Fixed = <code>${fmtEV(r.ev)}</code>。URP/内置管线按比例缩放（见下方说明）。`;
+    `HDRP：Directional = <code>${fmtLux(fill)} Lux</code>${hasAtmo() ? '（PBS Sky 同样会做大气衰减，故用补偿值）' : ''}，X Rotation = <code>${elev !== null && elev > 0 ? elev.toFixed(1) + '°' : '—'}</code>，色温同左；天光：${unitySky}；Exposure Fixed = <code>${fmtEV(r.ev)}</code>。URP/内置管线按比例缩放（见下方说明）。`;
   document.getElementById('sNote').textContent = t.desc + '。' + w.note;
 
   // 校准流程动态数字
-  document.getElementById('st1sun').textContent = fmtLux(r.sun) + ' lux';
+  document.getElementById('st1sun').textContent = fmtLux(fill) + ' lux';
   document.getElementById('st1pitch').textContent = elev !== null && elev > 0 ? '−' + elev.toFixed(1) + '°' : '—';
+  document.getElementById('st1atmo').innerHTML = hasAtmo()
+    ? `此值已含大气补偿（÷ T = ${T.toFixed(3)}），目的是让<b>到达地面</b>的照度等于 ${fmtLux(r.sun)} lux。`
+    : `Atmosphere Sun Light 未勾选，表值直接填入即到达地面。`;
   document.getElementById('st2ev').textContent = fmtEV(r.ev);
   let st4;
   if (mode === 'auto'){
@@ -488,6 +563,10 @@ const tbody = document.querySelector('#fullTable tbody');
 function renderTable(){
   tbody.innerHTML = '';
   const lat = currentLat(), dec = currentDec(), hdri = currentHdri(), mode = currentMode();
+  const atmo = hasAtmo(), tau = currentTau(), gi = giOn();
+  document.getElementById('thFill').innerHTML = atmo
+    ? '填入 Intensity (lux)<br><small style="font-weight:400">÷ T 补偿</small>'
+    : '填入 Intensity (lux)<br><small style="font-weight:400">同左</small>';
   const thScale = document.getElementById('thScale'), ftScale = document.getElementById('ftScale');
   if (mode === 'hdri'){
     thScale.textContent = 'Intensity Scale*';
@@ -502,13 +581,14 @@ function renderTable(){
   TIMES.forEach((t,ti)=>{
     const elev = elevationFor(t, lat, dec);
     const p = fmtPitch(elev);
+    const Tt = atmo ? transmittance(elev, tau) : 1;
     WEATHERS.forEach((w,wi)=>{
-      const r = compute(t, w);
+      const r = compute(t, w, gi);
       const tr = document.createElement('tr');
       tr.dataset.key = ti + '-' + wi;
       tr.innerHTML =
-        `<td class="timecell">${wi===0 ? t.name + '<small>高度角/Pitch：' + p.short + '</small>' : ''}</td><td>${w.name}</td>` +
-        `<td class="num">${fmtLux(r.sun)}</td><td class="num">${r.temp}</td>` +
+        `<td class="timecell">${wi===0 ? t.name + '<small>高度角/Pitch：' + p.short + (atmo && elev !== null && elev > 0 ? ' · T=' + Tt.toFixed(2) : '') + '</small>' : ''}</td><td>${w.name}</td>` +
+        `<td class="num">${fmtLux(r.sun)}</td><td class="num">${r.sun > 0 ? fmtLux(r.sun / Tt) : '—'}</td><td class="num">${r.temp}</td>` +
         `<td class="num">${fmtLux(r.sky)}</td><td class="num">${mode === 'hdri' ? fmtScale(r.skyLum / hdri) : fmtLux(r.skyLum)}</td>` +
         `<td class="num">${fmtRatio(r.ratio)}</td><td class="num">${r.ratio<1.05?'—':r.stops.toFixed(1)}</td>` +
         `<td class="num">${fmtEV(r.ev)}</td>`;
@@ -528,6 +608,12 @@ selSkyMode.onchange = ()=>{
   grpHdri.style.display = currentMode() === 'hdri' ? '' : 'none';
   renderTable(); update();
 };
+selAtmo.onchange = ()=>{
+  grpTau.style.display = hasAtmo() ? '' : 'none';
+  renderTable(); update();
+};
+inpTau.oninput = ()=>{ renderTable(); update(); };
+selGI.onchange = ()=>{ renderTable(); update(); };
 renderTable();
 update();
 </script>
