@@ -144,6 +144,10 @@
     <input type="number" id="inpTau" value="0.134" min="0.01" max="1" step="0.01">
   </div>
   <div class="sel-group">
+    <label>天光校正系数（实测标定）</label>
+    <input type="number" id="inpSkyCal" value="1" min="0.05" max="3" step="0.05">
+  </div>
+  <div class="sel-group">
     <label>地面反照率 ρ（BaseColor）</label>
     <select id="selAlbedo">
       <option value="0.18" selected>0.18 · 标准中灰（默认）</option>
@@ -307,8 +311,10 @@
     　<b>① 球受光面</b>（法线朝太阳，近似垂直）= 直射 + 0.55×天光 + 全日照地面的弹射<br>
     　<b>② 球暗面</b>（法线背向太阳，近似垂直）= 0.45×天光 + 部分自遮挡地面的弹射。垂直面只看到半个天空半球，所以天光只拿到 45%<br>
     　<b>③ 地面投影</b>（法线朝上，与地面共面）= 1.00×天光，<b>弹射为 0</b>。朝上能看到完整天空半球，但与地面共面的表面互相看不见，所以四周再亮的日照地面也补不进一点光<br>
-    因此在中午晴天，投影区反而会比球的暗面<b>略亮</b>（多拿的 55% 天光 &gt; 少拿的弹射），而不是更暗。若实测投影明显低于球暗面，说明有额外遮蔽或地面反照率偏低。</li>
-  <li><b>排查「球对得上、投影偏低」的标准做法</b>：用比值 <b>投影区 ÷ 日照地面 = 天光 ÷ 水平面总照度</b>。地面反照率在这个比值里被约掉，所以它<b>不依赖地面材质是否真的 0.18</b>，也不依赖曝光是否精确。比值符合表值 → 投影是对的，只是地面材质比 0.18 暗；比值明显偏低 → 投影里的天光被额外遮蔽，重点查 SkyLight 的 <code>Occlusion Max Distance</code>（DFAO 默认作用半径很大，附近物体会把一大片地面的天光压暗）、Lumen AO、以及校准球本身挡住的那部分天空（球离地越近遮挡越多，抬高球即可减小）。</li>
+    投影区和球暗面谁更亮<b>没有固定答案</b>，取决于天光与弹射的相对强度：天光强时投影更亮（多拿的 55% 天光胜过少拿的弹射），天光弱时球暗面更亮（它有太阳驱动的弹射托底，而投影一点弹射都没有）。页面会按当前参数直接给出两者数值，不要凭直觉判断顺序。</li>
+  <li><b>投影区是唯一能干净测出天光的探针</b>：三层里只有它完全没有太阳驱动的成分。以默认正午晴朗为例，天光在球受光面照度里只占约 3.5%、在球暗面里约 29%（其余靠太阳驱动的地面弹射托着），但在投影区里占 <b>100%</b>。所以天光若错了一倍，球受光面读数只差约 4%、球暗面差约 10%——都在你会当成"对上了"的容差内——而投影区会直接差一倍。<b>校准天光必须看投影区，看球的两个面会被太阳的贡献掩盖过去。</b></li>
+  <li><b>排查「球对得上、投影偏低」的标准做法</b>：投影偏低有两个互相竞争的原因——<b>天光整体偏低</b>，或<b>地面材质比 0.18 暗</b>。两者对投影读数的影响完全一样（读数只取决于 ρ × 天光 的乘积），必须靠第二个读数拆开：量<b>开阔处的日照地面</b>，然后看比值 <b>投影区 ÷ 日照地面 = 天光 ÷ 水平面总照度</b>。地面反照率在这个比值里被约掉，所以它不依赖地面材质、也不依赖曝光是否精确。比值<b>符合</b>表值 → 天光没问题，只是地面材质偏暗，不用动灯；比值<b>明显偏低</b> → 天光确实不足，用下面的「天光校正系数」标定，或提高大气散射。此外还要排除额外遮蔽：SkyLight 的 <code>Occlusion Max Distance</code>（DFAO 默认作用半径很大，附近物体会把一大片地面的天光压暗）、Lumen AO、以及校准球本身挡掉的那部分天空（球离地越近遮挡越多）。</li>
+  <li><b>天光校正系数</b>：表里的天光取自真实晴空实测区间的上沿，而 UE 默认 Sky Atmosphere 的 Rayleigh / Mie 散射比真实（含气溶胶、水汽的）大气更干净，散射进天空的光更少，因此实测常低于表值。标定方法：把地面反照率设成你实测确认的值，然后读投影区，令<b>系数 = 投影区实测 ÷ 表格给出的投影区值</b>，填入即可——之后三层数值会同步一致。如果希望天空的<b>外观</b>也跟着变亮而不只是数值对齐，请改 Sky Atmosphere 的散射参数（Rayleigh Scattering Scale / Mie / Aerosol），而不是缩放 SkyLight Intensity Scale：后者只改它发出的光，不改天空自身的显示亮度，会让画面里的天空与它照出的光不自洽。</li>
   <li><b>为什么 0.18 只出现在两个地方</b>：照度（lux）、天空亮度、Intensity Scale、EV100、光比这些量都<b>与物体反射率无关</b>——照度描述入射光，EV100 走的是入射式测光公式（C=250），光比是两个照度之比、同材质时反射率被约掉。反射率只进入：<b>(a)</b> 灰球的 cd/m² 读数（L = ρ × E ÷ π，非 18% 灰按 ρ 线性缩放）；<b>(b)</b> 地面弹射项里的<b>地面</b>反照率。注意这是两个不同的表面，别把校准球的反射率和地面的搞混。</li>
   <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
   <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
@@ -400,9 +406,9 @@ function sunlitFraction(elev){
 //   受光面朝向太阳，看到的地面全在日照下（f = 1）；阴影面朝背光侧，看到的地面
 //   有一部分落在物体自身投影里、只被天光照亮，所以有效地面照度更低。这个不对称
 //   是低角度太阳下光比远大于「教科书晴天 6:1」的主要原因。
-function compute(t, w, rho, sinH, fSun){
+function compute(t, w, rho, sinH, fSun, skyCal){
   const sun = t.sunPerp * w.sunMul;           // 到达地面的平行光 lux（垂直于光线）
-  const sky = t.sky * w.skyMul;               // 天光 lux（水平面）
+  const sky = t.sky * w.skyMul * skyCal;      // 天光 lux（水平面），可用实测系数校正
   const skyLum = sky / Math.PI;               // 平均天空亮度 cd/m²
   const direct = sun * sinH;                  // 直射的水平分量
   const ground = direct + sky;                // 水平面总照度
@@ -461,6 +467,7 @@ const selAtmo = document.getElementById('selAtmo');
 const inpTau = document.getElementById('inpTau');
 const grpTau = document.getElementById('grpTau');
 const selAlbedo = document.getElementById('selAlbedo');
+const inpSkyCal = document.getElementById('inpSkyCal');
 TIMES.forEach((t,i)=> selTime.add(new Option(t.name, i)));
 WEATHERS.forEach((w,i)=> selWeather.add(new Option(w.name, i)));
 
@@ -471,6 +478,7 @@ function currentMode(){ return selSkyMode.value; }   // 'auto' | 'hdri' | 'manua
 function hasAtmo(){ return selAtmo.value === 'atmo'; }
 function currentTau(){ const v = parseFloat(inpTau.value); return (v > 0 ? v : 0.134); }
 function currentRho(){ const v = parseFloat(selAlbedo.value); return (v >= 0 ? v : 0.18); }
+function currentSkyCal(){ const v = parseFloat(inpSkyCal.value); return (v > 0 ? v : 1); }
 // 由高度角求 sin(h)；太阳在地平线下或无方向光时地面不接收直射
 function sinOf(elev){ return (elev === null || elev <= 0) ? 0 : Math.sin(elev * D2R); }
 
@@ -512,7 +520,7 @@ function update(){
   const elev = elevationFor(t, currentLat(), currentDec());
   const rho = currentRho();
   const fSun = sunlitFraction(elev);
-  const r = compute(t, w, rho, sinOf(elev), fSun);
+  const r = compute(t, w, rho, sinOf(elev), fSun, currentSkyCal());
   const p = fmtPitch(elev);
   const scale = r.skyLum / currentHdri();
   const T = hasAtmo() ? transmittance(elev, currentTau()) : 1;
@@ -581,7 +589,8 @@ function update(){
   document.getElementById('lvShd').innerHTML =
     `<b>${fmtLux(r.shdNits)}</b> cd/m² &nbsp;=&nbsp; 0.18 × (天光 0.45× ${fmtLux(0.45*r.sky)} + 弹射 ${fmtLux(r.bShd)}) ÷ π　<span style="color:var(--muted)">垂直面只看到 45% 的天空</span>`;
   document.getElementById('lvCast').innerHTML =
-    `<b>${fmtLux(r.castNits)}</b> cd/m² &nbsp;=&nbsp; ρ × 天光 ${fmtLux(r.sky)} ÷ π　<span style="color:var(--warn)">弹射 = 0：与地面共面的表面互相看不见，四周的日照地面一点光都补不进来</span>`;
+    `<b>${fmtLux(r.castNits)}</b> cd/m² &nbsp;=&nbsp; ρ × 天光 ${fmtLux(r.sky)} ÷ π　<span style="color:var(--warn)">弹射 = 0：与地面共面的表面互相看不见，四周的日照地面一点光都补不进来</span>`
+    + `<br><span style="color:var(--muted)">三层里唯一不含太阳驱动成分的探针 —— 天光错一倍，这里就差一倍，而球的两面只差 4%/10%。校准天光只能看这里。</span>`;
   document.getElementById('lvGround').innerHTML =
     `<b>${fmtLux(r.groundLitNits)}</b> cd/m² &nbsp;=&nbsp; ρ × 水平面总照度 ${fmtLux(r.ground)} ÷ π　<span style="color:var(--muted)">朝上、受直射</span>`;
   document.getElementById('lvDiag').innerHTML = r.ground > 0
@@ -656,7 +665,7 @@ const tbody = document.querySelector('#fullTable tbody');
 function renderTable(){
   tbody.innerHTML = '';
   const lat = currentLat(), dec = currentDec(), hdri = currentHdri(), mode = currentMode();
-  const atmo = hasAtmo(), tau = currentTau(), rho = currentRho();
+  const atmo = hasAtmo(), tau = currentTau(), rho = currentRho(), skyCal = currentSkyCal();
   document.getElementById('thFill').innerHTML = atmo
     ? '填入 Intensity (lux)<br><small style="font-weight:400">÷ T 补偿</small>'
     : '填入 Intensity (lux)<br><small style="font-weight:400">同左</small>';
@@ -677,7 +686,7 @@ function renderTable(){
     const Tt = atmo ? transmittance(elev, tau) : 1;
     const sinH = sinOf(elev), fSun = sunlitFraction(elev);
     WEATHERS.forEach((w,wi)=>{
-      const r = compute(t, w, rho, sinH, fSun);
+      const r = compute(t, w, rho, sinH, fSun, skyCal);
       const tr = document.createElement('tr');
       tr.dataset.key = ti + '-' + wi;
       tr.innerHTML =
@@ -707,6 +716,7 @@ selAtmo.onchange = ()=>{
   renderTable(); update();
 };
 inpTau.oninput = ()=>{ renderTable(); update(); };
+inpSkyCal.oninput = ()=>{ renderTable(); update(); };
 selAlbedo.onchange = ()=>{ renderTable(); update(); };
 renderTable();
 update();
