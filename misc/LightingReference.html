@@ -84,6 +84,19 @@
   .step b{color:var(--accent2);}
   .step .dyn{color:var(--accent); font-weight:600;}
 
+  /* 术语提示 */
+  .tip{border-bottom:1px dotted var(--accent2); cursor:help; position:relative; color:var(--text);}
+  .tip::after{
+    content:attr(data-tip); position:absolute; left:0; bottom:calc(100% + 7px); z-index:50;
+    min-width:230px; max-width:360px; background:#0d0f13; color:#e8eaf0;
+    border:1px solid var(--accent2); border-radius:8px; padding:9px 11px;
+    font-size:12px; line-height:1.6; font-weight:400; white-space:normal;
+    opacity:0; visibility:hidden; transition:opacity .12s; pointer-events:none;
+    box-shadow:0 6px 20px rgba(0,0,0,.55);
+  }
+  .tip:hover::after{opacity:1; visibility:visible;}
+  .panel td .tip::after, ul.notes .tip::after{left:auto;}
+
   ul.notes{margin-top:22px; font-size:12.5px; color:var(--muted); line-height:1.85;}
   ul.notes li{margin-left:18px; margin-bottom:7px;}
   ul.notes b{color:var(--text);}
@@ -94,7 +107,7 @@
 </head>
 <body>
 
-<h1>PBR 光照参考表<span class="sub">时段 × 气候 — 平行光 / 天光 / 光比 / EV100，真实物理单位</span></h1>
+<h1>PBR 光照参考表<span class="sub">时段 × 气候 — 平行光 / 天光 / 光比 / <span class="tip" data-tip="Exposure Value at ISO 100，ISO100 下的曝光值。EV = log2(照度 ÷ 2.5)，每 +1 表示光量翻倍。用入射式定义（标定常数 C=250），与物体反射率无关。UE 的 Min/Max EV100 就是这个量。">EV100</span>，真实物理单位</span></h1>
 <p class="desc">
   适用于 UE5（物理光照单位）与 Unity HDRP（同为 lux / EV 体系）。
   基准假设：场景中所有物体 BaseColor = 0.18 线性中灰、Roughness = 1、Metallic = 0。
@@ -137,11 +150,11 @@
 </div>
 
 <div class="cards">
-  <div class="card"><div class="k">到达地面的平行光</div><div class="v" id="cSun">—</div><div class="u">lux · 垂直于光线的照度（DNI），非水平地面照度</div></div>
-  <div class="card"><div class="k">→ 填入 Intensity</div><div class="v warn" id="cFill">—</div><div class="u" id="cFillNote">—</div></div>
-  <div class="card"><div class="k">Pitch（平行光角度）</div><div class="v warn" id="cPitch">—</div><div class="u" id="cPitchNote">—</div></div>
-  <div class="card"><div class="k">天光照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空亮度 <span id="cSkyLum">—</span> cd/m² (nits)</div></div>
-  <div class="card"><div class="k">光比（受光面 : 背光面）</div><div class="v green" id="cRatio">—</div><div class="u" id="cRatioNote">—</div></div>
+  <div class="card"><div class="k">到达地面的平行光</div><div class="v" id="cSun">—</div><div class="u"><span class="tip" data-tip="lux（勒克斯）= 照度 / illuminance，单位面积上接收到的光通量。描述「有多少光打过来」，与被照物体的材质无关。这是可以和公开实测数据、以及引擎光源参数直接对照的量。">lux</span> · 垂直于光线的照度（<span class="tip" data-tip="Direct Normal Illuminance，直射法向照度。垂直于光线方向的平面上接收到的照度。这正是 UE / HDRP 平行光 Intensity 字段的定义。注意它不等于水平地面照度，后者 = DNI × sin(太阳高度角)。">DNI</span>），非水平地面照度</div></div>
+  <div class="card"><div class="k">→ 填入 <span class="tip" data-tip="UE 平行光的 Intensity 字段（单位 lux）。勾选 Atmosphere Sun Light 后，引擎会按大气透射率再衰减一次，所以这里要填「到达地面值 ÷ 透射率」而不是直接填到达地面值。">Intensity</span></div><div class="v warn" id="cFill">—</div><div class="u" id="cFillNote">—</div></div>
+  <div class="card"><div class="k"><span class="tip" data-tip="平行光的俯仰角。UE 的 Rotation Pitch = 负的太阳高度角（−90° 为正头顶直射）；Unity 用 Transform 的 X Rotation = 太阳高度角，符号相反。">Pitch</span>（平行光角度）</div><div class="v warn" id="cPitch">—</div><div class="u" id="cPitchNote">—</div></div>
+  <div class="card"><div class="k">天光照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空<span class="tip" data-tip="cd/m²（坎德拉每平方米）= 亮度 / luminance，与 nit 是同一个单位的两种写法（1 nit ≡ 1 cd/m²）。描述「表面看起来有多亮」，含有反射率。这是引擎 Pixel Inspector 里能直接读到的量。">亮度</span> <span id="cSkyLum">—</span> cd/m² (nits)</div></div>
+  <div class="card"><div class="k"><span class="tip" data-tip="光比 = 主体亮面照度 ÷ 主体暗面照度，两者都量在主体身上。行业所称「阴影部位／暗部」即主体的背光面，不是地面落影；地面落影不参与光比。">光比</span>（亮面 : 暗面）</div><div class="v green" id="cRatio">—</div><div class="u" id="cRatioNote">—</div></div>
   <div class="card"><div class="k">EV100（无曝光补偿）</div><div class="v" id="cEV">—</div><div class="u">水平面总照度约 <span id="cTotal">—</span> lux</div></div>
 </div>
 
@@ -154,10 +167,11 @@
     </span>
   </h3>
   <table>
-    <tr><td>① 受光面（球，朝太阳）</td><td id="lvLit">—</td></tr>
-    <tr><td>② 背光面（球，背太阳）</td><td id="lvShd">—</td></tr>
-    <tr><td>③ 阴影（地面投影）</td><td id="lvCast">—</td></tr>
+    <tr><td>① 亮面（球，朝太阳）</td><td id="lvLit">—</td></tr>
+    <tr><td>② 暗面（球，背太阳）<br><small style="color:#6b7280">即行业所称「阴影部位」</small></td><td id="lvShd">—</td></tr>
+    <tr><td>③ 投影（地面落影）<br><small style="color:#6b7280">不参与光比</small></td><td id="lvCast">—</td></tr>
     <tr><td>④ 日照地面（参照）</td><td id="lvGround">—</td></tr>
+    <tr><td>光比 = ① ÷ ②</td><td id="lvRatio">—</td></tr>
     <tr><td>单位换算</td><td><b>cd/m² 与 nit 是同一个单位的两种写法</b>（1 nit ≡ 1 cd/m²，都是亮度 / luminance）；lux 是照度 / illuminance，两者不同物理量。照度与表面无关，是本质量；引擎里只能读到亮度。朗伯面上严格互换：<code>E(lux) = L(cd/m² = nits) × π ÷ 反射率</code>，反向 <code>L = 反射率 × E ÷ π</code>。</td></tr>
     <tr><td>公开照度参考区间</td><td>直射日光 32,000–100,000 lux ｜ 全日照阴影 / 非直射 10,000–25,000 lux ｜ 阴天 1,000–10,000 lux ｜ 暮光 1–10 lux ｜ 满月 0.05–0.3 lux</td></tr>
     <tr><td>与反照率无关的判据</td><td id="lvDiag">—</td></tr>
@@ -175,12 +189,55 @@
   </table>
 </div>
 
-<h2>测量方法：受光面 · 背光面 · 阴影</h2>
+<h2>如何控制大气透射率</h2>
 <div class="warn-box">
-  三者的照度构成完全不同，不能互相类推：<b>① 受光面</b>＝直射＋55% 天光＋日照地面弹射；
-  <b>② 背光面</b>＝45% 天光＋部分自遮挡地面弹射（垂直面只看到半个天空半球）；
-  <b>③ 阴影</b>＝100% 天光，<b>弹射恰为 0</b>——与地面共面的表面互相看不见，四周再亮的日照地面也补不进光。
-  所以阴影是三者中唯一不含太阳成分的量，也是唯一能干净反映天光的量。
+  <b>最重要的一条：不要去猜透射率，用 ① 亮面读数把 Intensity 反推到位。</b>
+  流程是——按表填入 Intensity → 量 ① 亮面 → 若读数低于表值，就把 Intensity 往上加直到对上。
+  这样无论你的大气参数是什么，到达地面的光都正确。只有当你想改变<b>天空外观</b>（颜色、霞光、通透感）时，才需要动下面的大气参数。
+</div>
+<div class="panel">
+  <h3>Sky Atmosphere：哪些参数影响太阳被衰减多少</h3>
+  <table>
+    <tr><td>Rayleigh Scattering Scale</td><td>空气分子散射（短波优先）。<b>增大</b>→ 天空更蓝更亮、太阳更暗更暖。这是"通透感"的主控项。</td></tr>
+    <tr><td>Mie Scattering Scale</td><td>气溶胶／尘埃散射。<b>增大</b>→ 霾感、太阳周围光晕变大、太阳变暗，天空整体发白。真实城市／沙尘环境靠它。</td></tr>
+    <tr><td>Mie Absorption Scale</td><td>颗粒<b>吸收</b>（不是散射）。增大→ 太阳变暗但天空<b>不会</b>跟着变亮，产生污染／烟尘的脏灰感。</td></tr>
+    <tr><td>Absorption Scale（臭氧层）</td><td>10–40 km 的第二吸收层。主要改变天空色调（尤其暮光的蓝紫），对太阳衰减影响较小。</td></tr>
+    <tr><td>Rayleigh / Mie<br>Exponential Distribution</td><td>密度衰减到 40% 的高度（km）。<b>减小</b>→ 大气更"贴地"，低角度阳光穿过的浓密层更长，日落衰减更剧烈。</td></tr>
+    <tr><td>Atmosphere Height<br>Ground Radius</td><td>决定光线穿越的几何路程。一般不动，除非做外星／科幻星球。</td></tr>
+    <tr><td><b>Transmittance Min<br>Light Elevation Angle</b></td><td><b>日落救命参数。</b>钳制计算太阳透射率所用的高度角，避免太阳贴近／低于地平线时物体照明彻底熄灭。<span class="tip" data-tip="Epic 官方文档明确说明：该参数不影响 aerial perspective（空气透视），只影响到达地面的光照。所以远景雾气的观感不会被它改变。">注意它不影响空气透视</span>。做日落／夜景过渡时优先调这个，而不是硬拉 Intensity。</td></tr>
+    <tr><td>MultiScattering<br>Ground Albedo</td><td>只<b>增加</b>散射光，不改变直接透射率。Ground Albedo 仅在 MultiScattering &gt; 0 时才生效——想让地面颜色影响天空底部时用。</td></tr>
+    <tr><td style="color:var(--bad)">Sky Luminance Factor</td><td><b style="color:var(--bad)">陷阱：它只缩放天空像素，不改变天空发出的光。</b>用它调亮天空会让画面里的天空与它照出的光不自洽（灰球读数不变而天空变亮）。要同时改变两者，请改上面的散射参数。</td></tr>
+  </table>
+</div>
+<div class="panel">
+  <h3>不同气候的指数高度雾（Exponential Height Fog）</h3>
+  <table>
+    <tr><td>当前气候</td><td id="fogWeather">—</td></tr>
+    <tr><td>目标能见度</td><td id="fogVis">—</td></tr>
+    <tr><td>Fog Density</td><td id="fogDensity">—</td></tr>
+    <tr><td>Fog Height Falloff</td><td id="fogFalloff">—</td></tr>
+    <tr><td>Fog Max Opacity</td><td id="fogOpacity">—</td></tr>
+    <tr><td>Volumetric Fog</td><td id="fogVolumetric">—</td></tr>
+    <tr><td>Directional Inscattering</td><td id="fogDirectional">—</td></tr>
+    <tr><td>校验方法</td><td>UE 的 Fog Density <b>不是物理单位</b>，上表是起点值而非标准答案。校验方式：在目标能见度距离上放一个高对比物体（例如深色方块），调 Density 直到它<b>刚好接近消失在雾里</b>——气象学的能见度定义正是对比度降到 2% 的距离。定好之后再用 Height Falloff 控制垂直分布。</td></tr>
+    <tr><td>常见坑</td><td>① <b>Volumetric Fog 不响应</b> <code>Start Distance</code>、<code>Fog Max Opacity</code>、<code>Fog Cutoff Distance</code>——这三个只作用于非体积的高度雾，开了体积雾后调它们没反应是正常的。<br>
+      ② Sky Atmosphere 上的 <code>Height Fog Contribution</code> 控制大气对雾的贡献，雾色不对时先查它。<br>
+      ③ 雾会抬高暗部读数（内散射），校准灰球时把 Density 临时归零，避免污染测量。<br>
+      ④ <code>Fog Cutoff Distance</code> 用来排除已经自带雾的天空球。</td></tr>
+  </table>
+</div>
+
+<h2>测量方法：亮面 · 暗面 · 投影</h2>
+<div class="warn-box">
+  <b>术语先对齐</b>：摄影／灯光行业里的<b>光比</b>指主体<b>亮面与暗面</b>之比，两者都量在主体身上；
+  常说的「阴影部位／暗部」指的是主体的<b>背光面</b>，<u>不是</u>地面上的落影。
+  本页因此把第三个量称为「<b>投影</b>」（地面落影），它<b>不参与光比</b>，只用来校准天光。
+  这也对应素描的三大面：亮面 / 灰面 / 暗面说的都是主体本身。
+  <br><br>
+  三者照度构成完全不同，不能互相类推：<b>① 亮面</b>＝直射＋55% 天光＋日照地面弹射；
+  <b>② 暗面</b>＝45% 天光＋部分自遮挡地面弹射（垂直面只看到半个天空半球）；
+  <b>③ 投影</b>＝100% 天光，<b>弹射恰为 0</b>——与地面共面的表面互相看不见，四周再亮的日照地面也补不进光。
+  所以投影是三者中唯一不含太阳成分的量，也是唯一能干净反映天光的量。
 </div>
 <div class="calib">
   <div class="calib-svg">
@@ -255,9 +312,9 @@
         <text x="504" y="286" fill="#c0533f" font-size="10" text-anchor="end">✗ 掠射：Fresnel 抬高高光，读数偏高</text>
       </g>
 
-      <text id="litLabel"  x="8"   y="370" fill="#f5b942" font-size="11">① 受光面 —</text>
-      <text id="shdLabel"  x="140" y="370" fill="#7ecb8f" font-size="11">② 背光面 —</text>
-      <text id="castLabel" x="272" y="370" fill="#5ab0f0" font-size="11">③ 阴影 —</text>
+      <text id="litLabel"  x="8"   y="370" fill="#f5b942" font-size="11">① 亮面 —</text>
+      <text id="shdLabel"  x="140" y="370" fill="#7ecb8f" font-size="11">② 暗面 —</text>
+      <text id="castLabel" x="272" y="370" fill="#5ab0f0" font-size="11">③ 投影 —</text>
       <text id="glLabel"   x="382" y="370" fill="#e08f6a" font-size="11">④ 日照地面 —</text>
       <text id="unitHint" x="8" y="389" fill="#9aa3b2" font-size="10">标注为照度 lux；白色箭头 = 相机必须沿该点法线方向读取</text>
 
@@ -275,13 +332,13 @@
       漫反射是 Lambertian、与视角无关，但高光的 Fresnel 在掠射角会从 0.04 升到接近 1.0，Specular 归零才能消除这个视角依赖。
     </div></div>
     <div class="step"><div class="n">3</div><div>
-      <b>① 受光面</b>：相机置于<b>太阳同侧</b>（太阳在背后）看向球，球面最亮点即法线正对太阳处，此时天然接近法线观察。
+      <b>① 亮面</b>：相机置于<b>太阳同侧</b>（太阳在背后）看向球，球面最亮点即法线正对太阳处，此时天然接近法线观察。
     </div></div>
     <div class="step"><div class="n">4</div><div>
-      <b>② 背光面</b>：相机转到<b>逆光侧</b>，读球的<b>赤道高度</b>。不要读接地附近——那里天空被地面挡去大半，还叠加接触 AO。
+      <b>② 暗面（即行业所称「阴影部位」）</b>：相机转到<b>逆光侧</b>，读球的<b>赤道高度</b>。不要读接地附近——那里天空被地面挡去大半，还叠加接触 AO。
     </div></div>
     <div class="step"><div class="n">5</div><div>
-      <b>③ 阴影 + ④ 日照地面</b>：两者都<b>垂直俯视</b>读取。③ 取<b>投影中心</b>（表中给的是中心值），
+      <b>③ 投影 + ④ 日照地面</b>：两者都<b>垂直俯视</b>读取。③ 取<b>投影中心</b>（表中给的是中心值），
       ④ 取开阔处、远离投影。读数用 Pixel Inspector 取 tonemap 前缓冲，亮度按
       <code>0.2126R + 0.7152G + 0.0722B</code> 算，不要只读单通道。先关掉 Vignette（默认非 0，边缘会压暗）、
       Bloom、Local Exposure，测量点放在<b>屏幕中央</b>。<br>
@@ -317,13 +374,35 @@
 </table>
 </div>
 
+<h2>术语表</h2>
+<div class="panel">
+  <table>
+    <tr><td>DNI</td><td>Direct Normal Illuminance，直射法向照度。<b>垂直于光线方向</b>平面上的照度，单位 lux。UE / HDRP 平行光 Intensity 字段用的就是这个定义。水平地面照度 = DNI × sin(太阳高度角)，两者不同。</td></tr>
+    <tr><td>lux（照度）</td><td>Illuminance。单位面积接收到的光通量，描述"有多少光打过来"，<b>与物体材质无关</b>。能与公开实测数据、引擎光源参数直接对照。</td></tr>
+    <tr><td>cd/m² = nit（亮度）</td><td>Luminance。同一个单位的两种写法（1 nit ≡ 1 cd/m²）。描述"表面看起来有多亮"，<b>含有反射率</b>。引擎里能直接读到的就是这个。朗伯面换算：L = ρ × E ÷ π。</td></tr>
+    <tr><td>EV100</td><td>ISO 100 下的曝光值。EV = log₂(照度 ÷ 2.5)，每 +1 代表光量翻倍。入射式定义、与反射率无关，对应 UE 的 Min / Max EV100。</td></tr>
+    <tr><td>光比</td><td>主体<b>亮面照度 ÷ 暗面照度</b>，两者都量在主体身上。行业所说的"阴影部位／暗部"指主体背光面，<b>不是</b>地面落影。地面落影不参与光比。</td></tr>
+    <tr><td>档（stop）</td><td>光量翻倍为 1 档。档数 = log₂(光比)。比值有"亮:暗"与"暗:亮"两种书写习惯，档数无歧义，跨团队沟通建议用档数。</td></tr>
+    <tr><td>ρ（反照率 / albedo）</td><td>漫反射率，即材质的 BaseColor 线性值。标准中灰 0.18、水泥约 0.35、沙地约 0.55、新雪 0.8+。<b>校准球与地面是两个独立的 ρ</b>，不要混用。</td></tr>
+    <tr><td>T（透射率）</td><td>Transmittance。阳光穿过大气后剩下的比例。太阳越低光程越长、T 越小。勾选 Atmosphere Sun Light 时引擎会自动施加它，所以 Intensity 要填补偿后的值。</td></tr>
+    <tr><td>大气质量（AM）</td><td>Air Mass。阳光穿过的大气厚度，以垂直向上为 1。本页用 Kasten-Young 公式，低角度下比 1/sin(h) 准确得多。15° 时约 3.8。</td></tr>
+    <tr><td>Rayleigh / Mie 散射</td><td>Rayleigh 是空气分子散射（短波优先，天空之所以蓝）；Mie 是气溶胶／尘埃散射（偏前向，产生太阳光晕和霾感）。两者共同决定 T 与天空外观。</td></tr>
+    <tr><td>GI / 弹射</td><td>Global Illumination，全局光照。这里主要指地面把阳光反射到物体暗部的间接光。UE5 由 Lumen 提供，关闭后暗部只剩天光。</td></tr>
+    <tr><td>AO / DFAO</td><td>Ambient Occlusion 环境光遮蔽 / Distance Field AO。近似计算天光被附近几何遮挡的程度。DFAO 有世界空间作用半径（SkyLight 的 Occlusion Max Distance），是非物理的额外衰减，测量时需留意。</td></tr>
+    <tr><td>HDRI</td><td>High Dynamic Range Image，高动态范围环境贴图。用全景图记录整个天空的亮度分布当作环境光源；亮度存在贴图里，<b>与太阳位置无关</b>，所以只有它能临时关灯校准。</td></tr>
+    <tr><td>Real Time Capture</td><td>UE SkyLight 的选项。每帧实时捕捉场景（含 Sky Atmosphere）生成环境光，因此天光会自动跟随太阳变化，Intensity Scale 保持 1.0 即可。</td></tr>
+    <tr><td>Source Angle</td><td>平行光的光源角直径（度）。真实太阳约 0.54°；值越大阴影边缘越柔和，阴天用 5–10° 模拟云层散射后的软方向性。</td></tr>
+    <tr><td>PBR</td><td>Physically Based Rendering，基于物理的渲染。核心要求是用真实物理单位与能量守恒的材质，这样一套光照参数才能在不同场景、不同资产间通用。</td></tr>
+  </table>
+</div>
+
 <h2>换算约定</h2>
 <ul class="notes">
   <li><b>两个单位的关系</b>：<b>cd/m² 与 nit 是同一个单位的两种写法</b>（1 nit ≡ 1 cd/m²），都指亮度 / luminance；lux 指照度 / illuminance，是不同的物理量，不能直接互称。页面「三个层面」一栏可切换只看 lux、只看 cd/m²、或两者对照。<br>
     照度（lux）描述打到表面上的光，与表面材质无关，因此才是能和公开实测数据、以及引擎光源参数直接对照的量；亮度含有反射率，只对特定材质成立。但引擎里能直接读到的偏偏只有亮度，所以页面两个都给：lux 用来判断"这个光照强度是否合理"，cd/m² 用来对照"Pixel Inspector 里该看到多少"。朗伯面上两者严格互换。光比与 EV100 用哪个单位算都一样——比值里反射率被约掉，EV 本身就由照度定义。</li>
-  <li><b>平行光的两个数不是一回事</b>。「到达地面」= 地面高度、垂直于光线方向的照度（DNI），是物理目标；水平地面照度 = DNI × sin(高度角)。UE / HDRP 的 Intensity 字段用同一定义，但勾选 <b>Atmosphere Sun Light</b> 后引擎会按大气透射率 T 再衰减一次，而 DNI 已含过一次衰减，直接填就衰减两次。所以有大气时填 DNI ÷ T，表格已给出该值。低角度影响极大，正午几乎无差别。T 由太阳高度角经 Kasten-Young 大气质量与 Beer-Lambert 算出。</li>
+  <li><b>平行光的两个数不是一回事</b>。「到达地面」= 地面高度、垂直于光线方向的照度（DNI），是物理目标；水平地面照度 = DNI × sin(高度角)。UE / HDRP 的 Intensity 字段用同一定义，但勾选 <b>Atmosphere Sun Light</b> 后引擎会按大气透射率 T 再衰减一次，而 DNI 已含过一次衰减，直接填就衰减两次。所以有大气时填 DNI ÷ T，表格已给出该值。低角度影响极大，正午几乎无差别。T 由太阳高度角经 <span class="tip" data-tip="一个大气质量经验公式：AM = 1 / (sin h + 0.50572·(h+6.07995)^-1.6364)，h 为太阳高度角。比简单的 1/sin(h) 在低角度下准确得多，是太阳能工程的标准式。">Kasten-Young</span> 大气质量与 Beer-Lambert 算出。</li>
   <li><b>Pitch</b>：UE 的 Rotation Pitch = −太阳高度角（−90° 为头顶直射）；Unity 为 Transform X Rotation = 高度角。正午与上午/下午的高度角由纬度与季节计算；清晨/傍晚、黄金时刻、日出日落按定义取固定高度角（15° / 4° / 0.5°），纬度只改变它们出现的时刻。满月取 45° 参考。</li>
-  <li><b>天光</b>：给出的是天空半球在水平面上的照度（lux），平均天空亮度 = 照度 ÷ π。自动捕捉方案下天光由太阳与大气派生，Intensity Scale 保持 1.0；HDRI 方案的 Intensity Scale = 目标天空亮度 ÷ HDRI 自身平均亮度；手动方案以阴影读数为准。<b>物理天空方案不要靠关闭平行光来看纯天光</b>：天空亮度本就来自太阳散射，关灯天即黑，Intensity Scale 乘 0 仍是 0。</li>
+  <li><b>天光</b>：给出的是天空半球在水平面上的照度（lux），平均天空亮度 = 照度 ÷ π。自动捕捉方案下天光由太阳与大气派生，Intensity Scale 保持 1.0；<span class="tip" data-tip="High Dynamic Range Image，高动态范围环境贴图。用一张全景图记录整个天空的亮度分布来充当环境光源；与物理天空不同，它的亮度存在贴图里，与太阳位置无关。">HDRI</span> 方案的 Intensity Scale = 目标天空亮度 ÷ HDRI 自身平均亮度；手动方案以阴影读数为准。<b>物理天空方案不要靠关闭平行光来看纯天光</b>：天空亮度本就来自太阳散射，关灯天即黑，Intensity Scale 乘 0 仍是 0。</li>
   <li><b>光照模型</b>：<br>
     　水平面总照度 E<sub>h</sub> = DNI × sin(高度角) + 天光<br>
     　受光面弹射 = ρ × E<sub>h</sub> × 0.5　　背光面弹射 = ρ × (f × DNI × sin(高度角) + 天光) × 0.5<br>
@@ -332,9 +411,9 @@
     　反向换算：E = L × π ÷ 反射率<br>
     系数 0.5 来自 (1 − cos 倾角) / 2 在垂直时的取值；天空系数 0.55 / 0.45 来自垂直面只看到半个天空半球。</li>
   <li><b>日照比例 f</b>：物体自身投影长度 = 高度 ÷ tan(高度角)，方向正是背光侧，因此背光面看到的地面有一部分只被天光照亮。f 由视角因子数值积分得出（15° 时 ≈ 0.52，55° ≈ 0.70，头顶 → 1.0）。投影只是窄带而可见地面在方位上很宽，故 f 下限为 0.5。这是低角度光比远大于「教科书晴天 6:1」的原因。</li>
-  <li><b>地面反照率</b>：晴天弹射项与背光面的天光项同量级，不可忽略。ρ = 0 对应无地面或 GI 关闭。排查暗部偏暗的顺序：<code>r.Lumen.DiffuseIndirect.Allow 0/1</code> 确认弹射在供光（正常切换会有可见但不剧烈的差异）→ 确认地面网格足够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）→ 核对地面 BaseColor。雪天请把 ρ 改为 0.80。</li>
+  <li><b>地面反照率</b>：晴天弹射项与背光面的天光项同量级，不可忽略。ρ = 0 对应无地面或 GI 关闭。排查暗部偏暗的顺序：<code>r.<span class="tip" data-tip="UE5 的实时全局光照与反射系统。地面弹射光（间接光）由它提供；关闭后暗部只剩天光直接照明。可用控制台 r.Lumen.DiffuseIndirect.Allow 0/1 快速验证弹射是否在供光。">Lumen</span>.DiffuseIndirect.Allow 0/1</code> 确认弹射在供光（正常切换会有可见但不剧烈的差异）→ 确认地面网格足够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）→ 核对地面 BaseColor。雪天请把 ρ 改为 0.80。</li>
   <li><b>校准球规格与投影区的自遮挡</b>：约定用 <b>UE 默认 Sphere（直径 1 m）直接置于地面</b>。球悬在自己投影区上方，会挡掉那里一部分天空，被挡处只能看到球的暗侧（球的下表面法线朝下、看到完整地面半球，亮度 ≈ 球反射率 × ρ × 水平面总照度 ÷ π，约为天空亮度的 1/6）。投影中心的余弦加权可见天空比例由上半球数值积分得出，<b>随太阳高度角变化</b>——太阳越高，投影离球越近，遮挡越重：15° 时 0.98、30° 时 0.88、45° 时 0.65、55° 时 0.45、70° 时 0.17。表中 ③ 已包含这份遮挡，并另给出抬高球后的无遮挡值。<br>
-    两点补充：该比例<b>与球的尺寸无关</b>（几何自相似），规定 1 m 只为可复现，以及与 DFAO 等世界空间半径的设置相匹配；模型只算单次几何遮挡，实测通常比预测高约 10–20%（多次弹射），属正常范围。</li>
+    两点补充：该比例<b>与球的尺寸无关</b>（几何自相似），规定 1 m 只为可复现，以及与 <span class="tip" data-tip="Distance Field Ambient Occlusion，距离场环境光遮蔽。UE 用网格的距离场近似计算天光被附近几何遮挡的程度。它有一个世界空间作用半径（SkyLight 的 Occlusion Max Distance），会把附近物体周围一大片地面的天光压暗——属于非物理的额外衰减，校准时要留意。">DFAO</span> 等世界空间半径的设置相匹配；模型只算单次几何遮挡，实测通常比预测高约 10–20%（多次弹射），属正常范围。</li>
   <li><b>校准天光只能看阴影</b>：天光在受光面照度里仅占约 4%、在背光面约 29%（其余由太阳驱动的弹射托底），在阴影里占 100%。天光若错一倍，受光面与背光面读数仅差 4% 与 10%，都落在「看起来对上了」的范围内，而阴影会差整整一倍。</li>
   <li><b>判据比值 ③ ÷ ④ = 天光 ÷ E<sub>h</sub></b>：地面反照率在此比值中被约掉，故不依赖地面材质是否真为 0.18，也不依赖曝光精度。使用前提是 ③ 已排除遮挡（球抬起、且不靠近其它物体）。比值符合表值说明天光正确、只是地面偏暗，不必动灯；比值偏低才是天光不足。真要补，应提高 Sky Atmosphere 的散射（Rayleigh / Mie / Aerosol），而不是缩放 SkyLight Intensity Scale——后者只改它发出的光、不改天空自身显示亮度，会让画面里的天空与它照出的光不自洽。</li>
   <li><b>EV100</b>：EV = log₂(水平面总照度 ÷ 2.5)，入射式、标定常数 C = 250，与物体反射率无关。锁定曝光时 Min = Max = 表值；自动曝光时保证表值落在区间内且 Exposure Compensation = 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>。</li>
@@ -357,6 +436,16 @@ const TIMES = [
 ];
 
 // groundRec: 该气候建议的地面反照率（基准一律 0.18，此值仅作提示）
+// fog: 指数高度雾的起点值。vis = 目标能见度；density/falloff/opacity 为 UE 参数（非物理单位，需按能见度校验）
+const FOG = {
+  clear:    { vis:'> 20 km',        density:0.005, falloff:0.2,  opacity:1.0, vol:false, ext:1.0, dist:0.2, note:'几乎只做远景空气透视。体积雾可关，省性能。' },
+  partly:   { vis:'10 – 20 km',     density:0.010, falloff:0.2,  opacity:1.0, vol:false, ext:1.0, dist:0.2, note:'略增密度让远山分层。云影变化靠 Volumetric Cloud 而非雾。' },
+  overcast: { vis:'8 – 15 km',      density:0.020, falloff:0.2,  opacity:1.0, vol:false, ext:1.0, dist:0.3, note:'UE 默认量级。雾色应偏冷、接近天光色。' },
+  rain:     { vis:'2 – 5 km',       density:0.080, falloff:0.15, opacity:0.95, vol:true, ext:1.2, dist:0.2, note:'开体积雾承载雨幕的纵深感。Albedo 偏白（水滴）。' },
+  storm:    { vis:'0.5 – 2 km',     density:0.200, falloff:0.10, opacity:0.9, vol:true,  ext:1.4, dist:0.1, note:'密度大、falloff 小 → 雾层厚且高。闪电时雾会整体被照亮，这是关键氛围点。' },
+  fog:      { vis:'50 m – 1 km',    density:0.600, falloff:0.05, opacity:0.85, vol:true, ext:1.5, dist:0.1, note:'falloff 极小让雾几乎均匀充满。Scattering Distribution 调低才能出侧逆光的光柱。' },
+  snow:     { vis:'0.5 – 2 km',     density:0.150, falloff:0.10, opacity:0.9, vol:true,  ext:1.2, dist:0.15, note:'Albedo 接近纯白，配合高地面反照率（ρ=0.80），整体高调、低反差。' },
+};
 const WEATHERS = [
   { id:'clear',    name:'晴朗',             sunMul:1.0,   skyMul:1.0,  temp:null, groundRec:0.18, srcAngle:'0.54°（锐利阴影）', note:'标准晴天，阴影边缘锐利、偏蓝。' },
   { id:'partly',   name:'多云（晴间多云）', sunMul:0.85,  skyMul:1.35, temp:null, groundRec:0.18, srcAngle:'1–2°',              note:'云面反射抬高天光，反差略降。' },
@@ -560,9 +649,9 @@ function updateSvg(elev, r){
 
   const nits = unitMode === 'nits';
   const u = nits ? ' cd/m²' : ' lx';
-  document.getElementById('litLabel').textContent  = `① 受光面 ${fmtLux(nits ? r.litNits : r.litE)}${u}`;
-  document.getElementById('shdLabel').textContent  = `② 背光面 ${fmtLux(nits ? r.shdNits : r.shdE)}${u}`;
-  document.getElementById('castLabel').textContent = `③ 阴影 ${fmtLux(nits ? r.castNits : r.castE)}${u}`;
+  document.getElementById('litLabel').textContent  = `① 亮面 ${fmtLux(nits ? r.litNits : r.litE)}${u}`;
+  document.getElementById('shdLabel').textContent  = `② 暗面 ${fmtLux(nits ? r.shdNits : r.shdE)}${u}`;
+  document.getElementById('castLabel').textContent = `③ 投影 ${fmtLux(nits ? r.castNits : r.castE)}${u}`;
   document.getElementById('glLabel').textContent   = `④ 日照地面 ${fmtLux(nits ? r.groundLitNits : r.groundE)}${u}`;
   document.getElementById('unitHint').textContent = nits
     ? '标注为亮度 cd/m²（= nits）；白色箭头 = 相机必须沿该点法线方向读取'
@@ -646,6 +735,10 @@ function update(){
   document.getElementById('lvGround').innerHTML =
     fmtBoth(r.groundE, r.groundLitNits)
     + `<br><span style="color:var(--muted)">= 水平面总照度 = 直射的水平分量 + 天光</span>`;
+  document.getElementById('lvRatio').innerHTML =
+    `<b>${fmtRatio(r.ratio)}</b>　反差 ${r.stops.toFixed(1)} 档`
+    + `<br><span style="color:var(--muted)">= ${fmtLux(r.litE)} ÷ ${fmtLux(r.shdE)} lux。用 lux 或 cd/m² 算结果相同（反射率约掉）。`
+    + `书写顺序有「亮:暗」与「暗:亮」两种习惯，本页统一用亮:暗；档数 = log₂(光比)，无歧义，跨团队沟通建议用档数。</span>`;
   document.getElementById('lvDiag').innerHTML = r.ground > 0
     ? `<b>无遮挡阴影 ÷ ④ = ${(r.castRatio*100).toFixed(1)}%</b>（= 天光 ÷ 水平面总照度）。反照率在此约掉，故与地面材质、曝光精度无关；`
       + `使用时把球抬离地面消除遮挡，再量这两处地面。`
@@ -656,7 +749,7 @@ function update(){
   document.getElementById('sUEDir').innerHTML = r.sun > 0
     ? `${dirName}：Intensity = <code>${fmtLux(fill)} lux</code>`
       + (hasAtmo() && elev !== null && elev > 0 ? `（含大气补偿，到达地面 ≈ ${fmtLux(r.sun)} lux）` : '')
-      + ` · Pitch <code>${pitchStr}</code> · Temperature <code>${r.temp} K</code>（勾选 Use Temperature） · Source Angle <code>${w.srcAngle}</code>`
+      + ` · Pitch <code>${pitchStr}</code> · Temperature <code>${r.temp} K</code>（勾选 Use Temperature） · <span class="tip" data-tip="平行光的光源角直径（度）。真实太阳约 0.54°，值越大阴影边缘越柔和。阴天用 5–10° 来模拟云层散射后的软方向性。">Source Angle</span> <code>${w.srcAngle}</code>`
     : `关闭方向光（或保留 <code>&lt;0.5 lux</code> 极弱软光），场景仅由天光驱动`;
 
   let skyRow, unitySky;
@@ -676,6 +769,24 @@ function update(){
   document.getElementById('sUnity').innerHTML =
     `Directional = <code>${fmtLux(fill)} Lux</code>，X Rotation = <code>${elev !== null && elev > 0 ? elev.toFixed(1)+'°' : '—'}</code>；天光：${unitySky}；Exposure Fixed = <code>${fmtEV(r.ev)}</code>`;
   document.getElementById('sNote').textContent = t.desc + '。' + w.note;
+
+  // 高度雾
+  const fg = FOG[w.id];
+  const warmLow = (t.id === 'golden' || t.id === 'sunset' || t.id === 'low');
+  document.getElementById('fogWeather').innerHTML = `<b>${w.name}</b>　<span style="color:var(--muted)">${fg.note}</span>`;
+  document.getElementById('fogVis').innerHTML = `<b>${fg.vis}</b>　<span style="color:var(--muted)">气象定义：对比度降到 2% 的距离</span>`;
+  document.getElementById('fogDensity').innerHTML = `<code>${fg.density}</code>　<span style="color:var(--muted)">起点值，须按上面「校验方法」实测调整</span>`;
+  document.getElementById('fogFalloff').innerHTML = `<code>${fg.falloff}</code>　<span style="color:var(--muted)">越小 → 雾层越厚越高、垂直过渡越缓</span>`;
+  document.getElementById('fogOpacity').innerHTML = `<code>${fg.opacity}</code>`
+    + (fg.vol ? `　<span style="color:var(--warn)">开体积雾后此项无效</span>` : '');
+  document.getElementById('fogVolumetric').innerHTML = fg.vol
+    ? `<b>开启</b>　Extinction Scale <code>${fg.ext}</code> · Scattering Distribution <code>${fg.dist}</code>`
+      + `　<span style="color:var(--muted)">Distribution 越接近 0 越均匀（侧逆光光柱需要低值），越接近 0.9 越集中在光源方向</span>`
+    : `<b>可关闭</b>（省性能）　若需要光柱再开，Scattering Distribution 用 <code>${fg.dist}</code>`;
+  document.getElementById('fogDirectional').innerHTML = warmLow
+    ? `<b>重点时段</b>：Inscattering Color 调到与太阳同色温（约 ${r.temp} K 的暖调），Exponent 调低（4 → 2 左右）扩大光晕，`
+      + `Start Distance 拉近。低角度太阳下这是霞光氛围的主要来源。`
+    : `Inscattering Color 与天光同色调即可，Exponent 保持默认量级；太阳越高该效果越不明显。`;
 
   // 流程动态值
   document.getElementById('st1sun').textContent = fmtLux(fill) + ' lux';
