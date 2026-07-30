@@ -121,6 +121,14 @@
     </select>
   </div>
   <div class="sel-group">
+    <label>天光方案</label>
+    <select id="selSkyMode">
+      <option value="auto" selected>自动捕捉（Real Time Capture / PBS Sky）</option>
+      <option value="hdri">HDRI / Cubemap</option>
+      <option value="manual">手动调整（灰球校准）</option>
+    </select>
+  </div>
+  <div class="sel-group" id="grpHdri" style="display:none;">
     <label>HDRI 平均亮度 L₀（cd/m²）</label>
     <input type="number" id="inpHdri" value="1" min="0.001" step="0.5">
   </div>
@@ -130,7 +138,7 @@
   <div class="card"><div class="k">平行光强度（太阳/月亮）</div><div class="v" id="cSun">—</div><div class="u">lux（垂直于光线）· Directional Light Intensity</div></div>
   <div class="card"><div class="k">平行光角度 Pitch</div><div class="v warn" id="cPitch">—</div><div class="u" id="cPitchNote">—</div></div>
   <div class="card"><div class="k">天光等效照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空亮度 <span id="cSkyLum">—</span> cd/m²</div></div>
-  <div class="card"><div class="k">SkyLight Intensity Scale</div><div class="v blue" id="cScale">—</div><div class="u">Real Time Capture 时恒为 <b>1.0</b>；HDRI 方案 = 天空亮度 ÷ L₀</div></div>
+  <div class="card"><div class="k" id="cScaleTitle">SkyLight Intensity Scale</div><div class="v blue" id="cScale">—</div><div class="u" id="cScaleNote">—</div></div>
   <div class="card"><div class="k">光比（受光面 : 阴影面）</div><div class="v green" id="cRatio">—</div><div class="u" id="cRatioStops">—</div></div>
   <div class="card"><div class="k">EV100（无曝光补偿）</div><div class="v" id="cEV">—</div><div class="u">地面总照度约 <span id="cTotal">—</span> lux</div></div>
 </div>
@@ -207,13 +215,8 @@
     </div></div>
     <div class="step"><div class="n">3</div><div>
       <b>放置校准球</b>：18% 灰（BaseColor ≈ 0.18 线性值）、Roughness = 1、Metallic = 0，置于空旷地面。
-      若走 <b>Real Time Capture</b>（UE）或 <b>Physically Based Sky</b>（HDRP）：天光自动派生自太阳与大气，Intensity Scale 保持 <b>1.0</b>，跳到第 5 步验证即可。
     </div></div>
-    <div class="step"><div class="n">4</div><div>
-      <b>HDRI / 手动天光才需要调</b>：暂时关掉平行光，用 UE 的 <b>Pixel Inspector</b>（或 <code>show VisualizeHDR</code> / HDRP 的 Light Explorer + Debug Exposure）读灰球亮度，
-      调 Intensity Scale 直到读数 ≈ <span class="dyn" id="st4target">—</span> cd/m²（= 0.18 × 天光照度 ÷ π）。
-      理论初值：Intensity Scale ≈ <span class="dyn" id="st4scale">—</span>（= 目标天空亮度 <span id="st4lum">—</span> cd/m² ÷ HDRI 平均亮度 L₀）。
-    </div></div>
+    <div class="step"><div class="n">4</div><div id="st4body">—</div></div>
     <div class="step"><div class="n">5</div><div>
       <b>开回平行光验证光比</b>：灰球受光面应读到 ≈ <span class="dyn" id="st5lit">—</span> cd/m²，阴影面 ≈ <span class="dyn" id="st5shd">—</span> cd/m²，
       两者比值 ≈ <span class="dyn" id="st5ratio">—</span>（即表中光比）。偏差 &lt; ±1/3 档（×1.26）即算校准完成。
@@ -228,21 +231,21 @@
     <tr>
       <th>时段（高度角 / Pitch）</th><th>气候</th>
       <th>平行光 (lux)</th><th>色温 (K)</th>
-      <th>天光 (lux)</th><th>Intensity Scale*</th>
+      <th>天光 (lux)</th><th id="thScale">Intensity Scale*</th>
       <th>光比</th><th>反差 (档)</th><th>EV100</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 </div>
-<p class="desc" style="margin-top:8px;">* Intensity Scale 按当前输入的 HDRI 平均亮度 L₀ 计算（= 天空平均亮度 ÷ L₀）；Real Time Capture / 物理天空方案恒为 1.0。</p>
+<p class="desc" style="margin-top:8px;" id="ftScale">—</p>
 
 <h2>使用说明与换算约定</h2>
 <ul class="footer-notes">
   <li><b>平行光（太阳）</b>：数值 = 垂直于光线方向的照度（Direct Normal Illuminance）。UE5 Directional Light 的 Intensity（单位 lux）与 Unity HDRP Directional Light（单位 Lux）都采用此定义，可直接填入。</li>
   <li><b>Pitch 约定</b>：UE 中 Directional Light 的 Rotation Pitch = <b>−太阳高度角</b>（−90° 为正头顶直射）；Unity 中为 Transform 的 X Rotation = 高度角。正午与上午/下午的高度角由上方「纬度 + 季节」计算；清晨/傍晚、黄金时刻、日出日落按定义取固定高度角（15° / 4° / 0.5°），纬度只影响它们出现的时刻和持续时长。月亮高度随月相变化，表中取 45° 作参考。</li>
   <li><b>天光</b>：给出的是天空半球在水平面上产生的照度（lux），平均天空亮度 = 照度 ÷ π（cd/m²）。UE5 推荐 Sky Light 开 <b>Real Time Capture</b> + Sky Atmosphere，天光自动匹配太阳强度；HDRI/Cubemap 方案用上面的灰球流程校准 Intensity Scale。Unity HDRP 的 HDRI Sky 可切 Lux 模式直接填天光照度。</li>
-  <li><b>Intensity Scale 的含义</b>：SkyLight 最终亮度 = 源（Cubemap/捕获）自身亮度 × Intensity Scale。因此它<b>没有普适值</b>，取决于你的 HDRI 是否带绝对亮度标定——这正是需要灰球校准的原因。若 HDRI 平均亮度未知，先按 L₀ = 1 cd/m² 取理论初值，再用灰球读数微调。</li>
+  <li><b>Intensity Scale 的含义</b>：SkyLight 最终亮度 = 源（Cubemap/捕获）自身亮度 × Intensity Scale。因此它<b>没有普适值</b>，取决于你的 HDRI 是否带绝对亮度标定——这正是需要灰球校准的原因。用顶部「天光方案」下拉切换：<b>自动捕捉</b>恒为 1.0；<b>HDRI</b> 按 L₀ 算理论初值再微调（L₀ 未知时先按 1 cd/m²）；<b>手动</b>没有初值可算，直接以灰球读数为标尺。</li>
   <li><b>光比</b>：面向光源的受光面照度 ÷ 阴影面照度（阴影面 = 部分天光 + 地面弹射）。1 档 = 2 倍。晴天约 5–8:1（2.5–3 档），阴天趋近 1:1。</li>
   <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
   <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
@@ -335,12 +338,15 @@ const selWeather = document.getElementById('selWeather');
 const inpLat = document.getElementById('inpLat');
 const selSeason = document.getElementById('selSeason');
 const inpHdri = document.getElementById('inpHdri');
+const selSkyMode = document.getElementById('selSkyMode');
+const grpHdri = document.getElementById('grpHdri');
 TIMES.forEach((t,i)=> selTime.add(new Option(t.name, i)));
 WEATHERS.forEach((w,i)=> selWeather.add(new Option(w.name, i)));
 
 function currentLat(){ return Math.min(80, Math.max(0, parseFloat(inpLat.value) || 0)); }
 function currentDec(){ return parseFloat(selSeason.value); }
 function currentHdri(){ const v = parseFloat(inpHdri.value); return (v > 0 ? v : 1); }
+function currentMode(){ return selSkyMode.value; }   // 'auto' | 'hdri' | 'manual'
 
 // SVG 太阳角度与读数
 function updateSvg(elev, r){
@@ -390,7 +396,27 @@ function update(){
     : `高度角 ${elev.toFixed(1)}°（UE Rotation Pitch = −高度角）`;
   document.getElementById('cSky').textContent = fmtLux(r.sky) + ' lx';
   document.getElementById('cSkyLum').textContent = fmtLux(r.skyLum);
-  document.getElementById('cScale').textContent = fmtScale(scale);
+
+  // 天光方案分支
+  const mode = currentMode();
+  const shadowTarget = 0.18 * r.sky / Math.PI;   // 纯天光下灰球读数目标
+  const sT = document.getElementById('cScaleTitle'),
+        sV = document.getElementById('cScale'),
+        sN = document.getElementById('cScaleNote');
+  if (mode === 'auto'){
+    sT.textContent = 'SkyLight Intensity Scale';
+    sV.textContent = '1.0';
+    sN.innerHTML = 'Real Time Capture / PBS Sky：天光由太阳与大气<b>自动派生</b>，无需手调';
+  } else if (mode === 'hdri'){
+    sT.textContent = 'SkyLight Intensity Scale';
+    sV.textContent = fmtScale(scale);
+    sN.innerHTML = `= 目标天空亮度 ${fmtLux(r.skyLum)} cd/m² ÷ L₀（${currentHdri()} cd/m²），灰球微调`;
+  } else {
+    sT.textContent = '天光目标亮度（手动）';
+    sV.textContent = fmtLux(r.skyLum) + ' cd/m²';
+    sN.innerHTML = `无固定 Scale：用灰球把纯天光读数校到 ≈ <b>${fmtLux(shadowTarget)} cd/m²</b>`;
+  }
+
   document.getElementById('cRatio').textContent = fmtRatio(r.ratio);
   document.getElementById('cRatioStops').textContent =
     r.ratio < 1.05 ? '无可辨识阴影（全漫射）' : '反差约 ' + r.stops.toFixed(1) + ' 档';
@@ -402,21 +428,41 @@ function update(){
     r.sun > 0
       ? `${dirName}：Intensity = <code>${fmtLux(r.sun)} lux</code> · Rotation Pitch ≈ <code>${elev !== null && elev > 0 ? '−' + elev.toFixed(1) + '°' : '—'}</code> · Temperature ≈ <code>${r.temp} K</code>（勾选 Use Temperature）· Source Angle ≈ <code>${w.srcAngle}</code>`
       : `关闭方向光（或保留 <code>&lt;0.5 lux</code> 的极弱软光），场景仅由天光驱动`;
-  document.getElementById('sUESky').innerHTML =
-    `首选 <code>Real Time Capture</code> + Sky Atmosphere（Intensity Scale = <code>1.0</code>，自动匹配）；HDRI/Cubemap 方案：Intensity Scale ≈ <code>${fmtScale(scale)}</code>（按 L₀ = ${currentHdri()} cd/m² 估算），再用灰球流程微调到天空亮度 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>`;
+  let skyRow, unitySky;
+  if (mode === 'auto'){
+    skyRow = `Source = Captured Scene，勾选 <code>Real Time Capture</code>，Intensity Scale = <code>1.0</code>；配合 Sky Atmosphere 自动匹配表值（抽查目标：天空平均亮度 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>）`;
+    unitySky = `Physically Based Sky（自动匹配太阳强度）`;
+  } else if (mode === 'hdri'){
+    skyRow = `Source = Specified Cubemap（HDRI），Intensity Scale ≈ <code>${fmtScale(scale)}</code>（按 L₀ = ${currentHdri()} cd/m² 估算），再用灰球流程微调到天空亮度 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>`;
+    unitySky = `HDRI Sky：Intensity Mode = <code>Lux</code> 填 <code>${fmtLux(r.sky)} lux</code>（或 Multiplier ≈ <code>${fmtScale(scale)}</code>）`;
+  } else {
+    skyRow = `Source = Specified Cubemap / Captured Scene（<b>关闭</b> Real Time Capture），手调 Intensity Scale 至天空平均亮度 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>（水平照度 ${fmtLux(r.sky)} lux），以灰球读数为准`;
+    unitySky = `Gradient/Uniform Sky：把天空亮度校到 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>（等效 ${fmtLux(r.sky)} lux）`;
+  }
+  document.getElementById('sUESky').innerHTML = skyRow;
   document.getElementById('sUEExp').innerHTML =
     `锁定曝光：<code>Min EV100 = Max EV100 = ${fmtEV(r.ev)}</code>；自动曝光则确保区间覆盖 <code>${fmtEV(r.ev)}</code>，Exposure Compensation = <code>0</code>`;
   document.getElementById('sUnity').innerHTML =
-    `HDRP：Directional = <code>${fmtLux(r.sun)} Lux</code>，X Rotation = <code>${elev !== null && elev > 0 ? elev.toFixed(1) + '°' : '—'}</code>，色温同左；PBS Sky 自动 / HDRI Sky（Lux 模式）= <code>${fmtLux(r.sky)} lux</code>；Exposure Fixed = <code>${fmtEV(r.ev)}</code>。URP/内置管线按比例缩放（见下方说明）。`;
+    `HDRP：Directional = <code>${fmtLux(r.sun)} Lux</code>，X Rotation = <code>${elev !== null && elev > 0 ? elev.toFixed(1) + '°' : '—'}</code>，色温同左；天光：${unitySky}；Exposure Fixed = <code>${fmtEV(r.ev)}</code>。URP/内置管线按比例缩放（见下方说明）。`;
   document.getElementById('sNote').textContent = t.desc + '。' + w.note;
 
   // 校准流程动态数字
   document.getElementById('st1sun').textContent = fmtLux(r.sun) + ' lux';
   document.getElementById('st1pitch').textContent = elev !== null && elev > 0 ? '−' + elev.toFixed(1) + '°' : '—';
   document.getElementById('st2ev').textContent = fmtEV(r.ev);
-  document.getElementById('st4target').textContent = fmtLux(0.18 * r.sky / Math.PI);
-  document.getElementById('st4scale').textContent = fmtScale(scale);
-  document.getElementById('st4lum').textContent = fmtLux(r.skyLum);
+  let st4;
+  if (mode === 'auto'){
+    st4 = `<b>自动捕捉方案无需手调</b>：Intensity Scale 保持 <b>1.0</b>，天光由太阳与大气自动派生。
+      确认 Sky Atmosphere 强度未被额外缩放、SkyLight 没有残留的手调倍率后，直接进入第 5 步验证。`;
+  } else if (mode === 'hdri'){
+    st4 = `<b>校准 HDRI 天光</b>：暂时关掉平行光，用 UE 的 <b>Pixel Inspector</b>（或 <code>show VisualizeHDR</code> / HDRP 的 Light Explorer + Debug Exposure）读灰球亮度，
+      调 Intensity Scale 直到读数 ≈ <span class="dyn">${fmtLux(shadowTarget)}</span> cd/m²（= 0.18 × 天光照度 ÷ π）。
+      理论初值：Intensity Scale ≈ <span class="dyn">${fmtScale(scale)}</span>（= 目标天空亮度 ${fmtLux(r.skyLum)} cd/m² ÷ L₀ ${currentHdri()} cd/m²）。`;
+  } else {
+    st4 = `<b>手动校准天光</b>：暂时关掉平行光，读灰球亮度，直接调 SkyLight 的 Intensity Scale 直到读数 ≈ <span class="dyn">${fmtLux(shadowTarget)}</span> cd/m²（= 0.18 × 天光照度 ÷ π）。
+      等效目标：天空平均亮度 <span class="dyn">${fmtLux(r.skyLum)}</span> cd/m²、水平照度 <span class="dyn">${fmtLux(r.sky)}</span> lux。没有 HDRI 绝对亮度可参考，灰球读数就是唯一标尺。`;
+  }
+  document.getElementById('st4body').innerHTML = st4;
   document.getElementById('st5lit').textContent = fmtLux(r.litNits);
   document.getElementById('st5shd').textContent = fmtLux(r.shdNits);
   document.getElementById('st5ratio').textContent = fmtRatio(r.ratio);
@@ -432,7 +478,18 @@ function update(){
 const tbody = document.querySelector('#fullTable tbody');
 function renderTable(){
   tbody.innerHTML = '';
-  const lat = currentLat(), dec = currentDec(), hdri = currentHdri();
+  const lat = currentLat(), dec = currentDec(), hdri = currentHdri(), mode = currentMode();
+  const thScale = document.getElementById('thScale'), ftScale = document.getElementById('ftScale');
+  if (mode === 'hdri'){
+    thScale.textContent = 'Intensity Scale*';
+    ftScale.textContent = '* Intensity Scale = 天空平均亮度 ÷ HDRI 平均亮度 L₀（当前 ' + hdri + ' cd/m²），为理论初值，需灰球微调。';
+  } else if (mode === 'auto'){
+    thScale.textContent = '天空亮度 (cd/m²)*';
+    ftScale.textContent = '* 自动捕捉方案 Intensity Scale 恒为 1.0；此列为可抽查的天空平均亮度目标（= 天光照度 ÷ π）。';
+  } else {
+    thScale.textContent = '天空亮度 (cd/m²)*';
+    ftScale.textContent = '* 手动方案以灰球读数为准；此列为目标天空平均亮度（= 天光照度 ÷ π）。';
+  }
   TIMES.forEach((t,ti)=>{
     const elev = elevationFor(t, lat, dec);
     const p = fmtPitch(elev);
@@ -443,7 +500,7 @@ function renderTable(){
       tr.innerHTML =
         `<td class="timecell">${wi===0 ? t.name + '<small>高度角/Pitch：' + p.short + '</small>' : ''}</td><td>${w.name}</td>` +
         `<td class="num">${fmtLux(r.sun)}</td><td class="num">${r.temp}</td>` +
-        `<td class="num">${fmtLux(r.sky)}</td><td class="num">${fmtScale(r.skyLum / hdri)}</td>` +
+        `<td class="num">${fmtLux(r.sky)}</td><td class="num">${mode === 'hdri' ? fmtScale(r.skyLum / hdri) : fmtLux(r.skyLum)}</td>` +
         `<td class="num">${fmtRatio(r.ratio)}</td><td class="num">${r.ratio<1.05?'—':r.stops.toFixed(1)}</td>` +
         `<td class="num">${fmtEV(r.ev)}</td>`;
       tr.style.cursor = 'pointer';
@@ -458,6 +515,10 @@ selWeather.onchange = update;
 inpLat.oninput = ()=>{ renderTable(); update(); };
 selSeason.onchange = ()=>{ renderTable(); update(); };
 inpHdri.oninput = ()=>{ renderTable(); update(); };
+selSkyMode.onchange = ()=>{
+  grpHdri.style.display = currentMode() === 'hdri' ? '' : 'none';
+  renderTable(); update();
+};
 renderTable();
 update();
 </script>
