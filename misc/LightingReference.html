@@ -202,10 +202,15 @@
       <text id="sunLabel" x="16" y="30" fill="#f5b942" font-size="11">太阳</text>
 
       <ellipse id="castEllipse" cx="300" cy="300" rx="60" ry="9" fill="#0e1014" opacity="0.75"/>
-      <circle cx="260" cy="270" r="30" fill="url(#ballGrad)"/>
+      <circle cx="260" cy="232" r="30" fill="url(#ballGrad)"/>
       <path id="ballShadow" d="" fill="#12141a" opacity="0.5"/>
-      <text x="260" y="347" fill="#9aa3b2" font-size="10.5" text-anchor="middle">
-        校准球：0.18 灰 · Roughness=1 · Metallic=0 · <tspan fill="#e08f6a">Specular=0</tspan></text>
+      <!-- 离地间隙要求 -->
+      <line x1="228" y1="262" x2="228" y2="300" stroke="#7ecb8f" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="223" y1="262" x2="233" y2="262" stroke="#7ecb8f" stroke-width="1"/>
+      <line x1="223" y1="300" x2="233" y2="300" stroke="#7ecb8f" stroke-width="1"/>
+      <text x="219" y="285" fill="#7ecb8f" font-size="10" text-anchor="end">离地 ≥5R</text>
+      <text x="260" y="349" fill="#9aa3b2" font-size="10.5" text-anchor="middle">
+        校准球：0.18 灰 · Roughness=1 · Metallic=0 · <tspan fill="#e08f6a">Specular=0</tspan>（间隙为示意，非等比）</text>
 
       <g id="mp1">
         <line id="mp1cam" stroke="#e8eaf0" stroke-width="1.6" marker-end="url(#arrowC)"/>
@@ -259,14 +264,20 @@
       <b>② 背光面</b>：相机转到<b>逆光侧</b>，读球的<b>赤道高度</b>。不要读接地附近——那里天空被地面挡去大半，还叠加接触 AO。
     </div></div>
     <div class="step"><div class="n">5</div><div>
-      <b>③ 阴影 + ④ 日照地面</b>：两者都<b>垂直俯视</b>读取。③ 取球投影中心，④ 取开阔处、远离投影。
-      读数工具用 Pixel Inspector 取 tonemap 前缓冲，亮度按 <code>0.2126R + 0.7152G + 0.0722B</code> 算，不要只读单通道。
-      先关掉 Vignette（默认非 0，边缘会压暗）、Bloom、Local Exposure，并把测量点放在<b>屏幕中央</b>。
+      <b>把球抬离地面至少 5 倍半径</b>，这是读对 ③ 的前提。球贴地时它就挂在自己投影区的头顶上，
+      会遮掉那里一大片天空，且遮住的部分被球自身（暗面约为天空亮度的 1/6）填充，读数因此显著偏低。
+      余弦加权的可见天空比例：贴地时投影中心仅 <b>0.45</b>，抬到 2R 为 0.86、<b>5R 为 0.98</b>、8R 为 0.99。
     </div></div>
     <div class="step"><div class="n">6</div><div>
-      <b>对照与排查</b>：三点各自偏差 &lt; ±1/3 档（×1.26）即算通过。
-      <b>①② 对得上而 ③ 偏低</b>是最常见情况——先看判据比值 ③÷④：比值正常说明地面材质比 0.18 暗（不必动灯）；
-      比值偏低说明天光不足或被额外遮蔽，查 Sky Atmosphere 的散射参数与 SkyLight 的 <code>Occlusion Max Distance</code>。
+      <b>③ 阴影 + ④ 日照地面</b>：两者都<b>垂直俯视</b>读取。③ 取投影中心，④ 取开阔处、远离投影。
+      读数用 Pixel Inspector 取 tonemap 前缓冲，亮度按 <code>0.2126R + 0.7152G + 0.0722B</code> 算，不要只读单通道。
+      先关掉 Vignette（默认非 0，边缘会压暗）、Bloom、Local Exposure，测量点放在<b>屏幕中央</b>。
+    </div></div>
+    <div class="step"><div class="n">7</div><div>
+      <b>对照</b>：三点各自偏差 &lt; ±1/3 档（×1.26）即通过。若 ③ 偏低，<b>先确认球已抬起</b>——
+      投影区呈现「中心暗、边缘亮」的梯度就是球遮挡天空的特征，与灯光数值无关。
+      排除遮挡后仍偏低，再看判据比值 ③÷④：比值正常说明地面材质比 0.18 暗，不必动灯；
+      比值偏低才是天光不足，查 Sky Atmosphere 散射参数与 SkyLight 的 <code>Occlusion Max Distance</code>。
     </div></div>
   </div>
 </div>
@@ -299,8 +310,9 @@
     系数 0.5 来自 (1 − cos 倾角) / 2 在垂直时的取值；天空系数 0.55 / 0.45 来自垂直面只看到半个天空半球。</li>
   <li><b>日照比例 f</b>：物体自身投影长度 = 高度 ÷ tan(高度角)，方向正是背光侧，因此背光面看到的地面有一部分只被天光照亮。f 由视角因子数值积分得出（15° 时 ≈ 0.52，55° ≈ 0.70，头顶 → 1.0）。投影只是窄带而可见地面在方位上很宽，故 f 下限为 0.5。这是低角度光比远大于「教科书晴天 6:1」的原因。</li>
   <li><b>地面反照率</b>：晴天弹射项与背光面的天光项同量级，不可忽略。ρ = 0 对应无地面或 GI 关闭。排查暗部偏暗的顺序：<code>r.Lumen.DiffuseIndirect.Allow 0/1</code> 确认弹射在供光（正常切换会有可见但不剧烈的差异）→ 确认地面网格足够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）→ 核对地面 BaseColor。雪天请把 ρ 改为 0.80。</li>
+  <li><b>校准球必须抬离地面</b>：表中 ③ 的值是<b>无遮挡</b>投影的理论值。球贴地时它悬在自己投影区正上方，会遮掉那里大量天空——余弦加权的可见天空比例在投影中心只剩 0.45，且被遮部分并非全黑，而是被球自身表面填充（暗面亮度约为天空亮度的 1/6），所以读数会明显偏低并呈现「中心暗、边缘亮」的梯度。抬高到 5 倍半径以上可见天空恢复到 0.98，读数即回归表值。这个梯度是遮挡的判别特征，出现时不要去动任何灯光参数。同理，球的 ② 背光面也不要贴近接地点读取。</li>
   <li><b>校准天光只能看阴影</b>：天光在受光面照度里仅占约 4%、在背光面约 29%（其余由太阳驱动的弹射托底），在阴影里占 100%。天光若错一倍，受光面与背光面读数仅差 4% 与 10%，都落在「看起来对上了」的范围内，而阴影会差整整一倍。</li>
-  <li><b>判据比值 ③ ÷ ④ = 天光 ÷ E<sub>h</sub></b>：地面反照率在此比值中被约掉，故不依赖地面材质是否真为 0.18，也不依赖曝光精度。比值符合表值说明天光正确、只是地面偏暗；比值偏低说明天光不足或有额外遮蔽。UE 默认 Sky Atmosphere 的散射比含气溶胶的真实大气干净，实测天光常低于表值——需要时提高 Rayleigh / Mie / Aerosol，而不要缩放 SkyLight Intensity Scale：后者只改它发出的光、不改天空自身显示亮度，会让画面天空与它照出的光不自洽。</li>
+  <li><b>判据比值 ③ ÷ ④ = 天光 ÷ E<sub>h</sub></b>：地面反照率在此比值中被约掉，故不依赖地面材质是否真为 0.18，也不依赖曝光精度。使用前提是 ③ 已排除遮挡（球抬起、且不靠近其它物体）。比值符合表值说明天光正确、只是地面偏暗，不必动灯；比值偏低才是天光不足。真要补，应提高 Sky Atmosphere 的散射（Rayleigh / Mie / Aerosol），而不是缩放 SkyLight Intensity Scale——后者只改它发出的光、不改天空自身显示亮度，会让画面里的天空与它照出的光不自洽。</li>
   <li><b>EV100</b>：EV = log₂(水平面总照度 ÷ 2.5)，入射式、标定常数 C = 250，与物体反射率无关。锁定曝光时 Min = Max = 表值；自动曝光时保证表值落在区间内且 Exposure Compensation = 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>。</li>
   <li><b>Unity URP / 内置管线</b>：非物理单位，不能直接填 lux。保留表中比例关系即可：平行光在 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」配置，反差档位与色温通用。</li>
   <li><b>数据来源</b>：DNI 与天光基于 CIE 天空模型与实测范围（晴天正午地面约 10–12 万 lux、阴天 1–2.5 万 lux、日落约 400–700 lux、满月约 0.05–0.3 lux），以中纬度为基准取整。改纬度与季节会重算高度角并连带影响水平面照度、EV100 与弹射项；但各时段的 DNI 与天光是按该时段典型高度角标定的常量，不随纬度重算，因此极端组合（如 60°N 冬至正午，高度角仅 6.6°）下 DNI 偏乐观，请参考表中透射率判断合理性。</li>
@@ -417,7 +429,7 @@ const hasAtmo     = ()=> selAtmo.value === 'atmo';
 const currentRho  = ()=> { const v = parseFloat(selAlbedo.value); return v >= 0 ? v : 0.18; };
 
 function updateSvg(elev, r){
-  const cx = 260, cy = 270, R = 30, groundY = 300, CAM = 46;
+  const cx = 260, cy = 232, R = 30, groundY = 300, CAM = 46;
   const a = (elev === null || elev <= 0) ? 30 : Math.max(4, Math.min(85, elev));
   const rad = a*D2R;
   const hasSun = elev !== null && elev > 0 && r.sun > 0;
@@ -439,7 +451,8 @@ function updateSvg(elev, r){
     `M ${(cx + R*(-uy)).toFixed(1)} ${(cy + R*ux).toFixed(1)} ` +
     `A ${R} ${R} 0 0 1 ${(cx - R*(-uy)).toFixed(1)} ${(cy - R*ux).toFixed(1)} Z`);
 
-  const shadowLen = hasSun ? Math.min(210, 2*R/Math.tan(rad)) : 0;
+  // 投影中心的水平偏移 = 球心离地高度 ÷ tan(高度角)
+  const shadowLen = hasSun ? Math.min(200, (groundY - cy)/Math.tan(rad)) : 0;
   const ce = document.getElementById('castEllipse');
   ce.setAttribute('rx', Math.max(R, shadowLen/2 + R*0.5).toFixed(1));
   ce.setAttribute('cx', (cx + shadowLen/2).toFixed(1));
