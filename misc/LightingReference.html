@@ -171,6 +171,17 @@
 </div>
 
 <div class="settings">
+  <h3>三个层面的灰度读数目标（cd/m²）</h3>
+  <table>
+    <tr><td>① 球 · 直接受光面</td><td id="lvLit">—</td></tr>
+    <tr><td>② 球 · 暗面</td><td id="lvShd">—</td></tr>
+    <tr><td>③ 地面 · 投影区</td><td id="lvCast">—</td></tr>
+    <tr><td>（参考）地面 · 日照区</td><td id="lvGround">—</td></tr>
+    <tr><td><b>与反照率无关的判据</b></td><td id="lvDiag">—</td></tr>
+  </table>
+</div>
+
+<div class="settings">
   <h3>建议引擎设置（当前组合）</h3>
   <table>
     <tr><td>UE5 · Directional Light</td><td id="sUEDir">—</td></tr>
@@ -250,8 +261,11 @@
     </div></div>
     <div class="step"><div class="n">4</div><div id="st4body">—</div></div>
     <div class="step"><div class="n">5</div><div>
-      <b>开回平行光验证光比</b>：灰球受光面应读到 ≈ <span class="dyn" id="st5lit">—</span> cd/m²，阴影面 ≈ <span class="dyn" id="st5shd">—</span> cd/m²，
-      两者比值 ≈ <span class="dyn" id="st5ratio">—</span>（即表中光比）。偏差 &lt; ±1/3 档（×1.26）即算校准完成。
+      <b>开回平行光，分三层验证</b>：受光面 ≈ <span class="dyn" id="st5lit">—</span>、暗面 ≈ <span class="dyn" id="st5shd">—</span>（比值 <span class="dyn" id="st5ratio">—</span>）、
+      地面投影 ≈ <span class="dyn" id="st5cast">—</span> cd/m²。每层偏差 &lt; ±1/3 档（×1.26）即算完成。<br>
+      <b>球的两面对得上、只有投影偏低</b>时，先量「投影 ÷ 日照地面」这个与反照率无关的比值（见上方判据）：
+      比值正常 = 地面材质本身比 0.18 暗，不是灯的问题；比值偏低 = 投影里的天光被额外遮蔽，查 SkyLight 的
+      <code>Occlusion Max Distance</code>（DFAO 默认作用范围很大，附近物体会把地面的天光压暗）与 Lumen AO。
     </div></div>
   </div>
 </div>
@@ -289,6 +303,12 @@
     天空系数依据是开阔地无遮挡的垂直面只能看到半个天空半球（恰为水平面的 0.5），受光点法线朝太阳取 0.55、阴影点法线背向并略朝下取 0.45。1 档 = 2 倍。</li>
   <li><b>日照比例 f 与低角度太阳的自遮挡</b>：物体自身投影长度 = 高度 ÷ tan(高度角)，方向正是背光侧——也就是阴影面朝下看去的那片地面。投影里的地面只被天光照亮，没有直射，所以阴影面拿到的弹射比受光面少。f 表由视角因子数值积分得出（垂直微面元 dF = x·z ÷ (π·r⁴) dA，扣除投影覆盖的窄带）：高度角 15° 时 f ≈ 0.52，55° 时 ≈ 0.70，正头顶时 → 1.0。注意投影只是一条<b>窄带</b>，而垂直面看到的地面在方位上很宽，所以自遮挡最多吃掉约一半（f 的下限是 0.5），不会归零。这解释了为什么「教科书晴天 6:1」只在中午高角度成立，低角度实际会拉到 10:1 以上。</li>
   <li><b>地面反照率决定暗部能有多亮</b>：弹射项往往和阴影面的天光项同量级，所以它<b>不是</b>可忽略的修正。ρ = 0 对应「无地面 / GI 关闭」，此时暗部只剩天光那一半半球。排查暗部偏暗的顺序：先用 <code>r.Lumen.DiffuseIndirect.Allow 0/1</code> 看弹射是否真的在供光（正常情况下切换会有可见但不剧烈的差异，因为弹射只占阴影面照度的一部分）；再确认地面网格真实存在且够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）；最后核对地面材质的 BaseColor 是否真是 0.18。另外 SkyLight 遮蔽（DFAO / Lumen AO）还会再削暗部约 10–20%，读数请取球的<b>赤道高度</b>、不要贴近接地点（接地处天空被挡掉大半并叠加接触 AO）。</li>
+  <li><b>三个层面是三种不同的几何，别互相套用</b>：<br>
+    　<b>① 球受光面</b>（法线朝太阳，近似垂直）= 直射 + 0.55×天光 + 全日照地面的弹射<br>
+    　<b>② 球暗面</b>（法线背向太阳，近似垂直）= 0.45×天光 + 部分自遮挡地面的弹射。垂直面只看到半个天空半球，所以天光只拿到 45%<br>
+    　<b>③ 地面投影</b>（法线朝上，与地面共面）= 1.00×天光，<b>弹射为 0</b>。朝上能看到完整天空半球，但与地面共面的表面互相看不见，所以四周再亮的日照地面也补不进一点光<br>
+    因此在中午晴天，投影区反而会比球的暗面<b>略亮</b>（多拿的 55% 天光 &gt; 少拿的弹射），而不是更暗。若实测投影明显低于球暗面，说明有额外遮蔽或地面反照率偏低。</li>
+  <li><b>排查「球对得上、投影偏低」的标准做法</b>：用比值 <b>投影区 ÷ 日照地面 = 天光 ÷ 水平面总照度</b>。地面反照率在这个比值里被约掉，所以它<b>不依赖地面材质是否真的 0.18</b>，也不依赖曝光是否精确。比值符合表值 → 投影是对的，只是地面材质比 0.18 暗；比值明显偏低 → 投影里的天光被额外遮蔽，重点查 SkyLight 的 <code>Occlusion Max Distance</code>（DFAO 默认作用半径很大，附近物体会把一大片地面的天光压暗）、Lumen AO、以及校准球本身挡住的那部分天空（球离地越近遮挡越多，抬高球即可减小）。</li>
   <li><b>为什么 0.18 只出现在两个地方</b>：照度（lux）、天空亮度、Intensity Scale、EV100、光比这些量都<b>与物体反射率无关</b>——照度描述入射光，EV100 走的是入射式测光公式（C=250），光比是两个照度之比、同材质时反射率被约掉。反射率只进入：<b>(a)</b> 灰球的 cd/m² 读数（L = ρ × E ÷ π，非 18% 灰按 ρ 线性缩放）；<b>(b)</b> 地面弹射项里的<b>地面</b>反照率。注意这是两个不同的表面，别把校准球的反射率和地面的搞混。</li>
   <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
   <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
@@ -342,6 +362,8 @@ function elevationFor(t, lat, dec){
 //   阴影点法线背向太阳并略朝下         → 约 0.45
 // 物理依据：开阔地无遮挡的垂直面只能看到半个天空半球，恰为水平面的 0.5。
 const SKY_F_LIT = 0.55, SKY_F_SHD = 0.45;
+// 校准球自身的反射率（与「地面反照率 ρ」是两个不同的表面，切勿混用）
+const BALL_ALBEDO = 0.18;
 
 // Kasten-Young 大气质量（h = 太阳高度角，度）
 function airMass(h){
@@ -393,9 +415,17 @@ function compute(t, w, rho, sinH, fSun){
   const stops = Math.log2(Math.max(ratio, 1));
   const temp = w.temp || t.temp;
   // 18% 灰球读数目标 (cd/m²)：L = albedo × E / π
-  const litNits = 0.18 * litE / Math.PI;
-  const shdNits = 0.18 * shadowE / Math.PI;
-  return { sun, sky, skyLum, ground, ev, ratio, stops, temp, litNits, shdNits, bLit, bShd };
+  const litNits = BALL_ALBEDO * litE / Math.PI;
+  const shdNits = BALL_ALBEDO * shadowE / Math.PI;
+  // 地面读数（用地面自己的反照率 ρ，不是球的）
+  //   日照区：朝上、受直射 → E = 水平面总照度
+  //   投影区：朝上、无直射 → E = 天光。注意弹射为 0：与地面共面的表面互相看不见，
+  //          所以四周再亮的日照地面也不会给投影补一点光。这是投影容易偏暗的物理原因。
+  const groundLitNits = rho * ground / Math.PI;
+  const castNits      = rho * sky / Math.PI;
+  const castRatio     = ground > 0 ? sky / ground : 0;   // 投影/日照区，与反照率无关
+  return { sun, sky, skyLum, ground, ev, ratio, stops, temp, litNits, shdNits, bLit, bShd,
+           groundLitNits, castNits, castRatio };
 }
 
 function fmtLux(v){
@@ -544,6 +574,22 @@ function update(){
   document.getElementById('cEV').textContent = fmtEV(r.ev);
   document.getElementById('cTotal').textContent = fmtLux(r.ground);
 
+  // 三个层面的读数目标
+  const direct = r.sun * sinOf(elev);
+  document.getElementById('lvLit').innerHTML =
+    `<b>${fmtLux(r.litNits)}</b> cd/m² &nbsp;=&nbsp; 0.18 × (直射 ${fmtLux(r.sun)} + 天光 0.55× ${fmtLux(0.55*r.sky)} + 弹射 ${fmtLux(r.bLit)}) ÷ π`;
+  document.getElementById('lvShd').innerHTML =
+    `<b>${fmtLux(r.shdNits)}</b> cd/m² &nbsp;=&nbsp; 0.18 × (天光 0.45× ${fmtLux(0.45*r.sky)} + 弹射 ${fmtLux(r.bShd)}) ÷ π　<span style="color:var(--muted)">垂直面只看到 45% 的天空</span>`;
+  document.getElementById('lvCast').innerHTML =
+    `<b>${fmtLux(r.castNits)}</b> cd/m² &nbsp;=&nbsp; ρ × 天光 ${fmtLux(r.sky)} ÷ π　<span style="color:var(--warn)">弹射 = 0：与地面共面的表面互相看不见，四周的日照地面一点光都补不进来</span>`;
+  document.getElementById('lvGround').innerHTML =
+    `<b>${fmtLux(r.groundLitNits)}</b> cd/m² &nbsp;=&nbsp; ρ × 水平面总照度 ${fmtLux(r.ground)} ÷ π　<span style="color:var(--muted)">朝上、受直射</span>`;
+  document.getElementById('lvDiag').innerHTML = r.ground > 0
+    ? `<b>投影区 ÷ 日照区 = ${(r.castRatio*100).toFixed(1)}%</b>（= 天光 ÷ 水平面总照度）。这个比值里地面反照率被约掉了，
+       所以<b>不依赖你的地面材质是否真的 0.18</b>——直接量这两处地面，比值对得上就说明天光量和阴影通路都正确；
+       明显偏低则说明投影里的天光被额外遮蔽了（DFAO / Lumen AO / 球体挡住天空）。`
+    : `该组合无直射，投影与日照区无区别`;
+
   const dirName = t.id === 'night' ? '月光方向光' : '太阳方向光';
   const atmoHint = hasAtmo() && r.sun > 0 && elev !== null && elev > 0
     ? `（已按 T = ${T.toFixed(3)} 补偿；<b>Atmosphere Sun Light 勾选中</b>，到达地面 ≈ ${fmtLux(r.sun)} lux）`
@@ -593,6 +639,7 @@ function update(){
       需要更干净的纯天光读数时用<b>光照通道</b>隔离：太阳仅通道 0、校准球仅通道 1、SkyLight 覆盖通道 0+1，此时球面目标 ≈ <span class="dyn">${fmtLux(shadowTarget)}</span> cd/m²（读<b>球顶</b>、法线朝上时看到完整天空半球，= 0.18 × 天光照度 ÷ π）。`;
   }
   document.getElementById('st4body').innerHTML = st4;
+  document.getElementById('st5cast').textContent = fmtLux(r.castNits);
   document.getElementById('st5lit').textContent = fmtLux(r.litNits);
   document.getElementById('st5shd').textContent = fmtLux(r.shdNits);
   document.getElementById('st5ratio').textContent = fmtRatio(r.ratio);
