@@ -137,12 +137,14 @@
 </div>
 
 <div class="panel">
-  <h3>三个层面的灰度读数目标（cd/m²）</h3>
+  <h3>三个层面：照度（物理量）与灰度读数（可测量）</h3>
   <table>
     <tr><td>① 受光面（球，朝太阳）</td><td id="lvLit">—</td></tr>
     <tr><td>② 背光面（球，背太阳）</td><td id="lvShd">—</td></tr>
     <tr><td>③ 阴影（地面投影）</td><td id="lvCast">—</td></tr>
     <tr><td>④ 日照地面（参照）</td><td id="lvGround">—</td></tr>
+    <tr><td>单位换算</td><td>照度是本质量、与表面无关；引擎里只能读到亮度。两者对朗伯面严格互换：<code>E(lux) = L(cd/m²) × π ÷ 反射率</code>，反过来 <code>L = 反射率 × E ÷ π</code>。所以读到 nits 后除以 0.18 再乘 π 就得到 lux，可直接与公开照度表对照。</td></tr>
+    <tr><td>公开照度参考区间</td><td>直射日光 32,000–100,000 lux ｜ 全日照阴影 / 非直射 10,000–25,000 lux ｜ 阴天 1,000–10,000 lux ｜ 暮光 1–10 lux ｜ 满月 0.05–0.3 lux</td></tr>
     <tr><td>与反照率无关的判据</td><td id="lvDiag">—</td></tr>
   </table>
 </div>
@@ -242,7 +244,7 @@
       <text id="shdLabel"  x="140" y="370" fill="#7ecb8f" font-size="11">② 背光面 —</text>
       <text id="castLabel" x="272" y="370" fill="#5ab0f0" font-size="11">③ 阴影 —</text>
       <text id="glLabel"   x="382" y="370" fill="#e08f6a" font-size="11">④ 日照地面 —</text>
-      <text x="8" y="389" fill="#9aa3b2" font-size="10">白色箭头 = 相机必须沿该点法线方向读取</text>
+      <text x="8" y="389" fill="#9aa3b2" font-size="10">标注为照度 lux；白色箭头 = 相机必须沿该点法线方向读取</text>
 
       <path id="pitchArc" d="" fill="none" stroke="#e08f6a" stroke-width="1.4"/>
       <text id="pitchText" fill="#e08f6a" font-size="11">—</text>
@@ -267,7 +269,9 @@
       <b>③ 阴影 + ④ 日照地面</b>：两者都<b>垂直俯视</b>读取。③ 取<b>投影中心</b>（表中给的是中心值），
       ④ 取开阔处、远离投影。读数用 Pixel Inspector 取 tonemap 前缓冲，亮度按
       <code>0.2126R + 0.7152G + 0.0722B</code> 算，不要只读单通道。先关掉 Vignette（默认非 0，边缘会压暗）、
-      Bloom、Local Exposure，测量点放在<b>屏幕中央</b>。
+      Bloom、Local Exposure，测量点放在<b>屏幕中央</b>。<br>
+      引擎只能读到亮度（cd/m²）；要换成照度就除以该表面的反射率再乘 π，即 <code>E = L × π ÷ ρ</code>，
+      这样就能和公开的照度参考表直接对照。
     </div></div>
     <div class="step"><div class="n">6</div><div>
       <b>③ 天生就低于「纯天光」，这是正常的</b>：球贴地时它悬在自己投影区上方，挡掉一部分天空，
@@ -300,6 +304,7 @@
 
 <h2>换算约定</h2>
 <ul class="notes">
+  <li><b>为什么以 lux 为主</b>：照度（lux）描述打到表面上的光，与表面材质无关，因此才是能和公开实测数据、以及引擎光源参数直接对照的量；亮度（cd/m²）含有反射率，只对特定材质成立。但引擎里能直接读到的偏偏只有亮度，所以页面两个都给：lux 用来判断"这个光照强度是否合理"，cd/m² 用来对照"Pixel Inspector 里该看到多少"。朗伯面上两者严格互换。光比与 EV100 用哪个单位算都一样——比值里反射率被约掉，EV 本身就由照度定义。</li>
   <li><b>平行光的两个数不是一回事</b>。「到达地面」= 地面高度、垂直于光线方向的照度（DNI），是物理目标；水平地面照度 = DNI × sin(高度角)。UE / HDRP 的 Intensity 字段用同一定义，但勾选 <b>Atmosphere Sun Light</b> 后引擎会按大气透射率 T 再衰减一次，而 DNI 已含过一次衰减，直接填就衰减两次。所以有大气时填 DNI ÷ T，表格已给出该值。低角度影响极大，正午几乎无差别。T 由太阳高度角经 Kasten-Young 大气质量与 Beer-Lambert 算出。</li>
   <li><b>Pitch</b>：UE 的 Rotation Pitch = −太阳高度角（−90° 为头顶直射）；Unity 为 Transform X Rotation = 高度角。正午与上午/下午的高度角由纬度与季节计算；清晨/傍晚、黄金时刻、日出日落按定义取固定高度角（15° / 4° / 0.5°），纬度只改变它们出现的时刻。满月取 45° 参考。</li>
   <li><b>天光</b>：给出的是天空半球在水平面上的照度（lux），平均天空亮度 = 照度 ÷ π。自动捕捉方案下天光由太阳与大气派生，Intensity Scale 保持 1.0；HDRI 方案的 Intensity Scale = 目标天空亮度 ÷ HDRI 自身平均亮度；手动方案以阴影读数为准。<b>物理天空方案不要靠关闭平行光来看纯天光</b>：天空亮度本就来自太阳散射，关灯天即黑，Intensity Scale 乘 0 仍是 0。</li>
@@ -307,7 +312,8 @@
     　水平面总照度 E<sub>h</sub> = DNI × sin(高度角) + 天光<br>
     　受光面弹射 = ρ × E<sub>h</sub> × 0.5　　背光面弹射 = ρ × (f × DNI × sin(高度角) + 天光) × 0.5<br>
     　受光面 E = DNI + 0.55 × 天光 + 受光面弹射　　背光面 E = 0.45 × 天光 + 背光面弹射<br>
-    　阴影 E = 天光　　日照地面 E = E<sub>h</sub>　　灰度读数 L = 反射率 × E ÷ π<br>
+    　阴影 E = 天光（无遮挡）　　日照地面 E = E<sub>h</sub>　　灰度读数 L = 反射率 × E ÷ π<br>
+    　反向换算：E = L × π ÷ 反射率<br>
     系数 0.5 来自 (1 − cos 倾角) / 2 在垂直时的取值；天空系数 0.55 / 0.45 来自垂直面只看到半个天空半球。</li>
   <li><b>日照比例 f</b>：物体自身投影长度 = 高度 ÷ tan(高度角)，方向正是背光侧，因此背光面看到的地面有一部分只被天光照亮。f 由视角因子数值积分得出（15° 时 ≈ 0.52，55° ≈ 0.70，头顶 → 1.0）。投影只是窄带而可见地面在方位上很宽，故 f 下限为 0.5。这是低角度光比远大于「教科书晴天 6:1」的原因。</li>
   <li><b>地面反照率</b>：晴天弹射项与背光面的天光项同量级，不可忽略。ρ = 0 对应无地面或 GI 关闭。排查暗部偏暗的顺序：<code>r.Lumen.DiffuseIndirect.Allow 0/1</code> 确认弹射在供光（正常切换会有可见但不剧烈的差异）→ 确认地面网格足够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）→ 核对地面 BaseColor。雪天请把 ρ 改为 0.80。</li>
@@ -397,6 +403,7 @@ function compute(t, w, rho, sinH, fSun, skyVis){
   const ratio = shdE > 0 ? litE/shdE : 1;
   // 阴影（地面投影）
   // 无遮挡理论值：只有天光，弹射为 0（与地面共面的表面互相看不见）
+  const castFreeE = sky;
   const castFreeNits = rho*sky/Math.PI;
   // 球贴地时：比例 skyVis 的半球看到天空，其余被球的暗侧填充。
   // 球的下表面法线朝下、可看到完整地面半球，故其亮度 ≈ 球反射率 × ρ × 水平面总照度 ÷ π。
@@ -406,6 +413,9 @@ function compute(t, w, rho, sinH, fSun, skyVis){
     sun, sky, skyLum, ground, ev, ratio, bLit, bShd, skyVis,
     stops: Math.log2(Math.max(ratio, 1)),
     temp: w.temp || t.temp,
+    // 照度（lux）：物理量，与表面无关
+    litE, shdE, castE: rho > 0 ? castNits*Math.PI/rho : castFreeE, castFreeE, groundE: ground,
+    // 灰度读数（cd/m²）：0.18 灰球 / ρ 地面在该照度下的亮度，即引擎里能直接读到的量
     litNits: BALL_ALBEDO*litE/Math.PI,
     shdNits: BALL_ALBEDO*shdE/Math.PI,
     castNits, castFreeNits,
@@ -511,10 +521,10 @@ function updateSvg(elev, r){
   ['mp1','mp3','mp4','grazeWarn'].forEach(id=>
     document.getElementById(id).setAttribute('opacity', hasSun ? '1' : '0.2'));
 
-  document.getElementById('litLabel').textContent  = `① 受光面 ${fmtLux(r.litNits)}`;
-  document.getElementById('shdLabel').textContent  = `② 背光面 ${fmtLux(r.shdNits)}`;
-  document.getElementById('castLabel').textContent = `③ 阴影 ${fmtLux(r.castNits)}`;
-  document.getElementById('glLabel').textContent   = `④ 日照地面 ${fmtLux(r.groundLitNits)}`;
+  document.getElementById('litLabel').textContent  = `① 受光面 ${fmtLux(r.litE)} lx`;
+  document.getElementById('shdLabel').textContent  = `② 背光面 ${fmtLux(r.shdE)} lx`;
+  document.getElementById('castLabel').textContent = `③ 阴影 ${fmtLux(r.castE)} lx`;
+  document.getElementById('glLabel').textContent   = `④ 日照地面 ${fmtLux(r.groundE)} lx`;
 
   const arc = document.getElementById('pitchArc'), pt = document.getElementById('pitchText');
   if (hasSun){
@@ -574,19 +584,23 @@ function update(){
   document.getElementById('cTotal').textContent = fmtLux(r.ground);
 
   // 三个层面
+  const lvl = (E, L) => `照度 <b>${fmtLux(E)} lux</b> → 读数 <b>${fmtLux(L)} cd/m²</b>`;
   document.getElementById('lvLit').innerHTML =
-    `<b>${fmtLux(r.litNits)}</b> = 0.18 × (直射 ${fmtLux(r.sun)} + 天光 0.55× ${fmtLux(0.55*r.sky)} + 弹射 ${fmtLux(r.bLit)}) ÷ π`;
+    lvl(r.litE, r.litNits)
+    + `<br><span style="color:var(--muted)">= 直射 ${fmtLux(r.sun)} + 天光 0.55× ${fmtLux(0.55*r.sky)} + 弹射 ${fmtLux(r.bLit)} lux</span>`;
   document.getElementById('lvShd').innerHTML =
-    `<b>${fmtLux(r.shdNits)}</b> = 0.18 × (天光 0.45× ${fmtLux(0.45*r.sky)} + 弹射 ${fmtLux(r.bShd)}) ÷ π`
-    + (elev !== null && elev > 0 ? `　<span style="color:var(--muted)">可见地面 ${(fSun*100).toFixed(0)}% 在日照下</span>` : '');
+    lvl(r.shdE, r.shdNits)
+    + `<br><span style="color:var(--muted)">= 天光 0.45× ${fmtLux(0.45*r.sky)} + 弹射 ${fmtLux(r.bShd)} lux`
+    + (elev !== null && elev > 0 ? `（可见地面 ${(fSun*100).toFixed(0)}% 在日照下）` : '') + `</span>`;
   document.getElementById('lvCast').innerHTML =
-    `<b>${fmtLux(r.castNits)}</b>　<span style="color:var(--muted)">投影中心，球贴地（直径 1 m）</span>`
+    lvl(r.castE, r.castNits) + `　<span style="color:var(--muted)">投影中心，球贴地</span>`
     + (elev !== null && elev > 0
-        ? `<br>可见天空 <b>${(skyVis*100).toFixed(0)}%</b>，其余被球暗侧遮挡；若把球抬离地面 5R 以上则无遮挡，回到 <b>${fmtLux(r.castFreeNits)}</b>（= ρ × 天光 ÷ π，弹射为 0）`
-        : `<br>无方向光，无投影`)
-    + `<br><span style="color:var(--muted)">投影区呈中心暗、边缘亮的梯度；表中给的是中心值</span>`;
+        ? `<br><span style="color:var(--muted)">可见天空 ${(skyVis*100).toFixed(0)}%，其余被球暗侧遮挡；抬离地面 5R 后无遮挡 → `
+          + `${fmtLux(r.castFreeE)} lux / ${fmtLux(r.castFreeNits)} cd/m²（纯天光，弹射为 0）。投影区呈中心暗、边缘亮的梯度，此处为中心值</span>`
+        : `<br><span style="color:var(--muted)">无方向光，无投影</span>`);
   document.getElementById('lvGround').innerHTML =
-    `<b>${fmtLux(r.groundLitNits)}</b> = ρ × 水平面总照度 ${fmtLux(r.ground)} ÷ π`;
+    lvl(r.groundE, r.groundLitNits)
+    + `<br><span style="color:var(--muted)">= 水平面总照度 = 直射的水平分量 + 天光</span>`;
   document.getElementById('lvDiag').innerHTML = r.ground > 0
     ? `<b>无遮挡阴影 ÷ ④ = ${(r.castRatio*100).toFixed(1)}%</b>（= 天光 ÷ 水平面总照度）。反照率在此约掉，故与地面材质、曝光精度无关；`
       + `使用时把球抬离地面消除遮挡，再量这两处地面。`
