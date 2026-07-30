@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBR 光照参考表 — 时段 × 气候（UE5 / Unity HDRP）</title>
+<style>
+  :root{
+    --bg:#14161a; --panel:#1d2126; --card:#1e2128; --card2:#232732;
+    --border:#333845; --text:#e8eaf0; --muted:#9aa3b2; --accent:#f5b942;
+    --accent2:#5ab0f0; --good:#7ecb8f;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    padding:32px 24px 64px; max-width:1200px; margin:0 auto;
+  }
+  h1{font-size:22px; margin-bottom:6px;}
+  h1 .sub{color:var(--muted); font-size:13px; font-weight:normal; margin-left:10px;}
+  p.desc{color:var(--muted); font-size:13px; margin-bottom:24px; line-height:1.6;}
+  h2{font-size:16px; margin:36px 0 12px; color:var(--accent); border-left:3px solid var(--accent); padding-left:10px;}
+
+  .selectors{display:flex; gap:24px; flex-wrap:wrap; margin-bottom:20px;}
+  .sel-group{display:flex; flex-direction:column; gap:6px;}
+  .sel-group label{font-size:13px; color:var(--muted);}
+  select{
+    background:var(--card2); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:10px 14px; font-size:15px; min-width:220px; cursor:pointer;
+  }
+  select:focus{outline:1px solid var(--accent2);}
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-bottom:18px;}
+  .card{
+    background:linear-gradient(160deg,var(--card),var(--card2));
+    border:1px solid var(--border); border-radius:12px; padding:16px 18px;
+  }
+  .card .k{font-size:12px; color:var(--muted); margin-bottom:8px; letter-spacing:.5px;}
+  .card .v{font-size:24px; font-weight:600; color:var(--accent);}
+  .card .v.blue{color:var(--accent2);}
+  .card .v.green{color:var(--good);}
+  .card .u{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
+
+  .settings{
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:18px 20px; margin-bottom:10px;
+  }
+  .settings h3{font-size:14px; color:var(--accent2); margin-bottom:10px;}
+  .settings table{width:100%; border-collapse:collapse; font-size:13px;}
+  .settings td{padding:6px 8px; border-bottom:1px dashed #2c313c; vertical-align:top; line-height:1.55;}
+  .settings td:first-child{color:var(--muted); width:220px; white-space:nowrap;}
+  .settings code{background:#12141a; padding:1px 6px; border-radius:4px; color:#ffd88a; font-size:12.5px;}
+  .note-line{font-size:13px; color:var(--muted); line-height:1.7; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:8px;}
+  .note-line b{color:var(--text);}
+
+  table.full{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px;}
+  table.full th{
+    background:#242936; color:var(--muted); text-align:left; padding:8px 10px;
+    position:sticky; top:0; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap;
+  }
+  table.full td{padding:7px 10px; border-bottom:1px solid #262b35; white-space:nowrap;}
+  table.full tr:hover td{background:#232836;}
+  table.full tr.hl td{background:#2c3040; box-shadow:inset 3px 0 0 var(--accent);}
+  table.full td.num{font-variant-numeric:tabular-nums;}
+  .timecell{color:var(--accent2);}
+  .footer-notes{margin-top:28px; font-size:12.5px; color:var(--muted); line-height:1.9;}
+  .footer-notes li{margin-left:18px; margin-bottom:4px;}
+  .footer-notes b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<h1>PBR 光照参考表<span class="sub">时段 × 气候 — 平行光 / 天光 / 光比 / EV100（真实物理单位）</span></h1>
+<p class="desc">
+  适用于 Unreal Engine 5（默认物理光照单位）与 Unity HDRP（同为 lux/EV 体系）。
+  平行光强度为<b>垂直于光线方向</b>的照度（即引擎 Directional Light 的 Intensity 数值）；
+  EV100 为无曝光补偿时的建议曝光值（入射式，标定常数 C=250）。
+</p>
+
+<div class="selectors">
+  <div class="sel-group">
+    <label>时段</label>
+    <select id="selTime"></select>
+  </div>
+  <div class="sel-group">
+    <label>气候</label>
+    <select id="selWeather"></select>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card"><div class="k">平行光强度（太阳/月亮）</div><div class="v" id="cSun">—</div><div class="u">lux（垂直于光线）· Directional Light Intensity</div></div>
+  <div class="card"><div class="k">天光等效照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空亮度 <span id="cSkyLum">—</span> cd/m²</div></div>
+  <div class="card"><div class="k">光比（受光面 : 阴影面）</div><div class="v green" id="cRatio">—</div><div class="u" id="cRatioStops">—</div></div>
+  <div class="card"><div class="k">EV100（无曝光补偿）</div><div class="v" id="cEV">—</div><div class="u">地面总照度约 <span id="cTotal">—</span> lux</div></div>
+</div>
+
+<div class="settings">
+  <h3>建议引擎设置（当前组合）</h3>
+  <table>
+    <tr><td>UE5 · Directional Light</td><td id="sUEDir">—</td></tr>
+    <tr><td>UE5 · Sky Light</td><td id="sUESky">—</td></tr>
+    <tr><td>UE5 · 曝光（PostProcess）</td><td id="sUEExp">—</td></tr>
+    <tr><td>Unity HDRP</td><td id="sUnity">—</td></tr>
+    <tr><td>阴影特征 / 备注</td><td id="sNote">—</td></tr>
+  </table>
+</div>
+
+<h2>全组合速查表</h2>
+<div style="overflow-x:auto;">
+<table class="full" id="fullTable">
+  <thead>
+    <tr>
+      <th>时段</th><th>气候</th>
+      <th>平行光 (lux)</th><th>色温 (K)</th>
+      <th>天光 (lux)</th><th>天空亮度 (cd/m²)</th>
+      <th>光比</th><th>反差 (档)</th><th>EV100</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+</div>
+
+<h2>使用说明与换算约定</h2>
+<ul class="footer-notes">
+  <li><b>平行光（太阳）</b>：数值 = 垂直于光线方向的照度（Direct Normal Illuminance）。UE5 Directional Light 的 Intensity（单位 lux）与 Unity HDRP Directional Light（单位 Lux）都采用此定义，可直接填入。</li>
+  <li><b>天光</b>：给出的是天空半球在水平面上产生的照度（lux）。UE5 推荐 Sky Light 开 <b>Real Time Capture</b> 并配合 Sky Atmosphere——只要太阳强度物理正确，天光会自动匹配，无需手填；若用 HDRI/Cubemap，请以「平均天空亮度 cd/m² ≈ 天光 lux ÷ π」为目标校准（Intensity Scale 乘到该量级）。Unity HDRP 的 Physically Based Sky 同理自动匹配，HDRI Sky 可用 Lux 模式直接填天光照度。</li>
+  <li><b>光比</b>：面向光源的受光面照度 ÷ 阴影面照度（阴影面 = 部分天光 + 地面弹射）。1 档 = 2 倍。晴天约 5–8:1（2.5–3 档），阴天趋近 1:1。</li>
+  <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；用自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
+  <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
+  <li><b>阴天/雨天仍保留微弱平行光</b>（而非 0）：用大 Source Angle（5–10°）的软方向光维持体积感，这是行业常用做法；物理上对应云层透射的残余方向性。</li>
+  <li>数据基于 CIE 天空模型与实测照度范围（晴天正午地面约 10–12 万 lux、阴天 1–2.5 万 lux、日落约 400–700 lux、满月约 0.05–0.3 lux），做了适度取整，供关卡/灯光美术作为物理合理的起点。</li>
+</ul>
+
+<script>
+// ---------- 数据 ----------
+// sunPerp: 晴天基准·垂直于光线的照度 lux; sky: 晴天基准·天光水平照度 lux
+// elevSin: sin(太阳高度角), 用于地面照度与 EV 计算; temp: 晴天色温 K
+const TIMES = [
+  { id:'noon',   name:'正午（11:00–14:00）',        sunPerp:110000, sky:15000, elevSin:0.91, temp:5500,  desc:'太阳高度约 60–70°' },
+  { id:'mid',    name:'上午 / 下午（9–10点 · 15–16点）', sunPerp:95000,  sky:12000, elevSin:0.64, temp:5200,  desc:'太阳高度约 40°' },
+  { id:'low',    name:'清晨 / 傍晚（低角度阳光）',    sunPerp:45000,  sky:8000,  elevSin:0.26, temp:4300,  desc:'太阳高度约 15°，长阴影' },
+  { id:'golden', name:'黄金时刻',                    sunPerp:16000,  sky:4000,  elevSin:0.09, temp:3200,  desc:'太阳高度 0–6°，暖调侧光' },
+  { id:'sunset', name:'日出 / 日落',                 sunPerp:600,    sky:500,   elevSin:0.03, temp:2300,  desc:'太阳贴地平线，大气衰减极强' },
+  { id:'blue',   name:'蓝调时刻（民用暮光）',         sunPerp:0,      sky:40,    elevSin:0,    temp:10000, desc:'太阳在地平线下，仅天空散射' },
+  { id:'night',  name:'夜晚（满月）',                sunPerp:0.32,   sky:0.008, elevSin:0.71, temp:4300,  desc:'月光为方向光，色温偏中性' },
+];
+
+// sunMul/skyMul: 对晴天基准的倍率; temp: 覆盖色温(null=沿用时段); bounce: 阴影内弹射系数
+const WEATHERS = [
+  { id:'clear',    name:'晴朗',        sunMul:1.0,   skyMul:1.0,  temp:null, bounce:0.08, srcAngle:'0.54°（锐利阴影）', note:'标准晴天。阴影边缘锐利，天光偏蓝（阴影发蓝）。' },
+  { id:'partly',   name:'多云（晴间多云）', sunMul:0.85, skyMul:1.35, temp:null, bounce:0.10, srcAngle:'1–2°', note:'云面反射使天光更亮，反差略降；适合做光斑/云影变化。' },
+  { id:'overcast', name:'阴天',        sunMul:0.03,  skyMul:1.2,  temp:6800, bounce:0.05, srcAngle:'5–10°（极软）', note:'无明显投影。保留微弱软方向光维持体积感。' },
+  { id:'rain',     name:'雨天',        sunMul:0.005, skyMul:0.4,  temp:7000, bounce:0.05, srcAngle:'8–10°', note:'厚云层，整体偏暗偏冷。湿面反射建议靠材质（提高 specular / 降低 roughness）。' },
+  { id:'storm',    name:'雷暴 / 暴雨', sunMul:0.0,   skyMul:0.12, temp:7500, bounce:0.05, srcAngle:'—（无方向光）', note:'接近黄昏的亮度。闪电可用瞬时点光/矩形光（数百万流明级）。' },
+  { id:'fog',      name:'雾天',        sunMul:0.10,  skyMul:0.55, temp:6200, bounce:0.06, srcAngle:'3–5°', note:'配合体积雾使用；雾会进一步压平光比，远景对比趋近 1:1。' },
+  { id:'snow',     name:'雪天（降雪）', sunMul:0.04,  skyMul:0.9,  temp:6500, bounce:0.18, srcAngle:'5–8°', note:'雪地反照率 0.8+，地面弹射极强，阴影被明显填亮、偏天空色。' },
+];
+
+// ---------- 计算 ----------
+function compute(t, w){
+  const sun = t.sunPerp * w.sunMul;           // 平行光 lux（垂直于光线）
+  const sky = t.sky * w.skyMul;               // 天光 lux（水平面）
+  const skyLum = sky / Math.PI;               // 平均天空亮度 cd/m²
+  const ground = sun * t.elevSin + sky;       // 地面总照度
+  const ev = Math.log2(Math.max(ground, 0.005) / 2.5);
+  // 光比：面向光源的受光面 vs 阴影面（部分天光 + 弹射）
+  const lit = sun + 0.6 * sky;
+  const shadow = 0.6 * sky + w.bounce * sun;
+  const ratio = shadow > 0 ? lit / shadow : 1;
+  const stops = Math.log2(Math.max(ratio, 1));
+  const temp = w.temp || t.temp;
+  return { sun, sky, skyLum, ground, ev, ratio, stops, temp };
+}
+
+function fmtLux(v){
+  if (v <= 0) return '0';
+  if (v < 1) return v.toPrecision(2);
+  if (v < 100) return v.toPrecision(3).replace(/\.?0+$/,'');
+  return Math.round(v).toLocaleString('en-US');
+}
+function fmtRatio(r){ return r < 1.05 ? '≈1 : 1' : r.toFixed(1) + ' : 1'; }
+function fmtEV(ev){ return (ev >= 0 ? '+' : '') + ev.toFixed(1); }
+
+// ---------- UI ----------
+const selTime = document.getElementById('selTime');
+const selWeather = document.getElementById('selWeather');
+TIMES.forEach((t,i)=> selTime.add(new Option(t.name, i)));
+WEATHERS.forEach((w,i)=> selWeather.add(new Option(w.name, i)));
+
+function update(){
+  const t = TIMES[selTime.value], w = WEATHERS[selWeather.value];
+  const r = compute(t, w);
+
+  document.getElementById('cSun').textContent = fmtLux(r.sun) + ' lx';
+  document.getElementById('cSky').textContent = fmtLux(r.sky) + ' lx';
+  document.getElementById('cSkyLum').textContent = fmtLux(r.skyLum);
+  document.getElementById('cRatio').textContent = fmtRatio(r.ratio);
+  document.getElementById('cRatioStops').textContent =
+    r.ratio < 1.05 ? '无可辨识阴影（全漫射）' : '反差约 ' + r.stops.toFixed(1) + ' 档';
+  document.getElementById('cEV').textContent = fmtEV(r.ev);
+  document.getElementById('cTotal').textContent = fmtLux(r.ground);
+
+  const dirName = t.id === 'night' ? '月光方向光' : '太阳方向光';
+  document.getElementById('sUEDir').innerHTML =
+    r.sun > 0
+      ? `${dirName}：Intensity = <code>${fmtLux(r.sun)} lux</code> · Temperature ≈ <code>${r.temp} K</code>（勾选 Use Temperature）· Source Angle ≈ <code>${w.srcAngle}</code>`
+      : `关闭方向光（或保留 <code>&lt;0.5 lux</code> 的极弱软光），场景仅由天光驱动`;
+  document.getElementById('sUESky').innerHTML =
+    `Sky Light 开 <code>Real Time Capture</code> + Sky Atmosphere（自动匹配）；手动/HDRI 方案：把平均天空亮度校准到 ≈ <code>${fmtLux(r.skyLum)} cd/m²</code>（水平照度 ${fmtLux(r.sky)} lux）`;
+  document.getElementById('sUEExp').innerHTML =
+    `锁定曝光：<code>Min EV100 = Max EV100 = ${fmtEV(r.ev)}</code>；自动曝光则确保区间覆盖 <code>${fmtEV(r.ev)}</code>，Exposure Compensation = <code>0</code>`;
+  document.getElementById('sUnity').innerHTML =
+    `HDRP：Directional = <code>${fmtLux(r.sun)} Lux</code>，色温同左；PBS Sky 自动 / HDRI Sky（Lux 模式）= <code>${fmtLux(r.sky)} lux</code>；Exposure Fixed = <code>${fmtEV(r.ev)}</code>。URP/内置管线按比例缩放（见下方说明）。`;
+  document.getElementById('sNote').textContent = t.desc + '。' + w.note;
+
+  document.querySelectorAll('#fullTable tbody tr').forEach(tr=>{
+    tr.classList.toggle('hl', tr.dataset.key === selTime.value + '-' + selWeather.value);
+  });
+}
+
+// 全组合表
+const tbody = document.querySelector('#fullTable tbody');
+TIMES.forEach((t,ti)=>{
+  WEATHERS.forEach((w,wi)=>{
+    const r = compute(t, w);
+    const tr = document.createElement('tr');
+    tr.dataset.key = ti + '-' + wi;
+    tr.innerHTML =
+      `<td class="timecell">${wi===0 ? t.name : ''}</td><td>${w.name}</td>` +
+      `<td class="num">${fmtLux(r.sun)}</td><td class="num">${r.temp}</td>` +
+      `<td class="num">${fmtLux(r.sky)}</td><td class="num">${fmtLux(r.skyLum)}</td>` +
+      `<td class="num">${fmtRatio(r.ratio)}</td><td class="num">${r.ratio<1.05?'—':r.stops.toFixed(1)}</td>` +
+      `<td class="num">${fmtEV(r.ev)}</td>`;
+    tr.style.cursor = 'pointer';
+    tr.onclick = ()=>{ selTime.value = ti; selWeather.value = wi; update(); window.scrollTo({top:0, behavior:'smooth'}); };
+    tbody.appendChild(tr);
+  });
+});
+
+selTime.onchange = update;
+selWeather.onchange = update;
+update();
+</script>
+</body>
+</html>
