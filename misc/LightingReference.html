@@ -204,14 +204,13 @@
 </p>
 <div class="calib">
   <div class="calib-svg">
-    <svg id="calibSvg" viewBox="0 0 420 300" width="100%" height="auto">
-      <!-- 天空渐变 -->
+    <svg id="calibSvg" viewBox="0 0 520 400" width="100%" height="auto">
       <defs>
         <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#2a3f63"/><stop offset="100%" stop-color="#1e2128"/>
         </linearGradient>
-        <radialGradient id="ballGrad" cx="0.35" cy="0.35" r="1">
-          <stop offset="0%" stop-color="#b9bec7"/><stop offset="60%" stop-color="#6f757f"/><stop offset="100%" stop-color="#3a3f48"/>
+        <radialGradient id="ballGrad" cx="0.32" cy="0.3" r="1.05">
+          <stop offset="0%" stop-color="#c2c7d0"/><stop offset="55%" stop-color="#6f757f"/><stop offset="100%" stop-color="#33383f"/>
         </radialGradient>
         <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 z" fill="#f5b942"/>
@@ -219,33 +218,72 @@
         <marker id="arrowB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 z" fill="#5ab0f0"/>
         </marker>
+        <marker id="arrowC" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+          <path d="M0,0 L7,3.2 L0,6.4 z" fill="#e8eaf0"/>
+        </marker>
       </defs>
-      <rect x="0" y="0" width="420" height="240" fill="url(#skyGrad)"/>
-      <!-- 地面 -->
-      <rect x="0" y="240" width="420" height="60" fill="#262b33"/>
-      <line x1="0" y1="240" x2="420" y2="240" stroke="#3a4150" stroke-width="1.5"/>
-      <!-- 天光弧线（半球采样示意） -->
-      <path d="M 60 240 A 150 150 0 0 1 360 240" fill="none" stroke="#5ab0f0" stroke-width="1.2" stroke-dasharray="4 5" opacity="0.7"/>
-      <line x1="140" y1="140" x2="196" y2="196" stroke="#5ab0f0" stroke-width="1.2" marker-end="url(#arrowB)" opacity="0.8"/>
-      <line x1="280" y1="140" x2="228" y2="196" stroke="#5ab0f0" stroke-width="1.2" marker-end="url(#arrowB)" opacity="0.8"/>
-      <text x="210" y="86" fill="#5ab0f0" font-size="11" text-anchor="middle">SkyLight（半球天光）</text>
-      <!-- 太阳光线组（角度动态） -->
+      <rect x="0" y="0" width="520" height="300" fill="url(#skyGrad)"/>
+      <rect x="0" y="300" width="520" height="100" fill="#262b33"/>
+      <line x1="0" y1="300" x2="520" y2="300" stroke="#3a4150" stroke-width="1.5"/>
+
+      <!-- 天光半球示意 -->
+      <path d="M 70 300 A 190 190 0 0 1 450 300" fill="none" stroke="#5ab0f0" stroke-width="1.1" stroke-dasharray="4 6" opacity="0.6"/>
+      <line x1="150" y1="175" x2="228" y2="248" stroke="#5ab0f0" stroke-width="1.1" marker-end="url(#arrowB)" opacity="0.7"/>
+      <line x1="370" y1="175" x2="292" y2="248" stroke="#5ab0f0" stroke-width="1.1" marker-end="url(#arrowB)" opacity="0.7"/>
+      <text x="260" y="106" fill="#5ab0f0" font-size="11" text-anchor="middle">SkyLight（半球天光）</text>
+
+      <!-- 太阳 -->
       <g id="sunGroup">
         <g id="sunRay">
           <circle cx="0" cy="0" r="12" fill="#f5b942"/>
-          <line x1="16" y1="0" x2="118" y2="0" stroke="#f5b942" stroke-width="2.4" marker-end="url(#arrow)"/>
+          <line x1="16" y1="0" x2="120" y2="0" stroke="#f5b942" stroke-width="2.4" marker-end="url(#arrow)"/>
         </g>
       </g>
       <text id="sunLabel" x="16" y="30" fill="#f5b942" font-size="11">太阳</text>
-      <!-- 灰球（受光/阴影两半） -->
-      <circle cx="212" cy="214" r="26" fill="url(#ballGrad)"/>
-      <path id="ballShadow" d="M212 188 A 26 26 0 0 1 212 240 Z" fill="#14161a" opacity="0.55"/>
-      <text x="212" y="272" fill="#9aa3b2" font-size="11" text-anchor="middle">18% 灰球 · Roughness = 1 · 非金属</text>
+
+      <!-- 地面投影(长度随高度角) -->
+      <ellipse id="castEllipse" cx="300" cy="300" rx="60" ry="9" fill="#0e1014" opacity="0.75"/>
+
+      <!-- 灰球 -->
+      <circle cx="260" cy="270" r="30" fill="url(#ballGrad)"/>
+      <path id="ballShadow" d="" fill="#12141a" opacity="0.5"/>
+      <text x="260" y="345" fill="#9aa3b2" font-size="10.5" text-anchor="middle">18% 灰球 · Roughness=1 · Metallic=0 · <tspan fill="#e08f6a">Specular=0</tspan></text>
+
+      <!-- 测量点 + 相机方向(必须沿法线) -->
+      <g id="mp1">
+        <line id="mp1cam" x1="0" y1="0" x2="0" y2="0" stroke="#e8eaf0" stroke-width="1.6" marker-end="url(#arrowC)"/>
+        <circle id="mp1dot" cx="0" cy="0" r="4.5" fill="#f5b942" stroke="#14161a" stroke-width="1.5"/>
+        <text id="mp1txt" x="0" y="0" fill="#f5b942" font-size="11" font-weight="bold">①</text>
+      </g>
+      <g id="mp2">
+        <line id="mp2cam" x1="0" y1="0" x2="0" y2="0" stroke="#e8eaf0" stroke-width="1.6" marker-end="url(#arrowC)"/>
+        <circle id="mp2dot" cx="0" cy="0" r="4.5" fill="#7ecb8f" stroke="#14161a" stroke-width="1.5"/>
+        <text id="mp2txt" x="0" y="0" fill="#7ecb8f" font-size="11" font-weight="bold">②</text>
+      </g>
+      <g id="mp3">
+        <line id="mp3cam" x1="0" y1="0" x2="0" y2="0" stroke="#e8eaf0" stroke-width="1.6" marker-end="url(#arrowC)"/>
+        <circle id="mp3dot" cx="0" cy="0" r="4.5" fill="#5ab0f0" stroke="#14161a" stroke-width="1.5"/>
+        <text id="mp3txt" x="0" y="0" fill="#5ab0f0" font-size="11" font-weight="bold">③</text>
+      </g>
+      <g id="mp4">
+        <line id="mp4cam" x1="0" y1="0" x2="0" y2="0" stroke="#e8eaf0" stroke-width="1.6" marker-end="url(#arrowC)"/>
+        <circle id="mp4dot" cx="0" cy="0" r="4.5" fill="#e08f6a" stroke="#14161a" stroke-width="1.5"/>
+        <text id="mp4txt" x="0" y="0" fill="#e08f6a" font-size="11" font-weight="bold">④</text>
+      </g>
+
+      <!-- 掠射角警告 -->
+      <g id="grazeWarn">
+        <line x1="470" y1="300" x2="352" y2="299" stroke="#c0533f" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#arrowC)"/>
+        <text x="474" y="288" fill="#c0533f" font-size="10" text-anchor="end">✗ 掠射角：Fresnel 抬高高光，读数偏高</text>
+      </g>
+
       <!-- 读数标注 -->
-      <text id="litLabel" x="118" y="196" fill="#f5b942" font-size="11" text-anchor="end">受光面 ≈ — cd/m²</text>
-      <line x1="124" y1="200" x2="190" y2="208" stroke="#f5b942" stroke-width="1" opacity="0.6"/>
-      <text id="shdLabel" x="306" y="196" fill="#7ecb8f" font-size="11" text-anchor="start">阴影面 ≈ — cd/m²</text>
-      <line x1="300" y1="200" x2="236" y2="210" stroke="#7ecb8f" stroke-width="1" opacity="0.6"/>
+      <text id="litLabel" x="8" y="368" fill="#f5b942" font-size="11">① 受光面 ≈ —</text>
+      <text id="shdLabel" x="150" y="368" fill="#7ecb8f" font-size="11">② 暗面 ≈ —</text>
+      <text id="castLabel" x="272" y="368" fill="#5ab0f0" font-size="11">③ 投影 ≈ —</text>
+      <text id="glLabel" x="386" y="368" fill="#e08f6a" font-size="11">④ 日照地面 ≈ —</text>
+      <text x="8" y="386" fill="#9aa3b2" font-size="10">白色箭头 = 相机必须沿该点法线方向看（cd/m²）</text>
+
       <!-- Pitch 弧标 -->
       <path id="pitchArc" d="" fill="none" stroke="#e08f6a" stroke-width="1.4"/>
       <text id="pitchText" x="0" y="0" fill="#e08f6a" font-size="11">—</text>
@@ -261,17 +299,38 @@
       不锁曝光时任何目视对比都不可靠。
     </div></div>
     <div class="step"><div class="n">3</div><div>
-      <b>放置校准球</b>：18% 灰（BaseColor ≈ 0.18 线性值）、Roughness = 1、Metallic = 0，置于空旷地面。
+      <b>放置校准球</b>：18% 灰（BaseColor = 0.18 线性值）、Roughness = 1、Metallic = 0、<b>Specular = 0</b>，置于空旷地面。
+      Specular 设 0 是为了去掉高光叶——否则掠射角下 Fresnel 会把读数抬高（详见下方「读数方法」）。
     </div></div>
     <div class="step"><div class="n">4</div><div id="st4body">—</div></div>
     <div class="step"><div class="n">5</div><div>
-      <b>开回平行光，分三层验证</b>：受光面 ≈ <span class="dyn" id="st5lit">—</span>、暗面 ≈ <span class="dyn" id="st5shd">—</span>（比值 <span class="dyn" id="st5ratio">—</span>）、
-      地面投影 ≈ <span class="dyn" id="st5cast">—</span> cd/m²。每层偏差 &lt; ±1/3 档（×1.26）即算完成。<br>
+      <b>开回平行光，按图中 ①②③④ 四点验证</b>：① 受光面 ≈ <span class="dyn" id="st5lit">—</span>、② 暗面 ≈ <span class="dyn" id="st5shd">—</span>（比值 <span class="dyn" id="st5ratio">—</span>）、
+      ③ 地面投影 ≈ <span class="dyn" id="st5cast">—</span> cd/m²。每点<b>沿其法线方向</b>读（见下方「读数方法」），偏差 &lt; ±1/3 档（×1.26）即算完成。<br>
       <b>球的两面对得上、只有投影偏低</b>时，先量「投影 ÷ 日照地面」这个与反照率无关的比值（见上方判据）：
       比值正常 = 地面材质本身比 0.18 暗，不是灯的问题；比值偏低 = 投影里的天光被额外遮蔽，查 SkyLight 的
       <code>Occlusion Max Distance</code>（DFAO 默认作用范围很大，附近物体会把地面的天光压暗）与 Lumen AO。
     </div></div>
   </div>
+</div>
+
+<h2>读数方法：四个测量点与视角要求</h2>
+<p class="desc" style="margin-bottom:14px;">
+  <b>为什么视角会影响读数？</b>漫反射项是 Lambertian 的，<b>L = ρ × E ÷ π 与观察方向无关</b>——这正是灰球法能成立的前提。
+  但你读到的像素里永远还混着一个<b>高光项</b>：UE 材质默认 Specular = 0.5（F₀ ≈ 0.04），Fresnel 在掠射角会一路升到接近 1.0。
+  所以同一块水平地面，垂直俯视和贴近地平线斜看，读数可以差出很多——斜看时天空的镜面反射被 Fresnel 放大，读数<b>偏高</b>。
+  两个对策：把校准材质的 <b>Specular 设为 0</b>（彻底去掉高光叶，此时严格与视角无关），并且<b>始终沿该点法线方向读</b>。
+</p>
+<div class="settings">
+  <h3>四个测量点的具体操作</h3>
+  <table>
+    <tr><td><b>① 球 · 直接受光面</b></td><td>法线正对太阳的那一点，即球面上<b>最亮</b>的点。操作：把相机放到<b>太阳同侧</b>（太阳在你背后）看向球，此时最亮点也正对着你，自然满足近法线观察。</td></tr>
+    <tr><td><b>② 球 · 暗面</b></td><td>法线水平、背向太阳的那一点。操作：相机转到<b>逆光侧</b>（太阳在球后方），读球的<b>赤道高度</b>。<span style="color:var(--warn)">不要读接地附近</span>——那里天空被地面挡掉大半并叠加接触 AO，会明显偏低。</td></tr>
+    <tr><td><b>③ 地面 · 投影区</b></td><td>球投下的阴影中心。操作：相机<b>垂直俯视</b>（俯角 90°）。这是唯一能干净测天光的探针，也最容易被掠射角污染，务必正俯视。</td></tr>
+    <tr><td><b>④ 地面 · 日照区</b></td><td>开阔处被直射的地面，远离球的投影。同样<b>垂直俯视</b>。它的作用是配合 ③ 求出与反照率无关的比值 ③÷④。</td></tr>
+    <tr><td>读数工具</td><td>Window → Developer Tools → <b>Pixel Inspector</b>，取 <b>tonemap 前</b>的缓冲；亮度按 <code>0.2126R + 0.7152G + 0.0722B</code> 计算，<span style="color:var(--warn)">不要只读单通道</span>——低色温暖光下 R 远高于亮度。</td></tr>
+    <tr><td>必须先关掉的干扰</td><td>Vignette（默认强度非 0，画面边缘会被压暗——测量点务必放在<b>屏幕中央</b>）、Bloom、Local Exposure、Chromatic Aberration、Film Grain。曝光按第 2 步锁死。Lumen 有时间累积，改完参数<b>等画面收敛</b>再读。</td></tr>
+    <tr><td>材质设置</td><td>BaseColor = 0.18 线性中灰、Roughness = 1、Metallic = 0、<b>Specular = 0</b>。地面材质的 BaseColor 单独确认——它和球是两个不同的反照率，③④ 用地面的，①② 用球的。</td></tr>
+  </table>
 </div>
 
 <h2>全组合速查表</h2>
@@ -482,33 +541,84 @@ function currentSkyCal(){ const v = parseFloat(inpSkyCal.value); return (v > 0 ?
 // 由高度角求 sin(h)；太阳在地平线下或无方向光时地面不接收直射
 function sinOf(elev){ return (elev === null || elev <= 0) ? 0 : Math.sin(elev * D2R); }
 
-// SVG 太阳角度与读数
+// SVG：太阳角度、四个测量点及其相机方向
 function updateSvg(elev, r){
-  const cx = 212, cy = 214;               // 灰球中心
+  const cx = 260, cy = 270, R = 30, groundY = 300;   // 灰球中心 / 半径 / 地面线
   const a = (elev === null || elev <= 0) ? 30 : Math.max(4, Math.min(85, elev));
   const rad = a * D2R;
-  const len = 150;
+  const hasSun = elev !== null && elev > 0 && r.sun > 0;
+
+  // 太阳位置：从球中心朝左上方 rad 角
+  const len = 175;
   const sx = cx - Math.cos(rad) * len, sy = cy - Math.sin(rad) * len;
-  // 光线初始方向为 +x；SVG y 轴向下，rotate(a) 后指向右下方的灰球
   const g = document.getElementById('sunRay');
   g.setAttribute('transform', `translate(${sx.toFixed(1)} ${sy.toFixed(1)}) rotate(${a.toFixed(1)})`);
-  document.getElementById('sunLabel').setAttribute('x', (sx - 10).toFixed(1));
-  document.getElementById('sunLabel').setAttribute('y', (sy - 18).toFixed(1));
-  const hasSun = elev !== null && elev > 0 && r.sun > 0;
+  const sl = document.getElementById('sunLabel');
+  sl.setAttribute('x', (sx - 10).toFixed(1));
+  sl.setAttribute('y', (sy - 18).toFixed(1));
   document.getElementById('sunGroup').setAttribute('opacity', hasSun ? '1' : '0.15');
-  document.getElementById('sunLabel').textContent = hasSun ? '太阳 / 月亮' : '（无方向光）';
-  document.getElementById('litLabel').textContent = `受光面 ≈ ${fmtLux(r.litNits)} cd/m²`;
-  document.getElementById('shdLabel').textContent = `阴影面 ≈ ${fmtLux(r.shdNits)} cd/m²`;
+  sl.textContent = hasSun ? '太阳 / 月亮' : '（无方向光）';
+
+  // 朝太阳的单位向量（SVG 坐标，y 向下）
+  const ux = -Math.cos(rad), uy = -Math.sin(rad);
+
+  // 球体的明暗分界：终结线端点 p1/p2 = 球心 ± R·t̂，t̂ 为朝太阳向量转 90°。
+  // 太阳在图中恒为左上方（ux<0, uy<0），三点极角恒递增，故 sweep-flag 恒为 1，
+  // 取到的正是经过背光侧（球心 − R·û）的那条弧。
+  const p1x = cx + R*(-uy), p1y = cy + R*(ux);
+  const p2x = cx - R*(-uy), p2y = cy - R*(ux);
+  document.getElementById('ballShadow').setAttribute('d',
+    `M ${p1x.toFixed(1)} ${p1y.toFixed(1)} A ${R} ${R} 0 0 1 ${p2x.toFixed(1)} ${p2y.toFixed(1)} Z`);
+
+  // 地面投影：长度 = 球直径 / tan(高度角)
+  const shadowLen = hasSun ? Math.min(210, 2*R / Math.tan(rad)) : 0;
+  const ce = document.getElementById('castEllipse');
+  ce.setAttribute('rx', Math.max(R, shadowLen/2 + R*0.5).toFixed(1));
+  ce.setAttribute('cx', (cx + shadowLen/2).toFixed(1));
+  ce.setAttribute('opacity', hasSun ? '0.75' : '0');
+
+  // 测量点：pos = 球面/地面上的点，n = 该点法线（相机必须沿 −n 方向看向它）
+  const CAM = 46;
+  function place(id, px, py, nx, ny, labelDx, labelDy){
+    document.getElementById(id+'dot').setAttribute('cx', px.toFixed(1));
+    document.getElementById(id+'dot').setAttribute('cy', py.toFixed(1));
+    const camLine = document.getElementById(id+'cam');
+    camLine.setAttribute('x1', (px + nx*CAM).toFixed(1));
+    camLine.setAttribute('y1', (py + ny*CAM).toFixed(1));
+    camLine.setAttribute('x2', (px + nx*7).toFixed(1));
+    camLine.setAttribute('y2', (py + ny*7).toFixed(1));
+    const t = document.getElementById(id+'txt');
+    t.setAttribute('x', (px + labelDx).toFixed(1));
+    t.setAttribute('y', (py + labelDy).toFixed(1));
+  }
+  // ① 受光面：法线朝太阳
+  place('mp1', cx + R*ux, cy + R*uy, ux, uy, ux*16 - 4, uy*16 + 4);
+  // ② 暗面：法线水平背向太阳（取赤道高度，避开接地点）
+  place('mp2', cx + R, cy, 1, 0, 12, -8);
+  // ③ 地面投影：法线朝上
+  place('mp3', cx + Math.max(shadowLen*0.55, R*1.2), groundY, 0, -1, 8, 14);
+  // ④ 日照地面：法线朝上，位于球投影之外的受光侧
+  place('mp4', cx - 110, groundY, 0, -1, -16, 14);
+  document.getElementById('mp1').setAttribute('opacity', hasSun ? '1' : '0.2');
+  document.getElementById('mp3').setAttribute('opacity', hasSun ? '1' : '0.2');
+  document.getElementById('mp4').setAttribute('opacity', hasSun ? '1' : '0.2');
+  document.getElementById('grazeWarn').setAttribute('opacity', hasSun ? '1' : '0.2');
+
+  document.getElementById('litLabel').textContent  = `① 受光面 ≈ ${fmtLux(r.litNits)}`;
+  document.getElementById('shdLabel').textContent  = `② 暗面 ≈ ${fmtLux(r.shdNits)}`;
+  document.getElementById('castLabel').textContent = `③ 投影 ≈ ${fmtLux(r.castNits)}`;
+  document.getElementById('glLabel').textContent   = `④ 日照地面 ≈ ${fmtLux(r.groundLitNits)}`;
+
   // Pitch 弧标
   const arc = document.getElementById('pitchArc'), txt = document.getElementById('pitchText');
   if (hasSun){
-    const r0 = 52;
+    const r0 = 62;
     const ex = cx - Math.cos(rad)*r0, ey = cy - Math.sin(rad)*r0;
     arc.setAttribute('d', `M ${cx-r0} ${cy} A ${r0} ${r0} 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`);
-    txt.setAttribute('x', (cx - r0 - 4).toFixed(1));
-    txt.setAttribute('y', (cy - 12).toFixed(1));
+    txt.setAttribute('x', (cx - r0 - 6).toFixed(1));
+    txt.setAttribute('y', (cy - 14).toFixed(1));
     txt.setAttribute('text-anchor','end');
-    txt.textContent = `${a.toFixed(0)}°（Pitch −${a.toFixed(0)}°）`;
+    txt.textContent = `${a.toFixed(0)}°`;
     arc.style.display = txt.style.display = '';
   } else {
     arc.style.display = txt.style.display = 'none';
