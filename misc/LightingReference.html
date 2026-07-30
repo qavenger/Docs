@@ -43,7 +43,16 @@
   .card .u{font-size:11.5px; color:var(--muted); margin-top:6px; line-height:1.5;}
 
   .panel{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:12px;}
-  .panel h3{font-size:13.5px; color:var(--accent2); margin-bottom:10px;}
+  .panel h3{font-size:13.5px; color:var(--accent2); margin-bottom:10px;
+            display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .utog{display:inline-flex; gap:0; border:1px solid var(--border); border-radius:7px; overflow:hidden;}
+  .utog button{
+    background:var(--card2); color:var(--muted); border:0; border-right:1px solid var(--border);
+    padding:5px 11px; font-size:11.5px; cursor:pointer; font-family:inherit;
+  }
+  .utog button:last-child{border-right:0;}
+  .utog button:hover{color:var(--text);}
+  .utog button.on{background:var(--accent); color:#14161a; font-weight:600;}
   .panel table{width:100%; border-collapse:collapse; font-size:12.5px;}
   .panel td{padding:6px 8px; border-bottom:1px dashed #2c313c; vertical-align:top; line-height:1.6;}
   .panel td:first-child{color:var(--muted); width:190px;}
@@ -131,19 +140,25 @@
   <div class="card"><div class="k">到达地面的平行光</div><div class="v" id="cSun">—</div><div class="u">lux · 垂直于光线的照度（DNI），非水平地面照度</div></div>
   <div class="card"><div class="k">→ 填入 Intensity</div><div class="v warn" id="cFill">—</div><div class="u" id="cFillNote">—</div></div>
   <div class="card"><div class="k">Pitch（平行光角度）</div><div class="v warn" id="cPitch">—</div><div class="u" id="cPitchNote">—</div></div>
-  <div class="card"><div class="k">天光照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空亮度 <span id="cSkyLum">—</span> cd/m²</div></div>
+  <div class="card"><div class="k">天光照度</div><div class="v blue" id="cSky">—</div><div class="u">lux（水平面）· 平均天空亮度 <span id="cSkyLum">—</span> cd/m² (nits)</div></div>
   <div class="card"><div class="k">光比（受光面 : 背光面）</div><div class="v green" id="cRatio">—</div><div class="u" id="cRatioNote">—</div></div>
   <div class="card"><div class="k">EV100（无曝光补偿）</div><div class="v" id="cEV">—</div><div class="u">水平面总照度约 <span id="cTotal">—</span> lux</div></div>
 </div>
 
 <div class="panel">
-  <h3>三个层面：照度（物理量）与灰度读数（可测量）</h3>
+  <h3>三个层面
+    <span class="utog" id="unitTog">
+      <button data-u="lux">lux（照度）</button>
+      <button data-u="nits">cd/m²（亮度）</button>
+      <button data-u="both" class="on">两者对照</button>
+    </span>
+  </h3>
   <table>
     <tr><td>① 受光面（球，朝太阳）</td><td id="lvLit">—</td></tr>
     <tr><td>② 背光面（球，背太阳）</td><td id="lvShd">—</td></tr>
     <tr><td>③ 阴影（地面投影）</td><td id="lvCast">—</td></tr>
     <tr><td>④ 日照地面（参照）</td><td id="lvGround">—</td></tr>
-    <tr><td>单位换算</td><td>照度是本质量、与表面无关；引擎里只能读到亮度。两者对朗伯面严格互换：<code>E(lux) = L(cd/m²) × π ÷ 反射率</code>，反过来 <code>L = 反射率 × E ÷ π</code>。所以读到 nits 后除以 0.18 再乘 π 就得到 lux，可直接与公开照度表对照。</td></tr>
+    <tr><td>单位换算</td><td><b>cd/m² 与 nit 是同一个单位的两种写法</b>（1 nit ≡ 1 cd/m²，都是亮度 / luminance）；lux 是照度 / illuminance，两者不同物理量。照度与表面无关，是本质量；引擎里只能读到亮度。朗伯面上严格互换：<code>E(lux) = L(cd/m² = nits) × π ÷ 反射率</code>，反向 <code>L = 反射率 × E ÷ π</code>。</td></tr>
     <tr><td>公开照度参考区间</td><td>直射日光 32,000–100,000 lux ｜ 全日照阴影 / 非直射 10,000–25,000 lux ｜ 阴天 1,000–10,000 lux ｜ 暮光 1–10 lux ｜ 满月 0.05–0.3 lux</td></tr>
     <tr><td>与反照率无关的判据</td><td id="lvDiag">—</td></tr>
   </table>
@@ -244,7 +259,7 @@
       <text id="shdLabel"  x="140" y="370" fill="#7ecb8f" font-size="11">② 背光面 —</text>
       <text id="castLabel" x="272" y="370" fill="#5ab0f0" font-size="11">③ 阴影 —</text>
       <text id="glLabel"   x="382" y="370" fill="#e08f6a" font-size="11">④ 日照地面 —</text>
-      <text x="8" y="389" fill="#9aa3b2" font-size="10">标注为照度 lux；白色箭头 = 相机必须沿该点法线方向读取</text>
+      <text id="unitHint" x="8" y="389" fill="#9aa3b2" font-size="10">标注为照度 lux；白色箭头 = 相机必须沿该点法线方向读取</text>
 
       <path id="pitchArc" d="" fill="none" stroke="#e08f6a" stroke-width="1.4"/>
       <text id="pitchText" fill="#e08f6a" font-size="11">—</text>
@@ -270,7 +285,7 @@
       ④ 取开阔处、远离投影。读数用 Pixel Inspector 取 tonemap 前缓冲，亮度按
       <code>0.2126R + 0.7152G + 0.0722B</code> 算，不要只读单通道。先关掉 Vignette（默认非 0，边缘会压暗）、
       Bloom、Local Exposure，测量点放在<b>屏幕中央</b>。<br>
-      引擎只能读到亮度（cd/m²）；要换成照度就除以该表面的反射率再乘 π，即 <code>E = L × π ÷ ρ</code>，
+      引擎只能读到亮度（cd/m²，与 nit 是同一单位）；要换成照度就除以该表面的反射率再乘 π，即 <code>E = L × π ÷ ρ</code>，
       这样就能和公开的照度参考表直接对照。
     </div></div>
     <div class="step"><div class="n">6</div><div>
@@ -294,7 +309,7 @@
     <tr>
       <th>时段（高度角 / Pitch）</th><th>气候</th>
       <th>到达地面 (lux)</th><th id="thFill">填入 Intensity (lux)</th><th>色温 (K)</th>
-      <th>天光 (lux)</th><th>天空亮度 (cd/m²)</th>
+      <th>天光 (lux)</th><th>天空亮度 (cd/m² = nits)</th>
       <th>光比</th><th>反差 (档)</th><th>EV100</th>
     </tr>
   </thead>
@@ -304,7 +319,8 @@
 
 <h2>换算约定</h2>
 <ul class="notes">
-  <li><b>为什么以 lux 为主</b>：照度（lux）描述打到表面上的光，与表面材质无关，因此才是能和公开实测数据、以及引擎光源参数直接对照的量；亮度（cd/m²）含有反射率，只对特定材质成立。但引擎里能直接读到的偏偏只有亮度，所以页面两个都给：lux 用来判断"这个光照强度是否合理"，cd/m² 用来对照"Pixel Inspector 里该看到多少"。朗伯面上两者严格互换。光比与 EV100 用哪个单位算都一样——比值里反射率被约掉，EV 本身就由照度定义。</li>
+  <li><b>两个单位的关系</b>：<b>cd/m² 与 nit 是同一个单位的两种写法</b>（1 nit ≡ 1 cd/m²），都指亮度 / luminance；lux 指照度 / illuminance，是不同的物理量，不能直接互称。页面「三个层面」一栏可切换只看 lux、只看 cd/m²、或两者对照。<br>
+    照度（lux）描述打到表面上的光，与表面材质无关，因此才是能和公开实测数据、以及引擎光源参数直接对照的量；亮度含有反射率，只对特定材质成立。但引擎里能直接读到的偏偏只有亮度，所以页面两个都给：lux 用来判断"这个光照强度是否合理"，cd/m² 用来对照"Pixel Inspector 里该看到多少"。朗伯面上两者严格互换。光比与 EV100 用哪个单位算都一样——比值里反射率被约掉，EV 本身就由照度定义。</li>
   <li><b>平行光的两个数不是一回事</b>。「到达地面」= 地面高度、垂直于光线方向的照度（DNI），是物理目标；水平地面照度 = DNI × sin(高度角)。UE / HDRP 的 Intensity 字段用同一定义，但勾选 <b>Atmosphere Sun Light</b> 后引擎会按大气透射率 T 再衰减一次，而 DNI 已含过一次衰减，直接填就衰减两次。所以有大气时填 DNI ÷ T，表格已给出该值。低角度影响极大，正午几乎无差别。T 由太阳高度角经 Kasten-Young 大气质量与 Beer-Lambert 算出。</li>
   <li><b>Pitch</b>：UE 的 Rotation Pitch = −太阳高度角（−90° 为头顶直射）；Unity 为 Transform X Rotation = 高度角。正午与上午/下午的高度角由纬度与季节计算；清晨/傍晚、黄金时刻、日出日落按定义取固定高度角（15° / 4° / 0.5°），纬度只改变它们出现的时刻。满月取 45° 参考。</li>
   <li><b>天光</b>：给出的是天空半球在水平面上的照度（lux），平均天空亮度 = 照度 ÷ π。自动捕捉方案下天光由太阳与大气派生，Intensity Scale 保持 1.0；HDRI 方案的 Intensity Scale = 目标天空亮度 ÷ HDRI 自身平均亮度；手动方案以阴影读数为准。<b>物理天空方案不要靠关闭平行光来看纯天光</b>：天空亮度本就来自太阳散射，关灯天即黑，Intensity Scale 乘 0 仍是 0。</li>
@@ -457,6 +473,27 @@ const currentMode = ()=> selSkyMode.value;
 const hasAtmo     = ()=> selAtmo.value === 'atmo';
 const currentRho  = ()=> { const v = parseFloat(selAlbedo.value); return v >= 0 ? v : 0.18; };
 
+// 显示单位：'lux' 照度 | 'nits' 亮度（cd/m² ≡ nit）| 'both' 两者对照
+let unitMode = 'both';
+const unitTog = document.getElementById('unitTog');
+unitTog.querySelectorAll('button').forEach(b=> b.onclick = ()=>{
+  unitMode = b.dataset.u;
+  unitTog.querySelectorAll('button').forEach(x=> x.classList.toggle('on', x === b));
+  update();
+});
+// E: 照度 lux, L: 亮度 cd/m²
+function fmtBoth(E, L){
+  if (unitMode === 'lux')  return `<b>${fmtLux(E)} lux</b>`;
+  if (unitMode === 'nits') return `<b>${fmtLux(L)} cd/m²</b>`;
+  return `照度 <b>${fmtLux(E)} lux</b> → 读数 <b>${fmtLux(L)} cd/m²</b>`;
+}
+// 分项拆解：照度模式与两者模式下用 lux 原值，亮度模式下折算成 cd/m²
+function fmtPart(E, albedo){
+  return unitMode === 'nits'
+    ? fmtLux(albedo*E/Math.PI) + ' cd/m²'
+    : fmtLux(E) + ' lux';
+}
+
 function updateSvg(elev, r){
   const cx = 260, cy = 270, R = 30, groundY = 300, CAM = 46;
   const a = (elev === null || elev <= 0) ? 30 : Math.max(4, Math.min(85, elev));
@@ -521,10 +558,15 @@ function updateSvg(elev, r){
   ['mp1','mp3','mp4','grazeWarn'].forEach(id=>
     document.getElementById(id).setAttribute('opacity', hasSun ? '1' : '0.2'));
 
-  document.getElementById('litLabel').textContent  = `① 受光面 ${fmtLux(r.litE)} lx`;
-  document.getElementById('shdLabel').textContent  = `② 背光面 ${fmtLux(r.shdE)} lx`;
-  document.getElementById('castLabel').textContent = `③ 阴影 ${fmtLux(r.castE)} lx`;
-  document.getElementById('glLabel').textContent   = `④ 日照地面 ${fmtLux(r.groundE)} lx`;
+  const nits = unitMode === 'nits';
+  const u = nits ? ' cd/m²' : ' lx';
+  document.getElementById('litLabel').textContent  = `① 受光面 ${fmtLux(nits ? r.litNits : r.litE)}${u}`;
+  document.getElementById('shdLabel').textContent  = `② 背光面 ${fmtLux(nits ? r.shdNits : r.shdE)}${u}`;
+  document.getElementById('castLabel').textContent = `③ 阴影 ${fmtLux(nits ? r.castNits : r.castE)}${u}`;
+  document.getElementById('glLabel').textContent   = `④ 日照地面 ${fmtLux(nits ? r.groundLitNits : r.groundE)}${u}`;
+  document.getElementById('unitHint').textContent = nits
+    ? '标注为亮度 cd/m²（= nits）；白色箭头 = 相机必须沿该点法线方向读取'
+    : '标注为照度 lux；白色箭头 = 相机必须沿该点法线方向读取';
 
   const arc = document.getElementById('pitchArc'), pt = document.getElementById('pitchText');
   if (hasSun){
@@ -584,22 +626,25 @@ function update(){
   document.getElementById('cTotal').textContent = fmtLux(r.ground);
 
   // 三个层面
-  const lvl = (E, L) => `照度 <b>${fmtLux(E)} lux</b> → 读数 <b>${fmtLux(L)} cd/m²</b>`;
+  const B = BALL_ALBEDO;
   document.getElementById('lvLit').innerHTML =
-    lvl(r.litE, r.litNits)
-    + `<br><span style="color:var(--muted)">= 直射 ${fmtLux(r.sun)} + 天光 0.55× ${fmtLux(0.55*r.sky)} + 弹射 ${fmtLux(r.bLit)} lux</span>`;
+    fmtBoth(r.litE, r.litNits)
+    + `<br><span style="color:var(--muted)">= 直射 ${fmtPart(r.sun, B)} + 天光 0.55× ${fmtPart(0.55*r.sky, B)} + 弹射 ${fmtPart(r.bLit, B)}</span>`;
   document.getElementById('lvShd').innerHTML =
-    lvl(r.shdE, r.shdNits)
-    + `<br><span style="color:var(--muted)">= 天光 0.45× ${fmtLux(0.45*r.sky)} + 弹射 ${fmtLux(r.bShd)} lux`
+    fmtBoth(r.shdE, r.shdNits)
+    + `<br><span style="color:var(--muted)">= 天光 0.45× ${fmtPart(0.45*r.sky, B)} + 弹射 ${fmtPart(r.bShd, B)}`
     + (elev !== null && elev > 0 ? `（可见地面 ${(fSun*100).toFixed(0)}% 在日照下）` : '') + `</span>`;
   document.getElementById('lvCast').innerHTML =
-    lvl(r.castE, r.castNits) + `　<span style="color:var(--muted)">投影中心，球贴地</span>`
+    fmtBoth(r.castE, r.castNits) + `　<span style="color:var(--muted)">投影中心，球贴地</span>`
     + (elev !== null && elev > 0
         ? `<br><span style="color:var(--muted)">可见天空 ${(skyVis*100).toFixed(0)}%，其余被球暗侧遮挡；抬离地面 5R 后无遮挡 → `
-          + `${fmtLux(r.castFreeE)} lux / ${fmtLux(r.castFreeNits)} cd/m²（纯天光，弹射为 0）。投影区呈中心暗、边缘亮的梯度，此处为中心值</span>`
+          + (unitMode === 'nits' ? `${fmtLux(r.castFreeNits)} cd/m²`
+             : unitMode === 'lux' ? `${fmtLux(r.castFreeE)} lux`
+             : `${fmtLux(r.castFreeE)} lux / ${fmtLux(r.castFreeNits)} cd/m²`)
+          + `（纯天光，弹射为 0）。投影区呈中心暗、边缘亮的梯度，此处为中心值</span>`
         : `<br><span style="color:var(--muted)">无方向光，无投影</span>`);
   document.getElementById('lvGround').innerHTML =
-    lvl(r.groundE, r.groundLitNits)
+    fmtBoth(r.groundE, r.groundLitNits)
     + `<br><span style="color:var(--muted)">= 水平面总照度 = 直射的水平分量 + 天光</span>`;
   document.getElementById('lvDiag').innerHTML = r.ground > 0
     ? `<b>无遮挡阴影 ÷ ④ = ${(r.castRatio*100).toFixed(1)}%</b>（= 天光 ÷ 水平面总照度）。反照率在此约掉，故与地面材质、曝光精度无关；`
