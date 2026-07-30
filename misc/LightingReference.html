@@ -155,6 +155,11 @@
 </div>
 
 <h2>如何用平行光校准天光（灰球法）</h2>
+<p class="desc" style="margin-bottom:14px;">
+  ⚠️ <b>不要靠关闭平行光来看"纯天光"</b>：物理天空（Sky Atmosphere / PBS Sky）的亮度来自太阳光的大气散射，
+  关掉太阳会连天空一起变黑——SkyLight 捕捉到的是黑天，Intensity Scale 乘以 0 仍是 0，暗部永远死黑。
+  只有「HDRI / Cubemap」方案（天空亮度存在贴图里，与太阳无关）可以临时关灯校准；其余方案保持太阳开启，改读灰球的<b>阴影面</b>。
+</p>
 <div class="calib">
   <div class="calib-svg">
     <svg id="calibSvg" viewBox="0 0 420 300" width="100%" height="auto">
@@ -249,6 +254,7 @@
   <li><b>光比</b>：面向光源的受光面照度 ÷ 阴影面照度（阴影面 = 部分天光 + 地面弹射）。1 档 = 2 倍。晴天约 5–8:1（2.5–3 档），阴天趋近 1:1。</li>
   <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
   <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
+  <li><b>为什么关掉平行光场景会全黑</b>：Sky Atmosphere / PBS Sky 的天空亮度全部来自太阳光的大气散射，太阳一关天空即黑，SkyLight（无论 Real Time Capture 还是重新捕捉）拿到的都是黑天。所以「关灯看纯天光」只对与太阳无关的 HDRI / Specified Cubemap 成立；物理天空方案请改读灰球阴影面，或用光照通道隔离太阳的直接光照。</li>
   <li><b>阴天/雨天仍保留微弱平行光</b>（而非 0）：用大 Source Angle（5–10°）的软方向光维持体积感，这是行业常用做法；物理上对应云层透射的残余方向性。</li>
   <li>照度数据基于 CIE 天空模型与实测范围（晴天正午地面约 10–12 万 lux、阴天 1–2.5 万 lux、日落约 400–700 lux、满月约 0.05–0.3 lux），以中纬度（约 35°）为基准做了取整；改纬度只更新 Pitch 几何参考，不重算照度。</li>
 </ul>
@@ -414,7 +420,7 @@ function update(){
   } else {
     sT.textContent = '天光目标亮度（手动）';
     sV.textContent = fmtLux(r.skyLum) + ' cd/m²';
-    sN.innerHTML = `无固定 Scale：用灰球把纯天光读数校到 ≈ <b>${fmtLux(shadowTarget)} cd/m²</b>`;
+    sN.innerHTML = `无固定 Scale：<b>保持太阳开启</b>，把灰球阴影面读数校到 ≈ <b>${fmtLux(r.shdNits)} cd/m²</b>`;
   }
 
   document.getElementById('cRatio').textContent = fmtRatio(r.ratio);
@@ -453,14 +459,17 @@ function update(){
   let st4;
   if (mode === 'auto'){
     st4 = `<b>自动捕捉方案无需手调</b>：Intensity Scale 保持 <b>1.0</b>，天光由太阳与大气自动派生。
-      确认 Sky Atmosphere 强度未被额外缩放、SkyLight 没有残留的手调倍率后，直接进入第 5 步验证。`;
+      确认 Sky Atmosphere 强度未被额外缩放、SkyLight 没有残留的手调倍率后，直接进入第 5 步验证。
+      注意：此方案下<b>永远不要靠关闭平行光来检查天光</b>——天空亮度本身来自太阳，关灯天就黑了。`;
   } else if (mode === 'hdri'){
-    st4 = `<b>校准 HDRI 天光</b>：暂时关掉平行光，用 UE 的 <b>Pixel Inspector</b>（或 <code>show VisualizeHDR</code> / HDRP 的 Light Explorer + Debug Exposure）读灰球亮度，
+    st4 = `<b>校准 HDRI 天光</b>（唯一可以临时关灯的方案）：暂时关掉平行光，用 UE 的 <b>Pixel Inspector</b>（或 <code>show VisualizeHDR</code> / HDRP 的 Light Explorer + Debug Exposure）读灰球亮度，
       调 Intensity Scale 直到读数 ≈ <span class="dyn">${fmtLux(shadowTarget)}</span> cd/m²（= 0.18 × 天光照度 ÷ π）。
-      理论初值：Intensity Scale ≈ <span class="dyn">${fmtScale(scale)}</span>（= 目标天空亮度 ${fmtLux(r.skyLum)} cd/m² ÷ L₀ ${currentHdri()} cd/m²）。`;
+      理论初值：Intensity Scale ≈ <span class="dyn">${fmtScale(scale)}</span>（= 目标天空亮度 ${fmtLux(r.skyLum)} cd/m² ÷ L₀ ${currentHdri()} cd/m²）。
+      <b>防坑</b>：若关灯后连天空一起变黑，说明 SkyLight 实际仍在捕捉大气（Source 不是 Specified Cubemap），先检查设置。`;
   } else {
-    st4 = `<b>手动校准天光</b>：暂时关掉平行光，读灰球亮度，直接调 SkyLight 的 Intensity Scale 直到读数 ≈ <span class="dyn">${fmtLux(shadowTarget)}</span> cd/m²（= 0.18 × 天光照度 ÷ π）。
-      等效目标：天空平均亮度 <span class="dyn">${fmtLux(r.skyLum)}</span> cd/m²、水平照度 <span class="dyn">${fmtLux(r.sky)}</span> lux。没有 HDRI 绝对亮度可参考，灰球读数就是唯一标尺。`;
+    st4 = `<b>手动校准天光（保持太阳开启！）</b>：物理天空由太阳驱动，关灯会连天空一起变黑、暗部读数恒为 0。
+      正确做法：太阳保持开启，读灰球<b>阴影面</b>，调 SkyLight 的 Intensity Scale 直到读数 ≈ <span class="dyn">${fmtLux(r.shdNits)}</span> cd/m²（阴影面目标 = 0.18 × (0.6×天光 + 弹射) ÷ π）。
+      需要更干净的纯天光读数时用<b>光照通道</b>隔离：太阳仅通道 0、校准球仅通道 1、SkyLight 覆盖通道 0+1，此时球面目标 ≈ <span class="dyn">${fmtLux(shadowTarget)}</span> cd/m²（= 0.18 × 天光照度 ÷ π）。`;
   }
   document.getElementById('st4body').innerHTML = st4;
   document.getElementById('st5lit').textContent = fmtLux(r.litNits);
