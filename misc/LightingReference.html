@@ -202,15 +202,15 @@
       <text id="sunLabel" x="16" y="30" fill="#f5b942" font-size="11">太阳</text>
 
       <ellipse id="castEllipse" cx="300" cy="300" rx="60" ry="9" fill="#0e1014" opacity="0.75"/>
-      <circle cx="260" cy="232" r="30" fill="url(#ballGrad)"/>
+      <!-- 球遮挡投影区天空的示意 -->
+      <g id="occGroup">
+        <path id="occCone" d="" fill="#c0533f" opacity="0.13"/>
+        <text id="occTxt" fill="#c0533f" font-size="10" text-anchor="middle">被球遮挡</text>
+      </g>
+      <circle cx="260" cy="270" r="30" fill="url(#ballGrad)"/>
       <path id="ballShadow" d="" fill="#12141a" opacity="0.5"/>
-      <!-- 离地间隙要求 -->
-      <line x1="228" y1="262" x2="228" y2="300" stroke="#7ecb8f" stroke-width="1" stroke-dasharray="3 3"/>
-      <line x1="223" y1="262" x2="233" y2="262" stroke="#7ecb8f" stroke-width="1"/>
-      <line x1="223" y1="300" x2="233" y2="300" stroke="#7ecb8f" stroke-width="1"/>
-      <text x="219" y="285" fill="#7ecb8f" font-size="10" text-anchor="end">离地 ≥5R</text>
-      <text x="260" y="349" fill="#9aa3b2" font-size="10.5" text-anchor="middle">
-        校准球：0.18 灰 · Roughness=1 · Metallic=0 · <tspan fill="#e08f6a">Specular=0</tspan>（间隙为示意，非等比）</text>
+      <text x="260" y="347" fill="#9aa3b2" font-size="10.5" text-anchor="middle">
+        UE 默认 Sphere（直径 1 m）· 0.18 灰 · Roughness=1 · Metallic=0 · <tspan fill="#e08f6a">Specular=0</tspan> · 直接置于地面</text>
 
       <g id="mp1">
         <line id="mp1cam" stroke="#e8eaf0" stroke-width="1.6" marker-end="url(#arrowC)"/>
@@ -264,20 +264,21 @@
       <b>② 背光面</b>：相机转到<b>逆光侧</b>，读球的<b>赤道高度</b>。不要读接地附近——那里天空被地面挡去大半，还叠加接触 AO。
     </div></div>
     <div class="step"><div class="n">5</div><div>
-      <b>把球抬离地面至少 5 倍半径</b>，这是读对 ③ 的前提。球贴地时它就挂在自己投影区的头顶上，
-      会遮掉那里一大片天空，且遮住的部分被球自身（暗面约为天空亮度的 1/6）填充，读数因此显著偏低。
-      余弦加权的可见天空比例：贴地时投影中心仅 <b>0.45</b>，抬到 2R 为 0.86、<b>5R 为 0.98</b>、8R 为 0.99。
+      <b>③ 阴影 + ④ 日照地面</b>：两者都<b>垂直俯视</b>读取。③ 取<b>投影中心</b>（表中给的是中心值），
+      ④ 取开阔处、远离投影。读数用 Pixel Inspector 取 tonemap 前缓冲，亮度按
+      <code>0.2126R + 0.7152G + 0.0722B</code> 算，不要只读单通道。先关掉 Vignette（默认非 0，边缘会压暗）、
+      Bloom、Local Exposure，测量点放在<b>屏幕中央</b>。
     </div></div>
     <div class="step"><div class="n">6</div><div>
-      <b>③ 阴影 + ④ 日照地面</b>：两者都<b>垂直俯视</b>读取。③ 取投影中心，④ 取开阔处、远离投影。
-      读数用 Pixel Inspector 取 tonemap 前缓冲，亮度按 <code>0.2126R + 0.7152G + 0.0722B</code> 算，不要只读单通道。
-      先关掉 Vignette（默认非 0，边缘会压暗）、Bloom、Local Exposure，测量点放在<b>屏幕中央</b>。
+      <b>③ 天生就低于「纯天光」，这是正常的</b>：球贴地时它悬在自己投影区上方，挡掉一部分天空，
+      被挡处只能看到球的暗侧（亮度约为天空的 1/6）。表中 ③ 已按 1 m 球的几何把这份遮挡算进去，
+      并同时给出抬高球后的无遮挡值供对照。投影区因此呈<b>中心暗、边缘亮</b>的梯度——这是几何特征，不是灯光问题。
     </div></div>
     <div class="step"><div class="n">7</div><div>
-      <b>对照</b>：三点各自偏差 &lt; ±1/3 档（×1.26）即通过。若 ③ 偏低，<b>先确认球已抬起</b>——
-      投影区呈现「中心暗、边缘亮」的梯度就是球遮挡天空的特征，与灯光数值无关。
-      排除遮挡后仍偏低，再看判据比值 ③÷④：比值正常说明地面材质比 0.18 暗，不必动灯；
-      比值偏低才是天光不足，查 Sky Atmosphere 散射参数与 SkyLight 的 <code>Occlusion Max Distance</code>。
+      <b>对照</b>：三点各自偏差 &lt; ±1/3 档（×1.26）即通过。③ 若明显低于表值，
+      先用判据比值排查：把球<b>临时抬离地面 5 倍半径</b>消除遮挡，量该处阴影与 ④ 的比值。
+      比值正常说明地面材质比 0.18 暗，不必动灯；比值偏低才是天光不足，
+      查 Sky Atmosphere 散射参数与 SkyLight 的 <code>Occlusion Max Distance</code>。
     </div></div>
   </div>
 </div>
@@ -310,7 +311,8 @@
     系数 0.5 来自 (1 − cos 倾角) / 2 在垂直时的取值；天空系数 0.55 / 0.45 来自垂直面只看到半个天空半球。</li>
   <li><b>日照比例 f</b>：物体自身投影长度 = 高度 ÷ tan(高度角)，方向正是背光侧，因此背光面看到的地面有一部分只被天光照亮。f 由视角因子数值积分得出（15° 时 ≈ 0.52，55° ≈ 0.70，头顶 → 1.0）。投影只是窄带而可见地面在方位上很宽，故 f 下限为 0.5。这是低角度光比远大于「教科书晴天 6:1」的原因。</li>
   <li><b>地面反照率</b>：晴天弹射项与背光面的天光项同量级，不可忽略。ρ = 0 对应无地面或 GI 关闭。排查暗部偏暗的顺序：<code>r.Lumen.DiffuseIndirect.Allow 0/1</code> 确认弹射在供光（正常切换会有可见但不剧烈的差异）→ 确认地面网格足够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）→ 核对地面 BaseColor。雪天请把 ρ 改为 0.80。</li>
-  <li><b>校准球必须抬离地面</b>：表中 ③ 的值是<b>无遮挡</b>投影的理论值。球贴地时它悬在自己投影区正上方，会遮掉那里大量天空——余弦加权的可见天空比例在投影中心只剩 0.45，且被遮部分并非全黑，而是被球自身表面填充（暗面亮度约为天空亮度的 1/6），所以读数会明显偏低并呈现「中心暗、边缘亮」的梯度。抬高到 5 倍半径以上可见天空恢复到 0.98，读数即回归表值。这个梯度是遮挡的判别特征，出现时不要去动任何灯光参数。同理，球的 ② 背光面也不要贴近接地点读取。</li>
+  <li><b>校准球规格与投影区的自遮挡</b>：约定用 <b>UE 默认 Sphere（直径 1 m）直接置于地面</b>。球悬在自己投影区上方，会挡掉那里一部分天空，被挡处只能看到球的暗侧（球的下表面法线朝下、看到完整地面半球，亮度 ≈ 球反射率 × ρ × 水平面总照度 ÷ π，约为天空亮度的 1/6）。投影中心的余弦加权可见天空比例由上半球数值积分得出，<b>随太阳高度角变化</b>——太阳越高，投影离球越近，遮挡越重：15° 时 0.98、30° 时 0.88、45° 时 0.65、55° 时 0.45、70° 时 0.17。表中 ③ 已包含这份遮挡，并另给出抬高球后的无遮挡值。<br>
+    两点补充：该比例<b>与球的尺寸无关</b>（几何自相似），规定 1 m 只为可复现，以及与 DFAO 等世界空间半径的设置相匹配；模型只算单次几何遮挡，实测通常比预测高约 10–20%（多次弹射），属正常范围。</li>
   <li><b>校准天光只能看阴影</b>：天光在受光面照度里仅占约 4%、在背光面约 29%（其余由太阳驱动的弹射托底），在阴影里占 100%。天光若错一倍，受光面与背光面读数仅差 4% 与 10%，都落在「看起来对上了」的范围内，而阴影会差整整一倍。</li>
   <li><b>判据比值 ③ ÷ ④ = 天光 ÷ E<sub>h</sub></b>：地面反照率在此比值中被约掉，故不依赖地面材质是否真为 0.18，也不依赖曝光精度。使用前提是 ③ 已排除遮挡（球抬起、且不靠近其它物体）。比值符合表值说明天光正确、只是地面偏暗，不必动灯；比值偏低才是天光不足。真要补，应提高 Sky Atmosphere 的散射（Rayleigh / Mie / Aerosol），而不是缩放 SkyLight Intensity Scale——后者只改它发出的光、不改天空自身显示亮度，会让画面里的天空与它照出的光不自洽。</li>
   <li><b>EV100</b>：EV = log₂(水平面总照度 ÷ 2.5)，入射式、标定常数 C = 250，与物体反射率无关。锁定曝光时 Min = Max = 表值；自动曝光时保证表值落在区间内且 Exposure Compensation = 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>。</li>
@@ -352,6 +354,14 @@ const TAU = 0.134;                          // 大气浑浊度：标定自 UE5 �
 const SUNLIT_F = [0.500, 0.507, 0.511, 0.517, 0.526, 0.538, 0.553, 0.572, 0.596,
                   0.624, 0.658, 0.698, 0.745, 0.796, 0.852, 0.906, 0.954, 0.988, 1.000];
 
+// 校准球贴地时，投影中心「能看到天空」的余弦加权比例，按 5° 制表。
+// 由上半球数值积分得出：球心在 R 高度，投影中心在水平距离 R/tan(高度角) 处。
+// 该比例与球的尺寸无关（几何自相似），1 m 直径的规定只为可复现，以及与 DFAO 等
+// 世界空间半径的设置相匹配。太阳越高投影离球越近，遮挡越严重。
+// 被遮挡的方向看到的是球的暗侧——投影中心位于本影内，看不到任何受光面，故无需考虑受光贡献。
+const OCC_V = [1.000, 0.999, 0.995, 0.983, 0.960, 0.924, 0.875, 0.811, 0.734,
+               0.646, 0.550, 0.450, 0.350, 0.256, 0.170, 0.099, 0.045, 0.011, 0.000];
+
 // ================== 物理 ==================
 function elevationFor(t, lat, dec){
   if (t.pitch === null) return null;
@@ -365,13 +375,15 @@ function elevationFor(t, lat, dec){
 function sinOf(elev){ return (elev === null || elev <= 0) ? 0 : Math.sin(elev*D2R); }
 function airMass(h){ return h <= 0 ? 40 : 1/(Math.sin(h*D2R) + 0.50572*Math.pow(h + 6.07995, -1.6364)); }
 function transmittance(h){ return (h === null || h <= 0) ? 1 : Math.exp(-TAU * airMass(h)); }
-function sunlitFraction(elev){
-  if (elev === null || elev <= 0) return 0.5;
+function lerpTable(tab, elev, below){
+  if (elev === null || elev <= 0) return below;
   const x = Math.min(90, elev)/5, i = Math.floor(x);
-  return i >= 18 ? 1.0 : SUNLIT_F[i] + (SUNLIT_F[i+1] - SUNLIT_F[i])*(x - i);
+  return i >= 18 ? tab[18] : tab[i] + (tab[i+1] - tab[i])*(x - i);
 }
+const sunlitFraction = elev => lerpTable(SUNLIT_F, elev, 0.5);
+const skyVisibility  = elev => lerpTable(OCC_V, elev, 1.0);
 
-function compute(t, w, rho, sinH, fSun){
+function compute(t, w, rho, sinH, fSun, skyVis){
   const sun = t.sunPerp * w.sunMul;
   const sky = t.sky * w.skyMul;
   const skyLum = sky / Math.PI;
@@ -383,13 +395,20 @@ function compute(t, w, rho, sinH, fSun){
   const litE = sun + SKY_F_LIT*sky + bLit;
   const shdE = SKY_F_SHD*sky + bShd;
   const ratio = shdE > 0 ? litE/shdE : 1;
+  // 阴影（地面投影）
+  // 无遮挡理论值：只有天光，弹射为 0（与地面共面的表面互相看不见）
+  const castFreeNits = rho*sky/Math.PI;
+  // 球贴地时：比例 skyVis 的半球看到天空，其余被球的暗侧填充。
+  // 球的下表面法线朝下、可看到完整地面半球，故其亮度 ≈ 球反射率 × ρ × 水平面总照度 ÷ π。
+  const underLum = BALL_ALBEDO * rho * ground / Math.PI;
+  const castNits = rho * (skyVis*skyLum + (1 - skyVis)*underLum);
   return {
-    sun, sky, skyLum, ground, ev, ratio, bLit, bShd,
+    sun, sky, skyLum, ground, ev, ratio, bLit, bShd, skyVis,
     stops: Math.log2(Math.max(ratio, 1)),
     temp: w.temp || t.temp,
     litNits: BALL_ALBEDO*litE/Math.PI,
     shdNits: BALL_ALBEDO*shdE/Math.PI,
-    castNits: rho*sky/Math.PI,                            // 阴影：纯天光，弹射为 0
+    castNits, castFreeNits,
     groundLitNits: rho*ground/Math.PI,
     castRatio: ground > 0 ? sky/ground : 0,
   };
@@ -429,7 +448,7 @@ const hasAtmo     = ()=> selAtmo.value === 'atmo';
 const currentRho  = ()=> { const v = parseFloat(selAlbedo.value); return v >= 0 ? v : 0.18; };
 
 function updateSvg(elev, r){
-  const cx = 260, cy = 232, R = 30, groundY = 300, CAM = 46;
+  const cx = 260, cy = 270, R = 30, groundY = 300, CAM = 46;
   const a = (elev === null || elev <= 0) ? 30 : Math.max(4, Math.min(85, elev));
   const rad = a*D2R;
   const hasSun = elev !== null && elev > 0 && r.sun > 0;
@@ -469,8 +488,26 @@ function updateSvg(elev, r){
   }
   place('mp1', cx + R*ux, cy + R*uy, ux, uy, ux*16 - 4, uy*16 + 4);   // 法线朝太阳
   place('mp2', cx + R, cy, 1, 0, 12, -8);                            // 法线水平背向太阳
-  place('mp3', cx + Math.max(shadowLen*0.55, R*1.2), groundY, 0, -1, 8, 14);
-  place('mp4', cx - 110, groundY, 0, -1, -16, 14);
+  const m3x = cx + Math.max(shadowLen, R*1.15);
+  place('mp3', m3x, groundY, 0, -1, 8, 15);
+  place('mp4', cx - 118, groundY, 0, -1, -16, 15);
+
+  // 遮挡示意：从投影中心指向球的那一片被挡住的天空
+  const occ = document.getElementById('occGroup');
+  if (hasSun){
+    const dx = cx - m3x, dy = cy - groundY, d = Math.hypot(dx, dy);
+    const px = -dy/d, py = dx/d;                       // 垂直于视线的单位向量
+    document.getElementById('occCone').setAttribute('d',
+      `M ${m3x.toFixed(1)} ${groundY} L ${(cx + px*R).toFixed(1)} ${(cy + py*R).toFixed(1)} ` +
+      `A ${R} ${R} 0 0 0 ${(cx - px*R).toFixed(1)} ${(cy - py*R).toFixed(1)} Z`);
+    const ot = document.getElementById('occTxt');
+    ot.setAttribute('x', ((m3x + cx)/2 + 26).toFixed(1));
+    ot.setAttribute('y', ((groundY + cy)/2 + 4).toFixed(1));
+    ot.textContent = `被球遮挡 ${((1 - r.skyVis)*100).toFixed(0)}%`;
+    occ.setAttribute('opacity', '1');
+  } else {
+    occ.setAttribute('opacity', '0');
+  }
   ['mp1','mp3','mp4','grazeWarn'].forEach(id=>
     document.getElementById(id).setAttribute('opacity', hasSun ? '1' : '0.2'));
 
@@ -497,8 +534,8 @@ function updateSvg(elev, r){
 function update(){
   const t = TIMES[selTime.value], w = WEATHERS[selWeather.value];
   const elev = elevationFor(t, currentLat(), currentDec());
-  const rho = currentRho(), fSun = sunlitFraction(elev);
-  const r = compute(t, w, rho, sinOf(elev), fSun);
+  const rho = currentRho(), fSun = sunlitFraction(elev), skyVis = skyVisibility(elev);
+  const r = compute(t, w, rho, sinOf(elev), fSun, skyVis);
   const p = fmtPitch(elev);
   const T = hasAtmo() ? transmittance(elev) : 1;
   const fill = r.sun / T;
@@ -543,12 +580,16 @@ function update(){
     `<b>${fmtLux(r.shdNits)}</b> = 0.18 × (天光 0.45× ${fmtLux(0.45*r.sky)} + 弹射 ${fmtLux(r.bShd)}) ÷ π`
     + (elev !== null && elev > 0 ? `　<span style="color:var(--muted)">可见地面 ${(fSun*100).toFixed(0)}% 在日照下</span>` : '');
   document.getElementById('lvCast').innerHTML =
-    `<b>${fmtLux(r.castNits)}</b> = ρ × 天光 ${fmtLux(r.sky)} ÷ π　<span style="color:var(--warn)">弹射 = 0</span>`
-    + `　<span style="color:var(--muted)">唯一不含太阳成分，校准天光只能看这里</span>`;
+    `<b>${fmtLux(r.castNits)}</b>　<span style="color:var(--muted)">投影中心，球贴地（直径 1 m）</span>`
+    + (elev !== null && elev > 0
+        ? `<br>可见天空 <b>${(skyVis*100).toFixed(0)}%</b>，其余被球暗侧遮挡；若把球抬离地面 5R 以上则无遮挡，回到 <b>${fmtLux(r.castFreeNits)}</b>（= ρ × 天光 ÷ π，弹射为 0）`
+        : `<br>无方向光，无投影`)
+    + `<br><span style="color:var(--muted)">投影区呈中心暗、边缘亮的梯度；表中给的是中心值</span>`;
   document.getElementById('lvGround').innerHTML =
     `<b>${fmtLux(r.groundLitNits)}</b> = ρ × 水平面总照度 ${fmtLux(r.ground)} ÷ π`;
   document.getElementById('lvDiag').innerHTML = r.ground > 0
-    ? `<b>③ ÷ ④ = ${(r.castRatio*100).toFixed(1)}%</b>（= 天光 ÷ 水平面总照度）。反照率在此约掉，故与地面材质、曝光精度无关。`
+    ? `<b>无遮挡阴影 ÷ ④ = ${(r.castRatio*100).toFixed(1)}%</b>（= 天光 ÷ 水平面总照度）。反照率在此约掉，故与地面材质、曝光精度无关；`
+      + `使用时把球抬离地面消除遮挡，再量这两处地面。`
     : '该组合无直射，阴影与日照地面无区别';
 
   // 引擎设置
@@ -597,9 +638,9 @@ function renderTable(){
   TIMES.forEach((t,ti)=>{
     const elev = elevationFor(t, lat, dec), p = fmtPitch(elev);
     const T = atmo ? transmittance(elev) : 1;
-    const sinH = sinOf(elev), fSun = sunlitFraction(elev);
+    const sinH = sinOf(elev), fSun = sunlitFraction(elev), skyVis = skyVisibility(elev);
     WEATHERS.forEach((w,wi)=>{
-      const r = compute(t, w, rho, sinH, fSun);
+      const r = compute(t, w, rho, sinH, fSun, skyVis);
       const tr = document.createElement('tr');
       tr.dataset.key = ti + '-' + wi;
       tr.innerHTML =
