@@ -76,6 +76,33 @@
   .step b{color:var(--accent2);}
   .step .dyn{color:var(--accent); font-weight:600;}
 
+  /* 分页 */
+  .tabs{display:flex; gap:4px; flex-wrap:wrap; margin:4px 0 18px;
+        border-bottom:1px solid var(--border); padding-bottom:0;}
+  .tabs button{
+    background:transparent; color:var(--muted); border:1px solid transparent; border-bottom:0;
+    padding:9px 16px; font-size:13.5px; cursor:pointer; font-family:inherit;
+    border-radius:8px 8px 0 0; margin-bottom:-1px;
+  }
+  .tabs button:hover{color:var(--text); background:#1c1f26;}
+  .tabs button.on{
+    color:var(--accent); background:var(--card); font-weight:600;
+    border-color:var(--border); border-bottom:1px solid var(--card);
+  }
+  .tabpane{display:none;}
+  .tabpane.on{display:block;}
+  .tabpane > h2:first-child{margin-top:6px;}
+
+  /* 光比场景表 */
+  table.ratio{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.ratio th{background:#242936; color:var(--muted); text-align:left; padding:8px 10px;
+                 font-weight:600; border-bottom:2px solid var(--border);}
+  table.ratio td{padding:9px 10px; border-bottom:1px solid #262b35; vertical-align:top; line-height:1.65;}
+  table.ratio td:first-child{white-space:nowrap; font-weight:600; color:var(--accent); font-size:14px;}
+  table.ratio td:nth-child(2){white-space:nowrap; color:var(--muted);}
+  table.ratio tr.hl td{background:#2c3040; box-shadow:inset 3px 0 0 var(--good);}
+  table.ratio .combo{color:var(--accent2); font-size:11.5px;}
+
   /* 术语提示 */
   .tip{border-bottom:1px dotted var(--accent2); cursor:help; position:relative; color:var(--text);}
   .tip::after{
@@ -141,6 +168,16 @@
   </div>
 </div>
 
+<nav class="tabs" id="tabs">
+  <button data-tab="setup" class="on">灯光设置</button>
+  <button data-tab="ratio">光比与场景</button>
+  <button data-tab="measure">测量方法</button>
+  <button data-tab="atmo">大气与雾</button>
+  <button data-tab="table">全组合速查</button>
+  <button data-tab="gloss">术语与换算</button>
+</nav>
+
+<section id="tab-setup" class="tabpane on">
 <div class="cards">
   <div class="card"><div class="k">到达地面的平行光</div><div class="v" id="cSun">—</div><div class="u"><span class="tip" data-tip="lux（勒克斯）= 照度 / illuminance，单位面积上接收到的光通量。描述「有多少光打过来」，与被照物体的材质无关。这是可以和公开实测数据、以及引擎光源参数直接对照的量。">lux</span> · 垂直于光线的照度（<span class="tip" data-tip="Direct Normal Illuminance，直射法向照度。垂直于光线方向的平面上接收到的照度。这正是 UE / HDRP 平行光 Intensity 字段的定义。注意它不等于水平地面照度，后者 = DNI × sin(太阳高度角)。">DNI</span>），非水平地面照度</div></div>
   <div class="card"><div class="k">→ 填入 <span class="tip" data-tip="UE 平行光的 Intensity 字段（单位 lux）。勾选 Atmosphere Sun Light 后，引擎会按大气透射率再衰减一次，所以这里要填「到达地面值 ÷ 透射率」而不是直接填到达地面值。">Intensity</span></div><div class="v warn" id="cFill">—</div><div class="u" id="cFillNote">—</div></div>
@@ -176,6 +213,96 @@
   </table>
 </div>
 
+</section>
+
+<section id="tab-ratio" class="tabpane">
+<h2>光比与典型场景</h2>
+<p class="desc" style="margin-bottom:14px;">
+  下表的观感描述与场景归类<b>整理自摄影／影视灯光的公开专业资料</b>（见页末来源），不是从本页模型推导出来的，
+  因此可以与右侧「本页对应组合」互相印证。行业通用的量化方式是 ASC 的
+  <span class="tip" data-tip="美国电影摄影师协会（American Society of Cinematographers）的光比写法：(主光 + 补光) : 补光，把补光归一为 1。由于补光同时照亮亮面与暗面，这个式子等价于「亮面总照度 : 暗面总照度」，也就是本页的算法。">(主光 + 补光) : 补光</span>，
+  等价于「亮面总照度 : 暗面总照度」；每差 1 档即比值翻倍。
+</p>
+<div class="panel" id="ratioNow" style="border-color:var(--good);">
+  <h3>当前组合</h3>
+  <table><tr><td>光比</td><td id="rnVal">—</td></tr></table>
+</div>
+<div style="overflow-x:auto;">
+<table class="ratio" id="ratioTable">
+  <thead><tr>
+    <th style="width:78px">光比</th><th style="width:56px">档差</th>
+    <th style="width:30%">观感（专业资料描述）</th><th>典型场景与用途</th><th style="width:22%">本页对应组合</th>
+  </tr></thead>
+  <tbody>
+    <tr data-lo="1" data-hi="1.35">
+      <td>1 : 1</td><td>0 档</td>
+      <td>主光与补光等强，画面「几乎看不到阴影、对比极低」。五官清晰但毫无戏剧性，<b>缺乏深度与体积感</b>，容易显得平淡。</td>
+      <td>产品／服装平铺、证件与图录、高调美妆。叙事上常用来表现无生气、程式化、压抑的空间（医院、办公室、审讯室的日光灯感）。有资料指出纯平光「配彩色比配黑白更好用」。</td>
+      <td class="combo">雷暴（各时段）、蓝调时刻（全部气候）</td>
+    </tr>
+    <tr data-lo="1.35" data-hi="2.5">
+      <td>2 : 1</td><td>1 档</td>
+      <td>中等对比，深度出现，阴影「轮廓清晰但不生硬」。<b>暗部细节完全保留</b>，在写实与戏剧之间取得平衡，整体偏柔。</td>
+      <td>被公认最「自然、生活化」的比例：访谈与对话、生活方式类、喜剧与轻松基调（高调喜剧、广告片常用）。人像里对应婚纱、儿童、美妆、日系清淡。户外即阴天与薄云天。</td>
+      <td class="combo">阴天 / 雨天 / 雪天（正午～黄金时刻）</td>
+    </tr>
+    <tr data-lo="2.5" data-hi="5">
+      <td>3–4 : 1</td><td>1.6–2 档</td>
+      <td>阴影明显加深、高光更醒目，但<b>关键细节仍然保留</b>。被形容为在不压垮主体的前提下加入张力、聚焦与氛围。</td>
+      <td><b>影视照明最常见的起点</b>——大量资料建议先按 4:1 布光，再依剧本与类型调整。适合剧情片、短片、时装摄影、企业形象与男性肖像。户外对应黄金时刻，或正午晴天但地面浅色（水泥、沙地、雪地）提供反弹补光。</td>
+      <td class="combo">雾天（多数时段）、日出日落晴朗；正午晴朗 + 地面 ρ ≥ 0.55</td>
+    </tr>
+    <tr data-lo="5" data-hi="10">
+      <td>8 : 1</td><td>3 档</td>
+      <td>「高度戏剧化、风格化」，亮部与暗部分离强烈，<b>暗部开始丢失细节</b>。资料建议有明确意图时才用，否则会掩盖信息。</td>
+      <td>黑色电影、惊悚、恐怖的标志性区间（多数资料把 4:1–8:1 以上归为此类）。黑白摄影偏爱这一档。户外即<b>正午晴天、深色地面、不加补光</b>——这也正是专业摄影师认为「几乎无法控制、阴影生硬不讨喜」而必须加反光板或改用阴影处的原因。</td>
+      <td class="combo">正午 / 上下午 / 黄金时刻的晴朗与多云（ρ = 0.18）</td>
+    </tr>
+    <tr data-lo="10" data-hi="1e9">
+      <td>10 : 1 以上</td><td>3.3 档以上</td>
+      <td>被描述为「极度阴郁、甚至带不祥感」。暗部趋近纯黑，形体走向剪影，画面只靠亮部叙事。</td>
+      <td>单光源舞台、月光夜景、霓虹夜街、烛光特写、恐怖与心理惊悚的高潮段落。物理上对应<b>缺少任何填充光源</b>的环境：真空／太空（无大气散射）、黑色地面的荒漠夜、密闭深空间。</td>
+      <td class="combo">满月夜晴朗；清晨傍晚晴朗且无地面弹射（ρ = 0）</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="panel" style="margin-top:14px;">
+  <h3>想调到目标光比，该动哪个参数</h3>
+  <table>
+    <tr><td>① 地面反照率（最有效）</td><td>暗部几乎全靠地面弹射填亮，所以它是杠杆最长的一项。正午晴朗下：ρ=0 → <b>17.5:1</b>、ρ=0.18 → <b>9.3:1</b>、ρ=0.35 → <b>6.7:1</b>、ρ=0.55 → <b>5.2:1</b>、ρ=0.80 → <b>4.2:1</b>。这正是专业资料里「户外用反光板作为补光源」的物理对应——浅色地面就是一块巨大的反光板。</td></tr>
+    <tr><td>② 气候</td><td>阴天／雨天把光比直接压到 2:1 甚至 1:1，因为直射几乎消失、天光成为唯一光源。要柔光，换天气比调灯有效得多。</td></tr>
+    <tr><td>③ 太阳高度角</td><td>并非越低越硬。低角度时直射被大气衰减得厉害、天光占比上升，光比反而下降：日出日落约 <b>3.4:1</b>，而正午晴天约 <b>9.3:1</b>。这与「黄金时刻是最好用的直射光」的行业共识一致。</td></tr>
+    <tr><td>④ 补光</td><td>需要精确控制时用大面积 RectLight 模拟反光板／柔光布。注意专业资料的提醒：<b>周围的反射面会污染暗部读数</b>，测量时要留意墙面、地面等意外补光。</td></tr>
+    <tr><td style="color:var(--bad)">不要用平行光强度调光比</td><td>提高太阳强度会同时抬高亮面与（经由地面弹射的）暗面，光比几乎不变甚至略升。它只改变整体曝光，不改变反差。</td></tr>
+  </table>
+</div>
+
+<div class="panel">
+  <h3>交叉验证：专业经验与本页模型是否吻合</h3>
+  <table>
+    <tr><td>正午晴天无补光</td><td>模型给 <b>9.3:1</b>（3.2 档）。专业资料把 8:1 归为「最大戏剧性、黑白与噩梦类型」，并普遍认为正午直射「几乎无法控制、阴影深而不讨喜」，必须加反光板或转入阴影处。<b>两者一致</b>——说明这个数值本就属于极端区间，不是模型算错了。</td></tr>
+    <tr><td>浅色地面 = 反光板</td><td>模型里 ρ 从 0.18 提到 0.55–0.80 时光比降到 5.2:1–4.2:1，正好落进专业资料推荐的 4:1 常用区。与「户外以反光板作为补光源」的做法完全对应。</td></tr>
+    <tr><td>阴天</td><td>模型给约 2:1。专业资料把 2:1 描述为最自然、生活化的柔光比例，而阴天正是经典的柔光条件。<b>吻合</b>。</td></tr>
+    <tr><td>黄金时刻</td><td>模型给 3.4–8.4:1（随高度角变化），核心区间落在 4:1 附近，即影视照明最常用的起点；而行业公认黄金时刻是「最好用的直射光」。<b>吻合</b>。</td></tr>
+    <tr><td>结论</td><td>模型的绝对数值与行业经验区间在四个独立情形下都对得上，因此可以放心把它当作布光起点；差异出现时优先怀疑测量方法与场景设置，而不是这张表。</td></tr>
+  </table>
+</div>
+
+<ul class="notes" style="margin-top:16px;">
+  <li><b>资料来源</b>（观感描述与场景归类均整理自以下公开资料，并与本页模型交叉核对）：
+    StudioBinder《Lighting Ratios Explained》（含 ASC 公式与入射式测量法）、
+    Beverly Boy《Lighting Ratios That Actually Matter》（类型与叙事对应）、
+    The Slanted Lens《Lighting Ratios for Photo and Video》（档差换算与双表测量法）、
+    Wikipedia《Lighting ratio》、
+    SLR Lounge / Westcott University（自然光与反光板实践）、
+    以及中文摄影资料对「光比／亮部暗部」的定义。</li>
+  <li><b>一致的量化口径</b>：以上资料都用<b>入射式</b>测光分别读亮面与暗面，比较光圈级差；1 档 = 2:1、2 档 = 4:1、3 档 = 8:1。本页的「档数」列与之完全一致，因此可直接互换使用。</li>
+</ul>
+</section>
+
+<section id="tab-atmo" class="tabpane">
 <h2>如何控制大气透射率</h2>
 <div class="warn-box">
   <b>最重要的一条：不要去猜透射率，用 ① 亮面读数把 Intensity 反推到位。</b>
@@ -214,6 +341,9 @@
   </table>
 </div>
 
+</section>
+
+<section id="tab-measure" class="tabpane">
 <h2>测量方法：亮面 · 暗面 · 投影</h2>
 <div class="warn-box">
   <b>术语先对齐</b>：摄影／灯光行业里的<b>光比</b>指主体<b>亮面与暗面</b>之比，两者都量在主体身上；
@@ -346,6 +476,9 @@
   </div>
 </div>
 
+</section>
+
+<section id="tab-table" class="tabpane">
 <h2>全组合速查表</h2>
 <div style="overflow-x:auto;">
 <table class="full" id="fullTable">
@@ -361,6 +494,9 @@
 </table>
 </div>
 
+</section>
+
+<section id="tab-gloss" class="tabpane">
 <h2>术语表</h2>
 <div class="panel">
   <table>
@@ -407,6 +543,7 @@
   <li><b>Unity URP / 内置管线</b>：非物理单位，不能直接填 lux。保留表中比例关系即可：平行光在 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」配置，反差档位与色温通用。</li>
   <li><b>数据来源</b>：DNI 与天光基于 CIE 天空模型与实测范围（晴天正午地面约 10–12 万 lux、阴天 1–2.5 万 lux、日落约 400–700 lux、满月约 0.05–0.3 lux），以中纬度为基准取整。改纬度与季节会重算高度角并连带影响水平面照度、EV100 与弹射项；但各时段的 DNI 与天光是按该时段典型高度角标定的常量，不随纬度重算，因此极端组合（如 60°N 冬至正午，高度角仅 6.6°）下 DNI 偏乐观，请参考表中透射率判断合理性。</li>
 </ul>
+</section>
 
 <script>
 // ================== 数据 ==================
@@ -546,6 +683,15 @@ const currentDec  = ()=> parseFloat(selSeason.value);
 const currentMode = ()=> selSkyMode.value;
 const hasAtmo     = ()=> selAtmo.value === 'atmo';
 const currentRho  = ()=> { const v = parseFloat(selAlbedo.value); return v >= 0 ? v : 0.18; };
+
+// 分页切换
+const tabBar = document.getElementById('tabs');
+tabBar.querySelectorAll('button').forEach(b=> b.onclick = ()=>{
+  tabBar.querySelectorAll('button').forEach(x=> x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tabpane').forEach(p=>
+    p.classList.toggle('on', p.id === 'tab-' + b.dataset.tab));
+  window.scrollTo({top:0, behavior:'smooth'});
+});
 
 // 读数一律用亮度 cd/m²（≡ nits）——引擎的 Luminance meter / Pixel Inspector 能直接读到的量。
 // lux 只用于填进引擎的光源参数（平行光 Intensity、天光照度），那些是设置值而非读数。
@@ -754,6 +900,20 @@ function update(){
   document.getElementById('st1sun').textContent = fmtLux(fill) + ' lux';
   document.getElementById('st1pitch').textContent = pitchStr;
   document.getElementById('st1ev').textContent = fmtEV(r.ev);
+
+  // 光比页：高亮当前组合所落的档位
+  let bandName = '—';
+  document.querySelectorAll('#ratioTable tbody tr').forEach(tr=>{
+    const lo = parseFloat(tr.dataset.lo), hi = parseFloat(tr.dataset.hi);
+    const inBand = r.ratio >= lo && r.ratio < hi;
+    tr.classList.toggle('hl', inBand);
+    if (inBand) bandName = tr.cells[0].textContent.trim();
+  });
+  document.getElementById('rnVal').innerHTML =
+    `<b style="color:var(--good);font-size:15px">${fmtRatio(r.ratio)}</b>　反差 ${r.stops.toFixed(1)} 档`
+    + `　→ 落在下表 <b>${bandName}</b> 档位（已高亮）`
+    + `<br><span style="color:var(--muted)">${t.name} · ${w.name} · 地面 ρ=${rho}`
+    + (elev !== null && elev > 0 ? ` · 太阳高度角 ${elev.toFixed(1)}°` : '') + `</span>`;
 
   updateSvg(elev, r);
   document.querySelectorAll('#fullTable tbody tr').forEach(tr=>
