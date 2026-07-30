@@ -282,11 +282,13 @@
   <li><b>Intensity Scale 的含义</b>：SkyLight 最终亮度 = 源（Cubemap/捕获）自身亮度 × Intensity Scale。因此它<b>没有普适值</b>，取决于你的 HDRI 是否带绝对亮度标定——这正是需要灰球校准的原因。用顶部「天光方案」下拉切换：<b>自动捕捉</b>恒为 1.0；<b>HDRI</b> 按 L₀ 算理论初值再微调（L₀ 未知时先按 1 cd/m²）；<b>手动</b>没有初值可算，直接以灰球读数为标尺。</li>
   <li><b>光比模型（全部公式）</b>：<br>
     　水平面总照度 E<sub>h</sub> = DNI × sin(高度角) + 天光<br>
-    　地面弹射 E<sub>b</sub> = ρ × E<sub>h</sub> × 0.5　（0.5 = 垂直面只看到半个地面半球）<br>
-    　受光面 E = DNI + 0.55 × 天光 + E<sub>b</sub>　　阴影面 E = 0.45 × 天光 + E<sub>b</sub><br>
+    　受光面弹射 E<sub>b,亮</sub> = ρ × E<sub>h</sub> × 0.5　（0.5 = 垂直面只看到半个地面半球）<br>
+    　阴影面弹射 E<sub>b,暗</sub> = ρ × (f × DNI × sin(高度角) + 天光) × 0.5<br>
+    　受光面 E = DNI + 0.55 × 天光 + E<sub>b,亮</sub>　　阴影面 E = 0.45 × 天光 + E<sub>b,暗</sub><br>
     　灰球读数 L = 反射率 × E ÷ π（cd/m²）<br>
     天空系数依据是开阔地无遮挡的垂直面只能看到半个天空半球（恰为水平面的 0.5），受光点法线朝太阳取 0.55、阴影点法线背向并略朝下取 0.45。1 档 = 2 倍。</li>
-  <li><b>地面反照率决定暗部能有多亮</b>：弹射项往往和阴影面的天光项同量级甚至更大，所以它<b>不是</b>可忽略的修正。ρ = 0 对应「球体浮空 / 无地面 / GI 关闭」，此时暗部只剩天光那一半半球，光比会被显著拉大——这也是排查暗部偏暗的第一个着眼点：先确认 Dynamic Global Illumination Method 不是 None、地面网格真实存在且够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）。另外 SkyLight 遮蔽（DFAO / Lumen AO）还会再削暗部约 10–20%，属正常范围。</li>
+  <li><b>日照比例 f 与低角度太阳的自遮挡</b>：物体自身投影长度 = 高度 ÷ tan(高度角)，方向正是背光侧——也就是阴影面朝下看去的那片地面。投影里的地面只被天光照亮，没有直射，所以阴影面拿到的弹射比受光面少。f 表由视角因子数值积分得出（垂直微面元 dF = x·z ÷ (π·r⁴) dA，扣除投影覆盖的窄带）：高度角 15° 时 f ≈ 0.52，55° 时 ≈ 0.70，正头顶时 → 1.0。注意投影只是一条<b>窄带</b>，而垂直面看到的地面在方位上很宽，所以自遮挡最多吃掉约一半（f 的下限是 0.5），不会归零。这解释了为什么「教科书晴天 6:1」只在中午高角度成立，低角度实际会拉到 10:1 以上。</li>
+  <li><b>地面反照率决定暗部能有多亮</b>：弹射项往往和阴影面的天光项同量级，所以它<b>不是</b>可忽略的修正。ρ = 0 对应「无地面 / GI 关闭」，此时暗部只剩天光那一半半球。排查暗部偏暗的顺序：先用 <code>r.Lumen.DiffuseIndirect.Allow 0/1</code> 看弹射是否真的在供光（正常情况下切换会有可见但不剧烈的差异，因为弹射只占阴影面照度的一部分）；再确认地面网格真实存在且够大（薄平面的 Mesh Distance Field 退化，Lumen 软件光追可能不参与）；最后核对地面材质的 BaseColor 是否真是 0.18。另外 SkyLight 遮蔽（DFAO / Lumen AO）还会再削暗部约 10–20%，读数请取球的<b>赤道高度</b>、不要贴近接地点（接地处天空被挡掉大半并叠加接触 AO）。</li>
   <li><b>为什么 0.18 只出现在两个地方</b>：照度（lux）、天空亮度、Intensity Scale、EV100、光比这些量都<b>与物体反射率无关</b>——照度描述入射光，EV100 走的是入射式测光公式（C=250），光比是两个照度之比、同材质时反射率被约掉。反射率只进入：<b>(a)</b> 灰球的 cd/m² 读数（L = ρ × E ÷ π，非 18% 灰按 ρ 线性缩放）；<b>(b)</b> 地面弹射项里的<b>地面</b>反照率。注意这是两个不同的表面，别把校准球的反射率和地面的搞混。</li>
   <li><b>EV100</b>：EV = log₂(地面总照度 ÷ 2.5)。锁定曝光时把 UE 的 <code>Min EV100 = Max EV100 = 表中值</code>；自动曝光时保证表中值落在 Min/Max 区间内，Exposure Compensation 保持 0。UE5 默认已启用 <code>Extend Default Luminance Range</code>（物理曝光），UE4 老项目需手动勾选。</li>
   <li><b>Unity（URP/内置管线）</b>：非物理单位，不能直接填 lux。可保留表中的<b>比例关系</b>：平行光设 1–8 区间内按 lux 比例缩放，环境光按「天光 ÷ 平行光」比值配置，反差档位与色温仍然通用。</li>
@@ -353,28 +355,47 @@ function transmittance(h, tau){
   return Math.exp(-tau * airMass(h));
 }
 
+// 可见地面中处于日照下的比例 f（对阴影面而言），按 5° 步长制表。
+// 来源：对垂直微面元（位于物体赤道高度）与地面之间的视角因子做数值积分
+//   dF = x·z / (π·r⁴) dA，扣掉物体自身投影覆盖的那条窄带（长 = 高 / tan(高度角)）。
+// 结论：太阳越低投影越长，但投影只是一条窄带，而垂直面看到的地面在方位上很宽，
+//   所以自遮挡最多吃掉约一半（h→0 时 f→0.5），而不是全部。
+const SUNLIT_F = [0.500, 0.507, 0.511, 0.517, 0.526, 0.538, 0.553, 0.572, 0.596,
+                  0.624, 0.658, 0.698, 0.745, 0.796, 0.852, 0.906, 0.954, 0.988, 1.000];
+function sunlitFraction(elev){
+  if (elev === null || elev <= 0) return 0.5;
+  const x = Math.min(90, elev) / 5, i = Math.floor(x);
+  if (i >= 18) return 1.0;
+  return SUNLIT_F[i] + (SUNLIT_F[i+1] - SUNLIT_F[i]) * (x - i);
+}
+
 // ---------- 计算 ----------
 // rho:  地面反照率（BaseColor 线性值）。0 等价于「无地面 / GI 关闭」。
 // sinH: sin(太阳高度角)，由纬度/季节算出的实际高度角决定。
-// 说明：垂直面接收的地面反射照度 = ρ × 水平面总照度 × 0.5
+// fSun: 阴影面可见地面中处于日照下的比例（见 sunlitFraction）。
+// 说明：垂直面接收的地面反射照度 = ρ × 有效地面照度 × 0.5
 //   系数 0.5 来自 (1 − cos(倾角)) / 2 在倾角 90° 时的取值——垂直面看到半个地面半球。
-//   受光面与阴影面都同等接收这一项（两者法线都近似垂直），所以它抬高暗部远比抬高亮部明显。
-function compute(t, w, rho, sinH){
+//   受光面朝向太阳，看到的地面全在日照下（f = 1）；阴影面朝背光侧，看到的地面
+//   有一部分落在物体自身投影里、只被天光照亮，所以有效地面照度更低。这个不对称
+//   是低角度太阳下光比远大于「教科书晴天 6:1」的主要原因。
+function compute(t, w, rho, sinH, fSun){
   const sun = t.sunPerp * w.sunMul;           // 到达地面的平行光 lux（垂直于光线）
   const sky = t.sky * w.skyMul;               // 天光 lux（水平面）
   const skyLum = sky / Math.PI;               // 平均天空亮度 cd/m²
-  const ground = sun * sinH + sky;            // 水平面总照度（直射的水平分量 + 天光）
+  const direct = sun * sinH;                  // 直射的水平分量
+  const ground = direct + sky;                // 水平面总照度
   const ev = Math.log2(Math.max(ground, 0.005) / 2.5);
-  const bounceE = rho * ground * 0.5;         // 地面弹射照度
-  const litE = sun + SKY_F_LIT * sky + bounceE;
-  const shadowE = SKY_F_SHD * sky + bounceE;
+  const bLit = rho * ground * 0.5;                    // 受光面看到的地面：全在日照下
+  const bShd = rho * (fSun * direct + sky) * 0.5;     // 阴影面看到的地面：部分在自身投影里
+  const litE = sun + SKY_F_LIT * sky + bLit;
+  const shadowE = SKY_F_SHD * sky + bShd;
   const ratio = shadowE > 0 ? litE / shadowE : 1;
   const stops = Math.log2(Math.max(ratio, 1));
   const temp = w.temp || t.temp;
   // 18% 灰球读数目标 (cd/m²)：L = albedo × E / π
   const litNits = 0.18 * litE / Math.PI;
   const shdNits = 0.18 * shadowE / Math.PI;
-  return { sun, sky, skyLum, ground, ev, ratio, stops, temp, litNits, shdNits, bounceE };
+  return { sun, sky, skyLum, ground, ev, ratio, stops, temp, litNits, shdNits, bLit, bShd };
 }
 
 function fmtLux(v){
@@ -460,7 +481,8 @@ function update(){
   const t = TIMES[selTime.value], w = WEATHERS[selWeather.value];
   const elev = elevationFor(t, currentLat(), currentDec());
   const rho = currentRho();
-  const r = compute(t, w, rho, sinOf(elev));
+  const fSun = sunlitFraction(elev);
+  const r = compute(t, w, rho, sinOf(elev), fSun);
   const p = fmtPitch(elev);
   const scale = r.skyLum / currentHdri();
   const T = hasAtmo() ? transmittance(elev, currentTau()) : 1;
@@ -515,7 +537,8 @@ function update(){
   document.getElementById('cRatio').textContent = fmtRatio(r.ratio);
   document.getElementById('cRatioStops').innerHTML =
     (r.ratio < 1.05 ? '无可辨识阴影（全漫射）' : '反差约 ' + r.stops.toFixed(1) + ' 档')
-    + ` · 地面 ρ=${rho}，弹射填充 ${fmtLux(r.bounceE)} lux`
+    + ` · 地面 ρ=${rho}，弹射填充：受光面 ${fmtLux(r.bLit)} lux / 阴影面 ${fmtLux(r.bShd)} lux`
+    + (elev !== null && elev > 0 ? `（阴影面可见地面仅 ${(fSun*100).toFixed(0)}% 在日照下，其余落在自身投影里）` : '')
     + (rho === 0 ? '<br><b>无地面弹射</b>，光比被显著拉大' : '')
     + (Math.abs(rho - w.groundRec) > 0.01 ? `<br>该气候建议 ρ≈${w.groundRec}` : '');
   document.getElementById('cEV').textContent = fmtEV(r.ev);
@@ -605,9 +628,9 @@ function renderTable(){
     const elev = elevationFor(t, lat, dec);
     const p = fmtPitch(elev);
     const Tt = atmo ? transmittance(elev, tau) : 1;
-    const sinH = sinOf(elev);
+    const sinH = sinOf(elev), fSun = sunlitFraction(elev);
     WEATHERS.forEach((w,wi)=>{
-      const r = compute(t, w, rho, sinH);
+      const r = compute(t, w, rho, sinH, fSun);
       const tr = document.createElement('tr');
       tr.dataset.key = ti + '-' + wi;
       tr.innerHTML =
