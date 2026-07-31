@@ -103,18 +103,15 @@
   table.ratio tr.hl td{background:#2c3040; box-shadow:inset 3px 0 0 var(--good);}
   table.ratio .combo{color:var(--accent2); font-size:11.5px;}
 
-  /* 术语提示 */
-  .tip{border-bottom:1px dotted var(--accent2); cursor:help; position:relative; color:var(--text);}
-  .tip::after{
-    content:attr(data-tip); position:absolute; left:0; bottom:calc(100% + 7px); z-index:50;
-    min-width:230px; max-width:360px; background:#0d0f13; color:#e8eaf0;
-    border:1px solid var(--accent2); border-radius:8px; padding:9px 11px;
-    font-size:12px; line-height:1.6; font-weight:400; white-space:normal;
-    opacity:0; visibility:hidden; transition:opacity .12s; pointer-events:none;
-    box-shadow:0 6px 20px rgba(0,0,0,.55);
+  /* 术语提示：单一浮层由 JS 定位，避免贴近视口边缘时被裁切 */
+  .tip{border-bottom:1px dotted var(--accent2); cursor:help; color:var(--text);}
+  #tipBox{
+    position:fixed; z-index:9999; display:none;
+    width:max-content; max-width:min(380px, calc(100vw - 24px));
+    background:#0d0f13; color:#e8eaf0; border:1px solid var(--accent2); border-radius:8px;
+    padding:10px 12px; font-size:12px; line-height:1.65; font-weight:400;
+    box-shadow:0 8px 26px rgba(0,0,0,.6); pointer-events:none;
   }
-  .tip:hover::after{opacity:1; visibility:visible;}
-  .panel td .tip::after, ul.notes .tip::after{left:auto;}
 
   ul.notes{margin-top:22px; font-size:12.5px; color:var(--muted); line-height:1.85;}
   ul.notes li{margin-left:18px; margin-bottom:7px;}
@@ -126,7 +123,8 @@
 </head>
 <body>
 
-<h1>PBR 光照参考表<span class="sub">时段 × 气候 — 平行光 / 天光 / 光比 / <span class="tip" data-tip="Exposure Value at ISO 100，ISO100 下的曝光值。EV = log2(照度 ÷ 2.5)，每 +1 表示光量翻倍。用入射式定义（标定常数 C=250），与物体反射率无关。UE 的 Min/Max EV100 就是这个量。">EV100</span>，真实物理单位</span></h1>
+<div id="tipBox"></div>
+<h1>PBR 光照参考表<span class="sub">时段 × 气候 — 平行光 / 天光 / 光比 / EV100，真实物理单位</span></h1>
 <p class="desc">
   适用于 UE5（物理光照单位）与 Unity HDRP（同为 lux / EV 体系）。
   基准假设：场景中所有物体 BaseColor = 0.18 线性中灰、Roughness = 1、Metallic = 0。
@@ -357,7 +355,7 @@
   取消勾选时引擎不做衰减，此时才需要按时段填「到达地面」那一列的值。
 </div>
 <div class="panel">
-  <h3>透射率的由来（本页如何保证自洽）</h3>
+  <h3>大气透射率 T</h3>
   <table>
     <tr><td>T 的定义</td><td>T = 到达地面的晴空 DNI ÷ 光源在大气层顶的输出。两者都是实测标定值，所以 <code>填入值 × T = 到达值</code> 恒成立。</td></tr>
     <tr><td>为什么不用公式估算</td><td>用恒定浑浊度的 Beer-Lambert 公式算 T 会在低太阳角<b>严重低估衰减</b>——真实大气的气溶胶集中在近地层，低角度光程穿过的浓密层不成比例地长，而恒定浑浊度假设无法表达这一点（15° 时偏乐观约 1.7 倍，日落时约 3.2 倍）。本页的 T 因此取自实测值直接反解，不经公式。</td></tr>
@@ -754,6 +752,92 @@ const currentMode = ()=> selSkyMode.value;
 const hasAtmo     = ()=> selAtmo.value === 'atmo';
 const currentRho  = ()=> { const v = parseFloat(selAlbedo.value); return v >= 0 ? v : 0.18; };
 
+// ---------- 术语提示 ----------
+// 单一浮层 + JS 定位：上方空间不足时翻到下方，水平溢出时贴边收回，
+// 因此贴近视口顶部或右缘的术语也能完整显示。
+const tipBox = document.getElementById('tipBox');
+function showTip(el){
+  tipBox.textContent = el.dataset.tip;
+  tipBox.style.display = 'block';
+  const r = el.getBoundingClientRect();
+  const bw = tipBox.offsetWidth, bh = tipBox.offsetHeight, pad = 10;
+  let top = r.top - bh - 8;
+  if (top < pad) top = r.bottom + 8;                                  // 上方不够 → 翻到下方
+  if (top + bh > innerHeight - pad) top = Math.max(pad, innerHeight - bh - pad);
+  let left = Math.min(r.left, innerWidth - bw - pad);
+  tipBox.style.left = Math.max(pad, left) + 'px';
+  tipBox.style.top = top + 'px';
+}
+const hideTip = ()=> { tipBox.style.display = 'none'; };
+document.addEventListener('mouseover', e=>{
+  const el = e.target.closest && e.target.closest('.tip');
+  if (el) showTip(el); else if (!e.target.closest || !e.target.closest('#tipBox')) hideTip();
+});
+document.addEventListener('scroll', hideTip, true);
+
+// 术语表：每个标签页内首次出现的术语自动加提示。
+// 分页阅读时读者可能从任意一页进入，所以按页而不是按全文计算「首次」。
+// ASCII 术语要求两侧非字母数字，避免命中单词内部；长词在前，避免被短词抢先匹配。
+const GLOSSARY = [
+  ['Real Time Capture', 'UE SkyLight 的选项。每帧实时捕捉场景（含 Sky Atmosphere）生成环境光，天光因此自动跟随太阳变化，Intensity Scale 保持 1.0 即可。'],
+  ['Intensity Scale', 'SkyLight 的强度倍率。最终天光亮度 = 源（Cubemap 或捕获结果）自身亮度 × Intensity Scale。它没有普适值，取决于源是否带绝对亮度标定。'],
+  ['Source Angle', '平行光的光源角直径（度）。真实太阳约 0.54°，值越大阴影边缘越柔和。阴天用 5–10° 模拟云层散射后的软方向性。'],
+  ['太阳常数', '太阳在大气层顶、垂直于光线方向的辐照度，1361 W/m² ≈ 128,000 lux。全年仅因地球轨道偏心率变化 ±3.4%，可视为恒定。'],
+  ['大气质量', 'Air Mass。阳光穿过的大气厚度，以垂直向上为 1，约等于 1/sin(太阳高度角)：15° 时约 3.8，日落时超过 30。它是透射率随时段变化的几何原因。'],
+  ['空气透视', 'Aerial Perspective。远处物体因大气散射而变淡、偏向天空色。UE 的 Sky Atmosphere 负责这一项，默认从 100 m 外才开始起作用。'],
+  ['irradiance', '照度 / 辐照度（lux 或 W/m²）。表面接收到的光在整个半球上的积分，决定表面被照亮的程度。与观察方向无关。'],
+  ['radiance', '亮度 / 辐亮度（cd/m² 或 W/m²·sr）。沿单一方向传播的光，是相机实际接收到的量。与方向有关。'],
+  ['Rayleigh', '瑞利散射。粒径远小于波长时的散射（空气分子），强烈偏向短波（λ⁻⁴），这是天空呈蓝色的原因。'],
+  ['EV100', 'ISO 100 下的曝光值。EV = log₂(照度 ÷ 2.5)，每 +1 表示光量翻倍。入射式定义、与物体反射率无关，对应 UE 的 Min / Max EV100。'],
+  ['HDRI', 'High Dynamic Range Image，高动态范围环境贴图。用全景图记录整个天空的亮度分布作为环境光源；亮度存在贴图里，与太阳位置无关。'],
+  ['DFAO', 'Distance Field Ambient Occlusion。用网格距离场近似计算天光被附近几何遮挡的程度。它有世界空间作用半径（SkyLight 的 Occlusion Max Distance），属非物理的额外衰减。'],
+  ['Lumen', 'UE5 的实时全局光照与反射系统。地面弹射光（间接光）由它提供；关闭后暗部只剩天光。可用 r.Lumen.DiffuseIndirect.Allow 0/1 验证弹射是否在供光。'],
+  ['DNI', 'Direct Normal Illuminance，直射法向照度。垂直于光线方向平面上的照度，单位 lux。UE / HDRP 平行光 Intensity 字段用的就是这个定义。水平地面照度 = DNI × sin(太阳高度角)。'],
+  ['PBR', 'Physically Based Rendering，基于物理的渲染。核心要求是用真实物理单位与能量守恒的材质，这样一套光照参数才能在不同场景与资产间通用。'],
+  ['Mie', '米氏散射。粒径接近或大于波长时的散射（气溶胶、尘、雾滴、云滴），波长依赖弱、偏前向。雾与霾、云同属此类，差别只在粒径与数密度。'],
+  ['反照率', 'Albedo，漫反射率，即材质 BaseColor 的线性值。标准中灰 0.18、水泥约 0.35、沙地约 0.55、新雪 0.8+。校准球与地面是两个独立的反照率。'],
+  ['光比', '主体亮面照度 ÷ 暗面照度，两者都量在主体身上。行业所称「阴影部位／暗部」指主体背光面，不是地面落影；地面落影不参与光比。'],
+  ['nits', '亮度单位，与 cd/m² 是同一个单位的两种写法（1 nit ≡ 1 cd/m²）。'],
+  ['cd/m²', '亮度 / luminance 的单位，坎德拉每平方米，与 nit 等价。描述表面看起来有多亮，含有反射率。引擎里能直接读到的就是它。'],
+  ['lux', '照度 / illuminance 的单位，勒克斯。描述打到表面上的光有多少，与被照物体材质无关。引擎光源参数用的就是它。'],
+];
+const SKIP_TAGS = new Set(['CODE','SCRIPT','STYLE','SVG','TEXT','TSPAN','OPTION','SELECT','BUTTON','H1','H2','H3']);
+function markGlossary(root){
+  const done = new Set();
+  // 该页已有手工提示的术语不再自动标注，避免重复
+  root.querySelectorAll('.tip').forEach(el=> done.add(el.textContent.trim()));
+  for (const [term, desc] of GLOSSARY){
+    if (done.has(term)) continue;
+    const ascii = /^[\x20-\x7E]+$/.test(term);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(n){
+        if (!n.nodeValue || n.nodeValue.indexOf(term) < 0) return NodeFilter.FILTER_REJECT;
+        for (let p = n.parentElement; p && p !== root; p = p.parentElement)
+          if (SKIP_TAGS.has(p.tagName) || p.classList.contains('tip')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let node;
+    while ((node = walker.nextNode())){
+      const i = node.nodeValue.indexOf(term);
+      if (ascii){
+        const before = node.nodeValue[i-1], after = node.nodeValue[i+term.length];
+        if ((before && /[A-Za-z0-9]/.test(before)) || (after && /[A-Za-z0-9]/.test(after))) continue;
+      }
+      const tail = node.splitText(i);
+      tail.splitText(term.length);
+      const span = document.createElement('span');
+      span.className = 'tip';
+      span.dataset.tip = desc;
+      span.textContent = term;
+      tail.parentNode.replaceChild(span, tail);
+      done.add(term);
+      break;                                    // 每页每术语只标第一处
+    }
+  }
+}
+const markAllPanes = ()=> document.querySelectorAll('.tabpane').forEach(markGlossary);
+
 // 分页切换
 const tabBar = document.getElementById('tabs');
 tabBar.querySelectorAll('button').forEach(b=> b.onclick = ()=>{
@@ -988,6 +1072,7 @@ function update(){
   updateSvg(elev, r);
   document.querySelectorAll('#fullTable tbody tr').forEach(tr=>
     tr.classList.toggle('hl', tr.dataset.key === selTime.value + '-' + selWeather.value));
+  markAllPanes();          // 动态内容重建后重新标注术语
 }
 
 const tbody = document.querySelector('#fullTable tbody');
