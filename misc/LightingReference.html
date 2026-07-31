@@ -364,28 +364,56 @@
   </table>
 </div>
 <div class="panel">
-  <h3>Sky Atmosphere 参数（默认值与效果取自引擎源码）</h3>
-  <p class="desc" style="margin:-2px 0 10px">
-    引擎把颜色与 Scale 相乘得到真正的系数：<code>系数 = 颜色 × Scale</code>。默认颜色是<b>归一化</b>的，
-    所以 Scale 就是该项在 0 km 高度的绝对强度（单位 1/km）。消光按
-    <code>Mie消光 × Mie密度 + Rayleigh × Rayleigh密度 + 臭氧 × 臭氧密度</code> 沿光线积分。
-  </p>
+  <h3>常用参数：天空的颜色与通透感</h3>
   <table>
-    <tr><td>Rayleigh Scattering<br>+ Scattering Scale</td><td>空气分子散射。默认系数 <code>(0.005802, 0.013558, 0.033100)</code> 1/km，颜色归一化为 <code>(0.175, 0.410, 1.0)</code>、Scale = <code>0.0331</code>。<b>蓝的系数是红的 5.7 倍</b>（λ⁻⁴ 的体现）。<br>
-      <b>Scale 等比缩放三个通道，不改变系数色相</b>——它就是分子密度倍率，增大等于处处增加大气质量。<b>所以增大它天空会变红而不是变蓝</b>：蓝光被消光掉得远比红光快，整个天空朝黄昏配色偏移。垂直方向的蓝光透射率随 Scale 变化：×1 → 0.77、×2 → 0.59、×4 → 0.35、×8 → 0.12，而红光始终在 0.69 以上。<br>
-      注意 Rayleigh <b>只有散射、没有吸收项</b>（源码中它的消光就等于散射），所以它把光"搬走"而不是"吃掉"。</td></tr>
-    <tr><td>Mie Scattering<br>+ Scattering Scale</td><td>气溶胶／尘埃散射。默认颜色<b>纯白</b>、Scale = <code>0.003996</code> 1/km，因此是中性灰的散射，不带色偏。增大 → 霾感、天空整体发白、太阳变暗、日晕更<b>强</b>（日晕的<b>大小</b>由 Anisotropy 决定，不是这一项）。城市雾霾与沙尘靠它。</td></tr>
-    <tr><td>Mie Absorption<br>+ Absorption Scale</td><td>颗粒<b>吸收</b>。默认纯白、Scale = <code>0.000444</code> 1/km。源码里 <code>Mie消光 = Mie散射 + Mie吸收</code>，所以这一项只增加消光、不增加散射：太阳变暗而天空<b>不会</b>跟着变亮，产生烟尘／污染的脏灰感。</td></tr>
-    <tr><td>Absorption<br>+ Absorption Scale（臭氧）</td><td>第二吸收层，默认系数 <code>(0.000650, 0.001881, 0.000085)</code>、Scale = <code>0.001881</code>，归一化后为 <code>(0.346, 1.0, 0.045)</code>——<b>主要吸收绿光，几乎不吸收蓝光</b>，所以它的作用是留下蓝紫，这正是暮光偏蓝的来源。分布是 10–40 km 的帐形（峰值 25 km、宽 15 km），只在长斜程上明显，因此几乎只影响暮光而非正午。</td></tr>
-    <tr><td>Rayleigh / Mie<br>Exponential Distribution</td><td>密度按 <code>exp(−高度 ÷ 该值)</code> 衰减，所以该值就是密度降到 1/e（约 40%）的高度。默认 Rayleigh <code>8.0 km</code>、Mie <code>1.2 km</code>——气溶胶比空气分子贴地得多，这是低太阳角衰减不成比例的原因。<b>减小</b> → 大气更贴地，日落衰减更剧烈。</td></tr>
-    <tr><td>Atmosphere Height<br>Ground Radius</td><td>默认 <code>60 km</code> / <code>6360 km</code>（地球值）。决定光线穿越的几何路程，一般不动，除非做外星／科幻星球。</td></tr>
-    <tr><td>MultiScattering</td><td>默认 <code>1.0</code>，仅作用于二次及以上的散射。源码注释给了一条实用建议：<b>当 <code>r.SkyAtmosphere.MultiScatteringLUT.HighQuality=0</code> 时推荐设为 2</b>，以更接近默认大气的真实表现。它只<b>增加</b>散射光，不改变直接透射率。</td></tr>
-    <tr><td>Ground Albedo</td><td>默认 <code>0.4</code> 线性灰。让地面颜色参与大气散射（例如沙漠让天空底部偏黄）。<b>仅在 MultiScattering &gt; 0 时生效。</b></td></tr>
-    <tr><td><b>Transmittance Min<br>Light Elevation Angle</b></td><td>默认 <code>−90°</code>（不钳制）。<b>日落救命参数</b>：钳制计算太阳透射率所用的高度角，避免太阳贴近或低于地平线时物体照明彻底熄灭。源码注释明确说明<b>它不影响空气透视</b>，所以远景雾气的观感不会被改变。做日落／夜景过渡时优先调它，而不是硬拉 Intensity。</td></tr>
-    <tr><td>Sky Luminance Factor</td><td>默认白色。缩放天空像素的亮度，<b>并且会影响 Real Time Capture 捕捉到的天光</b>（源码注释即如此说明），因此天空外观与它照出的光是<b>同步</b>变化的，不会不自洽。它的局限是只作用于天空、不改变平行光的透射率，所以调它会改变天空与太阳的相对关系。<code>Sky And Aerial Perspective Luminance Factor</code> 是同时覆盖天空与空气透视的版本。</td></tr>
-    <tr><td>Aerial Perspective<br>View Distance Scale</td><td>默认 <code>1.0</code>。按比例缩放"视点到表面"的距离，使空气透视看起来更厚。改的是观感，不改变实际光照。</td></tr>
-    <tr><td>Aerial Perspective<br>Start Depth</td><td>默认 <code>0.1 km = 100 m</code>。空气透视从这个距离外才开始计算——所以<b>角色尺度的主体完全不受空气透视影响</b>。</td></tr>
-    <tr><td>Height Fog Contribution</td><td>默认 <code>1.0</code>。缩放天空与大气光对高度雾的贡献，<b>需要项目设置 <code>SupportSkyAtmosphereAffectsHeightFog</code> 为真才生效</b>。雾色不对时先查它。</td></tr>
+    <tr><td><b>Mie Scattering Scale</b><br>（通透感主控）</td><td>空气里悬浮颗粒（灰尘、气溶胶）的浓度。<br>
+      <b>调大</b> → 天空发白、饱和度下降、远景更快被"洗白"、太阳周围光晕更强。城市雾霾、沙尘、盆地湿热天气靠它。<br>
+      <b>调小</b> → 天空更纯净、蓝得更干净、远山更清晰。<br>
+      <b>想要"更蓝的天"，降这一项，而不是提高 Rayleigh。</b></td></tr>
+    <tr><td><b>Rayleigh Scattering Scale</b><br>（大气浓度）</td><td>空气分子本身的浓度，决定天空的基础色。<br>
+      <b>调大</b> → 大气变浓，等于处处都像看向地平线：蓝光被散射掉，<b>天空和太阳一起转黄转红</b>，大幅调大会得到"永久黄昏"的感觉。<br>
+      <b>调小</b> → 大气稀薄，天空变暗、蓝色变深沉直到接近黑，适合高海拔与外星球。<br>
+      注意它是等比缩放，不是色调控制——<b>调大不会让天空更蓝</b>。</td></tr>
+    <tr><td>Mie Anisotropy<br>（光晕大小）</td><td>控制颗粒把光往前散射的集中程度，也就是<b>太阳光晕的大小</b>。<br>
+      <b>接近 0</b> → 光均匀散开，看不出明显光晕。<b>接近 1</b> → 光集中在太阳方向，形成紧凑明亮的日晕。<br>
+      逆光镜头的氛围主要靠它。注意光晕的<b>强度</b>由 Mie Scattering Scale 决定，两者分工不同。</td></tr>
+    <tr><td>Mie Absorption Scale<br>（脏空气）</td><td>颗粒吸收光的能力。<br>
+      <b>调大</b> → 画面整体变暗变"脏"，但天空<b>不会</b>跟着变亮。<br>
+      简单区分：要<b>亮</b>的霾（水汽、雾）用 Scattering；要<b>脏</b>的霾（烟尘、工业污染、火灾烟雾）用 Absorption。</td></tr>
+    <tr><td>Absorption Scale<br>（臭氧 · 暮光蓝紫）</td><td>高空臭氧层。它主要吃掉绿光而几乎不动蓝光，所以效果是让暮光带上<b>蓝紫调</b>。<br>
+      只在阳光斜穿高空时明显，正午几乎看不出变化。<b>想要更浓郁的蓝调时刻就调大它</b>，这是做暮光氛围性价比最高的一项。</td></tr>
+  </table>
+</div>
+<div class="panel">
+  <h3>常用参数：亮度与日落</h3>
+  <table>
+    <tr><td><b>Sky Luminance Factor</b><br>（天空亮度）</td><td>天空亮度倍率。它<b>同时</b>改变天空的显示亮度和天空照亮场景的强度，所以画面与光照始终一致。<br>
+      天空整体偏暗需要补时用它，<b>不要去改 SkyLight 的 Intensity Scale</b>——后者只改光、不改天空的显示亮度，会让画面里的天空与它照出的光对不上。它不影响太阳。<br>
+      <code>Sky And Aerial Perspective Luminance Factor</code> 是连远景空气透视一起缩放的版本。</td></tr>
+    <tr><td>MultiScattering<br>（大气通透度）</td><td>阳光在大气里多次弹射后补充的那部分亮度。<br>
+      <b>调大</b> → 天空（尤其地平线附近与暗部）更亮更"通"，阴天与雾天的柔和感更强。默认 1.0，<b>设为 2 通常更接近真实大气的层次</b>，是个很划算的改动。</td></tr>
+    <tr><td>Ground Albedo<br>（地面染色天空）</td><td>让地面颜色参与大气散射：沙漠让天空底部泛黄、雪原让天空更亮更冷。<br>
+      <b>只在 MultiScattering 大于 0 时才起作用</b>——调了没反应先查这个。</td></tr>
+    <tr><td><b>Transmittance Min<br>Light Elevation Angle</b><br>（日落救命参数）</td><td>太阳贴近或落到地平线以下时，物体上的光会迅速熄灭到全黑。这个参数给太阳的"有效高度"设一个下限，让日落时物体仍保留一点方向光和阴影。<br>
+      <b>它不影响远景雾气的观感</b>，只影响打到物体上的光。做日落与昼夜过渡时优先调它，<b>而不是硬拉平行光 Intensity</b>。</td></tr>
+  </table>
+</div>
+<div class="panel">
+  <h3>远景与雾的衔接</h3>
+  <table>
+    <tr><td>Aerial Perspective<br>Start Depth</td><td>空气透视从多远开始生效，默认 <b>100 m</b>。<br>
+      也就是说<b>角色尺度的主体完全不受空气透视影响</b>——想让近景也有雾感，必须用高度雾，调大气是没用的。</td></tr>
+    <tr><td>Aerial Perspective<br>View Distance Scale</td><td>让远景的空气透视看起来更厚（相当于把距离拉长）。纯观感调整，不改变实际打到物体上的光。想要"更远更朦胧的山"用它最快。</td></tr>
+    <tr><td>Height Fog Contribution</td><td>天空与大气对高度雾颜色的贡献程度。<b>雾色和天空对不上时先查它。</b>若调它完全没反应，说明项目未开启对应支持，找 TA 确认。</td></tr>
+  </table>
+</div>
+<div class="panel">
+  <h3>一般不需要动</h3>
+  <table>
+    <tr><td>Rayleigh / Mie<br>Exponential Distribution</td><td>大气分层的厚度——空气分子分布得高（默认 8 km），颗粒物贴近地面（默认 1.2 km）。<br>
+      <b>调小</b> → 大气更贴地，低角度阳光要穿过更厚的浓密层，日落效果更剧烈。做特殊星球或极端天气才动。</td></tr>
+    <tr><td>Rayleigh / Mie<br>Scattering（颜色）</td><td>散射的色偏。默认已是真实地球的比例，一般不动。改它可以做非地球大气，例如偏绿或偏紫的天空。</td></tr>
+    <tr><td>Atmosphere Height<br>Ground Radius</td><td>大气层厚度与星球半径，默认是地球值。做外星球、或需要夸张的地平线弯曲时才动。</td></tr>
   </table>
 </div>
 <div class="panel">
@@ -581,8 +609,8 @@
     <tr><td>T（透射率）</td><td>Transmittance。阳光穿过大气后剩下的比例。太阳越低光程越长、T 越小。勾选 Atmosphere Sun Light 时引擎会自动施加它，所以 Intensity 要填补偿后的值。</td></tr>
     <tr><td>太阳常数</td><td>太阳在大气层顶、垂直于光线方向的辐照度，1361 W/m² ≈ <b>128,000 lux</b>。全年仅因地球轨道偏心率变化 ±3.4%，可视为恒定。这就是勾选 Atmosphere Sun Light 时应填入 Intensity 的值——<b>不随时段变化</b>。</td></tr>
     <tr><td>大气质量（AM）</td><td>Air Mass。阳光穿过的大气厚度，以垂直向上为 1，约等于 1/sin(太阳高度角)：15° 时约 3.8，日落时超过 30。它是透射率随时段变化的几何原因。</td></tr>
-    <tr><td>Rayleigh / Mie 散射</td><td>Rayleigh 是空气分子散射，系数 ∝ λ⁻⁴（蓝比红强 5.7 倍），这是天空呈蓝色的原因；Mie 是气溶胶／尘埃／雾滴散射，波长依赖弱、偏前向，产生日晕与霾感。两者共同决定 T 与天空外观。<br>
-      <b>注意</b>：Rayleigh 系数偏蓝，不等于「把 Rayleigh Scattering Scale 调大天空会更蓝」。Scale 等比缩放三个通道，增大即加浓分子大气，蓝光被消光掉得远快于红光，结果是<b>整个天空朝黄昏配色偏红</b>。</td></tr>
+    <tr><td>Rayleigh / Mie 散射</td><td>Rayleigh 是空气分子的散射，对蓝光远强于红光，这是天空呈蓝色的原因；Mie 是气溶胶、尘埃、雾滴的散射，对各波长差别不大、偏向前方，产生日晕与霾感。两者共同决定太阳的衰减与天空的外观。<br>
+      <b>注意</b>：Rayleigh 偏蓝，不等于「把 Rayleigh Scattering Scale 调大天空会更蓝」。调大它是加浓大气，蓝光被消耗得比红光快得多，结果是<b>整个天空朝黄昏配色偏红</b>。想要更蓝的天空应该降低 Mie。</td></tr>
     <tr><td>GI / 弹射</td><td>Global Illumination，全局光照。这里主要指地面把阳光反射到物体暗部的间接光。UE5 由 Lumen 提供，关闭后暗部只剩天光。</td></tr>
     <tr><td>AO / DFAO</td><td>Ambient Occlusion 环境光遮蔽 / Distance Field AO。近似计算天光被附近几何遮挡的程度。DFAO 有世界空间作用半径（SkyLight 的 Occlusion Max Distance），是非物理的额外衰减，测量时需留意。</td></tr>
     <tr><td>HDRI</td><td>High Dynamic Range Image，高动态范围环境贴图。用全景图记录整个天空的亮度分布当作环境光源；亮度存在贴图里，<b>与太阳位置无关</b>，所以只有它能临时关灯校准。</td></tr>
@@ -799,7 +827,7 @@ const GLOSSARY = [
   ['空气透视', 'Aerial Perspective。远处物体因大气散射而变淡、偏向天空色。UE 的 Sky Atmosphere 负责这一项，默认从 100 m 外才开始起作用。'],
   ['irradiance', '照度 / 辐照度（lux 或 W/m²）。表面接收到的光在整个半球上的积分，决定表面被照亮的程度。与观察方向无关。'],
   ['radiance', '亮度 / 辐亮度（cd/m² 或 W/m²·sr）。沿单一方向传播的光，是相机实际接收到的量。与方向有关。'],
-  ['Rayleigh', '瑞利散射。粒径远小于波长时的散射（空气分子），系数 ∝ λ⁻⁴，蓝比红强约 5.7 倍，这是天空呈蓝色的原因。注意：把 Rayleigh Scattering Scale 调大不会让天空更蓝——Scale 等比缩放三个通道，等于加浓分子大气，蓝光被消光掉得远快于红光，天空反而偏红。'],
+  ['Rayleigh', '瑞利散射。空气分子的散射，对蓝光远强于红光，这是天空呈蓝色的原因。注意：把 Rayleigh Scattering Scale 调大不会让天空更蓝——那是在加浓大气，蓝光被消耗得比红光快得多，天空反而偏红。想要更蓝的天空应该降低 Mie。'],
   ['EV100', 'ISO 100 下的曝光值。EV = log₂(照度 ÷ 2.5)，每 +1 表示光量翻倍。入射式定义、与物体反射率无关，对应 UE 的 Min / Max EV100。'],
   ['HDRI', 'High Dynamic Range Image，高动态范围环境贴图。用全景图记录整个天空的亮度分布作为环境光源；亮度存在贴图里，与太阳位置无关。'],
   ['DFAO', 'Distance Field Ambient Occlusion。用网格距离场近似计算天光被附近几何遮挡的程度。它有世界空间作用半径（SkyLight 的 Occlusion Max Distance），属非物理的额外衰减。'],
