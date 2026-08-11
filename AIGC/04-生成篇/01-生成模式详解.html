@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 13 章 · 生成模式详解：T2V / FL2VA / Ref2VA</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="04-01">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 04 生成篇 / 第 13 章 · 生成模式详解</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 04 · 生成篇</div>
+  <h1>第 13 章 · 生成模式详解</h1>
+  <p class="subtitle">T2V / FL2VA / Ref2VA：进料方式决定可控性，首帧策略是游戏 CG 的核心打法</p>
+
+  <h2>一、三种模式的全景图</h2>
+  <img class="diagram" src="../assets/img/gen-modes.svg" alt="三种生成模式对比">
+
+  <p>三种模式不是三个模型，而是<strong>同一套 H3 权重的三种进料方式</strong>——训练时模型随机见过"有首帧/没首帧/有参考"的各种组合，所以你的节点上这些输入口都可接可不接。这也正是 ComfyUI 里 <code>MiniMaxH3ImageToVideo</code> 节点的 <code>first_frame</code> / <code>last_frame</code> 标注为 optional 的原因。</p>
+
+  <h2>二、T2V：纯文本抽卡</h2>
+  <p>只给提示词。画面构成、角色长相、场景布局全部随机。<strong>用途仅限创意探索期</strong>——"我想看看这个剧情大概什么感觉"。正式生产不用它，理由见第 2 章的两阶段对比。</p>
+
+  <h2>三、FL2VA：首帧（+尾帧）驱动，主力模式</h2>
+  <p>给一张起始帧图像（可选再给结束帧），模型负责中间的过渡动画。</p>
+  <ul>
+    <li><strong>只给首帧</strong>：最常用。画面内容锁死，运动和运镜由提示词控制。</li>
+    <li><strong>首尾帧都给</strong>：强制模型从 A 画面演到 B 画面。适合"变身""睁眼""亮灯"这类状态切换镜头。注意首尾帧差异越大，中间帧越容易扭曲，<strong>差异控制在"同一场景内的状态变化"最稳</strong>。</li>
+  </ul>
+
+  <h3>首帧从哪来：Flux 工作流要点</h3>
+  <ol class="steps">
+    <li><strong>分辨率对齐</strong>：首帧尺寸直接决定视频分辨率。H3 常用 1344×768（16:9），首帧就按这个尺寸生成，不要让 ComfyUI 拉伸。</li>
+    <li><strong>风格基座统一</strong>：所有镜头的首帧提示词共用同一段风格描述（见第 4 章的配方），保证全片色调一致。</li>
+    <li><strong>角色一致性</strong>：用同一张角色设定图做 img2img 变体，或在各镜头首帧提示词中重复完全相同的角色描述句（"a captain in a crimson uniform with silver insignia, short black hair"），一字不差。</li>
+    <li><strong>抽卡与精修</strong>：每个镜头出 4 张挑 1 张；局部不满意用 inpaint 局部重绘（Flux 的 Fill 模型或 KSampler 的 denoise 0.4~0.6 区域重绘）。</li>
+  </ol>
+
+  <h2>四、Ref2VA：参考驱动，锁身份</h2>
+  <p>给最多 9 张参考图（或 2~15 秒的参考视频），模型提取其中的<strong>身份特征</strong>（角色长相、物体外观）用于生成。与 FL2VA 的区别：首帧决定"第一个画面长什么样"，参考图决定"这个角色/物体在任何画面里都长这样"。</p>
+  <ul>
+    <li><strong>参考图要"证件照思维"</strong>：清晰、正面、主体占画面大、无遮挡。给 3~5 张不同角度的同一角色效果最好。</li>
+    <li><strong>ref_image_size 参数</strong>：<code>match</code> 快但身份还原弱；<code>max</code>（2048 短边）身份最准但慢数倍。人物特写镜头用 max，远景用 match。</li>
+    <li><strong>可以和 FL2VA 叠加</strong>：首帧定构图 + 参考图锁角色，双保险。</li>
+  </ul>
+
+  <h2>五、参数甜区（H3 实测）</h2>
+  <table>
+    <tr><th>参数</th><th>推荐值</th><th>说明</th></tr>
+    <tr><td>帧数</td><td>124（≈5 秒）</td><td>必须满足 17k+5；训练甜区 124~362</td></tr>
+    <tr><td>步数</td><td>8（标准）/ 12~16（精修）</td><td>8 步是蒸馏配置；重要镜头加步提质量</td></tr>
+    <tr><td>采样器/调度器</td><td>res_multistep + simple</td><td>官方配套，别换</td></tr>
+    <tr><td>分辨率</td><td>1344×768</td><td>16GB 显存的平衡点位</td></tr>
+    <tr><td>帧率</td><td>24 fps</td><td>模型按 24fps 训练，后期再插帧提速（第 16 章）</td></tr>
+  </table>
+
+  <h2>六、实例：三种模式各用在哪</h2>
+  <div class="box example">
+    <div class="box-title">📖 《归乡号》三个镜头的模式选择</div>
+    <p><strong>S01 星舰滑过星云 → FL2VA</strong>：星舰外观必须全片一致，用 Flux 先定死舰体设计。</p>
+    <p><strong>S05 舰桥警报亮起（状态切换）→ FL2VA 首尾帧</strong>：首帧"正常照明"，尾帧"红色警报灯"，模型自动补出灯光渐变的过渡。</p>
+    <p><strong>S07 舰长瞳孔特写 → FL2VA + Ref2VA 叠加</strong>：首帧定特写构图，参考图（舰长设定照 ×3）保证这张脸和 S04 里站起来的是同一个人。</p>
+  </div>
+
+
+  <h2>七、种子管理：科学抽卡方法论</h2>
+  <p>"抽卡"常被当作纯运气，其实有严格的方法论。核心原则来自第 15 章 RandomNoise 节的种子决定论：<strong>同种子同参数 = 逐像素复现</strong>。由此推导出三条纪律：</p>
+  <ol class="steps">
+    <li><strong>探针阶段</strong>：固定种子、只变提示词。此时画面差异 100% 归因于措辞——是打磨提示词的唯一干净环境。</li>
+    <li><strong>抽卡阶段</strong>：提示词冻结、只变种子。每批 4 个种子，画面差异 100% 归因于噪声先验——这时"挑最好的"在统计上才有意义。</li>
+    <li><strong>记录</strong>：选定结果的种子和参数写入分镜表备注列。后续任何微调（改一步参数）都基于该种子复现演进，而不是重新抽——<strong>没有种子记录的"好结果"等于没发生过</strong>。</li>
+  </ol>
+  <div class="box warn">
+    <div class="box-title">⚠️ 缓存类加速会破坏复现性</div>
+    <p>BlockCache/TeaCache 是近似算法，同种子不保证同结果（第 16 章）。种子管理纪律只在原生采样下严格成立；草稿期用缓存探索，锁定参数后务必回原生采样复跑确认。</p>
+  </div>
+
+  <h2>八、模式选择决策树</h2>
+  <pre>这个镜头要出现"已设定"的角色/物体吗？
+├─ 否 → 画面构图重要吗？
+│   ├─ 重要（正式镜头）→ FL2VA 首帧驱动（默认答案）
+│   └─ 不重要（创意探索）→ T2V 抽卡
+└─ 是 → 该角色在本片出现 ≥3 个镜头吗？
+    ├─ 否 → FL2VA + 锚句（Lv.1）
+    └─ 是 → FL2VA + Ref2VA（Lv.2）
+        └─ 还要拍系列/侧脸仍崩 → 角色 LoRA（Lv.3，第 21 章）
+特殊分支：
+├─ 镜头内有"状态切换"（亮灯/睁眼/变身）→ FL2VA 首尾帧双锁
+└─ 运镜必须精确（走位/跟拍）→ V2V 白模驱动（第 14 章）</pre>
+  <p>决策树的价值在于<strong>默认答案收束</strong>：80% 的镜头直接走 FL2VA，只剩 20% 需要思考——把注意力预算留给高潮镜头。</p>
+
+  <div class="pagenav">
+    <a href="../03-镜头语言与美学篇/07-风格化体系.html"><span class="dir">上一篇</span>第 12 章 · 风格化体系</a>
+    <a class="next" href="03-生成范式全解析.html"><span class="dir">下一篇</span>第 14 章 · 生成范式全解析 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

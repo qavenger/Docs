@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 18 章 · 超分与画质增强</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="05-02">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 05 后期增强篇 / 第 18 章 · 超分与画质增强</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 05 · 后期增强篇</div>
+  <h1>第 18 章 · 超分与画质增强</h1>
+  <p class="subtitle">SeedVR2 / FlashVSR / ESRGAN 三条路线，以及"先降后升"的反直觉技法</p>
+
+  <h2>一、为什么视频超分和图片超分是两回事</h2>
+  <p>图片超分（ESRGAN 系）逐帧处理视频会产生<strong>闪烁</strong>：每一帧的"重建细节"略有不同，连续播放时纹理在抖动。视频超分必须是<strong>时序感知</strong>（temporal-aware）的——模型同时看相邻多帧，保证重建细节在时间上稳定。这是选型的第一条分水岭。</p>
+
+  <h2>二、三条路线对比（2026 现状）</h2>
+  <table>
+    <tr><th>路线</th><th>时序感知</th><th>强项</th><th>短板</th><th>16GB 可行性</th></tr>
+    <tr><td><strong>SeedVR2</strong>（字节）</td><td>✅ DiT 修复器</td><td>修复力最强，AI 生成片的瑕疵重建一绝</td><td>慢，权重数个 GB</td><td>✅ 3B fp8 + batch 5~13</td></tr>
+    <tr><td><strong>FlashVSR</strong></td><td>✅ 单步流式</td><td>快——10 秒 720p→1080p 约 41 秒</td><td>需 ≥21 帧才生效</td><td>✅ 顺畅</td></tr>
+    <tr><td><strong>逐帧 ESRGAN</strong>（4x-UltraSharp 等）</td><td>❌</td><td>零下载成本（图像模型直接用）</td><td>闪烁；需 4×→2× 超采样压制</td><td>✅ 但不推荐成片用</td></tr>
+  </table>
+
+  <h2>三、反直觉核心技术：先降采样，再超分</h2>
+  <p>SeedVR2/FlashVSR 这类 DiT 修复器的工作方式是"<strong>参考输入、重新生成细节</strong>"，而不是放大已有像素。因此：</p>
+  <ol class="steps">
+    <li>把 AI 生成的 768×432 原片<strong>先缩到约一半</strong>（短边 360~480p）</li>
+    <li>喂给修复器，让它在干净的小图上"重造"细节到 1080p</li>
+    <li>效果优于直接放大原片——因为直接放大会把压缩噪声和 AI 伪影一起放大</li>
+  </ol>
+  <p>如果源片本身很干净（罕见），可以跳过降采样。</p>
+
+  <h2>四、关键参数与显存</h2>
+  <table>
+    <tr><th>参数</th><th>规则</th><th>原因</th></tr>
+    <tr><td>batch_size</td><td>必须 <strong>4n+1</strong>（5、9、13…）</td><td>时序窗口格式；batch ≥5 才启用时序一致性，太小会闪烁</td></tr>
+    <tr><td>显存 8GB</td><td>SeedVR2 3B GGUF Q4 + block swap + VAE tiling</td><td>能跑但慢</td></tr>
+    <tr><td>显存 12~16GB（主流甜点档）</td><td>3B/7B fp8，batch 5~13</td><td>顺畅区间</td></tr>
+    <tr><td>首次运行</td><td>权重自动下载，看似卡死</td><td>正常现象，去倒杯水</td></tr>
+  </table>
+
+  <h2>五、完整管线与节点清单</h2>
+  <p>回到第 17 章那张管线图，超分环节的具体节点流：</p>
+  <pre>VHS_LoadVideo（拆出 frames + audio）
+  → ImageResize（降到 0.5×，可选）
+  → SeedVR2 节点组（model loader + sampler，batch=9）
+  → FrameInterpolate（RIFE ×2，放超分之后！）
+  → VHS_VideoCombine（fps=48，audio 接回，h264 crf 16~18）</pre>
+
+  <div class="box tip">
+    <div class="box-title">💡 超分的正确期望</div>
+    <p>超分能修复：模糊、压缩噪点、轻微面部崩坏、纹理缺失。<br>超分不能修复：错误的构图、畸形的动作、身份不一致。<strong>它是抛光机，不是返厂重修</strong>——毛坯不行的镜头回第 13 章重来。</p>
+  </div>
+
+  <h2>六、实例：H3 原片 → 1080p 成片</h2>
+  <div class="box example">
+    <div class="box-title">📖 S07 瞳孔特写镜头（1344×768 原片）</div>
+    <p>这个镜头分辨率已接近 1080p 宽，但 AI 原片的皮肤纹理偏"塑料"。处理：不降采样（源已清晰）→ SeedVR2 3B fp8，batch=9，做质感重建而非放大 → RIFE ×2 → VHS 编码 crf 16。结果：皮肤出现真实毛孔质感，虹膜反光稳定不闪，48fps 丝滑推近。单镜处理约 6 分钟。</p>
+  </div>
+
+  <div class="box example">
+    <div class="box-title">📖 对照：S01 远景星舰镜头</div>
+    <p>远景镜头细节密度低，超分收益小。处理：FlashVSR 快速过一遍（41 秒级），甚至直接跳过超分只做插帧。<strong>后期时间也要花在刀刃上：特写精修，远景从简。</strong></p>
+  </div>
+
+
+  <h2>七、SeedVR2 部署与首跑</h2>
+  <ol class="steps">
+    <li><strong>装节点</strong>：<code>custom_nodes</code> 目录克隆 SeedVR2 的 ComfyUI 实现（社区主流为 kijai 系包装），重启。</li>
+    <li><strong>权重</strong>：首次运行自动下载（3B fp8 约 4GB），命令行可见进度——界面"卡住"是假象。</li>
+    <li><strong>基线参数</strong>（16GB）：3B fp8 权重、batch_size=9、开启 VAE tiling；720p 源→1080p 约每分钟素材 3~5 分钟。</li>
+    <li><strong>冒烟测试</strong>：先拿 2 秒废片跑通管线，确认无闪烁、无 OOM，再喂正片。</li>
+  </ol>
+  <div class="box warn">
+    <div class="box-title">⚠️ 超分不是默认步骤</div>
+    <p>两个情况下<strong>跳过超分</strong>：源片已达目标分辨率且质感合格（超分只会重新发明细节，引入风险）；远景低细节镜头（收益不抵时间）。超分预算是给特写和面部镜头的——第 20 章的三档工艺单即此原则的落地。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="01-重采样与插帧.html"><span class="dir">上一篇</span>第 17 章 · 重采样与插帧</a>
+    <a class="next" href="03-音频.html"><span class="dir">下一篇</span>第 19 章 · 音频 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

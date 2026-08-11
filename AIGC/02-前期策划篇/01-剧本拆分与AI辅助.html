@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 3 章 · 剧本拆分：把故事切成镜头</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="02-01">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 02 前期策划篇 / 第 3 章 · 剧本拆分</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 02 · 前期策划篇</div>
+  <h1>第 3 章 · 剧本拆分：把故事切成镜头</h1>
+  <p class="subtitle">一分钟 = 8~12 个镜头的铁律，以及让本地 LLM 帮你拆剧本的方法</p>
+
+  <h2>一、为什么必须拆镜头</h2>
+  <p>当前所有本地视频模型的单段生成上限都在 5~10 秒，且<strong>单镜头内只适合一个动作 + 一种运镜</strong>。想讲一个一分钟的故事，唯一的工程解法是"分镜生成 + 剪辑拼接"——这也是所有 AI 短片作者的实际工作方式，不是妥协，而是行业标准做法。好消息是：剪辑拼接恰恰是"写实中带点风格化"的游戏 CG 感的来源之一，真人电影也是这么拍的。</p>
+
+  <div class="box tip">
+    <div class="box-title">💡 镜头数量经验公式</div>
+    <p>总时长 ÷ 单镜头平均时长 = 镜头数。游戏 CG 节奏偏快，单镜头 4~6 秒为宜：<strong>60 秒 ≈ 10~12 个镜头</strong>。少于 6 个会显得拖沓（AI 视频长镜头容易"发呆"），多于 15 个则制作成本失控（每个镜头都要首帧 + 生成 + 后期）。</p>
+  </div>
+
+  <h2>二、镜头清单：拆分的产出物</h2>
+  <p>剧本拆分的产出不是一段文字，而是一张<strong>镜头清单表</strong>。每个镜头一行，包含这些字段：</p>
+
+  <table>
+    <tr><th>字段</th><th>说明</th><th>示例</th></tr>
+    <tr><td>镜号</td><td>编号，剪辑顺序</td><td>S03</td></tr>
+    <tr><td>时长</td><td>秒</td><td>5s</td></tr>
+    <tr><td>景别</td><td>远景 / 全景 / 中景 / 近景 / 特写</td><td>特写</td></tr>
+    <tr><td>画面内容</td><td>主体 + 环境 + 关键动作（一句话）</td><td>舰长的手按下通讯键，指尖微颤</td></tr>
+    <tr><td>运镜</td><td>固定 / 推 / 拉 / 摇 / 移 / 跟</td><td>缓慢推近</td></tr>
+    <tr><td>情绪</td><td>这个镜头要传达的感受</td><td>紧张中的决绝</td></tr>
+    <tr><td>音效/音乐</td><td>后期音频提示</td><td>低沉引擎底噪 + 心跳鼓点</td></tr>
+    <tr><td>首帧思路</td><td>给图像模型的构图描述</td><td>微距视角，手与通讯键，背景虚化驾驶舱</td></tr>
+  </table>
+
+  <h2>三、用本地 LLM 自动拆剧本</h2>
+  <p>本地 8B 级模型（如 Ollama 运行的 qwen3:8b）完全能胜任剧本拆分。关键在 <strong>system 提示词把输出格式锁死</strong>。把下面这段存成模板（也可以直接配进 ComfyUI 的 Ollama Generate 节点）：</p>
+
+  <pre>【system】
+你是一名游戏 CG 分镜师。用户会给你一段剧情梗概和总时长。
+你的任务：把剧情拆分为适合 AI 视频生成的镜头清单。
+
+硬性规则：
+1. 每个镜头 4~6 秒，一个镜头只包含一个主体动作和一种运镜
+2. 镜头之间要有景别变化节奏（远→中→近交替，避免连续两个同景别）
+3. 输出严格的表格格式：镜号 | 时长 | 景别 | 画面内容 | 运镜 | 情绪 | 音效
+4. 画面内容用中文写，具体到可见的细节，不要抽象描述
+5. 首尾镜头要有呼应
+
+【user】
+剧情：{在这里粘贴你的剧情}。总时长 60 秒，风格：写实带一点风格化的游戏 CG。</pre>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 8B 小模型的边界</div>
+    <p>8B 级本地模型拆出来的清单<strong>骨架可用、细节要人工润色</strong>：它可能写出"镜头环绕飞船飞行两周"这种 AI 视频做不到的复杂调度，或忽略景别节奏。把它当初稿生成器，不是终审。如果追求更高质量，把同样的提示词发给 12B+ 级本地模型或云端模型，对比两版取优。</p>
+  </div>
+
+  <h2>四、叙事节奏：镜头不是平均分配的</h2>
+  <p>一分钟 CG 的节奏通常是"三段式"：</p>
+  <ul>
+    <li><strong>铺垫（0~20s，3~4 镜）</strong>：远景/全景建立世界。星舰在深空巡航、舰内走廊、船员日常。节奏舒缓。</li>
+    <li><strong>转折（20~40s，3~4 镜）</strong>：事件发生。警报亮起、舰长起身、命令下达。景别收紧到中近景，剪辑加速。</li>
+    <li><strong>高潮（40~60s，3~4 镜）</strong>：情绪顶点 + 收尾。行星全貌揭示、舰长表情特写、拉远定格。最后一个镜头建议回到远景，与开头呼应。</li>
+  </ul>
+
+  <h2>五、实例：60 秒《归乡号》剧本拆分</h2>
+
+  <div class="box example">
+    <div class="box-title">📖 输入剧情</div>
+    <p>"一艘载着百万人的世代星舰'归乡号'历经三百年航行，终于抵达目的地星系。值班舰长在驾驶舱第一次看到那颗蓝色行星——传说中的人类新家园。"</div>
+
+  <div class="box example">
+    <div class="box-title">📖 拆分输出（节选 10 镜中的 4 镜，完整版见第 19 章）</div>
+    <p><strong>S01</strong> ｜ 5s ｜ 大远景 ｜ 星舰剪影滑过星云，城市灯火沿舰体亮起 ｜ 缓慢横移 ｜ 孤独、壮丽 ｜ 深空低鸣</p>
+    <p><strong>S04</strong> ｜ 5s ｜ 中景 ｜ 值班舰长从座椅上站起，制服反光 ｜ 轻微上摇 ｜ 警觉 ｜ 提示音 + 脚步声</p>
+    <p><strong>S07</strong> ｜ 6s ｜ 特写 ｜ 舰长瞳孔中映出蓝色行星的光点 ｜ 极缓推近 ｜ 震撼、希望 ｜ 音乐渐强</p>
+    <p><strong>S10</strong> ｜ 6s ｜ 大远景 ｜ 星舰驶向蓝色行星，尾焰渐亮 ｜ 拉远定格 ｜ 释然、史诗感 ｜ 主题音乐收束</p>
+  </div>
+
+  <p>注意 S07 的设计：<strong>"瞳孔映出行星"是 AI 视频的经典强项镜头</strong>——微距、浅景深、单一动作，模型完成度极高；而如果写成"舰长激动地快步走到舷窗前指着行星大喊"，动作链过长，必崩。拆镜头时就要把动作切碎到模型能消化的粒度。</p>
+
+
+  <h2>六、可直接套用的分镜表模板</h2>
+  <p>把镜头清单落成 CSV（可直接喂给第 21 章的批量脚本）：</p>
+  <pre>id,seconds,shot_size,composition,camera,content,emotion,audio,first_frame_note
+S01,6,大远景,负空间,横移slow,星舰剪影滑过星云,孤独壮丽,深空低鸣,舰体在左三分线
+S04,5,中景,引导线,tilt up,舰长从座椅站起,警觉,提示音+脚步,控制台作引导线
+S07,6,大特写,三分法,push in极缓,瞳孔映出蓝色行星,震撼,音乐渐强,眼在上三分交叉点</pre>
+  <p>列含义对应第 7 章（景别/构图）、第 8 章（运镜）、第 9 章（时长）。<strong>分镜表写到这个粒度，后续每个环节都是"照表施工"</strong>——这是前期文档的一切意义。</p>
+
+  <div class="pagenav">
+    <a href="../01-基础篇/02-一条CG视频的诞生流程.html"><span class="dir">上一篇</span>第 2 章 · 一条 CG 视频的诞生流程</a>
+    <a class="next" href="02-分镜设计.html"><span class="dir">下一篇</span>第 4 章 · 分镜设计 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

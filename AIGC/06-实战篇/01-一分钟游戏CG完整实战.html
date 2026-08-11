@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 20 章 · 实战：一分钟游戏 CG《归乡号》</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="06-01">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 06 实战篇 / 第 20 章 · 一分钟游戏 CG 完整实战</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 06 · 实战篇</div>
+  <h1>第 20 章 · 实战：制作一分钟游戏 CG《归乡号》</h1>
+  <p class="subtitle">全书方法论的总装——从立项文档到交付归档的完整生产实录</p>
+
+  <p>本章不是教程的重复，而是<strong>把第 1~19 章的每一件武器在真实项目里开一遍火</strong>。每个生产决策都标注它出自哪一章——读法有两种：顺序读到这里的读者把本章当验收；直接跳来的读者把本章当索引，按引用回查原理。</p>
+
+  <h2>Phase 0 · 立项：需求书</h2>
+  <p>产品级生产和玩票的分水岭是<strong>先把"完成"定义清楚</strong>。立项文档一页纸：</p>
+  <table>
+    <tr><th>条目</th><th>规格</th></tr>
+    <tr><td>交付物</td><td>1920×1080 / 48fps / 60 秒 mp4（h264 crf16）+ 分镜素材包</td></tr>
+    <tr><td>风格</td><td>写实基底 + 青橙风格化的游戏 CG（第 12 章光谱定位：电影感偏 CG）</td></tr>
+    <tr><td>验收硬指标</td><td>① 舰长四角镜头为同一人 ② 任意镜头切换无跳色 ③ 全片有声 ④ 无可见面部崩坏 ⑤ 48fps 播放速率正常</td></tr>
+    <tr><td>资源预算</td><td>16GB 级单卡；视频生成窗口 ≤ 2 夜；废片率预算 25%</td></tr>
+    <tr><td>死线倒排</td><td>D1 前期文档+设定 → D1 夜批量首帧 → D2 首帧验收+排产 → D2 夜批量生成 → D3 补废片+后期 → D4 剪辑混音交付</td></tr>
+  </table>
+
+  <h2>Phase 1 · 前期文档包（D1 上午，零算力）</h2>
+  <p>四份文档在动显卡之前完成，它们是后续所有决策的宪法：</p>
+
+  <h3>1. 风格圣经（方法论 → 第 12 章）</h3>
+  <pre>光谱定位：电影感偏游戏 CG（物理可信 + 审美提纯）
+主流派：胶片电影感 × 引擎级材质
+风格基座：cinematic game CG, photorealistic with stylized teal-orange
+  grading, anamorphic lens, 35mm film grain, volumetric lighting,
+  PBR materials, HDR
+布光性格：low-key 低调 + 实用光源
+禁忌：过饱和卡通色 / 纯黑无细节暗部 / 塑料皮肤 / 对称滥用</pre>
+
+  <h3>2. 色彩脚本（方法论 → 第 11 章）</h3>
+  <p>青（孤独）→ 蓝（未知）→ 金（希望）三段弧光；S05 是全片唯一换光镜头，承担色彩拐点。</p>
+
+  <h3>3. 光源逻辑表（方法论 → 第 10 章）</h3>
+  <p>舰桥主光 = 行星蓝光（画面右侧）+ 屏幕实用光；走廊 = 顶部灯带；生态舱 = 人造天空顶光。全片所有舰桥镜头的首帧提示词统一携带 <code>blue light from the right</code>。</p>
+
+  <h3>4. 分镜时间码表（方法论 → 第 3、6、7、8、9 章）</h3>
+  <p>直接采用第 9 章的 0:00~1:00 施工表。本章不再重复列示，只强调每个镜头的<strong>景别（第 7 章）、构图（第 7 章）、运镜（第 8 章）、时长与剪辑点（第 9 章）</strong>都已在表中定死，生产阶段只有执行没有发明。</p>
+
+  <h2>Phase 2 · 设定资产（D1 下午）</h2>
+  <p><strong>先产设定，再产镜头</strong>——角色与星舰的"标准照"是全片一致性的锚（第 14 章 Lv.2 方案）：</p>
+  <ol class="steps">
+    <li><strong>舰长设定图 ×3</strong>：正面胸像 / 四分之三侧面 / 制服背面。Flux 生成，提示词含角色锚句（一字不差复用于全片）：<code>a captain in a crimson uniform with silver insignia, short black hair, East Asian features, calm expression, character reference sheet style, neutral studio lighting, plain background</code>。中性光+纯色底是刻意的——参考图里的光影会污染 Ref2VA 的身份特征。</li>
+    <li><strong>星舰设定图 ×2</strong>：侧视全貌 / 尾部推进器视角。同理中性呈现。</li>
+    <li><strong>舰桥设定图 ×1</strong>：空场景，定死控制台布局与舷窗位置（光源逻辑表的空间依据）。</li>
+  </ol>
+
+  <h2>Phase 3 · 首帧批量生产（D1 夜，Flux）</h2>
+  <p>十镜首帧提示词全录。<strong>结构 = 风格基座 + 景别 + 构图 + 角度 + 主体环境 + 光线</strong>（第 5、7、10 章的合流），角色镜头嵌入锚句：</p>
+
+  <div class="box example">
+    <div class="box-title">📖 S01 星舰过星云（大远景/负空间/横移）</div>
+    <pre>风格基座 + extreme wide shot, vast negative space composition,
+a colossal generation starship on the left third line silhouetted
+against a violet nebula, thousands of city lights along its hull,
+deep space, faint cold starlight from above</pre>
+  </div>
+  <div class="box example">
+    <div class="box-title">📖 S04 舰长起身（中景/引导线/微仰）</div>
+    <pre>风格基座 + 角色锚句 + medium shot, slight low angle,
+rising from the command chair on a dark futuristic bridge,
+holographic consoles forming leading lines toward him,
+warm console glow from below, dim white overhead strip lights</pre>
+  </div>
+  <div class="box example">
+    <div class="box-title">📖 S07 瞳孔特写（大特写/三分法/平视微仰）</div>
+    <pre>风格基座 + 角色锚句 + extreme close-up, the captain's eye on
+the upper third intersection, vast negative space below,
+f/1.4 shallow depth of field, a tiny blue planet reflected in
+the iris, blue light from the right, macro detail</pre>
+  </div>
+  <div class="box example">
+    <div class="box-title">📖 S05 首尾帧对（状态切换专用）</div>
+    <pre>首帧：...the bridge in neutral white lighting, consoles dim
+尾帧：...same composition, deep blue holographic lighting,
+a glowing star map materializing above the central console
+（同一构图仅改光——同一 prompt 只换光线段，连种子都固定）</pre>
+  </div>
+
+  <p><strong>生产节奏</strong>：每镜 4 张候选（只变种子，第 15 章 RandomNoise 节的方法论），次晨按"内容 50% + 色调符合色彩脚本 30% + 面部/细节 20%"打分选定。<strong>首帧门禁（QC-1）</strong>：选定帧和相邻镜头首帧并排巡检，色调离群、舰桥布局与设定图矛盾者当场重出——此时代价 30 秒，流到下游就是 30 分钟。</p>
+
+  <h2>Phase 4 · 视频生成排产（D2 夜，H3）</h2>
+
+  <h3>逐镜生产卡</h3>
+  <table>
+    <tr><th>镜号</th><th>模式</th><th>帧数/步数</th><th>视频提示词（动作+运镜+光线变化）</th><th>备注</th></tr>
+    <tr><td>S01</td><td>FL2VA</td><td>141f/8步</td><td><code>the starship drifts slowly across the frame, city lights twinkling, slow lateral tracking, subtle nebula shimmer</code></td><td>6s 规格，剪辑取中段</td></tr>
+    <tr><td>S02</td><td>FL2VA</td><td>124f/8步</td><td><code>gentle crane down from the artificial sky to the greenhouse decks, leaves swaying</code></td><td>—</td></tr>
+    <tr><td>S03</td><td>FL2VA</td><td>124f/8步</td><td><code>locked-off shot, crew members pause and look up as the announcement light pulses</code></td><td>静观镜</td></tr>
+    <tr><td>S04</td><td>FL2VA+Ref</td><td>124f/8步</td><td><code>the captain rises from the chair, fabric shifting, gentle tilt up, consoles flicker awake</code></td><td>Ref: 舰长设定×3, match</td></tr>
+    <tr><td>S05</td><td>FL2VA 首尾帧</td><td>124f/8步</td><td><code>bridge lighting transitions from white to deep blue, star map materializing, dust in light beams</code></td><td>色彩拐点</td></tr>
+    <tr><td>S06</td><td>FL2VA+Ref</td><td>141f/12步</td><td><code>the captain walks slowly toward the viewport, blue light washing over his profile, slow push in</code></td><td>Ref: max 档</td></tr>
+    <tr><td>S07</td><td>FL2VA+Ref</td><td>141f/16步</td><td><code>the pupil slowly contracts, the planet reflection shimmering, extremely slow push in, almost imperceptible</code></td><td>顶点镜：满配</td></tr>
+    <tr><td>S08</td><td>FL2VA</td><td>158f/8步</td><td><code>camera pulls back slowly revealing the full blue planet, thin atmosphere glowing at the horizon</code></td><td>7s 冗余</td></tr>
+    <tr><td>S09</td><td>FL2VA+Ref</td><td>124f/12步</td><td><code>the captain presses the intercom key and speaks, Rembrandt lighting holding steady, static camera</code></td><td>Ref: max 档</td></tr>
+    <tr><td>S10</td><td>FL2VA</td><td>158f/8步</td><td><code>engine trails ignite brighter, camera pulls back revealing the planet ahead, motion gradually settling</code></td><td>剪辑变速延展</td></tr>
+  </table>
+  <p><strong>排产逻辑</strong>（第 16 章的分层策略）：草稿轮全员 8 步 + SageAttention；S06/S07/S09 三个面部重责镜头直接 12~16 步精修（不经过草稿轮——它们的成本高点早已在立项时被接受）。API 批量入队（第 21 章），文件名规范 <code>HB_S01_v01.mp4</code>，废片重抽递增版本号。</p>
+
+  <h3>毛坯门禁（QC-2）与返工决策树</h3>
+  <pre>毛坯到手逐镜过堂：
+├─ 构图/内容错（跑题、主体错）→ 回首帧？不，先查提示词 → 改词重抽（v+1）
+├─ 面部崩 → 该镜是否已挂 Ref2VA max？
+│   ├─ 没挂 → 挂上重抽
+│   └─ 已挂 → 步数 +4 重抽；仍崩 → 分镜层规避（切更紧的特写或改剪影，第 14 章脸崩武器库）
+├─ 运动漂移/抖动 → 运镜写慢了没有？减速重抽
+└─ 色调离群 → 不返工，记进剪辑调色清单（LUT 层兜底，第 11 章）</pre>
+
+  <h2>Phase 5 · 后期工艺单（D3）</h2>
+  <p>按第 17~19 章的铁律执行，<strong>每镜处理级别差异化</strong>——后期时间花在刀刃上：</p>
+  <table>
+    <tr><th>处理级别</th><th>镜头</th><th>工艺</th></tr>
+    <tr><td>精修级</td><td>S07、S09</td><td>SeedVR2 3B fp8（batch=9，质感重建）→ RIFE ×2 → crf16</td></tr>
+    <tr><td>标准级</td><td>S04、S05、S06、S08</td><td>FlashVSR 快速过 → RIFE ×2 → crf17</td></tr>
+    <tr><td>轻量级</td><td>S01、S02、S03、S10</td><td>仅 RIFE ×2（远景细节密度低，超分收益不抵成本）→ crf18</td></tr>
+  </table>
+  <p><strong>音频分轨</strong>（第 19 章四层结构落地）：引擎低鸣全片垫底（-18dB）；音效层用各镜 H3 原生音频，S04 脚步、S05 警报、S09 按键声逐镜对齐；音乐层 Suno 生成 60 秒史诗弦乐，按第 9 章卡点法对齐剪辑点；对白层仅一句 <em>"Full speed ahead."</em>，TTS 生成后贴 S09。</p>
+
+  <h2>Phase 6 · 剪辑工程与交付（D4）</h2>
+  <ol class="steps">
+    <li><strong>组装</strong>：按时间码表入点出点摆放，S07→S08 执行匹配剪辑（瞳孔圆→行星圆，硬切），其余镜头间 8 帧交叉溶解。</li>
+    <li><strong>卡点</strong>：音乐重拍标记后微调各镜 ±0.5s（冗余的价值在此兑现）。</li>
+    <li><strong>统一层</strong>：全片青橙 LUT 65% 强度 + 统一 film grain overlay（第 12 章风格漂移的最后防线）。</li>
+    <li><strong>收尾</strong>：S10 素材后半段 0.5× 变速 → 定格 2s → 黑场淡出 2s，延展成 15.5s 余韵。</li>
+    <li><strong>成片门禁（QC-3）</strong>：对照立项验收硬指标逐条打勾——尤其"先听 3 秒声音"和"倍速正常"两条血泪项。</li>
+    <li><strong>归档</strong>：<code>HB_归乡号/{首帧, 毛坯, 精修, 工程文件, 设定资产}</code> 五目录归档；设定图与风格圣经标记"可复用"——它们是下一集的固定资产（第 21 章 LoRA 决策的备料）。</li>
+  </ol>
+
+  <h2>复盘：全书方法论对账表</h2>
+  <table>
+    <tr><th>本章决策</th><th>方法论出处</th></tr>
+    <tr><td>立项验收硬指标先行</td><td>第 2 章 · 便宜环节做决策</td></tr>
+    <tr><td>先设定资产后镜头</td><td>第 14 章 · 一致性三级方案</td></tr>
+    <tr><td>首帧提示词六段式结构</td><td>第 5、7、10 章合流</td></tr>
+    <tr><td>S05 首尾帧状态切换</td><td>第 13 章 · FL2VA 首尾帧</td></tr>
+    <tr><td>面部镜头 Ref2VA max + 加步数</td><td>第 14 章 · 脸崩七种武器</td></tr>
+    <tr><td>草稿轮/精修轮分层排产</td><td>第 16 章 · 加速分层</td></tr>
+    <tr><td>差异化后期工艺单</td><td>第 18 章 · 超分的正确期望</td></tr>
+    <tr><td>先超分后插帧、音频接回</td><td>第 17、19 章铁律</td></tr>
+    <tr><td>时间码表与卡点冗余</td><td>第 9 章 · 分镜到秒</td></tr>
+    <tr><td>色彩弧光与 LUT 兜底</td><td>第 11 章 · 色彩脚本</td></tr>
+  </table>
+
+  <div class="box tip">
+    <div class="box-title">💡 真实时间账（16GB 单卡量级）</div>
+    <p>前期文档 3h + 设定 1h + 首帧 2h（60 张选 11）+ 生成窗口 2 夜（含 25% 返工）+ 后期 2h + 剪辑混音 3h ≈ <strong>4 天、其中人力约 11 小时</strong>。与立顶预算一致即合格；首次执行按 1.5 倍预估。第二部作品起，设定资产与风格圣经复用，人力可压到 7 小时内。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="../05-后期增强篇/03-音频.html"><span class="dir">上一篇</span>第 19 章 · 音频</a>
+    <a class="next" href="02-进阶玩法.html"><span class="dir">下一篇</span>第 21 章 · 进阶玩法 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

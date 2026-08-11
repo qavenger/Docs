@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 14 章 · 生成范式全解析</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="04-02">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 04 生成篇 / 第 14 章 · 生成范式全解析</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 04 · 生成篇</div>
+  <h1>第 14 章 · 生成范式全解析</h1>
+  <p class="subtitle">文生图 / 图生图 / 文生视频 / 图生视频 / 参考生视频 / 视频生视频——它们的本质区别只有一个：你给模型多少确定性</p>
+
+  <h2>一、一个洞察统摄所有范式</h2>
+  <p>所有"X 生 Y"范式共用同一台发动机（潜空间扩散去噪），区别只在<strong>进料</strong>。而进料的意义可以用一句话说穿：<strong>每一种范式，都是为了把某种"一致性"从运气手里夺回来</strong>。</p>
+  <ul>
+    <li>怕<strong>构图</strong>随机？→ 给首帧（图生视频）</li>
+    <li>怕<strong>角色脸</strong>每镜都变？→ 给参考图（参考生视频）</li>
+    <li>怕<strong>运动节奏</strong>不对？→ 给原视频（视频生视频）</li>
+    <li>什么都不给？→ 那就接受全方位抽卡（文生视频）</li>
+  </ul>
+  <p><strong>范式选择的本质就是一致性工程，而一致性问题的重灾区就是"脸"</strong>——人脸是观众最敏感、模型最容易崩的部位。本章末尾有脸崩专题。</p>
+
+  <img class="diagram" src="../assets/img/gen-matrix.svg" alt="生成范式矩阵">
+
+  <h2>二、图像侧范式（首帧生产的工具箱）</h2>
+
+  <h3>文生图（T2I）</h3>
+  <p><strong>原理</strong>：纯噪声 + 文本条件，denoise=1.0。<strong>用途</strong>：每个镜头的首帧初稿、概念探索。你的 Flux.1 dev 就是干这个的。<strong>一致性定位</strong>：零保障——它的产物是后续范式的"原材料"，一致性靠后续环节建立。</p>
+
+  <h3>图生图（img2img）与局部重绘（inpaint）</h3>
+  <p><strong>原理</strong>：把已有图片加"半量噪声"（denoise 0.3~0.7）再去噪——保留大结构，重画细节。局部重绘再加蒙版：只重画选中区域。</p>
+  <table>
+    <tr><th>denoise</th><th>效果</th><th>典型用途</th></tr>
+    <tr><td>0.2~0.35</td><td>几乎不变，仅微调质感</td><td>首帧去噪点、统一色调</td></tr>
+    <tr><td>0.4~0.6</td><td>保留构图，重塑内容</td><td>换角色服装、改场景陈设</td></tr>
+    <tr><td>0.7~0.85</td><td>只留大概轮廓</td><td>草图→成稿、风格迁移</td></tr>
+  </table>
+  <p><strong>一致性定位</strong>：首帧的"家族相似性"来源——同一角色设定图派生各镜头首帧，比每张纯 T2V 重画一致得多。</p>
+
+  <h2>三、视频侧范式（正文）</h2>
+
+  <h3>文生视频（T2V）</h3>
+  <p>第 13 章已详述。补一个一致性视角的评价：T2V 的<strong>帧间一致性是有的</strong>（时空注意力保证单条视频内不闪），但<strong>跨镜头一致性为零</strong>——这条的舰长和下条的舰长是两个随机长相。所以 T2V 做不了多镜头叙事，只能用于单镜头探索。</p>
+
+  <h3>图生视频（I2V ≈ FL2VA）</h3>
+  <p><strong>原理</strong>：首帧经 VAE 编码后拼进潜码起始位置，模型的去噪过程从这个"锚点"向外推演。术语对照：I2V 是通用叫法；FL2VA 是 H3 体系的叫法（First-Last-frame-to-Video-Action），强调还支持尾帧；LTX-2.3 里就叫 I2V。<strong>同一个东西，不同厂商的命名</strong>。</p>
+  <p><strong>一致性定位</strong>：构图 + 角色长相 + 场景全部锁死。<strong>它是性价比最高的一致性武器</strong>——首帧是图像模型出的，脸在首帧阶段就被你人工验收过了，视频模型只需"让这张合格的脸动起来"。</p>
+
+  <h3>参考生视频（Ref2VA）</h3>
+  <p><strong>原理</strong>：与 I2V 有本质区别——参考图不占潜码的"起始帧"位置，而是被编码成<strong>身份特征 token</strong>注入注意力层。所以参考图不定构图，只定"谁/什么东西"。你可以让被锁定的角色出现在任何全新构图里。</p>
+  <p><strong>一致性定位</strong>：<strong>跨镜头身份一致</strong>——这是 I2V 给不了的（I2V 各镜首帧不同，长相仍可能漂移）。代价：参考特征会拖慢生成（每步都要过参考 token），且对侧脸/大角度仍有崩坏率。</p>
+
+  <h3>视频生视频（V2V）</h3>
+  <p><strong>原理</strong>：原视频编码进潜空间 → 加部分噪声（denoise&lt;1）→ 按新提示词去噪重绘。运动轨迹、节奏、构图从原视频继承，外观按提示词重造。三种典型用法：</p>
+  <table>
+    <tr><th>用法</th><th>denoise</th><th>场景</th></tr>
+    <tr><td>质感增强</td><td>0.2~0.35</td><td>AI 原片去塑料感（但第 18 章说过：超分修复器通常更划算）</td></tr>
+    <tr><td>风格迁移</td><td>0.45~0.6</td><td><strong>实拍素材 → 游戏 CG 风</strong>；真人预演片 → 成片风格</td></tr>
+    <tr><td>白模转 CG</td><td>0.6~0.75</td><td><strong>Blender/引擎白模动画 → 成品级画面</strong>，运镜 100% 精确</td></tr>
+  </table>
+  <div class="box tip">
+    <div class="box-title">💡 V2V 是被低估的大招</div>
+    <p>对游戏团队，V2V 打开了一条混血管线：<strong>用引擎/Blender 搭白模动画（运镜、走位、节奏全精确）→ V2V 重绘成 CG 画质</strong>。这绕开了 AI 视频"运镜不可控"的最大短板——镜头语言在白模阶段就是完美的。LTX-2.3 的视频编辑模式和 H3 的参考视频输入都支持这一路。</p>
+  </div>
+
+  <h2>四、一致性总表：哪种范式治哪种病</h2>
+  <table>
+    <tr><th>要锁的东西</th><th>首选范式</th><th>备选/叠加</th></tr>
+    <tr><td>单条视频内不闪</td><td>任何范式（模型自带）</td><td>—</td></tr>
+    <tr><td>构图/场景布局</td><td>I2V 首帧</td><td>V2V</td></tr>
+    <tr><td>角色长相（跨镜头）</td><td>Ref2VA</td><td>I2V 首帧精修 + 锚句；角色 LoRA（第 21 章）</td></tr>
+    <tr><td>运动与运镜轨迹</td><td>V2V（白模驱动）</td><td>I2V 首尾帧</td></tr>
+    <tr><td>全片色调风格</td><td>首帧统一风格基座</td><td>剪辑期 LUT 兜底（第 20 章）</td></tr>
+  </table>
+
+  <h2>五、脸崩专题：七种武器</h2>
+  <p>脸崩的三个成因：<strong>脸在画面里占比太小</strong>（模型分配给面部的 token 少）、<strong>大幅度头部运动</strong>（训练数据稀缺区）、<strong>跨镜头身份漂移</strong>（无锚点）。对症下药：</p>
+  <ol class="steps">
+    <li><strong>分镜层</strong>：面部情绪戏尽量用特写/近景（脸大 = token 多 = 崩坏率低）。这是零成本最优解。</li>
+    <li><strong>首帧层</strong>：首帧阶段把脸修到完美（inpaint 只重绘面部），I2V 继承。</li>
+    <li><strong>参考层</strong>：面部镜头必挂 Ref2VA，<code>ref_image_size=max</code>。</li>
+    <li><strong>运动层</strong>：头部动作写小（"subtle turn"而非"turns around quickly"）。</li>
+    <li><strong>生成层</strong>：面部特写镜头加步数（8→12~16），细节更稳。</li>
+    <li><strong>后期层</strong>：SeedVR2 超分时对面部有重建增强；图像侧的 ADetailer（自动面部修复）可用于修首帧。</li>
+    <li><strong>规模层</strong>：角色要反复出镜 → 直接训角色 LoRA（第 21 章的投产账）。</li>
+  </ol>
+
+  <h2>六、实例：同一舰长镜头，六种范式</h2>
+  <div class="box example">
+    <div class="box-title">📖 "舰长看到行星"（S07 级特写）在六种范式下的做法</div>
+    <p><strong>文生图</strong>：Flux 出瞳孔特写概念图 —— 产出首帧素材。</p>
+    <p><strong>图生图</strong>：对首帧瞳孔区域 inpaint（denoise 0.5）精修行星倒影 —— 首帧验收。</p>
+    <p><strong>文生视频</strong>：直接写提示词生成 —— 脸和构图随机，<strong>本片不用</strong>。</p>
+    <p><strong>图生视频</strong>：首帧接入 H3 first_frame，提示词只写 "the pupil slowly contracts, extremely slow push in" —— 主力做法。</p>
+    <p><strong>参考生视频</strong>：叠加 3 张舰长设定照 —— 保证这张脸与 S04/S06/S09 是同一人。</p>
+    <p><strong>视频生视频</strong>：若先用手机实拍一段"人眼特写"做运镜参考，denoise 0.5 重绘成 CG —— 运镜强迫症的选择。</p>
+  </div>
+
+
+  <h2>七、范式组合：单一范式的天花板与组合拳</h2>
+  <p>六范式不是互斥选项，产品级镜头几乎总是组合：</p>
+  <table>
+    <tr><th>组合</th><th>解决什么</th><th>成本</th></tr>
+    <tr><td>T2I → img2img 精修 → FL2VA</td><td>构图锁定 + 首帧质量达标</td><td>基准成本（标配流水线）</td></tr>
+    <tr><td>上者 + Ref2VA</td><td>再叠加跨镜身份一致</td><td>+20~40% 生成时长</td></tr>
+    <tr><td>首尾帧 + Ref2VA</td><td>状态切换镜头中的角色保真</td><td>最高，仅给关键镜头</td></tr>
+    <tr><td>白模动画 → V2V → 超分</td><td>精确运镜 + CG 质感</td><td>省去返工，总账常更省</td></tr>
+  </table>
+  <p>组合的收益是<strong>乘法</strong>：首帧把构图废片率降到接近零，Ref2VA 再把身份废片率压一半——两层叠加后，综合废片率从纯 T2V 的 70% 降到 20% 以下。组合的成本是加法，收益是乘法，这就是为什么正式生产没有"单范式镜头"。</p>
+
+  <h2>八、范式视角下的资产观</h2>
+  <p>每种范式的"进料"都是可沉淀的资产：首帧图、设定参考图、白模动画、种子记录。项目结束时按范式入口归档（第 20 章的归档结构），下一部作品的边际成本会显著下降——<strong>第一部作品买设备，第二部作品只付电费</strong>。</p>
+
+  <div class="pagenav">
+    <a href="01-生成模式详解.html"><span class="dir">上一篇</span>第 13 章 · 生成模式详解</a>
+    <a class="next" href="04-节点图鉴.html"><span class="dir">下一篇</span>第 15 章 · ComfyUI 节点图鉴 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

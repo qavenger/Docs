@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 5 章 · 提示词工程：视频模型的母语</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="02-03">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 02 前期策划篇 / 第 5 章 · 提示词工程</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 02 · 前期策划篇</div>
+  <h1>第 5 章 · 提示词工程：视频模型的母语</h1>
+  <p class="subtitle">为什么提示词有"标准格式"——以及让 AI 帮你写提示词的完整管线</p>
+
+  <h2>一、先理解：提示词格式不是玄学</h2>
+  <p>视频模型训练时，每条训练视频都由视觉语言模型按固定规范重新标注（re-captioning）：<strong>风格开头，然后主体、动作、运镜、光线、质感</strong>。模型的"母语"就是这个格式——你按格式写，等于说它能完全听懂的话；你写得像散文，它只能猜。这就是为什么官方模板和社区大佬的提示词长得都差不多。</p>
+
+  <h2>二、六要素公式</h2>
+  <pre>[风格] + [主体与环境] + [动作] + [运镜与速度] + [光线] + [质感]</pre>
+  <table>
+    <tr><th>要素</th><th>作用</th><th>关键词库</th></tr>
+    <tr><td>风格</td><td>定调，放最前</td><td>cinematic game CG / photorealistic / anime style</td></tr>
+    <tr><td>主体与环境</td><td>画面里有什么</td><td>a captain in crimson uniform, command deck with holographic consoles</td></tr>
+    <tr><td>动作</td><td>唯一的动作，写可见结果</td><td>turns his head slowly, eyes widen</td></tr>
+    <tr><td>运镜与速度</td><td>镜头怎么动</td><td>slow dolly in / gentle tilt up / static shot</td></tr>
+    <tr><td>光线</td><td>氛围的一半</td><td>volumetric god rays, blue rim light, neon glow</td></tr>
+    <tr><td>质感</td><td>压 AI 味</td><td>35mm film grain, anamorphic lens flare, shallow depth of field</td></tr>
+  </table>
+
+  <h2>三、首帧模式下的提示词瘦身</h2>
+  <p>用 FL2VA 首帧驱动时，<strong>"主体与环境"已由首帧锁死，提示词里再详细描述反而引入冲突</strong>。此时提示词只保留四要素：</p>
+  <pre>[风格延续] + [动作] + [运镜与速度] + [光线变化]</pre>
+  <div class="box example">
+    <div class="box-title">📖 首帧已定（舰长 + 驾驶舱 + 舷窗行星）时的正确提示词</div>
+    <pre>cinematic game CG, the captain slowly turns toward the viewport,
+eyes widening with awe. Slow dolly in, blue light from the planet
+gradually washes across the deck, film grain.</pre>
+    <p>注意没有重写"红色制服""全息控制台"——首帧里都有了，写了只会和首帧打架。</p>
+  </div>
+
+  <h2>四、中英文策略</h2>
+  <table>
+    <tr><th>模型</th><th>文本编码器</th><th>建议语言</th></tr>
+    <tr><td>MiniMax H3</td><td>Qwen3-VL 32B</td><td>中英文都懂，但<strong>英文细节还原更好</strong>（训练标注以英文为主）</td></tr>
+    <tr><td>LTX-2.3</td><td>Gemma 3 12B</td><td>英文为主；一句话英文剧情它也能自动扩写</td></tr>
+    <tr><td>Flux（首帧）</td><td>T5 + CLIP</td><td>只用英文</td></tr>
+  </table>
+  <p>实践流程：<strong>中文构思 → AI 翻译成规范英文提示词 → 人工检查关键名词</strong>。不要自己硬写中式英语，让 LLM 干这个。</p>
+
+  <h2>五、AI 辅助提示词管线（三种实现）</h2>
+  <ol class="steps">
+    <li><strong>ComfyUI 内嵌 LLM 节点</strong>：通过 Ollama 类节点把本地 8B 模型接入画布——system 内置分镜师角色，中文剧情进、规范英文提示词出，直连视频节点的 prompt 输入，形成"剧情→分镜→视频"一条龙管线。</li>
+    <li><strong>T8 提示词增强器节点</strong>：社区节点，内置 8 个官方场景预设 + 26 个案例模板，支持把后端指向本地 Ollama（OpenAI 兼容接口 <code>http://127.0.0.1:11434/v1</code>），白嫖模板不付 API 费。适合需要"产品广告/MV"等特定场景规范时。</li>
+    <li><strong>对话式精修</strong>：复杂镜头直接和 AI 对话迭代——"这版运镜太复杂，拆成两个镜头""加上体积光"。适合高潮镜头逐镜打磨。</li>
+  </ol>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 反面案例：被"裸续写"毁掉的提示词</div>
+    <p>一个典型事故：用 ComfyUI 核心 <code>TextGenerate</code> 节点接 MiniMax 的 Qwen3-VL 编码器做提示词扩写，输入"一艘载着百万人级别的星舰在宇宙中航行……"，结果生成了一只橘猫的视频。原因是该编码器为视频条件做过裁剪，不支持对话模板，提示词被当作裸文本续写，输出乱码或跑题。LLM 扩写必须走独立的 LLM 运行时（如 Ollama 节点），不能借用视频模型的文本编码器。</p>
+  </div>
+
+  <h2>六、实例：同一镜头的三版提示词</h2>
+  <div class="box example">
+    <div class="box-title">📖 镜头：舰长看到行星（首帧模式）</div>
+    <p><strong>❌ 差（流水账）</strong>："舰长看到行星很激动" —— 中文直接输入 + 抽象情绪 + 无运镜，模型只能自由发挥。</p>
+    <p><strong>🟡 中（有结构但超载）</strong>："cinematic, the captain in red uniform stands up, walks to the window, points at the blue planet and shouts orders, camera pushes in then orbits around him" —— 英文了，但三个动作 + 两种运镜，必崩。</p>
+    <p><strong>✅ 好（单动作单运镜）</strong>："cinematic game CG, the captain's eyes widen as blue light floods in, a subtle smile forming. Slow dolly in, lens flare, film grain." —— 风格 + 单动作 + 单运镜 + 光线变化 + 质感，五秒刚刚好。</p>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">💡 负向提示词的现状</div>
+    <p>H3 和 LTX-2.3 这类新架构的蒸馏模型大多走 CFG=1 或低 CFG 路线，<strong>传统 SD 式的负向提示词（negative prompt）作用有限甚至无效</strong>。与其写负向词，不如把想要的正面约束写清楚（"smooth motion, stable camera"）。</p>
+  </div>
+
+
+  <h2>七、H3 官方提示词规范：三段式完整格式</h2>
+  <p>前面讲的六要素公式是入门骨架。MiniMax 官方为 H3 发布过正式的提示词写作指南（ModelScope 官方仓库，本手册附录已存本地副本），它定义了一套<strong>完整的三段式规范</strong>——官方模板和 skill 文件都遵循它，复杂镜头（多镜头、带对白、带音乐）必须升级到这套格式。</p>
+
+  <h3>整体结构</h3>
+  <pre>第一段：图对齐指令（仅 I2V/FL2VA/L2VA 需要，T2V 省略）
+For the target video, at 0.00 seconds into the target video,
+&lt;Picture 1&gt; (from [Shot 1]) is fully referenced.
+
+第二段起：三个核心字段
+integrated_multimodal_description: [Shot 1] ... [Shot 2] At 00:03.500, ...
+overall_soundscape: ...
+non_diegetic_music: ...</pre>
+  <table>
+    <tr><th>字段</th><th>职责</th><th>规则要点</th></tr>
+    <tr><td>integrated_multimodal_description</td><td>画面主体：风格/构图/主体/动作/镜头/对白/同期声，沿时间轴展开</td><td>Shot 1 开头必须声明风格和初始构图；每个细节都要"可见或可听"</td></tr>
+    <tr><td>overall_soundscape</td><td>环境音+动作音效+非语言人声</td><td>1~4 句连续段落；对白和戏内音乐不写在这里；全片静音才用 N/A</td></tr>
+    <tr><td>non_diegetic_music</td><td>配乐（只有观众能听到的）</td><td>1~3 句，只写乐器/速度/动态变化，<strong>禁止抽象情绪词</strong>（"激昂的音乐"无效，"sparse piano at slow tempo, low strings swelling"有效）</td></tr>
+  </table>
+
+  <h3>镜头切分语法（官方时码格式）</h3>
+  <pre>[Shot 1] Cinematic, a medium-wide shot frames ...            ← 首镜无时间戳
+[Shot 2] At 00:03.500, the camera cuts to a close-up ...     ← 后续镜头必须带严格递增的切点时间</pre>
+  <p>规则：切点必须带来新信息（主体/空间/状态/视角/时间的变化）；<strong>只是距离或角度的微调请用运镜而不是切换</strong>。普通切换写 <code>the camera cuts to</code>；淡入淡出等特效切换仅在明确需要时使用。</p>
+
+  <h3>官方运镜词表（12 种 × 幅度 × 速度）</h3>
+  <p>第 8 章的运镜体系在 H3 官方规范里有对应的标准词汇表，<strong>写提示词时优先用官方词</strong>——模型就是按这些词训练的：</p>
+  <table>
+    <tr><th>官方词</th><th>对应中文运镜</th><th>官方词</th><th>对应中文运镜</th></tr>
+    <tr><td>Push In / Pull Out</td><td>推 / 拉（机位移动）</td><td>Tracking Shot</td><td>跟拍</td></tr>
+    <tr><td>Zoom In / Zoom Out</td><td>变焦（焦距变化）</td><td>Static Shot</td><td>固定</td></tr>
+    <tr><td>Pan Left / Right</td><td>水平摇</td><td>Arc Shot</td><td>环绕</td></tr>
+    <tr><td>Truck Left / Right</td><td>平移</td><td>POV</td><td>主观视角</td></tr>
+    <tr><td>Tilt Up / Down</td><td>垂直摇</td><td>Roll Clockwise / Counterclockwise</td><td>滚转</td></tr>
+    <tr><td>Pedestal Up / Down</td><td>升降</td><td>Shake Slightly / Strongly</td><td>轻/强晃动</td></tr>
+  </table>
+  <p>完整表达式 = <strong>运动类型 + 幅度（with small/large amplitude）+ 速度（at slow/fast speed）</strong>，中幅度常速可省略。官方要求运镜写成自然语句而非标签堆砌：</p>
+  <pre>✅ The camera pushes in with small amplitude at slow speed toward the folded letter in her hands.
+❌ Push in, small, slow, letter.</pre>
+
+  <h3>对白、画面文字与声音</h3>
+  <ul>
+    <li><strong>说话人 ID</strong>：发声角色分配稳定编号 <code>(S1)</code><code>(S2)</code>，跨镜头不变；首次出现时给出音色描述（年龄/性别/音高/语速）。合唱用复合 ID <code>(S1,S2)</code>。</li>
+    <li><strong>对白格式</strong>：<code>says: &lt;d&gt;[English] 原文&lt;/d&gt;</code>——&lt;d&gt; 内只放语言标签和台词原文，逐字保留不翻译。</li>
+    <li><strong>画外音</strong>：必须用精确短语 <code>says in an off-screen voiceover</code>，且紧随其后声明 <code>while his lips remain completely closed</code>（防止模型给画面人物对口型）。</li>
+    <li><strong>跨镜台词</strong>：一句台词跨越剪切点时，两段连接处加 <code>&lt;scenetrans&gt;</code> 并声明 <code>continues seamlessly across the cut</code>。</li>
+    <li><strong>画面文字</strong>：招牌/字幕等可见文字放英文双引号内，原文保留：<code>A red neon sign reading "营业中" glows above the doorway.</code></li>
+  </ul>
+
+  <h3>参考模式（Ref2VA）的六段式</h3>
+  <p>全参考模式（多参考图/参考视频）使用更完整的六段结构，在三个核心字段之前增加：</p>
+  <table>
+    <tr><th>段</th><th>职责</th></tr>
+    <tr><td>subject_definitions</td><td>用标签定义每个被引用资产：<code>&lt;Subject N&gt;</code>（人/物/场景/风格）、<code>&lt;Picture N&gt;</code>（构图锚点）、<code>&lt;Video N&gt;</code>（整段参考视频）、<code>&lt;Audio N&gt;</code>（音频资产）</td></tr>
+    <tr><td>summary</td><td>任务类型与参考关系概述</td></tr>
+    <tr><td>retention_analysis</td><td>每个引用对象如何被保留/迁移/复用</td></tr>
+  </table>
+  <pre>&lt;Subject 1&gt; is the woman whose appearance comes from &lt;Picture 1&gt;
+and whose walking motion comes from &lt;Video 1&gt;.</pre>
+  <p>标签一旦分配全篇通用——这套标签系统就是"角色一致性"在提示词层面的官方实现。</p>
+
+  <div class="box example">
+    <div class="box-title">📖 官方 I2VA 完整示例（精简标注版）</div>
+    <pre>For the target video, at 0.00 seconds into the target video,
+&lt;Picture 1&gt; (from [Shot 1]) is fully referenced.
+
+integrated_multimodal_description: [Shot 1] Live-action, cinematic,
+the young woman shown in &lt;Picture 1&gt; remains beside the rain-covered
+train window, preserving her appearance, clothing, seat position, and
+the carriage layout. The camera trucks right with small amplitude at
+slow speed as she lifts her gaze from the folded letter toward the
+passing city lights. ...
+
+overall_soundscape: The train wheels produce a steady metallic rhythm
+beneath a low ventilation hum. Rain ticks against the window while
+paper rustles softly in her hands.
+
+non_diegetic_music: Sustained cello notes at a slow tempo with widely
+spaced piano tones, gradually decreasing in volume.</pre>
+    <p>注意首帧模式下的保留声明写法：<code>preserving her appearance, clothing, seat position, and the carriage layout</code>——逐项列出"什么不变"，比泛泛的 "keep consistent" 有效得多。</p>
+  </div>
+
+  <h2>八、两种格式的分工与 LLM 管线升级</h2>
+  <table>
+    <tr><th>格式</th><th>适用镜头</th><th>写法</th></tr>
+    <tr><td>六要素自由格式（本章前文）</td><td>单镜头、无对白、5 秒左右</td><td>人手写或 LLM 简写</td></tr>
+    <tr><td>官方三段式</td><td>多镜头内嵌、带对白/音乐、首尾帧复杂调度</td><td>强烈建议交给 LLM 生成——把官方指南全文放进 system prompt</td></tr>
+  </table>
+  <p>LLM 分镜管线的升级做法：把附录中两份官方指南的<strong>全文</strong>作为 system 上下文（8B 模型上下文足够装下），user 只给剧情——LLM 输出即是合规的三段式提示词。这正是官方 skill 文件（minimax-h3-prompt.skill）的工作原理：把规范固化进提示词模板，让通用 LLM 变成"H3 提示词专用编译器"。</p>
+
+
+  <h2>九、结构化提示词为什么有效：四个机制</h2>
+  <p>"把提示词写成固定格式"不是仪式感，背后有四个可验证的机制：</p>
+
+  <h3>机制一：对齐训练分布</h3>
+  <p>模型的训练数据由视觉语言模型按固定规范重新标注（re-captioning）。<strong>训练样本的文字长什么样，模型就最听得懂什么样的话</strong>。结构化提示词的本质是"模仿训练标注的分布"——同样的词汇，排成规范结构时模型的条件激活更充分，这是最直接的一层原因。</p>
+
+  <h3>机制二：注意力分工</h3>
+  <p>文本编码器为每个 token 分配注意力权重。自由散写的长段落里，"运镜词"和"风格词"混在一起，权重互相稀释；结构化字段（运镜写成独立动作句、声音归入 soundscape 字段）等于给模型一张<strong>词元职责表</strong>——每类信息在自己的位置上被足额读取。同一批词汇乱序打散 vs 按结构排列，输出稳定性差异实测可见。</p>
+
+  <h3>机制三：指令隔离</h3>
+  <p>三段式里声音归 <code>overall_soundscape</code>、配乐归 <code>non_diegetic_music</code>、画面归主字段——这不是洁癖。<strong>写在错误字段的信息会"泄漏"</strong>：把 "epic orchestral music" 写进画面描述，模型可能真给你生成一个管弦乐队；把音乐词放进配乐字段，它只影响音轨。字段就是防火墙。</p>
+
+  <h3>机制四：工程可维护性</h3>
+  <ul>
+    <li><strong>可 diff</strong>：两版提示词差异一目了然，调参归因成为可能（配合第 13 章的种子纪律）。</li>
+    <li><strong>可模板化</strong>：固定字段 + 变量槽位，批量生成十镜提示词时只有内容变、结构不变（第 21 章脚本的前提）。</li>
+    <li><strong>可定位修复</strong>：成片画面不对改主字段、声音不对改 soundscape、音乐不对改 music——自由格式时代"改一处崩三处"的问题消失。</li>
+    <li><strong>可交给 LLM 生产</strong>：结构越明确，小模型的输出越可靠——这是下一节强化器能成立的根本原因。</li>
+  </ul>
+  <div class="box warn">
+    <div class="box-title">⚠️ 结构化 ≠ 越长越好</div>
+    <p>字段框架的价值在"各归其位"，不在"填满"。无信息量的填充词（"very beautiful, high quality, masterpiece"）只会稀释有效 token 的注意力。<strong>每个字段写到"必要且充分"就停笔</strong>——官方示例的配乐段经常只有一句话。</p>
+  </div>
+
+  <h2>十、提示词强化器（Prompt Enhancer）全景与用法</h2>
+  <p><strong>定义</strong>：输入一句粗糙意图（"星舰抵达新家园"），输出一段完整规范提示词的工具。它是"结构化提示词"的生产设备——你负责创意，它负责格式与细节密度。</p>
+
+  <h3>四种形态对比</h3>
+  <table>
+    <tr><th>形态</th><th>代表</th><th>优点</th><th>短板</th></tr>
+    <tr><td><strong>① 模型内置自动扩写</strong></td><td>LTX-2.3 的 Gemma 编码器自动补全</td><td>零操作</td><td>不可控、不可审——写了什么你都不知道</td></tr>
+    <tr><td><strong>② Skill 模板文件</strong></td><td>官方 minimax-h3-prompt.skill</td><td>官方规范固化，配任意 LLM 即用</td><td>需自备 LLM 环境</td></tr>
+    <tr><td><strong>③ ComfyUI 增强器节点</strong></td><td>官方 LTX2 Prompt Enhancer 节点（内嵌分镜师 system prompt）；T8 增强器（8 官方场景预设 + 26 案例模板）</td><td>画布内闭环，输出直接喂视频节点</td><td>官方增强节点绑死特定编码器；第三方节点默认配付费 API</td></tr>
+    <tr><td><strong>④ 自建本地 LLM 管线</strong></td><td>Ollama 节点 + 本地 8B 模型</td><td>免费离线、system 完全自定义</td><td>需一次性配置</td></tr>
+  </table>
+  <div class="box tip">
+    <div class="box-title">💡 形态③④可以合体</div>
+    <p>T8 增强器节点支持自定义 OpenAI 兼容接口——把 Base URL 指向本地 Ollama（<code>http://127.0.0.1:11434/v1</code>）、模型 ID 填本地模型名，即可<strong>用它的场景预设模板，跑自己的免费后端</strong>。skill 文件的内容（官方规范）同样可以直接粘贴进 Ollama 节点的 system 框。</p>
+  </div>
+
+  <h3>自建强化器的配置方法（形态④实操）</h3>
+  <ol class="steps">
+    <li><strong>system 三段构成</strong>：角色声明（"你是 H3 提示词编译器"）+ 官方指南全文（附录本地副本直接粘贴）+ 输出约束（"只输出三段式提示词本体，无解释无引号"）。</li>
+    <li><strong>user 只给创意</strong>：一句话剧情或分镜表中的一行。</li>
+    <li><strong>接 PreviewAny 验收</strong>：增强输出先过显示节点人工过目，再接视频节点——别让没审过的文本直接烧 30 分钟算力。</li>
+    <li><strong>首帧模式加约束</strong>：I2V/FL2VA 时 system 里追加"画面内容以首帧为准，你只描述动作、运镜、光线变化与声音"——防止增强器自由发挥与首帧打架（第 5 章首帧瘦身原则的机器版）。</li>
+  </ol>
+
+  <h3>强化器的四个风险与质检</h3>
+  <table>
+    <tr><th>风险</th><th>表现</th><th>对策</th></tr>
+    <tr><td>加料幻觉</td><td>增强版多出你没要的元素（飞鸟、路人、雨）</td><td>验收时做"删减 diff"：对照原始意图，逐条删掉多余发明</td></tr>
+    <tr><td>与首帧冲突</td><td>文本描述的场景/服装和首帧不一致</td><td>system 加"首帧为准"约束（上文第 4 步）</td></tr>
+    <tr><td>风格漂移</td><td>增强器自带审美口味覆盖你的风格基座</td><td>风格基座写死在 system 里，禁止它改动</td></tr>
+    <tr><td>过度文学化</td><td>"命运的齿轮开始转动"式抽象抒情</td><td>system 加规则："每个细节必须可见或可听"</td></tr>
+  </table>
+  <p><strong>何时不用强化器</strong>：高潮镜头。强化器保证下限（格式合规、细节够密），但上限是平均水准——全片最重要的两三颗镜头值得手写逐字打磨，强化器的产出当草稿。</p>
+
+  <div class="box example">
+    <div class="box-title">📖 实例：一句意图的强化前后</div>
+    <p><strong>输入</strong>："星舰抵达新家园，舰长很激动，5 秒"</p>
+    <p><strong>强化输出（三段式节选）</strong>：</p>
+    <pre>integrated_multimodal_description: [Shot 1] Cinematic, 3D CG,
+a medium shot frames the captain in a crimson uniform standing
+before the panoramic viewport as a blue planet rises beyond the
+glass. The camera pushes in with small amplitude at slow speed
+while blue light gradually washes across his face; his eyes widen
+and a restrained smile forms.
+
+overall_soundscape: A deep engine hum underlies the bridge
+ambience, joined by a soft electronic notification chime.
+
+non_diegetic_music: Sustained string pads at a slow tempo,
+swelling gently as the planet appears.</pre>
+    <p>注意它自动完成了：风格声明前置、运镜三维表达式、"光线变化"作为时间轴事件、声音分字段、配乐只写乐器与动态。<strong>这些正是徒手写作最容易漏的规范点</strong>——强化器的真正价值不是"写得比你好"，是"永远不漏项"。</p>
+  </div>
+
+
+  <h2>十一、JSON 化提示词：管线侧的利器，模型侧的误会</h2>
+  <p>2025 年以来社区流行把提示词写成 JSON 对象。先给结论：<strong>视频模型本身并不"懂"JSON——对编码器而言花括号和引号只是普通 token；JSON 化的真正价值在人这一侧和管线这一侧</strong>。理解这一点，才能用对它。</p>
+
+  <h3>它长什么样</h3>
+  <pre>{
+  "shot": "extreme close-up",
+  "subject": "the captain's eye, blue planet reflected in iris",
+  "camera": { "movement": "push in", "amplitude": "small", "speed": "extremely slow" },
+  "lighting": "blue light from the right, f/1.4 shallow depth of field",
+  "audio": { "ambience": "low engine hum", "music": "sustained strings, slow tempo" }
+}</pre>
+
+  <h3>为什么模型不买账</h3>
+  <ul>
+    <li><strong>训练标注是散文体</strong>：re-captioning 的产物是自然语言段落（如官方三段式），不是 JSON。模型对散文的"语法惯性"远强于对键值对的。</li>
+    <li><strong>键名对模型没有语义特权</strong>：<code>"camera_movement": "push in"</code> 和散文 "the camera pushes in" 在编码器眼里只是两串不同的词——后者更贴近训练分布。</li>
+    <li><strong>结构符号白烧 token</strong>：花括号、引号、换行都占序列长度，嵌套越深浪费越多。</li>
+  </ul>
+  <p>社区确实有"JSON 直接喂模型效果变好"的报告——归因大多是<strong>写 JSON 的过程强迫作者补全了字段</strong>（不会忘记写运镜和光线），收益来自"完整"而非"JSON"。</p>
+
+  <h3>JSON 真正发光的三个位置</h3>
+  <ol class="steps">
+    <li><strong>LLM 生成的可靠性</strong>：让 LLM 输出 JSON（尤其配合 structured output / JSON mode），字段完备性可以被程序校验——少一个 lighting 字段脚本直接报错，而散文格式漏项只能靠肉眼。</li>
+    <li><strong>程序化组装与批量</strong>：JSON 是天然的分镜数据库格式——字段级替换、批量改风格基座（改一处 <code>style</code> 键全片生效）、和第 3 章的 CSV 分镜表、第 21 章的排产脚本无缝衔接。</li>
+    <li><strong>版本管理与评审</strong>：字段级 diff、逐字段评审（"这版只改了 lighting"），团队协作时远比散文段落可维护。</li>
+  </ol>
+
+  <h3>推荐架构：JSON 当中间表示（IR），散文当最终弹药</h3>
+  <pre>创意意图
+  ↓ LLM（JSON mode，字段可校验）
+JSON 中间表示  ←—— 人在此评审/修改（字段级）
+  ↓ 编译器（模板拼接，固定规则）
+三段式散文提示词  ←—— 喂给视频模型
+  ↓
+视频</pre>
+  <p>"编译"就是按固定模板把键值拼成自然语言——一段十几行的模板代码或一条 LLM 指令即可。这样两头的好处都占：人类享受 JSON 的严谨，模型吃到散文的亲切。</p>
+
+  <h3>三种格式总对比</h3>
+  <table>
+    <tr><th>格式</th><th>模型亲和度</th><th>LLM 生成可靠性</th><th>工程可维护性</th><th>定位</th></tr>
+    <tr><td>自由散文</td><td>🟡 中</td><td>低（易漏项）</td><td>低</td><td>随手测试</td></tr>
+    <tr><td>官方三段式</td><td>✅ 高（=训练分布）</td><td>中</td><td>中</td><td><strong>模型输入的标准形态</strong></td></tr>
+    <tr><td>JSON</td><td>🔴 低（直接喂）</td><td>✅ 高（可校验）</td><td>✅ 高</td><td><strong>生产管线的中间表示</strong></td></tr>
+  </table>
+
+  <div class="box example">
+    <div class="box-title">📖 实例：S07 的 JSON-IR 与编译产物</div>
+    <p><strong>中间表示（人评审这层）</strong>：</p>
+    <pre>{ "shot": "extreme close-up",
+  "subject": "captain's eye, blue planet reflected in the iris",
+  "camera": "push in, small amplitude, almost imperceptible speed",
+  "lighting": "blue light from the right, f/1.4 shallow DoF",
+  "soundscape": "deep engine hum, soft notification chime",
+  "music": "sustained strings swelling gently" }</pre>
+    <p><strong>编译后（喂模型这层）</strong>：</p>
+    <pre>integrated_multimodal_description: [Shot 1] Cinematic, an extreme
+close-up frames the captain's eye, a blue planet reflected in the
+iris. The camera pushes in with small amplitude at almost
+imperceptible speed as blue light washes in from the right...
+
+overall_soundscape: A deep engine hum underlies the bridge, with a
+soft notification chime.
+
+non_diegetic_music: Sustained strings at a slow tempo, swelling gently.</pre>
+    <p>两层各得其所：JSON 层丢了什么字段一眼可见；散文层的每个词都落在模型的舒适区。</p>
+  </div>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 例外情况</div>
+    <p>少数云端 API 与增强器节点明确声明接受 JSON 输入（其服务端自行编译），此时按对方文档来。判断标准永远只有一条：<strong>模型/工具的官方文档写明了 JSON，才直接喂 JSON</strong>；否则编译成散文。H3 官方指南通篇是散文格式——答案明确。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="02-分镜设计.html"><span class="dir">上一篇</span>第 4 章 · 分镜设计</a>
+    <a class="next" href="../03-镜头语言与美学篇/01-视觉思维.html"><span class="dir">下一篇</span>第 6 章 · 视觉思维与镜头语言 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

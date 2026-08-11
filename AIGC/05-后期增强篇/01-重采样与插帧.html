@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 17 章 · 重采样与插帧</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="05-01">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 05 后期增强篇 / 第 17 章 · 重采样与插帧</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 05 · 后期增强篇</div>
+  <h1>第 17 章 · 重采样与插帧</h1>
+  <p class="subtitle">网上工作流里"二次采样"到底在干什么，以及让 24fps 丝滑到 48fps 的实操</p>
+
+  <h2>一、名词澄清：三种"重采样"不是一回事</h2>
+  <p>"重采样/二次采样"在社区教程里被混用，实际是三种不同技术：</p>
+  <table>
+    <tr><th>叫法</th><th>本质</th><th>干什么用</th></tr>
+    <tr><td><strong>潜空间二次采样</strong>（img2img 式精修）</td><td>把生成的视频解码→再加少量噪声→低 denoise 重跑一遍采样器</td><td>修复局部瑕疵、改变细节风格。耗时接近重新生成，属于"再创作"而非"增强"</td></tr>
+    <tr><td><strong>超分重采样</strong></td><td>空间维度放大像素（SeedVR2 等）</td><td>提清晰度——第 18 章专讲</td></tr>
+    <tr><td><strong>时间重采样 = 插帧</strong></td><td>时间维度补中间帧（RIFE 等）</td><td>提流畅度——本章重点</td></tr>
+  </table>
+  <div class="box warn">
+    <div class="box-title">⚠️ 关于潜空间二次采样的冷静建议</div>
+    <p>它对图像很成熟（img2img），对视频<strong>性价比很低</strong>：重跑一遍的时间和重生成差不多，还破坏帧间一致性。视频镜头不满意，正确做法是改首帧/改提示词重新生成，而不是二次采样抢救。看到工作流里挂着它，先问"这一步真的必要吗"。</p>
+  </div>
+
+  <h2>二、插帧原理：AI 怎么"脑补"中间帧</h2>
+  <p>插帧模型（RIFE、FILM）输入相邻两帧，预测它们之间的光流（每个像素往哪动），再据此"弯折"合成中间帧。它不重画内容，只做运动内插——所以<strong>插帧不增加任何新细节，只增加运动平滑度</strong>。</p>
+  <ul>
+    <li><strong>RIFE</strong>：默认选择。小中幅度运动（人物转头、镜头推拉）效果极佳，模型仅 22MB。</li>
+    <li><strong>FILM</strong>：大幅度/快速运动（爆炸、打斗）时 RIFE 会产生涂抹，换 FILM。</li>
+  </ul>
+
+  <h2>三、实操：ComfyUI 内置插帧（0.26+ 无需插件）</h2>
+  <ol class="steps">
+    <li><strong>下载模型</strong>：从 HuggingFace <code>Comfy-Org/frame_interpolation</code> 下载 <code>rife_v4.26.safetensors</code>（22MB），放进 <code>ComfyUI/models/frame_interpolation/</code>，重启。</li>
+    <li><strong>搭节点</strong>：<code>FrameInterpolationModelLoader</code>（选 rife）→ <code>FrameInterpolate</code>。图像序列进、倍增的图像序列出。</li>
+    <li><strong>设倍率</strong>：multiplier = 目标帧率 ÷ 源帧率。24→48 用 ×2。倍率必须是整数。</li>
+    <li><strong>编码</strong>：接 <code>VHS_VideoCombine</code>（VideoHelperSuite 插件），<strong>帧率参数填源帧率×倍率</strong>（48），否则视频会以慢动作播放——这是新手最高频的坑。</li>
+  </ol>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 两个经典翻车</div>
+    <p><strong>① 慢动作 bug</strong>：插帧 ×2 后编码帧率还写 24 → 视频变慢一倍。铁律：<code>编码fps = 源fps × multiplier</code>。</p>
+    <p><strong>② 顺序颠倒</strong>：先插帧再超分 = 超分模型要多处理一倍帧数（时间翻倍），且插帧产生的轻微涂抹会被超分放大。<strong>永远先超分、后插帧</strong>（见下图）。</p>
+  </div>
+
+  <img class="diagram" src="../assets/img/post-pipeline.svg" alt="后期增强管线顺序">
+
+  <h2>四、什么时候需要插帧</h2>
+  <table>
+    <tr><th>场景</th><th>建议</th></tr>
+    <tr><td>成片交付（游戏 PV、宣传片）</td><td>✅ 24→48 或 24→60，丝滑感是"CG 品质"的重要组成</td></tr>
+    <tr><td>慢镜头镜头</td><td>✅ 生成正常速度 → 插帧 ×2~4 → 剪辑软件降速，获得高质量慢动作</td></tr>
+    <tr><td>草稿/内部评审</td><td>❌ 不必，省时间</td></tr>
+    <tr><td>运动极快的打斗镜头</td><td>🟡 RIFE 会涂抹，换 FILM 或保持 24fps</td></tr>
+  </table>
+
+  <h2>五、实例：星舰镜头的插帧操作单</h2>
+  <div class="box example">
+    <div class="box-title">📖 S01 镜头（星舰滑过星云，5 秒 124 帧 @24fps）</div>
+    <p>流程：<code>VHS_LoadVideo</code> 读入 mp4 → <code>FrameInterpolate</code>（RIFE，×2）→ <code>VHS_VideoCombine</code>（fps=48，编码 h264，crf 18，<strong>把 LoadVideo 拆出的 audio 一并接回</strong>）。</p>
+    <p>结果：5 秒 124 帧 → 5 秒 248 帧 @48fps，星舰滑行如丝般顺滑。耗时约 2 分钟（对比：重新生成一条要 30 分钟）。</p>
+    <p>注意：音频必须从原视频拆出再接回——ComfyUI 核心 <code>SaveVideo</code> 以外的节点链路默认会丢音频（第 19 章详述）。</p>
+  </div>
+
+
+  <h2>六、RIFE 与 FILM 的切换判据</h2>
+  <p>"运动大就换 FILM"过于笼统，可操作的判据是看<strong>帧间位移占比</strong>：主体在一帧内移动超过画面宽度约 15%（星舰快速掠镜、挥拳、爆炸碎片），RIFE 的光流估计开始失效，表现为运动边缘的"拉丝"涂抹。低于此阈值，RIFE 的结果更锐利。实操流程：默认 RIFE 跑一遍 → 逐镜抽查运动最激烈的 2~3 秒 → 发现涂抹的镜头单独换 FILM 重跑。</p>
+
+  <h2>七、倍率与观感的建议</h2>
+  <table>
+    <tr><th>倍率</th><th>结果帧率</th><th>观感</th><th>建议</th></tr>
+    <tr><td>×2</td><td>48fps</td><td>顺滑但保留"影像感"</td><td>✅ 成片默认</td></tr>
+    <tr><td>×2.5（24→60）</td><td>60fps</td><td>平台适配（B站/YouTube 60fps 档）</td><td>✅ 交付平台要求时用</td></tr>
+    <tr><td>×4</td><td>96fps</td><td>"肥皂剧效应"——过于滑腻，电影感流失</td><td>🟡 仅慢动作素材池</td></tr>
+  </table>
+  <p>非整数倍率（如 ×2.5）通过"×2 插帧 + 编码时重采样到 60"实现，比直接 ×4 再降更稳。</p>
+
+  <div class="pagenav">
+    <a href="../04-生成篇/02-加速技术.html"><span class="dir">上一篇</span>第 16 章 · 加速技术</a>
+    <a class="next" href="02-超分与画质增强.html"><span class="dir">下一篇</span>第 18 章 · 超分与画质增强 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

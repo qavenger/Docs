@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 16 章 · 加速技术全景：蒸馏、LoRA 与缓存</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="04-04">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 04 生成篇 / 第 16 章 · 加速技术</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 04 · 生成篇</div>
+  <h1>第 16 章 · 加速技术全景</h1>
+  <p class="subtitle">蒸馏模型、加速 LoRA、BlockCache/TeaCache——四层加速手段的原理、效果与代价</p>
+
+  <h2>一、先理解时间花在哪</h2>
+  <p>视频生成的时间 ≈ <strong>步数 × 每步耗时</strong>。每步耗时由模型大小、分辨率、帧数决定。所有加速技术都在动这两个乘数，可归为四层：</p>
+  <table>
+    <tr><th>层级</th><th>技术</th><th>原理一句话</th><th>加速比</th><th>画质代价</th></tr>
+    <tr><td>① 换模型</td><td>蒸馏版（V4 加速模型等）</td><td>大模型教小步数模型，直接少走路</td><td>2~4×</td><td>轻微，细节偏软</td></tr>
+    <tr><td>② 挂 LoRA</td><td>Lightning / Turbo LoRA</td><td>小补丁让原模型学会少步出图</td><td>2~4×</td><td>轻微</td></tr>
+    <tr><td>③ 缓存复用</td><td>BlockCache / TeaCache</td><td>相邻步变化小就跳过重复计算</td><td>1.2~2×</td><td>近似有损</td></tr>
+    <tr><td>④ 算子优化</td><td>SageAttention 等</td><td>注意力计算换更快算法</td><td>1.2~1.5×</td><td>几乎无损</td></tr>
+  </table>
+  <p>四层可以叠加（如蒸馏模型 + 缓存），但画质代价也会叠加。<strong>建议一次只加一层，跑同一条片子对比。</strong></p>
+
+  <h2>二、蒸馏模型（第 ① 层）</h2>
+  <p>蒸馏（distillation）是让"老师模型"（20~40 步）生成大量样本，训练"学生模型"用 4~8 步达到相近效果。你装的 H3 默认 8 步配置本身就是蒸馏产物；社区的 <strong>V4 加速版</strong>把它进一步压到更少步数。</p>
+  <ul>
+    <li><strong>何时用</strong>：批量出片、分镜探索阶段的速度优先场景。</li>
+    <li><strong>何时不用</strong>：成片级高潮镜头——步数少在复杂运动上细节发软，宁可等。</li>
+    <li><strong>获取</strong>：社区整合包/夸克网盘分发为主，注意核对底座版本与节点兼容性。</li>
+  </ul>
+
+  <h2>三、加速 LoRA（第 ② 层）</h2>
+  <p>加速 LoRA 是蒸馏思想的轻量化形态：不改底座模型，只挂一个几十 MB 的小补丁，让原模型学会"4~8 步出片"。图像侧的 Qwen-Image-Lightning、视频侧 Wan/LTX 系的 Lightning LoRA 都是这一路。</p>
+  <div class="box tip">
+    <div class="box-title">💡 LoRA 加速的使用姿势</div>
+    <p>在加载器后串一个 <code>LoraLoaderModelOnly</code> 节点，挂上加速 LoRA，然后把<strong>步数降到 LoRA 标注的甜区</strong>（通常 4~8 步）、CFG 降到 1.0~1.5。最常见的错误是挂了加速 LoRA 却还用 20 步——反而过拟合出 artifacts。<strong>加速 LoRA 和低步数是绑定销售的</strong>。</p>
+  </div>
+  <p>注意：风格 LoRA（改变画风）和加速 LoRA（减少步数）是两类东西，可以同时挂，但各自职责不同。第 21 章讲风格/角色 LoRA。</p>
+
+  <h2>四、缓存复用：BlockCache / TeaCache（第 ③ 层）</h2>
+  <p>扩散采样的相邻步骤之间，模型各层（block）的输出变化通常很小。缓存类技术检测"变化够不够小"，够小就直接复用上一步的计算结果，跳过整层计算：</p>
+  <ul>
+    <li><strong>BlockCache（T8 版）</strong>：针对 H3 的 F1B0 方案——先算第 0 层判断稳定性，稳定则跳过第 1~49 层。关键参数 <code>residual_diff_threshold</code>（默认 0.12，调高更快但更糙）、连续命中上限 2 次防漂移。作者实测约 <strong>1.2×</strong>。</li>
+    <li><strong>TeaCache</strong>：另一路"时间步嵌入相似度"判定的缓存方案，适配多种视频模型，加速比通常 1.5~2×。</li>
+  </ul>
+  <div class="box warn">
+    <div class="box-title">⚠️ 缓存是近似算法</div>
+    <p>缓存类技术不保证同 seed 结果一致，本质是"用微小画质换时间"。<strong>互斥</strong>：BlockCache 不能和 EasyCache/LazyCache 等其他缓存补丁同时挂。建议：草稿期开缓存，最终成片关掉跑原生。</p>
+  </div>
+
+  <h2>五、算子优化（第 ④ 层）</h2>
+  <p>SageAttention 用更高效的注意力核函数替换默认实现，对画质几乎无损，属于"白捡的加速"。在 ComfyUI 启动参数加 <code>--use-sage-attention</code> 即可（需先在嵌入环境安装 sageattention 包）。50 系显卡（Blackwell）兼容性已成熟，你的 5060 Ti 可用。</p>
+
+  <h2>六、决策建议（16GB 单卡）</h2>
+  <ol class="steps">
+    <li><strong>默认态</strong>：官方 8 步蒸馏配置 + SageAttention。这是性价比基线。</li>
+    <li><strong>赶工/批量</strong>：叠加 TeaCache 或换 V4 加速模型，接受轻微画质损失。</li>
+    <li><strong>成片镜头</strong>：回到原生 8~16 步，关缓存。重要镜头值得等。</li>
+    <li><strong>永远不要</strong>：为了省时间降分辨率出片再超分救——超分能救清晰度，救不回构图细节（第 18 章讲超分的正确用途）。</li>
+  </ol>
+
+  <div class="box example">
+    <div class="box-title">📖 实例：5 秒镜头的时间账（16GB 级显卡实测量级）</div>
+    <p>原生 8 步：约 30 分钟 → +SageAttention：约 24 分钟 → +TeaCache：约 15 分钟 → 换 V4 加速模型：约 8~10 分钟。<strong>一部 10 镜头的片子，全速配置能把过夜任务压缩到两小时内</strong>——但成片建议只对草稿镜头用全速，高潮镜头回归原生。</p>
+  </div>
+
+
+  <h2>五补、SageAttention 安装实操</h2>
+  <ol class="steps">
+    <li><strong>装包</strong>：用 ComfyUI 便携版的内嵌 Python 安装：<br><code>python_embeded\python.exe -m pip install sageattention</code></li>
+    <li><strong>加启动参数</strong>：编辑 <code>run_nvidia_gpu.bat</code>，在主程序参数末尾追加 <code>--use-sage-attention</code></li>
+    <li><strong>验证</strong>：启动日志出现 sage attention 相关字样，且同任务耗时下降约 15~25% 即生效</li>
+    <li><strong>回退预案</strong>：个别模型在 sage 注意力下出现色偏，删掉启动参数即可还原——它是无损可逆的</li>
+  </ol>
+
+  <h2>六补、步数-质量曲线：加步的边际收益</h2>
+  <p>"8 步加到 16 步值不值"取决于镜头内容，实测规律（H3 蒸馏配置）：</p>
+  <table>
+    <tr><th>步数</th><th>相对耗时</th><th>画质表现</th><th>适用</th></tr>
+    <tr><td>6</td><td>0.75×</td><td>运动细节发糊，仅构图评审可用</td><td>草稿</td></tr>
+    <tr><td>8</td><td>1.0×（基准）</td><td>标准出片质量</td><td>大多数镜头</td></tr>
+    <tr><td>12</td><td>1.5×</td><td>面部/纹理细节可感知提升</td><td>面部镜头</td></tr>
+    <tr><td>16</td><td>2.0×</td><td>提升趋缓，顶点镜头专用</td><td>高潮特写</td></tr>
+    <tr><td>24+</td><td>3×+</td><td>肉眼几乎无差异</td><td>不推荐</td></tr>
+  </table>
+  <p>结论：<strong>8 → 12 是性价比最高的一档跃升</strong>；超过 16 步的投入基本打水漂。加步预算只给面部重责镜头。</p>
+
+  <div class="pagenav">
+    <a href="04-节点图鉴.html"><span class="dir">上一篇</span>第 15 章 · ComfyUI 节点图鉴</a>
+    <a class="next" href="../05-后期增强篇/01-重采样与插帧.html"><span class="dir">下一篇</span>第 17 章 · 重采样与插帧 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 21 章 · 进阶：角色一致性、LoRA 微调与批量生产</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="06-02">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 06 实战篇 / 第 21 章 · 进阶玩法</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 06 · 实战篇</div>
+  <h1>第 21 章 · 进阶：角色一致性、LoRA 微调与批量生产</h1>
+  <p class="subtitle">当基础流程跑顺之后：锁角色、训 LoRA、把出片从作坊变成流水线</p>
+
+  <h2>一、角色一致性的三级方案</h2>
+  <table>
+    <tr><th>级别</th><th>方案</th><th>成本</th><th>适用</th></tr>
+    <tr><td>Lv.1</td><td>锚句重复：所有首帧提示词携带一字不差的角色描述</td><td>零</td><td>远景为主、面部镜头少</td></tr>
+    <tr><td>Lv.2</td><td>Ref2VA 参考图 / LTX-2.3 ID-LoRA 节点</td><td>低（3~5 张设定图）</td><td>有面部特写的中等篇幅</td></tr>
+    <tr><td>Lv.3</td><td>训练角色 LoRA（见下节）</td><td>高（数小时训练）</td><td>系列化内容、同一角色反复出镜</td></tr>
+  </table>
+  <p>升级判据很朴素：<strong>下一级解决不了的问题才值得上一级</strong>。多数单部作品 Lv.1+Lv.2 足够。</p>
+
+  <div class="box example">
+    <div class="box-title">📖 Lv.2 的设定图生产标准（常被做砸的细节）</div>
+    <p>Ref2VA 的效果上限在参考图质量，不在节点参数。合格的设定图要满足：<strong>中性光</strong>（无戏剧光影，光影会污染身份特征）、<strong>纯色底</strong>、<strong>主体占画面 60% 以上</strong>、<strong>多角度</strong>（正/侧/背至少三张）、<strong>表情中性</strong>。一张带"夕阳逆光氛围感"的美图当参考图，效果反而不如一张"呆板证件照"。</p>
+  </div>
+
+  <h2>二、LoRA 微调：什么时候值得</h2>
+  <p>LoRA 训练 = 用几十条素材给模型打一个"补丁"，让它永久学会某个角色/风格/概念。值得做的三种情况：</p>
+  <ol class="steps">
+    <li><strong>系列角色</strong>：主角要出现在几十条视频里，每次 Ref2VA 都救不回来"侧脸崩"的问题。</li>
+    <li><strong>私有风格</strong>：项目有独特美术风格（如特定渲染器质感），公开模型怎么调参都不像。</li>
+    <li><strong>特定概念</strong>：自研的舰船/机甲/怪物设计，模型先验里不存在。</li>
+  </ol>
+  <p><strong>数据要求</strong>：图像 LoRA 20~50 张多角度图；视频 LoRA 20~100 条短切片，配规范标注文本（标注格式 = 第 5 章的六要素公式——训练标注和推理提示词同构）。训练工具可用社区训练器（Boogu / AItoolkit 等，支持主流图像与视频底座），16GB 显存可训图像 LoRA，视频 LoRA 建议云端租卡（几美元一次）。</p>
+  <div class="box warn">
+    <div class="box-title">⚠️ 别混淆两种 LoRA</div>
+    <p>第 16 章的<strong>加速 LoRA</strong>（少步数）与本章的<strong>内容 LoRA</strong>（角色/风格）可同时挂载、各司其职，但训练方法完全不同。内容 LoRA 训练时切勿混入加速配置——步数日程不同会训出一个"四不像"。</p>
+  </div>
+
+  <div class="box example">
+    <div class="box-title">📖 投产决策账：角色 LoRA 训不训</div>
+    <p>情景：某角色要出演 12 集宣传短片。Ref2VA 每镜多耗约 20% 生成时间且侧脸约 10% 崩坏率 → 120 镜的返工损耗 ≈ 10 小时。角色 LoRA：30 张设定图整理 1h + 云端训练 2h（约 $3）+ 验证 1h = 半天，此后每镜零额外成本、崩坏率降到约 2%。<strong>结论：超过 3 集就回本，训。</strong>单部短片则 Ref2VA 足够——LoRA 是规模化的工具，不是精致的工具。</p>
+  </div>
+
+  <h2>三、批量生产：把 ComfyUI 变成流水线</h2>
+  <p>手动点 10 次 Run 是作坊，API 排队才是工厂。ComfyUI 原生 HTTP API 的三个端点就够搭一条产线：</p>
+  <table>
+    <tr><th>端点</th><th>作用</th></tr>
+    <tr><td><code>POST /prompt</code></td><td>提交工作流（API 格式 JSON），立即返回 prompt_id，不阻塞</td></tr>
+    <tr><td><code>GET /history/{prompt_id}</code></td><td>查询执行状态与产物</td></tr>
+    <tr><td><code>GET /queue</code></td><td>查看队列（批量入队后确认排队数）</td></tr>
+  </table>
+
+  <p>工作流的 API 格式从界面菜单 <strong>Export (API)</strong> 导出。下面是完整可运行的排产脚本——读入分镜表 CSV，逐镜改参数入队，断点续跑：</p>
+
+  <pre>#!/usr/bin/env python3
+# batch_produce.py —— 分镜表驱动的批量出片脚本
+# 依赖：pip install requests
+# 用法：python batch_produce.py shots.csv workflow_api.json
+import csv, json, sys, time, os
+import requests
+
+SERVER = "http://127.0.0.1:8188"
+
+# ---- 节点 ID 映射：按你的工作流 Export(API) 后的实际节点号修改 ----
+NODE_FIRST_FRAME = "3"      # LoadImage 节点
+NODE_PROMPT      = "105:104" # 视频条件节点的 prompt
+NODE_SECONDS     = "105:111" # PrimitiveFloat 秒数
+NODE_SAVE        = "92"      # SaveVideo 节点
+# ---------------------------------------------------------------
+
+def build_prompt(wf, shot):
+    wf = json.loads(json.dumps(wf))  # 深拷贝
+    wf[NODE_FIRST_FRAME]["inputs"]["image"] = shot["first_frame"]
+    wf[NODE_PROMPT]["inputs"]["prompt"] = shot["video_prompt"]
+    wf[NODE_SECONDS]["inputs"]["value"] = float(shot["seconds"])
+    wf[NODE_SAVE]["inputs"]["filename_prefix"] = f"video/{shot['id']}"
+    return wf
+
+def already_done(shot_id, outdir):
+    # 断点续跑：产物已存在则跳过
+    return any(f.startswith(shot_id) for f in os.listdir(outdir))
+
+def main(csv_path, wf_path):
+    wf = json.load(open(wf_path, encoding="utf-8"))
+    shots = list(csv.DictReader(open(csv_path, encoding="utf-8")))
+    outdir = r"D:\ComfyUI\ComfyUI_windows_portable\ComfyUI\output\video"
+    queued = []
+    for shot in shots:
+        if already_done(shot["id"], outdir):
+            print(f"[skip] {shot['id']} 已存在"); continue
+        p = build_prompt(wf, shot)
+        r = requests.post(f"{SERVER}/prompt", json={"prompt": p})
+        pid = r.json()["prompt_id"]
+        queued.append((shot["id"], pid))
+        print(f"[queue] {shot['id']} -> {pid}")
+    # 轮询直到全部完成
+    pending = dict(queued)
+    while pending:
+        time.sleep(60)
+        for sid, pid in list(pending.items()):
+            h = requests.get(f"{SERVER}/history/{pid}").json()
+            if h:
+                status = h[pid]["status"]["status_str"]
+                print(f"[{status}] {sid}")
+                del pending[sid]
+    print("全部完成")
+
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])</pre>
+
+  <p>配套的分镜表 <code>shots.csv</code>（表头即脚本字段）：</p>
+  <pre>id,first_frame,seconds,video_prompt
+S01,frames/HB_S01_v03.png,6,"the starship drifts slowly across the frame, ..."
+S04,frames/HB_S04_v02.png,5,"the captain rises from the chair, ..."
+...</pre>
+
+  <div class="box tip">
+    <div class="box-title">💡 流水线的三个工程细节</div>
+    <p><strong>① 入队即返回</strong>：/prompt 接口不等待执行，10 个任务 1 秒排完，ComfyUI 内部顺序消化——脚本发完就可以去睡觉。<strong>② 版本号管理</strong>：废片重抽时把 <code>shot["id"]</code> 改成 <code>S04_v02</code>，新旧产物并存可对比，选定后归档。<strong>③ 失败兜底</strong>：history 里 status 非 success 的镜头（OOM 等）单独收集到一个 retry 列表，夜间任务早上只补这几条。</p>
+  </div>
+
+  <h2>四、风格化进阶：社区融合模型</h2>
+  <p>第 1 章提到的审美融合版这类社区模型，定位是<strong>审美增强</strong>：更好的胶片感、更少的"AI 塑料脸"、自动修复常见瑕疵。使用纪律：</p>
+  <ul>
+    <li>与官方权重并存（checkpoints 目录共存），同一条分镜各跑一条 A/B 对比再决定全片用哪个。</li>
+    <li><strong>全片只用一个底座</strong>——中途换模型 = 风格断裂，A/B 测试必须在第一个镜头做完。</li>
+    <li>社区模型更新快但文档少，发布页的视频演示比 README 更能反映真实价值。</li>
+  </ul>
+
+  <h2>五、产能进阶路线图</h2>
+  <table>
+    <tr><th>阶段</th><th>形态</th><th>单镜成本</th></tr>
+    <tr><td>手工期</td><td>画布上逐镜点 Run</td><td>30 分钟 + 全程值守</td></tr>
+    <tr><td>队列期</td><td>画布上批量入队</td><td>30 分钟 + 零值守</td></tr>
+    <tr><td>脚本期</td><td>CSV + API 脚本（本节）</td><td>30 分钟 + 断点续跑 + 失败自动收集</td></tr>
+    <tr><td>产线期</td><td>首帧生成→视频→后期全部 API 串联</td><td>人力只剩评审</td></tr>
+  </table>
+  <p>产线期的形态：首帧（Flux API）→ 人工挑选门禁 → 视频（H3 API）→ 后期（超分/插帧 API）全自动串联，人从"操作者"退为"评审员"。这是 AI 视频工作室的真实形态，而它的每一块积木都已在前面的章节备齐。</p>
+
+  <div class="pagenav">
+    <a href="01-一分钟游戏CG完整实战.html"><span class="dir">上一篇</span>第 20 章 · 一分钟游戏 CG 实战</a>
+    <a class="next" href="../07-附录/01-资源与排错.html"><span class="dir">下一篇</span>第 22 章 · 资源与排错 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 19 章 · 音频：被低估的一半体验</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="05-03">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 05 后期增强篇 / 第 19 章 · 音频</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 05 · 后期增强篇</div>
+  <h1>第 19 章 · 音频：被低估的一半体验</h1>
+  <p class="subtitle">原生音画同步、后期配音、以及那个几乎人人都踩过的"音频丢失"坑</p>
+
+  <h2>一、为什么音频值一章</h2>
+  <p>影视行业有句话：<strong>观众能原谅模糊的画面，不能原谅糟糕的声音</strong>。AI 视频同理——静音的 CG 片段像监控录像，配上引擎低鸣和音乐瞬间变"作品"。音频方案按来源分三层：</p>
+
+  <h2>二、第一层：模型原生音频</h2>
+  <table>
+    <tr><th>模型</th><th>音频能力</th><th>特点</th></tr>
+    <tr><td>MiniMax H3</td><td>独立音频 VAE + 音频潜码，与视频联合生成</td><td>环境音、动作音效自动匹配画面；你的节点里的 <code>VAEDecodeAudio</code> 就是这条支路</td></tr>
+    <tr><td>LTX-2.3</td><td>潜空间音画联合生成，同步准确率 ~92%</td><td>目前本地最强；脚步声、对白唇形同步都能出；HiFi-GAN 声码器底噪低</td></tr>
+  </table>
+  <p><strong>提示词里可以写声音</strong>：在提示词末尾加声音描述（"with deep engine rumble and distant alarm beeps"），音画联合模型会尝试生成对应音效。写法和画面描述一样：具体、可数。</p>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 经典坑：音频在后处理中丢失</div>
+    <p>ComfyUI 核心的 <code>SaveVideo</code>/<code>CreateVideo</code> 节点链路里，一旦你改用 <code>VHS_LoadVideo</code> 读入视频做超分/插帧，图像帧和音频就分家了——<strong>如果最后只用帧序列合成新视频，音频会被静默丢弃</strong>。正确做法：<code>VHS_LoadVideo</code> 同时拆出 audio 输出 → 处理完帧后 → <code>VHS_VideoCombine</code> 的 audio 输入接回。检查成片时先听 3 秒再收工。</p>
+  </div>
+
+  <h2>三、第二层：后期 AI 配音</h2>
+  <p>原生音频不够用（或模型不带音频）时的补救：</p>
+  <ul>
+    <li><strong>MMAudio</strong>：看视频自动配环境音/音效的开源模型，ComfyUI 有对应节点。适合"画面已有、声音全无"的存量素材。</li>
+    <li><strong>TTS 配音</strong>：角色台词用文本转语音生成（GPT-SoVITS 等本地方案可克隆音色），再在剪辑软件里对画面。</li>
+    <li><strong>音乐</strong>：Suno/本地音乐模型生成主题音乐，剪辑时铺底。</li>
+  </ul>
+
+  <h2>四、第三层：声音分层思维</h2>
+  <p>专业音频是"分层"的，AI 生成时也可以按层规划：</p>
+  <table>
+    <tr><th>层</th><th>内容</th><th>《归乡号》示例</th></tr>
+    <tr><td>环境底层</td><td>持续不断的空间氛围</td><td>引擎低鸣、舱内电流声（全片贯穿）</td></tr>
+    <tr><td>音效层</td><td>与画面动作绑定的点状声音</td><td>通讯键咔哒声、警报、脚步声</td></tr>
+    <tr><td>音乐层</td><td>情绪引导</td><td>铺垫段弦乐低吟 → 高潮段主题旋律</td></tr>
+    <tr><td>对白层</td><td>角色台词</td><td>舰长一句 "Full speed ahead."</td></tr>
+  </table>
+  <p>前两层尽量让模型原生生成；音乐和对白<strong>几乎总是后期单独做</strong>再混音——AI 视频模型的音乐能力普遍薄弱。</p>
+
+  <h2>五、实例：给舰长镜头配声音</h2>
+  <div class="box example">
+    <div class="box-title">📖 S04 镜头（舰长起身，5 秒）</div>
+    <p><strong>提示词声音部分</strong>："...bootsteps on metal deck, fabric rustle of uniform, low engine hum in background"</p>
+    <p><strong>后期补强</strong>：H3 原生音频导出后，引擎低鸣偏薄 → 剪辑软件里叠一层免版税太空环境音（音量 -18dB 垫底），起身瞬间加一个轻微的"衣料摩擦"音效采样。</p>
+    <p><strong>验收标准</strong>：闭眼只听声音，能脑补出"一个人在未来飞船里站了起来"——达标。</p>
+  </div>
+
+  <div class="box tip">
+    <div class="box-title">💡 LTX-2.3 用户注意</div>
+    <p>LTX-2.3 工作流出片没声音的最高频原因：<code>Video Combine</code> 节点没勾选 <strong>Add Audio</strong>。生成前先确认这个复选框。</p>
+  </div>
+
+
+  <h2>六、混音电平参考表</h2>
+  <p>剪辑软件里四条轨道的相对响度（以对话/主体音效为 0dB 基准）：</p>
+  <table>
+    <tr><th>轨道</th><th>相对电平</th><th>说明</th></tr>
+    <tr><td>对白/关键音效</td><td>0 dB（基准）</td><td>全片最响的元素，只允许它触顶</td></tr>
+    <tr><td>音乐</td><td>-8 ~ -12 dB</td><td>情绪段可推到 -6，对白出现时闪避（sidechain 或手动压）</td></tr>
+    <tr><td>音效层</td><td>-6 ~ -10 dB</td><td>脚步/按键/警报——听得见但不抢戏</td></tr>
+    <tr><td>环境底层</td><td>-16 ~ -20 dB</td><td>引擎低鸣——"听不见但在场"，抽掉才觉得空</td></tr>
+  </table>
+  <p>验收测试法：<strong>小音量播放</strong>——笔记本喇叭 30% 音量下仍能听清对白和关键音效，混音即合格；大音箱上才听得清的不算数。</p>
+
+  <h2>七、音频与生成顺序的工程建议</h2>
+  <p>音乐先做、音效后配的顺序在第 9 章（卡点）已确立；补一条硬规则：<strong>H3/LTX 的原生音频一律视为"音效素材"而非"成片音轨"</strong>——它进剪辑轨后还要做电平、降噪、对齐。直接把原生音频当成片，响度会忽大忽小（各镜生成响度无规范）。</p>
+
+  <div class="pagenav">
+    <a href="02-超分与画质增强.html"><span class="dir">上一篇</span>第 18 章 · 超分与画质增强</a>
+    <a class="next" href="../06-实战篇/01-一分钟游戏CG完整实战.html"><span class="dir">下一篇</span>第 20 章 · 一分钟游戏 CG 完整实战 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

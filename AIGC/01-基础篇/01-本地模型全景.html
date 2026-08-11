@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 1 章 · 本地视频模型全景</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="01-01">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 01 基础篇 / 第 1 章 · 本地视频模型全景</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 01 · 基础篇</div>
+  <h1>第 1 章 · 本地视频模型全景</h1>
+  <p class="subtitle">MiniMax H3、LTX-2.3、社区蒸馏版——三条路线横向对比，16GB 显卡的最优解</p>
+
+  <p>2026 年下半年的本地视频生成，早已不是"能跑就行"的阶段。开源模型已经分化出清晰的三条路线：<strong>大而全的旗舰</strong>、<strong>音画一体的新架构</strong>、<strong>快而省的蒸馏版</strong>。选型的本质是回答三个问题：你的显存有多少、你要不要声音、你的素材要不要商用。</p>
+
+  <h2>一、三位主角的基本面</h2>
+
+  <h3>MiniMax H3 —— 多模式架构代表</h3>
+  <p>H3 最大的特点是<strong>多模式架构</strong>：同一套权重支持文生视频（T2V）、首帧驱动（FL2VA）、参考图驱动（Ref2VA）等多种进料方式，且<strong>原生带音频生成</strong>（独立的音频 VAE + 音频潜码）。官方部署形态是 int8 剪枝版 UNet + Qwen3-VL-32B 文本编码器，默认 8 步蒸馏采样，16GB 级显卡上 5 秒 16:9 视频约 30 分钟。</p>
+  <p>它的短板同样明确：32B 文本编码器是显存黑洞；8 步蒸馏在复杂运动上细节偏软。</p>
+
+  <h3>LTX-2.3 —— 音画同步的新标杆</h3>
+  <p>Lightricks 2026 年 3 月发布的 22B DiT 模型，<strong>Apache 2.0 协议</strong>（这是它最大的战略价值——可商用，无附加条款）。核心技术亮点：</p>
+  <ul>
+    <li><strong>潜空间联合音画生成</strong>：视频和音频不是两条管线拼接，而是在同一个潜空间里联合去噪，官方测试音画同步准确率约 92%。环境音、脚步声、对白可以随画面一起出来。</li>
+    <li><strong>Gemma 3 12B 文本编码器</strong>：256K 上下文，简单提示词能自动补全成电影级描述——对"不会写提示词"的人极其友好。</li>
+    <li><strong>原生竖屏 1080×1920</strong>：竖屏数据原生训练，不是横屏裁剪，短视频平台刚需。</li>
+    <li><strong>帧数规则</strong>：8n+1（对比 H3 的 17k+5），分辨率需 32 的倍数。</li>
+  </ul>
+
+  <h3>社区蒸馏/融合版 —— 站在巨人肩膀上的改造</h3>
+  <p>以 B 站 UP 主 T8 等社区作者发布的改版为代表：<strong>Krea2 融合版</strong>（把高审美图像模型的风格蒸馏进视频模型）、<strong>V4 加速版</strong>（进一步蒸馏采样步数）。这类模型不是官方产品，质量参差，但针对特定痛点（审美、速度）经常有惊喜。</p>
+
+  <h2>二、横向对比表</h2>
+
+  <table>
+    <tr><th>维度</th><th>MiniMax H3</th><th>LTX-2.3</th><th>社区蒸馏版</th></tr>
+    <tr><td><strong>画质上限</strong></td><td>高（8 步下细节偏软）</td><td>最高（22B，皮肤发丝级）</td><td>取决于底座</td></tr>
+    <tr><td><strong>速度</strong>（5s/16GB 实测级）</td><td>~30 分钟（8 步）</td><td>GGUF Q4 下相近或更慢</td><td>可快 2~4 倍</td></tr>
+    <tr><td><strong>显存门槛</strong></td><td>16GB 顺畅</td><td>GGUF Q4 ≈18GB，低配方案可压到 16GB 内</td><td>同底座</td></tr>
+    <tr><td><strong>音频</strong></td><td>✅ 原生（音频 VAE）</td><td>✅ 音画同步（最强）</td><td>继承底座</td></tr>
+    <tr><td><strong>许可</strong></td><td>⚠️ 查具体条款</td><td>✅ Apache 2.0</td><td>⚠️ 继承底座+作者条款</td></tr>
+    <tr><td><strong>首帧驱动</strong></td><td>✅ FL2VA</td><td>✅ I2V（优化过，减少机械平移）</td><td>视版本</td></tr>
+    <tr><td><strong>参考图锁角色</strong></td><td>✅ Ref2VA（最多 9 图）</td><td>✅ ID-LoRA</td><td>视版本</td></tr>
+    <tr><td><strong>生态</strong></td><td>ComfyUI 原生 + 社区插件多</td><td>ComfyUI 原生模板内置</td><td>夸克网盘分发为主</td></tr>
+  </table>
+
+  <h2>三、选型决策树</h2>
+
+  <ol class="steps">
+    <li><strong>素材要进商业项目？</strong>→ 直接 LTX-2.3（Apache 2.0 是唯一完全干净的选项）。H3 与社区改版用于内部预演、风格探索。</li>
+    <li><strong>要人物对白/音效同步？</strong>→ LTX-2.3，音画同步准确率目前本地最强。</li>
+    <li><strong>已经有 Flux 工作流、想"定帧再动"？</strong>→ H3 的 FL2VA 是目前首帧驱动最顺滑的，本书主力方案。</li>
+    <li><strong>出片太慢想提速？</strong>→ 先试 V4 加速版或 BlockCache（第 15 章），不要盲目换模型。</li>
+  </ol>
+
+  <div class="box tip">
+    <div class="box-title">💡 本书的技术栈选择</div>
+    <p>全书以 <strong>Flux（首帧）+ MiniMax H3（动画化）+ SeedVR2（超分）+ RIFE（插帧）</strong> 为主线——这是 16GB 级显卡上经过验证的成熟组合。LTX-2.3 作为对比与备选贯穿各章，标注其与主线的差异点。</p>
+  </div>
+
+  <h2>四、实例：同一个分镜，两套参数</h2>
+
+  <div class="box example">
+    <div class="box-title">📖 分镜：舰长转身看向舷窗外的蓝色行星（5 秒）</div>
+    <p><strong>H3 方案</strong>：FL2VA 模式，首帧由 Flux 生成（1344×768），124 帧（17×7+5），8 步，res_multistep + simple，出片约 30 分钟。</p>
+    <p><strong>LTX-2.3 方案</strong>：I2V 模式，同一首帧缩到 32 的倍数（1344×768 恰好满足），121 帧（8×15+1），22~26 步，CFG 3.0~5.0，Gemma 编码器可只写一句话剧情让它自动扩写，附带引擎低鸣音效。</p>
+    <p><strong>取舍</strong>：H3 出片快、运镜稳；LTX-2.3 画面细节和音效更好但显存紧张时需要 GGUF Q4 + VAE offload。本书第 19 章实战会用 H3 主线完成全片。</p>
+  </div>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 关于"整合包"</div>
+    <p>社区整合包（一键安装包）能省环境配置时间，但注意三点：确认模型文件来源可信；确认整合包的 ComfyUI 版本不要太旧（本教程基于 0.30 的新前端与节点 API）；付费整合包不是必需的——本书所有内容均可用官方免费组件复现。</p>
+  </div>
+
+
+  <h2>五、显存配置速查（16GB 级）</h2>
+  <table>
+    <tr><th>任务</th><th>配置</th><th>显存水位</th></tr>
+    <tr><td>Flux 首帧</td><td>fp8 权重，默认设备</td><td>~12GB，宽松</td></tr>
+    <tr><td>H3 视频 1344×768×124f</td><td>int8 UNet + nvfp4 编码器</td><td>~15GB，紧张可跑</td></tr>
+    <tr><td>H3 + Ref2VA（max 档）</td><td>同上 + 参考编码</td><td>可能溢出 → CLIPLoader 改 cpu</td></tr>
+    <tr><td>LTX-2.3</td><td>GGUF Q4 + VAE offload</td><td>贴近上限，关浏览器</td></tr>
+    <tr><td>SeedVR2 超分</td><td>3B fp8 + batch 5~9 + tiling</td><td>~14GB</td></tr>
+    <tr><td>本地 LLM（8B Q4）+ 视频待机</td><td>Ollama keep_alive 30min</td><td>~6GB，可与首帧共存</td></tr>
+  </table>
+  <p>OOM 排查顺序：① CLIPLoader 设备改 cpu → ② 关浏览器/其他 GPU 程序 → ③ 降分辨率 → ④ 降 batch。<strong>先挪编码器，画质零损失；降分辨率是最后手段</strong>。</p>
+
+  <div class="pagenav">
+    <a href="../index.html"><span class="dir">上一篇</span>返回目录</a>
+    <a class="next" href="02-一条CG视频的诞生流程.html"><span class="dir">下一篇</span>第 2 章 · 一条 CG 视频的诞生流程 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

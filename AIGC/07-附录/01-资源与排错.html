@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 22 章 · 资源清单与故障排查手册</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="07-01">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 07 附录 / 第 22 章 · 资源与排错</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 07 · 附录</div>
+  <h1>第 22 章 · 资源清单与故障排查手册</h1>
+  <p class="subtitle">模型去哪下、插件装哪些、报错怎么救、教程看哪些</p>
+
+  <h2>一、模型下载速查</h2>
+  <table>
+    <tr><th>模型</th><th>用途</th><th>体积</th><th>获取</th></tr>
+    <tr><td>Flux.1 dev fp8</td><td>首帧生成</td><td>17GB</td><td>HF: <code>Comfy-Org/flux1-dev</code></td></tr>
+    <tr><td>Qwen-Image 2512（GGUF Q8）</td><td>首帧备选（中文文字强、Apache 2.0）</td><td>~13GB</td><td>HF: Qwen 官方仓库</td></tr>
+    <tr><td>MiniMax H3 全家桶</td><td>视频生成（UNet int8 + Qwen3VL 编码器 + 双 VAE）</td><td>~30GB</td><td>HF: Comfy-Org 相关仓库 / 官方模板引导下载</td></tr>
+    <tr><td>LTX-2.3 GGUF Q4</td><td>视频生成备选（音画同步、Apache 2.0）</td><td>~18GB 显存方案</td><td>HF: Lightricks 官方</td></tr>
+    <tr><td>rife_v4.26</td><td>插帧</td><td>22MB</td><td>HF: <code>Comfy-Org/frame_interpolation</code> → <code>models/frame_interpolation/</code></td></tr>
+    <tr><td>SeedVR2 3B fp8</td><td>视频超分修复</td><td>数 GB（首跑自动下载）</td><td>ComfyUI SeedVR2 节点插件</td></tr>
+    <tr><td>qwen3:8b</td><td>本地分镜/提示词 LLM</td><td>5.2GB</td><td><code>ollama pull qwen3:8b</code></td></tr>
+  </table>
+  <div class="box tip">
+    <div class="box-title">💡 国内网络</div>
+    <p>HuggingFace 下载慢/失败时：设环境变量 <code>HF_ENDPOINT=https://hf-mirror.com</code> 走镜像；社区模型多看发布页附带的夸克/百度网盘链接。</p>
+  </div>
+
+  <h2>二、必备插件清单</h2>
+  <table>
+    <tr><th>插件</th><th>干什么</th><th>必需度</th></tr>
+    <tr><td>ComfyUI-VideoHelperSuite（VHS）</td><td>视频读写、保音频编码——后期一切的基础</td><td>★★★ 必装</td></tr>
+    <tr><td>ComfyUI-Ollama</td><td>本地 LLM 分镜/提示词节点</td><td>★★★ 本书方案</td></tr>
+    <tr><td>SeedVR2 节点</td><td>时序感知超分</td><td>★★☆ 成片需要</td></tr>
+    <tr><td>ComfyUI-KJNodes</td><td>LTX-2.3 辅助节点集</td><td>★★☆ LTX 路线</td></tr>
+    <tr><td>ComfyUI-MelBandRoFormer</td><td>音频分离增强</td><td>★☆☆ 进阶</td></tr>
+    <tr><td>T8 提示词增强器</td><td>场景预设模板（可接本地 Ollama）</td><td>★☆☆ 可选</td></tr>
+  </table>
+  <p>插帧无需插件：ComfyUI 0.26+ 已内置 <code>FrameInterpolate</code> 节点。</p>
+
+  <h2>三、故障速查表</h2>
+  <table>
+    <tr><th>症状</th><th>病因</th><th>处方</th></tr>
+    <tr><td>生成内容和提示词完全无关（如要星舰出橘猫）</td><td>误用核心 TextGenerate 节点接 MiniMax 编码器做扩写，输出乱码</td><td>LLM 扩写改走 Ollama 节点；或直接手写英文提示词</td></tr>
+    <tr><td>显存爆炸（OOM）</td><td>32B 文本编码器占满显存</td><td>CLIPLoader 的"设备"改 cpu；或关浏览器等占显存程序</td></tr>
+    <tr><td>成片没有声音</td><td>后期链路音频没接回 / LTX 未勾 Add Audio</td><td>VHS_LoadVideo 的 audio 输出接回 VHS_VideoCombine</td></tr>
+    <tr><td>插帧后视频变慢动作</td><td>编码 fps 忘了 ×倍率</td><td>编码 fps = 源 fps × multiplier</td></tr>
+    <tr><td>超分后画面闪烁</td><td>逐帧 ESRGAN / SeedVR2 batch 太小</td><td>换时序感知模型；batch 用 4n+1 且 ≥5</td></tr>
+    <tr><td>挂加速 LoRA 后画面出 artifacts</td><td>步数没跟着降</td><td>加速 LoRA 必须配 4~8 步 + CFG 1.0~1.5</td></tr>
+    <tr><td>帧数报错</td><td>H3 要 17k+5；LTX 要 8n+1</td><td>H3 用 124；LTX 用 121</td></tr>
+    <tr><td>人物每镜换脸</td><td>没用一致性方案</td><td>锚句 → Ref2VA → 角色 LoRA（第 21 章三级方案）</td></tr>
+    <tr><td>首次跑超分/新模型"卡死"</td><td>权重正在自动下载</td><td>看命令行下载进度，耐心等</td></tr>
+  </table>
+
+  <h2>四、精选学习资料</h2>
+  <table>
+    <tr><th>资料</th><th>类型</th><th>价值点</th></tr>
+    <tr><td><a href="https://modelscope.cn/models/MiniMax/MiniMax-H3">MiniMax H3 官方 ModelScope 仓库</a></td><td>官方文档（英文）</td><td>docs/ 目录下两份提示词写作指南（基础版 + 参考模式）——第 5 章官方规范的一手出处；<strong>本手册已存本地副本</strong>：<code>07-附录/官方文档/</code></td></tr>
+    <tr><td><a href="https://www.bilibili.com/video/BV1pRM96yETW/">B 站：关于 Minimax H3 的提示词增强（劇毒Shoujo）</a></td><td>视频教程</td><td>官方 skill 文件（minimax-h3-prompt.skill）的用法演示——把官方规范固化成 LLM 提示词模板</td></tr>
+    <tr><td><a href="https://www.bilibili.com/video/BV13Tu16BEEa/">B 站：MiniMax H3 Krea2 融合版与 V4 加速（T8star-Aix）</a></td><td>视频教程</td><td>社区改版模型首发：Krea2 审美融合、V4 加速、BlockCache 节点的作者演示</td></tr>
+    <tr><td><a href="https://docs.comfy.org/zh/tutorials/video/ltx/ltx-2-3">ComfyUI 官方 LTX-2.3 教程</a></td><td>官方文档（中文）</td><td>LTX 工作流的标准答案，帧数/CFG 等参数的权威值</td></tr>
+    <tr><td><a href="https://docs.comfy.org/tutorials/utility/video-upscale">ComfyUI 官方视频超分教程</a></td><td>官方文档</td><td>超分节点的官方接法</td></tr>
+    <tr><td><a href="https://comfyui-mcp.artokun.io/docs/blog/video-upscale-comfyui">ComfyUI Video Upscaling in 2026</a></td><td>专题长文（英文）</td><td>SeedVR2/FlashVSR/RIFE 顺序与参数的最详尽整理，第 17、18 章的主要参考</td></tr>
+    <tr><td><a href="https://blog.csdn.net/lzj781210/article/details/160004407">ComfyUI + LTX-2.3 极致全能指南</a></td><td>中文教程（CSDN）</td><td>LTX-2.3 整合包部署与避坑</td></tr>
+    <tr><td><a href="https://post.smzdm.com/p/a82ewd9l">LTX-2.3 深度评测</a></td><td>中文评测（什么值得买）</td><td>音画同步能力的实测结论</td></tr>
+    <tr><td>B 站 UP 主 T8star-Aix</td><td>视频教程系列</td><td>社区改版模型（Krea2 融合、V4 加速）首发与演示</td></tr>
+    <tr><td><a href="https://docs.comfy.org/zh/tutorials/image/qwen/qwen-image">Qwen-Image 官方 ComfyUI 教程</a></td><td>官方文档（中文）</td><td>首帧备选模型的工作流</td></tr>
+  </table>
+
+  <h2>五、收尾：本书的技术栈一图流</h2>
+  <div class="box example">
+    <div class="box-title">📖 参考装备清单（全本地部署形态）</div>
+    <p><strong>前期</strong>：Ollama 本地 LLM（8B 级）剧本拆分 + 提示词改写<br>
+    <strong>首帧</strong>：Flux.1 dev fp8（可换 Qwen-Image）<br>
+    <strong>视频</strong>：MiniMax H3 FL2VA/Ref2VA（备选 LTX-2.3）<br>
+    <strong>后期</strong>：SeedVR2 超分 → RIFE 插帧 → VHS 编码<br>
+    <strong>剪辑</strong>：剪映 / DaVinci Resolve（免费版足够）<br>
+    <strong>加速</strong>：SageAttention 常驻；TeaCache/蒸馏版按需</p>
+  </div>
+  <p>工具会过时，流程不会。<strong>先定帧再动画、便宜的环节做决策、昂贵的环节只执行</strong>——这三条原则在任何新一代模型上都成立。祝出片顺利。</p>
+
+  <div class="pagenav">
+    <a href="../06-实战篇/02-进阶玩法.html"><span class="dir">上一篇</span>第 21 章 · 进阶玩法</a>
+    <a class="next" href="../index.html"><span class="dir">完成</span>返回目录 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

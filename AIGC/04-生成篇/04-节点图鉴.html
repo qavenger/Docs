@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 15 章 · ComfyUI 节点图鉴</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="04-03">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 04 生成篇 / 第 15 章 · ComfyUI 节点图鉴</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 04 · 生成篇</div>
+  <h1>第 15 章 · ComfyUI 节点图鉴</h1>
+  <p class="subtitle">视频工作流核心节点的产品级参考手册：全称、原理、输入输出、参数与坑位</p>
+
+  <h2>〇、阅读前提：数据类型与流水线</h2>
+  <p>ComfyUI 的连线本质是<strong>类型化的数据流</strong>。先记住八种端口类型，任何陌生节点都能据此定位：</p>
+  <table>
+    <tr><th>类型</th><th>内容</th><th>谁产出 / 谁消费</th></tr>
+    <tr><td>MODEL</td><td>扩散模型主体（含权重与推理接口）</td><td>UNETLoader → 采样器/Guider</td></tr>
+    <tr><td>CLIP</td><td>文本编码器</td><td>CLIPLoader → 条件节点</td></tr>
+    <tr><td>VAE</td><td>变分自编码器（像素↔潜码翻译器）</td><td>VAELoader → 条件节点/解码节点</td></tr>
+    <tr><td>CONDITIONING</td><td>条件张量（编码后的提示词+控制信息）</td><td>条件节点 → Guider</td></tr>
+    <tr><td>LATENT</td><td>潜码（压缩后的中间表示）</td><td>条件节点/采样器 → 采样器/解码器</td></tr>
+    <tr><td>IMAGE</td><td>像素帧（张量格式，批次维 B×H×W×C）</td><td>LoadImage/VAEDecode → 处理或保存节点</td></tr>
+    <tr><td>VIDEO / AUDIO</td><td>封装好的视频/音频对象</td><td>CreateVideo → SaveVideo</td></tr>
+    <tr><td>STRING / INT / FLOAT</td><td>文本与数值</td><td>Primitive 类节点 → 任意参数口</td></tr>
+  </table>
+  <pre>主干流水线（视频生成）：
+
+ UNETLoader ──→ MODEL ──────────────┐
+ CLIPLoader ──→ CLIP ──→ 条件节点 ──→ CONDITIONING ──→ Guider ─┐
+ VAELoader ───→ VAE ────↗      └──→ LATENT ────────┐          ├─→ SamplerCustomAdvanced
+ RandomNoise / KSamplerSelect / BasicScheduler ────┴──────────┘        │
+                                                          LATENT（去噪完成）
+                                                               ↓
+                              SaveVideo ←── VIDEO ←── CreateVideo ←── VAEDecode（→IMAGE 帧）
+                                                               └──── VAEDecodeAudio（→AUDIO）</pre>
+
+  <h2>一、模型装载组</h2>
+
+  <h3>1. UNETLoader <span style="color:var(--ink-soft);font-weight:400">（Load Diffusion Model / 扩散模型加载器）</span></h3>
+  <p><strong>全称与定位</strong>：UNet/DiT 扩散模型加载器，位于 <code>loaders</code> 分类。尽管名字叫 UNet，2026 年的模型实为 DiT（Diffusion Transformer）架构——名称是历史沿袭。</p>
+  <p><strong>详细作用</strong>：读取 safetensors 权重文件，构建计算图并输出 MODEL 对象。视频模型如 <code>minimax_h3_fl2va_pruned_int8_convrot.safetensors</code>（int8 剪枝版）约 10~20GB，加载后常驻显存。</p>
+  <table>
+    <tr><th>参数</th><th>取值</th><th>说明</th></tr>
+    <tr><td>unet_name</td><td>文件名</td><td>从 <code>models/diffusion_models/</code> 目录读取</td></tr>
+    <tr><td>weight_dtype</td><td>default / fp8_e4m3fn / fp16 / bf16</td><td>权重加载精度。<strong>规则：预量化模型（文件名含 int8/fp8）必须选 default</strong>，让它按内嵌精度加载；强选 fp16 会把 10GB 模型撑成 20GB+，直接 OOM</td></tr>
+  </table>
+  <p><strong>坑</strong>：蒸馏版与原版权重文件名相近，混选后若步数配置不匹配（蒸馏版配 20 步），画面会出现过拟合 artifacts。</p>
+
+  <h3>2. CLIPLoader <span style="color:var(--ink-soft);font-weight:400">（文本编码器加载器）</span></h3>
+  <p><strong>全称与定位</strong>：文本编码器加载器。名字里的 CLIP 同样是历史沿袭——现代模型的编码器早已不是 CLIP，而是 T5、Qwen-VL、Gemma 等大型语言模型变体。</p>
+  <p><strong>详细作用</strong>：加载文本编码模型，负责把提示词字符串转成模型能理解的高维向量序列（token embeddings）。H3 用的 <code>qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors</code> 是一个 32B 视觉语言模型的裁剪量化版——它决定模型"听懂人话"的能力上限。</p>
+  <table>
+    <tr><th>参数</th><th>取值</th><th>说明</th></tr>
+    <tr><td>clip_name</td><td>文件名</td><td>从 <code>models/text_encoders/</code>（或 clip/）读取</td></tr>
+    <tr><td>type</td><td>minimax / ltxv / flux / sd3 …</td><td>编码器架构声明，<strong>选错则 tokenize 逻辑全错</strong>，生成内容必然跑题</td></tr>
+    <tr><td>device</td><td>default / cpu</td><td>default=进显存。32B 编码器占约 14GB 显存；OOM 时改 cpu 可将其挪到内存，编码耗时从秒级涨到几十秒</td></tr>
+  </table>
+  <p><strong>坑</strong>：文本编码器 ≠ 聊天 LLM。视频模型配套的编码器多为裁剪版（去掉了对话头），不能接 TextGenerate 节点当提示词扩写器用——会得到乱码或跑题文本（第 5 章反面案例）。</p>
+
+  <h3>3. VAELoader <span style="color:var(--ink-soft);font-weight:400">（Variational AutoEncoder / 变分自编码器加载器）</span></h3>
+  <p><strong>详细作用</strong>：VAE 是像素空间与潜空间之间的"翻译官"：编码时把 1080p 画面压缩成几十 KB 的潜码，解码时还原。H3 这类音画模型有<strong>两个</strong> VAE，需要两个 VAELoader 节点：</p>
+  <ul>
+    <li><code>video_vae</code>（如 minimax_h3_video_vae_fp16）：时空三维压缩，常见压缩率 8×8×4（宽×高×时间）</li>
+    <li><code>audio_vae</code>（fp32）：音频频谱的压缩器。音频走独立潜空间，与视频潜码在 DiT 内联合去噪</li>
+  </ul>
+  <p><strong>坑</strong>：VAE 与主模型严格配套——换视频模型而不同步换 VAE，轻则色彩发灰，重则输出雪花噪点。</p>
+
+  <h3>4. LoraLoaderModelOnly <span style="color:var(--ink-soft);font-weight:400">（仅模型 LoRA 加载器）</span></h3>
+  <p><strong>全称与定位</strong>：LoRA（Low-Rank Adaptation，低秩适配）补丁加载器，仅修改 MODEL 不动 CLIP 的变体。</p>
+  <p><strong>详细作用</strong>：把几十 MB 的低秩矩阵补丁注入主模型的注意力层，改变其行为——加速 LoRA 让模型学会少步去噪，内容 LoRA 让模型学会特定角色/风格。视频模型场景几乎都用 ModelOnly 变体（文本编码器不需要改）。</p>
+  <table>
+    <tr><th>参数</th><th>说明</th></tr>
+    <tr><td>strength_model</td><td>补丁强度。加速 LoRA 固定 1.0；风格 LoRA 0.6~1.0 间调，过强会覆盖底座的光影物理</td></tr>
+  </table>
+  <p><strong>坑</strong>：加速 LoRA 与低步数绑定销售（详见第 16 章）；多个 LoRA 串联时顺序影响结果——加速类靠后挂。</p>
+
+  <h2>二、条件组</h2>
+
+  <h3>5. MiniMaxH3ImageToVideo <span style="color:var(--ink-soft);font-weight:400">（H3 首/尾帧视频条件节点）</span></h3>
+  <p><strong>全称与定位</strong>：MiniMax H3 First/Last-frame-to-Video-Action 条件组装节点，位于 <code>model/conditioning/minimax</code>。整条 H3 工作流的心脏。</p>
+  <p><strong>详细作用</strong>：完成三件事——①用 CLIP 把提示词编码为文本 token；②若有首/尾帧，用 VAE 编码为潜码并写入时间轴对应位置（keyframes 机制）；③按 width/height/length 构建空白初始潜码。输出 CONDITIONING + LATENT 两路。</p>
+  <table>
+    <tr><th>输入</th><th>类型</th><th>详细说明</th></tr>
+    <tr><td>prompt</td><td>STRING</td><td>文本条件。可接 widget 输入或上游 STRING 节点（如 LLM 分镜输出）</td></tr>
+    <tr><td>first_frame</td><td>IMAGE（可选）</td><td>首帧锚点。接入即 FL2VA 模式，画面内容被锁死</td></tr>
+    <tr><td>last_frame</td><td>IMAGE（可选）</td><td>尾帧锚点。与首帧同场景的状态差越小，过渡越稳</td></tr>
+    <tr><td>length</td><td>INT</td><td>帧数，必须满足 17k+5（17 的倍数加 5）。124≈5 秒@24fps；训练甜区 124~362</td></tr>
+    <tr><td>width / height</td><td>INT</td><td>输出分辨率，32 的倍数。16GB 显存甜区 1344×768</td></tr>
+    <tr><td>clip / vae</td><td>CLIP / VAE</td><td>来自装载组</td></tr>
+  </table>
+  <p><strong>坑</strong>：首帧分辨率会被缩放到 width/height——首帧直接按目标尺寸生成，避免二次拉伸损耗。</p>
+
+  <h3>6. Ref2VA <span style="color:var(--ink-soft);font-weight:400">（Reference-to-Video-Action / 参考驱动条件节点）</span></h3>
+  <p><strong>详细作用</strong>：与首帧机制不同——参考图不写入潜码时间轴，而是编码为<strong>身份特征 token</strong>，在去噪全程参与注意力计算，让任意画面中的角色/物体保持同一身份。支持 ≤9 张参考图、2~15 秒参考视频（24fps、内部按 2fps 采样）、参考音频。</p>
+  <table>
+    <tr><th>参数</th><th>说明</th></tr>
+    <tr><td>ref_image_size</td><td><code>match</code>=参考图缩到生成分辨率（快，身份还原弱）；<code>max</code>=2048 短边高保真编码（身份最准，但参考 token 参与每步计算，速度慢数倍）</td></tr>
+  </table>
+  <p><strong>坑</strong>：参考图要"证件照思维"（主体大、清晰、少遮挡）；含多个无关主体的参考图会污染身份特征。</p>
+
+  <h3>7. CLIPTextEncode <span style="color:var(--ink-soft);font-weight:400">（CLIP 文本编码节点）</span></h3>
+  <p><strong>详细作用</strong>：图像侧工作流（Flux/SDXL/Qwen-Image）的经典文本条件节点，提示词 → CONDITIONING 的最小单元。Flux 工作流中通常两个实例分别喂 T5 与 CLIP-L 编码器再合并。支持权重语法 <code>(keyword:1.2)</code>（Flux 的 T5 支路忽略权重语法，纯自然语言）。</p>
+
+  <h3>8. BasicGuider / CFGGuider <span style="color:var(--ink-soft);font-weight:400">（引导器）</span></h3>
+  <p><strong>全称与定位</strong>：Guidance 引导器，把 MODEL 和 CONDITIONING 组装成采样器可调用的"打分函数"。</p>
+  <p><strong>详细作用</strong>：BasicGuider 是单条件直通（CFG=1，蒸馏模型的标配）；CFGGuider 携带正负双条件，每步计算"有条件的预测 − 无条件的预测"并按 cfg 系数放大方向——这就是 Classifier-Free Guidance（无分类器引导）的物理实现。H3/LTX 蒸馏管线用 BasicGuider；Flux dev 用 CFGGuider 时 guidance≈3.5。</p>
+
+  <h2>三、采样组</h2>
+
+  <h3>9. RandomNoise <span style="color:var(--ink-soft);font-weight:400">（随机噪声源）</span></h3>
+  <p><strong>详细作用</strong>：按 <code>noise_seed</code> 生成高斯噪声潜码。种子决定论：同种子+同参数=逐像素可复现。科学抽卡的方法论是<strong>固定其他一切，只变种子</strong>——此时画面差异 100% 来自噪声先验，可以归因。</p>
+
+  <h3>10. KSamplerSelect <span style="color:var(--ink-soft);font-weight:400">（采样算法选择器）</span></h3>
+  <p><strong>详细作用</strong>：选择去噪的数值积分算法。常见成员：<code>euler</code>（一阶，稳）、<code>dpmpp_2m</code>（二阶多步，细节丰富）、<code>res_multistep</code>（H3 官方配套的少步数优化算法）。算法之间无绝对优劣，但<strong>模型发布方会指定配套算法</strong>，擅自更换轻则质量下降重则出错。</p>
+
+  <h3>11. BasicScheduler <span style="color:var(--ink-soft);font-weight:400">（基础调度器）</span></h3>
+  <p><strong>详细作用</strong>：生成 sigma（噪声水平）日程表——决定 8/20/50 步分别在多"脏"的状态之间跳跃。</p>
+  <table>
+    <tr><th>参数</th><th>说明</th></tr>
+    <tr><td>scheduler</td><td>simple（均匀）、karras（两端密中间疏，SD 系经典）、beta、exponential。H3 配套 simple</td></tr>
+    <tr><td>steps</td><td>去噪步数。时间成本与之严格线性</td></tr>
+    <tr><td>denoise</td><td>1.0=从纯噪声开始（文生/首帧生视频）；0.2~0.85=对已有内容加噪重做（img2img/V2V 的核心旋钮，第 14 章有对照表）</td></tr>
+  </table>
+
+  <h3>12. SamplerCustomAdvanced <span style="color:var(--ink-soft);font-weight:400">（自定义高级采样器）</span></h3>
+  <p><strong>详细作用</strong>：采样执行器，把 noise/guider/sampler/sigmas/latent_image 五路输入组装执行去噪循环。它就是经典 KSampler 的模块化版本——拆开的意义在于：调度器可换成增强版、可中途插入双采样（先快后精）、可对 sigmas 做自定义编辑。普通出片两者任选，研究型工作流必须用它。</p>
+
+  <h2>四、解码与输出组</h2>
+
+  <h3>13. VAEDecode / VAEDecodeAudio <span style="color:var(--ink-soft);font-weight:400">（VAE 解码器·视频/音频）</span></h3>
+  <p><strong>详细作用</strong>：采样完成的 LATENT → 像素帧（IMAGE 批次）/ 音频波形（AUDIO）。视频解码是显存峰值点——124 帧 1344×768 解码时可额外吃数 GB；长视频若此处 OOM，改用 <code>VAEDecodeTiled</code> 分块解码。</p>
+
+  <h3>14. CreateVideo / SaveVideo</h3>
+  <p><strong>详细作用</strong>：CreateVideo 把帧序列与音频封装为 VIDEO 对象（fps 在此设定）；SaveVideo 落盘 mp4/webm。<strong>坑</strong>：核心节点的封装链路对音频的处理以"显式接入"为准——帧和音频在条件组之后就分家了，任何中间处理都必须保证音频线不断（第 19 章）。</p>
+
+  <h2>五、图像输入组</h2>
+
+  <h3>15. LoadImage / ImageScale</h3>
+  <p><strong>详细作用</strong>：LoadImage 从 <code>input/</code> 目录读图（直接把图片拖进画布会自动创建）。ImageScale 做尺寸变换，<code>upscale_method</code> 选 lanczos 保细节；首帧接入视频节点前，用它对齐到目标分辨率是显式可控的做法。</p>
+
+  <h2>六、后期组</h2>
+
+  <h3>16. VHS_LoadVideo / VHS_VideoCombine <span style="color:var(--ink-soft);font-weight:400">（VideoHelperSuite 视频读写）</span></h3>
+  <p><strong>详细作用</strong>：第三方视频 IO 双雄。LoadVideo 拆出 frames（IMAGE 批次）+ audio + fps 元信息；VideoCombine 反向封装，支持 h264/h265、crf 质量控制（16~18 为出片档）。<strong>crf 每降 6 体积约翻倍</strong>；出片勿超 23（肉眼可见的方块）。</p>
+
+  <h3>17. FrameInterpolationModelLoader / FrameInterpolate <span style="color:var(--ink-soft);font-weight:400">（插帧模型加载器 / 插帧执行）</span></h3>
+  <p><strong>详细作用</strong>：ComfyUI 0.26+ 内置插帧。Loader 加载 RIFE/FILM 权重（22MB 级）；Interpolate 的 <code>multiplier</code> 为整数倍增。物理限制：只内插不创造——第 17 章的顺序铁律（先超分后插帧）源于此。</p>
+
+  <h3>18. SeedVR2 节点组 <span style="color:var(--ink-soft);font-weight:400">（第三方时序感知超分）</span></h3>
+  <p><strong>详细作用</strong>：DiT 架构的视频修复器。Loader + Sampler 两节点形态，<code>batch_size</code> 须满足 4n+1 且 ≥5（时序窗口格式，窗口跨帧才有一致性）。16GB 显存配 3B fp8 + batch 5~9。详见第 18 章。</p>
+
+  <h2>七、工具组</h2>
+
+  <h3>19. Primitive 系 <span style="color:var(--ink-soft);font-weight:400">（PrimitiveFloat / Int / String / StringMultiline）</span></h3>
+  <p><strong>详细作用</strong>：把 widget 值变成可连线的数据口，实现"一个值喂多个节点"。H3 模板用 PrimitiveFloat 存"秒数"——改一处，帧数公式和音频长度同时更新。</p>
+
+  <h3>20. ComfyMathExpression <span style="color:var(--ink-soft);font-weight:400">（数学表达式节点）</span></h3>
+  <p><strong>详细作用</strong>：对输入值执行表达式求值。典型用法是"秒数 → 最近的 17k+5 帧数"的换算：<code>max(5, round(a*24)) + (5 - (max(5, round(a*24)) % 17)) % 17</code>。改时长只动 PrimitiveFloat，帧数合规性由公式兜底。</p>
+
+  <h3>21. PreviewAny / MarkdownNote / Reroute</h3>
+  <p><strong>PreviewAny</strong>：把任意数据流以文本显示——调试 LLM 文本输出的唯一窗口（生成的分镜到底写了什么，接它就能看见）。<strong>MarkdownNote</strong>：画布文档化，团队协作和隔周复工的救命稻草。<strong>Reroute</strong>：纯理线用，不参与计算——大画布可读性的关键。</p>
+
+  <h3>22. OllamaConnectivityV2 / OllamaGenerateV2 <span style="color:var(--ink-soft);font-weight:400">（第三方本地 LLM 节点）</span></h3>
+  <p><strong>详细作用</strong>：Connectivity 节点管理 Ollama 服务地址、模型选择与保活时间（keep_alive 决定模型在显存驻留多久——视频管线间歇用 LLM，设 30 分钟避免反复加载数 GB 权重）；Generate 节点携带 system/prompt 发起推理，输出 result（生成文本）/thinking（思维链）/context（多轮上下文）。<strong>模型选择在 Connectivity 节点</strong>，Generate 节点只负责提示词。</p>
+
+  <h2>八、实例：一条标准 H3 首帧工作流的节点点名</h2>
+  <div class="box example">
+    <div class="box-title">📖 17 个节点的完整数据流还原</div>
+    <p><strong>文本流</strong>：PrimitiveStringMultiline（剧情）→ OllamaGenerateV2（LLM 分镜）→ MiniMaxH3ImageToVideo.prompt</p>
+    <p><strong>图像流</strong>：LoadImage（Flux 首帧）→ ImageScale（对齐 1344×768）→ MiniMaxH3ImageToVideo.first_frame</p>
+    <p><strong>参数流</strong>：ResolutionSelector → width/height；PrimitiveFloat(5.0) → ComfyMathExpression → length</p>
+    <p><strong>模型流</strong>：CLIPLoader(minimax) + VAELoader(video) → 条件节点；UNETLoader → BasicGuider ← 条件节点.CONDITIONING</p>
+    <p><strong>采样流</strong>：RandomNoise + KSamplerSelect(res_multistep) + BasicScheduler(simple, 8) + 条件节点.LATENT → SamplerCustomAdvanced</p>
+    <p><strong>输出流</strong>：采样 LATENT → VAEDecode → CreateVideo(24fps) ← VAEDecodeAudio；→ SaveVideo</p>
+    <p>用本章的图鉴逐个对号——每个节点都能说出全称、职责和它的坑，才算真正"看懂"了一条工作流。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="03-生成范式全解析.html"><span class="dir">上一篇</span>第 14 章 · 生成范式全解析</a>
+    <a class="next" href="02-加速技术.html"><span class="dir">下一篇</span>第 16 章 · 加速技术 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

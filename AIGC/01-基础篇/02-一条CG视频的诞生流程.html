@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 2 章 · 一条 CG 视频的诞生流程</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="01-02">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 01 基础篇 / 第 2 章 · 一条 CG 视频的诞生流程</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 01 · 基础篇</div>
+  <h1>第 2 章 · 一条 CG 视频的诞生流程</h1>
+  <p class="subtitle">六阶段生产线总览：为什么专业玩家都"先定帧、再动画"</p>
+
+  <p>新手做 AI 视频的典型路径是：打开视频模型 → 写一句提示词 → 抽卡 → 不满意 → 改提示词 → 再抽卡。这个过程的痛苦之处在于<strong>每次抽卡都要付出完整的视频生成时间</strong>（在 16GB 显卡上是半小时级别），而画面构成、角色长相、场景布局这些本该在前期定死的东西，全被交给了运气。</p>
+  <p>专业流程把"创意决策"和"算力消耗"分开了：<strong>便宜的环节做决策，昂贵的环节只执行</strong>。</p>
+
+  <h2>一、六阶段生产线</h2>
+
+  <img class="diagram" src="../assets/img/pipeline-overview.svg" alt="六阶段生产线">
+
+  <h3>阶段 ①②：剧本与分镜（纯文字，零算力）</h3>
+  <p>把故事切成 8~12 个单镜头，每个镜头写清楚：画面里有什么、镜头怎么动、什么情绪。这一阶段全部可以用本地 LLM（Ollama + qwen3:8b）辅助完成——详见第 3、4 章。<strong>在这里改一版文案的成本是几秒钟，在视频生成后改的成本是半小时</strong>，所以前期抠得越细，后期越省。</p>
+
+  <h3>阶段 ③：首帧（图像模型，单张约 30 秒）</h3>
+  <p>每个镜头先用 Flux 生成一张"定帧图"。图像模型比视频模型便宜两个数量级，可以放肆抽卡：一个镜头抽 4~8 张首帧，挑出构图、角色、光影最满意的一张。这一步相当于传统影视的<strong>概念设计 + 美术定稿</strong>。</p>
+
+  <h3>阶段 ④：视频生成（半小时级，只执行）</h3>
+  <p>首帧接入视频模型的 first_frame 输入，提示词只描述"运动和运镜"。因为画面内容已被首帧锁死，视频模型只需要做好一件事：<strong>让这张画正确地动起来</strong>。废片率从纯文生视频的 70%+ 降到 20% 以下。</p>
+
+  <h3>阶段 ⑤⑥：后期增强与剪辑</h3>
+  <p>超分提清晰度、插帧提流畅度、配音频，最后进剪辑软件拼接。这是"能用"和"能打"的分水岭，PART 04 整篇讲这个。</p>
+
+  <h2>二、时间预算（以 16GB 级显卡为基准）</h2>
+
+  <table>
+    <tr><th>环节</th><th>单位耗时</th><th>一个 60 秒项目（10 镜头）总量</th><th>性质</th></tr>
+    <tr><td>剧本 + 分镜</td><td>—</td><td>1~2 小时（人工+AI）</td><td>创作</td></tr>
+    <tr><td>首帧生成</td><td>~30 秒/张</td><td>~1 小时（含抽卡挑选）</td><td>创作</td></tr>
+    <tr><td>首帧精修（局部重绘）</td><td>~1 分钟/次</td><td>0.5 小时</td><td>创作</td></tr>
+    <tr><td>视频生成</td><td>~30 分钟/5 秒</td><td><strong>5~8 小时</strong>（含 20% 重抽）</td><td>算力</td></tr>
+    <tr><td>超分 + 插帧</td><td>~5 分钟/镜</td><td>~1 小时</td><td>算力</td></tr>
+    <tr><td>剪辑合成</td><td>—</td><td>1~2 小时</td><td>创作</td></tr>
+  </table>
+
+  <div class="box tip">
+    <div class="box-title">💡 节奏建议：白天做决策，晚上跑算力</div>
+    <p>视频生成的 5~8 小时是无人值守时间。合理节奏：白天完成剧本、分镜、首帧并把视频任务全部排队（ComfyUI 支持任务队列），睡前启动，早上起床收片。第 20 章会讲如何用 API 把排队也自动化。</p>
+  </div>
+
+  <h2>三、为什么"先首帧后视频"是分水岭</h2>
+
+  <p>纯文生视频（T2V）把三件事同时交给模型碰运气：<strong>画面里有什么</strong>（构图/角色/场景）、<strong>画面怎么动</strong>（运动/运镜）、<strong>动得稳不稳</strong>（一致性）。首帧策略把第一件事完全拿走——图像模型的画面质量远高于视频模型直接生成的首帧，且可以人工挑选、局部重绘精修。</p>
+  <p>这带来三个直接收益：</p>
+  <ul>
+    <li><strong>角色一致性</strong>：所有镜头的首帧都基于同一张角色设定图派生，角色长相不会每镜一变（第 13、21 章展开）。</li>
+    <li><strong>镜头语言可控</strong>：构图在首帧里定死，提示词只需写运镜，模型不用再"猜构图"。</li>
+    <li><strong>成本可控</strong>：废片发生在 30 秒一张的图像阶段，而不是 30 分钟一条的视频阶段。</li>
+  </ul>
+
+  <h2>四、实例：星舰舰长镜头的两阶段对比</h2>
+
+  <div class="box example">
+    <div class="box-title">📖 同一段剧情，两种走法</div>
+    <p><strong>走法 A（纯 T2V）</strong>：提示词直接写"星舰驾驶舱，舰长看蓝色行星，镜头推近"。实测：构图随机（有时俯拍有时仰拍）、舰长服装每次不同、行星位置飘忽。抽 5 条才有一条能用的，耗时 2.5 小时。</p>
+    <p><strong>走法 B（首帧策略）</strong>：Flux 先出 4 张驾驶舱概念图（2 分钟），选定"对称构图、红色制服舰长居中、舷窗右上蓝色行星"的一张；H3 接首帧，提示词只写 "camera slowly pushes in, captain turns toward the viewport"。一次通过，耗时 35 分钟。</p>
+    <p><strong>结论</strong>：B 的画面质量和可控性全面胜出，总耗时反而更短。这就是本书主线流程的全部理由。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="01-本地模型全景.html"><span class="dir">上一篇</span>第 1 章 · 本地视频模型全景</a>
+    <a class="next" href="../02-前期策划篇/01-剧本拆分与AI辅助.html"><span class="dir">下一篇</span>第 3 章 · 剧本拆分 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>
