@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 8 章 · 坚硬岩铁与原始朴真</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="03-03">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 03 材质 · Material / 第 8 章 · 坚硬岩铁与原始朴真</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 03 · 材质 · MATERIAL</div>
+  <h1>第 8 章 · 坚硬岩铁与原始朴真</h1>
+  <p class="subtitle">让 AI 画的石头有重量、金属有分量、器物有故事——靠的是细节层级与磨损叙事，不是形容词</p>
+
+  <h2>一、同一块金属，六种表面处理</h2>
+  <p>先做一个思想实验：一块不锈钢，切成六份，做六种表面处理。它们的基色相同、金属度相同，唯一变化的是<strong>粗糙度的值与分布</strong>——但成像结果差别大到不像同一种东西。这是理解第 6 章参数表最好的练习。</p>
+
+  <table>
+    <tr><th>处理</th><th>物理变化</th><th>成像特征</th><th>提示词</th></tr>
+    <tr><td>抛光 polished</td><td>粗糙度趋近 0，各向同性</td><td>清晰镜像，能读出环境内容；明暗反差极大</td><td><code>mirror-polished steel reflecting the surrounding environment, sharp bright-to-black transitions</code></td></tr>
+    <tr><td>拉丝 brushed</td><td>平行微沟槽 → 各向异性</td><td>高光被拉成与纹路垂直的条带，环境反射被"抹开"</td><td><code>brushed stainless steel, anisotropic streak highlights running along the horizontal grain</code></td></tr>
+    <tr><td>喷砂 bead-blasted</td><td>粗糙度均匀升到 0.6 左右</td><td>无可辨高光，只剩柔和的整体提亮；最接近"金属哑光"</td><td><code>bead-blasted matte metal, diffuse silver-grey sheen, no distinct reflections</code></td></tr>
+    <tr><td>氧化 patina</td><td>表面生成氧化层 → <strong>不再是金属</strong>，变成电介质</td><td>出现漫反射颜色（铜绿、铁黑），高光变白变弱</td><td><code>oxidised copper with mottled verdigris patina, matte dielectric surface over metallic edges</code></td></tr>
+    <tr><td>锈蚀 rusted</td><td>金属度成为<strong>混合值</strong>：锈斑处为 0，未锈处为 1</td><td>斑驳——亮反射与粉状锈斑在同一表面共存</td><td><code>rusted iron, flaking orange rust breaking through to bare metal underneath, mixed matte and reflective patches</code></td></tr>
+    <tr><td>做旧 aged</td><td>棱边磨亮（粗糙度局部降低），凹处积垢（局部升高）</td><td>粗糙度沿几何分布，是"用过"的证据</td><td><code>aged brass, worn bright along the raised edges, dark tarnish settled into the recesses</code></td></tr>
+  </table>
+
+  <div class="box tip">
+    <div class="box-title">💡 最后一行才是重点</div>
+    <p>前五种是"一种材质"，第六种是"一段历史"。<br>
+    做旧的本质是<strong>粗糙度不再均匀，而是按几何形态分布</strong>：凸起被摩擦得更光滑，凹陷被灰尘填得更粗糙。这个分布规律在渲染里叫 curvature-based mask（Substance Painter 的智能材质核心就是它），在美术上叫"结构色/污渍逻辑"。<br>
+    你只要在提示词里写清楚"<strong>哪里亮、哪里脏</strong>"，画面立刻从"渲染练习"变成"真实存在过的物件"。这是本章最高性价比的一招。</p>
+  </div>
+
+  <h2>二、岩石谱系：颗粒度、纹理走向、风化</h2>
+  <p>石头之所以难写，是因为大部分人只写颜色（"灰色的石头"）。但辨认岩石靠的是三件事：<strong>晶粒有多大、内部结构往哪个方向走、表面被时间做了什么</strong>。</p>
+
+  <table>
+    <tr><th>岩石</th><th>颗粒与结构</th><th>关键特征</th><th>提示词</th></tr>
+    <tr><td>花岗岩</td><td>粗晶粒，肉眼可见黑白粉三色矿物斑点</td><td>随机点状杂色，无方向性；抛光后有小面积闪光（云母）</td><td><code>coarse-grained granite with speckled black and pink mineral crystals, tiny mica flecks catching the light</code></td></tr>
+    <tr><td>大理石</td><td>细晶粒 + <strong>方解石有明显 SSS</strong></td><td>光透进表层几毫米再散出 → 特有的"内部发光"；脉络走向连续</td><td><code>white marble with subsurface scattering giving the surface an inner glow, grey veining flowing across the form</code></td></tr>
+    <tr><td>玄武岩</td><td>极细晶粒 + 气孔</td><td>深黑、极哑光（吸光）、布满小孔洞，孔洞内是硬阴影</td><td><code>dark basalt, extremely matte and light-absorbing, pitted with small vesicles casting hard tiny shadows</code></td></tr>
+    <tr><td>砂岩</td><td>沉积颗粒 + <strong>水平层理</strong></td><td>方向性极强的横向条带；表面呈砂糖质感，边缘易崩</td><td><code>sandstone with horizontal sedimentary bedding layers, sugary granular surface, crumbling weathered edges</code></td></tr>
+    <tr><td>板岩</td><td>片状解理</td><td>沿一个方向劈开，断面呈平整薄片与锐利台阶；微弱丝绢光泽</td><td><code>slate splitting along flat cleavage planes, sharp stepped edges, faint silky sheen on the fresh break</code></td></tr>
+  </table>
+
+  <p>风化是给石头加时间的手段，而且它有<strong>方向</strong>：雨水顺重力向下冲刷，苔藓长在背阴与积水处，风蚀发生在迎风面。写 <code>weathered</code> 是无信息的，写 <code>dark water-streaking running down the north face, moss in the sheltered crevices</code> 才是。</p>
+
+  <h2>三、细节层级：AI 图"塑料感"的真正成因</h2>
+  <p>这一节是本章的技术核心，也是最容易迁移到所有材质上的一条方法。</p>
+  <p>真实表面的细节在<strong>三个数量级上同时存在</strong>：</p>
+  <ol class="steps">
+    <li><strong>大形态（米级–分米级）</strong>：整体轮廓、大的凹凸、裂口、破损。它决定"这是什么东西、经历过什么"。</li>
+    <li><strong>中等纹理（厘米级）</strong>：木纹、砖缝、锤痕、织纹、岩石的层理。它决定"这是什么材质"。</li>
+    <li><strong>微观颗粒（毫米级以下）</strong>：砂粒、毛孔、细划痕、灰尘、纤维毛刺。它决定"这是真的"。</li>
+  </ol>
+  <p><strong>AI 的默认输出几乎总是只给第二级。</strong>原因不难理解：训练集里的 caption 大量描述的是"木纹桌子""砖墙"这种中等尺度的材质名词，而第一级藏在构图里、第三级藏在像素里，很少被写进文字。模型学到的是"材质 = 一种花纹"。</p>
+  <p>只有中间一级会怎样？大形态完美无缺、微观完全干净——这正是<strong>注塑塑料件</strong>的定义。所以"AI 味"里的塑料感不是渲染问题，是<strong>细节层级缺失</strong>问题。</p>
+
+  <div class="box tip">
+    <div class="box-title">💡 三级细节的提示词补齐模板</div>
+    <p>写任何硬质材质时，按这个顺序各补一句，一句都不要省：</p>
+    <pre>[大形态] a chipped corner and one deep crack running down the left side,
+[中等纹理] coarse granular stone texture with horizontal bedding lines,
+[微观颗粒] fine dust and micro-pits catching the raking light,
+            individual sand grains visible at the broken edge</pre>
+    <p>第三句里的 <code>catching the raking light</code> 是关键——微观细节<strong>只有在掠射光下才可见</strong>（正面光会把它们全部照平）。所以三级细节和下一节的光照配方是一件事的两面。</p>
+  </div>
+
+  <img class="diagram" src="../assets/img/detail-hierarchy.svg" alt="材质三级细节层级原理">
+
+  <h2>四、陶土、原木与侘寂：不完美是可描述的</h2>
+  <p>"朴真"在提示词里最容易写空。<code>rustic</code>、<code>handmade</code>、<code>natural</code> 这类词的信息量接近于零。要写实，得知道手作痕迹在物理上留下了什么。</p>
+
+  <h3>手作痕迹的具体形态</h3>
+  <ul>
+    <li><strong>拉坯陶器</strong>：内外壁有<strong>螺旋上升的指痕环纹</strong>（throwing rings），器口不完全水平，壁厚不均。</li>
+    <li><strong>手捏陶器</strong>：表面留有指压凹坑，边缘厚薄随机。</li>
+    <li><strong>柴烧 / 落灰釉</strong>：釉面流淌不均，向火面与背火面颜色不同，底部有<strong>流釉堆积的珠边</strong>。</li>
+    <li><strong>手工木器</strong>：手刨或凿留下的<strong>连续浅弧面刀痕</strong>（chatter marks / faceted tool marks），而不是砂纸磨出的均匀平面。</li>
+    <li><strong>金缮 kintsugi</strong>：裂纹被金漆填补，是把破损<strong>标记出来而非隐藏</strong>的做法。</li>
+  </ul>
+
+  <h3>侘寂的三个可视化特征</h3>
+  <p>侘寂（wabi-sabi）作为日本美学概念，落到画面上可以拆成三条互相独立、都能写进提示词的判据：</p>
+  <table>
+    <tr><th>特征</th><th>画面表现</th><th>提示词</th></tr>
+    <tr><td>不完美</td><td>器形有偏差，釉面有缩釉、气孔、色斑</td><td><code>slightly uneven rim, glaze pooling irregularly with pinholes and bare patches</code></td></tr>
+    <tr><td>不对称</td><td>拒绝几何中心与规整重复，重心偏移</td><td><code>asymmetrical silhouette, deliberately off-centre form</code></td></tr>
+    <tr><td>时间痕迹</td><td>包浆、磨损、开片、褪色、修补</td><td><code>crazed glaze surface, dark patina worn into the handle, an old repaired chip</code></td></tr>
+  </table>
+  <p>另加一条布光判据：侘寂几乎总是配<strong>单一柔和的自然侧光 + 大片阴影</strong>（谷崎润一郎《阴翳礼赞》里说的那种"在幽暗中显形"的审美）。用棚拍那种四面均匀的商业光，无论器物多朴素，出来都是产品图不是侘寂。</p>
+
+  <h2>五、磨损的叙事价值：让道具有故事</h2>
+  <p>这一节是给游戏与影视概念设计的读者的。磨损不只是让材质变真，它<strong>携带信息</strong>——观众会无意识地从磨损位置反推使用方式。这是道具设计里最经济的叙事手段：不用一句台词，一把刀就能说清它被谁用了多久。</p>
+
+  <table>
+    <tr><th>磨损位置</th><th>物理成因</th><th>观众读到的信息</th></tr>
+    <tr><td>握持处磨光、变深</td><td>手汗与摩擦，粗糙度降低</td><td>被同一个人长期握着——有主人</td></tr>
+    <tr><td>棱角磕碰出亮边</td><td>碰撞剥离表层，露出底材</td><td>被搬运、被使用，不是陈列品</td></tr>
+    <tr><td>凹陷与雕花内积灰</td><td>灰尘沉降在无法擦到的地方</td><td>年代久，且被保养过（凸面干净、凹面脏）</td></tr>
+    <tr><td>底部环状磨痕</td><td>反复放置与拖动</td><td>日用器，不是供奉器</td></tr>
+    <tr><td>单侧褪色</td><td>长期朝向窗户的一面被紫外线漂白</td><td>它在一个固定位置待了很多年</td></tr>
+    <tr><td>刃口缺口 + 重新打磨的斜面</td><td>使用中崩口后被修复</td><td>它坏过，而且有人愿意修它</td></tr>
+  </table>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 磨损要符合逻辑，否则更假</div>
+    <p>AI 很擅长"到处均匀地加锈"，那是<strong>噪声</strong>不是磨损。均匀分布的划痕、随机撒在平面中央的锈斑，观众读到的不是"旧"，而是"贴了一张做旧贴图"。<br>
+    判断标准只有一条：<strong>问这道痕迹是怎么产生的</strong>。手够不到的地方不会被磨亮，垂直面不会积灰，水流不会往上淌。在提示词里把因果写出来——<code>worn bright only where the hand grips it</code>、<code>dust settled on the upward-facing surfaces only</code>——比写十个 <code>weathered, damaged, grungy</code> 有效得多。</p>
+  </div>
+
+  <h2>六、光照配方：硬质材质要硬光</h2>
+  <p>第 7 章说柔软材质要大柔光，硬质材质正好相反，原因也在物理里：</p>
+  <ul>
+    <li><strong>纹理靠阴影可见。</strong>表面的凹凸只有在光线接近平行于表面（掠射 / raking light）时，才会投出足以辨认的自身阴影。大柔光从各个角度包裹表面，把这些微阴影全部填掉——<strong>柔光的字面作用就是抹平纹理</strong>。这就是为什么用商业棚拍的柔光箱去拍砖墙，砖墙会变成一张平淡的印刷品。</li>
+    <li><strong>金属靠反差可见。</strong>第 6 章讲过，金属的全部信息是环境反射。柔和均匀的环境反射出来是一片中灰，只有<strong>亮暗差别极大的环境</strong>才能让金属显出金属性。所以拍金属要用"亮条 + 大黑区"的布光。</li>
+    <li><strong>重量靠阴影可见。</strong>让石头有重量的不是石头本身，是它<strong>压在地上那道又深又实的接触阴影</strong>（contact shadow）。这是最被低估的一个词。物体与地面接触处的环境光被完全遮挡，那里必然接近全黑；AI 常给出一圈虚浮的灰影，物体因此像漂着的泡沫。</li>
+  </ul>
+  <pre>hard low-angle raking light from camera right,
+strong contact shadow directly beneath the object,
+deep unfilled shadows, high contrast, dark surroundings</pre>
+
+  <div class="box example">
+    <div class="box-title">📖 案例 1：锈蚀铁器（金属度混合 + 三级细节）</div>
+    <pre>a heavy iron gate latch mounted on weathered timber,
+hard raking sunlight from the lower left at 4800K, deep unfilled shadows,
+flaking orange rust breaking through to bare dark metal underneath,
+worn bright and smooth only where a hand has gripped the lever for years,
+dark grime settled into the recesses and the bolt holes,
+fine pitting and micro-scratches catching the raking light,
+one deep dent on the upper edge from an old impact,
+100mm macro, f/11, slightly above eye level,
+photographed for a production art reference sheet</pre>
+    <p>模型：FLUX.2 · 画幅 3:2 · 无负面词。<br>
+    逐层对照：第 3 行 = 金属度混合；第 4 行 = 磨损叙事（握持处）；第 5 行 = 曲率遮罩（凹处积垢）；第 6 行 = 第三级细节 + 掠射光；第 7 行 = 第一级大形态。<strong>这五行是本章方法的完整落地，可以当模板复用到任何做旧道具上。</strong></p>
+  </div>
+
+  <div class="box example">
+    <div class="box-title">📖 案例 2：砂岩遗迹（岩石结构 + 重量）</div>
+    <pre>a broken sandstone column lying half-buried in dry ground,
+late afternoon sun raking across the surface from camera left, 3400K,
+horizontal sedimentary bedding lines running through the stone,
+sugary granular surface, individual sand grains visible at the fractured end,
+crumbling weathered edges, dark water-streaking running down one face,
+lichen growing only in the shaded crevices,
+a deep solid contact shadow where the column presses into the sand,
+35mm, f/11, low camera angle looking slightly up</pre>
+    <p>模型：MJ v8.1 · 画幅 16:9。<br>
+    重量的三个来源都在：<code>half-buried</code>（它陷进去了）、<code>deep solid contact shadow</code>（它压着地面）、<code>low camera angle looking up</code>（视角强化体量）。删掉这三处，同样的提示词会给出一块看起来像泡沫道具的石头。</p>
+  </div>
+
+  <div class="box example">
+    <div class="box-title">📖 案例 3：柴烧陶碗（侘寂）</div>
+    <pre>a single wood-fired ceramic bowl on a bare wooden shelf,
+one soft window light from the far left, everything else falling into darkness,
+3800K, deep shadow occupying two thirds of the frame,
+asymmetrical hand-thrown form with a slightly uneven rim,
+spiral throwing rings visible on the inner wall,
+ash glaze pooling thickly at the base and running thin at the shoulder,
+bare unglazed clay at the foot with visible coarse grog particles,
+one small old chip on the rim, darkened with use,
+85mm, f/4, eye level, quiet still-life composition</pre>
+    <p>模型：Nano Banana Pro · 画幅 4:5。<br>
+    注意这里<strong>没有写 wabi-sabi 这个词</strong>。写了反而容易触发"日式禅意装修风格图"的刻板集群（榻榻米、枯山水、木框窗）。把三个判据（不对称、不完美、时间痕迹）逐条描述成具体物理事实，得到的才是侘寂本身。<strong>能描述的东西就不要指称</strong>——这是第 1 章物理层与文化层分工原则的一次具体应用。</p>
+  </div>
+
+  <img class="diagram" src="../assets/img/metal-six-finishes.png" alt="同一金属的六种表面处理对照">
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 本章的两大翻车与诊断法</div>
+    <p><strong>金属画成塑料</strong>——诊断：看高光对比。塑料的高光是"白点贴在有色面上"，金属是"整个面在亮与黑之间剧烈起伏"。修法：删掉白背景，写明反射环境（<code>bright strip and deep dark surroundings</code>），并强调 <code>no diffuse colour</code>。<br>
+    <strong>石头画成泡沫</strong>——诊断：看接触处与边缘。泡沫感的三个证据是接触阴影虚、边缘过于完整锐利、表面无第三级颗粒。修法：<code>deep contact shadow</code> + <code>crumbling chipped edges</code> + <code>sand grains visible at the broken edge</code>，再把光换成硬侧光。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="02-轻软棉绒与梦幻薄纱.html"><span class="dir">上一篇</span>第 7 章 · 轻软棉绒与梦幻薄纱</a>
+    <a class="next" href="04-鎏金光芒与迷幻光影.html"><span class="dir">下一篇</span>第 9 章 · 鎏金光芒与迷幻光影 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

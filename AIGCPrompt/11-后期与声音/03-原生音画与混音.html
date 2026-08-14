@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 36 章 · 原生音画与混音</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="11-03">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 11 后期与声音 / 第 36 章 · 原生音画与混音</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 11 · 后期与声音</div>
+  <h1>第 36 章 · 原生音画与混音</h1>
+  <p class="subtitle">把 H3 / LTX 原生声音当作同步素材，把对白、音效、音乐与响度规范组装成真正可交付的声轨</p>
+
+  <figure class="figure">
+    <img src="../assets/img/video-audio-layer-stack.svg" alt="环境、动作、对白和音乐四层声音结构">
+    <figcaption>原生音画可以提供同步触点，但完整混音仍需把连续环境、动作音效、对白和配乐分层；每层拥有不同的时间职责、响度空间和返工入口。</figcaption>
+  </figure>
+
+  <h2>一、声音不是附件，而是另一条叙事时间线</h2>
+  <p>静音画面只告诉观众“发生了什么”，声音还要说明<strong>空间有多大、动作有多重、危险离多远、情绪何时转向</strong>。AI 视频项目常见的误区，是直到锁画后才找一首音乐铺满全片；结果动作没有触点、场景没有空气、对白被音乐遮住。正确方法是在分镜表中同时写声音事件：持续底噪、点状动作、对白、音乐段落和静默。画面镜号与声音镜号共享同一时间码，后期才不会靠耳朵猜同步。</p>
+
+  <h2>二、H3 / LTX 原生音画：先保留，再决定用多少</h2>
+  <p>MiniMax H3 与 LTX 音画工作流能够在生成视频的同时产生与动作相关的音频。不同节点包装与版本的接口会变化，但共同结构是：视频潜码进入画面解码支路，音频潜码进入音频解码或声码器支路，最后在视频合成节点封装。<strong>原生音频最大的价值是同步线索</strong>：脚步落点、衣料摩擦、按键、引擎启停和短句口型往往比后配更贴画；它的弱点是每个镜头响度、底噪、音色与空间感不统一。因此原生轨应按镜头导出为“现场素材”，不能直接串接为成片母带。</p>
+  <table>
+    <tr><th>能力</th><th>H3 / LTX 原生轨适合承担</th><th>通常应后期另做</th></tr>
+    <tr><td>环境</td><td>舱室底噪、风声、机械连续声的同步草稿</td><td>跨镜连续的 room tone、低频设计与空间统一</td></tr>
+    <tr><td>动作</td><td>脚步、碰撞、按键、衣料等可见触点</td><td>需要品牌辨识度或精确力度的英雄音效</td></tr>
+    <tr><td>对白</td><td>极短句、口型参考、临时演出</td><td>正式台词、固定角色音色、可修改文案与多语言版本</td></tr>
+    <tr><td>音乐</td><td>镜内声源或气氛草稿</td><td>主题旋律、完整结构、版权可证明的交付音乐</td></tr>
+  </table>
+  <p>音画提示词要把声音写成<strong>可数事件 + 材质 + 距离 + 空间</strong>，而不是只写“cinematic sound”。例如：</p>
+  <pre>the captain rises once from the command chair and takes two slow steps,
+boots striking a metal deck at each visible footfall,
+soft uniform fabric rustle, steady low engine hum in a large sealed bridge,
+one restrained console beep after his hand touches the control,
+no music, no crowd, no repeated footsteps</pre>
+  <p>“两步”“触碰后一次提示音”“无音乐”都能验收；“史诗音效”不能。对白镜头应把句子、说话者、情绪与停顿写清，但正式制作仍建议录音或 TTS 后配，因为文本修改、跨镜音色和语言版本都需要可编辑资产。</p>
+
+  <div class="box warn">
+    <div class="box-title">最常见的静默事故</div>
+    <p>视频进入超分或插帧后通常被拆成帧序列，音频不会自动跟随。读取节点必须同时导出 audio，画面处理完成后再接入视频合成节点；LTX 等工作流还要确认启用了音频解码与 Add Audio。每次中间导出先播放开头、切点与结尾三处，不能等交付时才发现无声。</p>
+  </div>
+
+  <h2>三、后期四层：环境、音效、对白、音乐</h2>
+  <ol class="steps">
+    <li><strong>环境层。</strong>为每个空间铺连续 room tone：舰桥引擎低鸣、走廊通风、生态舱轻风。切镜时用短交叠保持空间连续，避免底噪忽然抽空。</li>
+    <li><strong>音效层。</strong>先标所有可见触点，再分前景英雄音效与背景细节。硬表面要有起音、主体与短尾响；同类脚步准备数个变体，避免机械重复。</li>
+    <li><strong>对白层。</strong>清理口水音与持续噪声，剪呼吸但不把人声剪成真空；用 EQ 腾出清晰度，再以轻压缩稳定句内动态。固定角色必须固定音色、口音、语速和表演说明。</li>
+    <li><strong>音乐层。</strong>先按叙事段落选节拍和调性，再对剪辑点做进入、抬升、停顿与收束。对白出现时用音量自动化或侧链闪避，不要只把整首音乐永久压低。</li>
+  </ol>
+  <table>
+    <tr><th>轨道组</th><th>功能</th><th>《归乡号》例子</th><th>处理重点</th></tr>
+    <tr><td>AMB</td><td>空间与连续性</td><td>引擎低频、舰桥电流、生态舱空气</td><td>循环点无接缝，低频不过量</td></tr>
+    <tr><td>SFX / Foley</td><td>动作重量与材质</td><td>靴底、制服、按键、警报、推进器</td><td>逐帧对触点，远近与混响匹配画面</td></tr>
+    <tr><td>DIA</td><td>信息与角色</td><td>舰长：“全速前进。”</td><td>可懂度、固定音色、口型容差</td></tr>
+    <tr><td>MUS</td><td>情绪与结构</td><td>冷色段低弦，见到家园后主题抬升</td><td>不盖对白，高潮留动态余量</td></tr>
+  </table>
+
+  <h2>四、同步：用帧和毫秒说话</h2>
+  <p>24 fps 下一帧约 41.7 ms，25 fps 为 40 ms，30 fps 为 33.3 ms。硬碰撞、按键和落脚应优先对到可见接触帧；远处事件可按距离加入延迟；机械启动先有瞬态，再有持续声。对白同步先对爆破音和闭唇音，再检查句尾是否被画面切断。若全片始终提前或滞后，先检查采样率、变速和封装时间戳，而不是逐个移动片段。</p>
+  <pre>同步验收顺序：
+1. 时间线与交付帧率一致，禁止用错误 fps 解释素材；
+2. 对齐三个硬触点：首个动作、镜头中部动作、最后一个动作；
+3. 三点偏移相同 → 整轨平移；偏移逐渐扩大 → 检查变速/采样率/时长；
+4. 只在个别动作失准 → 切分该事件并局部对齐；
+5. 最后以正常速度闭眼听一次，再静音看一次。</pre>
+
+  <h2>五、响度与动态：交付规范优先于“听起来很响”</h2>
+  <p>峰值表只告诉你有没有触顶，不能说明整片听感。混音至少同时观察<strong>综合响度 LUFS-I、短时响度、响度范围与 True Peak</strong>。没有指定平台时，网络视频可把约 -16 至 -14 LUFS-I、True Peak 不高于 -1 dBTP 作为审片起点；广播、影院、广告投放和具体平台有各自标准，必须以交付书为准，不能用本章数值覆盖客户规范。</p>
+  <table>
+    <tr><th>阶段</th><th>动作</th><th>判定</th></tr>
+    <tr><td>对白基准</td><td>先只混 DIA，句间自然、每句可懂</td><td>笔记本或手机小音量仍能听清关键词</td></tr>
+    <tr><td>音效加入</td><td>英雄音效可短暂突出，环境不抢中频</td><td>闭眼能判断空间与动作，不被持续低频压迫</td></tr>
+    <tr><td>音乐加入</td><td>对白区自动闪避，高潮保留余量</td><td>音乐抽掉会失去情绪，保留时又不遮信息</td></tr>
+    <tr><td>母带限制</td><td>轻度总线处理，按交付规格校准响度</td><td>无削波、无泵动，响度不是靠压扁动态换来</td></tr>
+  </table>
+
+  <h2>六、分轨、降噪与空间统一：保留以后还能改的余地</h2>
+  <p>交付混音之前先整理源轨。原生音频按镜头保留原文件，另复制一份用于剪辑；对白、拟音、设计音效、环境和音乐分别进入总线，不把处理后的成片声提前烘成一条。降噪只去稳定且可识别的底噪，避免把呼吸、衣料和混响尾巴一起削掉；短暂杂音优先做局部修补，不用重度门限把每个句间切成真空。</p>
+  <p>空间感需要跨层一致：同一舰桥里的对白、脚步和按键应共享相近的早期反射与混响尾部，但近景对白保持更干，远处广播更窄、更暗。切到生态舱时再更换空间响应。若每条音效都自带不同混响，应先选较干素材或控制原尾响，再送入统一空间总线。最终至少导出 full mix、DIA、M&amp;E（音乐与音效）及按需求拆分的 AMB/SFX/MUS，方便多语言与修改。</p>
+  <table>
+    <tr><th>交付轨</th><th>内容</th><th>用途</th></tr>
+    <tr><td>Full Mix</td><td>最终对白、音乐、音效与环境</td><td>主成片封装与响度验收</td></tr>
+    <tr><td>DIA</td><td>对白、呼吸及必要对白处理</td><td>改文案、配音替换、多语言</td></tr>
+    <tr><td>M&amp;E</td><td>Music &amp; Effects，不含对白</td><td>海外配音和渠道版本</td></tr>
+    <tr><td>AMB / SFX / MUS</td><td>可选细分总线</td><td>预告重剪、游戏内复用与归档</td></tr>
+  </table>
+
+  <h2>七、失败诊断与验收</h2>
+  <table>
+    <tr><th>失败</th><th>原因</th><th>处方</th></tr>
+    <tr><td>镜头之间底噪跳变</td><td>直接拼原生音轨</td><td>分离可用触点；另铺连续环境层；切点做短交叠</td></tr>
+    <tr><td>对白清楚但刺耳</td><td>过度降噪、提升高频或限制器压得太狠</td><td>回原始文件，减处理量；用自动化代替全程重压缩</td></tr>
+    <tr><td>口型先准后漂</td><td>视频变速、采样率或时间戳错误</td><td>核对总时长与帧率；统一 48 kHz；必要时小幅弹性伸缩</td></tr>
+    <tr><td>音乐一进对白消失</td><td>中频重叠、未做闪避</td><td>音乐自动化/侧链；在对白频段留空间；重排而非只降总音量</td></tr>
+    <tr><td>响度达标但听感很小</td><td>低频占用能量、瞬态过多或动态失衡</td><td>清理无用次低频，重做层级，再校准 LUFS</td></tr>
+  </table>
+  <div class="box tip">
+    <div class="box-title">交付前验收清单</div>
+    <p>□ 原生音轨、后配对白、音效与音乐均保留独立轨；□ 所有硬触点逐帧同步；□ 首中尾三处无整体漂移；□ 对白在小音量与手机扬声器上可懂；□ 镜头切换没有底噪抽空；□ 音乐不遮对白；□ LUFS-I 与 True Peak 符合目标平台；□ 48 kHz 母带、分轨和无音乐版按需求导出；□ 使用的声音、音乐与音色授权可追溯。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="02-视频超分与画质增强.html"><span class="dir">上一篇</span>第 35 章 · 视频超分与画质增强</a>
+    <a class="next" href="../12-完整项目/01-归乡号完整实战.html"><span class="dir">下一篇</span>第 37 章 · 《归乡号》完整实战 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

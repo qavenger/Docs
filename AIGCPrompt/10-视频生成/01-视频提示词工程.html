@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 30 章 · 视频提示词工程</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="10-01">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 10 视频生成 / 第 30 章 · 视频提示词工程</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 10 · 视频生成</div>
+  <h1>第 30 章 · 视频提示词工程</h1>
+  <p class="subtitle">把创意编译成模型真正执行的时间、运动、参考关系与声音，而不是堆砌“电影感”形容词</p>
+
+  <figure class="figure">
+    <img src="../assets/img/video-prompt-dialects.svg" alt="同一镜头卡编译为H3、LTX-2.5和Wan提示词方言">
+    <figcaption>同一创意决策不能逐词搬运：H3把画面、声景和配乐分字段，LTX-2.5使用按时间推进的自然段，Wan短镜头则强调初始、动作、轨迹与结束状态。</figcaption>
+  </figure>
+
+  <div class="box warn">
+    <div class="box-title">资料快照：2026-08-14</div>
+    <p>本章只把当前官方资料能确认的提示格式写成事实。模型版本、网页入口、API 字段、时长、分辨率和输入模式会持续变化；提示词负责叙事与约束，平台面板负责提交规格。任何旧工作流中的 checkpoint、LoRA、采样步数或帧率，都不能自动成为新版本的固定参数。</p>
+  </div>
+
+  <h2>一、提示词不是文学，而是时间条件</h2>
+  <p>静态图只需回答“这一帧有什么”，视频还必须回答“先发生什么、什么保持不变、相机如何观察、声音何时出现”。模型在有限时长内同时分配主体运动、镜头运动、材质变化和音频事件；若一条短镜头塞入奔跑、转身、开门、爆炸，再要求推镜、环绕和升降，动作会争夺同一段时间，常见结果就是漏动作、瞬移或形体崩坏。</p>
+  <p>可执行提示词有四个机制：<strong>时间排序</strong>把事件变成因果链；<strong>职责隔离</strong>避免画面、环境声和配乐互相泄漏；<strong>参考锚定</strong>说明哪个资产提供身份、构图、运动或音轨；<strong>结束保持</strong>给模型一个可收敛的最终状态。结构的价值是减少歧义，不是越长越好。</p>
+
+  <table>
+    <tr><th>先决定</th><th>必须写清</th><th>不应混写</th></tr>
+    <tr><td>任务与输入</td><td>文生、首帧、首尾帧、末帧、全参考</td><td>不要把参考图内容当作新设计重述</td></tr>
+    <tr><td>表演</td><td>初始状态、唯一主动作、可见结果</td><td>情绪词不能代替眼神、姿态与呼吸</td></tr>
+    <tr><td>摄影</td><td>景别、唯一主运镜、速度、落点</td><td>推镜与变焦、跟拍与环绕不可随意并列</td></tr>
+    <tr><td>连续性</td><td>身份、服装、道具、空间、屏幕方向</td><td>“keep consistent”不如逐项列出不变项</td></tr>
+    <tr><td>声音</td><td>对白、同期声、环境声、观众配乐的归属</td><td>不要把角色可听音乐写成非叙事配乐</td></tr>
+  </table>
+
+  <h2>二、先选方言：同一镜头不能原样跨模型</h2>
+  <table>
+    <tr><th>路线</th><th>送模形态</th><th>最重要的边界</th></tr>
+    <tr><td>MiniMax H3 基础模式</td><td>按任务需要的图对齐指令 + 三个核心字段</td><td>T2VA 无图对齐行；I2VA、FL2VA、L2VA按各自锚点写</td></tr>
+    <tr><td>MiniMax H3 Full-reference</td><td>固定顺序的六段英文结构</td><td>标签全篇同义，<code>detailed_description</code>取代基础模式主字段</td></tr>
+    <tr><td>LTX-2.5</td><td>约 200 英文词以内、按发生顺序推进的一段自然语言</td><td>不把 JSON、标签袋或 2.3 工作流原样送入</td></tr>
+    <tr><td>Wan</td><td>短镜头时间轴：初始→一个主动作→一个主运镜→结束保持</td><td>时长、分辨率、输入模式以当前平台入口为准</td></tr>
+  </table>
+
+  <h2>三、MiniMax H3 基础模式：三核心字段各司其职</h2>
+  <p>H3 基础模式的主体是 <code>integrated_multimodal_description</code>、<code>overall_soundscape</code>、<code>non_diegetic_music</code>。只有图像锚定任务才在最前加入图对齐指令：T2VA 直接从三字段开始；I2VA 把 <code>&lt;Picture 1&gt;</code> 对齐 0 秒；FL2VA 声明首图与尾图各自时点；L2VA 把图片落在最终镜头的结束时点。图对齐行后空一行，再进入三字段。</p>
+
+  <h3>四类基础任务的运动路径不同</h3>
+  <table>
+    <tr><th>任务</th><th>图片的时间身份</th><th>正文应描述的路径</th></tr>
+    <tr><td>T2VA</td><td>没有图片锚点</td><td>从文本建立完整的起始构图、动作发展和结果，不添加图对齐行</td></tr>
+    <tr><td>I2VA</td><td><code>&lt;Picture 1&gt;</code>是 0 秒真实首帧</td><td>首帧锚点→动作开始→连续发展→结果；身份、服装、颜色和空间关系保持</td></tr>
+    <tr><td>FL2VA</td><td>两张图分别是开头与结尾</td><td>不要复述两张静帧，而要写姿态、物体、构图和光线如何连续缩小差异并抵达末帧</td></tr>
+    <tr><td>L2VA</td><td><code>&lt;Picture 1&gt;</code>只锚定最终时刻</td><td>推断合理前态→显式过渡路径→逐步收敛→在最后镜头准确落到参考图</td></tr>
+  </table>
+  <p>I2VA 的首帧不是“风格参考”，而是视频在 0 秒的实际画面；L2VA 的末帧也不天然属于 <code>[Shot 1]</code>，多镜头时必须归到真实的最终 <code>[Shot N]</code>。FL2VA 通常优先单镜头连续插值，只有用户明确要求时才增加切镜。三种任务都应写清哪些参考特征保持不变，但不能让静态保留描述淹没真正需要生成的运动路径。</p>
+
+  <div class="box tip">
+    <div class="box-title">对白、画面文字与声音的边界</div>
+    <p>实际发声者使用全片稳定的 <code>(S1)</code>、<code>(S2)</code> 编号；首次出现时在标签外说明年龄、音色、音高或语速，台词原文只放进 <code>&lt;d&gt;[Language] ...&lt;/d&gt;</code>，不得擅自翻译。画外音使用 <code>says in an off-screen voiceover</code>，并紧接着声明画面人物嘴唇保持闭合。招牌、字幕等真实可见文字放在英文双引号内并保留原文。角色听得到的广播、演唱和乐器属于戏内事件，应写进主时间线；只有观众听见的配乐才进入 <code>non_diegetic_music</code>。</p>
+  </div>
+
+  <table>
+    <tr><th>字段</th><th>内容</th><th>验收问题</th></tr>
+    <tr><td><code>integrated_multimodal_description</code></td><td>风格、构图、主体、动作、镜头、对白与戏内声音，按播放顺序展开</td><td>每一项是否可见或可听？后续切镜是否有递增时码？</td></tr>
+    <tr><td><code>overall_soundscape</code></td><td>全片环境声、物理动作声、非语言人声，连续 1–4 句</td><td>是否误放对白、演唱或戏内音乐？</td></tr>
+    <tr><td><code>non_diegetic_music</code></td><td>只有观众听见的配乐，写乐器、速度、节奏与动态</td><td>是否只写了“悲伤、史诗”等抽象情绪？</td></tr>
+  </table>
+
+  <div class="box example">
+    <div class="box-title">完整 H3 I2VA 三段式 prompt</div>
+    <pre>For the target video, at 0.00 seconds into the target video, &lt;Picture 1&gt; (from [Shot 1]) is fully referenced.
+
+integrated_multimodal_description: [Shot 1] Live-action, cinematic, the young woman shown in &lt;Picture 1&gt; remains seated beside the rain-covered train window, preserving her face, navy coat, folded letter, seat position, and the carriage layout. The camera trucks right with small amplitude at slow speed as she lifts her gaze from the letter toward the passing city lights. Her reflection slides across the glass while she folds the paper once along its existing crease and then holds still, looking outside.
+
+overall_soundscape: The train wheels produce a steady metallic rhythm beneath a low ventilation hum. Rain ticks against the window while the paper rustles once in her hands.
+
+non_diegetic_music: Widely spaced piano notes at a slow tempo, joined by sustained low cello that gradually decreases in volume.</pre>
+  </div>
+
+  <p>多镜头时，<code>[Shot 1]</code>不加时间戳；从 <code>[Shot 2] At 00:03.500, the camera cuts to...</code>起使用严格递增切点。仅改变距离或小角度时优先写运镜。完整运镜句由类型、必要时的幅度和速度组成，例如 <code>The camera pushes in with small amplitude at slow speed.</code>，不要写成标签清单。</p>
+
+  <h2>四、H3 Full-reference：六段与四类标签</h2>
+  <p>Full-reference 不是给基础三段“再加几个引用词”，而是另一套固定输出：<code>subject_definitions</code>、<code>summary</code>、<code>retention_analysis</code>、<code>detailed_description</code>、<code>overall_soundscape</code>、<code>non_diegetic_music</code>，六段均用英文。这里主时间线字段是 <code>detailed_description</code>，不能改名为 <code>integrated_multimodal_description</code>。</p>
+
+  <table>
+    <tr><th>标签</th><th>正确职责</th><th>常见误用</th></tr>
+    <tr><td><code>&lt;Subject N&gt;</code></td><td>可复用的人、物、环境、风格、动作或姿态</td><td>把源文件本身当 Subject</td></tr>
+    <tr><td><code>&lt;Picture N&gt;</code></td><td>具体首帧、关键帧、末帧或构图锚点</td><td>图片只提供人物外观时仍多建独立条目</td></tr>
+    <tr><td><code>&lt;Video N&gt;</code></td><td>整段视频的编辑源、续写起点、运镜或时间结构</td><td>用它替代视频中可见人物的 Subject</td></tr>
+    <tr><td><code>&lt;Audio N&gt;</code></td><td>复制或参考的音频信号、音色、节奏与连续性</td><td>视频文件带声音就自动创建 Audio 标签</td></tr>
+  </table>
+
+  <div class="box example">
+    <div class="box-title">H3 参考标签小例</div>
+    <pre>subject_definitions:
+&lt;Subject 1&gt; is the woman whose appearance comes from &lt;Picture 1&gt; and whose walking motion comes from &lt;Video 1&gt;.
+&lt;Picture 2&gt; is the last frame of [Shot 1], defining the final pose and composition.
+&lt;Audio 1&gt; is the voice-timbre reference for &lt;Subject 1&gt; (S1).
+
+summary:
+[reference generation + keyframe completion + audio reference] The target video follows &lt;Subject 1&gt; walking toward the final composition in &lt;Picture 2&gt; while referencing &lt;Audio 1&gt; for her voice timbre.
+
+retention_analysis:
+&lt;Subject 1&gt; (appears in [Shot 1]): fully_preserved - her identity and referenced walking motion are retained.
+&lt;Picture 2&gt; ([Shot 1] last frame): fully_preserved - the final pose and composition are reached.
+&lt;Audio 1&gt;: reference - its timbre guides (S1) without copying the original signal.
+
+... followed by detailed_description, overall_soundscape, and non_diegetic_music.</pre>
+    <p>标签一旦分配，六段中必须保持同一含义。<code>retention_analysis</code>写每个资产如何保留、迁移、复制或弱参考；它不是剧情摘要。人物实际发声时写 <code>&lt;Subject 1&gt; (S1)</code>，对白放在 <code>&lt;d&gt;[Language] ...&lt;/d&gt;</code> 内。</p>
+  </div>
+
+  <h2>五、LTX-2.5：一段自然语言就是时间线</h2>
+  <p>LTX-2.5 的送模提示应控制在<strong>约 200 英文词以内</strong>，写成一个自然段，并严格按发生顺序推进：先主动作，再补主体外观、环境反应、相机、光线、颜色、结束状态与同步声音。它不是 H3 三段式，也不需要把镜头卡 JSON 直接喂入。</p>
+
+  <div class="box example">
+    <div class="box-title">完整 LTX-2.5 自然段 prompt</div>
+    <pre>A woman in a cobalt raincoat waits alone on a wet railway platform at night. She hears the approaching train, raises her head, and takes one slow step toward the yellow safety line while the camera tracks right beside her at walking speed. Rain falls diagonally in a steady crosswind, and reflections stretch across the dark concrete without changing the platform geometry. A white headlight grows behind her, briefly outlining the coat and umbrella. The camera settles into a medium three-quarter view as the train stops, and she holds her position for the final moment. Keep her face, coat seams, umbrella shape, platform columns, and screen direction consistent. Synchronized audio: rain on metal roofing, distant rail vibration growing into brake squeal, no music.</pre>
+  </div>
+
+  <div class="box warn">
+    <div class="box-title">LTX-2.5 与 LTX-2.3：模型文件与 LoRA 不互换</div>
+    <p>不得把 LTX-2.3 专用 checkpoint、文本编码器、LoRA、节点组合或参数表仅改名称后冒充 2.5。官方仓库明确说明两代模型文件不可互换，LoRA 只适用于训练它的对应模型；即使某个命令选项同名，也必须按 2.5 当前实现重新核对语义与范围。本章不声称 LTX-2.5 有固定 guidance、steps、帧率或分辨率：这些数值只有在所用官方仓库、节点版本或平台当前文档明确给出时才可填写。</p>
+  </div>
+
+  <h2>六、Wan：让短镜头只做一件事</h2>
+  <p>Wan 的稳健写法是<strong>初始状态 → 唯一主动作 → 唯一主运镜 → 结束保持</strong>。提示词可以使用时间段，但时间必须先由当前入口实际支持的规格决定。下面仅演示“入口已选择 6 秒”时的写法；若入口不是 6 秒，应同比例重排事件，不能把示例数字当成模型固定能力。</p>
+
+  <div class="box example">
+    <div class="box-title">完整 Wan 时间轴 prompt</div>
+    <pre>A six-second product shot. At 0–2 seconds, a matte-black wristwatch rests on dark slate under one narrow neutral top light; only the second hand moves. At 2–5 seconds, the watch remains still while the camera performs one slow 30-degree clockwise arc, revealing the brushed-steel crown. At 5–6 seconds, the camera settles into a three-quarter hero view and holds. Keep the case geometry, dial markings, crown position, slate texture, and lighting direction stable. No zoom, object rotation, floating particles, or text overlay.</pre>
+  </div>
+
+  <h2>七、参数与平台边界：正文和控件各管一层</h2>
+  <table>
+    <tr><th>项目</th><th>写在哪里</th><th>提交前动作</th></tr>
+    <tr><td>动作顺序、运镜、结束状态、声音因果</td><td>提示词正文</td><td>朗读一遍，确认时间上能完成</td></tr>
+    <tr><td>时长、分辨率、画幅、输入模式</td><td>平台/API当前字段；必要时正文同步描述</td><td>以调用当日入口为准，检查是否真的开放</td></tr>
+    <tr><td>guidance、steps、帧率、采样器</td><td>仅在当前实现明确提供时填写</td><td>记录平台、版本、日期与默认值，不跨版本照搬</td></tr>
+    <tr><td>checkpoint、LoRA、量化与节点</td><td>工作流清单</td><td>逐项验证版本兼容，不靠改名“升级”</td></tr>
+    <tr><td>参考图/视频/音频的槽位顺序</td><td>上传面板与提示标签共同确认</td><td>核对编号、资产与用途一一对应</td></tr>
+  </table>
+
+  <h2>八、从镜头卡编译，而不是让增强器加戏</h2>
+  <ol class="steps">
+    <li><strong>先写不可失败项。</strong>列出主体身份、唯一主动作、唯一主运镜、结束状态、连续性和声音六项。</li>
+    <li><strong>建立中间表示。</strong>JSON 或表格可用于审查，但它是管线资产，不是所有模型共同的送模格式。</li>
+    <li><strong>按目标模型编译。</strong>H3 分配到字段与标签；LTX-2.5 编成按时序推进的一个英文自然段；Wan 压缩为短时间轴。</li>
+    <li><strong>做删减 diff。</strong>逐条删除增强器擅自加入的路人、雾、霓虹、转场、对白和第二运镜。</li>
+    <li><strong>先低成本验证。</strong>固定可复现条件，一次只改动作、运镜或声音中的一类；确认结构后再提高平台允许的交付规格。</li>
+  </ol>
+
+  <h2>九、失败诊断：先找争夺同一时间的指令</h2>
+  <table>
+    <tr><th>症状</th><th>高概率原因</th><th>优先修复</th></tr>
+    <tr><td>动作漏掉或顺序颠倒</td><td>短时长塞入多条主动作</td><td>保留一条主动作链，删去支线并写结束状态</td></tr>
+    <tr><td>人物脸、服装或道具漂移</td><td>只写“保持一致”，或文本重述与参考冲突</td><td>逐项列不变项；图生视频时让参考图负责静态外观</td></tr>
+    <tr><td>镜头像漂浮或突然变焦</td><td>并列多个运镜，或没有速度和落点</td><td>只留一个主运镜，说明速度、幅度与最终景别</td></tr>
+    <tr><td>H3 声音层混乱</td><td>对白、环境声和配乐放错字段</td><td>对白/戏内声回主时间线，环境声进 soundscape，观众配乐进 music</td></tr>
+    <tr><td>H3 参考对象串号</td><td>标签在六段中改义，Picture 与 Subject 混用</td><td>先做资产—标签对照表，再逐段检索编号</td></tr>
+    <tr><td>LTX-2.5 结果不稳定</td><td>提示过长、标签化、因果倒序，或混用 2.3 资产</td><td>压到约 200 英文词内，改成顺序自然段，并重建 2.5 兼容工作流</td></tr>
+    <tr><td>Wan 末尾继续乱动</td><td>没有“settles and holds”，或主体和相机同时多重运动</td><td>明确结束保持，冻结非主动作对象</td></tr>
+    <tr><td>换平台后参数失效</td><td>把某入口默认值当成模型永久规格</td><td>回到当前文档和控件，重建参数记录</td></tr>
+  </table>
+
+  <h2>十、提交前验收清单</h2>
+  <ul>
+    <li>任务模式与输入资产已经确认，参考编号和上传槽位一一对应。</li>
+    <li>镜头只有一个主动作和一个主运镜；动作有起点、发展与可保持的终点。</li>
+    <li>所有描述都可见、可听或可在平台字段验证，没有“震撼、治愈、史诗感”替代具体事件。</li>
+    <li>H3 基础模式按需含图对齐指令，且三个核心字段名称、顺序和声音职责正确。</li>
+    <li>H3 Full-reference 使用六段，主字段为 <code>detailed_description</code>，四类标签跨段不改义。</li>
+    <li>LTX-2.5 是约 200 英文词以内的一段顺序自然语言，未混入任何 2.3 checkpoint、LoRA 或伪装参数。</li>
+    <li>Wan 写出初始状态、唯一主动作、唯一主运镜和结束保持；示例时码已适配当前入口。</li>
+    <li>时长、分辨率、输入模式及任何 guidance、steps、帧率都已按调用当日平台复核。</li>
+    <li>连续性锁定项逐条可检查，增强器没有擅自增加主体、剧情、转场或声音。</li>
+    <li>已保存模型/平台版本、日期、提示词和参数记录，下一轮只改变一个变量。</li>
+  </ul>
+
+  <div class="pagenav">
+    <a href="../09-动态叙事/07-时间节奏与色彩脚本.html"><span class="dir">上一篇</span>第 29 章 · 时间节奏与色彩脚本</a>
+    <a class="next" href="02-生成范式与一致性.html"><span class="dir">下一篇</span>第 31 章 · 生成范式与一致性 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>

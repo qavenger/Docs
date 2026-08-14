@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 2 章 · 2026 模型地图：从生图到原生音画</title>
+<link rel="stylesheet" href="../assets/css/book.css">
+</head>
+<body data-page="01-02">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html">← 目录</a>
+    <span class="crumb">PART 01 概览篇 / 第 2 章 · 2026 模型地图</span>
+    <button class="read-toggle">标记为已读</button>
+  </div>
+  <div class="readbar"><div></div></div>
+</div>
+
+<div class="wrap">
+  <div class="kicker">PART 01 · 概览篇</div>
+  <h1>第 2 章 · 2026 模型地图：从生图到原生音画</h1>
+  <p class="subtitle">这本书不再只讲静态生图：先分清图像、视频音画与提示词编译，再选择模型方言</p>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 资料快照：2026-08-14</div>
+    <p>模型版本、网页控件、API 字段与开放权重会持续滚动。本章只把<strong>官方文档能确认的能力</strong>写成事实；第三方平台名称、速度、显存和默认参数一律标明来源，不把一次本地测试伪装成普遍规律。做项目时应再次打开本章末尾的官方链接核对。</p>
+  </div>
+
+  <h2>一、先回答范围：它既讲生图，也讲生视频</h2>
+  <p>本书前 22 章以静态图像为主，因为光、材质、构图和艺术流派必须先在一帧里成立；动态图像并不会废除这些规则，只是再加上<strong>时间、运动、镜间一致性与声音</strong>。合并版从第 23 章开始进入动态叙事、视频生成、后期和完整 CG 项目。因此，模型不应再排成一张“谁最好”的榜单，而要分成三条生产线。</p>
+
+  <table>
+    <tr><th>能力线</th><th>主要产物</th><th>最难约束</th><th>本书位置</th></tr>
+    <tr><td>静态图像生成 / 编辑</td><td>概念图、角色设定、海报、镜头首帧</td><td>构图、材质、文字、身份和局部保留</td><td>第 1–22 章</td></tr>
+    <tr><td>视频 / 原生音画生成</td><td>单镜头、连续动作、带对白或环境声的视频</td><td>时间顺序、运动因果、帧间与跨镜一致性、音画同步</td><td>第 23–38 章</td></tr>
+    <tr><td>提示词编译与前期辅助</td><td>剧本拆镜、镜头卡、模型专用 prompt</td><td>不擅自加戏、字段正确、约束优先级和可审查性</td><td>第 24、25、30、38 章</td></tr>
+  </table>
+
+  <figure class="figure">
+    <img src="../assets/img/model-three-production-lines.svg" alt="提示词编译、静态图像与视频音画三条模型能力线">
+    <figcaption>模型不应排成一条榜单：语言模型把创意编译成镜头卡，图像模型用低成本锁定美术决策，视频模型再执行动作、运镜和声音。每一层解决不同的失败风险。</figcaption>
+  </figure>
+
+  <div class="box tip">
+    <div class="box-title">💡 “会写提示词的模型”不等于“负责渲染的模型”</div>
+    <p>一个语言模型可以把中文创意编译成 H3 或 LTX-2.5 的规范提示词，却不一定直接生成最终画面；反过来，视频模型内置的文本编码器也不等于通用聊天模型。生产管线必须分别记录：谁做创意拆解、谁做图像首帧、谁让画面运动、谁负责声音。</p>
+  </div>
+
+  <h2>二、静态图像：六种任务方言</h2>
+  <figure class="figure">
+    <img src="../assets/img/model-dialects-six-outcomes.jpg" alt="同一概念摩托车主题的六种静态图像任务取向对照">
+    <figcaption>同一主题可被翻译成风格探索、精确执行、材质控制、商业视觉、分镜首帧与广告交付六种静态任务。它说明“先选任务，再写语法”，不是模型跑分或固定排名。</figcaption>
+  </figure>
+
+  <table>
+    <tr><th>模型 / 路线</th><th>最顺手的方言</th><th>强项</th><th>常见翻车机制</th></tr>
+    <tr><td>Midjourney v8.1</td><td>高信息密度视觉短语 + 风格/角色参考 + 尾部参数</td><td>风格探索、情绪板、系列视觉</td><td>形容词被平均；参考权重过高时题材渗入</td></tr>
+    <tr><td>Nano Banana Pro<br>（Gemini 3 Pro Image）</td><td>完整任务说明：创建或编辑、必须保留、允许改变、验收条件</td><td>多轮改图、多参考图关系、图文理解</td><td>写成标签袋后，模型不知道约束优先级</td></tr>
+    <tr><td>FLUX.2 Pro</td><td>连续的摄影 / 设计描述，明确空间与物理关系</td><td>写实材质、光学语言、结构控制</td><td>技术词互相冲突时，会生成“术语华丽但物理不通”的图</td></tr>
+    <tr><td>Seedream 5</td><td>中文商业简报：主体、卖点、版式、交付规格</td><td>电商、海报、本土语义、成套资产</td><td>氛围与排版同时要求，却没有说明谁优先</td></tr>
+    <tr><td>GPT Image 2</td><td>分层创意简报；编辑时逐项列出不变项</td><td>指令遵循、局部编辑、带字视觉</td><td>要求太多而无主次，装饰侵蚀主体</td></tr>
+    <tr><td>图像模型作为视频首帧</td><td>中性设定图或镜头生产卡：构图、人物、环境、光、用途全部锁定</td><td>用便宜的一帧替视频模型承担昂贵的美术决策</td><td>首帧写得过于戏剧化，后续动作没有可用空间</td></tr>
+  </table>
+
+  <p>静态模型的共同原则是：先固定物理层和用途层，再翻译风格层。换模型时保留<strong>决策</strong>，不要逐词搬运。MJ 的短语块应改写成 Gemini/GPT Image 可验收的完整句；自然语言简报若搬回 MJ，则应压缩成视觉块并把参考控制放到尾部。</p>
+
+  <h3>自然语言生图简报示例</h3>
+  <pre>Create a vertical luxury skincare key visual for a 4:5 social placement.
+Place exactly one unlabeled frosted-glass serum bottle on a pale travertine
+plinth, centered slightly below the optical middle. Use a large 5200K softbox
+45 degrees camera-left and a narrow 3400K rim light. Preserve realistic
+transmission in the glass and fine pores in the stone. Keep the upper 30%
+quiet and low-contrast for copy. Do not add text, logos, flowers, water
+splashes, or a second product. The result must read as restrained editorial
+still life, not a glossy CGI render.</pre>
+  <p><strong>可验收点：</strong>对象只有一件；主、轮廓光方向可复查；玻璃和石材由不同光学行为区分；上方留白是用途条件；排除项只删除会改变广告类型的对象。</p>
+
+  <h2>三、MiniMax H3：一套提示词同时编排画面、声音与参考关系</h2>
+  <p>MiniMax 官方在 2026 年 7 月 31 日发布的 H3 页面把它描述为<strong>通用多模态生成模型</strong>：文本、图片、视频和音频可以成为上下文，目标输出可覆盖图像、视频、音频以及同步音画。官方页面给出的上限包括最长约 15 秒和原生 2K 视频，但这些属于模型/服务能力声明，不应被误写成每个本地节点、每个地区入口都固定提供的按钮。</p>
+
+  <p>H3 的提示词方言不是“电影感 + 运镜词”的逗号串，而是把<strong>画面时间线、同期声和配乐</strong>分开。对带首帧的 I2VA，先声明图片与 0 秒对齐；随后使用三个核心字段：</p>
+
+  <pre>For the target video, at 0.00 seconds into the target video,
+&lt;Picture 1&gt; (from [Shot 1]) is fully referenced.
+
+integrated_multimodal_description: [Shot 1] Live-action, cinematic,
+a medium-wide shot preserves the woman, her blue coat, the wet station
+platform and the train position shown in &lt;Picture 1&gt;. The camera trucks
+right with small amplitude at slow speed as she lifts her gaze. At 00:04.000,
+the camera cuts to a close-up while she says: &lt;d&gt;[Chinese] 我们到了。&lt;/d&gt;
+
+overall_soundscape: Rain taps the metal canopy above a low train-idle hum.
+Her coat rustles as she turns; the announcement remains distant and muffled.
+
+non_diegetic_music: Sparse piano notes at a slow tempo; low strings enter
+after the cut and remain below the dialogue.</pre>
+
+  <table>
+    <tr><th>字段</th><th>只负责什么</th><th>验收问题</th></tr>
+    <tr><td><code>integrated_multimodal_description</code></td><td>可见画面、动作、切镜、对白与戏内声音</td><td>每句话是否能在时间线上看见或听见？</td></tr>
+    <tr><td><code>overall_soundscape</code></td><td>跨全片的环境声与物理动作声</td><td>声音是否有来源，是否误把配乐写进环境？</td></tr>
+    <tr><td><code>non_diegetic_music</code></td><td>角色听不到、观众能听到的配乐</td><td>是否写了乐器、速度和动态，而非只写“悲伤”？</td></tr>
+  </table>
+
+  <p>H3 的参考模式还可以用 <code>&lt;Subject N&gt;</code>、<code>&lt;Picture N&gt;</code>、<code>&lt;Video N&gt;</code> 与 <code>&lt;Audio N&gt;</code> 分别指认身份、关键帧、时间结构和音轨。标签一旦分配就必须跨字段保持同义；这相当于把“像参考图”改写成可审查的资产关系。第 30 章会给完整六段式、首尾帧与全参考案例。</p>
+
+  <div class="box warn">
+    <div class="box-title">⚠️ 不要把旧 H3 本地节点参数当成模型永久规格</div>
+    <p>旧教程中的某个量化权重、采样步数、帧数公式和单卡耗时只能说明当时的节点组合。合并版将这些内容放进“工作站实测记录”，不再把它们写成 H3 模型本身的固定能力。</p>
+  </div>
+
+  <h2>四、LTX-2.5：用一段按时间推进的导演说明组织音画</h2>
+  <p>Lightricks 官方 LTX-2 仓库当前把 <strong>LTX-2.5</strong>列为推荐版本，并将 LTX-2.3 标作旧版。仓库提供 22B full/dev 与 distilled 路线，支持文生视频、图生视频、视频生视频、音频驱动视频、关键帧插值、局部重做、配音与 HDR 变换等工作流。2.5 与 2.3 的 checkpoint / LoRA 不兼容，因此“把文件名里的 2.3 改成 2.5”不是升级。</p>
+
+  <p>LTX-2.5 官方提示建议与 H3 的显式字段不同：写成<strong>不超过约 200 词、按发生顺序推进的一段自然语言</strong>，从主动作直接开始，把主体、运动、外观、环境、相机、光线、颜色与场景变化写成连续因果。字段化 JSON 可以留在管线里管理镜头卡，但送入模型前应编译成自然段。</p>
+
+  <pre>A woman in a cobalt raincoat waits alone on a wet railway platform at night.
+She hears the approaching train, raises her head, and takes one slow step toward
+the yellow safety line while the camera tracks right beside her at walking speed.
+Rain falls diagonally in a steady crosswind; reflections stretch across the dark
+concrete without changing the platform geometry. A white headlight grows behind
+her, briefly outlining the coat and umbrella. The camera settles into a medium
+three-quarter view as the train stops. Keep her face, coat seams, umbrella shape,
+platform columns, and screen direction consistent. Synchronized audio: rain on
+metal roofing, distant rail vibration growing into brake squeal, no music.</pre>
+
+  <p><strong>为什么这样写：</strong>动作只有“抬头—迈步—停下”一条主链；跟拍速度与人物步速绑定；白色头灯的增强有时间原因；不变项逐项列出；声音随列车距离变化。若把它改成镜头术语列表，时间关系会消失。</p>
+
+  <h2>五、Wan 2.7：短镜头仍然要有时间轴</h2>
+  <p>Wan 2.7 在不同聚合平台可能以不同的模型或产品版本名出现，具体输入类型、时长、帧率和负面字段以当前入口为准。本书保留它，是因为“初始状态 → 唯一主动作 → 唯一主运镜 → 结束状态”的写法具有稳定的模型无关价值。</p>
+
+  <pre>A six-second product film, 16:9. At 0–2 seconds, a matte black wristwatch rests
+on dark slate under one narrow 4300K top light; only the second hand moves.
+At 2–5 seconds, the camera makes one slow 30-degree clockwise orbit while a soft
+rim light reveals the brushed steel crown. At 5–6 seconds, the camera settles
+into a three-quarter hero view and holds. Keep the watch geometry and dial
+markings stable. No zoom, extra rotation, floating particles, or text overlay.</pre>
+
+  <p>这段提示词可以跨平台迁移，因为它没有假造 API 控件；真正提交时再把 6 秒、画幅、帧率和输入图放入平台字段。正文只负责讲清时间因果，参数面板负责传递机器可验证的规格。</p>
+
+  <h2>六、提示词编译器：让语言模型做格式，不替你做审美决定</h2>
+  <p>当一部 60 秒影片有十几个镜头时，人手反复填 H3 三段式或 LTX 自然段很容易漏项。更稳妥的管线是：先把创意写成结构化镜头卡，再由语言模型按目标模型规范编译，最后做人工 diff。</p>
+
+  <pre>{
+  "shot_id": "S07",
+  "duration_s": 6,
+  "visual_anchor": "approved_frame_S07.png",
+  "subject_lock": ["captain_face", "crimson_uniform", "bridge_layout"],
+  "action": "eyes widen; restrained smile forms",
+  "camera": "slow push in, small amplitude",
+  "light_change": "blue planet light rises from camera right",
+  "sound": ["engine hum", "soft notification chime"],
+  "music": "low strings enter after 4 seconds"
+}</pre>
+
+  <p>JSON 是项目的中间表示，不是模型的“高级提示词”。编译到 H3 时，把内容分别放入画面、声景、配乐字段；编译到 LTX-2.5 时，按时间顺序写成一个自然段；编译到 Wan 时，压缩为一个主动作和一个主运镜。编译器只能补格式，不能擅自增加飞鸟、雾、霓虹或剧情转折。</p>
+
+  <h2>七、按最难约束选模型</h2>
+  <table>
+    <tr><th>首要任务</th><th>优先路线</th><th>首要控制</th><th>换路线的信号</th></tr>
+    <tr><td>快速探索高完成度静态风格</td><td>MJ v8.1</td><td>风格参考、画幅、变化范围</td><td>需要精确文字或局部保留</td></tr>
+    <tr><td>多参考图编辑与严格保留</td><td>Nano Banana Pro / GPT Image 2</td><td>保留项、修改项、验收项</td><td>需要极端风格发散或时间运动</td></tr>
+    <tr><td>写实首帧与材质验证</td><td>FLUX.2 Pro</td><td>光源、镜头、表面响应</td><td>需要复杂文字排版或连续音画</td></tr>
+    <tr><td>带对白、声景和配乐的多模态镜头</td><td>MiniMax H3</td><td>参考标签、画面时间线、声景和配乐字段</td><td>只需要无声短镜或现有视频重绘</td></tr>
+    <tr><td>开放工作流、关键帧与同步音画编辑</td><td>LTX-2.5</td><td>按时间推进的自然段、参考关系、版本兼容</td><td>显存/部署预算不匹配或平台未提供对应模式</td></tr>
+    <tr><td>短镜头动作与运镜</td><td>Wan 2.7</td><td>初始—动作—轨迹—结束状态</td><td>需要复杂原生声音或多参考编辑</td></tr>
+    <tr><td>批量生产模型专用 prompt</td><td>独立语言模型 + 模板</td><td>官方规范、禁止加戏、人工 diff</td><td>镜头是高潮或含关键表演，应人工逐字写</td></tr>
+  </table>
+
+  <p>最终原则没有变：<strong>按交付中最不能失败的约束选模型，而不是按首页样片最好看选模型。</strong>先写下不能失败的三件事——例如角色身份、标题可读、镜头轨迹或对白同步——再选择原生支持这些条件的模型。参数只能放大模型已有的控制能力，不能把一种方言强行改造成另一种。</p>
+
+  <div class="box example">
+    <div class="box-title">官方资料入口</div>
+    <p><a href="https://www.minimax.io/blog/minimax-h3">MiniMax H3 官方发布说明</a> · <a href="https://platform.minimax.io/docs/api-reference/video-generation-v2-create">MiniMax 视频生成 API</a> · <a href="https://github.com/Lightricks/LTX-2">LTX-2 / LTX-2.5 官方仓库</a>。第三方平台的模型名和参数必须以实际调用当日的能力说明为准。</p>
+  </div>
+
+  <div class="pagenav">
+    <a href="01-美学定义方法论.html"><span class="dir">上一篇</span>第 1 章 · 美学定义方法论</a>
+    <a class="next" href="../02-光/01-光源与光质.html"><span class="dir">下一篇</span>第 3 章 · 光源与光质 →</a>
+  </div>
+</div>
+
+<script src="../assets/js/progress.js"></script>
+</body>
+</html>
