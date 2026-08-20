@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="从艺术家的文字创意出发，经 AI 预视觉、多轮审核和 Agent 编译，生成可编辑 Unreal Engine Sequencer 的工作流愿景、可行性调研与试点路线。">
+  <title>从文字创意到 UE Sequencer · AIGC 实时过场工作流调研</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/report.js" defer></script>
+</head>
+<body>
+<div class="progress" aria-hidden="true"><span></span></div>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#top">AI × UE Sequencer</a>
+    <div class="top-actions">
+      <span class="muted hide-mobile">可行性调研 · 2026-08-20</span>
+      <button class="ghost-btn" type="button" data-print>打印 / PDF</button>
+    </div>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div class="eyebrow">Vision &amp; Feasibility · AIGC to Unreal Engine Cinematics</div>
+  <h1>从一句创意，<br>到可编辑的 UE Sequencer</h1>
+  <p class="lede">让艺术家先自由描述想要的过场；AI 将创意补全为可视、可讨论的导演方案，通过生成视频完成低成本预视觉和多轮审核，方向锁定后再由 Agent 与 MCP 把创意“编译”为项目内可编辑、可复用、可继续精修的 Level Sequence。</p>
+  <div class="meta-row">
+    <span class="meta-pill">输入：艺术家的自然语言创意</span>
+    <span class="meta-pill">中间媒介：AI 预视觉与审核反馈</span>
+    <span class="meta-pill">输出：项目资产驱动的 Level Sequence</span>
+    <span class="meta-pill">资料快照：2026-08-20</span>
+  </div>
+  <div class="verdict-hero">
+    <div>
+      <strong>愿景：建立一套从艺术创意到实时过场的智能生产工作流。</strong>
+      <p>生成视频承担<strong>预视觉界面</strong>的角色，让导演、美术和动画在正式制作前看见、讨论和修正创意；审核通过的导演意图随后被结构化为镜头、表演、灯光、声音和资产计划，并由 Agent 与 MCP 转译为 UE 中真实、可编辑的时间轴。整条链路以艺术家决策为中心，以 Level Sequence 作为最终生产交付物。</p>
+    </div>
+    <div class="score">创意编译<small>TEXT → PREVIS → SEQUENCER</small></div>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="toc" aria-label="目录">
+    <div class="toc-title">报告目录</div>
+    <a href="#vision">00 · 愿景与目标工作流</a>
+    <a href="#summary">01 · 执行摘要</a>
+    <a href="#assessment">02 · 六条设想逐项评估</a>
+    <a href="#corrections">03 · 关键修正</a>
+    <a href="#workflow">04 · 推荐生产工作流</a>
+    <a href="#animation">05 · 动画生成与清理</a>
+    <a href="#reconstruction">06 · 镜头与灯光还原</a>
+    <a href="#market">07 · 市场与公开验证</a>
+    <a href="#architecture">08 · UE / MCP 工程架构</a>
+    <a href="#audio">09 · 声音生产</a>
+    <a href="#risks">10 · 风险与治理</a>
+    <a href="#pilot">11 · 最小试点计划</a>
+    <a href="#decision">12 · Go / No-Go 标准</a>
+    <a href="#sources">13 · 来源与口径</a>
+  </nav>
+
+  <main>
+    <section id="vision" class="vision-section">
+      <div class="section-no">VISION 00</div>
+      <h2>目标愿景：把艺术家的创意“编译”为实时过场</h2>
+      <p class="vision-lede">艺术家不需要先理解 Sequencer 轨道、相机参数、骨架重定向或灯光单位。他们只需要清楚地表达<strong>想讲什么、希望观众看到什么、角色应当如何表演</strong>。系统负责把这份创意逐步变成可观看的预视觉，再变成项目内可编辑的实时过场。</p>
+
+      <div class="vision-statement">
+        <span class="vision-quote">“</span>
+        <p>一个受伤的骑士推开神殿大门。镜头从他颤抖的手开始，缓慢后退，露出被月光照亮的废墟。他听见身后传来脚步，停住，但没有回头。</p>
+        <div class="vision-transform">艺术家的自然语言创意 <span>→</span> 项目中可播放、可调整、可继续制作的 UE Level Sequence</div>
+      </div>
+
+      <div class="vision-flow" role="img" aria-label="从文字创意到 Unreal Engine Sequencer 的七阶段工作流">
+        <div class="vision-node human">
+          <div class="vision-icon">01</div>
+          <strong>文字创意</strong>
+          <span>艺术家描述故事、情绪、角色表演和期望画面</span>
+          <small>Creative Brief</small>
+        </div>
+        <div class="vision-arrow"><b>→</b><span>理解</span></div>
+        <div class="vision-node ai">
+          <div class="vision-icon">02</div>
+          <strong>AI 创意扩写</strong>
+          <span>补全镜头、动作、节奏、光色和声音意图</span>
+          <small>Director Brief · Shot Ideas</small>
+        </div>
+        <div class="vision-arrow"><b>→</b><span>可视化</span></div>
+        <div class="vision-node ai">
+          <div class="vision-icon">03</div>
+          <strong>AI 预视觉</strong>
+          <span>生成关键帧、分镜和短视频候选，快速看见创意</span>
+          <small>Storyboard · Animatic · Previs</small>
+        </div>
+        <div class="vision-arrow review"><b>↔</b><span>评审</span></div>
+        <div class="vision-node gate">
+          <div class="vision-icon">04</div>
+          <strong>多轮审核调整</strong>
+          <span>艺术家用自然语言修改表演、镜头、节奏和氛围</span>
+          <small>Human-in-the-loop · Creative Lock</small>
+        </div>
+        <div class="vision-arrow"><b>→</b><span>结构化</span></div>
+        <div class="vision-node contract">
+          <div class="vision-icon">05</div>
+          <strong>导演意图编译</strong>
+          <span>结合项目资产和规范，生成镜头、动画与灯光计划</span>
+          <small>ShotSpec · Asset Plan · Confidence</small>
+        </div>
+        <div class="vision-arrow"><b>→</b><span>执行</span></div>
+        <div class="vision-node ue">
+          <div class="vision-icon">06</div>
+          <strong>AI + MCP 还原</strong>
+          <span>在 UE 中绑定资产，创建相机、轨道、灯光和声音</span>
+          <small>Agent · MCP · Sequencer Scripting</small>
+        </div>
+        <div class="vision-arrow review"><b>↔</b><span>对比</span></div>
+        <div class="vision-node output">
+          <div class="vision-icon">07</div>
+          <strong>可编辑 Sequencer</strong>
+          <span>实时预览、人工精修、平台验证并交付正式资产</span>
+          <small>Level Sequence · Anim · Camera · Light</small>
+        </div>
+      </div>
+
+      <div class="vision-loop">
+        <div><b>创意循环</b><span>文字 → 预视觉 → 人工反馈 → 新候选</span><small>目标是低成本找到“对的方向”</small></div>
+        <div><b>生产循环</b><span>ShotSpec → UE 组装 → Proxy Render → 差异修正</span><small>目标是把方向变成可编辑资产</small></div>
+      </div>
+
+      <h3>设计原则：艺术家主导，AI 扩展表达</h3>
+      <div class="grid grid-3">
+        <article class="card"><span class="badge high">艺术家主导</span><h4>创意所有权不变</h4><p>艺术家决定故事、情绪、表演和镜头是否成立。AI 提供候选、解释差异并吸收反馈，每一轮结果都服务于人的创作判断。</p></article>
+        <article class="card"><span class="badge mid">视频是中间媒介</span><h4>先看见，再制作</h4><p>AI 视频用于快速回答“这个创意看起来怎样”，承担预视觉、比较方案和锁定方向的功能；获批的导演意图随后进入结构化生产阶段。</p></article>
+        <article class="card"><span class="badge rnd">Sequencer 是交付物</span><h4>结果必须可编辑</h4><p>最终输出使用项目真实角色、场景、动画、相机、灯光和声音，团队可以继续调整、优化、回滚并在目标平台运行。</p></article>
+      </div>
+
+      <h3>期望的艺术家体验</h3>
+      <div class="experience-grid">
+        <div class="experience-step"><b>艺术家说</b><p>“镜头不要这么英雄化。让角色更疲惫，停顿久一点；月光只勾出轮廓，暂时不要让观众看清神殿内部。”</p></div>
+        <div class="experience-step"><b>系统理解并提案</b><p>降低机位和推镜速度，延长反应停顿；将正面主光改为弱冷轮廓光；生成两版 6 秒预视觉供比较，并解释变化。</p></div>
+        <div class="experience-step"><b>方向批准后</b><p>检索项目角色、场景、动作和灯光模板，生成 ShotSpec；Agent 在 UE 中创建 Level Sequence，输出 Proxy Render 和差异清单。</p></div>
+      </div>
+
+      <div class="callout warn">
+        <div class="callout-title">相邻的成熟工作流：3D 白盒 → AI 视频</div>
+        与本愿景方向相反的生产链路已经形成较多公开实践：创作者先在 UE 或 Blender 中搭建白盒场景、角色走位和相机运动，输出 Playblast，再交给视频生成模型补充角色外观、材质、环境和电影化光影。由于三维空间和运镜在输入端已经确定，这条路线具有较强的运动控制力，并验证了“3D 结构 + AI 视觉生成”的价值。
+        <p>本愿景在此基础上进一步向创意上游延伸：以艺术家的文字描述和 AI 预视觉为起点，在方向获批后，将导演意图反向编译为项目内可编辑的 Sequencer。后续章节评估这条新增链路中各环节的成熟度、可自动化范围和研发缺口。</p>
+      </div>
+    </section>
+
+    <section id="summary">
+      <div class="section-no">SECTION 01</div>
+      <h2>执行摘要：愿景的当前可行性</h2>
+      <p>围绕“<strong>艺术家文字创意 → AI 预视觉与审核 → AI + MCP 生成 Sequencer</strong>”这一总体目标，当前各环节的成熟度并不相同。文字理解、创意扩写、预视觉和编辑器自动组装已经可以承担实际工作；生成视频到三维表演、相机和灯光的转换仍是决定端到端质量的主要研发区。</p>
+      <div class="grid grid-3">
+        <article class="card">
+          <span class="badge high">高可行</span>
+          <h3>创意与自动组装</h3>
+          <p>AI 关键帧 / 视频非常适合探索构图、情绪、节奏和导演意图。锁定镜头清单后，UE 的 Sequencer Scripting 能确定性地创建相机、绑定、轨道、区段和动画引用。</p>
+        </article>
+        <article class="card">
+          <span class="badge mid">中可行</span>
+          <h3>视频转表演动画</h3>
+          <p>单人、全身可见、遮挡较少的身体动作已可实用；面部在 MetaHuman 体系内较成熟。手指、道具、双人接触、地面接触、快速翻滚仍需要专门捕捉或较多清理。</p>
+        </article>
+        <article class="card">
+          <span class="badge rnd">研发项</span>
+          <h3>视频反推镜头与布光</h3>
+          <p>镜头切分、主体追踪、粗略相机运动和光照语义可自动分析；从单段生成视频唯一还原三维镜头、焦距、场景尺度和光源参数不可保证，只能“匹配画面”，不能宣称“恢复真值”。</p>
+        </article>
+      </div>
+
+      <div class="callout">
+        <div class="callout-title">一句话建议</div>
+        将项目定义为<strong>“AI 辅助的实时过场编译管线”</strong>：AI 负责提出意图与候选，ShotSpec 负责把意图结构化，专业求解器负责产生动画 / 相机数据，MCP 与 UE Python 负责安全组装，人负责锁定、修正和签收。
+      </div>
+
+      <h3>成熟度总览</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>环节</th><th>当前成熟度</th><th>适合投入生产</th><th>不应承诺</th></tr></thead>
+          <tbody>
+            <tr><td>剧本 → 分镜 / 关键帧</td><td><span class="badge high">高</span></td><td>情绪板、镜头候选、构图和美术方向</td><td>一次生成即得到连续、资产一致的完整片段</td></tr>
+            <tr><td>关键帧 → 创意视频</td><td><span class="badge high">高</span></td><td>Previs、节奏探索、快速评审</td><td>视频像素直接等价于三维资产与物理真值</td></tr>
+            <tr><td>视频 → 身体动画</td><td><span class="badge mid">中</span></td><td>单人、常规动作、遮挡少、短镜头</td><td>复杂接触、手指、多人打斗自动达到终稿</td></tr>
+            <tr><td>视频 / 音频 → 面部</td><td><span class="badge high">中高</span></td><td>MetaHuman 对白、口型、基础情绪</td><td>风格化脸或任意自定义面部骨架零适配</td></tr>
+            <tr><td>视频 → 相机</td><td><span class="badge mid">中</span></td><td>真实静态场景素材的追踪；生成视频的粗匹配</td><td>生成视频中相机内参、尺度和轨迹的精确恢复</td></tr>
+            <tr><td>视频 → 灯光</td><td><span class="badge low">中低</span></td><td>光向、软硬、色温、主辅轮廓光的语义初始化</td><td>从单视角唯一还原所有灯具、材质和间接光</td></tr>
+            <tr><td>ShotSpec → Sequencer</td><td><span class="badge high">高</span></td><td>轨道创建、资产绑定、相机切换、批量预览</td><td>LLM 任意操作编辑器仍然安全可靠</td></tr>
+            <tr><td>配音 / 音效 / 音乐</td><td><span class="badge high">高</span></td><td>样片、候选、临时与部分正式资产</td><td>未经授权即可复刻声音或默认拥有完整权利</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="assessment">
+      <div class="section-no">SECTION 02</div>
+      <h2>六条设想逐项评估</h2>
+
+      <h3>1. 一次性角色动画外包成本高</h3>
+      <p><span class="badge high">判断成立</span> 一次性过场通常存在大量不可复用的表演：停顿、视线、手势、道具接触、双人距离、镜头内节奏。它们的成本不仅是“做骨骼动画”，还包括导演沟通、参考拍摄、重定向、修脚、面部、布料、碰撞和返修。</p>
+      <div class="grid grid-2">
+        <article class="card"><h4>AI 真正能省的</h4><p>减少错误方向的动画制作；把导演意图在进入昂贵动画阶段前可视化；为动画师提供带时间的参考；自动处理一部分基础身体运动、口型和初始 Sequencer 组装。</p></article>
+        <article class="card"><h4>AI 不会自动消失的</h4><p>角色 rig 质量、道具约束、接触、风格化运动、动画层、镜头遮挡、可玩状态切换、审美签收和资产治理。</p></article>
+      </div>
+      <p><strong>建议：</strong>不要以“替代动画外包”为唯一 ROI。更稳的收益是<strong>更早暴露问题、减少方向性返工、将重复组装自动化</strong>。</p>
+
+      <h3>2. AI 生关键帧 / 视频做前期创意迭代</h3>
+      <p><span class="badge high">可立即采用</span> 这是整条流程中最成熟、回报最快的一环，适合探索景别、构图、光色、节奏、表演强弱和镜头衔接。</p>
+      <ul class="checklist">
+        <li>先建立角色、服装、场景、道具和色彩脚本，使用批准的资产参考，而非每镜自由生成。</li>
+        <li>以镜头为单位生成 3–8 秒候选，再在剪辑软件中拼接；不要一开始追求 30–60 秒连续生成。</li>
+        <li>在画面上叠加镜头编号、时长、角色、动作、台词和“不可改项”，让评审针对导演意图而不是像素瑕疵。</li>
+        <li>给每个镜头保留 prompt、seed / 参考图、模型版本、裁切和剪辑记录，以便复现。</li>
+      </ul>
+      <div class="callout warn"><div class="callout-title">边界</div>生成视频会产生结构漂移、角色身份变化、肢体幻觉和不可能的相机运动。它是<strong>设计提案</strong>，不能默认为动作捕捉或相机求解的无噪声输入。</div>
+
+      <h3>3. 对满意视频进行角色表演拆解</h3>
+      <p><span class="badge mid">可落地，但必须结构化</span> “拆解”应输出数据，而不是另一段自然语言。最低限度需要 Shot Manifest 和每角色的 Performance Sheet。</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>层级</th><th>应记录内容</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>镜头</td><td>入出点、画幅、景别、镜头运动、焦点、剪辑动机</td><td>决定 Sequencer 时间轴和相机切换</td></tr>
+          <tr><td>角色</td><td>可见区间、根运动、动作阶段、朝向、视线、情绪、接触物</td><td>决定身体 / 面部 / 眼神 / 道具的独立任务</td></tr>
+          <tr><td>环境</td><td>地面、座椅、门、武器等约束对象与接触帧</td><td>纯视觉 mocap 不知道 UE 中真实碰撞位置</td></tr>
+          <tr><td>声音</td><td>台词、呼吸、动作点、音乐 hit point、环境声</td><td>支持口型、节奏和音频事件轨</td></tr>
+          <tr><td>不确定性</td><td>遮挡、出画、AI 幻觉、无法确定的手或脚</td><td>直接标为人工处理，不把错误自动传下游</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>建议：</strong>用视觉模型辅助切镜、追踪、姿态和事件识别，但由导演 / 动画负责人锁定镜头时长与动作意图。被锁定的视频应冻结版本，后续改剪辑要触发依赖失效。</p>
+
+      <h3>4. 由视频生成一次性表演动画资产</h3>
+      <p><span class="badge mid">条件性可用</span> 商业单目方案已能从普通视频生成 3D 骨骼运动并导出 FBX / BVH / GLB 等，再通过 UE IK Rig / IK Retargeter 转到目标骨架。MetaHuman Animator 可以用单目视频、深度或音频产生 MetaHuman 表演。</p>
+      <div class="grid grid-3">
+        <article class="card"><h4>适配较好</h4><p>单人、全身可见、固定相机、光线均匀、3–10 秒、行走转身和普通手势。</p></article>
+        <article class="card"><h4>需要清理</h4><p>脚滑、根运动漂移、髋部高度、关节穿插、动作抖动、落地冲击、视线和节奏。</p></article>
+        <article class="card"><h4>建议改用捕捉</h4><p>双人搏斗、拥抱、坐椅 / 开门、武器交锋、手指特写、地面翻滚、强遮挡和长镜头。</p></article>
+      </div>
+      <p><strong>更正：</strong>“根据视频中角色动画生成资产”并不意味着必须使用 AI 生成视频作为求解源。若创意锁定，最好让真人按同样节奏<strong>重新表演一条干净参考</strong>，用单目 / 多目 mocap 求解；生成视频保留为导演参考。这样通常比强行从有幻觉、遮挡和运动模糊的视频反求更稳定。</p>
+
+      <h3>5. 大模型分析角色、运镜、布光，并通过 MCP 在 UE 还原</h3>
+      <p><span class="badge rnd">部分可用，核心是工程研发</span> 应拆成四个独立问题：</p>
+      <ol class="number-list">
+        <li><strong>语义理解：</strong>识别角色、动作阶段、主光方向、色温、景别和“推 / 拉 / 摇 / 移 / 跟”等意图，当前模型可以给出有用初稿。</li>
+        <li><strong>测量与求解：</strong>人物分割、2D 跟踪、姿态、深度、光流、特征点、相机标定。这应交给专业 CV / DCC 求解器，而不是只靠 LLM 看图描述。</li>
+        <li><strong>三维匹配：</strong>把求解结果映射到已有 UE 场景、角色尺度、镜头内参与灯具。生成视频往往没有一致三维几何，只能优化到视觉相似。</li>
+        <li><strong>编辑器执行：</strong>通过受约束 MCP 调用 UE Python / Remote Control / Editor Utility，创建序列和轨道。这部分高度可自动化。</li>
+      </ol>
+      <div class="callout danger"><div class="callout-title">不能跳过的事实</div>单张或单目视频中的光照、材质和几何存在不可辨识性：多组灯光与材质可以产生相近像素。相机焦距和相机距离也可互相补偿。最终目标应叫<strong>参考匹配（reference matching）</strong>，而不是“恢复原始参数”。</div>
+
+      <h3>6. 最后生成配乐、台词、音效</h3>
+      <p><span class="badge high">可落地</span> 文本转语音、语音转换、文本转音效、音乐生成已适合快速样片和部分正式资产。声音不应放到“最后才考虑”：台词时长影响口型与剪辑，音乐重拍影响动作和切镜，脚步 / 武器 / 门等音效需要事件点。</p>
+      <p><strong>建议：</strong>前期先用临时对白和 temp music 锁节奏，画面锁定后再生成或录制最终对白；动作音效通过 Sequencer / Animation Notify 绑定；最终在 DAW 中做响度、空间、动态和版权审查。</p>
+    </section>
+
+    <section id="corrections">
+      <div class="section-no">SECTION 03</div>
+      <h2>关键修正：从“一条模型链”改成“分支汇合”</h2>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>原设想中容易踩坑的线性逻辑</h3>
+          <p>创意视频 → 直接提取所有角色动画 → 直接反推相机和灯光 → MCP 完整还原。</p>
+          <p class="muted">任何一个上游幻觉都会变成下游资产错误；一旦剪辑改变，全部重做。</p>
+        </article>
+        <article class="card">
+          <h3>建议的生产逻辑</h3>
+          <p>创意视频只负责锁意图；身体、脸、手、道具、相机、灯光、声音分别选择最合适的数据源和求解器，最后以 ShotSpec 和时间码汇合。</p>
+          <p class="muted">每个分支都可替换、可降级、可人工接管。</p>
+        </article>
+      </div>
+
+      <h3>必须补充的环节</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>缺漏</th><th>为什么必要</th><th>建议产物</th></tr></thead>
+        <tbody>
+          <tr><td>资产与风格约束</td><td>生成视频若不绑定已有角色 / 场景，会设计出无法由项目资产实现的内容</td><td>Asset Bible、角色 turntable、允许 / 禁止项</td></tr>
+          <tr><td>剪辑锁定</td><td>动画、镜头和声音都依赖时长；持续改剪辑会造成指数级返工</td><td>EDL / OTIO、Shot Manifest、版本号</td></tr>
+          <tr><td>相机标定与尺度</td><td>FOV、焦距、filmback、主体距离会共同影响画面</td><td>CameraSpec、已知尺度锚点、镜头库</td></tr>
+          <tr><td>重定向与接触清理</td><td>视频 mocap 只给初始骨骼运动，不知道目标角色比例和 UE 道具位置</td><td>目标骨架 AnimSequence、接触标记、误差报告</td></tr>
+          <tr><td>状态衔接</td><td>实时过场要从 gameplay pose 进入和退出，不能只看镜头内部</td><td>进入 / 退出姿态、Motion Warping / blend 规则</td></tr>
+          <tr><td>性能与烘焙</td><td>编辑器里能播放不代表目标平台能稳定实时运行</td><td>烘焙资产、LOD / groom / cloth 策略、平台预算</td></tr>
+          <tr><td>版本与来源</td><td>模型、prompt、参考素材和配音授权必须可追溯</td><td>Provenance Manifest、license、model version、hash</td></tr>
+          <tr><td>质量回归</td><td>自动组装会出现漏绑定、断镜、穿插和失焦</td><td>缩略图、proxy 视频、构图 / 接触 / 性能检查</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="workflow">
+      <div class="section-no">SECTION 04</div>
+      <h2>推荐的端到端生产工作流</h2>
+      <div class="pipeline" aria-label="十步工作流">
+        <div class="pipe-step"><b>01</b><strong>意图与约束</strong><span>剧本、资产、角色、场景、平台预算</span></div>
+        <div class="pipe-step"><b>02</b><strong>AI 视觉探索</strong><span>关键帧、视频候选、情绪与构图</span></div>
+        <div class="pipe-step gate"><b>GATE A</b><strong>Animatic 锁定</strong><span>镜头编号、时长、台词、不可改项</span></div>
+        <div class="pipe-step"><b>03</b><strong>镜头拆解</strong><span>ShotSpec、每角色表演单、接触点</span></div>
+        <div class="pipe-step"><b>04</b><strong>数据采集</strong><span>干净表演、mocap、面部、音频</span></div>
+        <div class="pipe-step"><b>05</b><strong>动画求解</strong><span>身体 / 手 / 脸 / 道具分别处理</span></div>
+        <div class="pipe-step gate"><b>GATE B</b><strong>动画验收</strong><span>脚、根运动、接触、轮廓、节奏</span></div>
+        <div class="pipe-step"><b>06</b><strong>场景匹配</strong><span>相机求解、灯光初始化、焦点</span></div>
+        <div class="pipe-step"><b>07</b><strong>Sequencer 编译</strong><span>MCP 白名单工具确定性组装</span></div>
+        <div class="pipe-step"><b>08</b><strong>声音与最终 QC</strong><span>对白、音乐、音效、MRQ、平台性能</span></div>
+      </div>
+
+      <h3>每个关口应锁定什么</h3>
+      <div class="grid grid-3">
+        <article class="card"><h4>Gate A · 创意锁定</h4><p>锁定镜头顺序、每镜时长、角色动作意图、台词和音乐节拍。不锁像素瑕疵，也不承诺 3D 参数。</p></article>
+        <article class="card"><h4>Gate B · 动画锁定</h4><p>在灰盒场景和目标角色比例上检查轮廓、接触、脚滑、根运动、面部时序和进出状态。</p></article>
+        <article class="card"><h4>Gate C · 镜头锁定</h4><p>锁定 camera cut、transform、filmback、focal length、focus、关键灯光意图和可见性。之后才进入高成本灯光 / 布料 / 声音精修。</p></article>
+      </div>
+
+      <h3>三档制作策略</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>档位</th><th>适用镜头</th><th>动画来源</th><th>清理强度</th><th>建议</th></tr></thead>
+        <tbody>
+          <tr><td>Previs</td><td>内部评审、玩法验证</td><td>AI 视频 + 快速单目 mocap + 临时音频</td><td>只修严重穿插和脚滑</td><td>追求迭代速度，不进入正式资产库</td></tr>
+          <tr><td>Standard</td><td>中景对白、移动、常规演出</td><td>干净重演 + 单目 / 双目 + MetaHuman 面部</td><td>Control Rig 分层清理</td><td>最适合规模化的主战场</td></tr>
+          <tr><td>Hero</td><td>特写、打斗、拥抱、道具交互</td><td>多目 / 光学 / 惯性捕捉或资深动画师</td><td>手工关键帧、约束、布料和面部精修</td><td>AI 主要服务创意和辅助，不强求全自动</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="animation">
+      <div class="section-no">SECTION 05</div>
+      <h2>动画生成：不是一个模型，而是五条轨道</h2>
+      <div class="grid grid-3">
+        <article class="card"><span class="badge mid">Body</span><h3>身体与根运动</h3><p>单目视频 mocap 可提供初始骨架运动。优先选清晰、短、无遮挡、全身在画面的表演。导入后通过 IK Retargeter 转到目标骨架。</p></article>
+        <article class="card"><span class="badge mid">Hands</span><h3>手指与抓握</h3><p>多数单目全身方案的弱项。特写镜头建议手部专门捕捉、手势库、Control Rig 或关键帧。抓握要绑定真实道具 socket / constraint。</p></article>
+        <article class="card"><span class="badge high">Face</span><h3>脸与口型</h3><p>MetaHuman 可走视频、深度或音频工作流。自定义角色需要解决 blendshape / joint 映射和风格化比例，不应默认零成本。</p></article>
+        <article class="card"><span class="badge mid">Contact</span><h3>物体与双人接触</h3><p>用接触事件、IK Goal、约束、Motion Warping 和手工 pose 修复。仅从独立人物视频求解无法保证双方表面相遇。</p></article>
+        <article class="card"><span class="badge mid">Secondary</span><h3>布料、毛发、附件</h3><p>在身体动画锁定后由 UE 物理 / 缓存或 DCC 模拟处理。AI 视频中的飘动只作为风格和时序参考。</p></article>
+        <article class="card"><span class="badge high">Layering</span><h3>动画分层</h3><p>基础 locomotion、上身表演、头眼、呼吸、手部和面部独立成层，避免每次修改都重算整段。</p></article>
+      </div>
+
+      <h3>推荐的输入拍摄规范</h3>
+      <ul class="checklist">
+        <li>一镜一动作，优先 3–10 秒；录制开始和结束留静止姿态。</li>
+        <li>人物全身持续入画，避免宽松衣物遮住关节；背景与服装有反差。</li>
+        <li>相机固定、少运动模糊、均匀照明；高帧率优先于电影感。</li>
+        <li>地面可见，并记录演员身高、相机高度、距离和焦距，提供尺度锚点。</li>
+        <li>双人 / 道具镜头另录手、接触和相对位置参考；不要只上传最终合成视频。</li>
+      </ul>
+
+      <h3>UE 内最低清理清单</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>检查</th><th>典型错误</th><th>UE 处理</th><th>验收</th></tr></thead>
+        <tbody>
+          <tr><td>骨架与参考姿态</td><td>A / T Pose、骨轴、比例差异</td><td>IK Rig、Retarget Pose、链映射</td><td>肩、髋、膝、肘无持续偏折</td></tr>
+          <tr><td>根运动</td><td>原地动作漂移、世界位移错误</td><td>Root Motion、Transform Offset、Motion Warping</td><td>角色按场景路径到达目标点</td></tr>
+          <tr><td>脚接触</td><td>滑步、穿地、脚尖抖动</td><td>Full Body IK、Control Rig、接触曲线</td><td>支撑期屏幕误差稳定且无穿透</td></tr>
+          <tr><td>手与道具</td><td>掌心悬空、武器漂移</td><td>Constraint、IK Goal、socket、手势 pose</td><td>关键接触帧锁定，轮廓自然</td></tr>
+          <tr><td>曲线与抖动</td><td>每帧噪声、面部过驱动</td><td>Key Reduction、curve filter、additive layer</td><td>保留冲击与微表情，不出现高频颤动</td></tr>
+          <tr><td>镜头节奏</td><td>动作峰值错过切点</td><td>Time dilation / retime、section trim</td><td>动作意图与锁定 animatic 同步</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="reconstruction">
+      <div class="section-no">SECTION 06</div>
+      <h2>相机与灯光：从“恢复真值”改成“约束匹配”</h2>
+
+      <h3>相机匹配的可靠性梯度</h3>
+      <div class="grid grid-3">
+        <article class="card"><span class="badge high">较可靠</span><h4>真实静态场景视频</h4><p>有稳定特征点、已知 filmback / 焦距、少运动模糊、无变焦，可用 SfM / matchmove 求相机轨迹，再导入 UE。</p></article>
+        <article class="card"><span class="badge mid">可粗配</span><h4>实拍人物 + 简单背景</h4><p>人物是动态遮挡，应先 mask，再用背景特征求解；焦距和尺度仍需锚点。</p></article>
+        <article class="card"><span class="badge rnd">只做视觉优化</span><h4>AI 生成视频</h4><p>跨帧几何可能变化，光流和特征点不服从真实相机。建议用 UE 场景渲染与参考画面做轮廓 / 构图损失迭代，而非相信唯一轨迹。</p></article>
+      </div>
+
+      <h3>相机参数应拆开处理</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>参数</th><th>可从视频得到什么</th><th>还需要什么</th></tr></thead>
+        <tbody>
+          <tr><td>Camera Cut / 时长</td><td>镜头边界、入出点通常可自动检测并人工修正</td><td>剪辑锁定版本</td></tr>
+          <tr><td>Transform</td><td>真实静态场景可求轨迹；生成视频多为粗略趋势</td><td>3D 特征、尺度锚点、场景对齐</td></tr>
+          <tr><td>Focal Length / Filmback</td><td>可按透视和主体占比拟合，不一定唯一</td><td>传感器、镜头先验或镜头库约束</td></tr>
+          <tr><td>Focus / Aperture</td><td>可估计清晰主体和景深观感</td><td>UE 内目标距离、Cine Camera 的物理参数</td></tr>
+          <tr><td>Lens Distortion</td><td>实拍标定板可求；生成视频无真实镜头模型</td><td>镜头标定数据或风格化后期</td></tr>
+          <tr><td>Shake / 手持感</td><td>可从 2D 运动频谱提取风格</td><td>与主体运动分离、幅度限制</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>灯光建议采用“两层方案”</h3>
+      <div class="grid grid-2">
+        <article class="card">
+          <h4>第一层：语义 LightingSpec</h4>
+          <p>视觉模型输出“暖色硬主光从画面左上、冷色弱填充、背后窄轮廓、背景雾中有体积光”等描述，并给出置信度。它负责初始化，而非直接生成几十盏灯。</p>
+        </article>
+        <article class="card">
+          <h4>第二层：UE 画面匹配</h4>
+          <p>在既定材质、曝光和 OCIO 下，仅优化少量参数：主光方位 / 尺寸 / 色温 / 强度、fill ratio、轮廓光、天空与雾。用参考 / UE 并排和差值图评审。</p>
+        </article>
+      </div>
+      <div class="callout warn"><div class="callout-title">Lumen 相关限制</div>Lumen 提供动态间接光和反射，但结果取决于几何、材质、追踪模式、缓存和性能设置；大范围光照变化可能有更新延迟，小而强的 emissive 也可能产生噪声。参考匹配必须在目标平台配置下验收，而不是只看编辑器最高画质。</div>
+    </section>
+
+    <section id="market">
+      <div class="section-no">SECTION 07</div>
+      <h2>市场与公开验证：方向存在，但尚未看到同等完整的端到端产品</h2>
+      <div class="callout">
+        <div class="callout-title">调研结论（资料快照：2026-08-20）</div>
+        公开市场已经分别验证了<strong>3D 灰盒控制生成视频、视频求相机、单图 / 视频估光、Agent 操作 DCC / UE</strong>四个组件；但本次检索没有找到一个具有可复现实验、公开工程细节或独立评测的成熟方案，能把 <strong>AI 生成视频 → 恢复相机与显式灯光参数 → Agent 在 UE 中自动搭建 → 渲染闭环验证</strong>完整跑通。最接近的公开实践多数是相反方向：先在 UE / Blender 设计相机和灰盒，再让视频生成模型沿用运动并完成视觉渲染。Seedance 只是这类模型中公开案例较多的一个例子，结论同样适用于其他支持图像、视频或运动参考的生成模型。
+      </div>
+
+      <h3>证据分级</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>证据等级</th><th>公开案例</th><th>实际验证了什么</th><th>离目标还差什么</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge high">A · 可运行组件</span></td><td>ParticleSfM、VGGT、DUSt3R、DROID-SLAM、Genesis</td><td>从相干视频 / 图像估计相机轨迹、内参、深度、点云或环境网格；Genesis 可直接在 UE 内生成 tracked camera、mesh、lens distortion 和 plate setup</td><td>大多面向真实且几何一致的素材；尚未普遍验证 AI 生成视频的跨帧形变、伪透视和物体漂移</td></tr>
+          <tr><td><span class="badge high">A · 可运行组件</span></td><td>Epic Unreal MCP 5.8、Flux Point Unreal MCP、BlenderMCP</td><td>Agent 能创建 / 修改场景、相机、Sequencer、灯光、材质，并取得 viewport screenshot 继续修改</td><td>它们是执行层，不负责从视频求相机或灯光真值</td></tr>
+          <tr><td><span class="badge mid">B · 论文原型</span></td><td>DiffusionLight、UniRelight、DiffusionRenderer、IllumiCraft、Light-X</td><td>估计 HDR 环境光或内在属性，进行视频 relighting；Light-X 联合控制给定相机轨迹和照明条件</td><td>多数输出 relit pixels / albedo / G-buffer，而不是 UE 可直接实例化的灯具坐标、类型、强度和阴影参数</td></tr>
+          <tr><td><span class="badge mid">B · 创作者演示</span></td><td>“UE / Blender blockout → AI 视频”案例，包括使用 Seedance 等模型的公开演示</td><td>证明 3D playblast、灰盒和已知 camera move 可作为视频模型运动参考，维持构图与运动控制</td><td>方向与本项目相反：相机先在 3D 中已知，并没有从生成输出反求回 UE</td></tr>
+          <tr><td><span class="badge rnd">C · 概念 / 营销</span></td><td>自然语言要求 Agent “匹配参考图”“自动布光”的 Blender / UE 演示</td><td>多模态模型可以给出语义近似，并通过截图做几轮人工或 Agent 调整</td><td>缺少参数恢复误差、跨镜头 / 跨模型泛化、失败率、通用 AIGC 视频测试集和独立对照</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>AI 视频 × 3D 的公开工作流，主要是“正向约束”</h3>
+      <p>公开案例覆盖多种支持视频或运动参考的生成模型，其中 Seedance 因当前运动跟随效果和社区案例较多而经常出现。例如 <em>Seedance Camera Reference using Unreal Engine</em>、<em>Can AI Render Unreal Engine 5 Blockouts?</em>、<em>Turning Unreal Engine 5 Blockouts into Cinematic AI Renders</em>，以及 ComfyUI 的 <em>Playblast to Final Render</em>。这些案例在本报告中只作为<strong>通用“3D 参考 → AI 视频”范式</strong>的样本，不把工作流绑定到某个模型。共同模式是：</p>
+      <div class="pipeline">
+        <div class="pipe-step"><b>01</b><strong>UE / Blender 灰盒</strong><span>人物、场景和相机轨迹已在 3D 中确定</span></div>
+        <div class="pipe-step"><b>02</b><strong>Playblast</strong><span>输出稳定运动、遮挡和透视参考</span></div>
+        <div class="pipe-step"><b>03</b><strong>AI 视频生成</strong><span>使用适合当前项目的模型增强角色、材质和灯光观感</span></div>
+        <div class="pipe-step"><b>04</b><strong>筛选 / 后期</strong><span>接受视频输出，不要求返回可编辑三维参数</span></div>
+        <div class="pipe-step"><b>结果</b><strong>运动受控的 AI 视频</strong><span>不是由 AI 视频恢复出来的 Sequencer</span></div>
+      </div>
+      <p>这条正向路线之所以先成熟，是因为相机和空间约束在输入端就已知。它也提示了一个更稳的混合策略：<strong>AI 创意视频用于设计；正式生产时，在项目现有镜头模板中找近邻或先搭粗略 3D 相机，再让视频模型做第二轮创意渲染，而不是要求一次反求全部未知量。</strong></p>
+
+      <h3>相机反求：已有强组件，但 AI 生成视频是特殊输入域</h3>
+      <div class="grid grid-2">
+        <article class="card"><h4>开源研究工具</h4><p><strong>ParticleSfM</strong> 用光流、运动分割和全局 SfM 从动态视频重建相机轨迹；<strong>VGGT</strong> 可由图像 / 视频帧预测相机内外参、深度、点图和轨迹；<strong>DUSt3R</strong> 可输出焦距、图像 pose 和对齐点云；<strong>DROID-SLAM</strong> 通过稠密 BA 估计相机与深度。</p><p class="muted">它们证明“视频 → 初始 3D camera”技术上成立，但共同依赖跨帧对应和相干三维结构。</p></article>
+        <article class="card"><h4>直接面向 UE 的商业工具</h4><p><strong>Boundless Genesis</strong> 宣称在 UE 5.7 / 5.8 内自动完成真实素材的相机跟踪、环境 mesh / point cloud、镜头畸变和 background plate，并输出 tracked UE camera。</p><p class="muted">这是市场上离“视频进、UE 相机出”最近的成品证据；但厂商明确依赖环境细节和视差，页面没有通用 AI 生成视频测试，也没有独立准确率评测。</p></article>
+      </div>
+      <div class="callout warn"><div class="callout-title">对 AIGC 视频的含义</div>可以把这些求解器直接用于 PoC，但必须把“解算失败”视为正常分支。不同视频生成模型都可能出现局部尺寸变化、背景漂移、伪变焦、物体生成 / 消失或非物理镜头；求解器会把这些误认为相机或动态物体运动。建议测试时覆盖至少两种视频模型，并同时跑 VGGT / ParticleSfM / Genesis 中至少两种求解方案，用重投影误差、轨迹平滑度和 UE proxy 对比选择，而不是只相信单一输出。</div>
+
+      <h3>灯光反求：研究较活跃，但显式 UE 灯具仍是空白</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>方法 / 产品</th><th>输入 → 输出</th><th>可以怎样接 UE</th><th>不能证明什么</th></tr></thead>
+        <tbody>
+          <tr><td>DiffusionLight</td><td>单图 → chrome-ball 表征 → 多曝光 HDR environment map</td><td>转换投影 / 朝向后，可作为 Skylight / HDRI 初始环境光</td><td>不是局部 Rect / Spot / Point Light 的位置和物理参数</td></tr>
+          <tr><td>UniRelight</td><td>视频 + 目标 environment lighting → relit video + albedo</td><td>可辅助评估目标光照风格和主体 albedo</td><td>没有把源视频分解成完整 UE 灯光 rig</td></tr>
+          <tr><td>DiffusionRenderer</td><td>真实视频 ↔ G-buffer / 图像</td><td>可提供 normal、depth、albedo 等 Agent 分析信号</td><td>摘要未声明显式相机或灯具恢复</td></tr>
+          <tr><td>IllumiCraft</td><td>前景视频 + prompt / background → relit / generated video</td><td>适合生成灯光候选参考</td><td>不估计源视频中的物理灯光参数</td></tr>
+          <tr><td>Light-X</td><td>视频 + 用户给定 trajectory + 文本 / HDR / 图像照明 → 新视频</td><td>证明相机与照明可联合控制，并可用于合成训练数据</td><td>trajectory 是输入；illumination 用图像 / token 条件，不是输出 UE 灯具</td></tr>
+        </tbody>
+      </table></div>
+      <p>因此，“Agent 布光”当前最现实的实现不是由一个模型恢复全部物理灯，而是：</p>
+      <ol class="number-list">
+        <li>DiffusionLight / lighting-estimation 模型给出 HDR 环境光、主光方向、色温和置信度。</li>
+        <li>检索项目已有 Lighting Template，选择最相近的一套批准 rig。</li>
+        <li>Agent 只调整有限参数：模板、主光方位 / 高度、强度倍率、fill ratio、色温、曝光。</li>
+        <li>通过 Unreal MCP / Python 应用参数，输出 viewport / MRQ proxy。</li>
+        <li>视觉模型比较参考与 proxy 的主体明暗分区、阴影方向、轮廓光、色温和曝光，迭代 3–5 次后交灯光师签收。</li>
+      </ol>
+
+      <h3>Agent 布光和 Sequencer 执行层已经出现</h3>
+      <p>Epic 已为 <strong>UE 5.8</strong> 文档化实验性的 Unreal MCP，可调用 All Toolsets / Toolset Registry 中的编辑器工具，官方示例包含 Actor 与灯光修改。社区的 Flux Point Unreal MCP 则明确列出 <code>manage_lighting</code>、<code>manage_sequence</code>、camera / viewport / screenshot 等能力；BlenderMCP 也演示了从参考图创建场景、添加 studio lights / HDRI、调整相机并让 Claude 查看 viewport screenshot。</p>
+      <p>这些案例验证了闭环的后半段：</p>
+      <div class="codebox">结构化 LightingSpec / CameraSpec
+→ Agent 调 MCP 创建或修改灯光与相机
+→ 获取 viewport screenshot / proxy render
+→ 多模态模型评价
+→ Agent 调整少量参数
+→ 人工批准</div>
+      <p class="caption">公开资料尚未证明前半段——“对任意 AI 生成视频稳定生成正确 LightingSpec / CameraSpec”——已经成为成熟产品。</p>
+
+      <h3>本项目应如何利用公开成果</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>PoC 路线</th><th>组件</th><th>验证目标</th><th>建议优先级</th></tr></thead>
+        <tbody>
+          <tr><td>AIGC Video → Camera</td><td>VGGT + ParticleSfM；可选 Genesis 商业对照</td><td>不同生成模型的视频能否稳定得到可用的相对轨迹、焦距趋势和置信区间</td><td><span class="badge high">第一优先</span></td></tr>
+          <tr><td>AIGC Video → Environment Light</td><td>DiffusionLight / HDR estimator</td><td>HDRI 初值是否比纯 VLM 文字描述更接近参考明暗，并能否跨视频模型泛化</td><td><span class="badge high">第一优先</span></td></tr>
+          <tr><td>Template Retrieval</td><td>项目历史 Sequencer 数据库</td><td>相似镜头 / 布光模板迁移是否优于从零回归</td><td><span class="badge high">第一优先</span></td></tr>
+          <tr><td>Agent 闭环</td><td>UE 5.8 MCP 或受约束的项目 MCP + MRQ</td><td>3–5 次迭代内改善构图和光照 rubric，且修改可回滚</td><td><span class="badge mid">第二优先</span></td></tr>
+          <tr><td>项目微调</td><td>历史 Sequencer + 参数扰动渲染 + 人工修订</td><td>学会项目模板与参数残差，而非恢复不存在的真值</td><td><span class="badge rnd">数据成熟后</span></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="architecture">
+      <div class="section-no">SECTION 08</div>
+      <h2>UE / MCP 工程架构：模型出意图，工具做确定性修改</h2>
+      <div class="arch">
+        <svg viewBox="0 0 980 430" role="img" aria-label="AI 到 Unreal Sequencer 的受约束工程架构">
+          <defs><linearGradient id="g1" x1="0" x2="1"><stop stop-color="#16313b"/><stop offset="1" stop-color="#17263c"/></linearGradient></defs>
+          <g font-family="Inter, Microsoft YaHei, sans-serif" fill="#e9f0fa">
+            <rect x="28" y="45" width="210" height="95" rx="13" fill="url(#g1)" stroke="#315971"/>
+            <text x="48" y="75" font-size="13" fill="#54d6d0">AI / CV ANALYSIS</text><text x="48" y="102" font-size="18" font-weight="700">镜头与表演理解</text><text x="48" y="125" font-size="12" fill="#9fb0c6">切镜 · 追踪 · 姿态 · 灯光语义</text>
+            <rect x="28" y="205" width="210" height="95" rx="13" fill="#111824" stroke="#26364d"/>
+            <text x="48" y="235" font-size="13" fill="#78a9ff">SPECIALIZED SOLVERS</text><text x="48" y="262" font-size="18" font-weight="700">专业求解器</text><text x="48" y="285" font-size="12" fill="#9fb0c6">Mocap · Face · Matchmove · Audio</text>
+            <rect x="308" y="112" width="210" height="122" rx="13" fill="#1a2131" stroke="#ba9cff"/>
+            <text x="328" y="143" font-size="13" fill="#ba9cff">CONTRACT</text><text x="328" y="171" font-size="21" font-weight="700">ShotSpec JSON</text><text x="328" y="195" font-size="12" fill="#9fb0c6">schema 校验 · 资产 ID · 时间码</text><text x="328" y="215" font-size="12" fill="#9fb0c6">置信度 · 来源 · 版本 · fallback</text>
+            <rect x="588" y="45" width="174" height="95" rx="13" fill="#111824" stroke="#f5bd62"/>
+            <text x="608" y="75" font-size="13" fill="#f5bd62">MCP TOOL GATE</text><text x="608" y="102" font-size="18" font-weight="700">白名单与预检</text><text x="608" y="125" font-size="12" fill="#9fb0c6">dry-run · diff · transaction</text>
+            <rect x="588" y="205" width="174" height="95" rx="13" fill="#111824" stroke="#67d391"/>
+            <text x="608" y="235" font-size="13" fill="#67d391">UE EDITOR APIs</text><text x="608" y="262" font-size="18" font-weight="700">确定性执行</text><text x="608" y="285" font-size="12" fill="#9fb0c6">Python · Utility · Remote Control</text>
+            <rect x="822" y="112" width="132" height="122" rx="13" fill="url(#g1)" stroke="#54d6d0"/>
+            <text x="842" y="143" font-size="13" fill="#54d6d0">OUTPUT</text><text x="842" y="171" font-size="18" font-weight="700">Sequencer</text><text x="842" y="194" font-size="12" fill="#9fb0c6">Level Sequence</text><text x="842" y="214" font-size="12" fill="#9fb0c6">Anim / Audio / Camera</text>
+            <rect x="308" y="337" width="454" height="62" rx="13" fill="#151f2f" stroke="#315971"/>
+            <text x="330" y="366" font-size="17" font-weight="700">Movie Render Queue + 自动 QC + 人工审批</text><text x="330" y="388" font-size="12" fill="#9fb0c6">proxy 渲染 · 构图差值 · 接触检查 · 性能 · 回滚</text>
+            <g stroke="#54d6d0" stroke-width="2" fill="none"><path d="M238 92H283Q296 92 296 105V160Q296 173 308 173"/><path d="M238 252H283Q296 252 296 239V187Q296 174 308 174"/><path d="M518 173H560Q575 173 575 158V108Q575 93 588 93"/><path d="M675 140V205"/><path d="M762 252H793Q807 252 807 238V187Q807 173 822 173"/><path d="M888 234V310Q888 322 875 322H545Q535 322 535 337"/></g>
+          </g>
+        </svg>
+      </div>
+
+      <h3>ShotSpec 示例</h3>
+      <div class="codebox">{
+  "shot_id": "SQ010_SH030",
+  "time": { "start_frame": 240, "duration_frames": 144, "fps": 24 },
+  "level": "/Game/Cinematics/Maps/Bridge",
+  "actors": [
+    { "asset_id": "CHR_Captain", "animation": "AN_Captain_Turn_03",
+      "root_target": "MK_Captain_End", "confidence": 0.91 }
+  ],
+  "camera": {
+    "preset": "S35_50mm", "focal_length_mm": 50,
+    "focus_target": "CHR_Captain:head", "intent": "slow_push_in",
+    "reference_match": { "subject_screen_x": 0.62, "subject_height": 0.54 }
+  },
+  "lighting": {
+    "template": "warm_key_cool_fill", "key_azimuth_deg": -35,
+    "key_softness": 0.7, "notes": "语义初始化；由灯光师签收"
+  },
+  "audio_events": [{ "frame": 268, "type": "dialogue", "asset_id": "VO_Captain_017" }],
+  "provenance": { "reference": "previs_v12.mp4", "approved_by": "cinematic_director" }
+}</div>
+      <p class="caption">示例字段用于解释契约思想，并非 UE 官方格式。生产中应由 JSON Schema 校验，并只接受资产注册表中的 ID。</p>
+
+      <h3>MCP 应暴露的白名单工具</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>工具</th><th>作用</th><th>安全约束</th></tr></thead>
+        <tbody>
+          <tr><td><code>sequence.plan</code></td><td>读取 ShotSpec，返回将创建 / 修改的对象差异</td><td>只读，不改资产；报告缺失资产和冲突</td></tr>
+          <tr><td><code>sequence.create</code></td><td>创建 Level Sequence、帧率、播放区间和目录</td><td>限定到 Cinematics 内容路径；禁止覆盖</td></tr>
+          <tr><td><code>actor.bind</code></td><td>把已有 Actor / Spawnable 绑定到序列</td><td>只能使用资产注册表白名单</td></tr>
+          <tr><td><code>track.add_animation</code></td><td>创建动画轨和区段，设置范围与 AnimSequence</td><td>检查骨架兼容、帧率、越界和空引用</td></tr>
+          <tr><td><code>camera.configure</code></td><td>创建 Cine Camera、cut、transform、lens、focus</td><td>参数范围、镜头 preset、禁止 NaN / 超大位移</td></tr>
+          <tr><td><code>light.apply_template</code></td><td>从批准模板实例化有限灯光</td><td>限制灯数、强度、类型和目标平台预算</td></tr>
+          <tr><td><code>audio.place_event</code></td><td>添加对白 / 音效轨和时间点</td><td>只接受已导入且授权状态明确的资产</td></tr>
+          <tr><td><code>render.proxy</code></td><td>通过 MRQ / MRG 输出低成本评审片</td><td>固定 preset、输出沙箱目录、任务限额</td></tr>
+          <tr><td><code>transaction.commit</code></td><td>在人工确认后执行计划并保存</td><td>事务、日志、备份、幂等键、可撤销</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="callout danger"><div class="callout-title">安全边界</div>UE Remote Control HTTP / WebSocket 文档没有提供完整的认证、授权和传输安全方案，并且相关能力被标为 Beta。不要把编辑器端口直接暴露到公网。MCP Server 应部署在本机或受控网络，做鉴权、白名单、速率限制、超时、事务、审计和输出目录隔离。</div>
+
+      <h3>Editor 与 Runtime 的区别</h3>
+      <p>UE Python 是<strong>编辑器内容生产工具</strong>：可批量处理资产、创建序列、调用编辑器 API，但不能作为 PIE、Standalone 或 cooked build 中的游戏逻辑。这里的“实时过场”应理解为：在编辑阶段生成 / 烘焙 Level Sequence 与 AnimSequence，游戏运行时由原生 Sequencer 系统播放。若要在玩家运行时实时生成新过场，则需要另行设计 C++ / Blueprint 运行时系统、网络与性能边界，其风险和范围显著更高。</p>
+    </section>
+
+    <section id="audio">
+      <div class="section-no">SECTION 09</div>
+      <h2>声音生产：从前期节奏到最终混音</h2>
+      <div class="pipeline">
+        <div class="pipe-step"><b>A</b><strong>临时对白</strong><span>在 Animatic 阶段确定句长、停顿和情绪</span></div>
+        <div class="pipe-step"><b>B</b><strong>口型 / 面部</strong><span>用最终或近最终音频驱动，避免反复重算</span></div>
+        <div class="pipe-step"><b>C</b><strong>动作事件</strong><span>脚步、武器、衣料、门、碰撞写入 cue sheet</span></div>
+        <div class="pipe-step"><b>D</b><strong>音乐与环境</strong><span>按段落、hit point、循环和状态过渡生成 / 编辑</span></div>
+        <div class="pipe-step"><b>E</b><strong>混音与实现</strong><span>响度、空间、总线、ducking、本地化和平台测试</span></div>
+      </div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>类型</th><th>AI 适合做什么</th><th>生产注意</th></tr></thead>
+        <tbody>
+          <tr><td>对白</td><td>选角样音、临时 VO、多语言草稿、补句</td><td>取得演员 / 声音授权；名称、情绪、发音词典和版本必须可追溯</td></tr>
+          <tr><td>音效</td><td>抽象、魔法、UI、环境和难以采样的候选；可生成短循环</td><td>动作同步、瞬态、循环接缝、频谱和游戏中重复疲劳仍需设计</td></tr>
+          <tr><td>音乐</td><td>temp track、风格候选、短段、结构探索</td><td>需要可编辑段落 / stems 时要确认工具输出；最终授权以服务条款与项目合同为准</td></tr>
+          <tr><td>面部驱动</td><td>由音频生成口型和基础脸部动画</td><td>爆破音、闭唇、眼神和情绪峰值需人工检查；不要把口型等同于完整表演</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn"><div class="callout-title">授权不是最后一步</div>在生成前建立声音许可清单：训练 / 参考素材是否有权使用、是否允许商业发布、是否允许复刻具体声音、生成资产是否能用于游戏与宣传、供应商条款变更如何冻结证据。敏感角色对白应优先使用获授权真人录音或合同明确的合成声音。</div>
+    </section>
+
+    <section id="risks">
+      <div class="section-no">SECTION 10</div>
+      <h2>主要风险与治理</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>风险</th><th>严重度</th><th>触发场景</th><th>控制措施</th></tr></thead>
+        <tbody>
+          <tr><td>参考视频不具备三维一致性</td><td><span class="badge low">高</span></td><td>AI 视频跨帧改变角色、背景、透视</td><td>只锁意图；标记幻觉区；必要时真人重演；做视觉匹配而非真值恢复</td></tr>
+          <tr><td>接触与穿插失败</td><td><span class="badge low">高</span></td><td>双人、武器、门、椅子、地面动作</td><td>接触表、IK / constraint、hero 镜头人工制作、自动穿插检查</td></tr>
+          <tr><td>模型 / API 版本漂移</td><td><span class="badge mid">中</span></td><td>供应商更新模型、输出骨架或价格</td><td>版本锁定、回归片段、适配层、原始输入与中间资产归档</td></tr>
+          <tr><td>远程控制越权</td><td><span class="badge low">高</span></td><td>LLM 可访问任意对象 / 路径 / 网络端口</td><td>本机部署、白名单、schema、dry-run、事务、审计、人工 commit</td></tr>
+          <tr><td>授权与人格权</td><td><span class="badge low">高</span></td><td>角色肖像、声音复刻、外部视频、音乐参考</td><td>书面授权、来源清单、供应商条款快照、禁止未授权克隆</td></tr>
+          <tr><td>隐私与未发布资产外泄</td><td><span class="badge low">高</span></td><td>把剧本、角色、镜头上传云服务</td><td>企业条款、数据保留设置、脱敏 / 本地模型、资产分级</td></tr>
+          <tr><td>审美趋同</td><td><span class="badge mid">中</span></td><td>完全依赖模型默认镜头和表演</td><td>导演规则、镜头语法库、批准参考、人工 hero pass</td></tr>
+          <tr><td>目标平台性能失败</td><td><span class="badge mid">中</span></td><td>高质量 Lumen、groom、cloth 只在工作站可播</td><td>早期平台预算、自动 profile、LOD、预烘焙和降级路径</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>推荐的数据治理字段</h3>
+      <p>每个生成或转换资产至少记录：<code>source_asset</code>、<code>source_license</code>、<code>consent</code>、<code>vendor</code>、<code>model/version</code>、<code>prompt</code>、<code>seed/reference</code>、<code>created_at</code>、<code>operator</code>、<code>reviewer</code>、<code>approved_use</code>、<code>derived_assets</code>。这些字段应进入资产管理系统，而不是只留在聊天记录。</p>
+    </section>
+
+    <section id="pilot">
+      <div class="section-no">SECTION 11</div>
+      <h2>4–6 周最小试点</h2>
+      <div class="callout"><div class="callout-title">建议样本</div>选择一段 20–30 秒、2 个角色、3–5 个镜头的对白型过场：包含一次走位、一次坐 / 站或拿取道具、一个面部特写，但避免复杂打斗、群演、载具和长镜到底。使用项目现有角色、场景与 rig，才能测到真实集成成本。</div>
+
+      <div class="timeline">
+        <div class="timeline-item"><h3>第 1 周 · 基线与约束</h3><p>选定镜头；用现有传统流程估时；建立角色 / 场景资产白名单、ShotSpec v0、镜头编号和验收 rubric。输出传统方案的基线工时与 proxy。</p></div>
+        <div class="timeline-item"><h3>第 2 周 · AI Animatic</h3><p>制作关键帧与 3–5 版短视频候选，锁定剪辑、台词与动作意图。记录生成次数、人工筛选时间和不可实现设计。</p></div>
+        <div class="timeline-item"><h3>第 3 周 · 表演求解</h3><p>同时测试两条路径：A 从锁定视频直接求解；B 真人按锁定节奏重演后求解。导入 UE、重定向，并记录清理工时与误差。</p></div>
+        <div class="timeline-item"><h3>第 4 周 · Camera / Light / Sequencer 编译</h3><p>实现最小 MCP 工具：plan、create sequence、bind、add animation、configure camera、proxy render。相机和灯光只做有限参数匹配。</p></div>
+        <div class="timeline-item"><h3>第 5 周 · 声音、QC 与目标平台</h3><p>加入对白、面部、音效和 temp music；输出 MRQ 对照和运行时 build；检查穿插、失焦、渲染差异、帧率与内存。</p></div>
+        <div class="timeline-item"><h3>第 6 周 · 复盘与第二轮</h3><p>只针对瓶颈重跑一轮，验证工具是否降低第二次迭代成本。形成保留、替换、放弃的能力清单。</p></div>
+      </div>
+
+      <h3>KPI：不要只看“生成用了几分钟”</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>指标</th><th>测量方式</th><th>意义</th></tr></thead>
+        <tbody>
+          <tr><td>首版可评审时间</td><td>需求确认 → 有声音 proxy 可观看</td><td>验证创意迭代收益</td></tr>
+          <tr><td>锁剪辑后返工时间</td><td>一次明确导演修改 → 新 proxy</td><td>验证结构化与自动组装是否有价值</td></tr>
+          <tr><td>动画清理比</td><td>清理人工小时 / 最终镜头秒数</td><td>识别视频 mocap 是否真的省工</td></tr>
+          <tr><td>自动组装成功率</td><td>无需手动修复即可生成有效序列的 ShotSpec 比例</td><td>验证 MCP 与 schema 稳定性</td></tr>
+          <tr><td>接触 / 穿插缺陷</td><td>每镜严重缺陷数，按脚、手、道具、双人分类</td><td>避免主观“看起来不错”掩盖生产问题</td></tr>
+          <tr><td>参考匹配</td><td>切点、主体框、视线、构图、色温与关键动作点的 rubric</td><td>比像素相似度更贴近导演意图</td></tr>
+          <tr><td>目标平台成本</td><td>帧时间、显存、序列加载和峰值内存</td><td>确保它是实时过场而非仅离线 CG</td></tr>
+          <tr><td>单分钟总成本</td><td>服务费 + 人工 + 重跑 + 清理 + 集成</td><td>与传统基线公平比较</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>试点角色配置</h3>
+      <p>最小团队建议包含：过场导演 / 叙事设计、动画师、技术动画 / TA、UE 工程师、灯光、声音设计。一个人可兼多职，但签收责任要明确。不要只由 AI 工程师判断动作和镜头是否达到制作标准。</p>
+    </section>
+
+    <section id="decision">
+      <div class="section-no">SECTION 12</div>
+      <h2>Go / No-Go 决策标准</h2>
+      <div class="grid grid-2">
+        <article class="card">
+          <span class="badge high">GO · 扩大试点</span>
+          <ul class="checklist">
+            <li>AI Animatic 明显减少方向性返工，团队愿意用其签审。</li>
+            <li>Standard 镜头的视频 mocap 清理工时低于传统基线。</li>
+            <li>ShotSpec → Sequencer 可重复、幂等，第二轮修改更快。</li>
+            <li>Hero 镜头有明确人工升级路径，不被全自动目标拖累。</li>
+            <li>授权、数据安全和供应商条款得到法务 / 安全认可。</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="badge low">NO-GO · 暂停端到端</span>
+          <ul class="checklist">
+            <li>大部分镜头因遮挡 / 接触需重做，清理超过手工制作。</li>
+            <li>生成视频反复设计出现有资产无法实现的表演与场景。</li>
+            <li>镜头 / 灯光求解无法稳定复现，仍靠逐镜手工猜测。</li>
+            <li>MCP 缺少 schema、diff、事务和审计，修改不可控。</li>
+            <li>目标平台性能、数据合规或声音 / 参考授权无法关闭。</li>
+          </ul>
+        </article>
+      </div>
+
+      <h3>推荐的阶段路线</h3>
+      <ol class="number-list">
+        <li><strong>先投产：</strong>AI storyboard / animatic、临时声音、Shot Manifest、Sequencer 批量组装与 proxy 渲染。</li>
+        <li><strong>再规模化：</strong>针对 Standard 镜头建立规范化真人重演 + 视频 mocap + Retarget + Control Rig 清理模板。</li>
+        <li><strong>后研发：</strong>生成视频的相机 / 灯光参考匹配、视觉差值优化、多 Agent 自动 QC。</li>
+        <li><strong>最后评估：</strong>真正运行时动态生成新过场。它涉及 shipping API、安全、确定性、联网、延迟和性能，不应与编辑器内自动制片混为一谈。</li>
+      </ol>
+      <div class="callout"><div class="callout-title">最终建议</div>项目值得做，且最有价值的近期目标不是“无人化”，而是把过场制作从松散手工步骤变成<strong>有结构化契约、可替换求解器、可自动组装、可追踪回滚</strong>的生产系统。先用 20–30 秒试点证明“第二次迭代更便宜”，再决定是否投入视频反求相机 / 灯光等研发项。</div>
+    </section>
+
+    <section id="sources">
+      <div class="section-no">SECTION 13</div>
+      <h2>来源、证据口径与进一步验证</h2>
+      <p>以下以 Epic 官方文档、官方仓库和厂商官方页面为主。厂商页面只证明“该厂商当前宣称提供这项能力”，不代表本报告已独立验证精度、稳定性、价格或许可。所有版本、套餐和条款应在采购与试点当天重新确认。</p>
+      <ol class="sources">
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/python-scripting-in-sequencer-in-unreal-engine?application_version=5.6">Epic Games — Python Scripting in Sequencer（UE 5.6）</a>：创建 / 打开 Level Sequence、绑定、相机、轨道、区段、动画和复制粘贴等编辑器自动化。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/scripting-the-unreal-editor-using-python">Epic Games — Scripting the Unreal Editor Using Python</a>：Python Editor Script Plugin、编辑器 / commandlet 执行方式及非运行时限制。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/control-rig-in-unreal-engine">Epic Games — Control Rig</a>：UE 内 rig、关键帧、约束、IK 与 Sequencer 动画编辑。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/ik-rig-animation-retargeting-in-unreal-engine">Epic Games — IK Rig Animation Retargeting</a>：不同骨架、比例与参考姿态间的链式重定向。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-sequence-editor-in-unreal-engine">Epic Games — Animation Sequence Editor</a>：导入 / 重导入、Root Motion、曲线、压缩、Sequencer / Control Rig 清理。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/metahuman/metahuman-animator-in-unreal-engine">Epic Games — MetaHuman Animator</a>：视频、深度和音频的实时 / 离线 MetaHuman 表演工作流。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/using-live-link-data-in-unreal-engine">Epic Games — Using Live Link Data</a>：Transform、Camera、Light、Animation roles 及外部数据接入。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/take-recorder-in-unreal-engine">Epic Games — Take Recorder</a>：录制 Live Link、相机、Actor、音频并形成 Level Sequence / subsequence。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/movie-render-pipeline-in-unreal-engine">Epic Games — Movie Render Pipeline</a>：MRQ / MRG 批量渲染、图像序列、HDR、alpha、预览与自动化。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/color-management-with-opencolorio-in-unreal-engine">Epic Games — Color Management with OpenColorIO</a>：媒体、视口、Composure 与 MRQ 的色彩变换。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/lumen-global-illumination-and-reflections-in-unreal-engine">Epic Games — Lumen GI and Reflections</a>：动态间接光、反射、追踪与质量 / 性能限制。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-control-api-http-reference-for-unreal-engine">Epic Games — Remote Control HTTP API</a>：对象函数、属性、资产搜索、批处理和事务接口；Beta。</li>
+        <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/remote-control-api-websocket-reference-for-unreal-engine">Epic Games — Remote Control WebSocket API</a>：HTTP 代理消息、Preset 订阅和变更事件；Beta。</li>
+        <li><a href="https://www.deepmotion.com/animate-3d">DeepMotion — Animate 3D</a>：厂商宣称的普通视频到 3D 动画、多人 / 手脸跟踪与 FBX / BVH / GLB 输出。</li>
+        <li><a href="https://www.rokoko.com/products/vision">Rokoko — Vision</a>：厂商单目视频 mocap、Rokoko Studio 清理 / 重定向、FBX / BVH 与 UE5 Manny 工作流；需复核当前产品页面和套餐。</li>
+        <li><a href="https://docs.move.ai/knowledge">Move AI — Knowledge Base</a>：Move One / 多机位 markerless motion capture 的产品入口；具体捕捉规范与导出格式应在 PoC 前按当前文档复核。</li>
+        <li><a href="https://github.com/facebookresearch/sam2">Meta Research — SAM 2</a>：图像 / 视频分割、mask propagation 与对象追踪；它不提供三维相机、灯光或几何恢复。</li>
+        <li><a href="https://github.com/colmap/colmap">COLMAP — Structure-from-Motion and Multi-View Stereo</a>：静态场景图像集合的 SfM / MVS；动态人物和生成视频不能直接假设满足其条件。</li>
+        <li><a href="https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert">ElevenLabs — Text to Sound Effects API</a>：文本、0.5–30 秒时长、loop、prompt influence 与多种输出格式。</li>
+        <li><a href="https://elevenlabs.io/docs/product-guides/products/music">ElevenLabs — Music</a>：音乐 / 歌曲生成、提示控制、参考和时长；商业许可与输出能力以当前条款 / 套餐为准。</li>
+        <li><a href="https://www.youtube.com/watch?v=GQmt-Y1-UeM">创作者案例 — 3D Camera Reference → AI Video</a>：以 Seedance 为例说明 UE 相机 / 灰盒先行、视频模型跟随的通用正向工作流；不构成反向重建验证。</li>
+        <li><a href="https://www.youtube.com/watch?v=jb8jw9w9EdU">JSFILMZ — AI Render Unreal Engine 5 Blockouts</a>：UE blockout 到 AI 视频渲染的创作者测试；证明运动参考价值，不证明输出可反解。</li>
+        <li><a href="https://www.reddit.com/r/generativeAI/comments/1rkhz25/seedance_20_camera_reference_using_unreal_engine/">社区案例 — Unreal Engine Camera Reference</a>：以 Seedance 为例的 UE camera reference 演示；在本报告中仅作为“3D 约束 → 视频生成”范式样本。</li>
+        <li><a href="https://dev.epicgames.com/documentation/unreal-engine/unreal-mcp-in-unreal-editor">Epic Games — Unreal MCP in Unreal Editor（UE 5.8）</a>：实验性官方 MCP、Toolset Registry 与 Agent 编辑器操作；执行工具，不包含参考视频反求。</li>
+        <li><a href="https://github.com/Flux-Point-Studios/unreal-mcp">Flux Point Studios — Unreal MCP</a>：社区 MIT 项目，包含 lighting、sequence、camera、viewport、screenshot 等 Agent 工具；未包含视频逆向重建。</li>
+        <li><a href="https://github.com/ahujasid/blender-mcp">BlenderMCP</a>：参考图建场景、studio lights / HDRI、相机与 viewport screenshot 的 Agent 演示；未声明视频相机 / 灯光精确恢复。</li>
+        <li><a href="https://boundless-resource.com/genesis">Boundless Entertainment — Genesis</a>：商业 UE 5.7 / 5.8 matchmove 插件，厂商宣称自动 tracked camera、environment mesh、point cloud、lens distortion 与 plate setup；面向真实素材，未公开通用 AIGC 视频验证。</li>
+        <li><a href="https://github.com/bytedance/particle-sfm">ByteDance — ParticleSfM</a>：动态视频中的光流、运动分割与全局 SfM，输出相机轨迹和 COLMAP 结构；GPL-3.0。</li>
+        <li><a href="https://github.com/facebookresearch/vggt">Meta — VGGT</a>：从图像 / 视频帧预测相机内外参、深度、点图和轨迹；需做 OpenCV → UE 坐标与曲线清理，商用 checkpoint 条款需单独核实。</li>
+        <li><a href="https://github.com/naver/dust3r">Naver — DUSt3R</a>：从重叠图像恢复焦距、pose 和对齐点云；代码 / 权重为非商业许可，且要求跨帧几何一致。</li>
+        <li><a href="https://github.com/princeton-vl/DROID-SLAM">Princeton — DROID-SLAM</a>：从单目 / 双目 / RGB-D 图像序列估计 camera motion 与 depth；BSD-3-Clause，需已知或合理相机标定。</li>
+        <li><a href="https://github.com/DiffusionLight/DiffusionLight">DiffusionLight</a>：单图 chrome-ball 多曝光估计 HDR environment map；可作为 UE HDRI 初值，但不是局部灯具恢复。</li>
+        <li><a href="https://research.nvidia.com/labs/toronto-ai/UniRelight/">NVIDIA Research — UniRelight</a>：联合 albedo 分解和视频 relighting；输出 relit video / albedo，不输出显式 UE 灯具参数。</li>
+        <li><a href="https://arxiv.org/abs/2501.18590">DiffusionRenderer（CVPR 2025）</a>：视频到 G-buffer 的神经逆向渲染与 G-buffer 到图像；公开摘要未声明显式相机 / 光源恢复。</li>
+        <li><a href="https://github.com/yuanze-lin/IllumiCraft">IllumiCraft</a>：以视频、prompt 和可选背景控制几何 / 照明观感；Apache-2.0，属于视频生成 / relighting，不是灯具反解。</li>
+        <li><a href="https://arxiv.org/html/2512.05115v1">Light-X（ICLR 2026）</a>：由源视频、用户给定相机轨迹和文本 / HDR / 图像照明联合生成 4D 视频；证明联合控制，但 trajectory 与 lighting 是输入条件而非恢复结果。</li>
+        <li><a href="https://ojs.aaai.org/index.php/AAAI/article/view/37832">Video Camera Trajectory Editing with Generative Rendering（AAAI 2026）</a>：由单目视频和用户定义 camera path 重合成新视角；不提供 UE camera track 导出，也不反求灯光。</li>
+      </ol>
+
+      <h3>PoC 前必须补做的实测</h3>
+      <ul class="checklist">
+        <li>用团队真实角色骨架对 10 类动作测试 2–3 个视频 mocap 供应商，而非引用 demo。</li>
+        <li>对相同镜头比较“生成视频直接求解”和“真人干净重演求解”的清理小时。</li>
+        <li>确认 MetaHuman Animator 与目标 UE 版本、目标角色类型、部署平台和许可相容。</li>
+        <li>在内网环境做 MCP / Remote Control 威胁建模，验证未授权对象和路径无法访问。</li>
+        <li>让法务审阅使用的图像、视频、声音和音乐服务条款，并保存当日条款快照。</li>
+        <li>在真实目标机测 Level Sequence、Lumen、groom、cloth、音频和加载峰值。</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<footer>
+  AI 辅助 UE Sequencer 实时过场工作流可行性调研 · 资料快照 2026-08-20<br>
+  本报告为技术路线与试点建议，不替代采购、法务、安全和目标平台性能验证。
+</footer>
+<button class="backtop" type="button" aria-label="返回顶部">↑</button>
+</body>
+</html>
