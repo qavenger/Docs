@@ -48,14 +48,15 @@
     <a href="#corrections">03 · 关键修正</a>
     <a href="#workflow">04 · 推荐生产工作流</a>
     <a href="#animation">05 · 动画生成与清理</a>
-    <a href="#reconstruction">06 · 镜头与灯光还原</a>
-    <a href="#market">07 · 市场与公开验证</a>
-    <a href="#architecture">08 · UE / MCP 工程架构</a>
-    <a href="#audio">09 · 声音生产</a>
-    <a href="#risks">10 · 风险与治理</a>
-    <a href="#pilot">11 · 最小试点计划</a>
-    <a href="#decision">12 · Go / No-Go 标准</a>
-    <a href="#sources">13 · 来源与口径</a>
+    <a href="#performance-isolation">06 · 多角色表演隔离</a>
+    <a href="#reconstruction">07 · 镜头与灯光还原</a>
+    <a href="#market">08 · 市场与公开验证</a>
+    <a href="#architecture">09 · UE / MCP 工程架构</a>
+    <a href="#audio">10 · 声音生产</a>
+    <a href="#risks">11 · 风险与治理</a>
+    <a href="#pilot">12 · 最小试点计划</a>
+    <a href="#decision">13 · Go / No-Go 标准</a>
+    <a href="#sources">14 · 来源与口径</a>
   </nav>
 
   <main>
@@ -353,8 +354,132 @@
       </table></div>
     </section>
 
-    <section id="reconstruction">
+    <section id="performance-isolation">
       <div class="section-no">SECTION 06</div>
+      <h2>多角色表演隔离：从群像镜头生成单角色参考</h2>
+      <p>一段预视觉可能同时包含多名角色：有人说话、有人反应、有人移动，还有拥抱、搏斗、递物等相互作用。动画生成阶段需要将每名角色的表演分别观察和求解，同时保留他们与其他角色、道具和地面的时间关系。理想输出是一组同步的 <strong>Performance Package</strong>，而不仅是一段裁切放大的视频。</p>
+
+      <div class="callout">
+        <div class="callout-title">市场结论（资料快照：2026-08-20）</div>
+        <strong>角色识别、逐帧遮罩、单角色抠像、清洁背景和多人骨骼求解已经有成熟产品或可运行工具；从一个普通单目群像视频中，为每名角色可靠生成正 / 侧 / 后三路同步的新视角视频，仍属于研究型能力。</strong> 当前可生产的方案应优先输出“原视角单角色视频 + Alpha + 骨骼 / 姿态 + 遮挡与接触标记”；三视图采用骨骼代理或 3D 角色重渲染，而不是让视频模型自由补画不可见动作。
+      </div>
+
+      <h3>目标输出：每名角色一份同步表演包</h3>
+      <div class="performance-flow" aria-label="多人视频拆分为单角色表演包的流程">
+        <div class="performance-box source"><b>输入</b><strong>多人预视觉视频</strong><span>共享时间码 · 多人表演 · 遮挡 · 交互</span></div>
+        <div class="performance-split">→<small>检测 / ReID / 分割</small></div>
+        <div class="performance-box"><b>角色 A</b><strong>Solo Performance</strong><span>原视角 RGB · Alpha · Pose · Contact</span></div>
+        <div class="performance-box"><b>角色 B</b><strong>Solo Performance</strong><span>原视角 RGB · Alpha · Pose · Contact</span></div>
+        <div class="performance-box"><b>角色 C</b><strong>Solo Performance</strong><span>原视角 RGB · Alpha · Pose · Contact</span></div>
+        <div class="performance-split">→<small>3D 代理 / 多视图渲染</small></div>
+        <div class="performance-box output"><b>输出</b><strong>动画参考包</strong><span>Front · Side · Back · Skeleton · Confidence</span></div>
+      </div>
+
+      <p>推荐的每角色目录结构：</p>
+      <div class="codebox">SH030_PerformancePackage/
+├── shared/
+│   ├── source_video.mp4
+│   ├── timeline.json
+│   └── interactions.json
+├── Actor_A/
+│   ├── solo_original_view.mp4
+│   ├── alpha_mask.mov
+│   ├── skeleton_front.mp4
+│   ├── skeleton_side.mp4
+│   ├── skeleton_back.mp4
+│   ├── pose_3d.json
+│   ├── contact_events.json
+│   └── confidence.json
+└── Actor_B/ ...</div>
+
+      <h3>能力拆解与成熟度</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>能力</th><th>成熟度</th><th>市场 / 技术证据</th><th>适合输出</th><th>主要边界</th></tr></thead>
+        <tbody>
+          <tr><td>多人身份识别与持续跟踪</td><td><span class="badge high">较成熟</span></td><td>Autodesk Flow Studio ReID；SAM 2 多对象视频分割；常规 MOT</td><td>actor_id、bbox、逐帧 mask、可见性</td><td>交叉换位、全遮挡、外观相似时可能串人</td></tr>
+          <tr><td>单角色 Alpha / Solo 原视角</td><td><span class="badge high">较成熟</span></td><td>Flow Studio Alpha Masks；SAM 2 + 合成；Generative Omnimatte</td><td>透明背景角色层或中性背景 solo 视频</td><td>头发、运动模糊、透明物、影子与反射需要检查</td></tr>
+          <tr><td>移除其他角色并补背景</td><td><span class="badge high">可生产</span></td><td>Flow Studio Clean Plate 可移除最多 4 名人类角色；AE Content-Aware Fill；DaVinci / 视频 inpainting</td><td>clean plate、目标角色合成视频</td><td>重遮挡、持物、肢体交互、背景从未露出时会生成猜测</td></tr>
+          <tr><td>多人独立 3D 骨骼</td><td><span class="badge mid">条件性成熟</span></td><td>DeepMotion 多人跟踪；Flow Studio AI MoCap；Move AI 等</td><td>每角色 FBX / BVH / pose track</td><td>官方拍摄建议本身要求少遮挡、少交叉、少身体接触</td></tr>
+          <tr><td>被遮挡肢体补全</td><td><span class="badge mid">可推断，非真值</span></td><td>时序 pose prior、motion prediction、AHOY 等遮挡人体研究</td><td>候选 3D pose + 低置信度区间</td><td>被其他人完全挡住的手脚没有像素证据；必须标注为推断</td></tr>
+          <tr><td>正 / 侧 / 后同步三视图视频</td><td><span class="badge rnd">研究型</span></td><td>单目 Gaussian Avatar、novel-view human rendering、视频扩散多视图先验</td><td>视觉辅助参考</td><td>不可见侧由模型幻觉；多人交互和快速动作尚无通用成熟产品</td></tr>
+          <tr><td>骨骼代理三视图</td><td><span class="badge high">推荐生产</span></td><td>任一可用 3D pose / mocap 解算 + UE / Blender 固定相机重渲染</td><td>同步正、侧、后三视图和关节曲线</td><td>外观不如生成视频真实，但运动信息可测量、可追踪</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>最接近完整需求的现有流程</h3>
+      <div class="grid grid-3">
+        <article class="card">
+          <span class="badge high">商业产品</span>
+          <h4>Autodesk Flow Studio</h4>
+          <p>可以在一帧中指定演员并跨帧 / 跨镜头 ReID，输出 AI MoCap、Alpha Masks、Clean Plate、Camera Track 以及 Blender / Maya / Unreal / USD 场景。其独立 Clean Plate 工具支持从镜头中移除最多四名人类演员。</p>
+          <p class="muted">它是当前最接近“选角色 → 分层 → 动作 / 合成输出”的成品管线，但公开文档没有提供由单目输入生成目标演员三视图视频的能力。</p>
+        </article>
+        <article class="card">
+          <span class="badge mid">研究原型</span>
+          <h4>Generative Omnimatte</h4>
+          <p>输入视频和每对象 mask，将视频分解成逐对象 RGBA omnimatte、关联阴影 / 反射、solo video 与 clean background，可做对象及其视觉效果的移除和重新合成。</p>
+          <p class="muted">非常贴合“所有角色分别输出 solo 层”，但公开复现仍需高显存、逐对象顺序处理，质量低于论文原模型，属于研究级而非即插即用生产工具。</p>
+        </article>
+        <article class="card">
+          <span class="badge high">工程组合</span>
+          <h4>SAM 2 + Mocap + DCC</h4>
+          <p>SAM 2 为每名角色传播独立 mask；多人视频 mocap 输出各自骨骼；在 Blender / UE 中把骨骼映射到统一代理角色，再用固定正、侧、后相机同步渲染。</p>
+          <p class="muted">需要工程集成，但输出最适合后续动画生成：视觉层负责身份和轮廓，三视图骨骼负责可测量运动，不把模型补画误当真实表演。</p>
+        </article>
+      </div>
+
+      <h3>“三视图参考”需要区分三种含义</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>三视图类型</th><th>生成方式</th><th>信息可靠性</th><th>建议用途</th></tr></thead>
+        <tbody>
+          <tr><td>同一原视频的三个裁切</td><td>对角色 bbox 做跟随、稳像、放大</td><td>仍然只有同一观察角度</td><td>看表演节奏、脸部和手势；不能解决深度歧义</td></tr>
+          <tr><td>AI 补画的正 / 侧 / 后视频</td><td>角色层 + pose / depth 条件输入视频扩散模型</td><td>可见区域较可信，不可见区域为生成推测</td><td>帮助人理解候选动作；不能作为严格动画 ground truth</td></tr>
+          <tr><td>3D 骨骼 / 代理角色三视图</td><td>先求 3D pose / mocap，再由三台正交或透视相机渲染</td><td>与求解结果一致，可输出关节和置信度</td><td>后续 AI 动画、人工清理、接触检查的主要参考</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout warn"><div class="callout-title">关键判断</div>如果目标是提高“视频到动画”的精度，最有价值的不是三段看起来真实的新视频，而是<strong>每角色独立且同步的 3D pose、根运动、接触点、遮挡标记和原始像素证据</strong>。生成三视图可作为辅助 UI，但训练或求解时必须同时提供 observed / inferred mask 和置信度，避免把被遮挡区域的生成内容当作真实动作监督。</div>
+
+      <h3>推荐工作流：双轨输出</h3>
+      <div class="pipeline">
+        <div class="pipe-step"><b>01</b><strong>镜头切分</strong><span>冻结时间码、帧率和角色列表</span></div>
+        <div class="pipe-step"><b>02</b><strong>角色 ReID</strong><span>为每名角色分配稳定 actor_id</span></div>
+        <div class="pipe-step"><b>03</b><strong>分割与遮罩</strong><span>SAM 2 / Flow Studio 输出逐角色 mask</span></div>
+        <div class="pipe-step"><b>04A</b><strong>视觉隔离轨</strong><span>RGBA solo、clean plate、跟随裁切视频</span></div>
+        <div class="pipe-step"><b>04B</b><strong>运动求解轨</strong><span>多人 2D / 3D pose、root、face、hands</span></div>
+        <div class="pipe-step"><b>05</b><strong>遮挡与接触</strong><span>标注 observed / inferred、手脚与交互对象</span></div>
+        <div class="pipe-step"><b>06</b><strong>代理三视图</strong><span>在 DCC 中同步渲染正、侧、后骨骼</span></div>
+        <div class="pipe-step"><b>07</b><strong>动画生成</strong><span>视频 + mask + pose + confidence 联合输入</span></div>
+        <div class="pipe-step"><b>08</b><strong>多人合并 QC</strong><span>还原相对距离、接触和共同时间轴</span></div>
+        <div class="pipe-step"><b>输出</b><strong>角色动画资产</strong><span>每角色独立资产 + 共享交互约束</span></div>
+      </div>
+
+      <h3>互动镜头不能完全拆成互不相关的角色</h3>
+      <p>角色可以分别求解和生成动画，但以下数据必须共享保存：</p>
+      <ul class="checklist">
+        <li><strong>统一世界坐标与根运动：</strong>否则角色独立生成后无法回到正确的相对位置。</li>
+        <li><strong>接触图：</strong>谁在什么帧接触谁的哪一个部位，或接触哪个道具 / 地面。</li>
+        <li><strong>遮挡顺序：</strong>用于判断某段肢体是被挡住，还是角色本身没有动作。</li>
+        <li><strong>视线目标与对白时间：</strong>单独裁切后仍要保留反应对象和节奏来源。</li>
+        <li><strong>成对约束：</strong>握手、拥抱、搏斗、递物等镜头应以两角色联合优化，不能各自独立生成后再硬拼。</li>
+      </ul>
+
+      <h3>建议的 PoC 与验收指标</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>测试镜头</th><th>目的</th><th>验收指标</th></tr></thead>
+        <tbody>
+          <tr><td>3 人并排行走，无接触</td><td>身份保持与独立 mask</td><td>ID switch 次数、mask IoU、脚和手边缘完整度</td></tr>
+          <tr><td>2 人交叉换位</td><td>ReID 与短时遮挡</td><td>遮挡前后 actor_id 一致；错误恢复所需人工帧数</td></tr>
+          <tr><td>递交道具</td><td>手部、道具和接触事件</td><td>交接帧误差、双手与道具接触误差、道具归属切换</td></tr>
+          <tr><td>拥抱 / 搏斗</td><td>重遮挡和成对约束</td><td>低置信帧覆盖率、穿插、人工修复时间；允许升级为联合捕捉</td></tr>
+          <tr><td>角色出画后返回</td><td>长时 ReID</td><td>重新出现后的身份正确率和时间码连续性</td></tr>
+          <tr><td>代理三视图 vs AI 三视图</td><td>判断补画的实际价值</td><td>3D 关节误差、动作相位、人工误判率、动画清理工时</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Go 条件：</strong>普通多人镜头能够稳定生成每角色 mask、solo 原视角和独立骨骼；代理三视图能降低动画清理工时。<strong>No-Go 条件：</strong>项目大多数镜头包含重接触，而三视图补画改变了动作含义或制造错误关节证据。</p>
+    </section>
+
+    <section id="reconstruction">
+      <div class="section-no">SECTION 07</div>
       <h2>相机与灯光：从“恢复真值”改成“约束匹配”</h2>
 
       <h3>相机匹配的可靠性梯度</h3>
@@ -392,7 +517,7 @@
     </section>
 
     <section id="market">
-      <div class="section-no">SECTION 07</div>
+      <div class="section-no">SECTION 08</div>
       <h2>市场与公开验证：方向存在，但尚未看到同等完整的端到端产品</h2>
       <div class="callout">
         <div class="callout-title">调研结论（资料快照：2026-08-20）</div>
@@ -474,7 +599,7 @@
     </section>
 
     <section id="architecture">
-      <div class="section-no">SECTION 08</div>
+      <div class="section-no">SECTION 09</div>
       <h2>UE / MCP 工程架构：模型出意图，工具做确定性修改</h2>
       <div class="arch">
         <svg viewBox="0 0 980 430" role="img" aria-label="AI 到 Unreal Sequencer 的受约束工程架构">
@@ -545,7 +670,7 @@
     </section>
 
     <section id="audio">
-      <div class="section-no">SECTION 09</div>
+      <div class="section-no">SECTION 10</div>
       <h2>声音生产：从前期节奏到最终混音</h2>
       <div class="pipeline">
         <div class="pipe-step"><b>A</b><strong>临时对白</strong><span>在 Animatic 阶段确定句长、停顿和情绪</span></div>
@@ -568,7 +693,7 @@
     </section>
 
     <section id="risks">
-      <div class="section-no">SECTION 10</div>
+      <div class="section-no">SECTION 11</div>
       <h2>主要风险与治理</h2>
       <div class="table-wrap"><table>
         <thead><tr><th>风险</th><th>严重度</th><th>触发场景</th><th>控制措施</th></tr></thead>
@@ -589,7 +714,7 @@
     </section>
 
     <section id="pilot">
-      <div class="section-no">SECTION 11</div>
+      <div class="section-no">SECTION 12</div>
       <h2>4–6 周最小试点</h2>
       <div class="callout"><div class="callout-title">建议样本</div>选择一段 20–30 秒、2 个角色、3–5 个镜头的对白型过场：包含一次走位、一次坐 / 站或拿取道具、一个面部特写，但避免复杂打斗、群演、载具和长镜到底。使用项目现有角色、场景与 rig，才能测到真实集成成本。</div>
 
@@ -622,7 +747,7 @@
     </section>
 
     <section id="decision">
-      <div class="section-no">SECTION 12</div>
+      <div class="section-no">SECTION 13</div>
       <h2>Go / No-Go 决策标准</h2>
       <div class="grid grid-2">
         <article class="card">
@@ -658,7 +783,7 @@
     </section>
 
     <section id="sources">
-      <div class="section-no">SECTION 13</div>
+      <div class="section-no">SECTION 14</div>
       <h2>来源、证据口径与进一步验证</h2>
       <p>以下以 Epic 官方文档、官方仓库和厂商官方页面为主。厂商页面只证明“该厂商当前宣称提供这项能力”，不代表本报告已独立验证精度、稳定性、价格或许可。所有版本、套餐和条款应在采购与试点当天重新确认。</p>
       <ol class="sources">
@@ -699,6 +824,16 @@
         <li><a href="https://github.com/yuanze-lin/IllumiCraft">IllumiCraft</a>：以视频、prompt 和可选背景控制几何 / 照明观感；Apache-2.0，属于视频生成 / relighting，不是灯具反解。</li>
         <li><a href="https://arxiv.org/html/2512.05115v1">Light-X（ICLR 2026）</a>：由源视频、用户给定相机轨迹和文本 / HDR / 图像照明联合生成 4D 视频；证明联合控制，但 trajectory 与 lighting 是输入条件而非恢复结果。</li>
         <li><a href="https://ojs.aaai.org/index.php/AAAI/article/view/37832">Video Camera Trajectory Editing with Generative Rendering（AAAI 2026）</a>：由单目视频和用户定义 camera path 重合成新视角；不提供 UE camera track 导出，也不反求灯光。</li>
+        <li><a href="https://www.autodesk.com/products/flow-studio/overview">Autodesk Flow Studio</a>：商业 AI VFX / markerless mocap 平台，可进行演员 ReID、AI MoCap、Alpha Masks、Clean Plate、Camera Track，并导出 Blender / Maya / Unreal / USD 场景；具体能力随套餐变化。</li>
+        <li><a href="https://help.wonderdynamics.com/wonder-tools/clean-plate-wt/">Autodesk Flow Studio — Clean Plate</a>：官方文档说明可移除最多四名人类演员并补全背景；重遮挡、持物和人物交互是明确限制。</li>
+        <li><a href="https://help.wonderdynamics.com/export-elements/">Autodesk Flow Studio — Export Elements</a>：列出 Alpha Masks、Character Pass、Clean Plate、Camera Track、AI MoCap 和 DCC / UE 场景等分层输出。</li>
+        <li><a href="https://www.deepmotion.com/article/multi-person-ai-motion-capture-guidelines">DeepMotion — Multi-Person Tracking Capture Guidelines</a>：商业多人视频 mocap 拍摄规范；官方明确建议减少遮挡、交叉换位、身体接触和宽松服装。</li>
+        <li><a href="https://github.com/facebookresearch/sam2">Meta — SAM 2 Video Predictor</a>：多对象点 / 框提示、独立对象 mask propagation 和后续新增对象；Apache-2.0，适合建立逐角色遮罩，但不保证重遮挡后的身份恢复。</li>
+        <li><a href="https://gen-omnimatte.github.io/">Generative Omnimatte（CVPR 2025 Highlight）</a>：由视频和对象 masks 生成逐对象 RGBA、关联阴影 / 反射、solo video 和 clean background，适合多人视频分层。</li>
+        <li><a href="https://github.com/gen-omnimatte/gen-omnimatte-public">Generative Omnimatte Public Reimplementation</a>：Apache-2.0 研究复现；需要 SAM 2、高显存和逐对象优化，公开版本质量低于论文原模型，尚非即插即用生产工具。</li>
+        <li><a href="https://helpx.adobe.com/after-effects/desktop/remove-objects-from-your-videos/content-aware-fill.html">Adobe After Effects — Content-Aware Fill for Video</a>：成熟的 mask + 内容感知补全流程，可移除人物并制作 clean plate；复杂遮挡通常需要参考帧和人工修补。</li>
+        <li><a href="https://tangjiapeng.github.io/projects/GAF/">GAF — Gaussian Avatar Reconstruction from Monocular Videos</a>：由短单目视频重建可动画、可新视角渲染的高斯头部 Avatar；隐藏区域来自多视图扩散先验，且范围是头部而非多人全身表演。</li>
+        <li><a href="https://arxiv.org/html/2408.11402v3">Video Diffusion Models Are Strong Video Inpainters</a>：将图生视频扩散用于视频补全，证明生成模型可改进长时空洞区域；输出是视觉补全，不是被遮挡动作的测量真值。</li>
       </ol>
 
       <h3>PoC 前必须补做的实测</h3>
