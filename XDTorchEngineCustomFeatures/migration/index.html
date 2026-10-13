@@ -44,7 +44,7 @@
 <a href="../migration/roadmap.html">🗺️ 迁移路线图</a>
 <a href="../migration/by-team.html">👥 开发者 × 模块</a></nav>
   <main class="content"><div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
-<b>结论先行：</b>549 个定制宏中，<b>103</b> 个 UE5.8 已原生覆盖（可直接丢弃）、<b>215</b> 个被部分覆盖（保留差异部分）、<b>188</b> 个需要迁移；其中 <b>212</b> 个可以完全工程化、<b>129</b> 个只需引擎留接入点；引擎侵入方面，<b>366</b> 个无需改动或只需接入点（L0/L1），<b>12</b> 个属于深度侵入（须逐个评估）。
+<b>结论先行：</b>549 个定制宏中，<b>103</b> 个 UE5.8 已原生覆盖（可直接丢弃）、<b>215</b> 个被部分覆盖（保留差异部分）、<b>188</b> 个需要迁移；其中 <b>212</b> 个可以完全工程化、<b>129</b> 个只需引擎留接入点；引擎改动方面，<b>366</b> 个无需新增扩展点（L0：不动引擎或引擎内自包含补丁），<b>12</b> 个属于深度侵入（须逐个评估）。
 </div>
 
 <h2 class="sec">1. 这份分析解决什么问题</h2>
@@ -62,7 +62,7 @@
 <tbody>
 <tr><td class="tname">UE5 覆盖度</td><td>covered / partial / none / unknown</td><td>covered 直接丢弃；partial 只迁差异部分；none 全量迁移</td></tr>
 <tr><td class="tname">工程化可行性</td><td>yes / partial / no</td><td>yes 放项目/插件；partial 引擎留 hook + 工程实现；no 需引擎改动</td></tr>
-<tr><td class="tname">引擎侵入等级</td><td>0 / 1 / 2 / 3</td><td>0 无需改引擎；1 只加扩展点；2 少量结构性改动；3 深度侵入（慎入）</td></tr>
+<tr><td class="tname">引擎改动方式</td><td>0 / 1 / 2 / 3</td><td>L0 分两种：<b>无需改引擎</b>（对应「可工程化」）或 <b>引擎内补丁</b>（必须改引擎源码，但不必新增扩展点，对应「引擎内实现」）；L1 只需加扩展点；L2 少量结构性改动；L3 深度侵入（慎入）</td></tr>
 <tr><td class="tname">迁移处置</td><td>drop / patch / config / plugin / hook / port / keep</td><td>落地动作：删除 / 常开补丁 / 配置化 / 插件化 / 接入点 / 代码移植 / 暂留引擎</td></tr>
 <tr><td class="tname">工作量 / 风险</td><td>S/M/L · 低/中/高</td><td>用于排期；涉及反射 schema、资产序列化、Shader、Cook 的默认高风险</td></tr>
 </tbody>
@@ -88,7 +88,7 @@
 <tr><td>移植</td><td class="tval">195</td><td>代码移植（保留实现）</td></tr>
 <tr><td>保留引擎</td><td class="tval">14</td><td>仍需留在引擎</td></tr>
 </tbody></table>
-<p class="lead">风险分布：高 37 / 中 240 / 低 272；引擎侵入：L0 179 / L1 187 / L2 171 / L3 12。</p>
+<p class="lead">风险分布：高 37 / 中 240 / 低 272；引擎改动：不动引擎 149 / 引擎内补丁 30 / 仅加接入点 187 / 结构性改动 171 / 深度侵入 12。</p>
 
 <h2 class="sec">3.1 最值得先看的两个清单</h2>
 <p class="lead">下面两张表是排期时最常用的入口：前者是「UE5 已提供、引用量大」的可删除项；后者是真正需要逐个评估的深度侵入项。</p>
@@ -140,7 +140,7 @@
 <h2 class="sec">6. 使用方式</h2>
 <p class="note" style="display:block">范围说明：迁移分析覆盖 549 个未被排除的宏；原需求中「不需要」的 17 个宏（CustomUnlit 家族、描边、SmoothNormal、HDR 输出、DepthStencil 修复）不参与迁移评估，清单见 <a href="../ref/excluded.html">已排除的宏</a>。分析与结论均针对团队当前迁移目标 <b>UE5.8.2</b>。</p>
 <ul class="tight">
-<li><b>按宏查</b>：进入 <a href="matrix.html">全量评估矩阵</a>，可按 UE5 覆盖度 / 处置 / 侵入等级 / 风险筛选，或搜索宏名。</li>
+<li><b>按宏查</b>：进入 <a href="matrix.html">全量评估矩阵</a>，可按 UE5 覆盖度 / 处置 / 引擎改动方式 / 风险筛选，或搜索宏名。</li>
 <li><b>按动作查</b>：<a href="drop.html">可丢弃清单</a> / <a href="project-side.html">可工程化清单</a> / <a href="hooks.html">最小侵入接入点</a> / <a href="roadmap.html">迁移路线图</a>。</li>
 <li><b>看细节</b>：每个宏在「全量参考」的条目里新增了「UE5 迁移视角」区块（覆盖度、工程化、接入点、建议）。</li>
 </ul>
@@ -155,7 +155,7 @@
 <p class="lrule">颜色规则：<b class="c-cover">覆盖度</b>=红绿灯 · <b class="c-proj">工程化</b>=蓝色系 · <b class="c-hook">侵入</b>=紫色系 · <b class="c-disp">处置</b>=中性灰。<br>分级方式：工程化/侵入用「实心 → 底色 → 描边 → 虚线」四级形态表示程度递进（实心最强）。</p>
 <h4>UE5 覆盖度</h4><div class="litem"><span class="lbl migstatus s-covered">UE5 已覆盖</span><span class="ltext">UE5.8 原生等价，可直接删除</span></div><div class="litem"><span class="lbl migstatus s-partial">部分覆盖</span><span class="ltext">UE5 有同类能力，只迁差异部分</span></div><div class="litem"><span class="lbl migstatus s-none">未覆盖</span><span class="ltext">UE5 没有该能力，需迁移或补丁</span></div><div class="litem"><span class="lbl migstatus s-unknown">待确认</span><span class="ltext">证据不足，迁移前需人工确认</span></div>
 <h4>工程化可行性</h4><div class="litem"><span class="lbl migproj p-yes">可工程化</span><span class="ltext">放项目/插件/配置即可，不动引擎</span></div><div class="litem"><span class="lbl migproj p-partial">需接入点</span><span class="ltext">引擎留少量 Hook，逻辑在工程侧</span></div><div class="litem"><span class="lbl migproj p-no">引擎内实现</span><span class="ltext">必须改引擎核心</span></div>
-<h4>引擎侵入等级</h4><div class="litem"><span class="lbl mighook h-0">L0 无需侵入</span><span class="ltext">不改引擎源码</span></div><div class="litem"><span class="lbl mighook h-1">L1 仅加接入点</span><span class="ltext">Delegate / Interface / CVar 等扩展点</span></div><div class="litem"><span class="lbl mighook h-2">L2 结构性改动</span><span class="ltext">枚举 slot / 新 Pass / schema 字段</span></div><div class="litem"><span class="lbl mighook h-3">L3 深度侵入</span><span class="ltext">核心结构/生命周期/序列化，慎入</span></div>
+<h4>引擎改动方式</h4><div class="litem"><span class="lbl mighook h-0">L0 无需改引擎</span><span class="ltext">纯工程/插件/配置即可（对应「可工程化」）</span></div><div class="litem"><span class="lbl mighook h-0">L0 引擎内补丁</span><span class="ltext">需改引擎源码，但不必新增扩展点（对应「引擎内实现」）</span></div><div class="litem"><span class="lbl mighook h-1">L1 仅加接入点</span><span class="ltext">引擎只需暴露 Delegate / Interface / CVar 等扩展点</span></div><div class="litem"><span class="lbl mighook h-2">L2 结构性改动</span><span class="ltext">枚举 slot / 新 Pass / schema 字段</span></div><div class="litem"><span class="lbl mighook h-3">L3 深度侵入</span><span class="ltext">核心结构/生命周期/序列化，慎入</span></div>
 <h4>迁移处置</h4><div class="litem"><span class="lbl migdisp">删除</span><span class="ltext">UE5 已覆盖，直接删</span></div><div class="litem"><span class="lbl migdisp">常开补丁</span><span class="ltext">确认的 bugfix，作为 fork 常开补丁</span></div><div class="litem"><span class="lbl migdisp">配置化</span><span class="ltext">改为 CVar / ini / DeviceProfile / 命令行</span></div><div class="litem"><span class="lbl migdisp">插件化</span><span class="ltext">迁到项目模块 / 编辑器插件</span></div><div class="litem"><span class="lbl migdisp">接入点</span><span class="ltext">引擎只留 Hook，逻辑在插件</span></div><div class="litem"><span class="lbl migdisp">移植</span><span class="ltext">代码保留，适配后移植</span></div><div class="litem"><span class="lbl migdisp">保留引擎</span><span class="ltext">深度绑定，暂留并登记 Feature Card</span></div>
 <h4>工作量与风险</h4><div class="litem"><span class="lbl lbl-plain">S / M / L</span><span class="ltext">半天内 / 数天 / 周级</span></div><div class="litem"><span class="lbl lbl-plain">低 / 中 / 高</span><span class="ltext">涉反射、资产、Shader、Cook 的默认高风险</span></div>
 <h4>文档通用标签</h4><div class="litem"><span class="lbl lbl-on">= 1 启用</span><span class="ltext">宏当前开启（默认生效）</span></div><div class="litem"><span class="lbl lbl-off">= 0 关闭</span><span class="ltext">宏当前关闭或预留</span></div><div class="litem"><span class="lbl badge topic">主题</span><span class="ltext">所属功能域，可点击跳转</span></div><div class="litem"><span class="lbl badge use">源码引用 N</span><span class="ltext">在 Source / Shaders / Plugins 中出现的次数</span></div><div class="litem"><span class="lbl badge">作者</span><span class="ltext">宏定义处的署名（XDBuild*.cs）</span></div><div class="litem"><span class="lbl badge src">文件:行</span><span class="ltext">宏在配置源文件中的定义位置</span></div>

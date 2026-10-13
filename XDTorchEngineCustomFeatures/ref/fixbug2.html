@@ -82,7 +82,7 @@
 <p class="en">源码注释：Fix a bug when a check in AudioDecoderAAC_Apple.cpp - FElectraAudioDecoderAAC_Apple::FAudioConverterInstance::AudioToolbox_ComplexInputCallback will always be triggered regardlessly Ref https://github.com/EpicGames/UnrealEngine/blob/5.6/Engine/Plugins/Media/ElectraCodecs/Source/ElectraDecoders/Private/Apple/aac/AudioDecoderAAC_Apple.cpp</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Decoder/Apple/AudioDecoderAAC_Apple.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Plugins/Media/ElectraCodecs/Source/ElectraDecoders/Private/Apple/aac/AudioDecoderAAC_Apple.cpp:216（InputData 空值保护，且已移除 OutDataPacketDescription 的 check）</p>
 <p class="migline"><b>覆盖说明：</b>上游已合入</p>
 <p class="migline"><b>落地方式：</b>无需改动</p>
@@ -102,7 +102,7 @@
 <p class="en">源码注释：Fixed memory corruption in iOS MallocBinned when reallocating a pointer from nano region in a case it it went out of nano and needs to fallback to UE allocations, but new size is smaller than old size. This will result in memcpy more bytes and overwrite some neighbouring data or cause a page fault Ref https://github.com/EpicGames/UnrealEngine/commit/ed9fa68e850cd658227dce1878e234a7b40b63f2#diff-1f…</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/MallocBinned.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Core/Private/HAL/MallocBinned.cpp:1427-1453 Realloc 回退分支已含 XD 修法（FMemory::Memcpy 用 FMath::Min(OldSize,NewSize)、以 malloc_size(Ptr) 取 OldSize）→ 该点属实；但“iOS 默认优先 Mimalloc”不成立：ApplePlatformMemory.cpp:226 `#define UE_APPLE_USE_MIMALLOC_MIN_FREE_RAM_MB 0`，:244 的 Mimalloc 分支条件恒假，Apple 默认走 Binned3/Binned2/Ansi（:249-272）。</p>
 <p class="migline"><b>覆盖说明：</b>官方修复已在；Apple 默认走 Binned3/Binned2/Ansi（非 Mimalloc）</p>
 <p class="migline"><b>落地方式：</b>分配器内部，非工程侧</p>
@@ -123,7 +123,7 @@
 <p class="en">源码注释：Fix ShaderPatch Crash Bug (caused by HashTable reinitalized and fail with 'check(HashSize == 0)' expression)</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Core/Public/Containers/HashTable.h</li><li>Source/Runtime/RenderCore/Private/ShaderCodeArchive.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Core/Public/Containers/HashTable.h:358 FHashTable::Clear(uint32,uint32) 先 Free() 可重复调用；ShaderCodeArchive.cpp:935 使用 Clear 而非 Initialize</p>
 <p class="migline"><b>覆盖说明：</b>API 语义已避免重复初始化断言</p>
 <p class="migline"><b>落地方式：</b>引擎已处理</p>
@@ -144,7 +144,7 @@
 <p class="en">源码注释：MSAA crash in MAC, fixed in UE-427. https://github.com/EpicGames/UnrealEngine/commit/0eda472603d26d9c73cd61b2554c5c478ff41ec4 -Allow restart when we have [multisample] store set as we can load this back in with FMetalStateCache::PrepareToRestart load action fix up. -Disallow when using memory less RT or we didn't prevsouly store the results.</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Apple/MetalRHI/Private/MetalStateCache.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Apple/MetalRHI/Private/MetalStateCache.cpp:59 ConditionalOverrideStoreAction（MSAA store/load 统一处理，bCanRestartRenderPass 逻辑已重写或移除）</p>
 <p class="migline"><b>覆盖说明：</b>原崩溃点不存在</p>
 <p class="migline"><b>落地方式：</b>无需改动</p>
@@ -254,7 +254,7 @@
 <p class="en">源码注释：iOS Back Log Issue (only used for debug the issue, please don't modify it be 1)</p>
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/FileManagerGeneric.cpp</li><li>Source/Runtime/Core/Private/IOS/IOSPlatformFile.cpp</li><li>Source/Runtime/Core/Private/Misc/FileHelper.cpp</li><li>Source/Runtime/PakFile/Public/IPlatformFilePak.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>UE5 IOSPlatformFile.cpp 无对应调试日志分支</p>
 <p class="migline"><b>覆盖说明：</b>纯专项调试开关，默认 0</p>
 <p class="migline"><b>落地方式：</b>改为 CVar / 临时日志开关，无需编译宏</p>
@@ -296,7 +296,7 @@
 <p class="en">源码注释：Fix Stat Thread's crash ...</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Core/Public/Containers/ChunkedArray.h</li><li>Source/Runtime/Core/Public/Stats/Stats2.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>UE5 未采纳该修复：Containers/ChunkedArray.h:72/:265 仍为 Chunks.Add(new FChunk)（未清零），StatsSystemTypes.h:1030/:1036 仍为 MESSAGES_CHUNK_SIZE=4*1024 与 TChunkedArray&lt;FStatMessage,MESSAGES_CHUNK_SIZE&gt;；XD 补丁不存在</p>
 <p class="migline"><b>覆盖说明：</b>UE5 未采纳该修复，溢出点仍在；仅因 XD 侧值=0（未启用）可暂不移植</p>
 <p class="migline"><b>落地方式：</b>深绑定 Stat 线程数据缓冲，非工程侧</p>
@@ -405,7 +405,7 @@
 <p class="en">源码注释：Fix MediaPlayer hang when closing session on PC</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Plugins/Media/WmfMedia/Source/WmfMedia/Private/Player/WmfMediaPlayer.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Plugins/Media/WmfMedia/.../WmfMediaSession.cpp:346-384（bShuttingDown + 错误态跳过 Close + MediaSessionCloseEvent-&gt;Wait 守卫）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已加关闭时序守卫，与 XD 修复目标一致</p>
 <p class="migline"><b>落地方式：</b>WmfMedia 插件内部</p>
@@ -426,7 +426,7 @@
 <p class="en">源码注释：Fix UMG-Animation's play sequence in latent action</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/UMG/Private/Animation/UMGSequencePlayer.cpp</li><li>Source/Runtime/UMG/Private/UserWidget.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/UMG/Public/Blueprint/UserWidget.h:1193 PlayAnimation 返回 FWidgetAnimationHandle（无 FLatentActionInfo 形参），UE5 已移除 LatentAction 播放路径</p>
 <p class="migline"><b>覆盖说明：</b>XD 修补的 latent 播放问题在 UE5 已不存在</p>
 <p class="migline"><b>落地方式：</b>改用 FWidgetAnimationHandle 接口</p>
@@ -468,7 +468,7 @@
 <p class="en">源码注释：add iOS Controller Connection log</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/IOS/IOSInputInterface.cpp</li><li>Source/Runtime/ApplicationCore/Public/IOS/IOSInputInterface.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/ApplicationCore/Private/Apple/AppleControllerInterface.cpp:484（New controller inserted）、:507（removed）、:239/256/271（类型识别告警），LogAppleController</p>
 <p class="migline"><b>覆盖说明：</b>UE5 Apple 手柄接口已有连接/断开日志</p>
 <p class="migline"><b>落地方式：</b>用 LogAppleController 日志类别即可</p>
@@ -489,7 +489,7 @@
 <p class="en">源码注释：When UE4 parses the file data obtained from the p4 fstat command and builds the cache, the keys of StateCache that record paths should be case senitive. https://confluence.xindong.com/pages/viewpage.action?pageId=319604811</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Plugins/Developer/PerforceSourceControl/Source/PerforceSourceControl/Private/PerforceSourceControlProvider.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Plugins/Developer/PerforceSourceControl/.../PerforceSourceControlProvider.cpp:136,150 StateCache.Find(FileName) 未见大小写归一（未能确认是否已修）</p>
 <p class="migline"><b>覆盖说明：</b>证据不足，需实测 p4 fstat 缓存键大小写</p>
 <p class="migline"><b>落地方式：</b>可项目侧封装 ISourceControlProvider 或改用 SourceControlHelpers::AbsoluteFilenames 归一化</p>
@@ -577,7 +577,7 @@
 <p class="en">源码注释：Generate determined DerivedDataCache of Material Shader Map(MATSM)</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Materials/Material.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Engine/Private/Materials/Material.cpp:4524-4527 仍 Expressions/ExpressionCollection.Remove(nullptr) 后强制重编译并改 DDC key，但无 XD 的告警排查手段</p>
 <p class="migline"><b>覆盖说明：</b>UE5 保留同一不确定性来源</p>
 <p class="migline"><b>落地方式：</b>项目 Editor 插件/资产校验 Commandlet 扫描空 MaterialExpression 并提示 resave</p>
@@ -598,7 +598,7 @@
 <p class="en">源码注释：Fix uninitialized bIsUObjectWrapper when construct FEdGraphPinType Jira: https://xindong.atlassian.net/browse/UE4-3862 https://github.com/EpicGames/UnrealEngine/commit/38ea927c9f4751019b1afbd42c5a78fe312853a9 https://github.com/EpicGames/UnrealEngine/commit/017d386aaf549ba0167aed107a99a2189453be2d</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/EdGraph/EdGraphPin.h</li><li>Source/Runtime/Engine/Private/EdGraph/EdGraphPin.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Source/Runtime/Engine/Private/EdGraph/EdGraphPin.cpp:293-324（未初始化 bIsUObjectWrapper 序列化修正逻辑，原文注释一致）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已含该 fixup</p>
 <p class="migline"><b>落地方式：</b>Engine EdGraph 内部</p>
@@ -618,7 +618,7 @@
 <p class="en">源码注释：Generate determined MapBuildData cooking results https://github.com/EpicGames/UnrealEngine/commit/b44fab825a4ab1b3c2cc05cd6eb3fffb2ff23bb5 https://xindong.atlassian.net/browse/UE4-3769</p>
 <details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Runtime/AIModule/Classes/AISystem.h</li><li>Source/Runtime/AIModule/Private/AISystem.cpp</li><li>Source/Runtime/Engine/Classes/AI/AISystemBase.h</li><li>Source/Runtime/Engine/Classes/Engine/World.h</li><li>Source/Runtime/Engine/Private/AI/AISystemBase.cpp</li><li>Source/Runtime/Engine/Private/World.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Engine/Private/World.cpp:6240/6290 CleanupWorldInternal(...,bool bWorldChanged) 与 Runtime/RenderCore/Public/RendererInterface.h:266 IRendererModule::OnWorldCleanup(World,bSessionEnded,bCleanupResources,bWorldChanged) 已是 XD 的修法</p>
 <p class="migline"><b>覆盖说明：</b>UE5.8 已采用 bWorldChanged 语义</p>
 <p class="migline"><b>落地方式：</b>无需改动</p>
@@ -794,7 +794,7 @@
 <p class="en">源码注释：Support iterative shader library cooking for native shader library platform (i.e. Metal) Jira: https://xindong.atlassian.net/browse/UE4-3692</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderCodeLibrary.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/RenderCore/Private/ShaderLibrary/ShaderCodeLibraryUtilities.h:21 bIncrementalCookPruningEnabled=true；EditorShaderCodeArchive.cpp:846-863 ECookShaderLibrarySource::PreviousIncremental</p>
 <p class="migline"><b>覆盖说明：</b>增量 Shader 库 Cook 已原生</p>
 <p class="migline"><b>落地方式：</b>引擎已处理</p>
@@ -836,7 +836,7 @@
 <p class="en">源码注释：Save incremental user pipeline cache when shut down Jira: https://xindong.atlassian.net/browse/UE4-5469 On Apr 1 ,2019, https://github.com/EpicGames/UnrealEngine/commit/deb83ff254a67171a382136a93f1fca4dade4660 disabled saving when engine is shutting down to fix bugs on macOS On Jan 30,2022, https://github.com/EpicGames/UnrealEngine/commit/bc08b28872ae20a57aa43635f50d73d991cc787b re-enabled the inc…</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li><li>Source/Runtime/RenderCore/Public/ShaderPipelineCache.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/RenderCore/Private/ShaderPipelineCache.cpp:968-993 CloseUserPipelineFileCache→SavePipelineFileCache(SaveMode::Incremental)</p>
 <p class="migline"><b>覆盖说明：</b>退出时增量保存用户缓存已实现</p>
 <p class="migline"><b>落地方式：</b>引擎已处理</p>
@@ -856,7 +856,7 @@
 <p class="en">源码注释：Parse ProjectName from commandline arguments when we lanuch engine through cmd such as &quot;UE4Editor-Cmd.exe -project=XXX.uproject -run=XXX ...&quot; UE4 trys to get ProjectName from argv[0] but fails because the first argv is &quot;UE4Editor-Cmd.exe&quot;</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Launch/Private/LaunchEngineLoop.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Source/Runtime/Launch/Private/LaunchEngineLoop.cpp:604（FParse::Value(CmdLine,TEXT(&quot;project=&quot;),...)）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已正确解析 -project=</p>
 <p class="migline"><b>落地方式：</b>Launch 模块</p>
@@ -876,7 +876,7 @@
 <p class="en">源码注释：TextureStreaming uses current world time to decide when to update textures. However, the MulitWorld plugin pauses background world by stopping world ticking (e.g. opening bag level), which is not consistent with UWorld::IsPaused(), causing StreamingManager gets the time of background world and confusing texture streaming behavior. Jira: https://xindong.atlassian.net/browse/UE4-4169</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Streaming/StreamingManagerTexture.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>FRenderAssetStreamingManagerHelper::GetWorldTime 已按 world 取时间并跳过 Paused（Engine/Source/Runtime/Engine/Private/Streaming/StreamingManagerTexture.cpp:3324）</p>
 <p class="migline"><b>覆盖说明：</b>上游已修</p>
 <p class="migline"><b>落地方式：</b>无需处理</p>
@@ -939,7 +939,7 @@
 </div>
 <p class="zh">上述鼠标离开控件修复的调试日志</p>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>同上，UE5 无对应调试日志</p>
 <p class="migline"><b>覆盖说明：</b>随主修复一起评估</p>
 <p class="migline"><b>落地方式：</b>UE_LOG(LogSlate) 临时日志，不需要留在引擎</p>
@@ -959,7 +959,7 @@
 <p class="en">源码注释：Fix issue where aspect ratio constraint wasn't correctly restored in some cases https://xindong.atlassian.net/browse/UE4-4328 https://github.com/EpicGames/UnrealEngine/commit/e6dae6c8a4b003207b1fb7504e8db814f4c23248</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/LevelSequence/Private/LevelSequencePlayer.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/LevelSequence/Private/LevelSequencePlayer.cpp:210-214 GetAspectRatioAxisConstraintOverride（bOverride 为 false 时返回空 TOptional）；LevelSequenceActor.cpp:134-141</p>
 <p class="migline"><b>覆盖说明：</b>UE5 用 TOptional 语义天然正确恢复宽高比约束</p>
 <p class="migline"><b>落地方式：</b>无需处理</p>
@@ -1047,7 +1047,7 @@
 <p class="en">源码注释：Fixed the crash when switching feature level with multiple UWorlds Jira: https://xindong.atlassian.net/browse/UE4-6191 https://xindong.atlassian.net/wiki/spaces/EN/pages/1078330203/UE+FeatureLevel</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/LevelEditor/Private/LevelEditorActions.cpp</li><li>Source/Editor/LevelEditor/Private/SLevelEditor.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>UE5 弃用/移除全局 FL：World.h:1242 FeatureLevel 5.3 弃用、World.h:1546 ChangeFeatureLevel 5.8 弃用</p>
 <p class="migline"><b>覆盖说明：</b>切换路径已不存在</p>
 <p class="migline"><b>落地方式：</b>无需处理</p>
@@ -1220,7 +1220,7 @@
 <p class="en">源码注释：Do not add PSC to ParticleSystemWorldManager when world is tearing down. Jira: https://xindong.atlassian.net/browse/UE4-7072</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/ParticleSystemManager.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>UE5 ParticleSystemManager.cpp:560-563（RemovePSC 的 bReRegister 重注册）无 bIsTearingDown 守卫；WorldPSCPool.cpp:263（CreateWorldParticleSystem 在 tearing down 时返回 nullptr）与 ParticleSystemComponent.cpp:1031（OnUnregister bEmptyInstances）为相邻但不同的保护路径</p>
 <p class="migline"><b>覆盖说明：</b>UE5 未在上游 RemovePSC 重注册处加 bIsTearingDown 守卫，仅相邻路径间接兜底</p>
 <p class="migline"><b>落地方式：</b>随 XD 补丁集移植两行 !World-&gt;bIsTearingDown 判定，项目侧无需额外配置</p>
@@ -1240,7 +1240,7 @@
 <p class="en">源码注释：Fixes issue where an array of non-indexed elements with custom semantics would have their 'optimized' code path generated as: Local_Value = OptimizedValue; Instead of the reverse. https://github.com/EpicGames/UnrealEngine/commit/21572f4b707f4d3ddc66f82f423eb2b198a052ae https://github.com/EpicGames/UnrealEngine/commit/da68d46d3db20ddf429586e3fb9c025f59796d16 Jira: https://xindong.atlassian.net/brow…</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Developer/ShaderCompilerCommon/Private/HlslUtils.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Developer/HlslParser/Private/HlslUtils.cpp:842/884 CopyMember(MemberDeclaration, DestPrefix, SourcePrefix, …) 方向正确</p>
 <p class="migline"><b>覆盖说明：</b>UE4-6052 上游已修（代码迁至 HlslParser 模块）</p>
 <p class="migline"><b>落地方式：</b>引擎已修</p>
@@ -1260,7 +1260,7 @@
 <p class="en">源码注释：Check TrailRelaxCurveWidget.IsValid() before use it in FAnimTrailNodeDetails::PendingDelete() Jira: https://xindong.atlassian.net/browse/TORCHLIGHT-223837</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/DetailCustomizations/Private/AnimTrailNodeDetails.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Engine/Source/Editor/DetailCustomizations/Private/AnimTrailNodeDetails.cpp:86 已使用 TrailRelaxCurveWidget.IsValid()</p>
 <p class="migline"><b>覆盖说明：</b>上游已修</p>
 <p class="migline"><b>落地方式：</b>无需处理</p>
@@ -1280,7 +1280,7 @@
 <p class="en">源码注释：float4x4 PseudoInverseTransform(float4x4 InTransform) in MeshParticleVertexFactory.ush does not consider scale. Jira: https://xindong.atlassian.net/browse/TORCHLIGHT-226131</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Shaders/Private/MeshParticleVertexFactory.ush</li><li>Source/Runtime/Engine/Private/MeshParticleVertexFactory.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>UE5 Shaders/Private/MeshParticleVertexFactory.ush:255 GetParticleInverseTransform 用 length2+rsqrt 计算 InvNonUniformScale，正确处理非均匀缩放（取代 PseudoInverseTransform）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 重写后已覆盖 XD 修复</p>
 <p class="migline"><b>落地方式：</b>无需处理</p>
@@ -1301,7 +1301,7 @@
 <p class="en">源码注释：Build .stable.upipelinecache files with ShaderHashes to prevent invalid PSOs when shader code changes, which can sometimes result in invalid VS~PS combinations. Jira: https://xindong.atlassian.net/browse/TORCHLIGHT-226143</p>
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Commandlets/ShaderPipelineCacheToolsCommandlet.cpp</li><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Runtime/RHI/Private/PipelineFileCache.cpp</li><li>Source/Runtime/RHI/Public/PipelineFileCache.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/RenderCore/Private/PipelineCacheUtilities.cpp（FStablePipelineCacheSerializedHeader 按 FShaderHash 序列化）；Runtime/RenderCore/Private/ShaderPipelineCache.cpp:1114/1374 PSO desc 直接存 FShaderHash</p>
 <p class="migline"><b>覆盖说明：</b>UE5 stable PSO 缓存已用 FShaderHash 并做 stable→hash 重映射</p>
 <p class="migline"><b>落地方式：</b>Cook 侧用 ShaderPipelineCacheToolsCommandlet 生成 stable cache，不改引擎</p>
@@ -1322,7 +1322,7 @@
 <p class="en">源码注释：Jira:https://xindong.atlassian.net/browse/TORCHLIGHT-254075</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li><li>Source/Runtime/RenderCore/Public/ShaderPipelineCache.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/RenderCore/Private/ShaderPipelineCache.cpp:170 r.ShaderPipelineCache.MaxPrecompileTime（仅单一上限，无 NonFirstRun 变体）</p>
 <p class="migline"><b>覆盖说明：</b>缺非首启收紧上限</p>
 <p class="migline"><b>落地方式：</b>项目侧新增 CVar r.ShaderPipelineCache.MaxPrecompileTimeNonFirstRun 并接入 BatchMode</p>
@@ -1366,7 +1366,7 @@
 <p class="en">源码注释：Jira: https://xindong.atlassian.net/browse/TORCHLIGHT-262300 https://xindong.slack.com/archives/C054CK5NREG/p1782986212253889</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/RenderCore/Private/ShaderPipelineCache.cpp:864-882 NumPrecompilesRemaining 在 MaxPrecompileTime&gt;0 分支仍按时间比例估算</p>
 <p class="migline"><b>覆盖说明：</b>真实计数分支存在但非默认</p>
 <p class="migline"><b>落地方式：</b>项目侧设 MaxPrecompileTime=0 或改用真实计数</p>
@@ -1387,7 +1387,7 @@
 <p class="en">源码注释：Jira: https://xindong.atlassian.net/browse/TORCHLIGHT-263193 Preserve runtime TOC FileGuid during incremental saves.</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RHI/Private/PipelineFileCache.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/RHI/Private/PipelineFileCache.cpp:2585 Meta.FileGuid=FileGuid；2597 check(Meta.FileGuid!=FGuid())</p>
 <p class="migline"><b>覆盖说明：</b>增量保存 GUID 已正确保留</p>
 <p class="migline"><b>落地方式：</b>引擎已处理，无需改动</p>
@@ -1407,7 +1407,7 @@
 <p class="en">源码注释：Async lazy-load font faces can be shaped while still pending. The incomplete glyph sequence was cached as a stable result, so text stayed missing after the face finished loading. Doc: https://xd.feishu.cn/wiki/J21cwKkjniJEn5kgzNKc9FfYneh UE5 ref: https://github.com/EpicGames/UnrealEngine/commit/6e3ceb3cef25f001b514d82e6a7950036ca5d24b</p>
 <details class="usage"><summary>引用位置（17 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Framework/Text/ShapedTextCache.cpp</li><li>Source/Runtime/Slate/Private/Framework/Text/SlateHyperlinkRun.cpp</li><li>Source/Runtime/Slate/Private/Framework/Text/SlatePasswordRun.cpp</li><li>Source/Runtime/Slate/Private/Framework/Text/SlateTextLayout.cpp</li><li>Source/Runtime/Slate/Private/Framework/Text/SlateTextRun.cpp</li><li>Source/Runtime/Slate/Private/Framework/Text/TextLayout.cpp</li><li>Source/Runtime/Slate/Public/Framework/Text/IRun.h</li><li>Source/Runtime/Slate/Public/Framework/Text/ShapedTextCache.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Slate/Public/Framework/Text/TextLayout.h:735 LoadingFontFaces、:800 bLoadingFontFacesOnPreviousLayout；SRichTextBlock.h:255 SetFontFacesLoadingPaintPolicy；SlateCore/Public/Fonts/FontCache.h:791/808 OutLoadingFontFaces；SlateCore/Private/Fonts/SlateFontRenderer.cpp:46 Slate.Font.DetectAsyncLoadingFontFaces</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已完整实现异步字体加载期间的排版/重排处理</p>
 <p class="migline"><b>落地方式：</b>无需改动，必要时用 Slate.Font.DetectAsyncLoadingFontFaces 开关</p>
@@ -1428,7 +1428,7 @@
 <p class="en">源码注释：UE code might refer to assets directly, loading assets into memory even if the functionality is not explicitly used by the game.</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Components/VolumetricCloudComponent.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Engine/Private/Components/VolumetricCloudComponent.cpp:72（默认材质改用 TSoftObjectPtr）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已改软引用，避免引擎硬引用资产</p>
 <p class="migline"><b>落地方式：</b>无需处理；资产引用规则用 AssetManager 规则约束</p>
@@ -1492,7 +1492,7 @@
 <p class="en">源码注释：It's not easy to reproduce time-out issue, so use this macro to reproduce time-out case for test (cautions: only for test,don't change to 1 and submit)</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/VulkanRHI/Private/VulkanSwapChain.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖说明：</b>仅复现用测试开关，UE5 无</p>
 <p class="migline"><b>落地方式：</b>改为 CVar/命令行开关控制复现路径</p>
 <p class="migline"><b>机制：</b>CVar</p>
@@ -1623,7 +1623,7 @@
 <p class="en">源码注释：https://xindong.atlassian.net/browse/UE4-3494 Select multiple material parameter collections in editor crashes</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/MaterialEditor/Private/MaterialEditorDetailCustomization.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Source/Editor/MaterialEditor/Private/MaterialEditorDetailCustomization.cpp:676-682,776-782（FPropertyAccess::Result==MultipleValues 分支）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已处理多选 MPC</p>
 <p class="migline"><b>落地方式：</b>MaterialEditor 内部</p>
@@ -1666,7 +1666,7 @@
 <p class="en">源码注释：(1) Fix &quot;Global&quot; usherbytecode assetinfo is empty (2) Fix when cooking, assetinfo.json is not copied to cooked/metadata/shaderlibrarysource folder (3) Fix when live patch shader, assetinfo.json is not generated correctly</p>
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Materials/MaterialShared.cpp</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderCodeArchive.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderCodeLibrary.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/RenderCore/Private/ShaderLibrary/EditorShaderCodeArchive.cpp:846-862 LoadAssetInfo/PrevCookedShaders、1155-1162 SaveAssetInfo+CopyFilesToOutputDir；ShaderCodeArchive.cpp:955 SaveAssetInfo</p>
 <p class="migline"><b>覆盖说明：</b>assetinfo.json 生成/加载/拷贝已原生实现</p>
 <p class="migline"><b>落地方式：</b>引擎已处理</p>
@@ -1708,7 +1708,7 @@
 <p class="en">源码注释：Fix bug when GEditor-&gt;Trans is access but it is null</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/ObjectTools.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Source/Editor/UnrealEd/Private/ObjectTools.cpp:269,328,469（GEditor ? ToRawPtr(GEditor-&gt;Trans) : nullptr + if(Transactor)）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已全程空指针保护</p>
 <p class="migline"><b>落地方式：</b>UnrealEd 内部</p>
@@ -1773,7 +1773,7 @@
 <p class="en">源码注释：Fix Avf Media Player preroll callback handle giving bFinished=False occasionally on IOS16, this fix works fine on other IOS version as well</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp:426-460（同样的 preroll bFinished==NO 处理 + #if 0 注释原文）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已含该 iOS16 preroll 修复</p>
 <p class="migline"><b>落地方式：</b>AvfMedia 插件内部逻辑，随插件走</p>
@@ -1793,7 +1793,7 @@
 <p class="en">源码注释：Fix Avf Media Player TaskQeue used after free in Apple delegate</p>
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</li><li>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
 <p class="migline"><b>覆盖度依据：</b>AvfMediaPlayer.cpp:296-1020 使用 PlayerTasks.Enqueue 与线程安全队列（结构与 XD 修复同源，未逐点核对）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 AVF 插件已重写队列用法，需复核 use-after-free</p>
 <p class="migline"><b>落地方式：</b>引擎 AVF 插件内部</p>
@@ -1858,7 +1858,7 @@
 <p class="en">源码注释：https://xindong.atlassian.net/browse/TORCHLIGHT-239877 Fix PC GTAO bug from UE5.7</p>
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Shaders/Private/PostProcessAmbientOcclusion.usf</li><li>Shaders/Private/PostProcessAmbientOcclusionCommon.ush</li><li>Source/Runtime/Renderer/Private/CompositionLighting/PostProcessAmbientOcclusion.cpp</li><li>Source/Runtime/Renderer/Private/CompositionLighting/PostProcessAmbientOcclusion.h</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>UE5 Runtime/Renderer/Private/CompositionLighting/PostProcessAmbientOcclusion.h:29 EGTAOType/FGTAOContext，.cpp 内 GTAO 全流程（depth clear/upsample 等）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 原生 GTAO</p>
 <p class="migline"><b>落地方式：</b>直接用 UE5 GTAO（r.AmbientOcclusion.Method）</p>
@@ -1942,7 +1942,7 @@
 <p class="zh">移动端无有效 CustomDepth 时使用反向 Z 远平面值，避免被当作真实深度参与换算</p>
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/PostProcess/SceneRenderTargets.cpp</li></ul></details>
 <div class="migblock">
-<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需改引擎</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
 <p class="migline"><b>覆盖度依据：</b>Runtime/Renderer/Private/SceneTextures.cpp:1271-1272 与 1358（移动端 CustomDepthTexture 回退使用 SystemTextures.Black，注释明确为 color texture 存 DeviceZ）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 移动端回退值即 0（反向 Z 远平面），与 XD 修正后的 BlackDefault2D 语义一致</p>
 <p class="migline"><b>落地方式：</b>无需处理，UE5 原生行为即正确</p>
@@ -1957,7 +1957,7 @@
 <p class="lrule">颜色规则：<b class="c-cover">覆盖度</b>=红绿灯 · <b class="c-proj">工程化</b>=蓝色系 · <b class="c-hook">侵入</b>=紫色系 · <b class="c-disp">处置</b>=中性灰。<br>分级方式：工程化/侵入用「实心 → 底色 → 描边 → 虚线」四级形态表示程度递进（实心最强）。</p>
 <h4>UE5 覆盖度</h4><div class="litem"><span class="lbl migstatus s-covered">UE5 已覆盖</span><span class="ltext">UE5.8 原生等价，可直接删除</span></div><div class="litem"><span class="lbl migstatus s-partial">部分覆盖</span><span class="ltext">UE5 有同类能力，只迁差异部分</span></div><div class="litem"><span class="lbl migstatus s-none">未覆盖</span><span class="ltext">UE5 没有该能力，需迁移或补丁</span></div><div class="litem"><span class="lbl migstatus s-unknown">待确认</span><span class="ltext">证据不足，迁移前需人工确认</span></div>
 <h4>工程化可行性</h4><div class="litem"><span class="lbl migproj p-yes">可工程化</span><span class="ltext">放项目/插件/配置即可，不动引擎</span></div><div class="litem"><span class="lbl migproj p-partial">需接入点</span><span class="ltext">引擎留少量 Hook，逻辑在工程侧</span></div><div class="litem"><span class="lbl migproj p-no">引擎内实现</span><span class="ltext">必须改引擎核心</span></div>
-<h4>引擎侵入等级</h4><div class="litem"><span class="lbl mighook h-0">L0 无需侵入</span><span class="ltext">不改引擎源码</span></div><div class="litem"><span class="lbl mighook h-1">L1 仅加接入点</span><span class="ltext">Delegate / Interface / CVar 等扩展点</span></div><div class="litem"><span class="lbl mighook h-2">L2 结构性改动</span><span class="ltext">枚举 slot / 新 Pass / schema 字段</span></div><div class="litem"><span class="lbl mighook h-3">L3 深度侵入</span><span class="ltext">核心结构/生命周期/序列化，慎入</span></div>
+<h4>引擎改动方式</h4><div class="litem"><span class="lbl mighook h-0">L0 无需改引擎</span><span class="ltext">纯工程/插件/配置即可（对应「可工程化」）</span></div><div class="litem"><span class="lbl mighook h-0">L0 引擎内补丁</span><span class="ltext">需改引擎源码，但不必新增扩展点（对应「引擎内实现」）</span></div><div class="litem"><span class="lbl mighook h-1">L1 仅加接入点</span><span class="ltext">引擎只需暴露 Delegate / Interface / CVar 等扩展点</span></div><div class="litem"><span class="lbl mighook h-2">L2 结构性改动</span><span class="ltext">枚举 slot / 新 Pass / schema 字段</span></div><div class="litem"><span class="lbl mighook h-3">L3 深度侵入</span><span class="ltext">核心结构/生命周期/序列化，慎入</span></div>
 <h4>迁移处置</h4><div class="litem"><span class="lbl migdisp">删除</span><span class="ltext">UE5 已覆盖，直接删</span></div><div class="litem"><span class="lbl migdisp">常开补丁</span><span class="ltext">确认的 bugfix，作为 fork 常开补丁</span></div><div class="litem"><span class="lbl migdisp">配置化</span><span class="ltext">改为 CVar / ini / DeviceProfile / 命令行</span></div><div class="litem"><span class="lbl migdisp">插件化</span><span class="ltext">迁到项目模块 / 编辑器插件</span></div><div class="litem"><span class="lbl migdisp">接入点</span><span class="ltext">引擎只留 Hook，逻辑在插件</span></div><div class="litem"><span class="lbl migdisp">移植</span><span class="ltext">代码保留，适配后移植</span></div><div class="litem"><span class="lbl migdisp">保留引擎</span><span class="ltext">深度绑定，暂留并登记 Feature Card</span></div>
 <h4>工作量与风险</h4><div class="litem"><span class="lbl lbl-plain">S / M / L</span><span class="ltext">半天内 / 数天 / 周级</span></div><div class="litem"><span class="lbl lbl-plain">低 / 中 / 高</span><span class="ltext">涉反射、资产、Shader、Cook 的默认高风险</span></div>
 <h4>文档通用标签</h4><div class="litem"><span class="lbl lbl-on">= 1 启用</span><span class="ltext">宏当前开启（默认生效）</span></div><div class="litem"><span class="lbl lbl-off">= 0 关闭</span><span class="ltext">宏当前关闭或预留</span></div><div class="litem"><span class="lbl badge topic">主题</span><span class="ltext">所属功能域，可点击跳转</span></div><div class="litem"><span class="lbl badge use">源码引用 N</span><span class="ltext">在 Source / Shaders / Plugins 中出现的次数</span></div><div class="litem"><span class="lbl badge">作者</span><span class="ltext">宏定义处的署名（XDBuild*.cs）</span></div><div class="litem"><span class="lbl badge src">文件:行</span><span class="ltext">宏在配置源文件中的定义位置</span></div>
