@@ -85,8 +85,10 @@
 (function(){
   var sels = document.querySelectorAll('select.migfilter');
   if (!sels.length) return;
+  var bar = document.querySelector('.migtoolbar');
+  var scopeSel = (bar && bar.getAttribute('data-scope')) ? bar.getAttribute('data-scope') : '#migmatrix';
   var apply = function(){
-    var rows = document.querySelectorAll('#migmatrix tbody tr');
+    var rows = document.querySelectorAll(scopeSel + ' tbody tr');
     var active = {};
     Array.prototype.forEach.call(sels, function(s){ if (s.value) active[s.getAttribute('data-attr')] = s.value; });
     var shown = 0;

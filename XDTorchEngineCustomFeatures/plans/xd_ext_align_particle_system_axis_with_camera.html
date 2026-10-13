@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>修改草案 · XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css?v=3bc93071">
+<noscript><style>.tabpane{display:block !important}.tabbar{display:none !important}</style></noscript>
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <div class="topactions">
+    <button id="navToggle" class="navtoggle" title="目录">☰ 目录</button>
+    <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../plans/index.html">📝 修改草案</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a>
+<a href="../migration/by-team.html">👥 开发者 × 模块</a></nav>
+  <main class="content"><h1 class="plantitle">修改草案 · XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA</h1><p class="lead">粒子系统轴向对齐相机方向（需 Emitter 开启 bUseLocalSpace，UE4-6540）</p><div class="planmeta"><span class="migstatus s-partial">部分覆盖</span> <span class="migdisp d-port">移植</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="badge">工作量 M</span><span class="badge">风险 中</span><span class="badge">开发者 Lu Xun</span><span class="badge">主要模块 Engine</span></div><p class="planline"><b>一句话结论：</b>新增 UPROPERTY 会动资产 schema，建议以项目侧模板映射表替代属性</p><h2 class="sec">1. UE5 现状与证据</h2><p class="planline"><b>结论依据：</b>UE5 只有 Z 轴对齐：ParticleSystem.h:307 bOrientZAxisTowardCamera + ParticleSystemComponent.cpp:2390 OrientZAxisTowardCamera；无 XD 的 ESystemAlignAxis/AlineAxisWithCamera 任意轴</p><p class="planline"><b>覆盖说明：</b>能力有但语义窄</p><table class="mtable"><thead><tr><th>证据路径（UE5.8.2）</th><th>行号</th><th>核对结果</th></tr></thead><tbody><tr><td class="tname">ParticleSystem.h</td><td class="tval">307</td><td>✅ 已命中：<code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code></td></tr><tr><td class="tname">ParticleSystemComponent.cpp</td><td class="tval">2390</td><td>✅ 已命中：<code>Source/Runtime/Engine/Private/Particles/ParticleSystemComponent.cpp</code></td></tr></tbody></table><p class="planline"><b>覆盖度：</b><span class="migstatus s-partial">部分覆盖</span>&nbsp;&nbsp;<b>处置：</b><span class="migdisp d-port">移植</span></p><h2 class="sec">2. 修改步骤（移植）</h2><ol class="plansteps"><li><b>定位 UE5 对应文件</b><div class="stepbody">见下方「UE5 对应文件」；重点比对同文件在 UE4/UE5 的差异。</div></li><li><b>移植实现</b><div class="stepbody">原实现位置：<code>Source/Runtime/Engine/Classes/Particles/FastParticleSystemComponent.h</code>、<code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code>、<code>Source/Runtime/Engine/Classes/Particles/ParticleSystemComponent.h</code>、<code>Source/Runtime/Engine/Private/Particles/FastParticleSystem/FastParticleSystemComponent.cpp</code>、<code>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</code>。如涉及 Shader，需同步改 shader define 或共享 include。</div></li><li><b>适配 UE5 接口与规范</b><div class="stepbody">注意 C++20、UHT（反射）规则、bValidateCircularDependencies 默认开启等差异；必要时回归 DDC/Cook。</div></li></ol><h2 class="sec">3. UE5 对应文件（按同名匹配）</h2><table class="mtable"><thead><tr><th>UE4 引用文件</th><th>UE5 对应文件</th></tr></thead><tbody><tr><td class="tname">Source/Runtime/Engine/Classes/Particles/FastParticleSystemComponent.h</td><td><span class="planwarn">未找到同名文件</span></td></tr><tr><td class="tname">Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</td><td><code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code></td></tr><tr><td class="tname">Source/Runtime/Engine/Classes/Particles/ParticleSystemComponent.h</td><td><code>Source/Runtime/Engine/Classes/Particles/ParticleSystemComponent.h</code></td></tr><tr><td class="tname">Source/Runtime/Engine/Private/Particles/FastParticleSystem/FastParticleSystemComponent.cpp</td><td><span class="planwarn">未找到同名文件</span></td></tr><tr><td class="tname">Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</td><td><span class="planwarn">未找到同名文件</span></td></tr></tbody></table><h2 class="sec">4. UE4 侧改动位置（原实现）</h2><ul class="tight"><li><code>Source/Runtime/Engine</code>（5 处）</li></ul><p class="planline">共 5 处引用；完整列表见参考卡片。</p><h2 class="sec">5. 验证清单</h2><ul class="tight"><li>UE5 编译通过（C++20 / UHT / 循环依赖校验）</li><li>功能回归：与原 UE4 表现一致（含 Shader/DDC 清理后）</li><li>涉及引擎结构性改动：跑「默认 + 全关」双构建，确认宏包裹未腐烂</li><li>清理 Engine/项目 DerivedDataCache 并重编 Shader（如涉及）</li></ul><h2 class="sec">6. 相关</h2><p class="planline">参考卡片：<a href="../ref/misc2.html#XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA">XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA</a> · 评估矩阵：<a href="../migration/matrix.html#XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA">定位该行</a> · 草案索引：<a href="index.html">全部草案</a></p></main>
+  <aside class="legend" id="legend" aria-label="标签说明">
+<div class="lhead"><b>标签说明</b><button type="button" id="legendToggle" title="收起 / 展开">－</button></div>
+<div class="lbody">
+<p class="lrule">颜色规则：<b class="c-cover">覆盖度</b>=红绿灯 · <b class="c-proj">工程化</b>=蓝色系 · <b class="c-hook">侵入</b>=紫色系 · <b class="c-disp">处置</b>=中性灰。<br>分级方式：工程化/侵入用「实心 → 底色 → 描边 → 虚线」四级形态表示程度递进（实心最强）。</p>
+<h4>UE5 覆盖度</h4><div class="litem"><span class="lbl migstatus s-covered">UE5 已覆盖</span><span class="ltext">UE5.8 原生等价，可直接删除</span></div><div class="litem"><span class="lbl migstatus s-partial">部分覆盖</span><span class="ltext">UE5 有同类能力，只迁差异部分</span></div><div class="litem"><span class="lbl migstatus s-none">未覆盖</span><span class="ltext">UE5 没有该能力，需迁移或补丁</span></div><div class="litem"><span class="lbl migstatus s-unknown">待确认</span><span class="ltext">证据不足，迁移前需人工确认</span></div>
+<h4>落地位置（工程化可行性）</h4><div class="litem"><span class="lbl migproj p-yes">可工程化</span><span class="ltext">放项目/插件/配置即可，不动引擎</span></div><div class="litem"><span class="lbl migproj p-partial">需接入点</span><span class="ltext">引擎留少量 Hook，逻辑在工程侧</span></div><div class="litem"><span class="lbl migproj p-no">引擎内实现</span><span class="ltext">必须改引擎核心</span></div><div class="litem"><span class="lbl na-badge">—</span><span class="ltext">处置=删除的行不适用（已删除/不迁移）</span></div>
+<h4>引擎改动方式</h4><div class="litem"><span class="lbl mighook h-0">L0 无需改引擎</span><span class="ltext">纯工程/插件/配置即可（对应「可工程化」）</span></div><div class="litem"><span class="lbl mighook h-0">L0 引擎内补丁</span><span class="ltext">需改引擎源码，但不必新增扩展点（对应「引擎内实现」）</span></div><div class="litem"><span class="lbl mighook h-1">L1 仅加接入点</span><span class="ltext">引擎只需暴露 Delegate / Interface / CVar 等扩展点</span></div><div class="litem"><span class="lbl mighook h-2">L2 结构性改动</span><span class="ltext">枚举 slot / 新 Pass / schema 字段</span></div><div class="litem"><span class="lbl mighook h-3">L3 深度侵入</span><span class="ltext">核心结构/生命周期/序列化，慎入</span></div>
+<h4>迁移处置</h4><div class="litem"><span class="lbl migdisp">删除</span><span class="ltext">UE5 已覆盖，直接删</span></div><div class="litem"><span class="lbl migdisp">常开补丁</span><span class="ltext">确认的 bugfix，作为 fork 常开补丁</span></div><div class="litem"><span class="lbl migdisp">配置化</span><span class="ltext">改为 CVar / ini / DeviceProfile / 命令行</span></div><div class="litem"><span class="lbl migdisp">插件化</span><span class="ltext">迁到项目模块 / 编辑器插件</span></div><div class="litem"><span class="lbl migdisp">接入点</span><span class="ltext">引擎只留 Hook，逻辑在插件</span></div><div class="litem"><span class="lbl migdisp">移植</span><span class="ltext">代码保留，适配后移植</span></div><div class="litem"><span class="lbl migdisp">保留引擎</span><span class="ltext">深度绑定，暂留并登记 Feature Card</span></div>
+<h4>工作量与风险</h4><div class="litem"><span class="lbl lbl-plain">S / M / L</span><span class="ltext">半天内 / 数天 / 周级</span></div><div class="litem"><span class="lbl lbl-plain">低 / 中 / 高</span><span class="ltext">涉反射、资产、Shader、Cook 的默认高风险</span></div>
+<h4>文档通用标签</h4><div class="litem"><span class="lbl lbl-on">= 1 启用</span><span class="ltext">宏当前开启（默认生效）</span></div><div class="litem"><span class="lbl lbl-off">= 0 关闭</span><span class="ltext">宏当前关闭或预留</span></div><div class="litem"><span class="lbl badge topic">主题</span><span class="ltext">所属功能域，可点击跳转</span></div><div class="litem"><span class="lbl badge use">源码引用 N</span><span class="ltext">在 Source / Shaders / Plugins 中出现的次数</span></div><div class="litem"><span class="lbl badge">作者</span><span class="ltext">宏定义处的署名（XDBuild*.cs）</span></div><div class="litem"><span class="lbl badge src">文件:行</span><span class="ltext">宏在配置源文件中的定义位置</span></div>
+<p class="lfoot">完整结论见 <a href="../migration/index.html">UE5 迁移总览</a> · <a href="../migration/matrix.html">评估矩阵</a></p>
+</div>
+</aside>
+</div>
+<div class="statbar" id="statbar"><span class="sb-title">迁移决策</span><div class="sb-items"><a class="sb" href="../migration/roadmap.html#phase-drop-covered" title="A1 直接删除（UE5 已覆盖）：98 个宏">A1 删除·已覆盖 <b>98</b></a><a class="sb" href="../migration/roadmap.html#phase-drop-other" title="A2 直接删除（废弃/无引用/待复核）：49 个宏">A2 删除·其他原因 <b>49</b></a><a class="sb" href="../migration/roadmap.html#phase-patch" title="B 常开补丁：48 个宏">B 常开补丁 <b>48</b></a><a class="sb" href="../migration/roadmap.html#phase-config" title="C 配置化：66 个宏">C 配置化 <b>66</b></a><a class="sb" href="../migration/roadmap.html#phase-plugin" title="D 插件化：51 个宏">D 插件化 <b>51</b></a><a class="sb" href="../migration/roadmap.html#phase-hook" title="E 接入点改造：28 个宏">E 接入点 <b>28</b></a><a class="sb" href="../migration/roadmap.html#phase-port" title="F 代码移植：195 个宏">F 移植 <b>195</b></a><a class="sb" href="../migration/roadmap.html#phase-keep" title="G 暂留引擎（重点跟进）：14 个宏">G 暂留引擎 <b>14</b></a></div><span class="sb-total">合计 <b>549</b></span><button type="button" class="sb-toggle" id="sbToggle" title="收起 / 展开">▾</button></div>
+<script src="../assets/app.js?v=3bc93071"></script>
+</body>
+</html>
