@@ -105,6 +105,138 @@
 <li><b>平台差异尽量下沉到 C++</b>：宏是构建期全局值，团队约定不要把 <code>IsWithEditor</code> 之类的差异写进 UBT 逻辑，否则 Editor/Runtime 引擎会因 <code>Definitions.h</code> 不同而整包重编。</li>
 <li><b>验证宏是否生效</b>：在 <code>Intermediate/Build/&lt;Platform&gt;/&lt;Config&gt;/...</code> 的 <code>Definitions.*.h</code> 里搜索宏名；构建日志中也会打印 <code>Start/End Setup XD Features Macros</code> 与依赖检查结果。</li>
 </ul>
+
+<h2 class="sec">6. UE4.26 与 UE5.8.2 的构建体系差异</h2>
+<p>迁移前先把「宏系统赖以生存的那套机制」在两代引擎里的差异对齐。下表已按 UE4.26 定制引擎与 UE5.8.2 实际源码核对（路径均为引擎内相对路径）。</p>
+<table class="mtable">
+<thead><tr><th>#</th><th>维度</th><th>UE4.26（XD 现状）</th><th>UE5.8.2（目标）</th><th>对宏系统的影响</th></tr></thead>
+<tbody>
+<tr><td class="tval">1</td><td>宏定义位置</td><td><code>Programs/UnrealBuildTool/Configuration/XDBuildConfiguration/*.cs</code>（7 个类）</td><td>UBT 结构变化：<code>Configuration/</code> 下新增 <code>Rules/</code> 子目录（<code>TargetRules.cs</code>、<code>ModuleRules.cs</code> 移入其中）</td><td>文件放置与命名空间按新结构组织；类/字段形态可沿用</td></tr>
+<tr><td class="tval">2</td><td>宏注入点</td><td>侵入 <code>UEBuildTarget.SetupGlobalEnvironment</code>（UE4.26 L3399）→ 末尾调用 <code>SetupXDNewFeaturesGlobalMacros</code>（L3817），反射读取 7 个类字段写入 <code>GlobalCompileEnvironment.Definitions</code></td><td>官方在 <code>UEBuildTarget.SetupGlobalEnvironment</code>（UE5.8 L6164）第 L6179 行执行 <code>Definitions.AddRange(Rules.GlobalDefinitions)</code></td><td><b>可以完全不动 UBT</b>：在 <code>*.Target.cs</code> 里向 <code>GlobalDefinitions</code> 添加即可</td></tr>
+<tr><td class="tval">3</td><td>作用范围</td><td>反射注入即全局，对所有模块（含引擎模块）生效</td><td><code>TargetRules.GlobalDefinitions</code>（全体模块）与 <code>ProjectDefinitions</code>（仅非引擎模块，<code>UEBuildModuleCPP.cs:2831</code> 以 <code>!Rules.bTreatAsEngineModule</code> 判定）</td><td>项目专有宏建议用 <code>ProjectDefinitions</code>，避免污染引擎/插件模块</td></tr>
+<tr><td class="tval">4</td><td>模块级宏</td><td><code>ModuleRules.PublicDefinitions / PrivateDefinitions</code></td><td>同左（<code>ModuleRules.cs:1383 / 1388</code>），并新增 <code>bTreatAsEngineModule</code> 等语义</td><td>插件/模块自有的开关放模块级，不占全局宏</td></tr>
+<tr><td class="tval">5</td><td>配置文件</td><td><code>BuildConfiguration.xml</code></td><td>仍为 <code>BuildConfiguration.xml</code>；schema 由 UBT <b>反射生成</b>（<code>Configuration/Xml/XmlConfig.cs:163 CreateSchema</code>），落盘到 <code>Engine/Saved/UnrealBuildTool/BuildConfiguration.Schema.xsd</code>；可配置类型 = 扫描 UBT 程序集（<code>XmlConfig.FindConfigurableTypes</code>）</td><td><b>没有 <code>&lt;CustomConfig&gt;</code> 这种包裹节点</b>（UE5 里 <code>CustomConfig</code> 是 ini 的 <code>-customconfig=</code> 概念）；在 UBT 里加带 <code>[XmlConfigFile]</code> 的类即可自动成为 XML 一节</td></tr>
+<tr><td class="tval">6</td><td>值应用方式</td><td>XD 自写 <code>CheckDependencies/SetupDependencies</code> 在编译前改字段值</td><td><code>XmlConfig.ApplyTo(实例)</code>；注意它会跳过 <code>static</code> 成员（<code>XmlConfig.cs:404</code>），只有实例字段/属性会被赋值</td><td>自定义配置类要用<b>实例属性</b>，再用 <code>static Get()</code> 缓存实例</td></tr>
+<tr><td class="tval">7</td><td>宏最终产物</td><td><code>Intermediate/Build/&lt;Platform&gt;/&lt;Config&gt;/&lt;Target&gt;/Definitions.&lt;Module&gt;.h</code></td><td>同左（<code>UEBuildModuleCPP.cs:2319</code> 生成 <code>Definitions.h</code>）</td><td>宏值变化 → 该头文件变化 → 依赖模块全部重编（宏最昂贵的代价）</td></tr>
+<tr><td class="tval">8</td><td>Shader 宏</td><td>各 <code>ShaderType / Material</code> 的 <code>ModifyCompilationEnvironment</code> 里 <code>OutEnvironment.SetDefine(...)</code>；C++ 宏不会自动进入 shader</td><td>同左；<b>新增</b> ini 机制 <code>[GlobalShaderDefines]</code>（<code>Runtime/RenderCore/Private/GlobalShader.cpp:255</code>）：<code>+Definitions=(Shader=类型名,Define=名字=值[,ShaderFormat=][,PermutationID=])</code>，仅对 <code>FGlobalShader</code> 子类生效，且各平台条目必须一致（否则 Fatal，提示 DDC 不一致）</td><td>全局 Shader 的开关可配置化（不重编）；材质 Shader 仍需 C++ 桥接</td></tr>
+<tr><td class="tval">9</td><td>C++ 标准</td><td><code>TargetRules.CppStandard = Default</code>（4.26 实际 C++14/17）</td><td><code>CppStandardEngine</code> / <code>CppStandard</code>（C++20）</td><td>老宏包裹的代码可能触发新警告/错误</td></tr>
+<tr><td class="tval">10</td><td>依赖校验</td><td>无强制</td><td><code>ModuleRules.bValidateCircularDependencies</code> 默认 <code>true</code>（<code>ModuleRules.cs:1496</code>）</td><td>以前「用宏绕开循环依赖」的写法会直接构建失败</td></tr>
+<tr><td class="tval">11</td><td>Unity 构建</td><td><code>bUseUnityBuild</code></td><td>同左 + <code>bUseAdaptiveUnityBuild</code>（默认 <code>true</code>，<code>TargetRules.cs:1877</code>）</td><td>条件编译在合并单元中的可见性/顺序需要回归</td></tr>
+<tr><td class="tval">12</td><td>UHT</td><td>UE4.26 的 UnrealHeaderTool</td><td>UE5 重写版 UHT（C# 实现，规则更严）</td><td>用宏包 <code>UPROPERTY/UCLASS</code> 更难迁移，必须走 CustomVersion</td></tr>
+<tr><td class="tval">13</td><td>UBT 自身</td><td>UBT 源码随引擎，改后重编</td><td><code>Engine/Build/BatchFiles/BuildUBT.bat</code>；UBT 源码变化会触发自编译</td><td>方案 A（改 UBT）有一次性成本，且所有模块 <code>Definitions.h</code> 会变化 → 全量重编</td></tr>
+</tbody>
+</table>
+<div class="note" style="display:block">⚠ 修正一个常见误解：UE5 的 <code>BuildConfiguration.xml</code> <b>没有</b> <code>&lt;CustomConfig&gt;</code> 包装节点（那是 ini 的 <code>-customconfig=</code> 概念）。自定义 UBT 配置类的正确形态是：类 + <code>[XmlConfigFile]</code> 实例属性 + XML 里同名一节（<code>&lt;Configuration&gt;&lt;你的类名&gt;…&lt;/你的类名&gt;&lt;/Configuration&gt;</code>），schema 由 UBT 自动生成。</div>
+
+<h2 class="sec">7. 适配 UE5 的三种方案</h2>
+<table class="mtable">
+<thead><tr><th>方案</th><th>做法</th><th>优点</th><th>代价 / 风险</th><th>适用</th></tr></thead>
+<tbody>
+<tr><td class="tname">A. UBT 自定义配置类</td><td>在 UBT 加 <code>Configuration/TLBuildConfiguration/*.cs</code>，字段标 <code>[XmlConfigFile]</code>；xml 控制默认值；在 <code>Target.cs</code> 或 UBT 注入点写入宏</td><td>最贴近 XD 现状；xml 一键开关；可表达「引擎级」开关；既有依赖检查逻辑可平迁</td><td>改 UBT → 自编译；宏值变化 = 全量重编；UE5 升级需跟 UBT diff</td><td>必须编译期裁剪、且引擎模块也要用的开关（RHI/ABI/Shader permutation）</td></tr>
+<tr><td class="tname">B. 工程侧 Target.cs / ModuleRules</td><td><code>GlobalDefinitions.Add(...)</code>（全体）/ <code>ProjectDefinitions.Add(...)</code>（仅非引擎模块）；插件用 <code>PublicDefinitions</code></td><td><b>零引擎侵入</b>；可在 Target.cs 里读环境变量/参数做灰度；升级成本最低</td><td>开关分散在各 Target 文件；只影响该 Target 的模块</td><td>项目/业务模块可见的迁移补丁（<code>TL_MIG_*</code>）</td></tr>
+<tr><td class="tname">C. 去宏化（运行期化）</td><td>CVar / ini / DeviceProfile / 插件 / Hook / CustomVersion</td><td>不重编、可灰度、可回滚；把「功能存在性」与「是否启用」解耦</td><td>需要改造调用点；有的能力天生要编译期裁剪</td><td>策略、数值、画质、工具、平台行为、资产 schema</td></tr>
+</tbody>
+</table>
+<h3>推荐：三层组合（L1 编译期 / L2 工程期 / L3 运行期）</h3>
+<table class="mtable">
+<thead><tr><th>层</th><th>承载形式</th><th>放什么</th><th>对应迁移分析的处置</th></tr></thead>
+<tbody>
+<tr><td class="tname">L1 引擎侧宏</td><td>方案 A：UBT 配置类 + <code>#if TL_MIG_*</code></td><td>RHI/ABI 差异、Shader permutation、必须裁剪的极底层路径</td><td><code>keep</code> 14 项 + 部分 <code>port</code> 的 L2/L3 侵入项</td></tr>
+<tr><td class="tname">L2 工程侧宏</td><td>方案 B：<code>Target.cs</code> Global/ProjectDefinitions</td><td>业务模块的迁移补丁、可灰度开关</td><td><code>port</code> 195 项中偏工程的部分</td></tr>
+<tr><td class="tname">L3 运行期</td><td>方案 C：CVar / ini / DeviceProfile / 插件 / Hook</td><td>策略、数值、画质、工具、平台行为、错误提示</td><td><code>config</code> 66 + <code>plugin</code> 51 + <code>hook</code> 28</td></tr>
+<tr><td class="tname">删除 / 补丁</td><td>不迁移或常开补丁</td><td>UE5 已覆盖，或已确认的 bugfix</td><td><code>drop</code> 147（A1 98 + A2 49）+ <code>patch</code> 48</td></tr>
+</tbody>
+</table>
+<p class="lead">目标不是「把 549 个宏搬过去」，而是把它压缩成 <b>少量 L1 编译期开关 + 一层工程定义 + 大量运行期配置/插件</b>。</p>
+
+<h2 class="sec">8. 落地步骤（含示例代码）</h2>
+<h3>Step 1｜先建工程侧开关（方案 B，最快见效）</h3>
+<pre style="background:var(--code-bg);padding:14px 16px;border-radius:10px;overflow:auto;font-size:13px">// Source/Torchlight_Migrate.Target.cs
+public class Torchlight_MigrateTarget : TargetRules
+{
+    public Torchlight_MigrateTarget(TargetInfo Target) : base(Target)
+    {
+        // 全体模块可见（含引擎）：用于引擎侧迁移补丁
+        GlobalDefinitions.Add("TL_MIG_RENDER_CUSTOM_SHADING_MODEL=1");
+        GlobalDefinitions.Add("TL_MIG_UI_WORLD_KEEP_ALIVE=1");
+
+        // 仅业务模块可见：项目自己的迁移补丁，不污染引擎/插件
+        ProjectDefinitions.Add("TL_MIG_COOK_CHERRY_PICK=1");
+
+        // 需要灰度时可在 Target.cs 里读环境变量决定是否添加（无需改 UBT）
+        if (System.Environment.GetEnvironmentVariable("TL_MIG_STRICT_LOG") == "1")
+        {
+            GlobalDefinitions.Add("TL_MIG_STRICT_LOG_THROTTLE=1");
+        }
+    }
+}</pre>
+
+<h3>Step 2｜引擎侧开关用 UBT 配置类（方案 A，按需）</h3>
+<pre style="background:var(--code-bg);padding:14px 16px;border-radius:10px;overflow:auto;font-size:13px">// Engine/Source/Programs/UnrealBuildTool/Configuration/TLBuildConfiguration/TLBuildFeatures.cs
+class TLBuildFeatures
+{
+    // Desc: 迁移期着色模型容错：原工程有定制 MSM_CustomUnlit 枚举，UE5 无此枚举，
+    //       资产加载会命中 check；开启后未知着色模型钳制为 Unlit。
+    // 关闭条件: MSM_CustomUnlit 资产全部改造完成。
+    [XmlConfigFile]
+    public bool bMigRenderCustomShadingModel = true;
+
+    static TLBuildFeatures? Cached;
+    public static TLBuildFeatures Get()
+    {
+        if (Cached == null)
+        {
+            Cached = new TLBuildFeatures();
+            XmlConfig.ApplyTo(Cached);   // 只应用实例成员
+        }
+        return Cached;
+    }
+}</pre>
+<pre style="background:var(--code-bg);padding:14px 16px;border-radius:10px;overflow:auto;font-size:13px">&lt;!-- Engine/Saved/UnrealBuildTool/BuildConfiguration.xml（或用户级 / 项目级） --&gt;
+&lt;Configuration xmlns="https://www.unrealengine.com/BuildConfiguration"&gt;
+  &lt;TLBuildFeatures&gt;
+    &lt;bMigRenderCustomShadingModel&gt;false&lt;/bMigRenderCustomShadingModel&gt;
+  &lt;/TLBuildFeatures&gt;
+&lt;/Configuration&gt;</pre>
+<p>把值变成宏（二选一）：</p>
+<ul class="tight">
+<li><b>推荐</b>：在 <code>*.Target.cs</code> 里 <code>GlobalDefinitions.Add("TL_MIG_RENDER_CUSTOM_SHADING_MODEL=" + (TLBuildFeatures.Get().bMigRenderCustomShadingModel ? 1 : 0));</code></li>
+<li>或按 XD 原做法在 UBT 的 <code>UEBuildTarget.SetupGlobalEnvironment</code>（UE5.8 L6164，紧邻 L6179 的 <code>GlobalDefinitions</code> 合并处）追加注入，并保留 <code>CheckDependencies</code> 风格的依赖校验</li>
+</ul>
+
+<h3>Step 3｜Shader 侧桥接（不要把 C++ 宏当 shader 宏用）</h3>
+<ul class="tight">
+<li><b>全局 Shader</b>：优先 ini <code>[GlobalShaderDefines]</code>（无需重编；仅 <code>FGlobalShader</code> 子类；各平台条目必须一致）</li>
+<li><b>材质 / 后处理 Shader</b>：在对应 <code>ModifyCompilationEnvironment</code> 里 <code>OutEnvironment.SetDefine(TEXT("TL_MIG_X"), 1);</code></li>
+<li><b>插件 Shader</b>：<code>AddShaderSourceDirectoryMapping</code> 映射虚拟目录 + 共享 include 里 <code>#ifndef TL_MIG_X</code> / <code>#define TL_MIG_X 0</code> / <code>#endif</code> 兜底，保证 C++ 侧未定义时也能编译</li>
+</ul>
+
+<h3>Step 4｜建立「双构建」验收</h3>
+<ul class="tight">
+<li><b>默认构建</b>（迁移补丁全开）：保证能跑老资产 / 老逻辑</li>
+<li><b>全关构建</b>（<code>TL_MIG_*=0</code>）：证明关闭后回到官方形态，用于归因「问题是不是迁移补丁引入的」</li>
+</ul>
+
+<h3>Step 5｜登记与淘汰机制</h3>
+<ul class="tight">
+<li>每个 <code>TL_MIG_*</code> 定义处必须写：问题现象 / 修法 / <b>何时可以关闭</b>（例：资产改造完成、插件上线后）</li>
+<li>建立「引擎改动 ↔ 宏名」索引（迁移工程的 <code>MIGRATION_STATE.md</code> 形态可延用）</li>
+<li>每完成一类资产/功能改造，把对应宏默认值改为 0，并记录关闭日期与依据</li>
+</ul>
+
+<h3>Step 6｜与迁移分析数据联动</h3>
+<p>本页的 <a href="../migration/matrix.html">全量评估矩阵</a> 已为 549 个宏给出「UE5 覆盖度 / 处置 / 侵入等级」，可直接生成待建宏清单：只为本应保留的能力建立 <code>TL_MIG_*</code>，其余走删除 / 补丁 / 配置 / 插件。</p>
+
+<h2 class="sec">9. 常见坑</h2>
+<ul class="tight">
+<li><b>宏值一变就全量重编</b>：宏最终落进 <code>Definitions.&lt;Module&gt;.h</code>，任何值变化都会让依赖它的模块重编。因此不要把「每天都会变」的项目数值（赛季号、selector 数量）留在宏里——这也是迁移分析把这类标为 <code>config</code> 的原因。</li>
+<li><b>平台 / 编辑器差异不要放进宏</b>：XD 已把 <code>IsWithEditor</code> 类判断下沉到 C++（否则 Editor/Runtime 会因 <code>Definitions.h</code> 不同而整包重编），UE5 继续遵守这条。</li>
+<li><b>改了 UBT 要有心理准备</b>：UBT 自身会重新编译一次，首次构建变慢；UBT 升级时需要重新对齐 diff。</li>
+<li><b>Shader 宏两条链路要同时改</b>：C++ 宏 + Shader define（或 ini）缺一不可，否则会出现「代码走了新分支、Shader 还是旧分支」的诡异表现。</li>
+<li><b>反射 / 资产不要用宏包</b>：<code>UPROPERTY</code>、资产字段、材质 schema 一律用 CustomVersion + 兼容读取；UE5 的 UHT 更严格。</li>
+<li><b>循环依赖</b>：UE5 默认开启 <code>bValidateCircularDependencies</code>，以前靠宏绕过的循环依赖需要真正拆分。</li>
+<li><b>不要写 <code>&lt;CustomConfig&gt;</code></b>：按第 6 节第 5 条，直接加 <code>[XmlConfigFile]</code> 类即可；写 <code>&lt;CustomConfig&gt;</code> 会被 schema 校验报未知节点。</li>
+</ul>
 </main>
   <aside class="legend" id="legend" aria-label="标签说明">
 <div class="lhead"><b>标签说明</b><button type="button" id="legendToggle" title="收起 / 展开">－</button></div>
