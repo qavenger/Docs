@@ -135,3 +135,65 @@
   else if (mq.addListener) mq.addListener(apply);
   apply();
 })();
+
+/* ---- 页签（tabs）+ 矩阵交叉筛选 ---- */
+(function(){
+  // tabs
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tabs]'), function(root){
+    var btns = root.querySelectorAll('.tabbtn[data-tab]');
+    var panes = root.querySelectorAll('.tabpane[data-pane]');
+    var activate = function(key, scroll){
+      Array.prototype.forEach.call(btns, function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === key); });
+      Array.prototype.forEach.call(panes, function(p){ p.classList.toggle('active', p.getAttribute('data-pane') === key); });
+      if (scroll && root.scrollIntoView) root.scrollIntoView({block:'start'});
+    };
+    Array.prototype.forEach.call(btns, function(b){
+      b.addEventListener('click', function(){
+        var k = b.getAttribute('data-tab');
+        activate(k, false);
+        if (history.replaceState) history.replaceState(null, '', '#' + k);
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.tocchips a[data-tab]'), function(a){
+      a.addEventListener('click', function(ev){
+        ev.preventDefault();
+        activate(a.getAttribute('data-tab'), true);
+        if (history.replaceState) history.replaceState(null, '', '#' + a.getAttribute('data-tab'));
+      });
+    });
+    var h = (location.hash || '').replace('#', '');
+    if (h) {
+      var hit = null;
+      Array.prototype.forEach.call(btns, function(b){ if (b.getAttribute('data-tab') === h) hit = h; });
+      if (hit) activate(hit, false);
+    }
+  });
+  // 矩阵交叉筛选
+  var mx = document.getElementById('mxmatrix');
+  if (mx) {
+    var detail = document.getElementById('mxdetail');
+    var info = document.getElementById('mxinfo');
+    var clearBtn = document.getElementById('mxclear');
+    var apply = function(owner, mod, isOther){
+      var rows = detail.querySelectorAll('tbody tr');
+      var shown = 0;
+      Array.prototype.forEach.call(rows, function(r){
+        var ok = (!owner || r.getAttribute('data-owner') === owner) &&
+                 (isOther ? r.getAttribute('data-other') === '1'
+                          : (!mod || r.getAttribute('data-module') === mod));
+        r.classList.toggle('hide', !ok);
+        if (ok) shown++;
+      });
+      detail.style.display = '';
+      if (info) info.textContent = '当前筛选：' + (owner || '全部开发者') + ' × ' + (isOther ? '其他模块' : (mod || '全部模块')) + '，共 ' + shown + ' 个宏';
+      Array.prototype.forEach.call(mx.querySelectorAll('td.mx'), function(td){ td.classList.remove('active'); });
+    };
+    Array.prototype.forEach.call(mx.querySelectorAll('td.mx'), function(td){
+      td.addEventListener('click', function(){
+        td.classList.add('active');
+        apply(td.getAttribute('data-owner'), td.getAttribute('data-module'), td.getAttribute('data-other') === '1');
+      });
+    });
+    if (clearBtn) clearBtn.addEventListener('click', function(){ apply('', '', false); });
+  }
+})();
