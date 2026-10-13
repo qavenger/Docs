@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>项目特性（XDCustomizedProjectFeatures） · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>项目特性（XDCustomizedProjectFeatures）</h1><p class="lead">XDCustomizedProjectFeatures · 共 26 个宏</p>
+<div class="toolbar"><input class="filter" placeholder="在本文档内筛选宏名…" data-scope="#macrolist"></div>
+<div class="pager"><a href="frontend.html">← 前端工具（XDFrontEndTools）</a></div>
+<div id="macrolist">
+<h2 class="author">Cheng Zhi Jun</h2>
+<article class="macro" id="XD_TORCHLIGHT_PHYSICSANIM_ADJUST">
+<h3 class="mname">XD_TORCHLIGHT_PHYSICSANIM_ADJUST <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Cheng Zhi Jun</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:24</span>
+</div>
+<p class="zh">物理动画（PhysicsAnim）行为调整：骨骼物理混合与模拟参数修正</p>
+<p class="detail">修改 SkeletalMeshComponent 与 PhysAnim.cpp 的物理动画路径（如模拟骨骼的混合与插值），适配火炬之光的角色物理表现。</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/SkeletalMeshComponent.h</li><li>Source/Runtime/Engine/Private/Components/SkeletalMeshComponent.cpp</li><li>Source/Runtime/Engine/Private/PhysicsEngine/PhysAnim.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Private/PhysicsEngine/PhysAnim.cpp（无 bNotPhysicsLocation 分支；仅 :344 Blend）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 未包含 XD 的骨骼物理混合/位置保护逻辑</p>
+<p class="migline"><b>落地方式：</b>逻辑在引擎 PhysicsAnim 与 SkeletalMeshComponent 内部，项目无法接管；建议参数化为 CVar 后由项目配置</p>
+<p class="migline"><b>接入点：</b>PhysAnim 中 bNotPhysicsLocation 位置保护分支 · SkeletalMeshComponent 物理混合参数暴露</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>建议以 CVar 形式保留（默认沿用 XD 行为），便于按项目/机型切换</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_PHYSICSANIM_ADJUST">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_IMPORTSCENECONVERT_FORCEFRONTXAXIS">
+<h3 class="mname">XD_TORCHLIGHT_IMPORTSCENECONVERT_FORCEFRONTXAXIS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Cheng Zhi Jun</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:25</span>
+</div>
+<p class="zh">导入场景转换时强制以 +X 作为模型正面朝向</p>
+<p class="detail">统一外部工具（3ds Max/Maya）导出的模型朝向，避免美术资源进引擎后朝向不一致。</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Fbx/FbxMainImport.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UnrealEd/Private/Fbx/FbxMainImport.cpp:220/1536（bForceFrontXAxis、ECoordinateSystemPolicy::MatchUpForwardAxes）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有坐标系策略与 bForceFrontXAxis，但没有 XD 的 JointOrientationMatrix(0,0,-90) 修正</p>
+<p class="migline"><b>落地方式：</b>仅配置 bForceFrontXAxis/CoordinateSystemPolicy 无法复现（UE 原生 JointOrientationMatrix 仍为 (-90,-90,0)）；需改/替换 FFbxImporter 该分支（Source/Editor/UnrealEd/Private/Fbx/FbxMainImport.cpp:1559-1561）</p>
+<p class="migline"><b>接入点：</b>UFbxImportUI.bForceFrontXAxis / ECoordinateSystemPolicy · FbxMainImport JointOrientationMatrix 分支</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>需改/替换 FFbxImporter JointOrientationMatrix 分支（导入器非项目扩展点）；会改变既有资产朝向，需重新导入校验</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_IMPORTSCENECONVERT_FORCEFRONTXAXIS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_TASK_GRAPH_EXT">
+<h3 class="mname">XD_TORCHLIGHT_TASK_GRAPH_EXT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Cheng Zhi Jun</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:26</span>
+</div>
+<p class="zh">TaskGraph 扩展（新增任务类型/调度接口，供项目并行任务使用）</p>
+<p class="rels">关联宏：<a class="rel" href="opt.html#XD_OPT_CUSTOM_CONCURRENT_SLATE_TASK">XD_OPT_CUSTOM_CONCURRENT_SLATE_TASK</a></p>
+<p class="en">源码注释： // Submitted by Gong Bailiang</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Core/Public/Async/ParallelFor.h</li><li>Source/Runtime/Engine/Classes/Components/ActorComponent.h</li><li>Source/Runtime/Engine/Classes/Engine/World.h</li><li>Source/Runtime/Engine/Private/Components/ActorComponent.cpp</li><li>Source/Runtime/Engine/Private/LevelTick.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/Core/Public/Async/ParallelFor.h:556（仅 ParallelForWithPreWork/BeforeHelping）；Source/Runtime/Engine/Classes/Components/ActorComponent.h:762 OnPreEndOfFrameSync / :1160 RequiresPreEndOfFrameSync；Source/Runtime/Engine/Private/LevelTick.cpp:1017-1020,1183（原生注册+调用）；World.h:1647</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已有组件级 OnPreEndOfFrameSync/RequiresPreEndOfFrameSync 原生扩展；仅缺 ParallelFor AfterHelping 回调</p>
+<p class="migline"><b>落地方式：</b>项目任务调度/并行逻辑放项目模块；引擎侧只需在 ParallelFor 与 LevelTick 留出回调扩展点</p>
+<p class="migline"><b>接入点：</b>ParallelForWithPreWork 增加 AfterHelping 回调 · UWorld/ActorComponent 增加 EndOfFrameSync 广播与注册接口</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>注意与 UE5 新增的 AsyncTick/PreEndOfFrameSync 机制对齐，避免重复生命周期</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_TASK_GRAPH_EXT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Lan Xi</h2>
+<article class="macro" id="XD_TORCHLIGHT_WIDGET_CUSTOMIZE_TITLE_BAR">
+<h3 class="mname">XD_TORCHLIGHT_WIDGET_CUSTOMIZE_TITLE_BAR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Lan Xi</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:29</span>
+</div>
+<p class="zh">控件自定义标题栏（游戏内窗口/弹窗统一 TitleBar 样式）</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/Widgets/SWindow.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/SlateCore/Public/Widgets/SWindow.h:1107 SWindow::MakeWindowTitleBar virtual；Application/SlateApplicationBase.h:436 亦为纯虚可定制；参考 Editor/PIEPreviewDeviceProfileSelector/SPIEPreviewWindow</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已提供窗口标题栏定制虚函数，等价能力存在</p>
+<p class="migline"><b>落地方式：</b>项目 SWindow 子类或自定义 FSlateApplication 重写 MakeWindowTitleBar（FWindowTitleBarArgs 含 CenterContent/对齐）</p>
+<p class="migline"><b>机制：</b>Interface</p>
+<p class="migline"><b>建议：</b>宏可删，改用项目 SideWindow 子类实现统一 TitleBar</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_WIDGET_CUSTOMIZE_TITLE_BAR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Zhou Shuang</h2>
+<article class="macro" id="XD_TORCHLIGHT_GAMEVIEWPORT_ALLOW_OVERRIDE_COMMAND_HANDLE">
+<h3 class="mname">XD_TORCHLIGHT_GAMEVIEWPORT_ALLOW_OVERRIDE_COMMAND_HANDLE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Zhou Shuang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:33</span>
+</div>
+<p class="zh">允许项目重写 GameViewportClient 的命令处理（HandleCommand）</p>
+<p class="en">源码注释：In order to customize gameviewportclient's hanndle command behavior</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/GameViewportClient.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 已提供可覆写入口：GameViewportClient.h:209 UGameViewportClient::Exec 为 public virtual（:234 HandleToggleFullscreenCommand 非 virtual 不构成障碍）；类可由 ini 替换（Engine.h:807 GameViewportClientClassName，globalconfig）</p>
+<p class="migline"><b>覆盖说明：</b>UGameViewportClient::Exec 已是 public virtual，且类可经 ini 替换，无需开放命令覆写</p>
+<p class="migline"><b>落地方式：</b>项目派生 UGameViewportClient 并重写 virtual Exec()，在调用 Super 前拦截 TOGGLEFULLSCREEN 等命令即可</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>无需引擎改：UGameViewportClient::Exec 已是 virtual，改为项目子类</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_GAMEVIEWPORT_ALLOW_OVERRIDE_COMMAND_HANDLE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Yu Hang</h2>
+<article class="macro" id="XD_TORCHLIGHT_RUNTIME_DEVICE_PROFILE">
+<h3 class="mname">XD_TORCHLIGHT_RUNTIME_DEVICE_PROFILE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 8</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:36</span>
+</div>
+<p class="zh">运行时设备档案（DeviceProfile）切换支持</p>
+<p class="detail">允许在运行时根据设备/画质档位切换 DeviceProfile，动态调整分辨率、特效等级等。</p>
+<details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelector/Private/AndroidDeviceProfileSelector.cpp</li><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelector/Public/AndroidDeviceProfileSelector.h</li><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelectorRuntime/Private/AndroidDeviceProfileSelectorRuntimeModule.cpp</li><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelectorRuntime/Private/AndroidDeviceProfileSelectorRuntimeModule.h</li><li>Plugins/Runtime/IOSDeviceProfileSelector/Source/IOSDeviceProfileSelector/Private/IOSDeviceProfileSelectorModule.cpp</li><li>Plugins/Runtime/IOSDeviceProfileSelector/Source/IOSDeviceProfileSelector/Private/IOSDeviceProfileSelectorModule.h</li><li>Source/Runtime/Engine/Private/DeviceProfiles/DeviceProfileManager.cpp</li><li>Source/Runtime/Engine/Public/IDeviceProfileSelectorModule.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/IDeviceProfileSelectorModule.h（公开接口）；Classes/DeviceProfiles/DeviceProfileManager.h:129 SetOverrideDeviceProfile / :304 SetActiveDeviceProfile</p>
+<p class="migline"><b>覆盖说明：</b>UE5 支持运行时切换单个 DP 与选择器模块，但无 XD 的多 DP 运行时合并(CVar 聚合)</p>
+<p class="migline"><b>落地方式：</b>项目实现 IDeviceProfileSelectorModule 选 DP，运行时用 SetOverrideDeviceProfile；多档合并需引擎在 DeviceProfileManager 加扩展点</p>
+<p class="migline"><b>接入点：</b>IDeviceProfileSelectorModule（已有 ModularFeature 扩展点） · UDeviceProfileManager 多档 CVar 聚合入口（如需）</p>
+<p class="migline"><b>机制：</b>ModularFeature</p>
+<p class="migline"><b>建议：</b>优先用 UE5 原生 SetOverrideDeviceProfile/Selector，仅当确需多 DP 合并才加引擎扩展</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_RUNTIME_DEVICE_PROFILE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_DISABLE_IDLE_TIMER">
+<h3 class="mname">XD_TORCHLIGHT_DISABLE_IDLE_TIMER <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:38</span>
+</div>
+<p class="zh">禁用引擎空闲计时器（避免帧率被空闲降频影响）</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp</li><li>Source/Runtime/ApplicationCore/Public/IOS/IOSAppDelegate.h</li><li>Source/Runtime/Core/Public/Misc/CoreDelegates.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp:554-605（bEnableIdleTimer 配置 + setIdleTimerDisabled NO→YES 技巧 + IsIdleTimerEnabled）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已内置同一技巧，并暴露 IOSRuntimeSettings.bEnableIdleTimer 开关</p>
+<p class="migline"><b>落地方式：</b>在 IOSRuntimeSettings / DefaultDeviceProfiles.ini 设 bEnableIdleTimer=False 即可，无需引擎改动</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>直接删除宏，改用配置；XD 的 FIOSCoreDelegates 静态 hack 一并清理</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_DISABLE_IDLE_TIMER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE">
+<h3 class="mname">XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:41</span>
+</div>
+<p class="zh">暴露本地化包缓存更新委托，保证异步加载能正确命中本地化资源</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_MEADIA_FILE_LOCALIZED_PATH">XD_MEADIA_FILE_LOCALIZED_PATH</a></p>
+<p class="en">源码注释：Expose a delegate that Update localized package cache in order to load localized package correctly by async loading</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/Internationalization/PackageLocalizationCache.cpp</li><li>Source/Runtime/CoreUObject/Private/Internationalization/PackageLocalizationManager.cpp</li><li>Source/Runtime/CoreUObject/Public/Internationalization/IPackageLocalizationCache.h</li><li>Source/Runtime/CoreUObject/Public/Internationalization/PackageLocalizationCache.h</li><li>Source/Runtime/CoreUObject/Public/Internationalization/PackageLocalizationManager.h</li><li>Source/Runtime/Engine/Private/Internationalization/EnginePackageLocalizationCache.cpp</li><li>Source/Runtime/Engine/Public/Internationalization/EnginePackageLocalizationCache.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 已公开等价 API：Runtime/CoreUObject/Public/Internationalization/PackageLocalizationManager.h:67-75 FPackageLocalizationManager::InvalidateRootSourcePath()+ConditionalUpdateCache()，无需新增委托</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已公开 InvalidateRootSourcePath()/ConditionalUpdateCache()，语义等价 XD 的 UpdateLocalizedPackageCache</p>
+<p class="migline"><b>落地方式：</b>项目直接调用 InvalidateRootSourcePath()+ConditionalUpdateCache() 触发热更重载，无需引擎改</p>
+<p class="migline"><b>建议：</b>UE5 已公开等价 API，删除宏；项目直接调用即可</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_SEASON">
+<h3 class="mname">XD_TORCHLIGHT_SEASON <span class="v num">= 16</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:44</span>
+</div>
+<p class="zh">赛季号（当前 16），用于热更版本与缓存清理判定</p>
+<p class="detail">整数宏，每赛季需手动递增；被 PSO/PBC 缓存清理、Pak 命名、Metal Shader 缓存等引用。</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE">XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</a> <a class="rel" href="projectfeatures.html#XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX">XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX</a></p>
+<p class="en">源码注释：@yuhang @heyifeng Season number used in hotpatch, change per season</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Apple/MetalRHI/Public/MetalShaderResources.h</li><li>Source/Runtime/PakFile/Private/IPlatformFilePak.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li><li>Source/Runtime/RenderCore/Public/ShaderCodeArchive.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp:696（[ShaderPipelineCache] GameVersion 可配置，回退 FEngineVersion::Current().GetChangelist()）；Public/ShaderCodeArchive.h 独立 EAssetInfoVersion</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无赛季号概念，但把相关版本号改成配置/版本号机制是现成的</p>
+<p class="migline"><b>落地方式：</b>赛季号放 DefaultGame.ini（PSO GameVersion）、Pak 命名与 BuildVersion 配置；代码内改用 FEngineVersion/FApp::GetBuildVersion 或读 ini，不再编译期硬编码</p>
+<p class="migline"><b>接入点：</b>ShaderPipelineCache GameVersion ini 项 · ShaderCodeArchive/平台 shader library 头部版本改为从配置/Version 读取</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>注意 shader 归档/Metal library 头部版本与缓存清理判定，换季必须清 DDC 与 PSO 缓存</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_SEASON">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX">
+<h3 class="mname">XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:47</span>
+</div>
+<p class="zh">Pak Chunk 划分时忽略 Cook ini 的影响（修正 Chunk 归属）</p>
+<p class="rels">关联宏：<a class="rel" href="tools.html#XD_TOOL_ASSET_AUDIT_EXT_COL">XD_TOOL_ASSET_AUDIT_EXT_COL</a></p>
+<p class="en">源码注释：Make pak chunk include ignore cook ini</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/AssetRegistry/Private/AssetRegistry.cpp</li><li>Source/Runtime/Core/Private/Misc/CoreDelegates.cpp</li><li>Source/Runtime/Core/Public/Misc/CoreDelegates.h</li><li>Source/Runtime/Engine/Private/AssetManager.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Classes/Engine/AssetManager.h:889 GetPackageChunkIds / :842 ModifyCook（virtual）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 提供 chunk 归属虚函数可覆写，但无 XD 的忽略委托与 AssetRegistry 依赖清理修正</p>
+<p class="migline"><b>落地方式：</b>项目派生 UAssetManager 覆写 GetPackageChunkIds/ModifyCook 控制 chunk；忽略逻辑改由引擎一处委托（FCoreDelegates 风格）暴露</p>
+<p class="migline"><b>接入点：</b>UAssetManager::GetPackageChunkIds（已有虚函数） · AssetRegistry 管理依赖清理处暴露 ShouldIgnorePackage 委托</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>影响 Cook chunk 归属与打包确定性，改完必须做全量 chunk 归属比对</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FORCE_SATATICMESH_LOD_STREAM_BULK">
+<h3 class="mname">XD_FORCE_SATATICMESH_LOD_STREAM_BULK <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:50</span>
+</div>
+<p class="zh">把静态网格 LOD 渲染数据拆入 ubulk 流式文件（默认关闭）</p>
+<p class="note">⚠ 默认 0。开启可减小常驻内存，但增加 I/O；纹理/骨骼网格由 UE 自带 ini 控制。</p>
+<p class="en">源码注释：renderdata拆分进ubulk : tex (UE自带ini开启) sk mesh (UE自带ini开启) static mesh (宏开启) 动画sequence (宏开启)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/StaticMesh.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/StaticMeshResources.h:463（FByteBulkData StreamingBulkData）；Runtime/Engine/Private/StaticMesh.cpp:984 序列化</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已有 LOD 渲染数据 bulk 流式能力，但无 XD 的强制全部 LOD 进 ubulk 开关</p>
+<p class="migline"><b>落地方式：</b>bulk flags 在 cook 侧 FStaticMeshLODResources 序列化时决定，需引擎薄封装成配置项后才能由项目 ini 控制</p>
+<p class="migline"><b>接入点：</b>FStaticMeshLODResources 序列化/cook 时 bulk data flags 的配置入口</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>建议把宏换成读 ini/CVar 的开关；默认关闭可直接删宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FORCE_SATATICMESH_LOD_STREAM_BULK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FORCE_ANIMATION_STREAM_BULK">
+<h3 class="mname">XD_FORCE_ANIMATION_STREAM_BULK <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:51</span>
+</div>
+<p class="zh">把动画 Sequence 数据拆入 ubulk 流式文件（默认关闭）</p>
+<p class="note">⚠ 默认 0。</p>
+<p class="rels">关联宏：<a class="rel" href="projectfeatures.html#XD_FORCE_SATATICMESH_LOD_STREAM_BULK">XD_FORCE_SATATICMESH_LOD_STREAM_BULK</a></p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Animation/AnimCompressionTypes.cpp</li><li>Source/Runtime/Engine/Private/Animation/AnimSequence.cpp</li><li>Source/Runtime/Engine/Public/Animation/AnimCompressionTypes.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Private/Animation/AnimCompressionTypes.cpp:1672（bUseBulkDataForSave 由 ETargetPlatformFeatures::MemoryMappedAnimation 决定）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已可按平台特性把压缩动画数据写入 ubulk；XD 是强制开关</p>
+<p class="migline"><b>落地方式：</b>该特性不是 ini 开关：ETargetPlatformFeatures::MemoryMappedAnimation 由平台属性硬编码（AndroidPlatformProperties.h:128-131 已返回 true、IOSPlatformProperties.h:81 true、GenericPlatformProperties.h:268 false），项目只能依赖平台已有取值，或在项目平台扩展/引擎侧调整</p>
+<p class="migline"><b>接入点：</b>ETargetPlatformFeatures::MemoryMappedAnimation · TargetPlatform 属性</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>改为按平台特性在项目平台扩展/引擎侧处理；改动 cook 产物，需清缓存重 cook</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FORCE_ANIMATION_STREAM_BULK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_CSM_SHADOW_OPT">
+<h3 class="mname">XD_CSM_SHADOW_OPT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:54</span>
+</div>
+<p class="zh">级联阴影（CSM）优化：新增 DirectionalCSMShadowBoundRadiusScale 缩放阴影包围半径并补偿淡出比例</p>
+<p class="detail">PC 端方向光可按比例缩小 CSM 阴影包围球，并用 ShadowDistanceFadeoutFraction 补偿，使动态阴影与静态烘焙阴影过渡更自然、减少阴影渲染范围。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW">XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW</a></p>
+<p class="en">源码注释：CSM阴影优化</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h</li><li>Source/Runtime/Engine/Private/Components/DirectionalLightComponent.cpp</li><li>Source/Runtime/Engine/Private/Components/LightComponent.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h（无 DirectionalCSMShadowBoundRadiusScale）；Renderer 无对应 CSM 半径缩放/淡出补偿</p>
+<p class="migline"><b>覆盖说明：</b>UE5 完整路径追踪阴影(VSM/CSM)未提供 XD 的包围半径缩放与 fadeout 补偿</p>
+<p class="migline"><b>落地方式：</b>FDirectionalLightSceneProxy 为 Renderer/Private 内部类型，项目无法派生；须在引擎加 UPROPERTY 并贯穿场景代理与 CSM 设置</p>
+<p class="migline"><b>接入点：</b>UDirectionalLightComponent 新增 DirectionalCSMShadowBoundRadiusScale UPROPERTY · FDirectionalLightSceneProxy 传递字段 · FScene 中 CSM 阴影包围球半径与 ShadowDistanceFadeoutFraction 补偿</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>保留为引擎侧常开项或改 CVar；涉及阴影半径计算，需重跑阴影相关截图基线</p>
+<p class="migline"><a href="../migration/matrix.html#XD_CSM_SHADOW_OPT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MATERIAL_DYNAMIC_SWITCH">
+<h3 class="mname">XD_MATERIAL_DYNAMIC_SWITCH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 28</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:57</span>
+</div>
+<p class="zh">材质 Selector Switch（多选一静态开关组）支持动态切换与编辑器参数复制</p>
+<p class="detail">新增 UDEditorStaticSelectorSwitchParameterValue 等类型，编辑器侧支持 Selector 开关的参数复制/覆盖，运行时按选择结果走不同分支；用于用少量材质覆盖多套外观，减少材质数量与 Shader 变体。</p>
+<p class="rels">关联宏：<a class="rel" href="projectfeatures.html#XD_MATERIAL_SELECTOR_SWITCH_NUM">XD_MATERIAL_SELECTOR_SWITCH_NUM</a></p>
+<p class="en">源码注释：动态材质开关</p>
+<details class="usage"><summary>引用位置（28 处 / 前 8 个文件）</summary><ul><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialPropertyHelpers.cpp</li><li>Source/Editor/UnrealEd/Classes/MaterialEditor/DEditorStaticSwitchParameterValue.h</li><li>Source/Editor/UnrealEd/Private/EditorParameters.cpp</li><li>Source/Editor/UnrealEd/Private/PlayLevel.cpp</li><li>Source/Editor/UnrealEd/Private/PreviewMaterial.cpp</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialExpressionStaticSwitchParameter.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-3">深度侵入</span> <span class="migmeta">处置 移植 · 工作量 L · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/StaticParameterSet.h（FStaticSwitchParameter 无 SelectorValue/SelectorBits；无 Selector Switch 概念）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 静态参数集无多选一 Selector 语义</p>
+<p class="migline"><b>落地方式：</b>涉及 FStaticParameterSet/FStaticSwitchParameter 反射 schema、材质编译与 shader permutation hash、MaterialInstance/PreviewMaterial，必须留在引擎</p>
+<p class="migline"><b>接入点：</b>FStaticSwitchParameter 增加 SelectorValue/SelectorBits 字段与序列化/hash · MaterialCompiler/UniformExpression 的 selector 求值 · FMaterialParameterValueResolver、MaterialInstance 参数复制、PreviewMaterial 同步</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>高风险项：改变材质序列化与 shader key，迁移后需全量重编 shader 与 DDC/材质校验</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MATERIAL_DYNAMIC_SWITCH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MATERIAL_SELECTOR_SWITCH_NUM">
+<h3 class="mname">XD_MATERIAL_SELECTOR_SWITCH_NUM <span class="v num">= 7</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:59</span>
+</div>
+<p class="zh">材质 Selector Switch 的最大节点数（当前 7）</p>
+<p class="detail">整数宏，决定材质中可用的选择器数量上限。</p>
+<p class="en">源码注释：Max number of nodes for selector switches</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Materials/MaterialExpressionStaticSwitchParameter.h</li><li>Source/Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialExpressions.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialInstance.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>none（UE5 无 Selector Switch，无对应常量）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无该能力，仅作为 XD selector 实现的上限常量</p>
+<p class="migline"><b>落地方式：</b>数值本身应改为 ini/CVar（如 r.Material.SelectorSwitchMaxNum），但仍需引擎读取该配置</p>
+<p class="migline"><b>接入点：</b>材质编译侧读取配置的最大 selector 数量（避免编译期硬编码 7）</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>硬编码 7 改为配置项，注意数值变化会影响 shader hash/permutation 数量</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MATERIAL_SELECTOR_SWITCH_NUM">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Yuan Bing</h2>
+<article class="macro" id="XD_TORCHLIGHT_WIDGET_NEW_INTERFACE">
+<h3 class="mname">XD_TORCHLIGHT_WIDGET_NEW_INTERFACE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Yuan Bing</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:62</span>
+</div>
+<p class="zh">UMG 控件新增接口（供项目扩展控件行为）</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/UMG/Private/UserWidget.cpp</li><li>Source/Runtime/UMG/Public/Blueprint/UserWidget.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h:1426（仅 GetWidgetFromName，无 GetAllWidgets/GetWidgetFromPsId）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 UUserWidget 无批量取控件与按 PsId 查找接口</p>
+<p class="migline"><b>落地方式：</b>项目 UUserWidget 子类 + BlueprintFunctionLibrary 实现 GetAllWidgets（可访问 WidgetTree），PsId 查找依赖 PSID 字段方案</p>
+<p class="migline"><b>接入点：</b>UUserWidget 新增 GetAllWidgets/GetWidgetFromPsId（如必须放在基类）</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>优先项目基类+函数库实现；仅当需全局可用时才动 UUserWidget</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_WIDGET_NEW_INTERFACE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Gong Bailiang</h2>
+<article class="macro" id="XD_TORCHLIGHT_LANDSCAPE_GENERATE_MID_BY_DEFAULT">
+<h3 class="mname">XD_TORCHLIGHT_LANDSCAPE_GENERATE_MID_BY_DEFAULT <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Gong Bailiang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:65</span>
+</div>
+<p class="zh">Landscape 默认生成 MID（默认关闭）</p>
+<p class="note">⚠ 默认 0。开启后地形默认使用动态材质实例，便于运行时改地形参数。</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Landscape/Private/Landscape.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/Landscape/Private/Landscape.cpp:1768（默认 false）；对照 UE4 XD Source/Runtime/Landscape/Private/Landscape.cpp:1086-1090（宏下为 true）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 属性原生存在但默认 false，XD 宏为 true，默认行为相反</p>
+<p class="migline"><b>落地方式：</b>在项目 Landscape 子类/蓝图或 Landscape 工具设置里改默认，不必改引擎</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>宏可删；如需默认开启用项目侧默认值/配置</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_LANDSCAPE_GENERATE_MID_BY_DEFAULT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_USE_DLSS">
+<h3 class="mname">XD_TORCHLIGHT_USE_DLSS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Gong Bailiang</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:67</span>
+</div>
+<p class="zh">项目级 DLSS 开关（配合 XD_PC_DLSS_SUPER_SAMPLING 使用）</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_PC_DLSS_SUPER_SAMPLING">XD_PC_DLSS_SUPER_SAMPLING</a></p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/RHI/Public/DataDrivenShaderPlatformInfo.h:135（bSupportsDLSSShaders）；Engine/Plugins 无内置 DLSS 插件</p>
+<p class="migline"><b>覆盖说明：</b>UE5 核心仅留 DLSS shader 平台标志，DLSS 本体由 NVIDIA Streamline 插件提供</p>
+<p class="migline"><b>落地方式：</b>项目 Config（DefaultEngine.ini/DeviceProfile）+ DLSS 插件开关；编译宏改为运行时/配置开关</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>删宏，改由项目配置与第三方插件控制</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_USE_DLSS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_RELEASE_INSTANCEDECORATORS_IN_URICHTEXTBLOCK">
+<h3 class="mname">XD_TORCHLIGHT_RELEASE_INSTANCEDECORATORS_IN_URICHTEXTBLOCK <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Gong Bailiang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:69</span>
+</div>
+<p class="zh">URichTextBlock 释放 InstancedDecorators 引用（避免资源滞留内存）</p>
+<p class="rels">关联宏：<a class="rel" href="fixbug2.html#XD_BUG_FIX_CODE_REFERENCED_ASSETS">XD_BUG_FIX_CODE_REFERENCED_ASSETS</a></p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/UMG/Private/Components/RichTextBlock.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 已修复该泄漏：Source/Runtime/UMG/Private/Components/RichTextBlock.cpp:59-65 ReleaseSlateResources 已无条件 InstanceDecorators.Empty()（RichTextBlock.h:258 InstanceDecorators 仍在）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已无条件执行 InstanceDecorators.Empty()，原生等价修复</p>
+<p class="migline"><b>落地方式：</b>无需处理，UE5 原生已清理 InstanceDecorators</p>
+<p class="migline"><b>建议：</b>UE5 已原生修复该泄漏，删除宏即可</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_RELEASE_INSTANCEDECORATORS_IN_URICHTEXTBLOCK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Lin Hengze</h2>
+<article class="macro" id="XD_TORCHLIGHT_MARGIN_HDUI_SCALE">
+<h3 class="mname">XD_TORCHLIGHT_MARGIN_HDUI_SCALE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Lin Hengze</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:72</span>
+</div>
+<p class="zh">HDUI 布局的 Margin 按 UI 缩放比例换算</p>
+<p class="detail">在 ElementBatcher 中按 HD UI 缩放系数处理边距，保证高清 UI 在不同分辨率下的布局一致。</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/Rendering/ElementBatcher.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/SlateCore/Public/Layout/Margin.h（FMargin 仅 Left/Top/Right/Bottom，无 HduiScale）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无 Margin 的 UI 缩放字段</p>
+<p class="migline"><b>落地方式：</b>需要给 SlateCore FMargin 增加字段并在 ElementBatcher 命中其换算，属 SlateCore 结构改动</p>
+<p class="migline"><b>接入点：</b>FMargin 新增 HduiScale 字段（含序列化/UHT） · FSlateElementBatcher 九宫格 Margin 计算分支</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>FMargin 为高频结构，加字段会扩散到 UMG/Slate 资产序列化，建议评估用项目自定义九宫格控件替代</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_MARGIN_HDUI_SCALE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_FOCUS_TO_GAMEVIEWPORT_ON_COMMIT">
+<h3 class="mname">XD_TORCHLIGHT_FOCUS_TO_GAMEVIEWPORT_ON_COMMIT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Lin Hengze</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:75</span>
+</div>
+<p class="zh">输入提交时用 SetAllUserFocusToGameViewport 替代 ClearKeyboardFocus</p>
+<p class="detail">ClearKeyboardFocus 会禁用全部键盘事件；改为把焦点交给 GameViewport，保证提交后游戏仍能接收键盘输入。</p>
+<p class="en">源码注释：ClearKeyboardFocus will disable all keyboard events. Replace ClearKeyboardFocus with SetAllUserFocusToGameViewport.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Widgets/Text/SlateEditableTextLayout.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/Slate/Private/Widgets/Text/SlateEditableTextLayout.cpp:1728（受 OwnerWidget-&gt;ShouldClearKeyboardFocusOnCommit() 控制）；Source/Runtime/Slate/Public/Widgets/Text/ISlateEditableTextWidget.h:229；Source/Runtime/UMG/Public/Components/EditableText.h:92-93,200,229</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已有 ShouldClearKeyboardFocusOnCommit()/ClearKeyboardFocusOnCommit 可覆写开关，默认行为仍清除焦点</p>
+<p class="migline"><b>落地方式：</b>项目侧用 EditableText.ClearKeyboardFocusOnCommit 或覆写 ShouldClearKeyboardFocusOnCommit() 控制；如需全局开关再在 Slate 加 CVar</p>
+<p class="migline"><b>接入点：</b>SlateEditableTextLayout 提交分支的 CVar 开关</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>建议做成 CVar，默认关闭，避免影响编辑器输入框行为</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_FOCUS_TO_GAMEVIEWPORT_ON_COMMIT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_SLISTPANEL_ADD_ELISTITEMALIGNMENT_EVENLUFIXWIDE">
+<h3 class="mname">XD_TORCHLIGHT_SLISTPANEL_ADD_ELISTITEMALIGNMENT_EVENLUFIXWIDE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Lin Hengze</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:78</span>
+</div>
+<p class="zh">SListPanel 新增 EListItemAlignment::EvenlyFixWide 对齐方式（标记宏）</p>
+<p class="note">⚠ 该宏仅作为改动标记，实际代码（SListPanel.cpp）中相关代码无 #if 保护、直接生效；注意其名称拼写与代码注释中的 EVENLYFIXSIZE 不完全一致。</p>
+<p class="en">源码注释：This value is meaningless and only marks changes</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Widgets/Views/SListPanel.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Views/SListPanel.h</li><li>Source/Runtime/Slate/Public/Widgets/Views/STableViewBase.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Slate/Public/Widgets/Views/STableViewBase.h:33（EListItemAlignment 无 EvenlyFixWide）；SListPanel.cpp 布局分支亦无</p>
+<p class="migline"><b>覆盖说明：</b>UE5 未包含该对齐方式（仅 Fill/EvenlyDistributed/EvenlySize/EvenlyWide 等）</p>
+<p class="migline"><b>落地方式：</b>枚举与 SListPanel 布局算法均在引擎 Slate 私有实现中，无法项目侧扩展</p>
+<p class="migline"><b>接入点：</b>EListItemAlignment 新增 EvenlyFixWide 枚举项 · SListPanel GetItemSize/GetItemPadding 分支</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>枚举为增量添加，风险可控；但会影响列表布局表现，需 UI 回归</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_SLISTPANEL_ADD_ELISTITEMALIGNMENT_EVENLUFIXWIDE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_SASSETPICKER_IGNORE_HDUI_ASSETS">
+<h3 class="mname">XD_TORCHLIGHT_SASSETPICKER_IGNORE_HDUI_ASSETS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Lin Hengze</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:81</span>
+</div>
+<p class="zh">资源选择器过滤时忽略 hdui 目录下的资源</p>
+<p class="detail">美术在 SAssetPicker 中挑选资源时不显示高清 UI 专用资源，避免误用。</p>
+<p class="en">源码注释：Ignore assets in the hdui directory when filtering assets</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/ContentBrowser/Private/FrontendFilters.cpp</li><li>Source/Editor/ContentBrowser/Private/FrontendFilters.h</li><li>Source/Editor/ContentBrowser/Private/SAssetPicker.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/ContentBrowser/Public/ContentBrowserFrontEndFilterExtension.h:19（AddFrontEndFilterExtensions ModularFeature）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有前端过滤器扩展机制，但无 hdui 目录忽略逻辑</p>
+<p class="migline"><b>落地方式：</b>项目 Editor 插件实现 FContentBrowserFrontEndFilterExtension，在 AddFrontEndFilterExtensions 上加 hdui 排除过滤器</p>
+<p class="migline"><b>机制：</b>ModularFeature</p>
+<p class="migline"><b>建议：</b>完全工程化：用官方过滤器扩展点，零引擎改动</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_SASSETPICKER_IGNORE_HDUI_ASSETS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE">
+<h3 class="mname">XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">Lin Hengze</span>
+<span class="badge use">源码引用 8</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:84</span>
+</div>
+<p class="zh">从蓝湖（LanHu）复制粘贴 UI 代码时的资源对象修正规则</p>
+<p class="detail">修正粘贴生成的控件资源引用，保证图片/字体等资源正确挂接。</p>
+<p class="en">源码注释：Correct asset resourceObject when pasting LanHu code</p>
+<details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Source/Editor/UMGEditor/Private/WidgetBlueprint.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditor.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.h</li><li>Source/Editor/UMGEditor/Public/WidgetBlueprint.h</li><li>Source/Editor/UMGEditor/Public/WidgetBlueprintEditor.h</li><li>Source/Runtime/Slate/Private/Framework/Commands/GenericCommands.cpp</li><li>Source/Runtime/Slate/Public/Framework/Commands/GenericCommands.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.cpp（无蓝湖/资源对象修正逻辑；FWidgetBlueprintEditor::PasteWidgets 非 virtual）</p>
+<p class="migline"><b>覆盖说明：</b>项目专有粘贴规则，UE5 无</p>
+<p class="migline"><b>落地方式：</b>引擎在 FWidgetBlueprintEditorUtils 粘贴路径留扩展点（委托/虚函数），蓝湖修正规则放项目 Editor 插件</p>
+<p class="migline"><b>接入点：</b>FWidgetBlueprintEditorUtils::PasteWidgets 扩展点 · FWidgetBlueprintEditor ToolkitCommands 增加 Replace/Paste 变体命令</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>涉及 UMG 资产序列化，改动需注意 Blueprint 版本兼容</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">zhangmin</h2>
+<article class="macro" id="XD_TORCHLIGHT_UMG_AUTOWRAP">
+<h3 class="mname">XD_TORCHLIGHT_UMG_AUTOWRAP <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">zhangmin</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:88</span>
+</div>
+<p class="zh">UMG 设计器自动换行（AutoWrap）命令与布局调整逻辑</p>
+<p class="en">源码注释：Enable the UMG Designer AutoWrap command and layout adjustment logic</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Editor/UMGEditor/Private/Designer/SDesignerView.cpp</li><li>Source/Editor/UMGEditor/Private/UMGEditorActions.cpp</li><li>Source/Editor/UMGEditor/Private/UMGEditorActions.h</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditor.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.h</li><li>Source/Editor/UMGEditor/Public/WidgetBlueprintEditor.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UMGEditor（grep AutoWrap 无命中）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 UMG 设计器无自动换行命令</p>
+<p class="migline"><b>落地方式：</b>项目 Editor 插件用 FDesignerExtension（Editor/UMGEditor/Public/DesignerExtension.h）+ 给 FWidgetBlueprintEditor ToolkitCommands 注册命令，布局改写逻辑放插件</p>
+<p class="migline"><b>接入点：</b>FDesignerExtension / IHasDesignerExtensibility · FWidgetBlueprintEditor ToolkitCommands 注册入口 · SDesignerView 布局刷新接口</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>优先用官方 DesignerExtension 机制实现，避免改 UMGEditor 内部</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_UMG_AUTOWRAP">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">xupeng</h2>
+<article class="macro" id="XD_TORCHLIGHT_WIDGET_ADD_PSID">
+<h3 class="mname">XD_TORCHLIGHT_WIDGET_ADD_PSID <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">火炬之光项目特性</span>
+<span class="badge">xupeng</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildProjectFeaturesConfiguration.cs">XDBuildProjectFeatures:92</span>
+</div>
+<p class="zh">Widget 保存 PSD2UMG 同步的原始 Photoshop 节点 ID（仅编辑器）</p>
+<p class="detail">便于 UI 迭代时把引擎控件与 PSD 图层对应起来。</p>
+<p class="rels">关联宏：<a class="rel" href="projectfeatures.html#XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE">XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE</a></p>
+<p class="en">源码注释：Stores the original Photoshop node ID synced by PSD2UMG. This value is editable only in editor defaults and is not available at runtime.</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/UMGEditor/Private/Customizations/UMGDetailCustomizations.cpp</li><li>Source/Runtime/UMG/Private/Components/Widget.cpp</li><li>Source/Runtime/UMG/Public/Components/Widget.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/UMG/Public/Components/Widget.h（无 PsId 属性）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 UWidget 无 PSD 节点 ID 字段</p>
+<p class="migline"><b>落地方式：</b>UPROPERTY 必须落在 UWidget 或项目统一控件基类上；若要求所有控件可见则需引擎加字段，否则项目自建基类控件承载 PsId</p>
+<p class="migline"><b>接入点：</b>UWidget 新增 PsId（FName, EditorOnly）UPROPERTY 与细节面板</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>会改变 UMG 资产 schema，建议做成 EditorOnly 属性并写迁移校验</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TORCHLIGHT_WIDGET_ADD_PSID">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+</div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

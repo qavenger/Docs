@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>运行时接口与诊断 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🧭 运行时接口与诊断</h1><p class="lead">日志、崩溃上报、退出行为与杂项接口</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>面向线上运维与项目接入的一组「小接口、大作用」改动：统一退出/重启、日志与崩溃可诊断、Http/媒体等运行时接口补齐、以及一批运行时委托供项目注入逻辑。
+</div>
+
+<h2 class="sec">1. 退出、重启与异常</h2>
+<ul class="tight">
+<li><code>XD_MISC_EXT_APP_EXIT_METHOD</code>：统一的正常/异常退出接口，项目可决定退出方式。</li>
+<li><code>XD_MISC_ANDROID_EXIT_WITH_ABORT_METHOD</code> / <code>XD_MISC_IOS_EXIT_WITH_ABORT_METHOD</code>：主动退出改用 abort，让 Backtrace 捕获信号并留下日志。</li>
+<li><code>XD_REPORT_ALL_REQUEST_EXIT_EVENT_AS_ERROR</code>：强制退出前 Flush 全部日志并上报为错误事件。</li>
+<li><code>XD_MISC_WINDOWS_FORCE_EXIT_WITH_CRASH</code>：Windows 以崩溃方式退出以产出崩溃报告。</li>
+<li><code>XD_EXT_USE_SHARED_REBOOT_REQUEST</code>：收集应用初始化期间的重启请求统一执行（Android 走 JNI，Generic 仅告警）。</li>
+<li><code>XD_BUG_FIX_PARSE_PROJECTNAME_FROM_COMMANDLINE</code>：从命令行正确解析 ProjectName（<code>UE4Editor-Cmd.exe -project=...</code> 场景）。</li>
+<li><code>XD_BUG_FIX_ENGINE_INITIALIZED_FAIL</code>：引擎初始化失败时主动触发崩溃，保证「静默退不出日志」变成可上报的崩溃。</li>
+</ul>
+
+<h2 class="sec">2. 日志体系</h2>
+<ul class="tight">
+<li><code>XD_TOOL_ONLY_BACKUP_ONE_FILE_FOR_BACKTRACE</code>：移动端只保留一个日志备份文件，专供 Backtrace 崩溃上报，避免日志刷爆磁盘。</li>
+<li><code>XD_MISC_CHECK_EXPRESSION_ALSO_PRINT_UE_LOG</code>：CHECK 失败时同时输出 UE_LOG，便于在完整日志里定位崩溃点。</li>
+<li><code>XD_MISC_FATAL_ERROR_PRINT_FILE_NAME_IN_SHIPPING_MODE</code>：Shipping 包的致命错误也带源码文件名。</li>
+<li><code>XD_MISC_LOG_REDUCTION</code>：减少 Shipping 构建的运行时日志量。</li>
+<li><code>XD_BUG_FIX_LOG_LOST_TIMESTAMP</code>、<code>XD_BUGFIX_STAT_MESSAGES_CHUNK_SIZE_OVERFLOW</code>、<code>XD_BUG_FIX_UPGRADE_PREVIEWSCENE_LOG_LEVEL</code>：日志时间戳丢失、Stat 线程消息块溢出、PreviewScene 日志级别。</li>
+<li><code>XD_MISC_ADD_INTERFACE_TO_GET_LOG_VERBOSITY</code>：查询日志级别接口。</li>
+<li><code>XD_MSIC_GENERIC_STACK_TRACE</code>：通用平台堆栈回溯，支持自定义深度。</li>
+<li><code>XD_EXT_REPORT_ERROR_MSG_VIA_CRASH_TOOLS</code>：把错误信息通过 Themis 等崩溃平台上报。</li>
+<li><code>XD_EXT_SUPPORT_DUMP_FNAME</code>：Dump FName 名称表（配合 <code>DumpConsoleCommands_XD</code> 使用）。</li>
+<li><code>XD_USE_BIG_ERROR_MESSAGE_SIZE</code>（默认 <span class="v off">0</span>）：放大错误信息缓冲区以便调试。</li>
+</ul>
+
+<h2 class="sec">3. 运行时接口扩展</h2>
+<ul class="tight">
+<li><code>XD_MISC_CONSOLE_VARIABLES</code>：登记所有 <code>xd.*</code> 控制台变量（<code>XDConsoleVariables.inc</code>），是 <code>DumpConsoleCommands_XD</code> 与线上热调的基础（UBT 强制为 1）。</li>
+<li><code>XD_TOOL_ADD_RUNTIME_DELEGATES_EXTENSION</code>：新增一批运行时多播委托（粒子生命周期、SkeletalMesh、WorldCulling 等），项目可在不改引擎的情况下挂接逻辑。</li>
+<li><code>XD_MISC_SUPPORT_HTTP_REQUEST_COMPLETION_RESULT_GETTER</code>：Http 请求提供完成结果 Getter，便于状态记录与检查。</li>
+<li><code>XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME</code>：媒体播放结束后可保留末帧。</li>
+<li><code>XD_BUG_FIX_WMF_SESSION_CLOSE_HANG</code>、<code>XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE</code>、<code>XD_AVF_NO_PREROLL</code>、<code>XD_BUG_FIX_AVF_TASK_QUEUE</code>：PC WMF 关闭卡死、Electra 释放阻塞 GT、iOS AVF 回调与线程安全问题。</li>
+<li><code>XD_BUG_FIX_HTTP_THREAD_INVALID_SLEEP_TIME</code>：修复 Http 线程睡眠时间负值。</li>
+<li><code>XD_BUG_FIX_CODE_REFERENCED_ASSETS</code>：避免引擎代码直接引用资源导致无用加载。</li>
+<li><code>XD_BUG_FIX_GC_SYNCOBJ</code>：GC 等待空指针修复。</li>
+</ul>
+
+<h2 class="sec">4. 使用建议</h2>
+<ul class="tight">
+<li>线上排障首选 <code>DumpConsoleCommands_XD</code>（列出所有定制 CVar 当前值）+ MemReport + Backtrace 日志；这三个能力分别由本页与内存专题的宏支撑。</li>
+<li><code>XD_MISC_CONSOLE_VARIABLES</code> 是强制为 1 的基础设施；新增自定义 CVar 时应加入 <code>XDConsoleVariables.inc</code> 以便统一管理。</li>
+<li>退出方式（abort / 崩溃退出）与崩溃平台策略强相关，改动前先与运维/QA 确认崩溃上报口径。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 30 个宏——UE5 已覆盖 <b>5</b>、部分覆盖 <b>13</b>、未覆盖 <b>9</b>；可完全工程化 <b>12</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">运行时接口与诊断 相关宏（30）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME">XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME</a></td><td>修复 FHttpThread 睡眠时间出现负值导致异常</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_PARSE_PROJECTNAME_FROM_COMMANDLINE">XD_BUG_FIX_PARSE_PROJECTNAME_FROM_COMMANDLINE</a></td><td>从命令行解析 ProjectName（UE4Editor-Cmd -project=XXX 场景）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_USE_SHARED_REBOOT_REQUEST">XD_EXT_USE_SHARED_REBOOT_REQUEST</a></td><td>收集应用初始化期间的重启请求并统一执行</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_UPGRADE_PREVIEWSCENE_LOG_LEVEL">XD_BUG_FIX_UPGRADE_PREVIEWSCENE_LOG_LEVEL</a></td><td>修正 PreviewScene 的 VerboseLog 输出</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_AVF_TASK_QUEUE">XD_BUG_FIX_AVF_TASK_QUEUE</a></td><td>修复 AVF 播放器 TaskQueue 释放后使用（use-after-free）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_LOG_REDUCTION">XD_MISC_LOG_REDUCTION</a></td><td>减少 Shipping 构建的运行时日志量</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_ADD_INTERFACE_TO_GET_LOG_VERBOSITY">XD_MISC_ADD_INTERFACE_TO_GET_LOG_VERBOSITY</a></td><td>提供获取日志 Verbosity 的接口</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_ENGINE_INITIALIZED_FAIL">XD_BUG_FIX_ENGINE_INITIALIZED_FAIL</a></td><td>引擎初始化失败时主动触发崩溃（而非静默退出），保证崩溃可被上报定位</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_REPORT_ALL_REQUEST_EXIT_EVENT_AS_ERROR">XD_REPORT_ALL_REQUEST_EXIT_EVENT_AS_ERROR</a></td><td>RequestExit(force=1) 时上报更完整的崩溃/退出信息</td><td class="tval">1</td><td class="tuse">13</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_WINDOWS_FORCE_EXIT_WITH_CRASH">XD_MISC_WINDOWS_FORCE_EXIT_WITH_CRASH</a></td><td>Windows 平台强制以崩溃方式退出以生成崩溃报告</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE">XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE</a></td><td>修复 Electra 播放器释放时阻塞游戏线程（PC 编辑器模式禁用）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_DEBUG_LEVEL_LOADING_STOP">XD_TOOL_DEBUG_LEVEL_LOADING_STOP</a></td><td>关卡加载停止相关调试日志（当前关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_EXT_APP_EXIT_METHOD">XD_MISC_EXT_APP_EXIT_METHOD</a></td><td>提供统一的正常/异常退出接口（供项目选择退出方式）</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_CONSOLE_VARIABLES">XD_MISC_CONSOLE_VARIABLES</a></td><td>注册 XD 新增的控制台变量（xd.* 命名空间）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_SUPPORT_HTTP_REQUEST_COMPLETION_RESULT_GETTER">XD_MISC_SUPPORT_HTTP_REQUEST_COMPLETION_RESULT_GETTER</a></td><td>HTTP 请求增加完成结果 Getter（供状态记录与检查）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_SUPPORT_DUMP_FNAME">XD_EXT_SUPPORT_DUMP_FNAME</a></td><td>支持 Dump FName 值（调试名称表）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_AVF_NO_PREROLL">XD_AVF_NO_PREROLL</a></td><td>修复 iOS16 上 AVF 播放器 preroll 回调 bFinished=False 问题</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_DUMP_XD_CONSOLE_VARIABLES">XD_TOOL_DUMP_XD_CONSOLE_VARIABLES</a></td><td>Dump 所有 XD 新增控制台变量（xd.* 前缀）的名称与当前值</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_CHECK_EXPRESSION_ALSO_PRINT_UE_LOG">XD_MISC_CHECK_EXPRESSION_ALSO_PRINT_UE_LOG</a></td><td>CHECK(false) 失败时同时输出 UE_LOG（便于定位崩溃点）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_FATAL_ERROR_PRINT_FILE_NAME_IN_SHIPPING_MODE">XD_MISC_FATAL_ERROR_PRINT_FILE_NAME_IN_SHIPPING_MODE</a></td><td>Shipping 模式下致命错误也输出源码文件名，便于定位</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ADD_RUNTIME_DELEGATES_EXTENSION">XD_TOOL_ADD_RUNTIME_DELEGATES_EXTENSION</a></td><td>运行时新增一组扩展委托（项目侧可挂钩引擎事件）</td><td class="tval">1</td><td class="tuse">9</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ONLY_BACKUP_ONE_FILE_FOR_BACKTRACE">XD_TOOL_ONLY_BACKUP_ONE_FILE_FOR_BACKTRACE</a></td><td>日志只保留一份备份文件（专供 Backtrace 崩溃上报）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_LOG_LOST_TIMESTAMP">XD_BUG_FIX_LOG_LOST_TIMESTAMP</a></td><td>修复移动端日志丢失时间戳</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_USE_BIG_ERROR_MESSAGE_SIZE">XD_USE_BIG_ERROR_MESSAGE_SIZE</a></td><td>加大错误信息缓冲区，便于调试（当前关闭）</td><td class="tval">0</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MSIC_GENERIC_STACK_TRACE">XD_MSIC_GENERIC_STACK_TRACE</a></td><td>通用平台堆栈回溯信息，支持自定义深度</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME">XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME</a></td><td>媒体播放结束后可选择保留最后一帧而非清空 MediaTexture</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUGFIX_STAT_MESSAGES_CHUNK_SIZE_OVERFLOW">XD_BUGFIX_STAT_MESSAGES_CHUNK_SIZE_OVERFLOW</a></td><td>修复 Stat 线程消息块大小溢出崩溃（默认关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_WMF_SESSION_CLOSE_HANG">XD_BUG_FIX_WMF_SESSION_CLOSE_HANG</a></td><td>修复 PC WMF MediaPlayer 关闭会话时卡死</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_DEBUG_MONOLITHIC_INFO">XD_TOOL_DEBUG_MONOLITHIC_INFO</a></td><td>用 #pragma message 输出编译代码路径（Monolithic 调试，当前关闭）</td><td class="tval">0</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_REPORT_ERROR_MSG_VIA_CRASH_TOOLS">XD_EXT_REPORT_ERROR_MSG_VIA_CRASH_TOOLS</a></td><td>通过崩溃上报工具（Themis）上报错误信息</td><td class="tval">1</td><td class="tuse">13</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="memory-profiling.html"><h3>📊 内存与性能分析</h3><p>与当前主题关联密切</p></a><a class="card" href="platform-pc.html"><h3>🖥️ PC / Windows / D3D</h3><p>与当前主题关联密切</p></a><a class="card" href="platform-mobile.html"><h3>📲 Android / iOS / Mac</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>渲染管线与排序 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🎨 渲染管线与排序</h1><p class="lead">BasePass、模板、渲染优先级、半透明与 OIT</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>UE4 的渲染顺序由引擎按「材质类型 + 距离」统一决定，项目很难干预。心动定制把「顺序」与「深度/模板/颜色写入」开放给材质与 MeshBatch，并新增 TAA 后半透明与扭曲半透明两条管线，解决<b>特效层次、渲染穿插、特殊遮罩</b>三类问题。
+</div>
+
+<h2 class="sec">1. 材质级模板测试（NativeStencil）</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</code>：在材质实例属性中暴露模板参数——<code>bOverride_StencilTestMode/StencilValue/DisableDepth</code>、<code>EStencilCompareOpMode</code>、<code>bDisableDepthTest</code>；移动端在 <code>MobileBasePass</code> 的 <code>SetDrawRenderState&lt;&gt;</code> 中落地，PC 端由下面的宏扩展。</li>
+<li><code>XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</code>：PC 上把模板能力扩展到 Pre-Depth Pass（可写）、BasePass 与半透明 Pass（只测不写），通过 <code>GetDepthStencilStateForDepthPassMaterialWithStencil&lt;&gt;()</code> / <code>SetDepthStencilStateForBasePass()</code> 实现。</li>
+<li><code>XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS</code>：PC Deferred 下模板写入只在 Pre-Depth 发生，BasePass 只读，省一次带宽并避免重复写入。</li>
+</ul>
+<p class="note" style="display:block">⚠ 典型用途：角色描边、UI 遮罩、只显示某区域、多层特效叠加；改这些宏需要清理 DDC 重编 Shader。</p>
+
+<h2 class="sec">2. 渲染顺序（Priority）</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_BASEPASS_RENDERING_PRIORITY</code>：不透明/Mask 材质与图元可设置 <code>RenderPriority</code>，排序键中从 depth 位里让出 2 bit 存放优先级；排序模式由 CVar <code>xd.r.BasePassSortPriorityMode</code> 选择「按材质 / 按图元」。</li>
+<li><code>XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</code>：半透明排序粒度从 Primitive 细化到 <b>MeshBatch</b>（<code>First/SecondPerBatchTranslucentPriority</code>），优先级钳到 8 bit，目前主要支持移动端渲染器。</li>
+<li><code>XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</code>：按 Emitter 顺序自动为粒子生成半透明优先级，特效美术无需手工排序。</li>
+</ul>
+
+<h2 class="sec">3. 深度/颜色写入的特殊材质</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE</code>：Opaque 材质支持 <code>SrcFactor=Zero, DstFactor=One</code> 且关闭深度写入（<code>bEnableOpaqueReverseBlend</code>），用于“只擦除/只覆盖颜色”的特殊材质。</li>
+<li><code>XD_RENDERING_DISABLE_COLOR_WRITE</code> + <code>XD_RENDERING_PC_DISABLE_COLOR_WRITE</code>：材质可勾选不写颜色（<code>CW_NONE</code>），PC 端在延迟路径下这类材质不会进入 BasePass 命令，Pre-Depth 也参与处理。用于纯遮挡体、模板写入器。</li>
+</ul>
+
+<h2 class="sec">4. 半透明管线：TAA 后合成与扭曲</h2>
+<ul class="tight">
+<li><code>XD_TRANSLUCENCY_AFTER_TAA</code>：新增 <code>TPT_TranslucencyAfterTAA</code> 半透明 Pass 与对应 MeshPass；材质可指定在 TAA 之后合成，解决 TAA 与半透明特效（尤其是叠加型特效）的闪烁、拖影。</li>
+<li><code>XD_DISTORT_TRANSLUCENCY</code>：新增 <code>TPT_DistortTranslucency</code> 与独立 <code>DistortionPass</code>，热浪/水波/空间扭曲类效果可控且可排序；移动端可用 <code>r.Mobile.DisableDistortion</code> 默认关闭。</li>
+</ul>
+
+<h2 class="sec">5. OIT（顺序无关透明）</h2>
+<ul class="tight">
+<li><code>XD_OIT_SORTKEY</code>：新增 <code>OITSortKey.h/.cpp</code> 与 <code>OITSortKeyManager</code>，为静态网格/骨骼网格/组件逐帧计算排序键（按分组 anchor 重排）；对需要拆背面的 Mesh 追加 ReverseCulling + 第二半透明优先级的批次。用于解决毛发/披风/多层半透明穿插闪烁。</li>
+</ul>
+
+<h2 class="sec">6. 其它渲染管线改动</h2>
+<ul class="tight">
+<li><code>XD_SCENECAPTURE_SHARED_DEPTHTEXTURE</code>：SceneCapture 可复用主视图深度纹理（映射到自身投影），显著降低小地图/后视镜/抓拍等二次视图的开销。</li>
+<li><code>XD_RENDERING_FORCE_FEATURE_GATHER4</code>：强制启用硬件 Gather4 采样，加速 PCF 阴影过滤。</li>
+<li><code>XD_OPTIMIZATION_DONT_WAIT_QUERY_RESULT_WHEN_HW_OC_DISABLED</code>：<code>r.AllowOcclusionQueries=0</code> 时不再等待查询结果，减少无谓同步。</li>
+<li><code>XD_OPTIMIZATION_RESET_OCCLUSION_HISTORY_MEMORY</code>：换关卡时重置遮挡剔除历史，避免错误剔除与内存滞留。</li>
+<li><code>XD_EXTRA_GBUFFER</code>：仅声明、无引用的预留宏；<code>XD_OPT_TRANSLUCENCY_DEPTH_PREPASS</code> 同为声明未启用。</li>
+<li>稳定性修复：<code>XD_BUG_FIX_USE_CUSTOM_DEPTH_OF_CURRENT_RENDERER</code>、<code>XD_TRY_FIX_BUG_CUSTOM_DEPTH_RT_VALIDATION_ERROR</code>、<code>XD_BUG_FIX_DrawCallCategoryName_INVALID_POINTER</code>、<code>XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND</code>、<code>XD_BUG_FIX_UNDRAWN_CANVASRT_SRV</code>、<code>XD_BUG_FIX_VALUE_OF_ALPHA_WHEN_GENERATING_MIPMAP</code>。</li>
+</ul>
+
+<h2 class="sec">7. 注意事项</h2>
+<ul class="tight">
+<li><b>Build 依赖</b>：PC 模板扩展依赖材质模板宏；自动粒子排序依赖 Per-MeshBatch 优先级宏（UBT 会报错）。</li>
+<li><b>Shader 重编</b>：新增半透明 Pass 会改动 <code>EMeshPass</code> 枚举与排序布局（<code>NumBits</code>），修改后必须清 DDC。</li>
+<li><b>性能取舍</b>：Per-MeshBatch 优先级与 OIT 排序键都有每帧 CPU 成本，开放给美术使用时要控制规模（特效优先级只在前 8 bit 内，注意钳制）。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 24 个宏——UE5 已覆盖 <b>1</b>、部分覆盖 <b>9</b>、未覆盖 <b>14</b>；可完全工程化 <b>4</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">渲染管线与排序 相关宏（24）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE">XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE</a></td><td>Opaque 混合模式支持 SrcFactor=Zero/DST=One 并关闭深度写入</td><td class="tval">1</td><td class="tuse">16</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_UNDRAWN_CANVASRT_SRV">XD_BUG_FIX_UNDRAWN_CANVASRT_SRV</a></td><td>未绘制过的 CanvasRenderTarget2D 也需要转换为 SRV 状态（UE4-2038）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_SCENECAPTURE_SHARED_DEPTHTEXTURE">XD_SCENECAPTURE_SHARED_DEPTHTEXTURE</a></td><td>SceneCapture 复用主视图的深度纹理，避免重复渲染深度</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_TRANSLUCENCY_AFTER_TAA">XD_TRANSLUCENCY_AFTER_TAA</a></td><td>半透明支持在 TAA 之后合成（新增 TranslucencyPass 分段）</td><td class="tval">1</td><td class="tuse">21</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_TRY_FIX_BUG_CUSTOM_DEPTH_RT_VALIDATION_ERROR">XD_TRY_FIX_BUG_CUSTOM_DEPTH_RT_VALIDATION_ERROR</a></td><td>尝试修复 CustomDepth/CustomStencilSRV 校验失败并输出更多信息</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_EXTRA_GBUFFER">XD_EXTRA_GBUFFER</a></td><td>扩展 GBuffer 通道（预留，代码中未见引用）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</a></td><td>材质支持 NativeStencil：材质可自定义模板测试与写入</td><td class="tval">1</td><td class="tuse">25</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_USE_CUSTOM_DEPTH_OF_CURRENT_RENDERER">XD_BUG_FIX_USE_CUSTOM_DEPTH_OF_CURRENT_RENDERER</a></td><td>Scene Renderer 应使用当前渲染器的 CustomDepth 而非上一个渲染器的</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_BASEPASS_RENDERING_PRIORITY">XD_RENDERING_BASEPASS_RENDERING_PRIORITY</a></td><td>BasePass（不透明+Mask）支持按 MeshBatch 指定额外渲染顺序</td><td class="tval">1</td><td class="tuse">23</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_DISTORT_TRANSLUCENCY">XD_DISTORT_TRANSLUCENCY</a></td><td>半透明扭曲（Distortion）支持：独立 Distortion Pass 与材质开关</td><td class="tval">1</td><td class="tuse">25</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_TRANSLUCENCY_DEPTH_PREPASS">XD_OPT_TRANSLUCENCY_DEPTH_PREPASS</a></td><td>把半透明物体当作 Masked 写入深度预 Pass（当前未启用）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_DEBUG_RENDERING_FUNC">XD_EXT_DEBUG_RENDERING_FUNC</a></td><td>增加渲染调试辅助功能/接口</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</a></td><td>半透明 Pass 支持按 MeshBatch 设置额外渲染顺序（目前主要移动端）</td><td class="tval">1</td><td class="tuse">21</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_RESET_OCCLUSION_HISTORY_MEMORY">XD_OPTIMIZATION_RESET_OCCLUSION_HISTORY_MEMORY</a></td><td>切换关卡时重置遮挡剔除历史缓冲（Occlusion History）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_FORCE_FEATURE_GATHER4">XD_RENDERING_FORCE_FEATURE_GATHER4</a></td><td>强制启用硬件 Gather4 采样（阴影/后处理）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS">XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS</a></td><td>PC Deferred 下 BasePass 不再写 stencil（改在 Pre-Depth 写，BasePass 只读）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_DONT_WAIT_QUERY_RESULT_WHEN_HW_OC_DISABLED">XD_OPTIMIZATION_DONT_WAIT_QUERY_RESULT_WHEN_HW_OC_DISABLED</a></td><td>当 r.AllowOcclusionQueries 关闭时不再等待遮挡查询结果</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_DISABLE_COLOR_WRITE">XD_RENDERING_DISABLE_COLOR_WRITE</a></td><td>材质支持关闭颜色写入（只写深度/模板）</td><td class="tval">1</td><td class="tuse">14</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</a></td><td>PC 端扩展模板功能：允许 Pre-Depth Pass 写 stencil、BasePass/半透明 Pass 只测不写</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_PC_DISABLE_COLOR_WRITE">XD_RENDERING_PC_DISABLE_COLOR_WRITE</a></td><td>PC 端在 Pre-Depth Pass 支持材质关闭颜色写入</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_DrawCallCategoryName_INVALID_POINTER">XD_BUG_FIX_DrawCallCategoryName_INVALID_POINTER</a></td><td>修复 RHIPrivateBeginFrame 访问无效 CategoryName 指针崩溃</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_OIT_SORTKEY">XD_OIT_SORTKEY</a></td><td>OIT（顺序无关透明）支持：为半透明物体生成稳定排序键</td><td class="tval">1</td><td class="tuse">26</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_VALUE_OF_ALPHA_WHEN_GENERATING_MIPMAP">XD_BUG_FIX_VALUE_OF_ALPHA_WHEN_GENERATING_MIPMAP</a></td><td>修复生成 Mipmap 时 Alpha 均值大于上一级（Alpha Scale 导致）</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND">XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND</a></td><td>BuildMeshDrawCommands 找不到 Shader 参数时输出调试信息（移动端 BasePass 崩溃定位）</td><td class="tval">1</td><td class="tuse">4</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="rendering-lighting.html"><h3>💡 光照、阴影与材质</h3><p>与当前主题关联密切</p></a><a class="card" href="mobile-rendering.html"><h3>📱 移动端渲染优化</h3><p>与当前主题关联密切</p></a><a class="card" href="shader-pso.html"><h3>🧩 着色器与 PSO</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

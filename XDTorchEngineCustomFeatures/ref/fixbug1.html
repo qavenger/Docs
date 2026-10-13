@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bug 修复（上半部分） · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>Bug 修复（上半部分）</h1><p class="lead">XDFixBugFeatures · 上半部分 · 共 89 个宏</p>
+<div class="toolbar"><input class="filter" placeholder="在本文档内筛选宏名…" data-scope="#macrolist"></div>
+<div class="pager"><a href="tools.html">← 工具特性（XDToolsFeatures）</a>　<a href="fixbug2.html">Bug 修复（下半部分） →</a></div>
+<div id="macrolist">
+<h2 class="author">Ran Qing Sen</h2>
+<article class="macro" id="XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED">
+<h3 class="mname">XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:26</span>
+</div>
+<p class="zh">修复常量材质实例（MIC）上 CastDynamicShadowAsMasked 不生效的问题</p>
+<p class="en">源码注释：fixed a bug that CastDynamicShadowAsMasked doesn't work on constant material instance</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Materials/MaterialInstance.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstanceBasePropertyOverrides.h</li><li>Source/Runtime/Engine/Private/Materials/MaterialInstance.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/Materials/MaterialInstance.cpp:5221 GetCastDynamicShadowAsMasked 直接返回 bCastDynamicShadowAsMasked；同文件 2496-2504 处理 bOverride_CastDynamicShadowAsMasked；5318 IsMasked 含 Translucent+CastDynamicShadowAsMasked 分支</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已原生修复 MIC 上该覆写不生效问题</p>
+<p class="migline"><b>落地方式：</b>无需工程侧代码</p>
+<p class="migline"><b>建议：</b>直接删除宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PREVIEW_CAMERA_SHAKE_WHEN_MOVE_LOCKED_ACTOR">
+<h3 class="mname">XD_BUG_FIX_PREVIEW_CAMERA_SHAKE_WHEN_MOVE_LOCKED_ACTOR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:29</span>
+</div>
+<p class="zh">修复移动被锁定的 Actor 时预览相机剧烈抖动</p>
+<p class="en">源码注释：fixed a bug that preview camera shake a lot when move locked actor</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/LevelEditorViewport.cpp</li><li>Source/Editor/UnrealEd/Public/LevelEditorViewport.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Editor/UnrealEd/Private/LevelEditorViewport.cpp:3055,4194,4353 UpdateViewForLockedActor/MoveCameraToLockedActor（已重构，无 XD 的 delta 抖动条件）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 锁定相机逻辑重写，抖动可能不再出现</p>
+<p class="migline"><b>落地方式：</b>LevelEditor 视口客户端内部</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>实测锁定 Actor 拖拽是否抖动，再决定保留补丁。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PREVIEW_CAMERA_SHAKE_WHEN_MOVE_LOCKED_ACTOR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR">
+<h3 class="mname">XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">移动端渲染优化</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:32</span>
+</div>
+<p class="zh">修复移动端帧率超过 60 时渲染线程可能多等一个 VSync 的问题</p>
+<p class="en">源码注释：fixed a bug when mobile's fresh rate beyond 60, render-thread may wait 2 vsync intervals</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/XDConsoleVariables.inc</li><li>Source/Runtime/OpenGLDrv/Private/Android/AndroidOpenGLFramePacer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/Android/AndroidOpenGLFramePacer.cpp:386-399（UE5.8 用 DriverRefreshNanos 计算 Under/OverDriverInterval 选择同步间隔，形态与 XD 的 xd.r.fixbug.mobileRTSwapBufferIntervalError 特殊分支不同）</p>
+<p class="migline"><b>覆盖说明：</b>UE5.8 帧同步算法已重写，无法从源码断定 &gt;60Hz 下是否仍多等一帧，需真机验证</p>
+<p class="migline"><b>落地方式：</b>可用 CVar/ini 调整交换间隔策略，但该逻辑在 RHI 内部</p>
+<p class="migline"><b>接入点：</b>FAndroidOpenGLFramePacer::UpdateFramePacing / SwapBuffers 前 SyncIntervalNanos 计算</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>Android OpenGL 已是次要路径；先真机验证 60/90/120Hz 是否仍有双倍等待，再决定是否移植 CVar</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_EDITOR_PREVIEW_FEATURE_LEVEL_NOT_MATCH_UI">
+<h3 class="mname">XD_BUG_FIX_EDITOR_PREVIEW_FEATURE_LEVEL_NOT_MATCH_UI <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:35</span>
+</div>
+<p class="zh">修复编辑器预览实际特性等级与 UI 显示不一致（显示 ES3.1 实际 SM5）</p>
+<p class="en">源码注释：https://xindong.atlassian.net/browse/UE4-529 (The editor shows that the preview mode is ES3.1 but actually SM5)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/EditorServer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Editor/UnrealEd/Private/EditorEngine.cpp:7082 GetActiveFeatureLevelPreviewType；Runtime/Core/Private/HAL/ConsoleManager.cpp:4608 r.FeatureLevelPreview；World::ChangeFeatureLevel 在 5.8 已 UE_DEPRECATED</p>
+<p class="migline"><b>覆盖说明：</b>UE5 预览特性等级机制已重构（ShaderPlatformChanged）</p>
+<p class="migline"><b>落地方式：</b>编辑器预览逻辑在 UnrealEd 内部</p>
+<p class="migline"><b>接入点：</b>r.FeatureLevelPreview · UEditorEngine::GetActiveFeatureLevelPreviewType</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>先确认 UE5 是否仍有该不一致，再决定是否保留补丁。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_EDITOR_PREVIEW_FEATURE_LEVEL_NOT_MATCH_UI">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_WRONG_MAT_EDITOR_VIEWPORT_SIZE_WHEN_NOT_TONEMAP_FILM">
+<h3 class="mname">XD_BUG_FIX_WRONG_MAT_EDITOR_VIEWPORT_SIZE_WHEN_NOT_TONEMAP_FILM <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:38</span>
+</div>
+<p class="zh">修复 r.Mobile.TonemapperFilm=0 时打开材质编辑器最后一个 OverrideInput 视口尺寸错误</p>
+<p class="en">源码注释：r.Mobile.TonemapperFilm=0, the last OverideInput have chance to have a wrong Viewport Extend size when we open MaterialEditor.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/PostProcess/PostProcessing.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 全仓无 r.Mobile.TonemapperFilm CVar（grep 仅命中历史测试日志），该分支已不存在</p>
+<p class="migline"><b>覆盖说明：</b>UE5 移除 TonemapperFilm，问题路径消失</p>
+<p class="migline"><b>落地方式：</b>Renderer 内部</p>
+<p class="migline"><b>建议：</b>相关 CVar 已删，宏可弃。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_WRONG_MAT_EDITOR_VIEWPORT_SIZE_WHEN_NOT_TONEMAP_FILM">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW">
+<h3 class="mname">XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:41</span>
+</div>
+<p class="zh">修复 Sequencer 复制关键帧后绘制不刷新</p>
+<p class="en">源码注释：fixed sequencer keyframe duplicate no update on draw</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/Sequencer/Private/Sequencer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Sequencer.cpp 已重写为 MVVM/Widgets（Engine/Source/Editor/Sequencer/Private），未定位复制关键帧后的重绘路径</p>
+<p class="migline"><b>覆盖说明：</b>路径变化，需实测</p>
+<p class="migline"><b>落地方式：</b>编辑器 Sequencer 侧</p>
+<p class="migline"><b>接入点：</b>Sequencer 重绘/KeyArea</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UE5 编辑器中复测关键帧复制重绘</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_IOS_TEXT_INPUT_CRASH">
+<h3 class="mname">XD_BUG_FIX_IOS_TEXT_INPUT_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:44</span>
+</div>
+<p class="zh">修复 iOS 中文输入法导致文本框崩溃</p>
+<p class="en">源码注释：chinese input characters cause ios text-input-box crash</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Framework/Text/IOS/IOSPlatformTextField.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Slate/Private/Framework/Text/IOS/IOSPlatformTextField.cpp:379/403/470/496/518（TextWidget.IsValid 守卫）、:322-336 弱引用取 Pin 后再用</p>
+<p class="migline"><b>覆盖说明：</b>UE5 重写了 iOS 文本输入（弱引用 + hasTextWidget），但中文输入法组字崩溃未明确标注修复</p>
+<p class="migline"><b>落地方式：</b>iOS 文本输入在引擎 Slate 层</p>
+<p class="migline"><b>接入点：</b>FIOSPlatformTextField::ShowVirtualKeyboard / SlateTextField</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>iOS 中文输入法崩溃需在 UE5 新实现上复测，必要时补丁。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_IOS_TEXT_INPUT_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_MOBILE_OPENGLES_CREATE_UAV_ERROR">
+<h3 class="mname">XD_BUG_FIX_MOBILE_OPENGLES_CREATE_UAV_ERROR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 8</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:47</span>
+</div>
+<p class="zh">修复 FOpenGLDynamicRHI::RHICreateUnorderedAccessView_RenderThread 崩溃</p>
+<p class="en">源码注释：fixed a bug when 'FOpenGLDynamicRHI::RHICreateUnorderedAccessView_RenderThread' crash</p>
+<details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/OpenGLDrv/Private/OpenGLDrv.cpp</li><li>Source/Runtime/OpenGLDrv/Private/OpenGLES.cpp</li><li>Source/Runtime/OpenGLDrv/Private/OpenGLUAV.cpp</li><li>Source/Runtime/OpenGLDrv/Public/OpenGL.h</li><li>Source/Runtime/OpenGLDrv/Public/OpenGLDrv.h</li><li>Source/Runtime/OpenGLDrv/Public/OpenGLES.h</li><li>Source/Runtime/RHI/Public/DynamicRHI.h</li><li>Source/Runtime/RenderCore/Public/RenderResource.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/OpenGLUAV.cpp:375（仅剩 FRHICommandListBase 单入口，RHICreateUnorderedAccessView_RenderThread 已删除）</p>
+<p class="migline"><b>覆盖说明：</b>目标函数不存在</p>
+<p class="migline"><b>落地方式：</b>无需改动</p>
+<p class="migline"><b>建议：</b>UE5 已移除 renderthread 版 UAV 创建接口</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_MOBILE_OPENGLES_CREATE_UAV_ERROR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_IOS_FATAL_ERROR_DONT_PRINT_MSG_AND_CALLSTACK">
+<h3 class="mname">XD_BUG_FIX_IOS_FATAL_ERROR_DONT_PRINT_MSG_AND_CALLSTACK <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:50</span>
+</div>
+<p class="zh">修复 iOS 平台致命错误信息与调用栈未写入日志文件</p>
+<p class="rels">关联宏：<a class="rel" href="fixbug2.html#XD_BUGFIX_IOS_LOSTLOG">XD_BUGFIX_IOS_LOSTLOG</a></p>
+<p class="en">源码注释：fix a bug that 'IOS platform UE's fatal error msg &amp; call-stack don't write into log file'</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Private/IOS/IOSErrorOutputDevice.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/IOS/IOSErrorOutputDevice.cpp:93 FDebug::LogFormattedMessageWithCallstack（:38-92 为 callstack 符号反解写 GErrorHist 的循环，:31-32 为 !GIsGuarded 时 RequestExit(true)）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已实现</p>
+<p class="migline"><b>落地方式：</b>无需改动</p>
+<p class="migline"><b>建议：</b>UE5 已覆盖，删除宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_IOS_FATAL_ERROR_DONT_PRINT_MSG_AND_CALLSTACK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_SHADER_COMPILING_CRASH">
+<h3 class="mname">XD_BUG_FIX_SHADER_COMPILING_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:55</span>
+</div>
+<p class="zh">修复着色器编译被取消时残留半成品 Shader 导致的 check 崩溃（取消时丢弃所有相关 Shader）</p>
+<p class="en">源码注释：sometimes shader compiling process will be canceled, if part of a shader pipeline stages already compiled and part of them being canceled, this will trigger a check() crash in runtime. we drop all of canceled shader to prevent this happen. If a shader really needed, it will get a whole complling operation after the cancelling, so don't worry about drop these shaders.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp</li><li>Source/Runtime/Engine/Public/ShaderCompiler.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp:2729 CancelCompilation（取消/作业生命周期已重写）</p>
+<p class="migline"><b>覆盖说明：</b>取消路径变化，需复核半成品 Shader</p>
+<p class="migline"><b>落地方式：</b>ShaderCompiler 取消逻辑</p>
+<p class="migline"><b>接入点：</b>FShaderCompilingManager::CancelCompilation</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>在 UE5 新取消/完成流程上复核是否残留半成品</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_SHADER_COMPILING_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TMP_FIX_MALLOC_ZERO_ISSUE">
+<h3 class="mname">XD_TMP_FIX_MALLOC_ZERO_ISSUE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:58</span>
+</div>
+<p class="zh">避免 0 字节内存分配（临时修复代码）</p>
+<p class="en">源码注释：Avoid alloc 0 memory, temporay test code here</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/MallocAnsi.cpp</li><li>Source/Runtime/Core/Private/HAL/MallocBinned.cpp</li><li>Source/Runtime/Core/Private/HAL/MallocBinned2.cpp</li><li>Source/Runtime/Core/Private/HAL/MallocBinned3.cpp</li><li>Source/Runtime/Core/Private/HAL/MallocMimalloc.cpp</li><li>Source/Runtime/Core/Private/HAL/MallocStomp.cpp</li><li>Source/Runtime/Core/Private/HAL/MallocTBB.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/HAL/MallocBinned2.cpp:720 Size=Max(1,Size)；Realloc NewSize==0 处理(766)</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已处理 0 字节分配</p>
+<p class="migline"><b>落地方式：</b>分配器内部，非工程侧</p>
+<p class="migline"><b>建议：</b>UE5 分配器已防零字节，删除临时修复</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TMP_FIX_MALLOC_ZERO_ISSUE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_VOLUME_LIGHTMAP_ADD_TO_SCENE_CRASH">
+<h3 class="mname">XD_BUG_FIX_VOLUME_LIGHTMAP_ADD_TO_SCENE_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:61</span>
+</div>
+<p class="zh">修复 FPrecomputedVolumetricLightmap::AddToScene 崩溃</p>
+<p class="en">源码注释：fix a bug that 'FPrecomputedVolumetricLightmap::AddToScene'</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Private/PrecomputedVolumetricLightmap.cpp</li><li>Source/Runtime/Engine/Public/PrecomputedVolumetricLightmap.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Public/PrecomputedVolumetricLightmap.h:271 TWeakObjectPtr&lt;UMapBuildDataRegistry&gt; SourceRegistry 成员；Runtime/Engine/Private/PrecomputedVolumetricLightmap.cpp:731/756-765 ensureMsgf 校验 SourceRegistry 有效性</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已采用与 XD 相同的弱引用方案</p>
+<p class="migline"><b>落地方式：</b>无需工程侧代码</p>
+<p class="migline"><b>建议：</b>直接删除宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_VOLUME_LIGHTMAP_ADD_TO_SCENE_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_ENGINE_INITIALIZED_FAIL">
+<h3 class="mname">XD_BUG_FIX_ENGINE_INITIALIZED_FAIL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:64</span>
+</div>
+<p class="zh">引擎初始化失败时主动触发崩溃（而非静默退出），保证崩溃可被上报定位</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Programs/AutomationTool/Gauntlet/Unreal/Base/Gauntlet.UnrealTestConfiguration.cs</li><li>Source/Runtime/Launch/Private/LaunchEngineLoop.cpp</li><li>Source/Runtime/Launch/Private/Windows/LaunchWindows.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Launch/Private/LaunchEngineLoop.cpp 未见初始化失败主动崩溃逻辑（仅返回错误码/RequestExit）</p>
+<p class="migline"><b>覆盖说明：</b>需保留保证崩溃可上报</p>
+<p class="migline"><b>落地方式：</b>位于 Launch 引擎入口，须引擎侧</p>
+<p class="migline"><b>接入点：</b>FEngineLoop::Init 返回值处理 · WinMain 崩溃上报入口</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>保留 Launch 侧初始化失败即崩溃上报的补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_ENGINE_INITIALIZED_FAIL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_DrawCallCategoryName_INVALID_POINTER">
+<h3 class="mname">XD_BUG_FIX_DrawCallCategoryName_INVALID_POINTER <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:67</span>
+</div>
+<p class="zh">修复 RHIPrivateBeginFrame 访问无效 CategoryName 指针崩溃</p>
+<p class="en">源码注释：crash at &quot;RHIPrivateBeginFrame&quot; function, line 899 (access invalid CategoryName pointer)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RHI/Public/RHI.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/RHI/Public/RHIStats.h:82 FRHIDrawStatsCategory 改用 TStaticArray 索引，FDrawCallCategoryName 已删除；RHI.cpp:136 索引检查</p>
+<p class="migline"><b>覆盖说明：</b>UE5 重构 drawcall 类别统计，指针失效 bug 结构上消除</p>
+<p class="migline"><b>落地方式：</b>无需迁移</p>
+<p class="migline"><b>建议：</b>UE5 已用索引式 FRHIDrawStatsCategory，原 bug 不复存在</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_DrawCallCategoryName_INVALID_POINTER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_SpriteCategoryVisibility_OUT_OF_INDEX">
+<h3 class="mname">XD_BUG_FIX_SpriteCategoryVisibility_OUT_OF_INDEX <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:70</span>
+</div>
+<p class="zh">修复 SpriteCategoryVisibility 数组越界崩溃</p>
+<p class="en">源码注释：crash at acess &quot;SpriteCategoryVisibility&quot; index out of array</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Editor/LevelEditor/Private/SLevelViewport.cpp</li><li>Source/Editor/UnrealEd/Classes/Editor/UnrealEdEngine.h</li><li>Source/Editor/UnrealEd/Private/LevelEditorViewport.cpp</li><li>Source/Editor/UnrealEd/Private/UnrealEdEngine.cpp</li><li>Source/Editor/UnrealEd/Public/LevelEditorViewport.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Editor/UnrealEd/Private/UnrealEdEngine.cpp:1195-1201 GetSpriteCategoryIndex 返回 INDEX_NONE 安全；SLevelViewport.cpp:1926-1928 仍按下标访问 ShowSpriteCommands</p>
+<p class="migline"><b>覆盖说明：</b>越界入口已安全化，视口循环仍需核对</p>
+<p class="migline"><b>落地方式：</b>UnrealEd/LevelEditor 内部</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>核对 SLevelViewport 精灵分类循环下标后保留补丁。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_SpriteCategoryVisibility_OUT_OF_INDEX">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_METAL_VERTEX_BUFFER_VIEW_VALIDATION_ERROR">
+<h3 class="mname">XD_BUG_FIX_METAL_VERTEX_BUFFER_VIEW_VALIDATION_ERROR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:73</span>
+</div>
+<p class="zh">修复 Xcode Metal Validation 开启时 Vertex Buffer 视图校验报错</p>
+<p class="en">源码注释：When profiling with xcode with 'metal validation' on, pop up a vertex buffer validation error</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Apple/MetalRHI/Private/MetalVertexBuffer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Apple/MetalRHI/Private/MetalBuffer.cpp:1222（linear texture 创建统一带 ResourceHazardTrackingModeUntracked）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 重写后已统一处理</p>
+<p class="migline"><b>落地方式：</b>无需改动</p>
+<p class="migline"><b>建议：</b>需开 Metal Validation 实机验证一次</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_METAL_VERTEX_BUFFER_VIEW_VALIDATION_ERROR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_EDITOR_POSTPROCESS_STILL_RUN_IN_GAME_MODE">
+<h3 class="mname">XD_BUG_FIX_EDITOR_POSTPROCESS_STILL_RUN_IN_GAME_MODE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:76</span>
+</div>
+<p class="zh">修复 ShaderDrawDebug 等编辑器后处理在 Game 模式仍运行的报错</p>
+<p class="en">源码注释：Caused by &quot;In ShaderDrawDebug Pass, when r.screenpercentage used color&amp;depth rt differ (pop-up error msg box)&quot;</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/GpuDebugRendering.cpp</li><li>Source/Runtime/Renderer/Private/PostProcess/PostProcessing.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/Renderer/Private/PostProcess/PostProcessing.cpp:637-655,677（编辑器 pass 全部 GIsEditor 判定）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 后处理已按 GIsEditor 隔离</p>
+<p class="migline"><b>落地方式：</b>Renderer 内部</p>
+<p class="migline"><b>建议：</b>UE5 结构已重写，宏无意义。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_EDITOR_POSTPROCESS_STILL_RUN_IN_GAME_MODE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_IOS_DEVICE_MAPPING_ERROR_MATCH">
+<h3 class="mname">XD_BUG_FIX_IOS_DEVICE_MAPPING_ERROR_MATCH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:79</span>
+</div>
+<p class="zh">修复 IOSDeviceMappings 机型匹配不正确</p>
+<p class="en">源码注释：[IOSDeviceMappings] don't match correctly.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Private/IOS/IOSPlatformMisc.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/IOS/IOSPlatformMisc.cpp:538 MatchIOSDeviceMapping 仅 RegexMatcher.FindNext()，无整串/机型前缀精确匹配</p>
+<p class="migline"><b>覆盖说明：</b>UE5 与 UE4 vanilla 行为一致</p>
+<p class="migline"><b>落地方式：</b>需改 Core IOS 匹配逻辑；也可在 DeviceProfiles.ini 用锚定正则规避</p>
+<p class="migline"><b>接入点：</b>FIOSPlatformMisc::MatchIOSDeviceMapping</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>优先尝试锚定正则配置，否则保留 Core 补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_IOS_DEVICE_MAPPING_ERROR_MATCH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_WINDOW_CRASH_WHEN_CREATE_UAV_VIEW">
+<h3 class="mname">XD_BUG_FIX_WINDOW_CRASH_WHEN_CREATE_UAV_VIEW <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:83</span>
+</div>
+<p class="zh">创建 UAV 失败时输出完整参数（B8G8R8A8_UNORM 不能做 typed UAV 类问题）</p>
+<p class="en">源码注释：When CreateUnorderedAccessView fail, dump the input args Error msg &quot;The format (B8G8R8A8_UNORM) cannot be used with a typed UAV</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/TextureRenderTarget2D.h</li><li>Source/Runtime/Engine/Private/CanvasRenderTarget2D.cpp</li><li>Source/Runtime/Engine/Private/TextureRenderTarget2D.cpp</li><li>Source/Runtime/Windows/D3D11RHI/Private/D3D11UAV.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Windows/D3D11RHI/Private/D3D11UAV.cpp:112 VERIFYD3D11RESULT_EX（仅输出错误串，无详细参数）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 记录了错误但缺 XD 的完整参数 dump</p>
+<p class="migline"><b>落地方式：</b>在 D3D11UAV.cpp CreateUnorderedAccessView 失败分支补参数日志</p>
+<p class="migline"><b>接入点：</b>FD3D11UnorderedAccessView 构造</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UAV 创建失败参数诊断，随代码迁移</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_WINDOW_CRASH_WHEN_CREATE_UAV_VIEW">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_DUMP_ASYNC_LOADING_FILE_ERROR_DETAILS">
+<h3 class="mname">XD_BUG_FIX_DUMP_ASYNC_LOADING_FILE_ERROR_DETAILS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:86</span>
+</div>
+<p class="zh">异步加载文件失败时输出详细原因</p>
+<p class="en">源码注释：Dump the detail reason about why async loading file fail</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/Misc/PackageName.cpp</li><li>Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading.cpp</li><li>Source/Runtime/CoreUObject/Public/Misc/PackageName.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 侧 AsyncLoading.cpp 有包加载失败日志但 grep GetPackageNoExistReason 无结果，无逐条失败原因链</p>
+<p class="migline"><b>覆盖说明：</b>UE5 未提供等价原因枚举</p>
+<p class="migline"><b>落地方式：</b>项目模块 bind FCoreDelegates::OnAsyncLoadPackage 打印上下文；精确原因需 FPackageName 只读接口</p>
+<p class="migline"><b>接入点：</b>FCoreDelegates::OnAsyncLoadPackage · FPackageName 新增 GetPackageNoExistReason 只读接口</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>调试类增强，优先项目侧实现，引擎只留只读接口</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_DUMP_ASYNC_LOADING_FILE_ERROR_DETAILS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_SHADER_PRINT_CREATE_STRUCTURE_BUFFER_CRASH">
+<h3 class="mname">XD_BUG_FIX_SHADER_PRINT_CREATE_STRUCTURE_BUFFER_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:89</span>
+</div>
+<p class="zh">修复 PC FD3D11DynamicRHI::RHICreateStructuredBuffer 崩溃</p>
+<p class="en">源码注释：Fix PC FD3D11DynamicRHI::RHICreateStructuredBuffer Crash</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/DeferredShadingRenderer.cpp</li><li>Source/Runtime/Renderer/Private/ShaderPrint.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Renderer/Private/ShaderPrint.cpp（UE5 已改写为 RDG，含 IsEnabled 门控，仍有 CreateStructuredBuffer）</p>
+<p class="migline"><b>覆盖说明：</b>覆盖屏蔽思路但具体补丁未内建</p>
+<p class="migline"><b>落地方式：</b>在 ShaderPrint.cpp 的 IsEnabled()/Initialize 顺序处补丁</p>
+<p class="migline"><b>接入点：</b>ShaderPrint::Initialize/IsEnabled</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>Shipping/Test 下禁用 ShaderPrint 避免创建结构化缓冲崩溃</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_SHADER_PRINT_CREATE_STRUCTURE_BUFFER_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND">
+<h3 class="mname">XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:92</span>
+</div>
+<p class="zh">BuildMeshDrawCommands 找不到 Shader 参数时输出调试信息（移动端 BasePass 崩溃定位）</p>
+<p class="en">源码注释：Fix BuildMeshDrawCommands&lt;TMeshProcessorShaders&lt;TMobileBasePassVSPolicyParamType&lt;FUniformLightMapPolicy&gt; -&gt; GetShaderBindings crash</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/RendererScene.cpp</li><li>Source/Runtime/Renderer/Private/ScenePrivate.h</li><li>Source/Runtime/Renderer/Private/ShaderBaseClasses.cpp</li><li>Source/Runtime/Renderer/Public/MaterialShader.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 MeshDrawCommands.cpp 仅有无关 checkf，无参数集合缺失调试日志</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无等价诊断日志</p>
+<p class="migline"><b>落地方式：</b>调试期在渲染器私有代码加日志，以自定义 CVar 控制</p>
+<p class="migline"><b>接入点：</b>MeshDrawCommands.cpp · FShaderParameterCollection 绑定处</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>移动端 BasePass 参数缺失崩溃定位日志，按需重加（仅非Shipping）</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP">
+<h3 class="mname">XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:96</span>
+</div>
+<p class="zh">移除 Volume Lightmap 中多余的资源状态转换（同步 UE 官方修复）</p>
+<p class="en">源码注释：Copy code from : https://github.com/EpicGames/UnrealEngine/commit/3acc03088894815edae9a68f6c543b5b044bf9b6 Reasons: Those transitions aren't needed at all, since those functions call CopyDataIntoAtlas, which does them too (correctly).</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/PrecomputedVolumetricLightmap.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/PrecomputedVolumetricLightmap.cpp:905-915 CopyDataIntoAtlas 内部自行做 UAV 转换；1049-1120 分配搬移处已无多余的 Transition all the UAVs 块</p>
+<p class="migline"><b>覆盖说明：</b>官方修复已进入 UE5 主线</p>
+<p class="migline"><b>落地方式：</b>无需工程侧代码</p>
+<p class="migline"><b>建议：</b>直接删除宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_FONT_PURE_FUNCTION_CALLED">
+<h3 class="mname">XD_BUG_FIX_FONT_PURE_FUNCTION_CALLED <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:99</span>
+</div>
+<p class="zh">修复字体相关纯虚函数被调用的崩溃</p>
+<p class="rels">关联宏：<a class="rel" href="fixbug2.html#XD_BUG_FIX_FONT_CACHE_MEM_LEAK">XD_BUG_FIX_FONT_CACHE_MEM_LEAK</a></p>
+<p class="en">源码注释：Try fix a bug 'pure virtual function being called while application was running'</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/Fonts/SlateFontInfo.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/SlateCore/Private/Fonts/SlateFontInfo.cpp:192-207 GetCompositeFont（无 IsValidLowLevel 守卫）；:85-97 构造函数已增加 UFont 有效性校验与告警</p>
+<p class="migline"><b>覆盖说明：</b>UE5 增加了构造期校验但未做 XD 的失效对象守卫</p>
+<p class="migline"><b>落地方式：</b>SlateCore 内部</p>
+<p class="migline"><b>接入点：</b>FSlateFontInfo::GetCompositeFont / HasValidFont</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>保留为常开崩溃补丁，需在 UE5 路径复现后最小化改动。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_FONT_PURE_FUNCTION_CALLED">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_SOME_IME_POP_UP_WITH_WRONG_POS">
+<h3 class="mname">XD_BUG_FIX_SOME_IME_POP_UP_WITH_WRONG_POS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:102</span>
+</div>
+<p class="zh">修复部分输入法（如搜狗）候选框位置不跟随输入框</p>
+<p class="en">源码注释：Some IME (such as sou-gou) pop-up with wrong position (don't follow input character)</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/Windows/TextStoreACP.cpp</li><li>Source/Runtime/ApplicationCore/Private/Windows/WindowsTextInputMethodSystem.cpp</li><li>Source/Runtime/ApplicationCore/Public/GenericPlatform/ITextInputMethodSystem.h</li><li>Source/Runtime/ApplicationCore/Public/Windows/TextStoreACP.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/Windows/TextStoreACP.cpp:450 GetTextExt、:478 GetScreenExt（已有插入点/屏幕矩形查询）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有标准 IME 位置信息通道，但没有 XD 的 fake-selection 兼容搜狗等输入法的 hack</p>
+<p class="migline"><b>落地方式：</b>改动在 ApplicationCore Windows IME 层</p>
+<p class="migline"><b>接入点：</b>ITextInputMethodSystem::GetIsUseFakeSelectionFixWrongInputPos 类扩展点 · FTextStoreACP::InsertTextAtSelection/GetTextExt</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>按需移植 fake-selection 兼容逻辑，注意只在国内 IME 场景启用。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_SOME_IME_POP_UP_WITH_WRONG_POS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS">
+<h3 class="mname">XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:105</span>
+</div>
+<p class="zh">修复 Android x86_64 平台编译链接错误</p>
+<p class="en">源码注释：Fix compile&amp;link errors for (android x86_64 platform)</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Decoder/Android/AudioDecoderAAC_JavaWrapper_Android.cpp</li><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Decoder/Android/VideoDecoderH264_Android.cpp</li><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Decoder/Android/VideoDecoderH264_JavaWrapper_Decoder_Android.cpp</li><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Decoder/VideoDecoderH264.h</li><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Player/AdaptiveStreamingPlayer.cpp</li><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Player/AdaptiveStreamingPlayer.h</li><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Player/AdaptiveStreamingPlayerInternal.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Android/AndroidRuntimeSettings/Classes/AndroidRuntimeSettings.h:454 bBuildForX8664</p>
+<p class="migline"><b>覆盖说明：</b>官方支持 x86_64</p>
+<p class="migline"><b>落地方式：</b>Project Settings 勾选 Support x86_64</p>
+<p class="migline"><b>建议：</b>UE5 官方支持 Android x64 构建</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_FReferencerFinder_GetAllReferencers_Crash">
+<h3 class="mname">XD_FIX_BUG_FReferencerFinder_GetAllReferencers_Crash <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:109</span>
+</div>
+<p class="zh">修复 FReferencerFinder::GetAllReferencers 崩溃（TORCHLIGHT-86072）</p>
+<p class="en">源码注释：Fix the crash bug with FReferencerFinder::GetAllReferencers https://xindong.atlassian.net/browse/TORCHLIGHT-86072?search_id=cc0a50e0-8882-47a3-8faf-bbe4162499ba</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/UObject/ReferencerFinder.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/CoreUObject/Private/UObject/ReferencerFinder.cpp:203,284（!ObjectItem.IsUnreachable() 守卫，与 XD 修复一致）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已含 IsUnreachable 检查</p>
+<p class="migline"><b>落地方式：</b>CoreUObject 内部</p>
+<p class="migline"><b>建议：</b>UE5 已修复。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_FReferencerFinder_GetAllReferencers_Crash">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_TEXT_BLOCK_ERROR_LAYER_ID_WHEN_USING_OUTLINE">
+<h3 class="mname">XD_FIX_BUG_TEXT_BLOCK_ERROR_LAYER_ID_WHEN_USING_OUTLINE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:112</span>
+</div>
+<p class="zh">修复 TextBlock/ShapedTextBlock 使用描边效果时 LayerId 错误</p>
+<p class="rels">关联宏：<a class="rel" href="excluded.html#XD_RENDERING_OUTLINE">XD_RENDERING_OUTLINE</a></p>
+<p class="en">源码注释：If TextBlock&amp;ShapedTextBlock widgets use outline effect, LayerId++</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Framework/Text/SlateTextRun.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Text/STextBlock.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 SlateCore/Private/Rendering/ElementBatcher.cpp:1514-1516、1680-1682：描边文字仍在 Layer 与 Layer+1 占两层；Slate/Private/Widgets/Text/STextBlock.cpp:262-330 未为描边预留额外层（无 XD 的 ++LayerId）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 仍存在描边文字层号未让位的问题</p>
+<p class="migline"><b>落地方式：</b>需改 STextBlock/ElementBatcher 层号分配</p>
+<p class="migline"><b>接入点：</b>STextBlock::OnPaint 返回层号 · FSlateElementBatcher::AddTextElement 描边分层</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>作为常开补丁保留（原 CVar s.UseTextBlockLayerIdNewMethod 可保留以便回退）。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_TEXT_BLOCK_ERROR_LAYER_ID_WHEN_USING_OUTLINE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_FILTER_OUT_MOBILE_SIMULATOR_VIRTUAL_CONTROLLER">
+<h3 class="mname">XD_FIX_BUG_FILTER_OUT_MOBILE_SIMULATOR_VIRTUAL_CONTROLLER <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">输入与手柄</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:117</span>
+</div>
+<p class="zh">过滤移动模拟器误报的虚拟手柄连接事件（按 ESC 时）</p>
+<p class="en">源码注释：https://xindong.atlassian.net/browse/UE4-4698 when user press 'ecs' keyboard with mobile-simulator, android will receive a controller connected event we need disable this situation</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/Android/AndroidInputInterface.cpp</li><li>Source/Runtime/ApplicationCore/Public/Android/AndroidInputInterface.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/ApplicationCore/Private/Android/AndroidInputInterface.cpp 无模拟器虚拟手柄过滤逻辑</p>
+<p class="migline"><b>覆盖说明：</b>未上游</p>
+<p class="migline"><b>落地方式：</b>Android 输入接口层过滤，属平台栈</p>
+<p class="migline"><b>接入点：</b>FAndroidInputInterface::SendControllerEvents / OnControllerAnalog</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>随 Android 输入栈移植，注意与真机手柄事件区分。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_FILTER_OUT_MOBILE_SIMULATOR_VIRTUAL_CONTROLLER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data">
+<h3 class="mname">XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:122</span>
+</div>
+<p class="zh">修复 Cook 时等待 CookedPlatformData 完成导致卡死（UE4-4780）</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_MISC_COOK_SAVE_QUEUE_FIX">XD_MISC_COOK_SAVE_QUEUE_FIX</a></p>
+<p class="en">源码注释：Fix infinite wait on cleared cooked platform data in case an UpdateResource clears them Jira: https://xindong.atlassian.net/browse/UE4-4780 Ref: https://udn.unrealengine.com/s/question/0D54z000070BdHmCAK/cooking-hangs-with-no-progress-but-continues-to-report</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Runtime/Engine/Private/TextureDerivedData.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Editor/UnrealEd/Private/CookOnTheFlyServer.cpp:4287-4298 明确处理“对象可能永不返回 true 于 IsCachedCookedPlatformDataLoaded”，:13084 RouteIsCachedCookedPlatformDataLoaded 为状态机实现</p>
+<p class="migline"><b>覆盖说明：</b>UE5 cooker 重写，原死等结构不存在</p>
+<p class="migline"><b>落地方式：</b>属 cooker 内部流程</p>
+<p class="migline"><b>建议：</b>UE5 已用 pending-cooked-platform-data 状态机规避死等；XD 的 NeverCook 特判不必迁移，迁移后回归验证即可</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data_Debug">
+<h3 class="mname">XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data_Debug <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:125</span>
+</div>
+<p class="zh">上述 Cook 卡死修复的调试开关（默认关闭）</p>
+<p class="en">源码注释：For 'XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data', the below macro used for debug</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookPackageData.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookPackageData.h</li><li>Source/Editor/UnrealEd/Private/Cooker/CookRequests.cpp</li><li>Source/Runtime/Launch/Private/Windows/LaunchWindows.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无该调试开关</p>
+<p class="migline"><b>覆盖说明：</b>XD 侧值=0，纯调试</p>
+<p class="migline"><b>落地方式：</b>无需迁移</p>
+<p class="migline"><b>建议：</b>调试开关且默认关闭，直接丢弃</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data_Debug">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_VULKAN_DUMP_MEMORY_CRASH">
+<h3 class="mname">XD_FIX_BUG_VULKAN_DUMP_MEMORY_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:129</span>
+</div>
+<p class="zh">修复退出游戏时 Vulkan 内存 Dump 崩溃（UE4-4866）</p>
+<p class="en">源码注释：When exit game, vulkan dump memory enter crash bug https://xindong.atlassian.net/browse/UE4-4866</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/VulkanRHI/Private/VulkanMemory.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/VulkanRHI/Private/VulkanMemory.cpp:3234 FMemoryManager::DumpMemory（内存管理器已重写）</p>
+<p class="migline"><b>覆盖说明：</b>崩溃点可能已消失，未确认</p>
+<p class="migline"><b>落地方式：</b>需 VulkanRHI 补丁</p>
+<p class="migline"><b>接入点：</b>FVulkanMemoryManager::DumpMemory / ShutdownMemory</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UE5 分配器重写，退出流程需实测再定去留</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_VULKAN_DUMP_MEMORY_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TRY_FIX_BUG_SLATE_INVALID_TEXTURE_PTR">
+<h3 class="mname">XD_TRY_FIX_BUG_SLATE_INVALID_TEXTURE_PTR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:133</span>
+</div>
+<p class="zh">尝试修复 Slate 纹理指针失效导致的崩溃（UE4-4846）</p>
+<p class="en">源码注释：Try to fix slate's invalid texture pointer's bug https://xindong.atlassian.net/browse/UE4-4846</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateRHIRenderer/Private/SlateRHIResourceManager.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/SlateRHIRenderer/Private/SlateMaterialResource.cpp:15-48 CheckInvalidUMaterial/CheckInvalidMaterialProxy、:263 checkf(&quot;Material %s has become invalid&quot; with DebugName)；SlateRHIResourceManager.cpp:68 ReleaseTextureAtlases(..., bWaitForRelease)，:774-846 资源有效性检查</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有失效资源检测与延迟释放，但 XD 的具体纹理指针修复未逐条对应</p>
+<p class="migline"><b>落地方式：</b>Slate RHI 资源管理内部</p>
+<p class="migline"><b>接入点：</b>FSlateRHIResourceManager 资源释放时机 · FSlateMaterialResource 有效性检查</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>崩溃多与 GC 竞态相关，先在 UE5 复现再决定补丁（UE4-4846）。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TRY_FIX_BUG_SLATE_INVALID_TEXTURE_PTR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ANDROID_GAMEPAD_INVALID_PTR">
+<h3 class="mname">XD_FIX_BUG_ANDROID_GAMEPAD_INVALID_PTR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">输入与手柄</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:137</span>
+</div>
+<p class="zh">修复 Android 手柄空指针崩溃（UE4-4854）</p>
+<p class="en">源码注释：Fix a nullptr crash bug with 'android gamepad' https://xindong.atlassian.net/browse/UE4-4854</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Build/Android/Java/src/com/epicgames/unreal/GameActivity.java.template:7277-7326 AndroidThunkJava_GetInputDeviceInfo（带 0x0/&quot;Unknown&quot; 兜底）、:7430-7447 IsGamepadAttached</p>
+<p class="migline"><b>覆盖说明：</b>UE5 Java 模板已做设备信息空值兜底，但 XD 的具体空指针点需复核</p>
+<p class="migline"><b>落地方式：</b>UE5 支持项目自带 Android Java 源（Build/Android/Java），可在项目侧加固</p>
+<p class="migline"><b>接入点：</b>GameActivity.java.template 手柄回调 · AndroidThunkJava_GetInputDeviceInfo</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>优先在项目 Android Java 源里加固，避免改引擎模板。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ANDROID_GAMEPAD_INVALID_PTR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_IOS_GAMEPAD_INVALID_PTR">
+<h3 class="mname">XD_FIX_BUG_IOS_GAMEPAD_INVALID_PTR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">输入与手柄</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:141</span>
+</div>
+<p class="zh">修复 iOS 手柄空指针崩溃（UE4-4868）</p>
+<p class="en">源码注释：Fix a nullptr crash bug with 'ios gamepad' https://xindong.atlassian.net/browse/UE4-4868</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/IOS/IOSInputInterface.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/Apple/AppleControllerInterface.cpp:160-165 GCControllerDidConnect/Disconnect 通知块（queue:nil），XD 的判空点需逐处比对</p>
+<p class="migline"><b>覆盖说明：</b>无法确认空指针路径是否仍存在</p>
+<p class="migline"><b>落地方式：</b>ApplicationCore Apple 控制器实现</p>
+<p class="migline"><b>接入点：</b>AppleControllerInterface 设备通知/PlayerIndex 绑定</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>先复现崩溃再打补丁，UE4-4868 可能已被 Apple 接口重写覆盖。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_IOS_GAMEPAD_INVALID_PTR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE">
+<h3 class="mname">XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:145</span>
+</div>
+<p class="zh">修复 Electra 播放器释放时阻塞游戏线程（PC 编辑器模式禁用）</p>
+<p class="en">源码注释：GT will be blocked when Electra::FDXDeviceInfo::s_DXDeviceInfo-&gt;DxDeviceManager-&gt;Release() called not sure the reason, so disable it in pc editor mode</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/ElectraPlayer_PC.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>ElectraPlayer_PC.cpp DestroyDirectXResources 在 XD 中绕过 DXGI Release 阻塞；UE5 未逐点核对（插件已大幅重构）</p>
+<p class="migline"><b>覆盖说明：</b>需实测 Electra 释放是否阻塞 GT</p>
+<p class="migline"><b>落地方式：</b>ElectraPlayer 插件内部</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UE5 Electra 已重写，先实测再定。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME">
+<h3 class="mname">XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:148</span>
+</div>
+<p class="zh">修复 FHttpThread 睡眠时间出现负值导致异常</p>
+<p class="en">源码注释：Avoid negative InnerLoopTime value in FHttpThread::Run() function, the bug found in etheria project</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Online/HTTP/Private/HttpThread.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/Online/HTTP/Private/HttpThread.cpp:601-612（负值钳制 + FMath::Max 睡眠）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已处理负睡眠时间</p>
+<p class="migline"><b>落地方式：</b>HTTP 模块内部</p>
+<p class="migline"><b>建议：</b>UE5 已修复。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_MOBILE_SCENE_CAPTURE_TONE_CURVE_HDR_CRASH">
+<h3 class="mname">XD_FIX_BUG_MOBILE_SCENE_CAPTURE_TONE_CURVE_HDR_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">移动端渲染优化</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:151</span>
+</div>
+<p class="zh">修复 CaptureSource=SCS_FinalToneCurveHDR 且移动预览模式下编辑器崩溃</p>
+<p class="en">源码注释：When capture mode is 'SCS_FinalToneCurveHDR' &amp; mobile preview mode, editor will crash</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/SceneCaptureRendering.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Renderer/Private/PostProcess/PostProcessTonemap.cpp:255-258 与 PostProcessDeviceEncodingOnly.cpp:49-53（SCS_FinalToneCurveHDR → HDR_LinearWithToneCurve）；Runtime/Renderer/Private/PostProcess/PostProcessCombineLUTs.cpp:754-757（HDR 输出强制 float LUT）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 后处理链对 SCS_FinalToneCurveHDR 有通用处理，但未发现针对移动预览（IsSimulatedPlatform）的特殊兜底</p>
+<p class="migline"><b>落地方式：</b>移动预览崩溃属渲染器路径，需引擎侧</p>
+<p class="migline"><b>接入点：</b>FMobileSceneRenderer 的 tonemap/SceneCaptureSource 处理 · PostProcessMobile 的 HDR 输出分支</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>编辑器移动预览 + SCS_FinalToneCurveHDR 需回归验证，仍崩溃则保留 XD 的降级补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_MOBILE_SCENE_CAPTURE_TONE_CURVE_HDR_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ZERO_MATRIX_CAUSE_CRASH_WHEN_COCOLLECT_DYNAMIC_MESH">
+<h3 class="mname">XD_FIX_BUG_ZERO_MATRIX_CAUSE_CRASH_WHEN_COCOLLECT_DYNAMIC_MESH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:154</span>
+</div>
+<p class="zh">修复零矩阵导致 CollectDynamicMesh 崩溃（TORCHLIGHT-115990）</p>
+<p class="en">源码注释：REF https://xindong.atlassian.net/browse/TORCHLIGHT-115990</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/SceneVisibility.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Renderer/Private/SceneVisibility.cpp 的 GatherDynamicMeshElements/GetDynamicMeshElements 路径未见 XD 式 Local2World 零缩放跳过判断</p>
+<p class="migline"><b>覆盖说明：</b>零矩阵崩溃防护缺失</p>
+<p class="migline"><b>落地方式：</b>改 Renderer 场景可见性收集处（场景收集必须引擎侧）</p>
+<p class="migline"><b>接入点：</b>FVisibilityTaskData::GatherDynamicMeshElementsForPrimitive 前置判断</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>渲染线程崩溃修复，注意 UE5 并行收集路径（TCommandPipe/ParallelFor）也要覆盖</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ZERO_MATRIX_CAUSE_CRASH_WHEN_COCOLLECT_DYNAMIC_MESH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TRY_FIX_BUG_CUSTOM_DEPTH_RT_VALIDATION_ERROR">
+<h3 class="mname">XD_TRY_FIX_BUG_CUSTOM_DEPTH_RT_VALIDATION_ERROR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:157</span>
+</div>
+<p class="zh">尝试修复 CustomDepth/CustomStencilSRV 校验失败并输出更多信息</p>
+<p class="en">源码注释：check(SceneContext.CustomDepth &amp;&amp; SceneContext.CustomStencilSRV) FAIL, Try to fix and log more info</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/PostProcess/SceneRenderTargets.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 SceneTexturesConfig/SceneRenderTargets 未见 CustomDepth/CustomStencilSRV 为空时的等价诊断与防护</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无对应防御性校验/日志</p>
+<p class="migline"><b>落地方式：</b>需在 UE5 场景纹理 CustomDepth 设置处加校验/日志</p>
+<p class="migline"><b>接入点：</b>SceneRenderTargets/SceneTextures CustomDepth setup</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>CustomDepth/StencilSRV 校验失败定位，属防御性补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TRY_FIX_BUG_CUSTOM_DEPTH_RT_VALIDATION_ERROR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME">
+<h3 class="mname">XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:160</span>
+</div>
+<p class="zh">修复运行时切换桌面模式时显示器查询报错（UE4-5201）</p>
+<p class="en">源码注释：REF https://xindong.atlassian.net/browse/UE4-5201</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/D3D12RHI/Private/D3D12Adapter.cpp</li><li>Source/Runtime/D3D12RHI/Private/D3D12Adapter.h</li><li>Source/Runtime/D3D12RHI/Private/Windows/WindowsD3D12Device.cpp</li><li>Source/Runtime/Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp:410 基于 DXGIFactory::IsCurrent() 重建工厂；WindowsD3D12Device.cpp 同</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已内建工厂失效重建</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>UE5 已修复，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_REMOVE_NONUSED_CHECK_IN_FREE_OBJECTS">
+<h3 class="mname">XD_FIX_BUG_REMOVE_NONUSED_CHECK_IN_FREE_OBJECTS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:163</span>
+</div>
+<p class="zh">移除 UObject 释放流程中无用的检查（UE4-5333）</p>
+<p class="en">源码注释：REF https://xindong.atlassian.net/browse/UE4-5333</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/UObject/UObjectAllocator.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/CoreUObject/Private/UObject/UObjectAllocator.cpp:57 FreeUObject 已无 check(!IsLoading())</p>
+<p class="migline"><b>覆盖说明：</b>UE4-5333 修复已在上游</p>
+<p class="migline"><b>落地方式：</b>UObject 分配器内部，非工程侧</p>
+<p class="migline"><b>建议：</b>UE5 已移除该检查</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_REMOVE_NONUSED_CHECK_IN_FREE_OBJECTS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ANDROID_MOUNT_OBB_FAIL">
+<h3 class="mname">XD_FIX_BUG_ANDROID_MOUNT_OBB_FAIL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:166</span>
+</div>
+<p class="zh">修复 Android MountOBB 崩溃（UE4-5298）</p>
+<p class="rels">关联宏：<a class="rel" href="misc1.html#XD_MISC_ADD_PAK_MOUNT_FAIL_DELEGATE">XD_MISC_ADD_PAK_MOUNT_FAIL_DELEGATE</a></p>
+<p class="en">源码注释：ANDROID MountOBB crash issue (https://xindong.atlassian.net/browse/UE4-5298)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Private/Android/AndroidPlatformFile.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Launch/Private/Android/LaunchAndroid.cpp:687 mount OBB；Runtime/Launch/Private/Android/AndroidJNI.cpp:2109 nativeSetObbFilePaths</p>
+<p class="migline"><b>覆盖说明：</b>OBB 机制仍在，崩溃点未确认</p>
+<p class="migline"><b>落地方式：</b>需 Launch/Android 侧补丁</p>
+<p class="migline"><b>接入点：</b>AndroidJNI OBB 路径设置 · LaunchAndroid OBB 挂载</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UE5 OBB/JNI 路径重构，需回归 UE4-5298 场景</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ANDROID_MOUNT_OBB_FAIL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ANDROID_glGetString_Crash">
+<h3 class="mname">XD_FIX_BUG_ANDROID_glGetString_Crash <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:169</span>
+</div>
+<p class="zh">增加日志定位 Android glGetString 崩溃</p>
+<p class="en">源码注释：print logs to debug glGetString crash bug</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 OpenGLDrv/Private/Android 已重写（AndroidOpenGLFunctions/AndroidOpenGL），原 OpenGLShaders.cpp 日志点不存在</p>
+<p class="migline"><b>覆盖说明：</b>证据不足</p>
+<p class="migline"><b>落地方式：</b>需 OpenGLDrv 补丁</p>
+<p class="migline"><b>接入点：</b>FOpenGLDynamicRHI::Init 的 glGetString 调用点</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>仅 GLES 打包路径有意义；统一走 Vulkan 可丢弃</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ANDROID_glGetString_Crash">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_LOG_ERROR_METAL_FILE_NAME_WHEN_COMPRESS_FAIL">
+<h3 class="mname">XD_FIX_BUG_LOG_ERROR_METAL_FILE_NAME_WHEN_COMPRESS_FAIL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:172</span>
+</div>
+<p class="zh">修复压缩空 .metal 文件时数组越界崩溃，并记录出错文件名</p>
+<p class="en">源码注释：When zlib .metal file &amp; the file is empty, ue will crash(array out of index)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Developer/Apple/MetalShaderFormat/Private/MetalShaderFormat.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Developer/Apple/MetalShaderFormat/Private/MetalShaderFormat.cpp:367 压缩/打包逻辑已重写（tar/zip 调试输出）</p>
+<p class="migline"><b>覆盖说明：</b>未确认空 .metal 越界是否已修</p>
+<p class="migline"><b>落地方式：</b>需 MetalShaderFormat 补丁</p>
+<p class="migline"><b>接入点：</b>.metal 源码压缩/打包阶段</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>仅编辑器打包阶段，低优先，建议实测空 .metal</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_LOG_ERROR_METAL_FILE_NAME_WHEN_COMPRESS_FAIL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_WINDOWS_ADJUST_SIZE_CONSIDER_TITLE_BAR">
+<h3 class="mname">XD_FIX_BUG_WINDOWS_ADJUST_SIZE_CONSIDER_TITLE_BAR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 14</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:175</span>
+</div>
+<p class="zh">修复 Windows 窗口尺寸计算未考虑标题栏高度</p>
+<p class="en">源码注释：REF https://xindong.atlassian.net/wiki/spaces/~zhoushuang.XD/pages/812163817/PC</p>
+<details class="usage"><summary>引用位置（14 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/GenericPlatform/GenericWindow.cpp</li><li>Source/Runtime/ApplicationCore/Private/Windows/WindowsWindow.cpp</li><li>Source/Runtime/ApplicationCore/Public/GenericPlatform/GenericWindow.h</li><li>Source/Runtime/ApplicationCore/Public/Windows/WindowsWindow.h</li><li>Source/Runtime/Engine/Classes/GameFramework/GameUserSettings.h</li><li>Source/Runtime/Engine/Private/GameEngine.cpp</li><li>Source/Runtime/Engine/Private/GameUserSettings.cpp</li><li>Source/Runtime/Engine/Private/GameViewportClient.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Public/GenericPlatform/GenericWindow.h:184 GetWindowTitleBarSize/GetWindowBorderSize（无 CaptionBar 专用接口）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有标题栏/边框尺寸接口，无 XD 的 CaptionBar 修正</p>
+<p class="migline"><b>落地方式：</b>项目内用 GetWindowTitleBarSize+GetWindowBorderSize 修正窗口尺寸；如需新虚函数则改 ApplicationCore</p>
+<p class="migline"><b>接入点：</b>FGenericWindow::GetWindowTitleBarSize · FWindowsWindow</p>
+<p class="migline"><b>机制：</b>Interface</p>
+<p class="migline"><b>建议：</b>涉及窗口尺寸计算，需回归多分辨率验证</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_WINDOWS_ADJUST_SIZE_CONSIDER_TITLE_BAR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_MAC_CREATE_MENU_SHOULD_IN_MAIN_THREAD">
+<h3 class="mname">XD_FIX_BUG_MAC_CREATE_MENU_SHOULD_IN_MAIN_THREAD <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:178</span>
+</div>
+<p class="zh">Mac 菜单创建必须回到主线程（否则崩溃/无响应）</p>
+<p class="en">源码注释：MAC create-menu opertion should happened in mainthread (not in gamethread)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Framework/MultiBox/Mac/MacMenu.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Slate 已移除 Mac/MacMenu.cpp（FMacMenu 无命中），Mac 菜单改由 ApplicationCore NSMenu 封装</p>
+<p class="migline"><b>覆盖说明：</b>原问题点不存在</p>
+<p class="migline"><b>落地方式：</b>无需改动</p>
+<p class="migline"><b>建议：</b>UE5 Mac 菜单代码重构，宏可删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_MAC_CREATE_MENU_SHOULD_IN_MAIN_THREAD">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ADD_REALTIME_MODE_FOR_GET_MOUSE_POS">
+<h3 class="mname">XD_FIX_BUG_ADD_REALTIME_MODE_FOR_GET_MOUSE_POS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">输入与手柄</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:181</span>
+</div>
+<p class="zh">为获取鼠标位置增加实时（非缓存）模式（UE4-5614）</p>
+<p class="en">源码注释：Issue ticket: https://xindong.atlassian.net/browse/UE4-5614</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/GameViewportClient.h</li><li>Source/Runtime/Engine/Classes/GameFramework/PlayerController.h</li><li>Source/Runtime/Engine/Private/GameViewportClient.cpp</li><li>Source/Runtime/Engine/Private/PlayerController.cpp</li><li>Source/Runtime/Engine/Private/Slate/SceneViewport.cpp</li><li>Source/Runtime/Engine/Public/Slate/SceneViewport.h</li><li>Source/Runtime/Engine/Public/UnrealClient.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Public/Slate/SceneViewport.h:129 GetMousePos(FIntPoint&amp;, const bool bLocalPosition) 无实时/缓存模式；UE5 可通过 FSlateApplication::GetCursorPos() 取实时坐标</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无 XD 的 bRealtime 形参，但项目可自行取实时值</p>
+<p class="migline"><b>落地方式：</b>项目侧直接调用 FSlateApplication::Get().GetCursorPos()/GetLastMousePosition()</p>
+<p class="migline"><b>接入点：</b>FViewport::GetMousePos · FSlateApplication::GetCursorPos</p>
+<p class="migline"><b>建议：</b>优先用 Slate 实时接口替代 XD 的形参扩展。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ADD_REALTIME_MODE_FOR_GET_MOUSE_POS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_SOLVE_FAIL_TO_FIND_SHADER_MAP">
+<h3 class="mname">XD_FIX_BUG_SOLVE_FAIL_TO_FIND_SHADER_MAP <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:185</span>
+</div>
+<p class="zh">关闭 CHECK_SHADERMAP_DEPENDENCIES 校验（编辑器专属数据会干扰 Shader 大小比较）</p>
+<p class="en">源码注释：CHECK_SHADERMAP_DEPENDENCIES Check function should turn off, because some editor-only data dirty the compiled shader-size editor only members are : FMaterialShader::DebugUniform... FMaterialShader::DebugDescription</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderMap.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RenderCore/Private/ShaderMap.cpp:281 #define CHECK_SHADERMAP_DEPENDENCIES (WITH_EDITOR || !(UE_BUILD_SHIPPING||UE_BUILD_TEST)) 仍存在</p>
+<p class="migline"><b>覆盖说明：</b>XD 关闭该校验的修改未被上游采纳</p>
+<p class="migline"><b>落地方式：</b>以编译期/配置开关关闭校验（项目自定义宏）</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>保留为常开补丁：关闭编辑器专属数据干扰的 ShaderMap 校验</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_SOLVE_FAIL_TO_FIND_SHADER_MAP">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_DeferredKinematicUpdateSkelMeshes_CRASH">
+<h3 class="mname">XD_FIX_BUG_DeferredKinematicUpdateSkelMeshes_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:189</span>
+</div>
+<p class="zh">修复 DeferredKinematicUpdateSkelMeshes 中无效骨骼网格指针崩溃（TORCHLIGHT-138970）</p>
+<p class="en">源码注释：DeferredKinematicUpdateSkelMeshes Contain invalid skel-mesh ptr REF https://xindong.atlassian.net/browse/TORCHLIGHT-138970</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Private/PhysicsEngine/PhysScene_PhysX.cpp</li><li>Source/Runtime/Engine/Public/Physics/PhysScene_PhysX.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 改 Chaos 且缓存 DeferredKinematicUpdateIndex（Engine/Source/Runtime/Engine/Private/PhysicsEngine/Experimental/PhysScene_Chaos.cpp:1736,1771），已带有效性判断</p>
+<p class="migline"><b>覆盖说明：</b>实现重写，风险已降低</p>
+<p class="migline"><b>落地方式：</b>无需额外处理（Chaos 已防护）</p>
+<p class="migline"><b>建议：</b>Chaos 路径已消除该崩溃，实测确认后删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_DeferredKinematicUpdateSkelMeshes_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_SKELETALMESH_SCALE_PHYSICAL_ASSET_ERROR">
+<h3 class="mname">XD_FIX_BUG_SKELETALMESH_SCALE_PHYSICAL_ASSET_ERROR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:193</span>
+</div>
+<p class="zh">修复缩放骨骼网格时物理资产骨骼位置错误（UE4-5905）</p>
+<p class="en">源码注释：REF https://xindong.atlassian.net/browse/UE4-5905 if scale skeletalmesh with physical asset, physical bone will error</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/SkeletalMeshComponent.h</li><li>Source/Runtime/Engine/Private/PhysicsEngine/PhysAnim.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 物理动画迁 Chaos，PhysAnim.cpp 已不存在，未定位等价缩放修正</p>
+<p class="migline"><b>覆盖说明：</b>需在 Chaos 实现中复核</p>
+<p class="migline"><b>落地方式：</b>物理动画模拟核心</p>
+<p class="migline"><b>接入点：</b>Chaos 物理动画模拟 · FBodyInstance 缩放</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>缩放骨骼+物理资产的姿态错误需复测</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_SKELETALMESH_SCALE_PHYSICAL_ASSET_ERROR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_EMULATOR_GET_WRONG_MOUSE_POS">
+<h3 class="mname">XD_FIX_BUG_EMULATOR_GET_WRONG_MOUSE_POS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">输入与手柄</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 9</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:198</span>
+</div>
+<p class="zh">修复模拟器下 getMousePosition 返回错误坐标（UE4-5857）</p>
+<p class="en">源码注释：ref https://xindong.atlassian.net/browse/UE4-5857 getMousePosition() return wrong position, pos is set uncorecctly</p>
+<details class="usage"><summary>引用位置（9 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/Android/AndroidCursor.cpp</li><li>Source/Runtime/ApplicationCore/Private/Android/AndroidInputInterface.cpp</li><li>Source/Runtime/ApplicationCore/Public/Android/AndroidCursor.h</li><li>Source/Runtime/ApplicationCore/Public/GenericPlatform/ICursor.h</li><li>Source/Runtime/Slate/Private/Framework/Application/SlateApplication.cpp</li><li>Source/Runtime/Slate/Private/Framework/Application/SlateUser.cpp</li><li>Source/Runtime/Slate/Public/Framework/Application/SlateApplication.h</li><li>Source/Runtime/Slate/Public/Framework/Application/SlateUser.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/ApplicationCore/Private/Android/AndroidInputInterface.cpp 无 Emulator 鼠标坐标处理（grep Emulator/MousePosition 无结果）</p>
+<p class="migline"><b>覆盖说明：</b>未上游</p>
+<p class="migline"><b>落地方式：</b>涉及 Android 输入/光标坐标换算</p>
+<p class="migline"><b>接入点：</b>FAndroidInputInterface 鼠标坐标 · FAndroidCursor</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>与模拟器键鼠支持一并移植。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_EMULATOR_GET_WRONG_MOUSE_POS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_ANDROID_LOG_CANNOT_GENERATE">
+<h3 class="mname">XD_FIX_BUG_ANDROID_LOG_CANNOT_GENERATE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:201</span>
+</div>
+<p class="zh">修复部分 Android 设备/模拟器无法生成日志文件（UE4-5817）</p>
+<p class="en">源码注释：Some android device and emulator device can't generate log file https://xindong.atlassian.net/browse/UE4-5817</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Private/Android/AndroidPlatformFile.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE4 侧仅宏定义无代码引用；UE5 Android 日志路径已重写（Runtime/Core/Private/Android/AndroidPlatformCrashContext.cpp:111）</p>
+<p class="migline"><b>覆盖说明：</b>证据不足</p>
+<p class="migline"><b>落地方式：</b>工程侧配置日志路径/CVar</p>
+<p class="migline"><b>建议：</b>标记型宏；需在无 SD 卡/模拟器实测日志可生成</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_ANDROID_LOG_CANNOT_GENERATE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Zhao Shuai Nan</h2>
+<article class="macro" id="XD_BUG_FIX_IOS_NOTIFICATION_FREEZES_GAME">
+<h3 class="mname">XD_BUG_FIX_IOS_NOTIFICATION_FREEZES_GAME <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:207</span>
+</div>
+<p class="zh">修复 iOS 收到系统通知（闹钟/IM 角标等）时游戏卡死</p>
+<p class="en">源码注释：[iOS only] fix a bug that causes application/game freezing when mobile devices receive OS notification pushes notification pushes include alarm, IM notify badges, etc.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp:455 Tick 循环内仍调用 [self IsBackgroundAudioPlaying]</p>
+<p class="migline"><b>覆盖说明：</b>卡死点仍在</p>
+<p class="migline"><b>落地方式：</b>需改 IOSAppDelegate tick 路径</p>
+<p class="migline"><b>接入点：</b>FAppEntry::Tick / FIOSAppDelegate::IsBackgroundAudioPlaying</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>系统通知（闹钟/IM 角标）导致卡死，UE5 未修</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_IOS_NOTIFICATION_FREEZES_GAME">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PAPER2D_COMMANDLET_IMPORT_ISSUE">
+<h3 class="mname">XD_BUG_FIX_PAPER2D_COMMANDLET_IMPORT_ISSUE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:210</span>
+</div>
+<p class="zh">修复导入 Sprite Sheet 时崩溃</p>
+<p class="en">源码注释：Fix a crash when import sprite sheets.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Plugins/2D/Paper2D/Source/PaperSpriteSheetImporter/Private/PaperJsonSpriteSheetImporter.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Plugins/2D/Paper2D/Source/PaperSpriteSheetImporter/Private/PaperJsonSpriteSheetImporter.cpp 仍走 AssetTools ImportAssets，未确认 commandlet 同步导入参数</p>
+<p class="migline"><b>覆盖说明：</b>XD 修复是给 ImportAssets 传 !IsRunningCommandlet()</p>
+<p class="migline"><b>落地方式：</b>Paper2D 插件内部</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UE5 导入管线已重构，复核 commandlet 路径。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PAPER2D_COMMANDLET_IMPORT_ISSUE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_TEXTFIELD_OPEN_FAILS_WHEN_SECOND_OPEN">
+<h3 class="mname">XD_BUG_FIX_TEXTFIELD_OPEN_FAILS_WHEN_SECOND_OPEN <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:213</span>
+</div>
+<p class="zh">修复 iOS 12.3.1 上输入框第二次打开失败</p>
+<p class="en">源码注释：Fix the bug that the textfield fails to open for the second time(IOS 12.31)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Framework/Text/IOS/IOSPlatformTextField.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Slate/Private/Framework/Text/IOS/IOSPlatformTextField.cpp:224/297 bWantsToShow、:401-410 keyboardWillShow 后重新 show、:269 hasTextWidget</p>
+<p class="migline"><b>覆盖说明：</b>UE5 重构了 iOS 输入框显示/隐藏状态机（bWantsToShow），行为等价但非同一补丁</p>
+<p class="migline"><b>落地方式：</b>iOS 文本输入在引擎 Slate 层</p>
+<p class="migline"><b>接入点：</b>FIOSPlatformTextField::ShowVirtualKeyboard · SlateTextField/SlateTextField2</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>iOS 二次打开需在真机复测 UE5 新状态机。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_TEXTFIELD_OPEN_FAILS_WHEN_SECOND_OPEN">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_METAL_CRASH_FLUSH_LOG">
+<h3 class="mname">XD_BUG_FIX_METAL_CRASH_FLUSH_LOG <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:216</span>
+</div>
+<p class="zh">Metal 断言触发时先 Flush 日志，保证崩溃日志完整</p>
+<p class="en">源码注释：Flush log when metal Trigger assertion</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Private/IOS/IOSPlatformMisc.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/IOS/IOSPlatformMisc.cpp:2307 GPUAssert/MetalAssert 仅 UE_FORCE_CRASH_AT_OFFSET，无 FlushAllLogsBeforeForceExit</p>
+<p class="migline"><b>覆盖说明：</b>未合入</p>
+<p class="migline"><b>落地方式：</b>需 Core IOS 补丁</p>
+<p class="migline"><b>接入点：</b>FIOSPlatformMisc::MetalAssert / GPUAssert</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>崩溃日志完整性保障，建议保留</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_METAL_CRASH_FLUSH_LOG">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD">
+<h3 class="mname">XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:219</span>
+</div>
+<p class="zh">防止 OpenGL 预编译阶段 Link 失败导致崩溃</p>
+<p class="en">源码注释：Prevent the crash due to the failure of the link during the pre-compilation stage.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/OpenGLShaders.cpp:65-74 r.OpenGL.IgnoreLinkFailure（含 r.OpenGL.IgnoreShaderCompileFailure）；:387-425 VerifyLinkedProgram 在 CVar=1 时返回 true；:2506/2564 的 Fatal 仅在 CVar=0 时可达</p>
+<p class="migline"><b>覆盖说明：</b>Link 失败处理仍在（含 Fatal 路径）</p>
+<p class="migline"><b>落地方式：</b>项目 ini 设 r.OpenGL.IgnoreLinkFailure=1（含 r.OpenGL.IgnoreShaderCompileFailure），使 Link 失败不再 Fatal</p>
+<p class="migline"><b>接入点：</b>r.OpenGL.IgnoreLinkFailure · r.OpenGL.IgnoreShaderCompileFailure</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>改用 UE5 原生 r.OpenGL.IgnoreLinkFailure 配置，Link 失败不再 Fatal</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_RICHTEXT_CLICK_FAILD_IN_SCALEBOX">
+<h3 class="mname">XD_BUG_FIX_RICHTEXT_CLICK_FAILD_IN_SCALEBOX <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:222</span>
+</div>
+<p class="zh">修复 ScaleBox 中 RichText 点击无效</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Widgets/Layout/SScaleBox.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Text/SRichTextBlock.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Text/SlateTextBlockLayout.cpp</li><li>Source/Runtime/Slate/Public/Framework/Text/TextLayout.h</li><li>Source/Runtime/Slate/Public/Widgets/Text/SRichTextBlock.h</li><li>Source/Runtime/Slate/Public/Widgets/Text/SlateTextBlockLayout.h</li><li>Source/Runtime/SlateCore/Public/Widgets/SWidget.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Slate/Public/Widgets/Text/SRichTextBlock.h:252 SetTextBlockScale、:304 TextBlockScale；UE5 无 XD 的 SWidget::ComputeDesiredOriginalSize/IsOverwriteComputeDesiredOriginalSize 虚函数</p>
+<p class="migline"><b>覆盖说明：</b>UE5 用 TextBlockScale 处理缩放，但没有 XD 的“原始尺寸”挂钩</p>
+<p class="migline"><b>落地方式：</b>涉及 SWidget/SlateTextBlockLayout/TextLayout 基类</p>
+<p class="migline"><b>接入点：</b>SWidget::ComputeDesiredSize 扩展点 · FSlateTextBlockLayout::OnPaint</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>ScaleBox 内 RichText 点击需在 UE5 下重测，优先尝试用 TextBlockScale 规避。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_RICHTEXT_CLICK_FAILD_IN_SCALEBOX">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL">
+<h3 class="mname">XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:225</span>
+</div>
+<p class="zh">修复粒子间接光（Indirect Lighting）数据获取失败</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Particles/FastParticleSystemComponent.h</li><li>Source/Runtime/Engine/Private/Particles/ParticleSystemRender.cpp</li><li>Source/Runtime/Engine/Public/ParticleHelper.h</li><li>Source/Runtime/Engine/Public/PrimitiveSceneProxy.h</li><li>Source/Runtime/Renderer/Private/PrimitiveSceneInfo.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 全源码 grep 无 WillEverBeLitParticle（UE5 仅 FPrimitiveSceneProxy::WillEverBeLit + ILC/Lumen 路径，PrimitiveSceneInfo.cpp 未加粒子专用判定）</p>
+<p class="migline"><b>覆盖说明：</b>XD 的 virtual WillEverBeLitParticle 及 PrimitiveSceneInfo 判据在 UE5 不存在</p>
+<p class="migline"><b>落地方式：</b>需在 FPrimitiveSceneProxy/PrimitiveSceneInfo 加粒子专用走查（Renderer+Engine 双侧）</p>
+<p class="migline"><b>接入点：</b>FPrimitiveSceneProxy::WillEverBeLitParticle 虚接口 · FPrimitiveSceneInfo 间接光缓存判定处</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>不同步涉及 Renderer 间接光分配，注意与 UE5 GPU Scene/ILC 变更对齐</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_CACHE_PRE_AIM_STATE">
+<h3 class="mname">XD_FIX_BUG_CACHE_PRE_AIM_STATE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:228</span>
+</div>
+<p class="zh">缓存上一帧 Aim 状态（动画/电影场景状态修正）</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/MovieScene/Private/Evaluation/MovieScenePreAnimatedState.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 MovieScenePreAnimatedState 已重写（Engine/Source/Runtime/MovieScene/Private/Evaluation/MovieScenePreAnimatedState.cpp），无 ECapturePreAnimatedState::Global 分支</p>
+<p class="migline"><b>覆盖说明：</b>无法确认等价修复</p>
+<p class="migline"><b>落地方式：</b>MovieScene 状态捕获核心</p>
+<p class="migline"><b>接入点：</b>TMovieSceneSavedTokens::Add · ECapturePreAnimatedState</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>涉及序列还原状态，需过场回归</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_CACHE_PRE_AIM_STATE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_IOS_CONTROLLER_MENUE_KEY_RESPONSE_TWICE">
+<h3 class="mname">XD_FIX_BUG_IOS_CONTROLLER_MENUE_KEY_RESPONSE_TWICE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">输入与手柄</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:231</span>
+</div>
+<p class="zh">修复 iOS 手柄 Menu 键响应两次</p>
+<p class="en">源码注释：Fix IOS controller Menu button response twice.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/IOS/IOSInputInterface.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/Apple/AppleControllerInterface.cpp（UE5 已把 iOS 手柄重写为共享 Apple 接口，:420 UNSUPPORTED CONTROLLER、:831 按键路径）</p>
+<p class="migline"><b>覆盖说明：</b>按键映射实现已变，需真机验证 Menu 键是否仍双触发</p>
+<p class="migline"><b>落地方式：</b>Apple 控制器接口在 ApplicationCore</p>
+<p class="migline"><b>接入点：</b>FAppleControllerInterface 按键回调</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>iOS 手柄 Menu 键需真机复测后决定是否保留补丁。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_IOS_CONTROLLER_MENUE_KEY_RESPONSE_TWICE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_FIX_BUG_PARTICLE_EMITTER_STAT_COUNT_FAIL">
+<h3 class="mname">XD_FIX_BUG_PARTICLE_EMITTER_STAT_COUNT_FAIL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:234</span>
+</div>
+<p class="zh">修复粒子 Emitter 渲染线程计数统计错误</p>
+<p class="en">源码注释：FIX Emitter RT count error.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/ParticleSystemRender.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Private/ParticleSystemSceneProxy.cpp:251 与 :268 仍保留 FScopeCycleCounter AdditionalScope(Data-&gt;StatID)（XD 已删除）</p>
+<p class="migline"><b>覆盖说明：</b>统计重复计数问题 UE5 仍在</p>
+<p class="migline"><b>落地方式：</b>改 FParticleSystemSceneProxy 渲染线程资源创建/释放</p>
+<p class="migline"><b>接入点：</b>FParticleSystemSceneProxy::CreateRenderThreadResourcesForEmitterData/ReleaseRenderThreadResourcesForEmitterData</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>纯统计修正，低风险补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_FIX_BUG_PARTICLE_EMITTER_STAT_COUNT_FAIL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Han Shu Bin</h2>
+<article class="macro" id="XD_BUG_FIX_SLATE_UI_MATERIAL_BATCH">
+<h3 class="mname">XD_BUG_FIX_SLATE_UI_MATERIAL_BATCH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:239</span>
+</div>
+<p class="zh">修复首次启动时 Slate UI 未走材质合批（特性等级/着色模型取值错误导致）</p>
+<p class="en">源码注释：Fix a bug that when first lunching games Slate UI not run in Material Batch(which caused by incorrect feature-level&amp;shading-model value).</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/PostProcess/SceneRenderTargets.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Renderer/Private/PostProcess/SceneRenderTargets.h 已无 CurrentFeatureLevel/CurrentShadingPath 成员（grep 无结果），该初始化分支整体被重构</p>
+<p class="migline"><b>覆盖说明：</b>XD 修补的未初始化路径在 UE5 已不存在</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>删除；首启 UI 合批若异常改用 Slate 相关 CVar 排查。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_SLATE_UI_MATERIAL_BATCH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_IOS_UI_CACHEDELEMENTDATA_CRASH">
+<h3 class="mname">XD_BUG_FIX_IOS_UI_CACHEDELEMENTDATA_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:243</span>
+</div>
+<p class="zh">修复 iOS 上 InvalidationBox/RetainerBox 因缓存数据内存访问越界崩溃</p>
+<p class="en">源码注释：[IOS only] Fixed a bug that using Invalidation Box or Retainer Box crash on IOS due to CachedElementData bad memory accessing. Use SharedPoint instead to track the memory valid or not</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/FastUpdate/SlateInvalidationRoot.cpp</li><li>Source/Runtime/SlateCore/Private/Rendering/DrawElements.cpp</li><li>Source/Runtime/SlateCore/Private/Rendering/ElementBatcher.cpp</li><li>Source/Runtime/SlateCore/Public/FastUpdate/SlateInvalidationRoot.h</li><li>Source/Runtime/SlateCore/Public/Rendering/DrawElements.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/SlateCore/Public/Rendering/DrawElements.h:105 FSlateCachedElementsHandle、:139-199 FSlateCachedElementData（AddCache/RemoveList）、Private/Rendering/ElementBatcher.cpp:518 AddCachedElements</p>
+<p class="migline"><b>覆盖说明：</b>UE5.2 起重写为 WidgetProxy/CachedElementsHandle 缓存体系，XD 的越界修复路径已不复存在</p>
+<p class="migline"><b>落地方式：</b>SlateCore 快速缓存内部</p>
+<p class="migline"><b>接入点：</b>FSlateCachedElementData / FSlateCachedElementsHandle</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>先验证 iOS 崩溃是否复现，再决定是否在新缓存体系上补丁。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_IOS_UI_CACHEDELEMENTDATA_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_GAME_MOVIE_PLAYER_DPI">
+<h3 class="mname">XD_BUG_FIX_GAME_MOVIE_PLAYER_DPI <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:246</span>
+</div>
+<p class="zh">修复首次启动时 GameMoviePlayer 未适配 DPI</p>
+<p class="en">源码注释：Fix a bug that when first lunching games Game Movie Player not adaptive DPI.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Slate/SGameLayerManager.cpp</li><li>Source/Runtime/MoviePlayer/Private/DefaultGameMoviePlayer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/MoviePlayer/Private/DefaultGameMoviePlayer.cpp:227/381（SDPIScaler UserWidgetDPIScaler）、:839 SetViewportDPIScale、:846 EnableDPIScale；Public/MoviePlayer.h:267 SetViewportDPIScale</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已内建 UserWidget 的 DPI 缩放</p>
+<p class="migline"><b>落地方式：</b>无需处理，直接用引擎实现</p>
+<p class="migline"><b>建议：</b>直接删除，UE5 首启 MoviePlayer DPI 已适配。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_GAME_MOVIE_PLAYER_DPI">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PSO_PRECOMPILIING_STUCK">
+<h3 class="mname">XD_BUG_FIX_PSO_PRECOMPILIING_STUCK <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:249</span>
+</div>
+<p class="zh">修复 RHI 线程无法完成 LastPreCompilingFence 导致卡在 Logo</p>
+<p class="en">源码注释：Fix a bug that stuck in logo during game lunching because RHI thread can not complete LastPreCompilingFence.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>none（未找到 XD 式 Android 预编译结束 ImmediateFlush(FlushRHIThread) 修复逻辑）</p>
+<p class="migline"><b>覆盖说明：</b>证据不足</p>
+<p class="migline"><b>落地方式：</b>Android RHI 预编译结束路径</p>
+<p class="migline"><b>接入点：</b>LastPreCompilingFence / RHI 预编译批结束</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>迁移后需在 Android 复现验证是否仍卡 Logo</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PSO_PRECOMPILIING_STUCK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_ADD_ARRAY_ELEMENT_TO_SEQUENCER_TRACK">
+<h3 class="mname">XD_BUG_FIX_ADD_ARRAY_ELEMENT_TO_SEQUENCER_TRACK <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:252</span>
+</div>
+<p class="zh">修复 TArray 属性元素无法添加到 Sequencer 轨道</p>
+<p class="en">源码注释：Fix a bug that TArray property's element can not add to sequencer's track.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/Sequencer/Private/DisplayNodes/SequencerObjectBindingNode.cpp</li><li>Source/Runtime/Engine/Classes/Particles/ParticleSystemComponent.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Sequencer 已重写为 MVVM（Engine/Source/Editor/Sequencer/Private/MVVM），未定位对应修改</p>
+<p class="migline"><b>覆盖说明：</b>编辑路径变化，需实测</p>
+<p class="migline"><b>落地方式：</b>引擎编辑器侧</p>
+<p class="migline"><b>接入点：</b>SequencerObjectBindingNode</p>
+<p class="migline"><b>机制：</b>Interface</p>
+<p class="migline"><b>建议：</b>在 UE5 MVVM 下复测数组元素添加</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_ADD_ARRAY_ELEMENT_TO_SEQUENCER_TRACK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_WRONG_EXISTING_CAMERA_BINGDING_SPACE">
+<h3 class="mname">XD_BUG_FIX_WRONG_EXISTING_CAMERA_BINGDING_SPACE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:255</span>
+</div>
+<p class="zh">修复 Sequencer 中已有 CineCamera 绑定被设置到错误的 Binding Space</p>
+<p class="en">源码注释：Fix a bug that Existing Binding Cine Camera was set in wrong Binding Space in sequencer.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/MovieSceneTools/Private/TrackEditors/CameraCutTrackEditor.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 引入 UE::MovieScene::FRelativeObjectBindingID（Engine/Source/Editor/MovieSceneTools/Private/TrackEditors/CameraCutTrackEditor.cpp:413），但 CreateNewSectionFromBinding(576) 仍直传 InBindingID</p>
+<p class="migline"><b>覆盖说明：</b>绑定空间语义部分重构</p>
+<p class="migline"><b>落地方式：</b>编辑器 Sequencer 侧</p>
+<p class="migline"><b>接入点：</b>FCameraCutTrackEditor::CreateNewSectionFromBinding · AddNewCameraCut</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>确认 Local 绑定空间是否仍错</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_WRONG_EXISTING_CAMERA_BINGDING_SPACE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL">
+<h3 class="mname">XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:258</span>
+</div>
+<p class="zh">修复细节面板添加 TArray 元素时跳过倒数第二个属性导致失败</p>
+<p class="rels">关联宏：<a class="rel" href="fixbug1.html#XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER">XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER</a></p>
+<p class="en">源码注释：Fix a bug that TArray property's element add to track failed in detail panel because skipped penult property.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/Sequencer/Private/KeyPropertyParams.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>SequencerHelpers::PropertyHandleToPropertyPath 已重写为逐级取 GetArrayIndex（Engine/Source/Editor/Sequencer/Private/SequencerCommonHelpers.cpp:1346）</p>
+<p class="migline"><b>覆盖说明：</b>数组折叠 bug 已消除</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>UE5 已修复，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER">
+<h3 class="mname">XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:262</span>
+</div>
+<p class="zh">修复细节面板添加 Spawnable 属性后 Sequencer 未同步刷新</p>
+<p class="note">⚠ 依赖 XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL。</p>
+<p class="en">源码注释：Fix a bug that when add spawnable property in detail panel but not show synchronously in sequencer. Note: This Marco depends on &quot;XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL&quot; Marco.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/Sequencer/Private/SequencerObjectChangeListener.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditor.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>FSequencerObjectChangeListener::OnObjectPostEditChange 不再广播 NotifyMovieSceneDataChanged（Engine/Source/Editor/Sequencer/Private/SequencerObjectChangeListener.cpp:537），改由 SequencerCommonHelpers.cpp:416 通知</p>
+<p class="migline"><b>覆盖说明：</b>通知路径已重构</p>
+<p class="migline"><b>落地方式：</b>编辑器 Sequencer 侧</p>
+<p class="migline"><b>接入点：</b>FSequencerObjectChangeListener::OnObjectPostEditChange · NotifyMovieSceneDataChanged</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>补结构变更通知即可</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_RECORD_SEQUENCER_CRASH">
+<h3 class="mname">XD_BUG_FIX_RECORD_SEQUENCER_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:266</span>
+</div>
+<p class="zh">修复录制 Sequencer 时崩溃（临时注释相关代码）</p>
+<p class="en">源码注释：Fix a bug that when recording a sequencer it will crash. Note: now I just commet these code temporarily, it still need to find out.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/UObject/ScriptCore.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Engine/Source/Runtime/CoreUObject/Private/UObject/ScriptCore.cpp:2061 仍为 checkf(!IsRoutingPostLoad)</p>
+<p class="migline"><b>覆盖说明：</b>未上游</p>
+<p class="migline"><b>落地方式：</b>UObject::ProcessEvent 核心路径</p>
+<p class="migline"><b>接入点：</b>UObject::ProcessEvent</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>临时降级 hack 应查根因，勿长期保留</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_RECORD_SEQUENCER_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PARTICLE_ERROR_TICK_WITH_FIXED_TIME_MODE">
+<h3 class="mname">XD_BUG_FIX_PARTICLE_ERROR_TICK_WITH_FIXED_TIME_MODE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:269</span>
+</div>
+<p class="zh">修复粒子组件固定时间步长模式 Tick 不生效</p>
+<p class="en">源码注释：Fix a bug that ParticleComponent fixed-time tick not work.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/FastParticleSystem/FastParticleSystemComponent.cpp</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 ParticleSystemComponent.cpp:2395-2399 仅 if (SystemUpdateMode==EPSUM_FixedTime) DeltaTimeTick=UpdateTime_Delta，无 XD 式的 UpdateTime_Delta 累计提前返回</p>
+<p class="migline"><b>覆盖说明：</b>固定步长累计逻辑在 UE5 仍不完整</p>
+<p class="migline"><b>落地方式：</b>改 UParticleSystemComponent::TickComponent</p>
+<p class="migline"><b>接入点：</b>UParticleSystemComponent::TickComponent 固定步长分支</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>影响固定步长特效播放速率，建议随补丁移植并核对表现</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PARTICLE_ERROR_TICK_WITH_FIXED_TIME_MODE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_SEQUENCE_NOT_TICK_IGNORE_PAUSED">
+<h3 class="mname">XD_BUG_FIX_SEQUENCE_NOT_TICK_IGNORE_PAUSED <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 6</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:272</span>
+</div>
+<p class="zh">修复游戏暂停时 LevelSequence 即使设置 bTickWhenPause 仍不 Tick</p>
+<p class="en">源码注释：Fix a bug that LevelSequence can not tick when game paused even set bTickWhenPause as true.</p>
+<details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Plugins/MovieScene/ActorSequence/Source/ActorSequence/Private/ActorSequenceComponent.cpp</li><li>Plugins/MovieScene/TemplateSequence/Source/TemplateSequence/Private/TemplateSequenceActor.cpp</li><li>Source/Runtime/Engine/Private/LevelTick.cpp</li><li>Source/Runtime/LevelSequence/Private/LevelSequenceActor.cpp</li><li>Source/Runtime/MovieScene/Private/MovieSceneSequencePlayer.cpp</li><li>Source/Runtime/MovieScene/Public/MovieSceneSequencePlayer.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>MovieSceneSequenceTickManager.cpp:380 bCanTick=(bTickWhenPaused||!bIsPaused)；MovieSceneSequenceTickInterval.cpp:29 从 bTickEvenWhenPaused 取值</p>
+<p class="migline"><b>覆盖说明：</b>上游已支持 bTickWhenPaused</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>UE5 已支持暂停时 Tick</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_SEQUENCE_NOT_TICK_IGNORE_PAUSED">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY">
+<h3 class="mname">XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:275</span>
+</div>
+<p class="zh">从二进制创建 GL Program 崩溃时跳过并回退到运行时编译</p>
+<p class="rels">关联宏：<a class="rel" href="misc1.html#XD_MISC_PSO_LRU_FALLBACK_TO_COMPILE">XD_MISC_PSO_LRU_FALLBACK_TO_COMPILE</a></p>
+<p class="en">源码注释：Skip and use runtime compiling when crashed on creating gl program from binary.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li><li>Source/Runtime/OpenGLDrv/Public/OpenGLShaderResources.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/OpenGLShaders.cpp:3455-3461 二进制建 program 失败即 Fatal（仅 PanicDelegate 上报）；XD 的『Unset+移出映射、回退编译』无等价实现（FOpenGLProgramBinaryCache 已改为 bIsOwned，见 OpenGLProgramBinaryFileCache.cpp:1098-1119）</p>
+<p class="migline"><b>覆盖说明：</b>GL PBC 已重写，但失败路径仍为 Fatal（仅可挂 RHIGetPanicDelegate 上报），无 XD 式显式跳过/回退</p>
+<p class="migline"><b>落地方式：</b>位于 OpenGLDrv RHI 内部</p>
+<p class="migline"><b>接入点：</b>FOpenGLProgramBinaryCache · CreateGLProgramFromBinary</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>在 UE5 GL 程序缓存上重打 Fatal→回退补丁（常开保留）</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC">
+<h3 class="mname">XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:278</span>
+</div>
+<p class="zh">修复 PC 阴影投影 Pass 深度状态错误（新增 FShadowProjectionDepthPassMeshProcessor）</p>
+<p class="en">源码注释：Fix wrong depth state in shadow projection pass(create a new FShadowProjectionDepthPassMeshProcessor used for solve the issue).</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/DepthRendering.cpp</li><li>Source/Runtime/Renderer/Private/DepthRendering.h</li><li>Source/Runtime/Renderer/Private/ShadowSetup.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Renderer/Private/DepthRendering.cpp:1227-1239 FDepthPassMeshProcessor 新增 bInShadowProjection 形参；:893 仅 !bShadowProjection 时才覆盖 Dither 深度状态；Runtime/Renderer/Private/ShadowSetup.cpp:2767-2775 ProjectionStenciling 传 true</p>
+<p class="migline"><b>覆盖说明：</b>UE5 用构造参数而非独立 MeshProcessor 解决了同一问题</p>
+<p class="migline"><b>落地方式：</b>无需工程侧代码</p>
+<p class="migline"><b>建议：</b>直接删除宏与 FShadowProjectionDepthPassMeshProcessor</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_WRONG_LOD_VERTICES_NUM_DDC">
+<h3 class="mname">XD_BUG_FIX_WRONG_LOD_VERTICES_NUM_DDC <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:281</span>
+</div>
+<p class="zh">修复骨骼 LOD 顶点数未写入 DDC 导致的数据错误</p>
+<p class="rels">关联宏：<a class="rel" href="tools.html#XD_SKELMESH_CHECK_DDC_KEY_MISS_MATCH_TOOL">XD_SKELMESH_CHECK_DDC_KEY_MISS_MATCH_TOOL</a></p>
+<p class="en">源码注释：Prevent wrong skeletal LOD NumVertices because it dosen't write this value to DDC.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Private/SkeletalMeshLODModel.cpp</li><li>Source/Runtime/Engine/Private/SkeletalMeshRenderData.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/SkeletalMeshLODModel.cpp:1252-1264 GetLODModelDeriveDataKey 仍只哈希 RawSkeletalMeshBulkDataID/UserSectionsData，未含 NumVertices/IndexBuffer</p>
+<p class="migline"><b>覆盖说明：</b>UE5.8 未修，LOD 顶点数变化不进 DDC key</p>
+<p class="migline"><b>落地方式：</b>DDC key 生成在 SkeletalMeshLODModel</p>
+<p class="migline"><b>接入点：</b>FSkeletalMeshLODModel::GetLODModelDeriveDataKey</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>DDC key schema 变更会触发 SkelMesh DDC 全量重烘，需与构建组约定上线窗口</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_WRONG_LOD_VERTICES_NUM_DDC">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_LIST_VIEW_SCROLL_BAR_BRUSH_ADAPT">
+<h3 class="mname">XD_BUG_FIX_LIST_VIEW_SCROLL_BAR_BRUSH_ADAPT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:284</span>
+</div>
+<p class="zh">修复 ListView 滚动条上下/背景画刷无法更新</p>
+<p class="en">源码注释：Fix the top/bottom/background brush from listview's scroll bar can not be updated.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Widgets/Layout/SScrollBar.cpp</li><li>Source/Runtime/Slate/Public/Widgets/Layout/SScrollBar.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Slate/Private/Widgets/Layout/SScrollBar.cpp:395-404（OnStyleChanged 重新 SetBorderImage/SetImage）、:138/407 InvalidateStyle</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已正确刷新上/下/背景画刷</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>删除。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_LIST_VIEW_SCROLL_BAR_BRUSH_ADAPT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR">
+<h3 class="mname">XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:287</span>
+</div>
+<p class="zh">修复编辑器中多世界对应特性等级（FeatureLevel）使用错误</p>
+<p class="en">源码注释：Fix the bug when using multi world with corrsponding feather level in editor.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/World.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 用 UWorld::GetFeatureLevel()(World.h:1229) + FOnFeatureLevelChanged(World.h:1870) + RecreateScene 替代全局 FL</p>
+<p class="migline"><b>覆盖说明：</b>概念已重构</p>
+<p class="migline"><b>落地方式：</b>按 world 取 FeatureLevel，无需全局改造</p>
+<p class="migline"><b>接入点：</b>UWorld::GetFeatureLevel · FOnFeatureLevelChanged</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>随 FeatureLevel 弃用一并删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_VALUE_OF_ALPHA_WHEN_GENERATING_MIPMAP">
+<h3 class="mname">XD_BUG_FIX_VALUE_OF_ALPHA_WHEN_GENERATING_MIPMAP <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:290</span>
+</div>
+<p class="zh">修复生成 Mipmap 时 Alpha 均值大于上一级（Alpha Scale 导致）</p>
+<p class="en">源码注释：Fix the bug for generated mipmap, the average of alpha value is greater than last mip(because of alpha-scale used).</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Developer/TextureCompressor/Private/TextureCompressorModule.cpp</li><li>Source/Developer/TextureCompressor/Public/TextureCompressorModule.h</li><li>Source/Editor/UnrealEd/Classes/Factories/TextureFactory.h</li><li>Source/Editor/UnrealEd/Private/Factories/EditorFactories.cpp</li><li>Source/Runtime/Engine/Classes/Engine/Texture.h</li><li>Source/Runtime/Engine/Private/Texture.cpp</li><li>Source/Runtime/Engine/Private/TextureDerivedData.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 全源码无 bForceUnitAlphaScale；FTextureBuildSettings/TextureDerivedData 无该字段</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无等价 build setting</p>
+<p class="migline"><b>落地方式：</b>需改 FTextureBuildSettings schema 与压缩模块（编辑器侧，配置驱动）</p>
+<p class="migline"><b>接入点：</b>FTextureBuildSettings 新增 bForceUnitAlphaScale · TextureDerivedData DDC key · TextureCompressorModule</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>贴图 build settings + DDC key 变更，务必同步调整 DDC key 触发重烘焙</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_VALUE_OF_ALPHA_WHEN_GENERATING_MIPMAP">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_IOS_SUNMASK_MEMORYLESS">
+<h3 class="mname">XD_BUG_FIX_IOS_SUNMASK_MEMORYLESS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:294</span>
+</div>
+<p class="zh">SunMask Pass 的 Memoryless RT 被当 SRV 使用：增加调试信息（UE4 i OS SunMask）</p>
+<p class="en">源码注释：Add debug info for Memoryless for SunMask pass. The bug happened becuase the rt is memoryless, but used as SRV, we don't known the reason, so print debug info about what's the reason</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Runtime/Apple/MetalRHI/Private/MetalStateCache.cpp</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalStateCache.h</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalTexture.cpp</li><li>Source/Runtime/Apple/MetalRHI/Public/MetalResources.h</li><li>Source/Runtime/RHI/Public/RHIResources.h</li><li>Source/Runtime/Renderer/Private/MobileShadingRenderer.cpp</li><li>Source/Runtime/Renderer/Private/PostProcess/SceneRenderTargets.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Apple/MetalRHI/Private/MetalStateCache.cpp:600（memoryless MSAA 当 SRV 时改用 resolved texture）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有通用 memoryless 回退，但无 XD 的 SunMask 专用检查</p>
+<p class="migline"><b>落地方式：</b>需 Renderer/MetalRHI 侧补丁，工程侧无法覆盖</p>
+<p class="migline"><b>接入点：</b>FMetalStateCache::SetRenderTargets 的 memoryless 附件处理 · MobileShadingRenderer 的 SunMask pass</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>移动端 RT/内存语义，需在 iOS 上回归 DOF+MSAA</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_IOS_SUNMASK_MEMORYLESS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Gong Bai Liang</h2>
+<article class="macro" id="XD_BUG_FIX_DONT_WAIT_PSO_PRECOMPILE_COMPLETED_WHEN_BATCH_JOB_PAUSED">
+<h3 class="mname">XD_BUG_FIX_DONT_WAIT_PSO_PRECOMPILE_COMPLETED_WHEN_BATCH_JOB_PAUSED <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:297</span>
+</div>
+<p class="zh">批量任务暂停时不再等待 PSO 预编译完成</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Launch/Private/Android/LaunchAndroid.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RenderCore/Public/ShaderPipelineCache.h:133 IsBatchingPaused / Pause·ResumeBatching；Runtime/Launch/Private/Android/LaunchAndroid.cpp 无该 busy-wait</p>
+<p class="migline"><b>覆盖说明：</b>UE5 启动流程已无该等待，逻辑等价</p>
+<p class="migline"><b>落地方式：</b>项目侧监听 IsBatchingPaused 决定是否等待</p>
+<p class="migline"><b>接入点：</b>FShaderPipelineCache::IsBatchingPaused/PauseBatching</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>复核 UE5 Android 启动是否仍需等待预编译</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_DONT_WAIT_PSO_PRECOMPILE_COMPLETED_WHEN_BATCH_JOB_PAUSED">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PSO_FOUND_DUPLICATED_PROGRAM_KEY_WHEN_LOADING_PROGRAM_BINARY_CACHE">
+<h3 class="mname">XD_BUG_FIX_PSO_FOUND_DUPLICATED_PROGRAM_KEY_WHEN_LOADING_PROGRAM_BINARY_CACHE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:300</span>
+</div>
+<p class="zh">修复 LinkProgram 早于 PSO 预编译执行导致 Program Key 重复</p>
+<p class="en">源码注释：LinkProgram sometimes steps in before pso precompile and forget to remove what it has done from the pending list.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/OpenGLShaders.cpp:2596/2985 CheckSinglePendingGLProgramCreateRequest；OpenGLProgramBinaryFileCache.h</p>
+<p class="migline"><b>覆盖说明：</b>PBC 加载与 GL Program 创建时序已重写</p>
+<p class="migline"><b>落地方式：</b>OpenGLDrv PBC 内部</p>
+<p class="migline"><b>接入点：</b>FOpenGLProgramBinaryCache::CheckSinglePendingGLProgramCreateRequest</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>复核新时序是否仍产生重复 Key</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PSO_FOUND_DUPLICATED_PROGRAM_KEY_WHEN_LOADING_PROGRAM_BINARY_CACHE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER">
+<h3 class="mname">XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:303</span>
+</div>
+<p class="zh">修复初始化粒子组件时 EmitterInstance 指针错乱</p>
+<p class="en">源码注释：Fix and reinforce a situation where tangled pointer may be introduced when initializing psc</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 ParticleSystemComponent.cpp:2794-2798 直接 EmitterInstances.SetNumZeroed(NumEmitters)，无 NumInstances&gt;NumEmitters 时的清理分支</p>
+<p class="migline"><b>覆盖说明：</b>指针错乱防护缺失</p>
+<p class="migline"><b>落地方式：</b>改 UParticleSystemComponent::InitParticles</p>
+<p class="migline"><b>接入点：</b>UParticleSystemComponent::InitParticles 实例数组扩容处</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>Emitter 数少于实例数时会残留悬垂指针，建议补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_DEBUG_LOCK_BUFFER_CRASH_ISSUE">
+<h3 class="mname">XD_BUG_FIX_DEBUG_LOCK_BUFFER_CRASH_ISSUE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:306</span>
+</div>
+<p class="zh">为 Lock Vertex/Index Buffer 崩溃增加调试日志</p>
+<p class="en">源码注释：Add debug log to analyze Lock vertex&amp;index buffer crash</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/RHI/Private/RHICommandList.cpp</li><li>Source/Runtime/SlateRHIRenderer/Private/SlateRHIRenderingPolicy.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Private/RHICommandList.cpp 已无 UnlockIndexBuffer/UnlockVertexBuffer_BottomOfPipe（grep 0 命中，仅 :2361 注释掉的 RHIUnlockVertexBuffer）；缓冲锁路径已改为 FRHICommandListBase/RDG 的 Lock-Unlock 模型，诊断点需按新结构重新定位</p>
+<p class="migline"><b>覆盖说明：</b>UE5 未复制该调试日志</p>
+<p class="migline"><b>落地方式：</b>需在 RHICommandList.cpp 的 Index/VertexBuffer 解锁 memcpy 前加判空日志，属引擎 RHI 内部</p>
+<p class="migline"><b>接入点：</b>FRHICommandList::UnlockIndexBuffer_BottomOfPipe 调用点</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>纯诊断日志，但 UE5 路径已重构，需重新定位崩溃点后再移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_DEBUG_LOCK_BUFFER_CRASH_ISSUE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PARTICLE_MODULE_SPAWN_RELATIVE_TIME_EXTRA_CALIBRATION">
+<h3 class="mname">XD_BUG_FIX_PARTICLE_MODULE_SPAWN_RELATIVE_TIME_EXTRA_CALIBRATION <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:310</span>
+</div>
+<p class="zh">重校准粒子生成相对时间（生成过慢时会瞬间被杀死且缩放错误，默认关闭）</p>
+<p class="en">源码注释：Re-calibrate relative time in particle emitter instances. When spawning too slow, the time calculated may cause the new-spawned to get killed instantly, with wrongly applied scale.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/ParticleModules.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>未逐行比对 UE5 ParticleModules.cpp:3973 附近 Spawn 相对时间重校准实现</p>
+<p class="migline"><b>覆盖说明：</b>默认关闭，证据不足不臆测</p>
+<p class="migline"><b>落地方式：</b>若需保留则改 UParticleModule::Spawn 时间参数计算</p>
+<p class="migline"><b>接入点：</b>粒子 Spawn 相对时间计算处</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>默认关闭；迁移后再按需评估，先不迁移</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PARTICLE_MODULE_SPAWN_RELATIVE_TIME_EXTRA_CALIBRATION">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT">
+<h3 class="mname">XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:313</span>
+</div>
+<p class="zh">修复 Ribbon 粒子初始尺寸为 1 而非分布起始值（默认关闭）</p>
+<p class="en">源码注释：Fix the initial ribbon particle size as 1, which should not be a problem unless relative time goes out off the lifespan of spawned particles.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/ParticleTrail2EmitterInstance.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>未比对 UE5 ParticleTrail2EmitterInstance.cpp:901 附近 CurrentSizes 初始化</p>
+<p class="migline"><b>覆盖说明：</b>默认关闭，证据不足</p>
+<p class="migline"><b>落地方式：</b>若保留则改 FParticleRibbonEmitterInstance 初始化</p>
+<p class="migline"><b>接入点：</b>FParticleRibbonEmitterInstance CurrentSizes 初始化</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>默认关闭，暂不迁移</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_PARTICLE_MODULE_SIZE_BY_TIME_SPAWN_INITIAL_SIZE">
+<h3 class="mname">XD_BUG_FIX_PARTICLE_MODULE_SIZE_BY_TIME_SPAWN_INITIAL_SIZE <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:317</span>
+</div>
+<p class="zh">修复按时间分布的粒子初始尺寸应始终取分布起点（默认关闭）</p>
+<p class="en">源码注释：Fix that when determining the spawned particles' intial size, we should always use the start of the distribution regardless of the relative time. This could be a problem when the spawning took too long and the relative time goes out off the lifespan of spawned particles.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/ParticleModules_Size.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 ParticleModules_Size.cpp:195 UParticleModuleSizeMultiplyLife::Spawn 使用 LifeMultiplier.GetValue(Particle.RelativeTime)（未取 0.0f）</p>
+<p class="migline"><b>覆盖说明：</b>XD 为行为改写且默认关闭</p>
+<p class="migline"><b>落地方式：</b>改 UParticleModuleSizeMultiplyLife::Spawn</p>
+<p class="migline"><b>接入点：</b>UParticleModuleSizeMultiplyLife::Spawn</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>属美术表现改动非 bugfix，默认关闭，建议不迁移以免美术表现变化</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_PARTICLE_MODULE_SIZE_BY_TIME_SPAWN_INITIAL_SIZE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BUG_FIX_BC7_TEX_COMPRESSION">
+<h3 class="mname">XD_BUG_FIX_BC7_TEX_COMPRESSION <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildFixBugConfiguration.cs">XDBuildFixBug:321</span>
+</div>
+<p class="zh">修复 BC7 ISPC 压缩器总用 mode7 导致 Alpha 通道被污染</p>
+<p class="en">源码注释：Fix that BC7 ispc compressor will always use mode7 (rgb+a combined mode), causing a wrongly polluted error-ish A channel color Details and TODOs - See https://xindong.atlassian.net/wiki/x/GgasRw</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Developer/TextureFormatIntelISPCTexComp/Private/TextureFormatIntelISPCTexComp.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Developer/TextureFormatIntelISPCTexComp/Private/TextureFormatIntelISPCTexComp.cpp:909-916（alpha 用 GetProfile_alpha_basic，非 mode7 slow）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已按通道正确选 profile</p>
+<p class="migline"><b>落地方式：</b>Developer 纹理格式模块</p>
+<p class="migline"><b>建议：</b>UE5 已修，删除即可。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BUG_FIX_BC7_TEX_COMPRESSION">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+</div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

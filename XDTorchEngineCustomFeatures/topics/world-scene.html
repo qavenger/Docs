@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>世界、植被、地形与动画 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🌳 世界、植被、地形与动画</h1><p class="lead">ISM/HISM、Landscape、多世界、流送与 Sequencer</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>围绕「大世界 + 移动端 + 多世界后台加载」三个前提，对植被实例化、地形绘制、纹理流送、动画/Sequencer 与网格资产链路做了系统改造，核心目标是<b>降低带宽与提交量</b>，同时保证多世界/FeatureLevel 切换的稳定性。
+</div>
+
+<h2 class="sec">1. 植被 ISM/HISM：移动端性能主战场</h2>
+<p>火炬之光的植被是「簇状分布 + 大量实例」，UE 原生方案在移动端有两个瓶颈：每像素采样光照图，以及实例缓冲带宽。定制方案把它们拆成一组互相配合的宏：</p>
+<ul class="tight">
+<li><code>XD_OPT_FOLIAGE_BAKE_LIGHTMAP_AND_SHADOWMAP_INTO_INSTANCE_BUFFER</code>：把 LightMap/ShadowMap 采样结果<b>按实例</b>烘焙进 Instance Buffer，Shader 直接读取，不再逐像素采样（需静态 SkyLight、关闭 AO/虚拟纹理光照图，并依赖移动端关闭 Lightmap 方向性）。</li>
+<li><code>XD_OPT_FOLIAGE_REPLACE_TRANSFORM_MATRIX_WITH_QUATERNION</code>：实例变换用四元数 + 统一缩放替代 3×3 矩阵，实例缓冲带宽显著下降；代价是实例不支持非均匀缩放。</li>
+<li><code>XD_OPT_FOLIAGE_DISABLE_PERINSTANCE_FUNCTIONS</code>：按材质实际用到的表达式裁剪 PerInstance 参数（如未使用 FadeAmount 就不传）。</li>
+<li><code>XD_OPT_FOLIAGE_SPLITING_INSTANCES_BY_MAX_INTERVAL</code>：集群树改按「实例最大间隔」切分（原生按最小顶点数），契合簇状分布，减少视锥外实例提交。</li>
+<li><code>XD_OPT_FOLIAGE_PER_FRAME_INSTANCE_BUFFER_RECONSTRUCTION</code>：把相同 LOD 的集群节点重新打包成实例缓冲，RT 侧每帧重建。</li>
+<li><code>XD_OPT_FOLIAGE_PER_INSTANCE_MOVEABLE_POINT_LIGHTING</code>：只对与唯一可移动点光相关的实例计算光照。</li>
+<li><code>XD_OPT_HISM_SPHERE_PROXY_MODE</code>（默认 <span class="v off">0</span>）：HISM 球形代理剔除模式。</li>
+<li><code>XD_BUG_FIX_REMOVE_BAD_INSTANCES</code>、<code>XD_BUG_FIX_DO_NOT_RENDER_UNBUILT_INSTANCES</code>：剔除 NaN/零缩放实例、不渲染尚未构建缓冲的实例。</li>
+</ul>
+<p class="note" style="display:block">⚠ 植被三件套（切分/逐帧重建/逐实例点光）明确标注 <b>Mobile(ES_31) Only</b>；四元数方案与 <code>DISABLE_PERINSTANCE_FUNCTIONS</code> 有耦合。</p>
+
+<h2 class="sec">2. 地形 Landscape</h2>
+<ul class="tight">
+<li><code>XD_LANDSCAPE_ADVANCE_PAINTING_TOOL</code>：本项目对地形最大的改造——新增 Advanced Paint 绘制工具、<code>UAdvancedLandscapeLayerInfo</code>、通道分配器与 <code>AdvancedChannelIDMap</code>、ParameterLUT 布局、AdvancedTextureArray 材质节点；运行时提供 <code>SetAdvancedAlphaData/GetAdvancedAlphaData/FillAdvancedLayer/ClearAdvancedLayer</code> 等 API（78 处引用）。</li>
+<li><code>XD_RENDERING_LANDSCAPE_LOD_BIAS</code>：新增 <code>r.LandscapeLODBias</code>（移动端/ES3.1），按画质档位调整地形 LOD。</li>
+<li><code>XD_OPT_MOBILE_LANDSCAPE_NO_LOD_MORPH</code>：<code>r.Mobile.DisableLandscapeLODMorph</code> 关闭地形 LOD 形变（省 VS 计算，但会产生 LOD 跳变）。</li>
+<li><code>XD_OPT_MOBILE_LANDSCAPE_POINT_LIGHTING</code>（默认 <span class="v off">0</span>）：VS 预输出可见点光属性、PS 丢弃无用计算。</li>
+<li><code>XD_BUG_FIX_GENERATE_LANDSCAPE_MOBILE_DATA_WHEN_SAVING</code>：保存时生成 MobileData，避免重 Cook 后产生无谓热更（UE4-3547）。</li>
+<li><code>XD_TORCHLIGHT_LANDSCAPE_GENERATE_MID_BY_DEFAULT</code>（默认 <span class="v off">0</span>）：地形默认生成动态材质实例。</li>
+</ul>
+
+<h2 class="sec">3. 世界、多世界（MultiWorld）与 FeatureLevel</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_MULTIWORLD_BACKGROUND_TICK_COMPATIBILITY</code>：为「后台子世界」打标（<code>MarkSubWorld/IsSubWorld</code>），在没有实际渲染时修正组件 Tick 与可见性逻辑。</li>
+<li><code>XD_BUG_FIX_ADAPT_TEXTURE_STREAMING_TO_MULTI_WORLD_PLUGIN</code>：纹理流送感知 ActiveWorld，可暂停非活跃关卡的流送（<code>r.Streaming.PauseStreamingInInactiveLevels</code>）。</li>
+<li><code>XD_BUG_FIX_GET_CURRENT_WORLD_TIME_FOR_TEXTURE_STREAMING</code>：流送改用「可 Tick 的世界」的时间，修复后台世界暂停导致的流送错乱（UE4-4169）。</li>
+<li><code>XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR</code>、<code>XD_BUG_FIX_THE_CRASH_WHEN_SWITCHING_FEATURE_LEVEL_WITH_MULTIPLE_UWORLDS</code>、<code>XD_BUG_FIX_REMOVE_CACHED_LEVEL_COLLECTION_IF_NOT_CONSISTENT_WITH_ACTIVE_LEVEL_COLLECTION</code>：编辑器专用 FeatureLevel、多 UWorld 切 FL 崩溃防护、LevelCollection 缓存一致性（UE4-6191/3863）。</li>
+<li><code>XD_OPT_DISABLE_NON_USABLE_WORLD_TICK_WORKS</code>：空 LevelCollection 直接跳过 Tick。</li>
+<li><code>XD_FIX_BUG_ZERO_MATRIX_CAUSE_CRASH_WHEN_COCOLLECT_DYNAMIC_MESH</code>：零矩阵实例直接跳过收集，避免崩溃（TORCHLIGHT-115990）。</li>
+<li><code>XD_TORCHLIGHT_TASK_GRAPH_EXT</code>：ParallelFor/LevelTick 的任务图扩展，供项目并行任务使用。</li>
+</ul>
+
+<h2 class="sec">4. 纹理流送细节优化</h2>
+<ul class="tight">
+<li><code>XD_BUG_FIX_CONSIDERING_FOV_FOR_TEXTURE_STREAMING</code>：计算 ScreenSize 时考虑 FOV，并修正半径计算误差（UE4-3640）。</li>
+<li><code>XD_BUG_FIX_DROP_MIPS_IF_MOVES_LONG_DISTANCE_SINCE_LAST_STREAMING</code>：短时间远距离移动（传送/切图）时释放 CachedMips/HiddenMips，避免显存被历史 Mip 占住（UE4-3669）。</li>
+<li><code>XD_MISC_MOBILE_USE_MIN_LOD_SIMULATE_LOD_BIAS</code>：GLES 用 <code>GL_TEXTURE_MIN_LOD</code> 模拟 LOD Bias。</li>
+<li><code>XD_BUG_FIX_RUNTIME_TEXTURE_LODBIAS</code>：恢复按设备档位（IOS_Mid/Android_Low 等）设置运行时 LODBias 的能力。</li>
+</ul>
+
+<h2 class="sec">5. 动画、骨骼网格与 LOD</h2>
+<ul class="tight">
+<li><code>XD_EXT_ANIMATION_TICK_OPTION_WITH_DISPLACEMENT</code>：动画资产标记 <code>bHasDisplacement</code>，据此决定可见性 Tick 策略（配合 AnimMontage）。</li>
+<li><code>XD_EXT_INVALID_LODSTATUS_UPDATE</code>：不在渲染时（不可见）不再调用 <code>UpdateLODStatus</code>，省 CPU。</li>
+<li><code>XD_EXT_RIGID_BODY_ANIMATION_NODE_SUPPORT_DEFAULT_SETTING_BODIES</code>：刚体动画节点支持 Default 属性的 Body（原先只有 Kinematic/Simulated）。</li>
+<li><code>XD_OPT_SKELETAL_MESH_SKIP_CREATE_UNIFORM_BUFFER_EVERY_FRAME</code>：骨骼 UBO 不再每帧创建（性能 + 内存泄漏修复）。</li>
+<li><code>XD_OPTIMIZATION_SHADOWS_FORCE_LOD</code>（默认 <span class="v off">0</span>）：阴影 Pass 使用更低 LOD 的骨骼网格。</li>
+<li><code>XD_MISC_ZERO_DEFAULT_BLEND_TIME</code>：AnimMontage 默认混合时间改为 0。</li>
+<li><code>XD_MISC_SKELETAL_MESH_COMPONENT_ADD_DELEGATES</code>：组件 Begin/EndPlay、激活/失活新增委托。</li>
+<li><code>XD_OPT_ASYNC_TICK_SKELETAL_MESH_COMPONENTS</code>（默认 <span class="v off">0</span>）：并行 Tick 骨骼网格组件（需配合若干 CVar AnyThread 改造）。</li>
+<li><code>XD_TOOL_SKELETAL_MESH_GET_GUID_FROM_FILEHASH</code>、<code>XD_SKELMESH_IMPORT_DEFAULT_SETTING</code>、<code>XD_SKELMESH_CHECK_DDC_KEY_MISS_MATCH_TOOL</code>：骨骼网格资产标识、导入默认值与 DDC 一致性工具。</li>
+</ul>
+
+<h2 class="sec">6. Sequencer 与过场动画</h2>
+<ul class="tight">
+<li><code>XD_OPTIMIZE_SEQUENCE_SUPPORT_PREVIEWSCENE_ASSET</code>：序列支持 PreviewScene 资产（不进入关卡即可预览）。</li>
+<li><code>XD_BUG_FIX_SEQUENCE_NOT_TICK_IGNORE_PAUSED</code>：游戏暂停时 LevelSequence 仍可 Tick（<code>bTickWhenPause</code> 生效）。</li>
+<li>编辑器修复组：<code>XD_BUG_FIX_ADD_ARRAY_ELEMENT_TO_SEQUENCER_TRACK</code>、<code>XD_BUG_FIX_WRONG_EXISTING_CAMERA_BINGDING_SPACE</code>、<code>XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL</code>、<code>XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER</code>、<code>XD_BUG_FIX_RECORD_SEQUENCER_CRASH</code>、<code>XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW</code>。</li>
+<li><code>XD_BUG_FIX_RESTORE_ASPECT_RATIO_CONSTRAINT</code>：修复相机纵横比约束恢复（UE4-4328）。</li>
+</ul>
+
+<h2 class="sec">7. 网格/材质资产链路</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP</code>：强制所有 LOD 共享 LOD0 的 Lightmap，显著减少光照图体积。</li>
+<li><code>XD_TOOL_SUPPORT_NO_BAKED_LIGHTMAP_DIRECTIONALITY_GLOBALLY_MOBILE</code>：移动端全局关闭 Lightmap 方向性，贴图体积减半（CVar <code>r.DisableBakedLightMapDirectonality</code>）。</li>
+<li><code>XD_TORCHLIGHT_IMPORTSCENECONVERT_FORCEFRONTXAXIS</code>：FBX 导入统一以 +X 为正面朝向。</li>
+<li><code>XD_TORCHLIGHT_PHYSICSANIM_ADJUST</code>：物理动画只混合旋转/缩放，保持骨骼位置稳定。</li>
+<li><code>XD_TOOL_SOLVE_UNMATCHED_OVERRIDDEN_MAT_WITH_STATIC_MESH_MATERIALS</code>、<code>XD_EXT_ALLOW_USE_ORIGIN_PROXY_MATERIAL</code>、<code>XD_SERIALIZE_UPGRADE_FIXUP_STATIC_MESH_NONUSED_PROPERTY</code>、<code>XD_MISC_MAP_CHECK_ADJUST_STATIC_MESH_ACTOR_SAME_POSITION_METHOD</code>：覆写材质对齐、Proxy 材质、序列化升级与 MapCheck 工具链。</li>
+</ul>
+
+<h2 class="sec">8. 注意事项</h2>
+<ul class="tight">
+<li><b>命名陷阱</b>：零矩阵崩溃宏实际为 <code>XD_FIX_BUG_ZERO_MATRIX_CAUSE_CRASH_WHEN_COCOLLECT_DYNAMIC_MESH</code>（FIX_BUG 而非 BUG_FIX）。</li>
+<li><b>仅声明未使用</b>：<code>XD_EXT_ANIMATION_TICK_OPTION</code> 在全源码中无 C++ 引用，是 <code>_WITH_DISPLACEMENT</code> 的遗留前缀。</li>
+<li><b>默认关闭</b>：球形代理剔除、异步骨骼 Tick、阴影强制 LOD、Socket 警告关闭等均为 0。</li>
+<li><b>Shader 联动</b>：四元数实例、地形 LOD Bias、逐实例光照等改动会改变 Shader，修改后必须清理 DDC 重新编译。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 53 个宏——UE5 已覆盖 <b>11</b>、部分覆盖 <b>19</b>、未覆盖 <b>17</b>；可完全工程化 <b>16</b>，深度侵入项 <b>6</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">世界、植被、地形与动画 相关宏（53）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_ADD_ARRAY_ELEMENT_TO_SEQUENCER_TRACK">XD_BUG_FIX_ADD_ARRAY_ELEMENT_TO_SEQUENCER_TRACK</a></td><td>修复 TArray 属性元素无法添加到 Sequencer 轨道</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_DISABLE_GET_SOCKET_WARNING_WHEN_NO_SKINMESH">XD_OPT_DISABLE_GET_SOCKET_WARNING_WHEN_NO_SKINMESH</a></td><td>当组件没有 SkinMesh 时 GetSocketInfoByName 直接返回空，避免刷警告（当前关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_DEBUG_BODY_INSTANCE_NAMES_INCLUDE_DEV">XD_MISC_DEBUG_BODY_INSTANCE_NAMES_INCLUDE_DEV</a></td><td>Dev 构建下也输出 Scale3D 接近 0 的物理 Body 组件名</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_ASYNC_TICK_SKELETAL_MESH_COMPONENTS">XD_OPT_ASYNC_TICK_SKELETAL_MESH_COMPONENTS</a></td><td>并行 Tick 场景中的骨骼网格组件（当前关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_REPLACE_TRANSFORM_MATRIX_WITH_QUATERNION">XD_OPT_FOLIAGE_REPLACE_TRANSFORM_MATRIX_WITH_QUATERNION</a></td><td>植被实例用四元数+统一缩放替代 3x3 变换矩阵，节省实例缓冲带宽</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_RIGID_BODY_ANIMATION_NODE_SUPPORT_DEFAULT_SETTING_BODIES">XD_EXT_RIGID_BODY_ANIMATION_NODE_SUPPORT_DEFAULT_SETTING_BODIES</a></td><td>刚体动画节点支持使用 Default 设置的物理 Body（原先仅 Kinematic/Simulated）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_CHECK_NULL_PTR_WHEN_PENDING_DELETE_ANIM_TRAIL_NODE">XD_BUG_FIX_CHECK_NULL_PTR_WHEN_PENDING_DELETE_ANIM_TRAIL_NODE</a></td><td>FAnimTrailNodeDetails::PendingDelete 中检查 TrailRelaxCurveWidget 有效性（TORCHLIGHT-223837）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZE_SEQUENCE_SUPPORT_PREVIEWSCENE_ASSET">XD_OPTIMIZE_SEQUENCE_SUPPORT_PREVIEWSCENE_ASSET</a></td><td>Sequencer 支持预览场景资产生成（不进入关卡即可预览序列）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR">XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR</a></td><td>修复编辑器中多世界对应特性等级（FeatureLevel）使用错误</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_DO_NOT_RENDER_UNBUILT_INSTANCES">XD_BUG_FIX_DO_NOT_RENDER_UNBUILT_INSTANCES</a></td><td>不渲染尚未构建完成的实例（避免无 UB/VB 时崩溃，UE4-6437）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_SKELETALMESH_SCALE_PHYSICAL_ASSET_ERROR">XD_FIX_BUG_SKELETALMESH_SCALE_PHYSICAL_ASSET_ERROR</a></td><td>修复缩放骨骼网格时物理资产骨骼位置错误（UE4-5905）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_SUPPORT_NO_BAKED_LIGHTMAP_DIRECTIONALITY_GLOBALLY_MOBILE">XD_TOOL_SUPPORT_NO_BAKED_LIGHTMAP_DIRECTIONALITY_GLOBALLY_MOBILE</a></td><td>移动端全局关闭 Lightmap 方向性烘焙（贴图体积减半）</td><td class="tval">1</td><td class="tuse">12</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_DROP_MIPS_IF_MOVES_LONG_DISTANCE_SINCE_LAST_STREAMING">XD_BUG_FIX_DROP_MIPS_IF_MOVES_LONG_DISTANCE_SINCE_LAST_STREAMING</a></td><td>玩家短时间长距离移动时释放 CachedMips/HiddenMips（UE4-3669）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_SPLITING_INSTANCES_BY_MAX_INTERVAL">XD_OPT_FOLIAGE_SPLITING_INSTANCES_BY_MAX_INTERVAL</a></td><td>植被聚簇树按最大间隔切分实例（移动端剔除优化）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_ANIMATION_TICK_OPTION">XD_EXT_ANIMATION_TICK_OPTION</a></td><td>Actor 不在相机视野时不更新 LODStatus（动画 Tick 优化）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_INVALID_LODSTATUS_UPDATE">XD_EXT_INVALID_LODSTATUS_UPDATE</a></td><td>停止在无渲染时调用 UpdateLODStatus</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_DISABLE_NON_USABLE_WORLD_TICK_WORKS">XD_OPT_DISABLE_NON_USABLE_WORLD_TICK_WORKS</a></td><td>移除世界中无意义的空 Tick 任务（世界 Tick 优化）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_BAKE_LIGHTMAP_AND_SHADOWMAP_INTO_INSTANCE_BUFFER">XD_OPT_FOLIAGE_BAKE_LIGHTMAP_AND_SHADOWMAP_INTO_INSTANCE_BUFFER</a></td><td>植被 ISM 按实例采样 LightMap/ShadowMap（把结果烘焙进实例缓冲）</td><td class="tval">1</td><td class="tuse">25</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_LANDSCAPE_LOD_BIAS">XD_RENDERING_LANDSCAPE_LOD_BIAS</a></td><td>Landscape 支持可配置的 LOD Bias（移动端）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_SEQUENCE_NOT_TICK_IGNORE_PAUSED">XD_BUG_FIX_SEQUENCE_NOT_TICK_IGNORE_PAUSED</a></td><td>修复游戏暂停时 LevelSequence 即使设置 bTickWhenPause 仍不 Tick</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_DeferredKinematicUpdateSkelMeshes_CRASH">XD_FIX_BUG_DeferredKinematicUpdateSkelMeshes_CRASH</a></td><td>修复 DeferredKinematicUpdateSkelMeshes 中无效骨骼网格指针崩溃（TORCHLIGHT-138970）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_PER_INSTANCE_MOVEABLE_POINT_LIGHTING">XD_OPT_FOLIAGE_PER_INSTANCE_MOVEABLE_POINT_LIGHTING</a></td><td>植被只对与可移动点光相关的实例计算逐实例点光照（仅支持一个可移动点光）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_CACHE_PRE_AIM_STATE">XD_FIX_BUG_CACHE_PRE_AIM_STATE</a></td><td>缓存上一帧 Aim 状态（动画/电影场景状态修正）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_WRONG_EXISTING_CAMERA_BINGDING_SPACE">XD_BUG_FIX_WRONG_EXISTING_CAMERA_BINGDING_SPACE</a></td><td>修复 Sequencer 中已有 CineCamera 绑定被设置到错误的 Binding Space</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_PHYSX_UP_TO_342">XD_MISC_PHYSX_UP_TO_342</a></td><td>PhysX SDK 升级至 3.4.2</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_SKELMESH_IMPORT_DEFAULT_SETTING">XD_SKELMESH_IMPORT_DEFAULT_SETTING</a></td><td>骨骼网格导入使用项目默认设置（统一美术导入参数）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_ADAPT_TEXTURE_STREAMING_TO_MULTI_WORLD_PLUGIN">XD_BUG_FIX_ADAPT_TEXTURE_STREAMING_TO_MULTI_WORLD_PLUGIN</a></td><td>纹理流送适配 MultiWorld 插件（UE4-4680）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_RECORD_SEQUENCER_CRASH">XD_BUG_FIX_RECORD_SEQUENCER_CRASH</a></td><td>修复录制 Sequencer 时崩溃（临时注释相关代码）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZE_MORE_TICKGROUP_EVENT_BASIC">XD_OPTIMIZE_MORE_TICKGROUP_EVENT_BASIC</a></td><td>在各 TickGroup 前后提供额外的事件（供项目做统计/任务调度）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_SKELETAL_MESH_COMPONENT_ADD_DELEGATES">XD_MISC_SKELETAL_MESH_COMPONENT_ADD_DELEGATES</a></td><td>骨骼网格组件 Begin/EndPlay、激活/失活增加委托</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_ANIMATION_TICK_OPTION_CONTEXT_LOG">XD_EXT_ANIMATION_TICK_OPTION_CONTEXT_LOG</a></td><td>动画 Tick 优化的上下文日志（默认关闭）</td><td class="tval">0</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER">XD_BUG_FIX_ADD_SPAWNABLE_TO_TARRAY_NOT_SYNC_IN_SEQUENCER</a></td><td>修复细节面板添加 Spawnable 属性后 Sequencer 未同步刷新</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_REMOVE_CACHED_LEVEL_COLLECTION_IF_NOT_CONSISTENT_WITH_ACTIVE_LEVEL_COLLECTION">XD_BUG_FIX_REMOVE_CACHED_LEVEL_COLLECTION_IF_NOT_CONSISTENT_WITH_ACTIVE_LEVEL_COLLECTION</a></td><td>当 ULevel::CachedLevelCollection 与 ActiveLevelCollection 不一致时清除缓存（UE4-3863）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_MULTIWORLD_BACKGROUND_TICK_COMPATIBILITY">XD_RENDERING_MULTIWORLD_BACKGROUND_TICK_COMPATIBILITY</a></td><td>MultiWorld 后台子世界（不实际渲染）中组件 Tick 的兼容处理</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MOBILE_LANDSCAPE_POINT_LIGHTING">XD_OPT_MOBILE_LANDSCAPE_POINT_LIGHTING</a></td><td>移动端地形点光源优化：顶点着色器输出点光源相关属性，像素端裁剪无用计算（当前关闭）</td><td class="tval">0</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_LANDSCAPE_ADVANCE_PAINTING_TOOL">XD_LANDSCAPE_ADVANCE_PAINTING_TOOL</a></td><td>Landscape 高级绘制：引入 IdMap 支持多图层材质与渲染</td><td class="tval">1</td><td class="tuse">78</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_SKELETAL_MESH_SKIP_CREATE_UNIFORM_BUFFER_EVERY_FRAME">XD_OPT_SKELETAL_MESH_SKIP_CREATE_UNIFORM_BUFFER_EVERY_FRAME</a></td><td>骨骼网格每帧重建骨骼 UniformBuffer 的性能与内存泄漏修复</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_TOGGLE_SKELETAL_MESH_PHYSICX_STATUS">XD_EXT_TOGGLE_SKELETAL_MESH_PHYSICX_STATUS</a></td><td>动态开关骨骼网格的物理效果（如布娃娃）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_SKELETAL_MESH_GET_GUID_FROM_FILEHASH">XD_TOOL_SKELETAL_MESH_GET_GUID_FROM_FILEHASH</a></td><td>骨骼网格支持从文件 Hash 生成 GUID（资产唯一标识）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_ANIMATION_TICK_OPTION_WITH_DISPLACEMENT">XD_EXT_ANIMATION_TICK_OPTION_WITH_DISPLACEMENT</a></td><td>基于位移的动画可见性 Tick 优化（作用于 EVisibilityBasedAnimTickOption 与 AnimMontage）</td><td class="tval">1</td><td class="tuse">9</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_DISABLE_PERINSTANCE_FUNCTIONS">XD_OPT_FOLIAGE_DISABLE_PERINSTANCE_FUNCTIONS</a></td><td>按材质表达式使用情况裁剪植被 PerInstance 参数（只保留用到的）</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_GET_CURRENT_WORLD_TIME_FOR_TEXTURE_STREAMING">XD_BUG_FIX_GET_CURRENT_WORLD_TIME_FOR_TEXTURE_STREAMING</a></td><td>纹理流送使用当前世界时间，修正 MultiWorld 暂停世界的干扰（UE4-4169）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_PER_FRAME_INSTANCE_BUFFER_RECONSTRUCTION">XD_OPT_FOLIAGE_PER_FRAME_INSTANCE_BUFFER_RECONSTRUCTION</a></td><td>按 LOD 对相同 LOD 的植被簇节点做实例化重建</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MOBILE_LANDSCAPE_NO_LOD_MORPH">XD_OPT_MOBILE_LANDSCAPE_NO_LOD_MORPH</a></td><td>允许关闭 Landscape LOD Morph（移动端）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_GENERATE_LANDSCAPE_MOBILE_DATA_WHEN_SAVING">XD_BUG_FIX_GENERATE_LANDSCAPE_MOBILE_DATA_WHEN_SAVING</a></td><td>保存 Landscape 时同时生成 MobileData，避免重 Cook 产生无谓热更（UE4-3547）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_CONSIDERING_FOV_FOR_TEXTURE_STREAMING">XD_BUG_FIX_CONSIDERING_FOV_FOR_TEXTURE_STREAMING</a></td><td>计算纹理流送 ScreenSize 时考虑 FOV，并修正半径误差（UE4-3640）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL">XD_BUG_FIX_ADD_TARRAY_ELEMENT_FAILED_IN_DETAIL_PANEL</a></td><td>修复细节面板添加 TArray 元素时跳过倒数第二个属性导致失败</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW">XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW</a></td><td>修复 Sequencer 复制关键帧后绘制不刷新</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_ANIMATION_TICK_OPTION_WITH_DISPLACEMENT_DEBUG_DUMP">XD_EXT_ANIMATION_TICK_OPTION_WITH_DISPLACEMENT_DEBUG_DUMP</a></td><td>Dump 蒙皮网格的 Tick 状态（调试，默认关闭）</td><td class="tval">0</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_ZERO_DEFAULT_BLEND_TIME">XD_MISC_ZERO_DEFAULT_BLEND_TIME</a></td><td>动画蒙太奇默认过渡时间改为 0</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_HISM_SPHERE_PROXY_MODE">XD_OPT_HISM_SPHERE_PROXY_MODE</a></td><td>HISM（植被）使用球形代理半径模式（当前关闭）</td><td class="tval">0</td><td class="tuse">20</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_REMOVE_BAD_INSTANCES">XD_BUG_FIX_REMOVE_BAD_INSTANCES</a></td><td>加载 ISM/HISM 时移除损坏的实例数据（UE4-6324）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_THE_CRASH_WHEN_SWITCHING_FEATURE_LEVEL_WITH_MULTIPLE_UWORLDS">XD_BUG_FIX_THE_CRASH_WHEN_SWITCHING_FEATURE_LEVEL_WITH_MULTIPLE_UWORLDS</a></td><td>修复多世界下切换特性等级时崩溃（UE4-6191）</td><td class="tval">1</td><td class="tuse">2</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="rendering-lighting.html"><h3>💡 光照、阴影与材质</h3><p>与当前主题关联密切</p></a><a class="card" href="mobile-rendering.html"><h3>📱 移动端渲染优化</h3><p>与当前主题关联密切</p></a><a class="card" href="cook-pak.html"><h3>📦 Cook / Pak / DDC / 热更</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>渲染特性（XDRenderingFeatures） · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>渲染特性（XDRenderingFeatures）</h1><p class="lead">XDRenderingFeatures · 共 55 个宏</p>
+<div class="toolbar"><input class="filter" placeholder="在本文档内筛选宏名…" data-scope="#macrolist"></div>
+<div class="pager"><a href="opt.html">性能优化（XDOptimizationFeatures） →</a></div>
+<div id="macrolist">
+<h2 class="author">Ran Qing Sen</h2>
+<article class="macro" id="XD_RENDERING_ALLOW_TRANSLUCENCY_OBJ_CAST_CSM_SHADOW">
+<h3 class="mname">XD_RENDERING_ALLOW_TRANSLUCENCY_OBJ_CAST_CSM_SHADOW <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:31</span>
+</div>
+<p class="zh">允许半透明物体向 CSM 级联阴影投射阴影（配合 CustomUnlit 渲染路径）</p>
+<p class="note">⚠ 构建依赖：XD_RENDERING_CUSTOM_UNLIT 必须为 1，否则 UBT 报错。</p>
+<p class="rels">关联宏：<a class="rel" href="excluded.html#XD_RENDERING_CUSTOM_UNLIT">XD_RENDERING_CUSTOM_UNLIT</a></p>
+<p class="en">源码注释：Allow translucency object cast csm shadow</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/MobileShadingRenderer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Renderer/Private/MobileBasePass.cpp:1194/1205/1216 移动端半透明三个 pass 均带 EFlags::CanReceiveCSM；:787-794 MaterialCanReceiveCSM 允许 TLM_SurfacePerPixelLighting 半透明；:293/388 bIsTranslucent 在 lightmap policy 选择中被标注 not used</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已按材质/图元能力而非'是否半透明'决定 CSM</p>
+<p class="migline"><b>落地方式：</b>多数情况只需项目侧配置（材质 TranslucencyLightingMode、ShouldReceiveMobileCSMShadows）；如需全局开关可保留一层 CVar</p>
+<p class="migline"><b>接入点：</b>r.Mobile.EnableStaticAndCSMShadowReceivers 等 CVar · MobileBasePass::MaterialCanReceiveCSM</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>先验证 UE5 默认半透明 CSM 是否满足需求；该特性构建期强依赖 XD_RENDERING_CUSTOM_UNLIT（UE5 无此路径）</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_ALLOW_TRANSLUCENCY_OBJ_CAST_CSM_SHADOW">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP">
+<h3 class="mname">XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:34</span>
+</div>
+<p class="zh">强制静态网格所有 LOD 共享 LOD0 的 Lightmap UV/贴图，避免每级 LOD 重复烘焙</p>
+<p class="detail">在编辑器构建数据时把高 LOD 的 Lightmap 设置指向 LOD0，可显著减少 Lightmap 体积与烘焙时间；代价是 LOD 切换时 Lightmap 精度一致。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_LIGHTMAP_BIAS">XD_RENDERING_LIGHTMAP_BIAS</a></p>
+<p class="en">源码注释：Force static-mesh share lightmap from lod0.</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Editor/UnrealEd/Classes/Factories/FbxStaticMeshImportData.h</li><li>Source/Editor/UnrealEd/Private/Fbx/FbxStaticMeshImport.cpp</li><li>Source/Editor/UnrealEd/Public/FbxImporter.h</li><li>Source/Runtime/Engine/Classes/Engine/StaticMesh.h</li><li>Source/Runtime/Engine/Private/StaticMesh.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Engine/Private/StaticMesh.cpp:10274-10289 UStaticMesh::CanLODsShareStaticLighting() 存在（简化 LOD/SpeedTree 自动共享），但无 bForceLODsShareLightmap 强制开关（grep 无结果）</p>
+<p class="migline"><b>覆盖说明：</b>有自动共享，无强制共享开关</p>
+<p class="migline"><b>落地方式：</b>导入侧可依赖简化 LOD 的自动共享；强制开关需引擎加 UStaticMesh 字段 + 改 CanLODsShareStaticLighting + FbxImportData 选项</p>
+<p class="migline"><b>接入点：</b>UStaticMesh 新 bForceLODsShareLightmap（XD StaticMesh.h:594） · UStaticMesh::CanLODsShareStaticLighting · FbxStaticMeshImportData 导入选项</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>影响 Lightmap 资产与烘焙一致性，需与 LOD 生成流程一起验证</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW">
+<h3 class="mname">XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">移动端渲染优化</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:37</span>
+</div>
+<p class="zh">移动端禁用点光源动态阴影，保证 PC 与移动端效果一致</p>
+<p class="detail">点光源不再走动态阴影 Pass，统一由静态/CSM 阴影承担；减少移动端 Draw Call 与阴影开销。</p>
+<p class="rels">关联宏：<a class="rel" href="projectfeatures.html#XD_CSM_SHADOW_OPT">XD_CSM_SHADOW_OPT</a></p>
+<p class="en">源码注释：To get the consistent effect for PC &amp; Mobile, disable point light's dynamic shadow now</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/PointLightComponent.h</li><li>Source/Runtime/Engine/Private/Components/LightComponent.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Renderer/Private/MobileBasePassRendering.cpp:48-52（r.Mobile.EnableMovablePointLightsShadows 默认 0）；Runtime/RenderCore/Private/ReadOnlyCVARCache.cpp:29-33（bMobileEnableMovableSpotlightsShadowValue 默认 false）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 默认即关闭移动端点光源动态阴影，与 XD 需求一致</p>
+<p class="migline"><b>落地方式：</b>r.Mobile.EnableMovablePointLightsShadows 保留默认 0 即可</p>
+<p class="migline"><b>建议：</b>UE5 默认行为已满足，直接删除宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_LIGHTMASS_DISABLE_BackfacingHitsFraction">
+<h3 class="mname">XD_RENDERING_LIGHTMASS_DISABLE_BackfacingHitsFraction <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:43</span>
+</div>
+<p class="zh">关闭 Lightmass 的 BackfacingHitsFraction 改进（UE4.24 新特性导致植被偏暗）</p>
+<p class="note">⚠ 默认 0（即保持 UE4.24 原始行为已关闭该改进）；如开启会恢复 UE 新版暗角处理。</p>
+<p class="en">源码注释：UE4.24 Add BackfacingHitsFraction feature ,but torchlight found foliage easily more darken Office release notes below: Improved dark corner mitigation by storing backfacing hits fraction inside irradiance cache records and marking texels as unmapped when their interpolated backfacing fraction &gt; 0.5</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Programs/UnrealLightmass/Private/Lighting/TextureMapping.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Programs/UnrealLightmass/Private/Lighting/SampleVolume.cpp:169-217、LightingCache.h:107-509 仍为 UE4.24 之后含 BackfacingHitsFraction 的实现，与 XD 关闭该宏时行为一致</p>
+<p class="migline"><b>覆盖说明：</b>UE5 保留同一 Lightmass 行为</p>
+<p class="migline"><b>落地方式：</b>无需迁移（宏值=0）；Lightmass 为独立程序，如需再改也只动 Programs/UnrealLightmass</p>
+<p class="migline"><b>建议：</b>宏默认关闭且行为一致，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_LIGHTMASS_DISABLE_BackfacingHitsFraction">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_PC_DX11_SUPPORT_RHI_THREAD">
+<h3 class="mname">XD_RENDERING_PC_DX11_SUPPORT_RHI_THREAD <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:46</span>
+</div>
+<p class="zh">为 PC DX11 打开 RHI 线程支持（当前关闭）</p>
+<p class="note">⚠ 默认 0。开启后 DX11 走 RHIThread 并发提交，需大量兼容性验证。</p>
+<p class="en">源码注释：PC DX11 default turn off RHI thread (try to open it)</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Windows/D3D11RHI/Private/D3D11Device.cpp</li><li>Source/Runtime/Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Windows/D3D11RHI/Private/D3D11Device.cpp:196 GRHISupportsRHIThread = true</p>
+<p class="migline"><b>覆盖说明：</b>UE5 D3D11 默认支持 RHI 线程</p>
+<p class="migline"><b>落地方式：</b>默认已支持，无需开启</p>
+<p class="migline"><b>建议：</b>UE5 已内建，宏可删</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_PC_DX11_SUPPORT_RHI_THREAD">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_PC_HANDLE_GRAPHICS_INSIGHTS_TOOL_ATTACHED">
+<h3 class="mname">XD_RENDERING_PC_HANDLE_GRAPHICS_INSIGHTS_TOOL_ATTACHED <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:49</span>
+</div>
+<p class="zh">PC 端挂载 RenderDoc/PIX 等图形调试工具时的行为处理（当前关闭）</p>
+<p class="en">源码注释：When PC attached with such as renderdoc graphics tool, how to handle it</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp（检测 RenderDoc/IntelGPA 并 EnableIdealGPUCaptureOptions，无 Shipping 退出）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 能检测抓帧工具但不阻断</p>
+<p class="migline"><b>落地方式：</b>项目模块检测调试工具句柄并提示/退出</p>
+<p class="migline"><b>接入点：</b>RenderDoc/IntelGPA 检测点</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>默认关闭；如需反抓帧保护可保留并配置化</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_PC_HANDLE_GRAPHICS_INSIGHTS_TOOL_ATTACHED">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA">
+<h3 class="mname">XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 24</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:52</span>
+</div>
+<p class="zh">统一调整粒子的整体亮度与 Alpha（材质/组件级开关）</p>
+<p class="detail">给粒子材质与组件增加全局亮度/透明度乘数，并由 View.AdditiveColorMultiplier 等参数注入 Shader；用于控制特效在 HDR 下的过曝。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE">XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE</a> <a class="rel" href="tools.html#XD_TOOL_ADDITIVE_BLEND_MATERIAL_ADD_ALPHA_COLOR_MULTIPLIER">XD_TOOL_ADDITIVE_BLEND_MATERIAL_ADD_ALPHA_COLOR_MULTIPLIER</a></p>
+<p class="en">源码注释：Adjust particle component's overall luminance</p>
+<details class="usage"><summary>引用位置（24 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/BasePassPixelShader.usf</li><li>Shaders/Private/ColorSpace.ush</li><li>Shaders/Private/MaterialTemplate.ush</li><li>Shaders/Private/MobileBasePassPixelShader.usf</li><li>Shaders/Private/SceneData.ush</li><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li><li>Source/Runtime/Engine/Classes/Particles/FastParticleSystemComponent.h</li><li>Source/Runtime/Engine/Classes/Particles/ParticleSystemComponent.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 ParticleSystemRender 无 XD 的亮度/Alpha 额外 uniform 与 AdditionalPrimitiveUniformBuffer（grep 无 Luminance/AdditionalPrimitiveUniformBuffer）</p>
+<p class="migline"><b>覆盖说明：</b>24 处引用，UE5 无等价能力</p>
+<p class="migline"><b>落地方式：</b>材质侧用 Material Parameter Collection/动态材质实例提供亮度+Alpha 全局/单实例缩放，组件侧只在项目组件设置 MID 参数</p>
+<p class="migline"><b>接入点：</b>材质参数集/动态材质实例 · 项目 PSC 子类参数下发</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>建议改用材质参数化实现，避免在粒子渲染路径加 uniform；注意与实例化方案的兼容</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_MATERIAL_CUSTOM_NODE_INPUT_ADD_FULL_PRECISION_SETTING">
+<h3 class="mname">XD_RENDERING_MATERIAL_CUSTOM_NODE_INPUT_ADD_FULL_PRECISION_SETTING <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:58</span>
+</div>
+<p class="zh">材质 Custom 节点新增 UseFullPrecision 开关，开启后局部变量使用 highp float</p>
+<p class="detail">移动端 GLES 默认 mediump，自定义节点在需要精度的计算（如世界坐标）时可勾选该选项强制 highp，避免精度问题。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_HIGHP_CUSTOM_NODE_OUTPUT">XD_HIGHP_CUSTOM_NODE_OUTPUT</a></p>
+<p class="en">源码注释：When toogle 'UseFullPrecision' checkbox, then local variable will use highp float</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Materials/MaterialExpressionCustom.h</li><li>Source/Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp</li><li>Source/Runtime/Landscape/Private/Materials/MaterialExpressionLandscapeAdvancedLayerBlend.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Engine/Public/Materials/MaterialExpressionCustom.h:27-40 FCustomInput 无 bUseFullPrecision；材质级 bUseFullPrecision_DEPRECATED（Material.h:947）已废弃</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无 Custom 节点每输入精度开关</p>
+<p class="migline"><b>落地方式：</b>需 FCustomInput 新字段 + HLSLMaterialTranslator 参数声明分支（XD HLSLMaterialTranslator.cpp:7400-7448）</p>
+<p class="migline"><b>接入点：</b>FCustomInput 新增 bUseFullPrecision（材质序列化 schema） · Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp Custom 参数声明</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>材质序列化 schema 变更，注意 Cook/DDC 与旧资产兼容</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_MATERIAL_CUSTOM_NODE_INPUT_ADD_FULL_PRECISION_SETTING">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT">
+<h3 class="mname">XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 6</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:61</span>
+</div>
+<p class="zh">模拟器包使用高分辨率纹理（新增 Emulator 专用 LodBias）</p>
+<p class="detail">PC 模拟器运行移动包时，按 Emulator 平台规则降低 Mip 剥离量，保证模拟器画质。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT_DEBUG">XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT_DEBUG</a> <a class="rel" href="misc2.html#XD_EMULATOR_EXTRA_INI">XD_EMULATOR_EXTRA_INI</a></p>
+<p class="en">源码注释：FOR Emulator we need to cook high-res texture, so add new LodBias used for emulator package</p>
+<details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Editor/DetailCustomizations/Private/TextureLODSettingsDetails.cpp</li><li>Source/Editor/DetailCustomizations/Private/TextureLODSettingsDetails.h</li><li>Source/Runtime/Engine/Classes/Engine/TextureLODSettings.h</li><li>Source/Runtime/Engine/Private/DeviceProfiles/DeviceProfileManager.cpp</li><li>Source/Runtime/Engine/Private/TextureDerivedData.cpp</li><li>Source/Runtime/Engine/Private/TextureLODSettings.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Classes/Engine/TextureLODSettings.h（LODBias 群组）；AndroidRuntimeSettings.h:485 bForceEmulatorProfileSelectionInNonShippingBuilds</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有 Emulator Profile 机制</p>
+<p class="migline"><b>落地方式：</b>DeviceProfiles.ini 增加 Emulator Profile，设 LODBias=0</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>用 DeviceProfile 替代 XD 的 Emulator 专用 LodBias 字段</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT_DEBUG">
+<h3 class="mname">XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT_DEBUG <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:64</span>
+</div>
+<p class="zh">高分辨率 DXT 功能的调试日志（默认关闭）</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT">XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT</a></p>
+<p class="en">源码注释：debug info for 'XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT'</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/TextureDerivedData.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无该调试日志</p>
+<p class="migline"><b>覆盖说明：</b>纯调试</p>
+<p class="migline"><b>落地方式：</b>删除或改 CVar</p>
+<p class="migline"><b>建议：</b>默认 0 的调试宏，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT_DEBUG">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_EMULATOR_CONTROL_MOUSE_ICON_VISIBILITY">
+<h3 class="mname">XD_RENDERING_EMULATOR_CONTROL_MOUSE_ICON_VISIBILITY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:66</span>
+</div>
+<p class="zh">控制模拟器运行时鼠标图标的显示/隐藏</p>
+<p class="detail">窗口失焦/暂停时自动隐藏系统鼠标，避免模拟器截图中出现光标。</p>
+<p class="en">源码注释：Control mouse icon visible or not</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Core/Private/Android/AndroidPlatformMisc.cpp</li><li>Source/Runtime/Core/Public/Android/AndroidPlatformMisc.h</li><li>Source/Runtime/Launch/Private/Android/AndroidJNI.cpp</li><li>Source/Runtime/Launch/Public/Android/AndroidJNI.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 AndroidPlatformMisc/AndroidJNI 无 SetMouseCursorVisibility（模拟器专用）</p>
+<p class="migline"><b>覆盖说明：</b>未覆盖</p>
+<p class="migline"><b>落地方式：</b>项目插件 JNI 调模拟器接口，宿主 hook 需引擎</p>
+<p class="migline"><b>接入点：</b>FAndroidMisc::SetMouseCursorVisibility · AndroidJNI</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>仅影响 QA 模拟器环境</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_EMULATOR_CONTROL_MOUSE_ICON_VISIBILITY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_SWITCH_DX_VERSION_AFTER_CRASH">
+<h3 class="mname">XD_PC_SWITCH_DX_VERSION_AFTER_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Ran Qing Sen</span>
+<span class="badge use">源码引用 8</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:69</span>
+</div>
+<p class="zh">PC 端 DX11/DX12 渲染崩溃后自动切换另一个版本重启</p>
+<p class="detail">崩溃记录写入配置，下次启动换用另一种 RHI（DX12崩溃→DX11，DX11崩溃→DX12），是 PC 兼容性保底方案。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH</a> <a class="rel" href="rendering.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL</a> <a class="rel" href="rendering.html#XD_PC_D3D12_ISSUE_REPORT">XD_PC_D3D12_ISSUE_REPORT</a></p>
+<p class="en">源码注释：fallback to dx11 when dx12 crash, fallback to dx12 when dx11 crash , add by PengTianCheng</p>
+<details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Core/Private/Misc/CoreGlobals.cpp</li><li>Source/Runtime/Core/Private/Windows/WindowsErrorOutputDevice.cpp</li><li>Source/Runtime/Core/Private/Windows/WindowsPlatformCrashContext.cpp</li><li>Source/Runtime/Core/Private/Windows/WindowsPlatformMisc.cpp</li><li>Source/Runtime/Core/Public/Logging/LogMacros.h</li><li>Source/Runtime/Core/Public/Windows/WindowsPlatformMisc.h</li><li>Source/Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp:118 GRHISearchOrder(D3D12-&gt;D3D11)；:962 ChoosePreferredRHI 读 [D3DRHIPreference]PreferredRHI</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有偏好 RHI 配置，无崩溃自动切换</p>
+<p class="migline"><b>落地方式：</b>项目模块记录崩溃 RHI 并改写 PreferredRHI 触发切换</p>
+<p class="migline"><b>接入点：</b>[D3DRHIPreference]PreferredRHI · bUsePreferredRHI</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>复用 UE5 PreferredRHI，崩溃标记与重启放项目</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_SWITCH_DX_VERSION_AFTER_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Liu Xing Kui</h2>
+<article class="macro" id="XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">
+<h3 class="mname">XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 25</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:77</span>
+</div>
+<p class="zh">材质支持 NativeStencil：材质可自定义模板测试与写入</p>
+<p class="detail">在预深度 Pass 中按材质设置 stencil 比较/参考值/读写掩码，用于角色描边、遮挡、UI 遮罩等效果；PC Deferred 路径由 XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL 扩展。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</a> <a class="rel" href="rendering.html#XD_RENDERING_BASEPASS_RENDERING_PRIORITY">XD_RENDERING_BASEPASS_RENDERING_PRIORITY</a> <a class="rel" href="rendering.html#XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE">XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE</a> <a class="rel" href="rendering.html#XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS">XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS</a></p>
+<p class="en">源码注释：Add NativeStencil Support In Material Ported to PC deferred shading by DU Peng. Depends on: XD_RENDERING_BASEPASS_RENDERING_PRIORITY XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE</p>
+<details class="usage"><summary>引用位置（25 处 / 前 8 个文件）</summary><ul><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.h</li><li>Source/Editor/UnrealEd/Private/PreviewMaterial.cpp</li><li>Source/Runtime/Engine/Classes/Engine/EngineTypes.h</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstance.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstanceBasePropertyOverrides.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInterface.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 L · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 仅 MD_PostProcess 支持 stencil test：MaterialShared.h:2566/3375 IsStencilTestEnabled、Materials/Material.h:1169 bEnableStencilTest、StencilRefValue；不透明/半透明材质无自定义 stencil</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有 PP-only stencil test，非全材质 NativeStencil</p>
+<p class="migline"><b>落地方式：</b>需 FMaterialInstanceBasePropertyOverrides 与 FMaterial 扩展 stencil test/write</p>
+<p class="migline"><b>接入点：</b>FMaterialInstanceBasePropertyOverrides · MaterialShared.h FMaterial stencil 字段 · RHI DepthStencilState</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>XD 全材质 NativeStencil（自定义测试/写入）远超 UE5 PP-only，需完整移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">
+<h3 class="mname">XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:82</span>
+</div>
+<p class="zh">PC 端扩展模板功能：允许 Pre-Depth Pass 写 stencil、BasePass/半透明 Pass 只测不写</p>
+<p class="note">⚠ 构建依赖：XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL 必须为 1。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</a></p>
+<p class="en">源码注释：Extent PC platform's stencil functions, main features: 1. Allow stencil test &amp; write in pre-depth pass, 2. Allow stencil test &amp; disable stencil write in base pass and translucency pass.</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/BasePassRendering.cpp</li><li>Source/Runtime/Renderer/Private/CustomUnlitRendering.cpp</li><li>Source/Runtime/Renderer/Private/DepthRendering.cpp</li><li>Source/Runtime/Renderer/Private/MeshDrawCommands.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 L · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 MaterialInstanceBasePropertyOverrides.h 无 StencilTestMode/StencilValue/DisableDepth；仅 MD_PostProcess 材质有 stencil test（MaterialShared.h:2566 IsStencilTestEnabled）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无不透明/半透明材质的 NativeStencil PC 扩展</p>
+<p class="migline"><b>落地方式：</b>需材质 schema 字段 + PreDepth/BasePass 渲染状态改动</p>
+<p class="migline"><b>接入点：</b>FMaterialInstanceBasePropertyOverrides 新字段 · MaterialShared.h FMaterial shader 参数 · BasePass/DepthRendering 状态</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>PC 端 PreDepth 写 stencil、BasePass/半透明只测不写，材质 schema + 渲染状态双重侵入</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_BASEPASS_RENDERING_PRIORITY">
+<h3 class="mname">XD_RENDERING_BASEPASS_RENDERING_PRIORITY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 23</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:85</span>
+</div>
+<p class="zh">BasePass（不透明+Mask）支持按 MeshBatch 指定额外渲染顺序</p>
+<p class="detail">材质/组件可设置渲染优先级，透传为 MeshBatch 排序权重，解决依赖 stencil/深度的特殊材质之间的绘制顺序问题。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</a> <a class="rel" href="rendering.html#XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</a></p>
+<p class="en">源码注释：Support BasePass(Opaque and Mask) Additional Render Order</p>
+<details class="usage"><summary>引用位置（23 处 / 前 8 个文件）</summary><ul><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.h</li><li>Source/Editor/UnrealEd/Private/PreviewMaterial.cpp</li><li>Source/Runtime/Core/Private/HAL/XDConsoleVariables.inc</li><li>Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstance.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstanceBasePropertyOverrides.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 MaterialInstanceBasePropertyOverrides.h 无 RenderPriority；仅 PrimitiveSceneProxy.h:755/1334 逐 primitive TranslucencySortPriority</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无 BasePass 逐 MeshBatch 额外渲染优先级</p>
+<p class="migline"><b>落地方式：</b>需材质 schema（RenderPriority）+ BasePass 排序键</p>
+<p class="migline"><b>接入点：</b>FMaterialInstanceBasePropertyOverrides RenderPriority · BasePassProcessor 排序键</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>BasePass 按 MeshBatch 额外优先级排序，UE5 无等价字段</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_BASEPASS_RENDERING_PRIORITY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE">
+<h3 class="mname">XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 16</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:88</span>
+</div>
+<p class="zh">Opaque 混合模式支持 SrcFactor=Zero/DST=One 并关闭深度写入</p>
+<p class="detail">用于特殊遮罩类材质在 BasePass 中只写颜色缓冲不写深度，配合渲染优先级实现遮盖/擦除效果。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_BASEPASS_RENDERING_PRIORITY">XD_RENDERING_BASEPASS_RENDERING_PRIORITY</a> <a class="rel" href="rendering.html#XD_RENDERING_DISABLE_COLOR_WRITE">XD_RENDERING_DISABLE_COLOR_WRITE</a></p>
+<p class="en">源码注释：Support Opaque Blend Mode: SrcFactor Zero And DST One, and Disable Depth Write</p>
+<details class="usage"><summary>引用位置（16 处 / 前 8 个文件）</summary><ul><li>Source/Developer/MaterialUtilities/Private/MaterialUtilities.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.h</li><li>Source/Editor/UnrealEd/Private/PreviewMaterial.cpp</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstance.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstanceBasePropertyOverrides.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInterface.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 MaterialInstanceBasePropertyOverrides.h 无 bEnableOpaqueReverseBlend 相关字段</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无等价材质开关</p>
+<p class="migline"><b>落地方式：</b>需材质 schema + BasePass 混合/深度状态改动</p>
+<p class="migline"><b>接入点：</b>FMaterialInstanceBasePropertyOverrides 新字段 · BasePassRendering blend/depth state</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>Src=Zero/Dst=One 且关闭深度写，材质 schema + 混合状态侵入</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_BASEPASS_OPAQUE_REVERSE_BLEND_NO_DEPTH_WRITE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_MOBILE_IOS_DEPTH_FETCH">
+<h3 class="mname">XD_RENDERING_MOBILE_IOS_DEPTH_FETCH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">移动端渲染优化</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 11</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:94</span>
+</div>
+<p class="zh">iOS 支持从深度 RT 采样深度（开启 MSAA+DOF 场景的必需项）</p>
+<p class="note">⚠ UBT 依赖检查：该宏被强制要求为 1，否则报错——关闭会导致 iOS 在 MSAA 开启且使用 DOF 时崩溃。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH">XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH</a></p>
+<details class="usage"><summary>引用位置（11 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/Common.ush</li><li>Shaders/Private/MobileBasePassCustomUnlitPixelShader.usf</li><li>Shaders/Private/MobileBasePassPixelShader.usf</li><li>Shaders/Private/OutlinePixelShader.usf</li><li>Shaders/Private/SceneTexturesCommon.ush</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalStateCache.cpp</li><li>Source/Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp</li><li>Source/Runtime/Renderer/Private/MobileShadingRenderer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 SceneDepthTextureForIOS（grep 无结果）；对应机制：Runtime/Renderer/Private/MobileShadingRenderer.cpp:696-710（bKeepDepthContent）与 Runtime/Renderer/Private/SceneTextures.cpp:522（创建 Depth.Resolve），Runtime/RenderCore/Private/RenderUtils.cpp:501-516（MobileAllowFramebufferFetch / MobileRequiresSceneDepthAux，Metal 移动平台返回 true）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 改为“需要深度解析时保留 Depth.Resolve”的统一方案，而非 XD 的 iOS 专用 depth fetch RT（MetalStateCache MRT、MobileTranslucentRendering）</p>
+<p class="migline"><b>落地方式：</b>移动 MSAA+后处理深度路径，属引擎侧</p>
+<p class="migline"><b>接入点：</b>FMobileSceneRenderer 的 bKeepDepthContent/深度解析路径 · MetalRHI 的 render pass store action</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>必须先回归验证 iOS MSAA+DOF 场景（XD 记录关闭该宏会崩溃）；UE5 原生路径正常则不迁移</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_MOBILE_IOS_DEPTH_FETCH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_FORCE_FEATURE_GATHER4">
+<h3 class="mname">XD_RENDERING_FORCE_FEATURE_GATHER4 <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:97</span>
+</div>
+<p class="zh">强制启用硬件 Gather4 采样（阴影/后处理）</p>
+<p class="detail">在支持 Gather4 的平台上用一次采样取 4 个纹素，加速 PCF 阴影过滤；不支持时自动回退。</p>
+<p class="rels">关联宏：<a class="rel" href="opt.html#XD_OPT_MOBILE_USE_COARSE_STATIC_SHADOW_MASK_TEXTURE">XD_OPT_MOBILE_USE_COARSE_STATIC_SHADOW_MASK_TEXTURE</a></p>
+<p class="en">源码注释：Force enable Hardware Gather4 sample</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Shaders/Private/ShadowFilteringCommon.ush</li><li>Shaders/Private/ShadowProjectionPixelShader.usf</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无强制 Gather4 的宏/define；仅个别着色器按需用 Gather4（PostProcess/DiaphragmDOF.cpp:821）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 不提供强制启用 Gather4 的开关</p>
+<p class="migline"><b>落地方式：</b>通过 ShaderPlatform/DeviceProfile 或自定义 shader 环境 define 控制</p>
+<p class="migline"><b>接入点：</b>ShaderCompiler ModifyCompilationEnvironment · ShaderPlatform 配置</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>改用着色器平台/环境 define 控制，避免硬编码强制</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_FORCE_FEATURE_GATHER4">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE">
+<h3 class="mname">XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">移动端渲染优化</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:100</span>
+</div>
+<p class="zh">移动端球面反射捕获增强：距离钳制 + 计算局部反射向量（当前关闭）</p>
+<p class="note">⚠ 默认 0。用于关闭 High Quality Reflection 时的移动端反射替代实现。</p>
+<p class="en">源码注释：Add Distance-Clamp and Calc Local-ReflectionVector for Sphere Reflection Capture (when High Quality Reflection is disabled)</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Shaders/Private/MobileBasePassPixelShader.usf</li><li>Source/Runtime/Engine/Private/Components/ReflectionCaptureComponent.cpp</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp</li><li>Source/Runtime/Engine/Public/SceneManagement.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Public/SceneManagement.h:1084-1090（FMobileReflectionCaptureShaderParameters 只有 Params/Texture/TextureBlend，无 ReflectionPositionAndRadius）；替代：Runtime/RenderCore/Private/RenderUtils.cpp:617（r.Mobile.Forward.EnableClusteredReflections）按簇选择反射捕获</p>
+<p class="migline"><b>覆盖说明：</b>宏值为 0（默认关闭）；UE5 有 clustered reflections 改善移动端反射来源选择，但无距离钳制+局部反射向量</p>
+<p class="migline"><b>落地方式：</b>涉及 uniform buffer 字段与材质反射向量计算，属引擎侧</p>
+<p class="migline"><b>接入点：</b>FMobileReflectionCaptureShaderParameters · MobileBasePass 的反射向量 shader 计算 · UReflectionCaptureComponent 的 UB 填充</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>功能长期关闭且 UE5 有 clustered reflections 替代路径，建议不迁移；若美术反馈球面反射问题再按需移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_MOBILE_USE_SPECIFIED_REFLECTION_CAPTURE">
+<h3 class="mname">XD_RENDERING_MOBILE_USE_SPECIFIED_REFLECTION_CAPTURE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">移动端渲染优化</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 13</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:103</span>
+</div>
+<p class="zh">允许指定某个反射捕获（Reflection Capture）作为移动端反射来源</p>
+<p class="detail">组件/场景可绑定指定 ReflectionCapture，避免移动端只能使用最近的捕获导致效果跳变。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE">XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE</a></p>
+<p class="en">源码注释：Allow user to specify the reflection capture (Mobile Only)</p>
+<details class="usage"><summary>引用位置（13 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/ReflectionCaptureComponent.h</li><li>Source/Runtime/Engine/Classes/Components/StaticMeshComponent.h</li><li>Source/Runtime/Engine/Classes/Engine/StaticMeshActor.h</li><li>Source/Runtime/Engine/Private/Components/ReflectionCaptureComponent.cpp</li><li>Source/Runtime/Engine/Private/PrimitiveSceneProxy.cpp</li><li>Source/Runtime/Engine/Private/StaticMeshActor.cpp</li><li>Source/Runtime/Engine/Private/StaticMeshRender.cpp</li><li>Source/Runtime/Engine/Public/PrimitiveSceneProxy.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 bUseCustomReflectionCapture/FindSpecifiedReflectionCapture（Engine/Classes/Engine/StaticMeshActor.h 与 PrimitiveSceneProxy.h 中无该属性）；替代：Runtime/RenderCore/Private/RenderUtils.cpp:617-619（r.Mobile.Forward.EnableClusteredReflections）自动按簇选择反射捕获</p>
+<p class="migline"><b>覆盖说明：</b>UE5 用 clustered reflections 自动选择，无逐 Actor/Actor 指定捕获的显式覆盖</p>
+<p class="migline"><b>落地方式：</b>可做成插件给 Actor/Component 加“指定捕获”属性，但选择逻辑需在移动 BasePass 中读取缓存代理，需引擎入口</p>
+<p class="migline"><b>接入点：</b>FPrimitiveSceneProxy/FPrimitiveSceneInfo 的反射捕获代理缓存 · MobileBasePass 的反射 UB 选择点 · AStaticMeshActor/ALandscapeProxy 的 UPROPERTY</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>新增 Actor 属性会改变资产序列化；建议先评估 clustered reflections 能否满足美术需求，再决定是否移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_MOBILE_USE_SPECIFIED_REFLECTION_CAPTURE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_LANDSCAPE_LOD_BIAS">
+<h3 class="mname">XD_RENDERING_LANDSCAPE_LOD_BIAS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Liu Xing Kui</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:106</span>
+</div>
+<p class="zh">Landscape 支持可配置的 LOD Bias（移动端）</p>
+<p class="detail">暴露 Landscape LODBias 属性并传入移动端地形 Shader，地图可按画质档位调整地形 LOD。</p>
+<p class="rels">关联宏：<a class="rel" href="opt.html#XD_OPT_MOBILE_LANDSCAPE_NO_LOD_MORPH">XD_OPT_MOBILE_LANDSCAPE_NO_LOD_MORPH</a></p>
+<p class="en">源码注释：Allow user to specify the Landscape LOD Bias (Mobile Only)</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Landscape/Private/Landscape.cpp</li><li>Source/Runtime/Landscape/Private/LandscapeRender.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 有 per-component LODBias + 按画质 ScalableLOD0/LODDistributionSetting（LandscapeProxy.h:566-572）与 r.LandscapeLOD0DistributionScale/LODDistributionScale（LandscapeRender.cpp:156-169），无全局 r.LandscapeLODBias</p>
+<p class="migline"><b>覆盖说明：</b>有替代粒度</p>
+<p class="migline"><b>落地方式：</b>用 ScalableLOD*Setting/画质档 CVar 替代全局 bias</p>
+<p class="migline"><b>接入点：</b>ULandscapeComponent::LODBias · ALandscapeProxy::ScalableLODDistributionSetting · r.LandscapeLOD0DistributionScale</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>改为按画质档配置，勿再引入全局 bias</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_LANDSCAPE_LOD_BIAS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Gong Bai Liang</h2>
+<article class="macro" id="XD_RENDERING_LIGHTMAP_BIAS">
+<h3 class="mname">XD_RENDERING_LIGHTMAP_BIAS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:111</span>
+</div>
+<p class="zh">暴露 Lightmap Bias 控制接口（材质/组件级）</p>
+<p class="detail">用于微调 Lightmap 采样偏移，解决漏光/黑边问题。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP">XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP</a></p>
+<p class="en">源码注释：Expose A Interface To Control Lightmap Bias</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/GameFramework/WorldSettings.h</li><li>Source/Runtime/Engine/Private/WorldSettings.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 grep bForceLightMapBias/GlobalLightMapBias 无结果，WorldSettings 无该属性（XD WorldSettings.h:505-519、WorldSettings.cpp:688 应用到 FLightMap2D/FLightShadowMap 的 LODBias）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 未暴露全局 Lightmap Bias</p>
+<p class="migline"><b>落地方式：</b>全局开关需引擎属性；仅按资产调偏差可先用 FLightMap2D::CoordinateBias（Runtime/Engine/Public/LightMap.h:347）等现有接口</p>
+<p class="migline"><b>接入点：</b>AWorldSettings 新属性 bForceLightMapBias/GlobalLightMapBias · FLightMap2D/FLightShadowMap LODBias 应用点</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>涉及烘焙光照采样一致性，迁移后需重校 Lightmap 质量与 DDC</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_LIGHTMAP_BIAS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">
+<h3 class="mname">XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 21</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:115</span>
+</div>
+<p class="zh">半透明 Pass 支持按 MeshBatch 设置额外渲染顺序（目前主要移动端）</p>
+<p class="detail">UE 原生半透明顺序由距离/材质决定，此功能允许材质/组件/粒子指定优先级，用于 UI 型特效、贴花等必须固定层次的效果。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</a></p>
+<p class="en">源码注释：Support TranslucentPass Additional Render Order per MeshBatch Currently only support Mobile Renderer, TODO: SM5 level multiple renderers support</p>
+<details class="usage"><summary>引用位置（21 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h</li><li>Source/Runtime/Engine/Classes/Engine/Scene.h</li><li>Source/Runtime/Engine/Classes/Particles/ParticleEmitter.h</li><li>Source/Runtime/Engine/Private/Components/PrimitiveComponent.cpp</li><li>Source/Runtime/Engine/Private/Particles/FastParticleSystem/FastParticleSystemRender.cpp</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li><li>Source/Runtime/Engine/Private/Particles/ParticleEmitterInstances.cpp</li><li>Source/Runtime/Engine/Private/Particles/ParticleGpuSimulation.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 MeshBatch.h 无排序优先级字段；仅 PrimitiveSceneProxy.h:755/1334 逐 primitive TranslucencySortPriority</p>
+<p class="migline"><b>覆盖说明：</b>UE5 仅逐 primitive 排序，无逐 MeshBatch</p>
+<p class="migline"><b>落地方式：</b>需 FMeshBatch 新字段 + TranslucencyPass mesh processor 排序</p>
+<p class="migline"><b>接入点：</b>FMeshBatch 新增 priority 字段 · MeshPassProcessor 半透明排序</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>半透明按 MeshBatch 额外优先级，UE5 仅支持逐 primitive 排序</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">
+<h3 class="mname">XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:118</span>
+</div>
+<p class="zh">按 Emitter 顺序自动生成粒子系统的半透明渲染优先级</p>
+<p class="note">⚠ 构建依赖：XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY 必须为 1。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</a></p>
+<p class="en">源码注释：Automatically generate translucent priority for particle assets based on the order of emitters</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 有 FPrimitiveSceneProxy::GetTranslucencySortPriority 与 BasePassRendering.cpp:317 SortKeyPriority（TranslucencySortDistanceOffset），但 FMeshBatch 无 per-batch 半透明优先级，也无按 Emitter 顺序自动生成</p>
+<p class="migline"><b>覆盖说明：</b>原语级排序有，按 Emitter 自动生成无</p>
+<p class="migline"><b>落地方式：</b>自动生成规则可在项目 PSC 子类算，写入组件 TranslucencySortPriority；per-batch 需引擎扩展</p>
+<p class="migline"><b>接入点：</b>UPrimitiveComponent::TranslucencySortPriority · FMeshBatch/排序键扩展点 · BasePassRendering SortKey 构造</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>渲染排序改动敏感，优先用组件级 TranslucencySortPriority 近似实现</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH">
+<h3 class="mname">XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">移动端渲染优化</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:124</span>
+</div>
+<p class="zh">Android 强制从深度 RT 采样深度（不使用深度解析 Pass）</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_MOBILE_IOS_DEPTH_FETCH">XD_RENDERING_MOBILE_IOS_DEPTH_FETCH</a> <a class="rel" href="opt.html#XD_OPT_ANDROID_GL_FORCE_REMOVE_DEPTH_RESOLVE_PASS">XD_OPT_ANDROID_GL_FORCE_REMOVE_DEPTH_RESOLVE_PASS</a></p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Shaders/Private/SceneTexturesCommon.ush</li><li>Source/Runtime/Renderer/Private/MobileBasePassRendering.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 FORCE_DEPTH_FETCH shader define（grep 无结果）；对应机制为 Runtime/RenderCore/Private/RenderUtils.cpp:501-504（MobileAllowFramebufferFetch）、Runtime/RenderCore/Private/ReadOnlyCVARCache.cpp:83-89（r.Mobile.AllowFramebufferFetch，覆盖 AndroidOpenGLESPlatform）、同文件 1075-1081（不支持时关闭 GSupportsShaderDepthStencilFetch 等）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 用平台驱动的 framebuffer fetch / depth-stencil fetch 能力位替代 XD 的 Android 强制深度 fetch define</p>
+<p class="migline"><b>落地方式：</b>通过 DeviceProfile 的 r.Mobile.AllowFramebufferFetch 控制（注意有平台白名单限制）</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>先确认 Android GL/Vulkan 下 r.Mobile.AllowFramebufferFetch 是否已满足深度读取需求；GLES 路径变化较大需真机验证</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS">
+<h3 class="mname">XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:133</span>
+</div>
+<p class="zh">PC Deferred 下 BasePass 不再写 stencil（改在 Pre-Depth 写，BasePass 只读）</p>
+<p class="detail">避免 base pass 重复写模板带来的带宽开销，同时统一 CustomStencil 值。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">XD_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</a> <a class="rel" href="rendering.html#XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL">XD_PC_RENDERING_NATIVESTENCIL_SUPPORT_MATERIAL</a></p>
+<p class="en">源码注释：When using deferred rendering on PC, let stencil write take place in prepass only (Disable basepass stencil write, readonly instead)</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/CustomUnlitRendering.cpp</li><li>Source/Runtime/Renderer/Private/MeshDrawCommands.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无对应开关（依赖 NativeStencil 材质体系，UE5 无）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无 Deferred BasePass 关闭 stencil 写入的机制</p>
+<p class="migline"><b>落地方式：</b>随 NativeStencil 系列一并移植，需 BasePass 深度模板状态改动</p>
+<p class="migline"><b>接入点：</b>BasePassRendering DepthStencilState · PreDepth stencil 写入</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>依赖 NativeStencil：Deferred 下 BasePass 不写 stencil、改由 PreDepth 写</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_DEFERRED_DISABLE_STENCIL_WRITE_IN_BASEPASS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_MULTIWORLD_BACKGROUND_TICK_COMPATIBILITY">
+<h3 class="mname">XD_RENDERING_MULTIWORLD_BACKGROUND_TICK_COMPATIBILITY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:136</span>
+</div>
+<p class="zh">MultiWorld 后台子世界（不实际渲染）中组件 Tick 的兼容处理</p>
+<p class="detail">后台世界被暂停渲染时，修正粒子/特效等组件的 Tick 与可见性计算，避免状态错乱。</p>
+<p class="rels">关联宏：<a class="rel" href="fixbug2.html#XD_BUG_FIX_ADAPT_TEXTURE_STREAMING_TO_MULTI_WORLD_PLUGIN">XD_BUG_FIX_ADAPT_TEXTURE_STREAMING_TO_MULTI_WORLD_PLUGIN</a></p>
+<p class="en">源码注释：Fix components' tick compatibility When creating a multiworld-expanded subworld in the backgound without actual rendering</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/World.h</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li><li>Source/Runtime/Engine/Private/World.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 保留引擎 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 MultiWorld/SubWorld 概念（Engine/Plugins grep 无结果）</p>
+<p class="migline"><b>覆盖说明：</b>未上游</p>
+<p class="migline"><b>落地方式：</b>UWorld Tick/组件可见性核心</p>
+<p class="migline"><b>接入点：</b>UWorld::MarkSubWorld/IsSubWorld · UParticleSystemComponent Tick · 组件可见性判断</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>依赖 MultiWorld 插件移植，需与流送/FL 补丁一并处理</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_MULTIWORLD_BACKGROUND_TICK_COMPATIBILITY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_PC_PER_LIGHT_PER_OBJECT_SHADOW_PROJECTION_CONTROL">
+<h3 class="mname">XD_RENDERING_PC_PER_LIGHT_PER_OBJECT_SHADOW_PROJECTION_CONTROL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Gong Bai Liang</span>
+<span class="badge use">源码引用 8</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:140</span>
+</div>
+<p class="zh">PC 端支持在光源与投射阴影物体上分别配置“是否相互影响”</p>
+<p class="detail">为光源/组件增加开关，控制某光源是否对该物体投影阴影，用于精细控制角色打光与阴影。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK">XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK</a></p>
+<p class="en">源码注释：Add configable switch on light and shadow-casting object to control whether this light source should affect the object Authored by and submitted on behalf of Guo, Dengji</p>
+<details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/LightComponent.h</li><li>Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h</li><li>Source/Runtime/Engine/Private/Components/LightComponent.cpp</li><li>Source/Runtime/Engine/Private/Components/PrimitiveComponent.cpp</li><li>Source/Runtime/Engine/Private/PrimitiveSceneProxy.cpp</li><li>Source/Runtime/Engine/Public/PrimitiveSceneProxy.h</li><li>Source/Runtime/Engine/Public/SceneManagement.h</li><li>Source/Runtime/Renderer/Private/LightSceneInfo.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 逐光源/逐图元 LightingChannels 已存在：Runtime/Renderer/Private/LightSceneInfo.cpp:507 GetLightingChannelMask 相与判定，FLightSceneProxy/PrimitiveSceneProxy 均暴露；但无 XD 的 bMarkLightForBattleChar/bDisableShadowInBattleCharLight 阴影专用语义（XD SceneManagement.h:1510/1718、PrimitiveSceneProxy.h:577/943）</p>
+<p class="migline"><b>覆盖说明：</b>LightingChannels 可部分替代，语义不同（它同时屏蔽光照）</p>
+<p class="migline"><b>落地方式：</b>能用 LightingChannels 表达的场合无需引擎改动；要'仅屏蔽阴影不影响光照'则需引擎加标志</p>
+<p class="migline"><b>接入点：</b>FLightSceneProxy 新标志 · FPrimitiveSceneProxy 新标志 · FLightSceneInfo 的 light/primitive 影响判定</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>先确认 LightingChannels 是否够用；若够用可直接 drop，省掉属性序列化改动</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_PC_PER_LIGHT_PER_OBJECT_SHADOW_PROJECTION_CONTROL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">DU Peng</h2>
+<article class="macro" id="XD_RENDERING_METAL_HALF">
+<h3 class="mname">XD_RENDERING_METAL_HALF <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">DU Peng</span>
+<span class="badge use">源码引用 12</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:151</span>
+</div>
+<p class="zh">Metal 平台相关精度（half）开关，当前关闭</p>
+<p class="note">⚠ 默认 0，涉及 ShaderCompilerCommon 与多个移动端 USF 的精度宏。</p>
+<details class="usage"><summary>引用位置（12 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/ComputeGenerateMips.usf</li><li>Shaders/Private/MobileBasePassCommon.ush</li><li>Shaders/Private/MobileBasePassVertexShader.usf</li><li>Shaders/Private/PostProcessCombineLUTs.usf</li><li>Shaders/Private/PostProcessMobile.usf</li><li>Source/Developer/ShaderCompilerCommon/Private/ShaderCompilerCommon.cpp</li><li>Source/Runtime/RenderCore/Private/GenerateMips.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderParameterMetadata.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Renderer/Private/MobileBasePassRendering.h / Runtime/RenderCore/Private/ShaderParameterMetadata.cpp（XD 侧定义点）；UE5 有 half / PRECISION_MEDIUMP 精度体系</p>
+<p class="migline"><b>覆盖说明：</b>UE5 精度体系变更，无同名开关</p>
+<p class="migline"><b>落地方式：</b>材质/ShaderPermutation 侧精度开关，建议用 ShaderInclude 或 CVar 替代宏</p>
+<p class="migline"><b>接入点：</b>MobileBasePassRendering::ModifyCompilationEnvironment · ShaderParameterMetadata · GenerateMips/PostProcessCombineLUTs 的 shader 环境</p>
+<p class="migline"><b>机制：</b>ShaderInclude</p>
+<p class="migline"><b>建议：</b>默认关闭；着色器 permutation 变化，迁移时需重估精度与性能</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_METAL_HALF">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Han Shu Bin</h2>
+<article class="macro" id="XD_RENDERING_DISABLE_COLOR_WRITE">
+<h3 class="mname">XD_RENDERING_DISABLE_COLOR_WRITE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 14</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:155</span>
+</div>
+<p class="zh">材质支持关闭颜色写入（只写深度/模板）</p>
+<p class="detail">材质可勾选 DisableColorWrite，用于纯遮挡物、深度预制体、模板写入器等。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_PC_DISABLE_COLOR_WRITE">XD_RENDERING_PC_DISABLE_COLOR_WRITE</a></p>
+<p class="en">源码注释：Support material disable color write.</p>
+<details class="usage"><summary>引用位置（14 处 / 前 8 个文件）</summary><ul><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.h</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstance.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstanceBasePropertyOverrides.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInterface.h</li><li>Source/Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 全源码无 bDisableColorWrite/DisableColorWrite 材质字段</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无材质级关闭颜色写入</p>
+<p class="migline"><b>落地方式：</b>需材质 schema 字段 + 渲染状态（ColorWrite/Blend 但写深度）</p>
+<p class="migline"><b>接入点：</b>FMaterialInstanceBasePropertyOverrides 新字段 · FMeshPassProcessorRenderState color write</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>材质关闭颜色写入（仅深度/模板），需 schema + 渲染状态侵入</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_DISABLE_COLOR_WRITE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_PC_DISABLE_COLOR_WRITE">
+<h3 class="mname">XD_RENDERING_PC_DISABLE_COLOR_WRITE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:158</span>
+</div>
+<p class="zh">PC 端在 Pre-Depth Pass 支持材质关闭颜色写入</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_DISABLE_COLOR_WRITE">XD_RENDERING_DISABLE_COLOR_WRITE</a></p>
+<p class="en">源码注释：Support material disable color write for PC in pre depth pass.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/DepthRendering.cpp</li><li>Source/Runtime/Renderer/Private/SceneVisibility.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 PreDepth 材质关闭颜色写入能力</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无等价 PreDepth 关闭颜色写</p>
+<p class="migline"><b>落地方式：</b>随 XD_RENDERING_DISABLE_COLOR_WRITE 一并移植，PreDepth 渲染状态改动</p>
+<p class="migline"><b>接入点：</b>DepthRendering PreDepth color write state</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>PC PreDepth 支持材质关闭颜色写入，依赖 DisableColorWrite 材质字段</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_PC_DISABLE_COLOR_WRITE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Wang Xiao Bo</h2>
+<article class="macro" id="XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK">
+<h3 class="mname">XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 6</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:166</span>
+</div>
+<p class="zh">PC 支持被隐藏的次要平行光仍写入 Deferred ShadowMask（保留其阴影遮蔽）</p>
+<p class="en">源码注释：support hidden secondary directional light's deferred shadow mask on PC</p>
+<details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h</li><li>Source/Runtime/Engine/Private/Components/DirectionalLightComponent.cpp</li><li>Source/Runtime/Engine/Public/SceneManagement.h</li><li>Source/Runtime/Renderer/Private/LightRendering.cpp</li><li>Source/Runtime/Renderer/Private/TiledDeferredLightRendering.cpp</li><li>Source/Runtime/Renderer/Private/TranslucentLighting.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 grep HiddenThisLightInDeferredLighting/IsHiddenThisLightInDeferredLighting 无结果；DirectionalLightComponent 无该属性（XD SceneManagement.h:1585、DirectionalLightComponent.h:263-267）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无'隐藏次要平行光但保留 ShadowMask'能力</p>
+<p class="migline"><b>落地方式：</b>需 FLightSceneProxy 新虚函数 + UDirectionalLightComponent 属性，并在 LightRendering/TiledDeferredLightRendering/TranslucentLighting 光照循环跳过</p>
+<p class="migline"><b>接入点：</b>FLightSceneProxy 新虚函数（SceneManagement.h:1585 对应位） · UDirectionalLightComponent 新属性 · Runtime/Renderer/Private/LightRendering.cpp 光照循环</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>与 XD CustomUnlit forward 路径绑定；UE5 下可先评估 LightingChannels 能否替代</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_GRAPHICS_DRIVER_VERSION_WARNING">
+<h3 class="mname">XD_PC_GRAPHICS_DRIVER_VERSION_WARNING <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:169</span>
+</div>
+<p class="zh">检测到显卡驱动版本过低时给出警告</p>
+<p class="detail">在 RHI 初始化阶段读取驱动版本并与最低要求比对，弹窗/日志提示玩家升级驱动。</p>
+<p class="en">源码注释：support upload graphics driver version's outdated issue.</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/RHI/Private/DynamicRHI.cpp</li><li>Source/Runtime/RHI/Private/RHI.cpp</li><li>Source/Runtime/RHI/Public/RHI.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Private/DynamicRHI.cpp:39-41 r.WarnOfBadDrivers(默认1)、:50-58 r.BadDriverWarningIsFatal、:82 RHIDetectAndWarnOfBadDrivers、:160 FindSuggestedDriverVersion 调用点</p>
+<p class="migline"><b>覆盖说明：</b>UE5 内建低驱动版本告警</p>
+<p class="migline"><b>落地方式：</b>Engine.ini 配置 r.WarnOfBadDrivers</p>
+<p class="migline"><b>接入点：</b>r.WarnOfBadDrivers</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>弃用自定义宏，改用 UE5 原生 CVar</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_GRAPHICS_DRIVER_VERSION_WARNING">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_D3DRHI_OUTPUT_VERBOSE_LOG">
+<h3 class="mname">XD_PC_D3DRHI_OUTPUT_VERBOSE_LOG <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:172</span>
+</div>
+<p class="zh">PC RHI 输出详细的验证/调试日志</p>
+<p class="detail">D3D11/D3D12 资源创建、状态校验等失败时输出更多上下文，便于定位驱动兼容问题。</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_EXT_PC_D3D11RHI_VERIFY_SRV">XD_EXT_PC_D3D11RHI_VERIFY_SRV</a></p>
+<p class="en">源码注释：support pc rhi output validation losgs</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/D3D12RHI/Private/D3D12Util.cpp</li><li>Source/Runtime/D3D12RHI/Public/D3D12Util.h</li><li>Source/Runtime/Windows/D3D11RHI/Private/D3D11Util.cpp</li><li>Source/Runtime/Windows/D3D11RHI/Public/D3D11Util.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 D3D11/D3D12 VERIFYD3DRESULT 无 r.D3D11.OutputVerifyD3DResultVerbose 系列 CVar</p>
+<p class="migline"><b>覆盖说明：</b>无详细验证日志开关</p>
+<p class="migline"><b>落地方式：</b>在 D3D11Util/D3D12Util 的 Verify 宏加 CVar 控制详细输出</p>
+<p class="migline"><b>接入点：</b>VERIFYD3D11RESULT*/VERIFYD3D12RESULT* 宏</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>改为 CVar 控制，避免编译期宏膨胀</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_D3DRHI_OUTPUT_VERBOSE_LOG">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_D3D12RHI_ADDITIONAL_COMPATIBILITY_TEST">
+<h3 class="mname">XD_PC_D3D12RHI_ADDITIONAL_COMPATIBILITY_TEST <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 11</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:175</span>
+</div>
+<p class="zh">DX12 额外兼容性检测（启动自检）</p>
+<p class="detail">启动时执行额外 DX12 能力/驱动测试，不通过则回退 DX11，降低玩家闪退率。</p>
+<p class="rels">关联宏：<a class="rel" href="misc1.html#XD_EXT_ANDROID_VULKAN_ENHENCED_SELF_CHECK">XD_EXT_ANDROID_VULKAN_ENHENCED_SELF_CHECK</a></p>
+<p class="en">源码注释：support additional dx12 compatibility test</p>
+<details class="usage"><summary>引用位置（11 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/D3D12RHI/Private/D3D12Adapter.cpp</li><li>Source/Runtime/D3D12RHI/Private/D3D12Adapter.h</li><li>Source/Runtime/D3D12RHI/Private/D3D12CommandContext.cpp</li><li>Source/Runtime/D3D12RHI/Private/D3D12Texture.cpp</li><li>Source/Runtime/D3D12RHI/Private/D3D12Util.cpp</li><li>Source/Runtime/D3D12RHI/Private/Windows/WindowsD3D12Device.cpp</li><li>Source/Runtime/RHI/Private/RHI.cpp</li><li>Source/Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/D3D12RHI/Private/Windows/WindowsD3D12Device.cpp:482 SafeTestD3D12CreateDevice、:684 IsAdapterSupported；D3D12Adapter.cpp:1918 GDemotedLocalMemorySize；Renderer/Private/SceneRendering.cpp:4452 r.DemotedLocalMemoryWarning</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有原生 D3D12 兼容自检与显存降级告警</p>
+<p class="migline"><b>落地方式：</b>沿用 UE5 原生自检，残留检查在项目模块读 RHI 信息</p>
+<p class="migline"><b>接入点：</b>FD3D12DynamicRHIModule::IsSupported · r.DemotedLocalMemoryWarning</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>先对齐 UE5 原生自检，再补 XD 独有项</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_D3D12RHI_ADDITIONAL_COMPATIBILITY_TEST">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_STARTING_PROTECTION_WITH_FORCE_DX12">
+<h3 class="mname">XD_PC_STARTING_PROTECTION_WITH_FORCE_DX12 <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:178</span>
+</div>
+<p class="zh">使用 -dx12 命令行强制 DX12 启动时的保护逻辑</p>
+<p class="detail">避免玩家用命令行强制 DX12 绕过兼容性检查导致反复崩溃。</p>
+<p class="en">源码注释：supports protection for starting with the &quot;-dx12&quot; command line</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp 未对 -d3d12 不支持做 DX11 回退（仅报错/退出）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无强制 DX12 失败保护</p>
+<p class="migline"><b>落地方式：</b>启动器/项目模块检测 D3D12 不支持时改用 dx11 启动参数</p>
+<p class="migline"><b>接入点：</b>-d3d12 命令行解析</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>启动器侧处理更安全，避免改 RHI 加载逻辑</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_STARTING_PROTECTION_WITH_FORCE_DX12">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH">
+<h3 class="mname">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:181</span>
+</div>
+<p class="zh">DX12 崩溃时回退 DX11（完整版，带崩溃上报）</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_PC_SWITCH_DX_VERSION_AFTER_CRASH">XD_PC_SWITCH_DX_VERSION_AFTER_CRASH</a> <a class="rel" href="rendering.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL</a></p>
+<p class="en">源码注释：support fallback to dx11 when dx12 crash</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Public/Logging/LogMacros.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp:962 ChoosePreferredRHI + [D3DRHIPreference]PreferredRHI(GameUserSettings)</p>
+<p class="migline"><b>覆盖说明：</b>UE5 提供 RHI 偏好配置入口，无崩溃自动切换</p>
+<p class="migline"><b>落地方式：</b>崩溃时把 PreferredRHI=dx11 写入 GameUserSettings 并重启（项目模块）</p>
+<p class="migline"><b>接入点：</b>[D3DRHIPreference]PreferredRHI · FWindowsPlatformMisc 崩溃记录</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>复用 UE5 PreferredRHI 机制，崩溃判定放项目侧</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_D3D12_ISSUE_REPORT">
+<h3 class="mname">XD_PC_D3D12_ISSUE_REPORT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:184</span>
+</div>
+<p class="zh">DX12 问题上报（崩溃/驱动问题收集与提示）</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH</a></p>
+<p class="en">源码注释：support dx12 issue report</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/RHI/Private/RHI.cpp</li><li>Source/Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp</li><li>Source/Runtime/RHI/Public/RHI.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 RHIGetD3D12IssueEventDelegate；仅有 GPUCrash/Aftermath/DRED（D3D12RHI/Private/D3D12Util.cpp、D3D12Adapter.cpp:156 r.D3D12.DRED）</p>
+<p class="migline"><b>覆盖说明：</b>无自定义 D3D12 问题上报事件</p>
+<p class="migline"><b>落地方式：</b>项目侧订阅崩溃/驱动信息并上报；如需 RHI 事件点则留 delegate</p>
+<p class="migline"><b>接入点：</b>自定义 RHI Issue Delegate（需引擎暴露）</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>引擎只留事件入口，收集与提示放项目</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_D3D12_ISSUE_REPORT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL">
+<h3 class="mname">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:187</span>
+</div>
+<p class="zh">DX12 崩溃回退 DX11 的精简实现（不含上报）</p>
+<p class="note">⚠ 当前代码中除宏定义外未发现引用，属保留/历史实现。</p>
+<p class="en">源码注释：support fallback to dx11 when dx12 crash</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp:962 ChoosePreferredRHI（同完整版入口）</p>
+<p class="migline"><b>覆盖说明：</b>精简版无上报，UE5 仅提供切换配置</p>
+<p class="migline"><b>落地方式：</b>项目模块写 PreferredRHI=dx11（不含上报）</p>
+<p class="migline"><b>接入点：</b>[D3DRHIPreference]PreferredRHI</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>与完整版合并，用 PreferredRHI 实现最小回退</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Guo DengJi</h2>
+<article class="macro" id="XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE">
+<h3 class="mname">XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Guo DengJi</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:191</span>
+</div>
+<p class="zh">限制 Bloom 取样的最小 RGB 值（配合粒子亮度调整，抑制特效过曝）</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA">XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA</a> <a class="rel" href="rendering.html#XD_BLOOM_CLAMP">XD_BLOOM_CLAMP</a></p>
+<p class="en">源码注释：Used to controll max particle's luminance (work with XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA)</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Shaders/Private/PostProcessBloom.usf</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>覆盖说明：</b>源码仅 build 定义，无实现引用（引用=1，实为占位）</p>
+<p class="migline"><b>落地方式：</b>-</p>
+<p class="migline"><b>建议：</b>无实现引用，删除；如需该功能应在 bloom 钳制方案中统一处理</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_TOON_LIT_SHADING_MODEL">
+<h3 class="mname">XD_RENDERING_TOON_LIT_SHADING_MODEL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Guo DengJi</span>
+<span class="badge use">源码引用 45</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:194</span>
+</div>
+<p class="zh">新增 ToonLit 卡通光照着色模型（火炬之光卡通渲染核心）</p>
+<p class="detail">在着色模型列表中增加 ToonLit，提供分档光照、Ramp 贴图、描边等卡通渲染所需的 Shading Model 支持；编辑器材质、渲染器与 Shader 全部打通。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE">XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE</a></p>
+<p class="en">源码注释：Add a new shading model(Tochlight ToonLit)</p>
+<details class="usage"><summary>引用位置（45 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/BasePassCommon.ush</li><li>Shaders/Private/BasePassPixelShader.usf</li><li>Shaders/Private/ClusteredDeferredShadingPixelShader.usf</li><li>Shaders/Private/DeferredLightPixelShaders.usf</li><li>Shaders/Private/DeferredLightingCommon.ush</li><li>Shaders/Private/DeferredShadingCommon.ush</li><li>Shaders/Private/ForwardLightingCommon.ush</li><li>Shaders/Private/LightShaderParameters.ush</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-3">深度侵入</span> <span class="migmeta">处置 移植 · 工作量 L · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 有 Substrate Toon 体系：UMaterialExpressionSubstrateToonBSDF（Runtime/Engine/Public/Materials/MaterialExpressionSubstrate.h:861）、UToonProfile（Runtime/Engine/Classes/Engine/ToonProfile.h）、Shaders/Private/ToonProfile.usf、CVar r.Substrate.Experimental.ToonUnifiedDiffuse（Runtime/RenderCore/Private/RenderUtils.cpp:2213）、ESubstrateBsdfFeature::Toon（Runtime/Renderer/Private/MobileBasePass.cpp:803）；但 EMate</p>
+<p class="migline"><b>覆盖说明：</b>有官方实验性 Toon 方案，但非 XD 式独立 shading model</p>
+<p class="migline"><b>落地方式：</b>优先走官方 Substrate Toon（r.Substrate + ToonProfile 资产）；若要保留 MSM_ToonLit 必须改引擎 shading model 枚举与全部 Deferred/Mobile usf</p>
+<p class="migline"><b>接入点：</b>EMaterialShadingModel 新枚举（EngineTypes.h，注意 MSM_NUM&lt;=16 static_assert 与反射 schema） · Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp 着色模型分支 · Shaders/Private/DeferredLightingCommon.ush、MobileBasePass.usf、RayTracingLighting（XD 落点 TiledDeferredLightRendering.cpp/MobileBasePassRendering.cpp/LightSceneInfo.cpp）</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>建议先做 Substrate Toon 与项目美术风格对比评估；保留 MSM_ToonLit 会带来枚举/序列化/shader permutation 深度侵入</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_TOON_LIT_SHADING_MODEL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE">
+<h3 class="mname">XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Guo DengJi</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:197</span>
+</div>
+<p class="zh">ToonLit 材质新增引擎级 Ramp 渐变贴图采样</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_TOON_LIT_SHADING_MODEL">XD_RENDERING_TOON_LIT_SHADING_MODEL</a></p>
+<p class="en">源码注释：Add a engine remap texture</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/Engine.h</li><li>Source/Runtime/Engine/Private/SceneManagement.cpp</li><li>Source/Runtime/Engine/Private/UnrealEngine.cpp</li><li>Source/Runtime/Engine/Public/SceneView.h</li><li>Source/Runtime/Renderer/Private/SceneRendering.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Engine/Classes/Engine/ToonProfile.h:26-84 FToonProfileStruct 内建 DiffuseRamp/SpecularRamp/DiffuseRampOffsetTexture/SpecularRampOffsetTexture；Shaders/Private/ToonProfileCommon.ush、ToonProfile.usf；View 侧 ToonProfileTexture（Runtime/Engine/Public/SceneView.h:1265，SceneRendering.cpp:2012-2023 绑定）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已内建引擎级 Ramp，但走 Substrate Toon 体系</p>
+<p class="migline"><b>落地方式：</b>若 ToonLit 采用 UE5 Substrate Toon，Ramp 直接用 UToonProfile 资产配置；否则随 XD ToonLit 一起移植</p>
+<p class="migline"><b>接入点：</b>UToonProfile 资产 + ToonProfile 纹理图集（SceneRendering.cpp:2012）</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>先验证 UE5 ToonProfile 的 Ramp 效果是否达标；不达标则随 ToonLit 一起移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">LuXun</h2>
+<article class="macro" id="XD_PC_RECORD_D3D11_RENDERING_RESOURCE_ALLOCATION">
+<h3 class="mname">XD_PC_RECORD_D3D11_RENDERING_RESOURCE_ALLOCATION <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">LuXun</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:203</span>
+</div>
+<p class="zh">记录 D3D11 渲染资源分配（排查显存溢出/泄漏）</p>
+<p class="detail">对纹理/RenderTarget/Buffer 的创建做持续记录并可导出，用于定位显存超标。</p>
+<p class="rels">关联宏：<a class="rel" href="tools.html#XD_TOOL_STAT_GL_PROGRAM_MEM_SIZE">XD_TOOL_STAT_GL_PROGRAM_MEM_SIZE</a></p>
+<p class="en">源码注释：Record rendering resource allocation to debug video memory overflow bugs. https://xindong.atlassian.net/browse/UE4-4264 https://xindong.atlassian.net/browse/UE4-4271</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerRuntime/Private/Runtime/Decoder/Windows/VideoDecoderH264_PC.cpp</li><li>Plugins/Media/WmfMedia/Source/WmfMedia/Private/Wmf/WmfMediaHardwareVideoDecodingTextureSample.cpp</li><li>Source/Runtime/Windows/D3D11RHI/Private/D3D11Util.cpp</li><li>Source/Runtime/Windows/D3D11RHI/Public/D3D11Util.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Windows/D3D11RHI 未见等价 FVRAMAllocationRecorder 分配记录（未完全核实）</p>
+<p class="migline"><b>覆盖说明：</b>证据不足</p>
+<p class="migline"><b>落地方式：</b>位于 D3D11RHI 资源创建路径，须引擎补丁</p>
+<p class="migline"><b>接入点：</b>VERIFYD3D11RESULT_* 宏 · D3D11 资源创建/释放</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>D3D11 显存记录工具按需移植（D3D12 已有官方跟踪）</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_RECORD_D3D11_RENDERING_RESOURCE_ALLOCATION">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_DISABLE_SLATE_PIXEL_SNAPPING">
+<h3 class="mname">XD_DISABLE_SLATE_PIXEL_SNAPPING <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">LuXun</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:206</span>
+</div>
+<p class="zh">关闭 Slate 文本渲染的像素对齐（Pixel Snapping）</p>
+<p class="detail">避免文字在缩放/位移动画中出现抖动或笔画丢失，代价是可能出现半像素模糊。</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_EXT_UE5_WIDGET_PIXEL_SNAPPING">XD_EXT_UE5_WIDGET_PIXEL_SNAPPING</a></p>
+<p class="en">源码注释：Disable pixel snapping for slate text rendering</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/Rendering/ElementBatcher.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/SlateCore/Public/Widgets/WidgetPixelSnapping.h:14 EWidgetPixelSnapping；UE5 无全局开关（grep GlobalPixelSnapping/slate.EnablePixelSnapping 无结果）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 只有控件级开关，缺 XD 的全局文本像素对齐开关</p>
+<p class="migline"><b>落地方式：</b>项目侧对需要关闭的控件调用 SetPixelSnapping(EWidgetPixelSnapping::Disabled)（UMG/C++ 均可用）</p>
+<p class="migline"><b>接入点：</b>SWidget::SetPixelSnapping · FSlateWindowElementList::PushPixelSnappingMethod</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>宏删除，改由项目按控件设置像素对齐；如确需全局开关，加 CVar 挂到 PushPixelSnappingMethod。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_DISABLE_SLATE_PIXEL_SNAPPING">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_OPAQUE_UNLIT_DISABLE_FOG">
+<h3 class="mname">XD_RENDERING_OPAQUE_UNLIT_DISABLE_FOG <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">LuXun</span>
+<span class="badge use">源码引用 12</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:215</span>
+</div>
+<p class="zh">Opaque Unlit 材质可单独关闭雾效叠加</p>
+<p class="detail">为不透明无光照材质提供开关，避免远景雾把天空盒/特效类 Unlit 材质染灰。</p>
+<p class="rels">关联宏：<a class="rel" href="misc1.html#XD_MISC_NO_SHADER_COMPILER_WHEN_MATERIAL_UPDATED">XD_MISC_NO_SHADER_COMPILER_WHEN_MATERIAL_UPDATED</a></p>
+<p class="en">源码注释：Support disable fog rendering for opaque unlit material Jira:https://xindong.atlassian.net/browse/TORCHLIGHT-240925</p>
+<details class="usage"><summary>引用位置（12 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/AtmosphericFogShader.usf</li><li>Shaders/Private/BasePassCommon.ush</li><li>Shaders/Private/DeferredShadingCommon.ush</li><li>Shaders/Private/Definitions.usf</li><li>Shaders/Private/HeightFogPixelShader.usf</li><li>Shaders/Private/ShadingModelsMaterial.ush</li><li>Shaders/Private/SkyAtmosphere.usf</li><li>Source/Editor/MaterialEditor/Private/MaterialEditorDetailCustomization.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Engine/Public/MaterialShared.h grep OpaqueUnlit/DisableFog 无结果；UE5 仅有 bUseTranslucencyVertexFog</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无 Opaque Unlit 单独关雾开关</p>
+<p class="migline"><b>落地方式：</b>需 UMaterial 新属性 + shader define（XD HLSLMaterialTranslator.cpp:1512）并在 BasePass 雾效叠加处分支</p>
+<p class="migline"><b>接入点：</b>UMaterial 新 bOpaqueUnlitDisableFog（XD MaterialShared.h:1738/2676） · HLSLMaterialTranslator shader define · BasePass 雾效叠加分支</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>材质属性 + shader permutation，需双端一致性与 DDC 重新验证</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_OPAQUE_UNLIT_DISABLE_FOG">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">PengTiancheng</h2>
+<article class="macro" id="XD_PC_DLSS_SUPER_SAMPLING">
+<h3 class="mname">XD_PC_DLSS_SUPER_SAMPLING <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:222</span>
+</div>
+<p class="zh">DLSS 超采样：额外降采样 Pass + DLSS 上采样集成</p>
+<p class="detail">新增 ExtraDLSSDownSample.usf 与 DLSSExtraUpsampling.cpp，把内部分辨率渲染结果降采样后交给 DLSS，兼顾性能与画质。</p>
+<p class="rels">关联宏：<a class="rel" href="projectfeatures.html#XD_TORCHLIGHT_USE_DLSS">XD_TORCHLIGHT_USE_DLSS</a></p>
+<p class="en">源码注释：Support DLSS Upscale Super Sampling</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Plugins/Runtime/Nvidia/DLSS/Source/DLSS/Private/DLSSUpscaler.cpp</li><li>Plugins/Runtime/Nvidia/DLSS/Source/DLSSUtility/Private/VelocityCombinePass.cpp</li><li>Shaders/Private/ExtraDLSSDownSample.usf</li><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li><li>Source/Runtime/Engine/Public/SceneView.h</li><li>Source/Runtime/Renderer/Private/PostProcess/DLSSExtraUpsampling.cpp</li><li>Source/Runtime/Renderer/Private/PostProcess/PostProcessing.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Plugins 下无 DLSS 插件；UE5 默认 TSR/TAAU（PostProcessing 内 TSR）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 不内置 DLSS，需第三方插件</p>
+<p class="migline"><b>落地方式：</b>接入 NVIDIA DLSS UE5 插件，后处理集成改用 ISceneViewExtension</p>
+<p class="migline"><b>接入点：</b>ISceneViewExtension · SubscribeToPostProcessingPass · FScreenPassTexture 额外降采样</p>
+<p class="migline"><b>机制：</b>Interface</p>
+<p class="migline"><b>建议：</b>改用 NVIDIA DLSS UE5 插件；注意二次降采样与 UE5 TSR/降采样链协调</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_DLSS_SUPER_SAMPLING">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_OIT_SORTKEY">
+<h3 class="mname">XD_OIT_SORTKEY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 26</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:225</span>
+</div>
+<p class="zh">OIT（顺序无关透明）支持：为半透明物体生成稳定排序键</p>
+<p class="detail">新增 OITSortKey.h/.cpp，静态网格/骨骼网格/组件在每帧计算排序键（含屏幕位置/深度），供 OIT 合成使用，解决半透明穿插闪烁。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</a> <a class="rel" href="rendering.html#XD_TRANSLUCENCY_AFTER_TAA">XD_TRANSLUCENCY_AFTER_TAA</a></p>
+<p class="en">源码注释：OIT support</p>
+<details class="usage"><summary>引用位置（26 处 / 前 8 个文件）</summary><ul><li>Source/Editor/Persona/Private/AnimationEditorViewportClient.cpp</li><li>Source/Editor/Persona/Private/AnimationEditorViewportClient.h</li><li>Source/Editor/UnrealEd/Classes/Animation/DebugSkelMeshComponent.h</li><li>Source/Editor/UnrealEd/Private/Animation/DebugSkelMeshComponent.cpp</li><li>Source/Editor/UnrealEd/Private/Factories/EditorFactories.cpp</li><li>Source/Editor/UnrealEd/Public/EditorViewportClient.h</li><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li><li>Source/Runtime/Engine/Classes/Components/SceneComponent.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Renderer/Private/OIT/OIT.h:79-105 提供 OIT 排序像素/三角形（IsSortedPixelsEnabled、AddOITComposePass）；XD 为按组排序键管理器 OITSortKey.h</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有逐像素 OIT，但无 XD 的组件分组排序键</p>
+<p class="migline"><b>落地方式：</b>OITSortKeyManager 逻辑可外移项目模块，需引擎侧 MeshBatch 排序键 hook</p>
+<p class="migline"><b>接入点：</b>FMeshBatch 排序键 · StaticMeshRender/SkeletalMeshTypes 排序入口</p>
+<p class="migline"><b>机制：</b>Interface</p>
+<p class="migline"><b>建议：</b>PC 优先用 UE5 OIT；移动端/按组稳定排序键是否保留需按平台评估</p>
+<p class="migline"><a href="../migration/matrix.html#XD_OIT_SORTKEY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_BLOOM_CLAMP">
+<h3 class="mname">XD_BLOOM_CLAMP <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:228</span>
+</div>
+<p class="zh">Bloom 亮度钳制（在降采样阶段限制输入亮度）</p>
+<p class="detail">在 PostProcessDownsample 中增加 Clamp，抑制高亮素材造成的全屏泛光。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE">XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE</a> <a class="rel" href="opt.html#XD_OPT_FAST_BLOOM">XD_OPT_FAST_BLOOM</a></p>
+<p class="en">源码注释：Bloom Clamp</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Renderer/Private/PostProcess/PostProcessDownsample.cpp</li><li>Source/Runtime/Renderer/Private/PostProcess/PostProcessDownsample.h</li><li>Source/Runtime/Renderer/Private/PostProcess/PostProcessing.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Shaders/Private/PostProcessDownsample.usf:27 SampleInput 无 min(50) 钳制；PostProcessDownsample.cpp 已无 BLOOM_DOWNSAMPLE 分支</p>
+<p class="migline"><b>覆盖说明：</b>UE5 重写降采样链，未保留 bloom 专用亮度钳制</p>
+<p class="migline"><b>落地方式：</b>需改引擎共享降采样链 FSceneDownsampleChain/PostProcessDownsample.usf，无法纯工程侧</p>
+<p class="migline"><b>接入点：</b>FSceneDownsampleChain::Init · PostProcessDownsample.usf 置换 FBloomClampDownSample</p>
+<p class="migline"><b>机制：</b>ShaderInclude</p>
+<p class="migline"><b>建议：</b>在 UE5 PostProcessDownsample 重新加入 bloom 分支并限制输入亮度（如 50）</p>
+<p class="migline"><a href="../migration/matrix.html#XD_BLOOM_CLAMP">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_HIGHP_CUSTOM_NODE_OUTPUT">
+<h3 class="mname">XD_HIGHP_CUSTOM_NODE_OUTPUT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:231</span>
+</div>
+<p class="zh">材质 Custom 节点输出使用 highp（保留项）</p>
+<p class="note">⚠ 全仓库仅宏定义本身，代码中未见引用，属预留功能。</p>
+<p class="en">源码注释：Highp Output for Custom Node</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无对应实现；XD 侧仅 Programs/UnrealBuildTool/Configuration/XDBuildConfiguration/XDBuildRenderingConfiguration.cs:231 定义，源码引用数=0</p>
+<p class="migline"><b>覆盖说明：</b>无代码引用的死宏</p>
+<p class="migline"><b>落地方式：</b>直接删除宏定义</p>
+<p class="migline"><b>建议：</b>删除前确认无第三方/插件依赖该宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_HIGHP_CUSTOM_NODE_OUTPUT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_CASCADE_RADIANCE">
+<h3 class="mname">XD_CASCADE_RADIANCE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 30</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:234</span>
+</div>
+<p class="zh">CascadeRadiance：基于自定义深度的级联辐射/光柱后处理体系</p>
+<p class="detail">新增 CascadeRadianceCustomDepth.cpp 与材质/组件属性，对标记物体渲染自定义深度，再在指定深度区间做辐射（Radiance）叠加，实现体积光/光晕/雾气类效果；涉及 PrimitiveComponent、粒子、材质与 SceneView 全链路。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_SCENECAPTURE_SHARED_DEPTHTEXTURE">XD_SCENECAPTURE_SHARED_DEPTHTEXTURE</a> <a class="rel" href="excluded.html#XD_EXTRA_SSSHADOW_CHANNEL_FOR_CUSTOMUNLIT">XD_EXTRA_SSSHADOW_CHANNEL_FOR_CUSTOMUNLIT</a></p>
+<p class="en">源码注释：CascadeRadiance</p>
+<details class="usage"><summary>引用位置（30 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li><li>Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h</li><li>Source/Runtime/Engine/Classes/Engine/Scene.h</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialInterface.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialRelevance.h</li><li>Source/Runtime/Engine/Classes/Particles/ParticleSystemComponent.h</li><li>Source/Runtime/Engine/Private/Components/PrimitiveComponent.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 保留引擎 · 工作量 L · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 CascadeRadiance：EMeshPass 无 CascadeRadianceCustomDepth，无 RenderCascadeRadianceCustomDepthPass</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无该自定义级联辐射体系</p>
+<p class="migline"><b>落地方式：</b>深度绑定 Renderer（新 MeshPass + 后处理 + SceneRenderer），无法工程化</p>
+<p class="migline"><b>接入点：</b>EMeshPass 新 slot · FSceneRenderer::RenderCascadeRadianceCustomDepthPass · PostProcessing 注入</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>整条自定义深度+后处理管线，UE5 无对应能力，需随渲染器一并移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_CASCADE_RADIANCE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXTRA_GBUFFER">
+<h3 class="mname">XD_EXTRA_GBUFFER <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:238</span>
+</div>
+<p class="zh">扩展 GBuffer 通道（预留，代码中未见引用）</p>
+<p class="note">⚠ 全仓库仅宏定义本身，未发现使用点。</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>覆盖说明：</b>UE4 侧源码无实现引用（引用=0），占位宏</p>
+<p class="migline"><b>落地方式：</b>-</p>
+<p class="migline"><b>建议：</b>占位宏，无任何实现，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXTRA_GBUFFER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_TRANSLUCENCY_AFTER_TAA">
+<h3 class="mname">XD_TRANSLUCENCY_AFTER_TAA <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 21</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:240</span>
+</div>
+<p class="zh">半透明支持在 TAA 之后合成（新增 TranslucencyPass 分段）</p>
+<p class="detail">把半透明拆分为 BeforeDOF/AfterDOF/AfterTAA 等阶段，材质可指定合成时机，解决 TAA 与半透明特效的闪烁/拖影冲突。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_DISTORT_TRANSLUCENCY">XD_DISTORT_TRANSLUCENCY</a> <a class="rel" href="rendering.html#XD_OIT_SORTKEY">XD_OIT_SORTKEY</a></p>
+<details class="usage"><summary>引用位置（21 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/ComposeSeparateTranslucency.usf</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialRelevance.h</li><li>Source/Runtime/Engine/Private/Materials/Material.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialInterface.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialShared.cpp</li><li>Source/Runtime/Engine/Public/MaterialShared.h</li><li>Source/Runtime/Engine/Public/PrimitiveViewRelevance.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Internal/TranslucentPassResource.h:10-21 ETranslucencyPass 含 Standard/StandardModulate/AfterDOF/AfterDOFModulate/AfterMotionBlur/Holdout，无 AfterTAA/AfterTSR 段</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有 AfterMotionBlur 段，无 TAA/TSR 之后合成段</p>
+<p class="migline"><b>落地方式：</b>需新增 ETranslucencyPass slot + 合成点，渲染管线排序侵入</p>
+<p class="migline"><b>接入点：</b>ETranslucencyPass 新枚举 slot · TranslucentRendering/PostProcessing 合成 · MeshPassProcessor</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UE5 有 AfterMotionBlur 段可参考；新增 AfterTAA/TSR 合成段需改 pass 枚举与后处理顺序</p>
+<p class="migline"><a href="../migration/matrix.html#XD_TRANSLUCENCY_AFTER_TAA">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_DISTORT_TRANSLUCENCY">
+<h3 class="mname">XD_DISTORT_TRANSLUCENCY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 25</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:242</span>
+</div>
+<p class="zh">半透明扭曲（Distortion）支持：独立 Distortion Pass 与材质开关</p>
+<p class="detail">新增 DistortionRendering 路径与材质/场景视图参数，热浪、水波、空间扭曲等效果可控且可排序。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_TRANSLUCENCY_AFTER_TAA">XD_TRANSLUCENCY_AFTER_TAA</a> <a class="rel" href="opt.html#XD_OPT_MOBILE_DISABLE_DISTORTION_BY_DEFAULT">XD_OPT_MOBILE_DISABLE_DISTORTION_BY_DEFAULT</a></p>
+<details class="usage"><summary>引用位置（25 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialRelevance.h</li><li>Source/Runtime/Engine/Private/Materials/Material.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialInterface.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialShared.cpp</li><li>Source/Runtime/Engine/Private/SceneManagement.cpp</li><li>Source/Runtime/Engine/Public/MaterialShared.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Engine/Public/Materials/Material.h:810 bUsesDistortion、1188 RefractionMethod；Renderer/Private/DistortionRendering.cpp、EMeshPass::Distortion；Shaders/.../ComposeSeparateTranslucency.usf 含 LensDistortion</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有原生折射/扭曲，但非 XD 的独立 Distortion Pass + 材质开关语义</p>
+<p class="migline"><b>落地方式：</b>基于 UE5 原生 Refraction/Distortion，如需独立 Distortion 通道与 AfterTAA 组合再补 hook</p>
+<p class="migline"><b>接入点：</b>EMeshPass::Distortion · ISceneViewExtension 后处理合成</p>
+<p class="migline"><b>机制：</b>Interface</p>
+<p class="migline"><b>建议：</b>优先评估 UE5 原生折射是否满足；XD 独立 Distortion Pass 组合语义需确认保留</p>
+<p class="migline"><a href="../migration/matrix.html#XD_DISTORT_TRANSLUCENCY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_RENDERING_CUSTOM_GI">
+<h3 class="mname">XD_RENDERING_CUSTOM_GI <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 13</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:246</span>
+</div>
+<p class="zh">材质新增自定义 GI（CustomGI）通道，可在材质中指定 GI 来源与亮度</p>
+<p class="detail">在材质属性中加入 CustomGI 输入，编辑器、HLSL 翻译器、材质烘焙导出全部打通；用于卡通渲染里手工控制环境光贡献。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_RENDERING_TOON_LIT_SHADING_MODEL">XD_RENDERING_TOON_LIT_SHADING_MODEL</a></p>
+<details class="usage"><summary>引用位置（13 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/MaterialTemplate.ush</li><li>Source/Developer/MaterialBaking/Private/ExportMaterialProxy.h</li><li>Source/Developer/MaterialUtilities/Private/MaterialUtilities.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialEditor.cpp</li><li>Source/Editor/UnrealEd/Private/MaterialGraph.cpp</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialExpressionMakeMaterialAttributes.h</li><li>Source/Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 L · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Engine/Public/SceneTypes.h:147-191 EMaterialProperty 无 MP_CustomGI/MP_GIScale，grep CustomGI 无结果（XD 在 SceneTypes.h:190 增加 MP_CustomGI，MaterialShared.h:744 MaterialExportCustomGI）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无自定义 GI 材质通道</p>
+<p class="migline"><b>落地方式：</b>可先用 Custom Primitive Data/MPC 近似驱动 Emissive+间接光系数；要在各 ShadingModel 注入 GI 需引擎改材质属性表</p>
+<p class="migline"><b>接入点：</b>EMaterialProperty 新项 + 材质导出（XD MaterialShared.h:744） · Runtime/Engine/Private/Materials/MaterialAttributeDefinitionMap.cpp 注册 · HLSLMaterialTranslator / MaterialIR / 各 ShadingModel usf</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>UE5 下需同时改属性映射表与 MIR/HLSL 生成，风险高；优先评估 Custom Primitive Data 或 Substrate 自定义 shading model</p>
+<p class="migline"><a href="../migration/matrix.html#XD_RENDERING_CUSTOM_GI">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_SCENECAPTURE_SHARED_DEPTHTEXTURE">
+<h3 class="mname">XD_SCENECAPTURE_SHARED_DEPTHTEXTURE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">渲染管线与排序</span>
+<span class="badge">PengTiancheng</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildRenderingConfiguration.cs">XDBuildRendering:250</span>
+</div>
+<p class="zh">SceneCapture 复用主视图的深度纹理，避免重复渲染深度</p>
+<p class="detail">SceneCaptureComponent2D 可选择共享场景深度（并映射到自身投影），显著降低抓拍/后视镜/小地图等二次视图的开销。</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_CASCADE_RADIANCE">XD_CASCADE_RADIANCE</a></p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Shaders/Private/SceneCapturePixelShader.usf</li><li>Source/Runtime/Engine/Classes/Components/SceneCaptureComponent2D.h</li><li>Source/Runtime/Engine/Classes/Engine/EngineTypes.h</li><li>Source/Runtime/Engine/Private/Components/SceneCaptureComponent.cpp</li><li>Source/Runtime/Engine/Private/SceneView.cpp</li><li>Source/Runtime/Engine/Public/SceneView.h</li><li>Source/Runtime/Renderer/Private/SceneCaptureRendering.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 SceneCaptureComponent2D.h:143 bRenderInMainRenderer + ShouldRenderInMainRenderer()；SceneCaptureRendering.cpp:65 r.SceneCapture.AllowRenderInMainRenderer、ViewFamilyDepthTexture</p>
+<p class="migline"><b>覆盖说明：</b>UE5 提供深度捕获在主渲染内复用，但非 XD 的通道级共享</p>
+<p class="migline"><b>落地方式：</b>优先用 UE5 bRenderInMainRenderer 复用主渲染深度；若需通道级共享再补 hook</p>
+<p class="migline"><b>接入点：</b>SceneCaptureRendering ViewFamilyDepthTexture · r.SceneCapture.AllowRenderInMainRenderer</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>UE5 主渲染复用可替代大部分需求，通道级共享深度纹理仍需评估</p>
+<p class="migline"><a href="../migration/matrix.html#XD_SCENECAPTURE_SHARED_DEPTHTEXTURE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+</div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

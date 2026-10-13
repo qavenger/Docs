@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UE5 迁移总览 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>结论先行：</b>549 个定制宏中，<b>103</b> 个 UE5.8 已原生覆盖（可直接丢弃）、<b>215</b> 个被部分覆盖（保留差异部分）、<b>188</b> 个需要迁移；其中 <b>212</b> 个可以完全工程化、<b>129</b> 个只需引擎留接入点；引擎侵入方面，<b>366</b> 个无需改动或只需接入点（L0/L1），<b>12</b> 个属于深度侵入（须逐个评估）。
+</div>
+
+<h2 class="sec">1. 这份分析解决什么问题</h2>
+<p>项目要从深度定制的 UE4.26 迁移到 <b>UE5.8.2</b>。之前的文档回答了「每个宏是做什么的」，这份文档回答迁移期的三个决策问题：</p>
+<ol>
+<li><b>能不能不迁？</b>——UE5.8 是否已经有等价能力（丢掉的优先），避免把 UE4 的技术债原样搬到 UE5。</li>
+<li><b>能不能搬走？</b>——与引擎不强绑定的部分，放进项目工程/插件实现，让引擎 fork 变薄。</li>
+<li><b>必须留在引擎里的，最少留什么？</b>——只留稳定接入点（Hook/Delegate/Interface/ModularFeature/Config），完整逻辑放工程侧。</li>
+</ol>
+<p>判定标准与分层思路来自团队的《引擎二次开发治理与开发思路》：<b>宏只做编译期裁剪，Hook/Plugin 做扩展与实现，CVar/Config 做策略，CustomVersion 做兼容</b>。</p>
+
+<h2 class="sec">2. 分析维度说明</h2>
+<table class="mtable">
+<thead><tr><th>维度</th><th>取值</th><th>怎么用</th></tr></thead>
+<tbody>
+<tr><td class="tname">UE5 覆盖度</td><td>covered / partial / none / unknown</td><td>covered 直接丢弃；partial 只迁差异部分；none 全量迁移</td></tr>
+<tr><td class="tname">工程化可行性</td><td>yes / partial / no</td><td>yes 放项目/插件；partial 引擎留 hook + 工程实现；no 需引擎改动</td></tr>
+<tr><td class="tname">引擎侵入等级</td><td>0 / 1 / 2 / 3</td><td>0 无需改引擎；1 只加扩展点；2 少量结构性改动；3 深度侵入（慎入）</td></tr>
+<tr><td class="tname">迁移处置</td><td>drop / patch / config / plugin / hook / port / keep</td><td>落地动作：删除 / 常开补丁 / 配置化 / 插件化 / 接入点 / 代码移植 / 暂留引擎</td></tr>
+<tr><td class="tname">工作量 / 风险</td><td>S/M/L · 低/中/高</td><td>用于排期；涉及反射 schema、资产序列化、Shader、Cook 的默认高风险</td></tr>
+</tbody>
+</table>
+
+<h2 class="sec">3. 总体统计</h2>
+<div class="stat">
+<div class="box"><div class="n">549</div><div class="l">分析宏数</div><div class="l"></div></div>
+<div class="box"><div class="n">103</div><div class="l">UE5 已覆盖</div><div class="l">可直接删除</div></div>
+<div class="box"><div class="n">215</div><div class="l">部分覆盖</div><div class="l">只迁差异</div></div>
+<div class="box"><div class="n">188</div><div class="l">未覆盖</div><div class="l">需迁移</div></div>
+<div class="box"><div class="n">43</div><div class="l">待确认</div><div class="l">需人工补充</div></div>
+<div class="box"><div class="n">212</div><div class="l">可完全工程化</div><div class="l">不动引擎</div></div>
+<div class="box"><div class="n">129</div><div class="l">需接入点</div><div class="l">hook + 插件</div></div>
+<div class="box"><div class="n">12</div><div class="l">深度侵入项</div><div class="l">风险最高</div></div>
+</div>
+<table class="mtable"><thead><tr><th>迁移处置</th><th>数量</th><th>说明</th></tr></thead><tbody>
+<tr><td>删除</td><td class="tval">147</td><td>UE5 已覆盖，直接删除</td></tr>
+<tr><td>常开补丁</td><td class="tval">48</td><td>作为 UE5 fork 常开补丁</td></tr>
+<tr><td>配置化</td><td class="tval">66</td><td>改为 CVar/ini/DeviceProfile/命令行</td></tr>
+<tr><td>插件化</td><td class="tval">51</td><td>迁到项目模块/编辑器插件</td></tr>
+<tr><td>接入点</td><td class="tval">28</td><td>引擎只留接入点，逻辑在插件</td></tr>
+<tr><td>移植</td><td class="tval">195</td><td>代码移植（保留实现）</td></tr>
+<tr><td>保留引擎</td><td class="tval">14</td><td>仍需留在引擎</td></tr>
+</tbody></table>
+<p class="lead">风险分布：高 37 / 中 240 / 低 272；引擎侵入：L0 179 / L1 187 / L2 171 / L3 12。</p>
+
+<h2 class="sec">3.1 最值得先看的两个清单</h2>
+<p class="lead">下面两张表是排期时最常用的入口：前者是「UE5 已提供、引用量大」的可删除项；后者是真正需要逐个评估的深度侵入项。</p>
+<h3>可优先删除（按源码引用量排序）</h3>
+<table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>UE5 依据</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SLATE_ASYNC_LOADING_FONT_MISSING_TEXT">XD_BUG_FIX_SLATE_ASYNC_LOADING_FONT_MISSING_TEXT</a></td><td>修复异步字体加载未完成时文本被错误缓存导致文字缺失</td><td>Runtime/Slate/Public/Framework/Text/TextLayout.h:735 LoadingFontFaces、:800 bLoadingFontFacesOnPreviousLayout；SRichTextBl</td><td class="tval">17</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_UE5_WIDGET_PIXEL_SNAPPING">XD_EXT_UE5_WIDGET_PIXEL_SNAPPING</a></td><td>移植 UE5 的 UWidget 像素对齐（Pixel Snapping）实现（UE4-7130）</td><td>Runtime/SlateCore/Public/Widgets/WidgetPixelSnapping.h:14 EWidgetPixelSnapping；UMG/Public/Components/Widget.h:445/613-61</td><td class="tval">13</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_MOBILE_OPENGLES_CREATE_UAV_ERROR">XD_BUG_FIX_MOBILE_OPENGLES_CREATE_UAV_ERROR</a></td><td>修复 FOpenGLDynamicRHI::RHICreateUnorderedAccessView_RenderThread 崩溃</td><td>Runtime/OpenGLDrv/Private/OpenGLUAV.cpp:375（仅剩 FRHICommandListBase 单入口，RHICreateUnorderedAccessView_RenderThread 已删除）</td><td class="tval">8</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_XCODE_SUPPORT_15">XD_MISC_XCODE_SUPPORT_15</a></td><td>支持 Xcode 15 构建</td><td>Programs/UnrealBuildTool/Platform/Mac/ApplePortableToolChain.cs:143 按已装 Xcode 版本映射工具链</td><td class="tval">8</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_SHADOWS_FORCE_LOD">XD_OPTIMIZATION_SHADOWS_FORCE_LOD</a></td><td>阴影 Pass 优化：绘制阴影时强制使用骨骼网格的低 LOD（当前关闭）</td><td>Runtime/Engine/Public/SceneView.h:1445 namespace EDrawDynamicFlags 有 ForceLowestLOD/FarShadowCascade（ShadowSetup.cpp:285</td><td class="tval">8</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_GET_MONITOR_INFO_FROM_ADAPTER">XD_TOOL_GET_MONITOR_INFO_FROM_ADAPTER</a></td><td>按 GPU 适配器获取所连接的显示器信息</td><td>Runtime/ApplicationCore/Public/GenericPlatform/GenericApplication.h:339 FMonitorInfo(NativeHandle/Name/DPI)+FDisplayMetr</td><td class="tval">8</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE">XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE</a></td><td>暴露本地化包缓存更新委托，保证异步加载能正确命中本地化资源</td><td>UE5 已公开等价 API：Runtime/CoreUObject/Public/Internationalization/PackageLocalizationManager.h:67-75 FPackageLocalizationMan</td><td class="tval">7</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_LLMTAG_EXTENSIONS">XD_OPT_LLMTAG_EXTENSIONS</a></td><td>引擎 LLM Tag 扩展（增加项目自用标签）</td><td>Runtime/Core/Public/HAL/LowLevelMemTracker.h:316 LLM_CUSTOM_TAG_START / ProjectTagStart=150</td><td class="tval">7</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_TMP_FIX_MALLOC_ZERO_ISSUE">XD_TMP_FIX_MALLOC_ZERO_ISSUE</a></td><td>避免 0 字节内存分配（临时修复代码）</td><td>Runtime/Core/Private/HAL/MallocBinned2.cpp:720 Size=Max(1,Size)；Realloc NewSize==0 处理(766)</td><td class="tval">7</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_LOG_COMPILE_ISSUE_MATERIAL_NAMES">XD_EXT_LOG_COMPILE_ISSUE_MATERIAL_NAMES</a></td><td>材质编译问题时输出材质名，便于定位</td><td>Runtime/Engine/Private/Materials/MaterialShader.cpp:2992/3004 FinishCompileShader(..., GetFriendlyName()) 已把材质名带入 DebugD</td><td class="tval">7</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS">XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS</a></td><td>修复 Android x86_64 平台编译链接错误</td><td>Runtime/Android/AndroidRuntimeSettings/Classes/AndroidRuntimeSettings.h:454 bBuildForX8664</td><td class="tval">7</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_SHADER_BYTE_CODE_PREFER_OODLE_COMPRESSION_FORMAT">XD_OPT_SHADER_BYTE_CODE_PREFER_OODLE_COMPRESSION_FORMAT</a></td><td>Shader 字节码默认优先使用 Oodle 压缩格式</td><td>Runtime/RenderCore/Public/ShaderCore.h:178 GetShaderCompressionFormat()；Runtime/RenderCore/Private/ShaderCore.cpp:4285 “</td><td class="tval">6</td></tr></tbody></table>
+<h3>深度侵入清单（L3，须逐个评估）</h3>
+<table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>机制</th><th>建议</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/tools.html#XD_LANDSCAPE_ADVANCE_PAINTING_TOOL">XD_LANDSCAPE_ADVANCE_PAINTING_TOOL</a></td><td>Landscape 高级绘制：引入 IdMap 支持多图层材质与渲染</td><td>Patch</td><td>深度侵入，含 Shader 与序列化，须整体移植并清 DDC</td><td class="tval">78</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_TOON_LIT_SHADING_MODEL">XD_RENDERING_TOON_LIT_SHADING_MODEL</a></td><td>新增 ToonLit 卡通光照着色模型（火炬之光卡通渲染核心）</td><td>Schema</td><td>建议先做 Substrate Toon 与项目美术风格对比评估；保留 MSM_ToonLit 会带来枚举/序列化/shader permutation 深度侵入</td><td class="tval">45</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_MATERIAL_DYNAMIC_SWITCH">XD_MATERIAL_DYNAMIC_SWITCH</a></td><td>材质 Selector Switch（多选一静态开关组）支持动态切换与编辑器参数复制</td><td>Schema</td><td>高风险项：改变材质序列化与 shader key，迁移后需全量重编 shader 与 DDC/材质校验</td><td class="tval">28</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT">XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT</a></td><td>UFastParticleSystemComponent：把部分粒子重计算搬到渲染线程</td><td>Patch</td><td>26 处引用的核心优化，建议先评估 UE5 异步 tick 是否已满足绝大多数收益再决定移植范围</td><td class="tval">26</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_BAKE_LIGHTMAP_AND_SHADOWMAP_INTO_INSTANCE_BUFFER">XD_OPT_FOLIAGE_BAKE_LIGHTMAP_AND_SHADOWMAP_INTO_INSTANCE_BUFFER</a></td><td>植被 ISM 按实例采样 LightMap/ShadowMap（把结果烘焙进实例缓冲）</td><td>Patch</td><td>ES3.1 仍需；改 Shader 与光照数据，须清 DDC 重烘焙</td><td class="tval">25</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_INSTANCING">XD_OPT_PARTICLE_INSTANCING</a></td><td>粒子实例化（Particle Instancing）：相同特效合并为一次 DrawCall</td><td>Patch</td><td>20 处引用的最大收益项；建议评估改用 Niagara+自定义数据接口/GPU 合并，避免在 UE5 渲染管线上重做实例化</td><td class="tval">20</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_HISM_SPHERE_PROXY_MODE">XD_OPT_HISM_SPHERE_PROXY_MODE</a></td><td>HISM（植被）使用球形代理半径模式（当前关闭）</td><td>Patch</td><td>跨 Engine/Renderer/Foliage 移植新组件/渲染路径与 ShowFlag，工作量 L；仅在移动端剔除收益明显时启用</td><td class="tval">20</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_REPLACE_TRANSFORM_MATRIX_WITH_QUATERNION">XD_OPT_FOLIAGE_REPLACE_TRANSFORM_MATRIX_WITH_QUATERNION</a></td><td>植被实例用四元数+统一缩放替代 3x3 变换矩阵，节省实例缓冲带宽</td><td>Patch</td><td>改实例缓冲布局与 Shader，序列化/兼容风险高</td><td class="tval">8</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_RHI_CRASH_INDICATION_FLAG">XD_BUG_FIX_RHI_CRASH_INDICATION_FLAG</a></td><td>增加 RHI 命令执行标记，用于判断崩溃是否发生在 RHI 提交阶段（UE4-3709）</td><td>Patch</td><td>深度侵入 RHI 核心，迁移收益需评估</td><td class="tval">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_PER_FRAME_INSTANCE_BUFFER_RECONSTRUCTION">XD_OPT_FOLIAGE_PER_FRAME_INSTANCE_BUFFER_RECONSTRUCTION</a></td><td>按 LOD 对相同 LOD 的植被簇节点做实例化重建</td><td>Patch</td><td>Mobile(ES3.1)专用，注意与 Nanite 路径互斥</td><td class="tval">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FOLIAGE_PER_INSTANCE_MOVEABLE_POINT_LIGHTING">XD_OPT_FOLIAGE_PER_INSTANCE_MOVEABLE_POINT_LIGHTING</a></td><td>植被只对与可移动点光相关的实例计算逐实例点光照（仅支持一个可移动点光）</td><td>Patch</td><td>先验证 r.Mobile.Forward.EnableLocalLights 能否替代，再决定是否移植实例烘焙</td><td class="tval">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_VK_DEFRAG_CRITICAL_SECTION">XD_BUG_FIX_VK_DEFRAG_CRITICAL_SECTION</a></td><td>修复 Vulkan 内存分配器碎片整理缺失临界区（UE4-3525）</td><td>Patch</td><td>内存分配器竞态修复，需在新分配器上重新评估</td><td class="tval">1</td></tr></tbody></table>
+
+<h2 class="sec">4. 迁移路线（建议）</h2>
+<ol>
+<li><b>先丢（第 1 周）</b>：把 UE5 已覆盖的宏标记删除，同步删除 UE4 fork 里对应代码，避免带着旧债升级。典型：Mimalloc、UE5 已上游的 Slate/Sequencer/网络修复、GLES 专属 workaround（如确认 UE5 不用）。</li>
+<li><b>再搬（第 2–4 周）</b>：把工具类、项目配置类、平台策略类迁到 Project/Plugin/Config。收益高、风险低（对应 <code>disposition=plugin/config</code>）。</li>
+<li><b>后建 Hook（第 4–8 周）</b>：为必须保留的能力设计最小接入点：渲染用 <code>ISceneViewExtension</code>、材质用 Shader Include Hook、资产管线用 Delegate/ModularFeature、编辑器用 ToolMenus/插件。</li>
+<li><b>最后处理深度绑定项（持续）</b>：反射 schema、Shader permutation、Cook/DDC、RHI 内部改动，按 Feature Card 逐个评估，能不进主干就不进。</li>
+</ol>
+<div class="note" style="display:block">⚠ 迁移期不要沿用「宏 = 万能开关」的做法。新改动一律先问：能不能做成插件？不能，才设计引擎 hook；再不能，才改引擎代码，并登记 Feature Card 与 CI 验证矩阵（见 <a href="hooks.html">最小侵入与接入点</a>）。</div>
+
+<h2 class="sec">5. 与现有工作/文档的关系</h2>
+<ul class="tight">
+<li><b>本特性文档</b>（<code>F:\Docs\XDTorchEngineCustomFeatures</code>）：提供每个宏的作用、引用位置与上下文，是本次迁移分析的输入。</li>
+<li><b>《引擎二次开发治理与开发思路》</b>（<code>F:\Docs\misc\engine_secondary_development_governance.html</code>）：本页维度与分层架构的依据。</li>
+<li><b>《XDBuild 宏模块治理校对》</b>（<code>F:\Docs\misc\xdbuild_macro_governance_audit.html</code>）：已有的宏分类建议，本页在其基础上补充 UE5.8 覆盖度与工程化判定。</li>
+<li><b>《Build 宏管理方案》</b>（<code>E:\TorchLight_UE5\Docs\Build-Macro-Plan.html</code>）：迁移期 <code>TL_MIG_*</code> 宏体系的落地方式（UBT 自定义 Configuration + BuildConfiguration.xml / Target.cs GlobalDefinitions），与本页第 4 节的「新旧分离」策略配套。</li>
+<li><b>迁移工程</b>：<code>F:\UE5_Projects\Torchlight_Migrate</code>（UE5.8.2 公版引擎 + 项目代码）。</li>
+</ul>
+
+<h2 class="sec">6. 使用方式</h2>
+<p class="note" style="display:block">范围说明：迁移分析覆盖 549 个未被排除的宏；原需求中「不需要」的 17 个宏（CustomUnlit 家族、描边、SmoothNormal、HDR 输出、DepthStencil 修复）不参与迁移评估，清单见 <a href="../ref/excluded.html">已排除的宏</a>。分析与结论均针对团队当前迁移目标 <b>UE5.8.2</b>。</p>
+<ul class="tight">
+<li><b>按宏查</b>：进入 <a href="matrix.html">全量评估矩阵</a>，可按 UE5 覆盖度 / 处置 / 侵入等级 / 风险筛选，或搜索宏名。</li>
+<li><b>按动作查</b>：<a href="drop.html">可丢弃清单</a> / <a href="project-side.html">可工程化清单</a> / <a href="hooks.html">最小侵入接入点</a> / <a href="roadmap.html">迁移路线图</a>。</li>
+<li><b>看细节</b>：每个宏在「全量参考」的条目里新增了「UE5 迁移视角」区块（覆盖度、工程化、接入点、建议）。</li>
+</ul>
+
+<h2 class="sec">7. 质量审核</h2>
+<p>本文档的迁移结论经过 6 组独立 Agent 抽样复核（复核样本累计约 478 个，含重复抽样），共提出并采纳 <b>69</b> 项修正，修正已合并进全量矩阵与各参考页条目。复核重点：UE5 覆盖证据是否真实、处置与侵入等级是否矛盾、高风险项（反射/资产/Shader/Cook）是否被低估。</p>
+
+</main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

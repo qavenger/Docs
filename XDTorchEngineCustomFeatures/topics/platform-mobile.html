@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Android / iOS / Mac · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>📲 Android / iOS / Mac</h1><p class="lead">移动与 Apple 平台 RHI、设备兼容与模拟器</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>移动端围绕「机型太多、驱动太杂」做了三层兜底：启动自检与降级（Vulkan↔OpenGL）、崩溃/日志可用性保障（iOS 丢日志、Metal 断言）、以及大量机型专项修复。
+</div>
+
+<h2 class="sec">1. Android：RHI 自检与降级</h2>
+<ul class="tight">
+<li><code>XD_EXT_ANDROID_VULKAN_ENHENCED_SELF_CHECK</code>：启动时增强 Vulkan 自检——枚举 instance 扩展/层、读取 driver 信息，历史上失败过的配置直接判定 NotSupported，避免反复崩溃。</li>
+<li><code>XD_EXT_ANDROID_ALLOW_OPENGL_FALLBACK_TO_VULKAN</code>：把 <code>OpenGLFailed</code> 状态持久化到 GameUserSettings，OpenGL 崩溃后允许回退/切换到 Vulkan（反之同理）。</li>
+<li><code>XD_EXT_PLATFORM_UNWANTED_BEHAVIORS_TAKEOVER</code>：Shipping 下接管平台弹框与退出请求；Vulkan 侧对应 <code>XD_VK_FATAL_LOG_BEHAVIOR_TAKEOVER</code>。</li>
+<li><code>XD_MISC_SUPPORT_GOOGLE_PACKAGE_SUBMIT</code>：适配 Google Play 提包（Android 12+ 的 <code>android:exported</code> 等）。</li>
+<li><code>XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS</code>：Android x86_64 平台编译链接修复。</li>
+<li><code>XD_MISC_ANDROID_EXIT_WITH_ABORT_METHOD</code>：主动退出改用 abort，让 Backtrace 能抓到信号并记录日志。</li>
+</ul>
+
+<h2 class="sec">2. Android：Vulkan / OpenGL 专项修复</h2>
+<ul class="tight">
+<li><code>XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT</code> / <code>_TESTING</code>：<code>vkAcquireNextImageKHR</code> 返回 <code>VK_TIMEOUT</code> 时按超时处理（旧驱动常见），测试用宏务必保持 0。</li>
+<li><code>XD_BUG_FIX_VKACQUIRENEXTIMAGE_SWAPCHAIN</code>：修复交换链未初始化时的空指针异常。</li>
+<li><code>XD_BUG_FIX_VK_DEFRAG_CRITICAL_SECTION</code>：Vulkan 内存分配器碎片整理补上临界区，避免多线程竞争。</li>
+<li><code>XD_BUG_FIX_VULKAN_TILE_FAST_CLEAR_ARTIFACT</code>：部分机型（如 Mate20）Tile Fast Clear 花屏的规避。</li>
+<li><code>XD_MISC_VULKANGPU_TIMESTAMP_QUERY</code>（默认 <span class="v off">0</span>）：高通芯片手机的 Vulkan GPU 时间戳查询，用于真机性能分析。</li>
+<li><code>XD_MISC_MOBILE_USE_MIN_LOD_SIMULATE_LOD_BIAS</code>：GLES 不支持纹理 LOD Bias，用 <code>GL_TEXTURE_MIN_LOD</code> 模拟。</li>
+<li><code>XD_MISC_LOG_OPENGL_FUNCTION_CALL_TRACE</code>（默认 <span class="v off">0</span>）：包装所有 GL 调用用于调试。</li>
+<li><code>XD_BUG_FIX_ANDROID_glGetString_Crash</code>、<code>XD_FIX_BUG_ANDROID_MOUNT_OBB_FAIL</code>、<code>XD_BUG_FIX_ANDROID_LOG_CANNOT_GENERATE</code>、<code>XD_BUG_FIX_ANDROID_WAIT_FOR_SAFE_ZONE_WAS_UPDATED_BEFORE_CHANGING_ORIENTATION</code>：驱动查询崩溃、OBB 挂载崩溃、日志无法生成、切横竖屏安全区等工程问题修复。</li>
+</ul>
+
+<h2 class="sec">3. iOS / Mac / Metal</h2>
+<ul class="tight">
+<li><code>XD_MISC_IOS_REQUEST_EXIT_BY_FORCE</code>：iOS 使用 <code>_Exit(0)</code> 直接结束进程（避免退出流程卡死）。</li>
+<li><code>XD_MISC_APPLE_HOME_INDICATOR_NO_AUTO_HIDDEN</code>：关闭 Home Indicator 自动隐藏（游戏场景不希望它出现/消失）。</li>
+<li><code>XD_BUGFIX_IOS_LOSTLOG</code> / <code>XD_BUGFIX_IOS_LOSTLOG_ISSUE</code>：修复 iOS Test 构建丢日志；<code>_ISSUE</code> 为专项调试宏（默认 0，勿提交为 1）。</li>
+<li><code>XD_BUG_FIX_IOS_FATAL_ERROR_DONT_PRINT_MSG_AND_CALLSTACK</code>：iOS 致命错误信息与调用栈写入日志文件。</li>
+<li><code>XD_BUG_FIX_METAL_VERTEX_BUFFER_VIEW_VALIDATION_ERROR</code>：Xcode Metal Validation 开启时的顶点缓冲校验报错修复。</li>
+<li><code>XD_BUG_FIX_METAL_CRASH_FLUSH_LOG</code>：Metal 断言触发时先 Flush 日志。</li>
+<li><code>XD_BUG_FIX_MSAA_CRASH_ON_MAC</code>：Mac MSAA 崩溃（同步 UE-427 官方修复）。</li>
+<li><code>XD_BUG_FIX_SYNC_RELEASE_RHI_RESOURCE</code>：释放 MetalUniformBuffer 的崩溃修复（同步 RHI 资源释放）。</li>
+<li><code>XD_BUG_FIX_IOS_MALLOC_BINNED_NANO_MEMORY_CORRUPTION</code>：iOS MallocBinned nano 区域内存越界写修复。</li>
+<li><code>XD_BUG_FIX_IOS_NOTIFICATION_FREEZES_GAME</code>、<code>XD_BUG_FIX_IOS_TEXT_INPUT_CRASH</code>、<code>XD_AVF_NO_PREROLL</code>、<code>XD_BUG_FIX_AVF_TASK_QUEUE</code>、<code>XD_BUG_FIX_IOS_AUDIO_CHECK_FAILURE</code>：通知卡死、中文输入崩溃、AVF 播放器回调/线程问题。</li>
+</ul>
+
+<h2 class="sec">4. 工具链与构建</h2>
+<ul class="tight">
+<li><code>XD_MISC_XCODE_SUPPORT_15</code>：支持 Xcode 15 构建。</li>
+<li><code>XD_MISC_XCODE27_SCENELIFE_CYCLE</code>：为较新 Apple SDK 输出 UIKit Scene Manifest 与 SceneDelegate 钩子。</li>
+<li><code>XD_MISC_SOLVE_MAC_PLATFORM_VFORK_COMPILE_WARNING</code>：<code>vfork</code> 弃用警告修复（UE4-3084）。</li>
+<li><code>XD_FIX_BUG_MAC_CREATE_MENU_SHOULD_IN_MAIN_THREAD</code>：Mac 菜单创建回到主线程。</li>
+<li><code>XD_RENDERING_METAL_HALF</code>（默认 <span class="v off">0</span>）：Metal 平台 half 精度相关开关。</li>
+<li><code>XD_MISC_TURN_OFF_IOS_GLOBAL_NEW_DELETE_OPERATOR</code>：当前代码为 <code>#if 0</code> 关闭状态。</li>
+<li><code>XD_OPT_IOS_CONFIG_CREATE_DEBUG_METAL_LIB</code>：允许在 Shipping/Test 构建跳过 Metal 源码 zip 步骤。</li>
+</ul>
+
+<h2 class="sec">5. 模拟器（PC 上跑移动包）</h2>
+<ul class="tight">
+<li><code>XD_EMULATOR_EXTRA_INI</code>：模拟器启动时叠加 Emulator 目录的 ini，方便为模拟器单独调画质/输入。</li>
+<li><code>XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT</code>（+ <code>_DEBUG</code>）：模拟器包使用高分辨率纹理（Emulator 专用 LodBias），保证模拟器画质用于 QA/直播。</li>
+<li><code>XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION</code>：模拟器使用原生分辨率。</li>
+<li><code>XD_RENDERING_EMULATOR_CONTROL_MOUSE_ICON_VISIBILITY</code>：控制模拟器鼠标光标显隐。</li>
+<li><code>XD_BUG_FIX_MUMU_GL_BACK_BUFFER_SAMPLE</code>（PC 专题页）与 <code>XD_BUG_FIX_DISABLE_PROGRAM_BINARY_IN_MUMU_EMULATOR</code>（PSO 专题页）：MuMu 模拟器的 GL/PBC 专项修复。</li>
+</ul>
+
+<h2 class="sec">6. 移动端输入与屏幕</h2>
+<ul class="tight">
+<li><code>XD_MISC_GET_RAW_TOUCH_POSITIONS</code>：暴露原始触点坐标（<code>SWidget</code>/<code>PlayerInput</code>/<code>PlayerController</code> 全链路），解决 UI 缩放后的触点偏移问题（UE4-4557）。</li>
+<li><code>XD_MISC_ANDROID_RESCALE_THE_MOBILE_BACK_BUFFER</code> / <code>XD_MISC_IOS_RESCALE_THE_MOBILE_BACK_BUFFER</code>（均默认 <span class="v off">0</span>）：按窄边缩放 BackBuffer，可由 CVar 覆盖。</li>
+<li><code>XD_EXT_ADD_ANDROID_GET_SCREEN_SIZE_INTERFACE</code>：Android 新增 <code>GetScreenSize()</code> 返回真实屏幕尺寸。</li>
+<li><code>XD_MISC_ADD_SetDeviceOrientation_Method</code>：游戏侧可主动控制设备方向。</li>
+<li><code>XD_MISC_ADD_GRANT_PERMISSION_STAGE_BEFORE_GET_USER_IFNO</code>：获取用户信息前先走权限申请（合规）。</li>
+<li><code>XD_MISC_STRICT_DS_CONTROLLER_SELECT</code>：Android 上严格识别 DS4/DualSense 手柄。</li>
+</ul>
+
+<h2 class="sec">7. 注意事项</h2>
+<ul class="tight">
+<li><b>UBT 强制项</b>：<code>XD_RENDERING_MOBILE_IOS_DEPTH_FETCH</code> 被 <code>CheckDependencies</code> 要求必须为 1，关闭会导致 iOS 在 MSAA+DOF 下崩溃。</li>
+<li>Vulkan/OpenGL 的降级状态写进 GameUserSettings；清理玩家配置目录后回退记录会丢失。</li>
+<li>模拟器专用修复（MuMu/PBC/BackBuffer）只影响 QA 环境，正式机型不受影响，但相关宏不建议关闭。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 40 个宏——UE5 已覆盖 <b>10</b>、部分覆盖 <b>10</b>、未覆盖 <b>15</b>；可完全工程化 <b>19</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">Android / iOS / Mac 相关宏（40）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUGFIX_IOS_LOSTLOG">XD_BUGFIX_IOS_LOSTLOG</a></td><td>修复 iOS Test 构建日志丢失</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_ANDROID_EXIT_WITH_ABORT_METHOD">XD_MISC_ANDROID_EXIT_WITH_ABORT_METHOD</a></td><td>Android 主动退出时改用 abort，保证 Backtrace 能捕获崩溃信号并记录日志</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_SOLVE_MAC_PLATFORM_VFORK_COMPILE_WARNING">XD_MISC_SOLVE_MAC_PLATFORM_VFORK_COMPILE_WARNING</a></td><td>解决 Mac 平台 vfork 弃用编译警告（UE4-3084）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_APPLE_HOME_INDICATOR_NO_AUTO_HIDDEN">XD_MISC_APPLE_HOME_INDICATOR_NO_AUTO_HIDDEN</a></td><td>iOS 关闭 Home Indicator 自动隐藏（游戏场景不适用）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ANDROID_glGetString_Crash">XD_FIX_BUG_ANDROID_glGetString_Crash</a></td><td>增加日志定位 Android glGetString 崩溃</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_IOS_DEVICE_MAPPING_ERROR_MATCH">XD_BUG_FIX_IOS_DEVICE_MAPPING_ERROR_MATCH</a></td><td>修复 IOSDeviceMappings 机型匹配不正确</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_VULKANGPU_TIMESTAMP_QUERY">XD_MISC_VULKANGPU_TIMESTAMP_QUERY</a></td><td>支持高通芯片手机的 Vulkan GPU 时间戳查询（默认关闭）</td><td class="tval">0</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_EMULATOR_CONTROL_MOUSE_ICON_VISIBILITY">XD_RENDERING_EMULATOR_CONTROL_MOUSE_ICON_VISIBILITY</a></td><td>控制模拟器运行时鼠标图标的显示/隐藏</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_METAL_HALF">XD_RENDERING_METAL_HALF</a></td><td>Metal 平台相关精度（half）开关，当前关闭</td><td class="tval">0</td><td class="tuse">12</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_IOS_RESCALE_THE_MOBILE_BACK_BUFFER">XD_MISC_IOS_RESCALE_THE_MOBILE_BACK_BUFFER</a></td><td>iOS 按窄边框重缩放 BackBuffer（默认关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_MOBILE_OPENGLES_CREATE_UAV_ERROR">XD_BUG_FIX_MOBILE_OPENGLES_CREATE_UAV_ERROR</a></td><td>修复 FOpenGLDynamicRHI::RHICreateUnorderedAccessView_RenderThread 崩溃</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_LOG_ERROR_METAL_FILE_NAME_WHEN_COMPRESS_FAIL">XD_FIX_BUG_LOG_ERROR_METAL_FILE_NAME_WHEN_COMPRESS_FAIL</a></td><td>修复压缩空 .metal 文件时数组越界崩溃，并记录出错文件名</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_MAC_CREATE_MENU_SHOULD_IN_MAIN_THREAD">XD_FIX_BUG_MAC_CREATE_MENU_SHOULD_IN_MAIN_THREAD</a></td><td>Mac 菜单创建必须回到主线程（否则崩溃/无响应）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_ANDROID_ALLOW_OPENGL_FALLBACK_TO_VULKAN">XD_EXT_ANDROID_ALLOW_OPENGL_FALLBACK_TO_VULKAN</a></td><td>Android 上 OpenGL 崩溃时允许回退到 Vulkan（反之亦可）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_USE_ELECTRA_MEDIA_PLAYERA_IN_APPLE_DEVICE">XD_MISC_USE_ELECTRA_MEDIA_PLAYERA_IN_APPLE_DEVICE</a></td><td>Apple 设备默认使用 Electra 媒体播放器</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MSAA_CRASH_ON_MAC">XD_BUG_FIX_MSAA_CRASH_ON_MAC</a></td><td>修复 Mac 上 MSAA 崩溃（同步 UE-427 官方提交）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_IOS_CONFIG_CREATE_DEBUG_METAL_LIB">XD_OPT_IOS_CONFIG_CREATE_DEBUG_METAL_LIB</a></td><td>iOS 允许通过配置跳过 zip 压缩 Metal 源码步骤（Shipping/Test 构建）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_METAL_VERTEX_BUFFER_VIEW_VALIDATION_ERROR">XD_BUG_FIX_METAL_VERTEX_BUFFER_VIEW_VALIDATION_ERROR</a></td><td>修复 Xcode Metal Validation 开启时 Vertex Buffer 视图校验报错</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ANDROID_LOG_CANNOT_GENERATE">XD_FIX_BUG_ANDROID_LOG_CANNOT_GENERATE</a></td><td>修复部分 Android 设备/模拟器无法生成日志文件（UE4-5817）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUGFIX_IOS_LOSTLOG_ISSUE">XD_BUGFIX_IOS_LOSTLOG_ISSUE</a></td><td>iOS 后台日志丢失问题专项调试开关（默认关闭，勿开启提交）</td><td class="tval">0</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_IOS_SUNMASK_MEMORYLESS">XD_BUG_FIX_IOS_SUNMASK_MEMORYLESS</a></td><td>SunMask Pass 的 Memoryless RT 被当 SRV 使用：增加调试信息（UE4 i OS SunMask）</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT_DEBUG">XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT_DEBUG</a></td><td>高分辨率 DXT 功能的调试日志（默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_IOS_EXIT_WITH_ABORT_METHOD">XD_MISC_IOS_EXIT_WITH_ABORT_METHOD</a></td><td>iOS 主动退出时改用 abort 以捕获崩溃日志</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_VULKAN_TILE_FAST_CLEAR_ARTIFACT">XD_BUG_FIX_VULKAN_TILE_FAST_CLEAR_ARTIFACT</a></td><td>修复部分机型（如 Mate20）Vulkan Tile Fast Clear 造成的花屏</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION">XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION</a></td><td>Android 模拟器使用原生分辨率以获得更好体验</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT">XD_RENDERING_EMULATOR_SUPPORT_HIGH_RES_DXT</a></td><td>模拟器包使用高分辨率纹理（新增 Emulator 专用 LodBias）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_IOS_NOTIFICATION_FREEZES_GAME">XD_BUG_FIX_IOS_NOTIFICATION_FREEZES_GAME</a></td><td>修复 iOS 收到系统通知（闹钟/IM 角标等）时游戏卡死</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS">XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS</a></td><td>修复 Android x86_64 平台编译链接错误</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_ANDROID_RESCALE_THE_MOBILE_BACK_BUFFER">XD_MISC_ANDROID_RESCALE_THE_MOBILE_BACK_BUFFER</a></td><td>Android 按窄边框重缩放 BackBuffer（默认关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_METAL_CRASH_FLUSH_LOG">XD_BUG_FIX_METAL_CRASH_FLUSH_LOG</a></td><td>Metal 断言触发时先 Flush 日志，保证崩溃日志完整</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_ADD_ANDROID_GET_SCREEN_SIZE_INTERFACE">XD_EXT_ADD_ANDROID_GET_SCREEN_SIZE_INTERFACE</a></td><td>Android 新增 GetScreenSize() 接口（返回真实屏幕尺寸）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_VULKAN_DUMP_MEMORY_CRASH">XD_FIX_BUG_VULKAN_DUMP_MEMORY_CRASH</a></td><td>修复退出游戏时 Vulkan 内存 Dump 崩溃（UE4-4866）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_IOS_FATAL_ERROR_DONT_PRINT_MSG_AND_CALLSTACK">XD_BUG_FIX_IOS_FATAL_ERROR_DONT_PRINT_MSG_AND_CALLSTACK</a></td><td>修复 iOS 平台致命错误信息与调用栈未写入日志文件</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ANDROID_MOUNT_OBB_FAIL">XD_FIX_BUG_ANDROID_MOUNT_OBB_FAIL</a></td><td>修复 Android MountOBB 崩溃（UE4-5298）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_LOG_OPENGL_FUNCTION_CALL_TRACE">XD_MISC_LOG_OPENGL_FUNCTION_CALL_TRACE</a></td><td>追踪所有 OpenGL ES 函数调用（调试 OpenGL 问题，默认关闭）</td><td class="tval">0</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_DEBUG_IOS_BACKGROUND_TASK">XD_TOOL_DEBUG_IOS_BACKGROUND_TASK</a></td><td>记录 iOS BackgroundTask 的开始/结束调用（后台任务调试）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_IOS_REQUEST_EXIT_BY_FORCE">XD_MISC_IOS_REQUEST_EXIT_BY_FORCE</a></td><td>iOS 使用 _Exit(0) 直接结束进程</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EMULATOR_EXTRA_INI">XD_EMULATOR_EXTRA_INI</a></td><td>模拟器运行包时加载额外的 ini 覆盖配置</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_IOS_AUDIO_CHECK_FAILURE">XD_BUG_FIX_IOS_AUDIO_CHECK_FAILURE</a></td><td>修复 iOS AAC 解码回调中必然触发的 check 失败</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_ANDROID_VULKAN_ENHENCED_SELF_CHECK">XD_EXT_ANDROID_VULKAN_ENHENCED_SELF_CHECK</a></td><td>Android Vulkan 启动自检增加更多检查项</td><td class="tval">1</td><td class="tuse">7</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="platform-pc.html"><h3>🖥️ PC / Windows / D3D</h3><p>与当前主题关联密切</p></a><a class="card" href="mobile-rendering.html"><h3>📱 移动端渲染优化</h3><p>与当前主题关联密切</p></a><a class="card" href="input-device.html"><h3>🎮 输入与手柄</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

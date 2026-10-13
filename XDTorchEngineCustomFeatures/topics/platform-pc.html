@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC / Windows / D3D · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🖥️ PC / Windows / D3D</h1><p class="lead">DX11/DX12 兼容、驱动与 Windows 平台行为</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>把 PC 端的「跑不起来 / 跑一半崩 / 玩家看不懂错误」三大类问题做了工程化处理：DX12/DX11 自动互切、启动自检、故障弹窗引导、显存可追踪。
+</div>
+
+<h2 class="sec">1. DX 版本兼容与崩溃回退</h2>
+<ul class="tight">
+<li><code>XD_PC_SWITCH_DX_VERSION_AFTER_CRASH</code>：读 <code>GameUserSettings.ini [D3DRHIPreference]</code> 的 <code>bCrashedOnD3D12/11</code> 决定首选 RHI；本次运行崩溃后被标记，下次启动自动切换另一个版本（DX12⇄DX11）。写标志由 <code>FWindowsPlatformMisc::LogD3D12Failed/LogD3D11Failed</code> 完成。</li>
+<li><code>XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH</code>（及 <code>_MINIMAL</code>）：DX12 崩溃时回退 DX11 的实现（完整版含上报，精简版仅切换）。</li>
+<li><code>XD_PC_STARTING_PROTECTION_WITH_FORCE_DX12</code>：玩家用 <code>-dx12</code> 命令行强制启动、或多 RHI 冲突/设备不支持时，保护性回退 DX11 而不是 Fatal。</li>
+<li>注意：以上逻辑在编辑器/非 Shipping 下直接 return，只对发行包生效。</li>
+</ul>
+
+<h2 class="sec">2. DX12 自检与诊断</h2>
+<ul class="tight">
+<li><code>XD_PC_D3D12RHI_ADDITIONAL_COMPATIBILITY_TEST</code>：增强设备创建流程的日志与显存统计（<code>LogMemoryInfo</code>、<code>TerminateOnOutOfMemory</code>），启动阶段多一道兼容性自检。</li>
+<li><code>XD_PC_D3D12_ISSUE_REPORT</code>：暴露 <code>RHIGetD3D12IssueEventDelegate</code> 委托，把 DX12 设备/驱动问题上报给项目侧（崩溃平台）。</li>
+<li><code>XD_PC_D3DRHI_OUTPUT_VERBOSE_LOG</code>：D3D11/D3D12 校验失败时输出完整参数（可用 CVar 单独开启）。</li>
+<li><code>XD_PC_GRAPHICS_DRIVER_VERSION_WARNING</code>：检测驱动版本过旧，弹窗提示升级（CVar <code>r.DisableDriverWarningPopupMsgBox</code> 可关）。</li>
+<li><code>XD_BUG_FIX_RHI_CRASH_INDICATION_FLAG</code>：加原子标志判断“崩溃是否发生在 RHI 命令执行中”，显著提高崩溃归因准确率。</li>
+<li><code>XD_EXT_DEBUG_RENDERING_FUNC</code>：非 Shipping 下给渲染资源加调试名称，便于 RenderDoc 抓帧。</li>
+</ul>
+
+<h2 class="sec">3. 显存与 OOM</h2>
+<ul class="tight">
+<li><code>XD_OPT_PC_D3D11_DEFAULT_USE_D24</code>：D3D11 默认使用 24 位深度缓冲（CVar <code>r.D3D11.Depth24Bit</code>），在 4K/高分辨率下省显存、规避 OOM。</li>
+<li><code>XD_PC_RECORD_D3D11_RENDERING_RESOURCE_ALLOCATION</code>：<code>FVRAMAllocationRecorder</code> 持续记录 D3D11 资源分配；控制台命令 <code>XD.Engine.DumpRecordedD3D11VRAMAllocation</code> 导出，用于定位显存泄漏/超标。</li>
+<li><code>XD_EXT_OOM_POP_UP_TIPS_WINDOWS</code>：内存/显存不足时弹窗引导玩家降低画质，并标记 <code>GIsOOMCrashed</code> 以便上报区分。</li>
+<li><code>XD_EXT_DX_ERROR_POP_UP_TIPS_WINDOWS</code>、<code>XD_EXT_DLL_MISSING_ERROR_POP_UP_TIPS_WINDOWS</code>：DX API 错误、DLL 缺失的玩家可读弹窗。</li>
+<li><code>XD_MISC_WINDOWS_FORCE_EXIT_WITH_CRASH</code>：需要留存崩溃现场时强制以崩溃方式退出。</li>
+</ul>
+
+<h2 class="sec">4. 多显示器、分辨率与 DPI</h2>
+<ul class="tight">
+<li><code>XD_TOOL_GET_MONITOR_INFO_FROM_ADAPTER</code> / <code>XD_TOOL_GET_RESOLUTIONS_FROM_SPECIFIED_MONITOR_ID</code>：把显示器与 GPU 适配器正确对应，并获取指定显示器的全屏分辨率列表（RHI 层新增 <code>FAttachedMonitorInfoRHI</code>/<code>FScreenResolutionRHI</code>，D3D11/D3D12 分别实现）。</li>
+<li><code>XD_MISC_ENABLE_DPI_AWARE_WHIT_PROCESS_PER_MONITOR_DPI_AWARE</code>：进程级 Per-Monitor DPI 感知，多屏不同缩放时不再手动 SetWindowPos。</li>
+<li><code>XD_PC_SCREENRESOLUTION_SETTING_FOR_LIMITED_MONITOR</code>：受限显示器（小屏/特殊分辨率）下的分辨率设置处理；该宏在引擎 Source 内未检索到消费点，属项目层接口。</li>
+<li><code>XD_PC_MISC_GET_HW_CURSORS</code>：PC 获取/切换硬件光标（游戏内鼠标样式）。</li>
+</ul>
+
+<h2 class="sec">5. MuMu 模拟器与抓帧</h2>
+<ul class="tight">
+<li><code>XD_BUG_FIX_MUMU_GL_BACK_BUFFER_SAMPLE</code>：修复 MuMu 模拟器无法进行 GL BackBuffer 采样（离屏渲染）的问题。</li>
+<li><code>XD_RENDERING_PC_HANDLE_GRAPHICS_INSIGHTS_TOOL_ATTACHED</code>（默认 <span class="v off">0</span>）：挂载 RenderDoc/PIX 等抓帧工具时的特殊处理。</li>
+<li>模拟器的输入映射、键鼠/手柄支持、分辨率与 ini 叠加等宏属于 Android 平台专题，见 <a href="platform-mobile.html">Android / iOS / Mac</a>。</li>
+</ul>
+
+<h2 class="sec">6. 其它 PC 专项</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_PC_DX11_SUPPORT_RHI_THREAD</code>（默认 <span class="v off">0</span>）：为 DX11 打开 RHI 线程（CVar <code>r.DX11.RHIThread</code>）；默认关闭，需充分验证后再开。</li>
+<li><code>XD_RENDERING_PC_HANDLE_GRAPHICS_INSIGHTS_TOOL_ATTACHED</code>（默认 <span class="v off">0</span>）：挂载 RenderDoc/PIX 等抓帧工具时的特殊处理；<code>XD_EXT_DEBUG_RENDERING_FUNC</code> 则在非 Shipping 下给资源加调试名。</li>
+<li><code>XD_EXT_PC_D3D11RHI_VERIFY_SRV</code>：CreateShaderResourceView 失败时的补充日志；引擎 Source 内未发现消费点，可能由上层/工具链使用。</li>
+<li><code>XD_EXT_PLATFORM_UNWANTED_BEHAVIORS_TAKEOVER</code> 与 <code>XD_REPORT_ALL_REQUEST_EXIT_EVENT_AS_ERROR</code>：接管平台弹窗/退出行为，并在强制退出前 Flush 全部日志。</li>
+</ul>
+
+<h2 class="sec">7. 注意事项</h2>
+<ul class="tight">
+<li>DX 切换依赖把标志写入并 Flush <code>GGameUserSettingsIni</code>；若玩家删除 ini 或使用便携版目录，回退状态会丢失。</li>
+<li>弹窗引导只在 <code>!UE_BUILD_SHIPPING</code> 之外的路径做判断，发行包才生效；测试时注意构建类型。</li>
+<li>显存记录工具会带来一定开销，仅在排查版本启用。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 43 个宏——UE5 已覆盖 <b>9</b>、部分覆盖 <b>17</b>、未覆盖 <b>12</b>；可完全工程化 <b>22</b>，深度侵入项 <b>2</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">PC / Windows / D3D 相关宏（43）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/rendering.html#XD_PC_D3D12RHI_ADDITIONAL_COMPATIBILITY_TEST">XD_PC_D3D12RHI_ADDITIONAL_COMPATIBILITY_TEST</a></td><td>DX12 额外兼容性检测（启动自检）</td><td class="tval">1</td><td class="tuse">11</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_SHADER_PRINT_CREATE_STRUCTURE_BUFFER_CRASH">XD_BUG_FIX_SHADER_PRINT_CREATE_STRUCTURE_BUFFER_CRASH</a></td><td>修复 PC FD3D11DynamicRHI::RHICreateStructuredBuffer 崩溃</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_GRAPHICS_DRIVER_VERSION_WARNING">XD_PC_GRAPHICS_DRIVER_VERSION_WARNING</a></td><td>检测到显卡驱动版本过低时给出警告</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_DLL_MISSING_ERROR_POP_UP_TIPS_WINDOWS">XD_EXT_DLL_MISSING_ERROR_POP_UP_TIPS_WINDOWS</a></td><td>DLL 缺失错误弹窗提示</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_VK_DEFRAG_CRITICAL_SECTION">XD_BUG_FIX_VK_DEFRAG_CRITICAL_SECTION</a></td><td>修复 Vulkan 内存分配器碎片整理缺失临界区（UE4-3525）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_VKACQUIRENEXTIMAGE_SWAPCHAIN">XD_BUG_FIX_VKACQUIRENEXTIMAGE_SWAPCHAIN</a></td><td>修复 Vulkan 获取交换链图像时空指针异常（UE4-3544）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME">XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME</a></td><td>修复运行时切换桌面模式时显示器查询报错（UE4-5201）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_SUPPORT_GOOGLE_PACKAGE_SUBMIT">XD_MISC_SUPPORT_GOOGLE_PACKAGE_SUBMIT</a></td><td>适配 Google Play 提包要求（Android 12+ 的 android:exported 等）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_XCODE_SUPPORT_15">XD_MISC_XCODE_SUPPORT_15</a></td><td>支持 Xcode 15 构建</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_D3D12_ISSUE_REPORT">XD_PC_D3D12_ISSUE_REPORT</a></td><td>DX12 问题上报（崩溃/驱动问题收集与提示）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH</a></td><td>DX12 崩溃时回退 DX11（完整版，带崩溃上报）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_PC_ONLY_ALLOW_LAUNCH_ONE_GAME_INSTANCE">XD_MISC_PC_ONLY_ALLOW_LAUNCH_ONE_GAME_INSTANCE</a></td><td>PC 只允许启动一个游戏实例（单例保护）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_PC_DX11_SUPPORT_RHI_THREAD">XD_RENDERING_PC_DX11_SUPPORT_RHI_THREAD</a></td><td>为 PC DX11 打开 RHI 线程支持（当前关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_RHI_CRASH_INDICATION_FLAG">XD_BUG_FIX_RHI_CRASH_INDICATION_FLAG</a></td><td>增加 RHI 命令执行标记，用于判断崩溃是否发生在 RHI 提交阶段（UE4-3709）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_WINDOW_CRASH_WHEN_CREATE_UAV_VIEW">XD_BUG_FIX_WINDOW_CRASH_WHEN_CREATE_UAV_VIEW</a></td><td>创建 UAV 失败时输出完整参数（B8G8R8A8_UNORM 不能做 typed UAV 类问题）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_STARTING_PROTECTION_WITH_FORCE_DX12">XD_PC_STARTING_PROTECTION_WITH_FORCE_DX12</a></td><td>使用 -dx12 命令行强制 DX12 启动时的保护逻辑</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_ADD_SetDeviceOrientation_Method">XD_MISC_ADD_SetDeviceOrientation_Method</a></td><td>新增 SetDeviceOrientation 接口，供游戏控制设备方向</td><td class="tval">1</td><td class="tuse">12</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_PLATFORM_UNWANTED_BEHAVIORS_TAKEOVER">XD_EXT_PLATFORM_UNWANTED_BEHAVIORS_TAKEOVER</a></td><td>平台级不希望的行为接管（弹窗、退出请求等，Android 优先）</td><td class="tval">1</td><td class="tuse">12</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_PC_HANDLE_GRAPHICS_INSIGHTS_TOOL_ATTACHED">XD_RENDERING_PC_HANDLE_GRAPHICS_INSIGHTS_TOOL_ATTACHED</a></td><td>PC 端挂载 RenderDoc/PIX 等图形调试工具时的行为处理（当前关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PC_D3D11_DEFAULT_USE_D24">XD_OPT_PC_D3D11_DEFAULT_USE_D24</a></td><td>PC D3D11 默认使用 24 位深度缓冲，规避显存不足崩溃</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_PC_D3D11RHI_VERIFY_SRV">XD_EXT_PC_D3D11RHI_VERIFY_SRV</a></td><td>扩展 D3D11 CreateShaderResourceView 失败时的日志信息</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_PC_RUN_WITH_GAME_LAUNCHER">XD_MISC_PC_RUN_WITH_GAME_LAUNCHER</a></td><td>PC 仅允许通过游戏启动器（Launcher）启动客户端</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_D3DRHI_OUTPUT_VERBOSE_LOG">XD_PC_D3DRHI_OUTPUT_VERBOSE_LOG</a></td><td>PC RHI 输出详细的验证/调试日志</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL">XD_PC_FALLBACK_TO_DX11_WHEN_DX12_CRASH_MINIMAL</a></td><td>DX12 崩溃回退 DX11 的精简实现（不含上报）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_DEBUG_LOCK_BUFFER_CRASH_ISSUE">XD_BUG_FIX_DEBUG_LOCK_BUFFER_CRASH_ISSUE</a></td><td>为 Lock Vertex/Index Buffer 崩溃增加调试日志</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_ENABLE_DPI_AWARE_WHIT_PROCESS_PER_MONITOR_DPI_AWARE">XD_MISC_ENABLE_DPI_AWARE_WHIT_PROCESS_PER_MONITOR_DPI_AWARE</a></td><td>使用 PROCESS_PER_MONITOR_DPI_AWARE 启用多显示器 DPI 感知</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_OOM_POP_UP_TIPS_WINDOWS">XD_EXT_OOM_POP_UP_TIPS_WINDOWS</a></td><td>Windows 显存/内存不足时弹窗引导玩家降画质</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_GET_MONITOR_INFO_FROM_ADAPTER">XD_TOOL_GET_MONITOR_INFO_FROM_ADAPTER</a></td><td>按 GPU 适配器获取所连接的显示器信息</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_WINDOWS_IMPLEMENT_GET_DEVICE_ID_METHOD">XD_MISC_WINDOWS_IMPLEMENT_GET_DEVICE_ID_METHOD</a></td><td>Windows 平台 GetDeviceID 返回 MAC 地址字符串</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_SWITCH_DX_VERSION_AFTER_CRASH">XD_PC_SWITCH_DX_VERSION_AFTER_CRASH</a></td><td>PC 端 DX11/DX12 渲染崩溃后自动切换另一个版本重启</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SYNC_RELEASE_RHI_RESOURCE">XD_BUG_FIX_SYNC_RELEASE_RHI_RESOURCE</a></td><td>修复释放 MetalUniformBuffer 时的崩溃（同步释放 RHI 资源）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MUMU_GL_BACK_BUFFER_SAMPLE">XD_BUG_FIX_MUMU_GL_BACK_BUFFER_SAMPLE</a></td><td>修复 MuMu 模拟器无法进行 GL BackBuffer 采样（离屏渲染，UE4-7250）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT">XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT</a></td><td>处理 vkAcquireNextImageKHR 返回 VK_TIMEOUT（旧驱动兼容，UE4-2139）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_WINDOWS_ADJUST_SIZE_CONSIDER_TITLE_BAR">XD_FIX_BUG_WINDOWS_ADJUST_SIZE_CONSIDER_TITLE_BAR</a></td><td>修复 Windows 窗口尺寸计算未考虑标题栏高度</td><td class="tval">1</td><td class="tuse">14</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_PC_MISC_GET_HW_CURSORS">XD_PC_MISC_GET_HW_CURSORS</a></td><td>PC 支持获取/切换硬件光标</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_DX_ERROR_POP_UP_TIPS_WINDOWS">XD_EXT_DX_ERROR_POP_UP_TIPS_WINDOWS</a></td><td>DX API 错误弹窗提示（引导升级驱动/切换DX版本）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_DISABLE_READ_CPU_TEMPERATURE">XD_OPT_DISABLE_READ_CPU_TEMPERATURE</a></td><td>关闭读取 CPU 温度文件（Oppo 机型读取时会掉帧）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT_TESTING">XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT_TESTING</a></td><td>为复现 VK_TIMEOUT 提供的测试开关（默认关闭，Shipping 自动置 0）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_POP_UP_ERROR_MSG_BOX_WHEN_DEPTH_ACESS_UNMATCH">XD_MISC_POP_UP_ERROR_MSG_BOX_WHEN_DEPTH_ACESS_UNMATCH</a></td><td>深度模板访问状态不匹配时弹窗提示（便于附加调试器，默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_GET_RESOLUTIONS_FROM_SPECIFIED_MONITOR_ID">XD_TOOL_GET_RESOLUTIONS_FROM_SPECIFIED_MONITOR_ID</a></td><td>获取指定显示器支持的全屏分辨率列表</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_PC_SCREENRESOLUTION_SETTING_FOR_LIMITED_MONITOR">XD_PC_SCREENRESOLUTION_SETTING_FOR_LIMITED_MONITOR</a></td><td>受限显示器（小屏/特殊分辨率）下的屏幕分辨率设置处理</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_XCODE27_SCENELIFE_CYCLE">XD_MISC_XCODE27_SCENELIFE_CYCLE</a></td><td>为较新 Apple SDK 输出 UIKit Scene Manifest 与 SceneDelegate 钩子</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_ADD_GRANT_PERMISSION_STAGE_BEFORE_GET_USER_IFNO">XD_MISC_ADD_GRANT_PERMISSION_STAGE_BEFORE_GET_USER_IFNO</a></td><td>获取用户信息前增加权限申请阶段（隐私合规）</td><td class="tval">1</td><td class="tuse">3</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="platform-mobile.html"><h3>📲 Android / iOS / Mac</h3><p>与当前主题关联密切</p></a><a class="card" href="runtime-misc.html"><h3>🧭 运行时接口与诊断</h3><p>与当前主题关联密切</p></a><a class="card" href="mechanism.html"><h3>⚙️ 宏系统与构建机制</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

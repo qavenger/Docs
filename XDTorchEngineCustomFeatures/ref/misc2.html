@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新接口与杂项（下半部分） · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>新接口与杂项（下半部分）</h1><p class="lead">XDNewInterfaces · 下半部分 · 共 72 个宏</p>
+<div class="toolbar"><input class="filter" placeholder="在本文档内筛选宏名…" data-scope="#macrolist"></div>
+<div class="pager"><a href="misc1.html">← 新接口与杂项（上半部分）</a>　<a href="frontend.html">前端工具（XDFrontEndTools） →</a></div>
+<div id="macrolist">
+<h2 class="author">（未署名）</h2>
+<article class="macro" id="XD_MISC_ADDITIONAL_ASSET_REGISTRY_TAGS_FOR_WWISE">
+<h3 class="mname">XD_MISC_ADDITIONAL_ASSET_REGISTRY_TAGS_FOR_WWISE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:270</span>
+</div>
+<p class="zh">Wwise 资产增加 AssetRegistry Tag，支持标签搜索</p>
+<p class="en">源码注释：Make Wwsie related objects (including Ak*) Asset-Registry-Tag-searchable Originally for the purpose of bUseAssetRegistryTagsWhitelistInsteadOfBlacklist</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>引擎 Source 中除 UBT 开关外无引用（grep 无结果）；Wwise 属项目集成插件，不在 UE5 引擎源码内可判</p>
+<p class="migline"><b>覆盖说明：</b>引用=0</p>
+<p class="migline"><b>落地方式：</b>Wwise 集成插件/项目模块的 AssetRegistryTags 扩展</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>实现应在 Wwise 插件侧；迁移前确认该需求是否仍在，否则删宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ADDITIONAL_ASSET_REGISTRY_TAGS_FOR_WWISE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_SUPPORT_HTTP_REQUEST_COMPLETION_RESULT_GETTER">
+<h3 class="mname">XD_MISC_SUPPORT_HTTP_REQUEST_COMPLETION_RESULT_GETTER <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge use">源码引用 6</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:273</span>
+</div>
+<p class="zh">HTTP 请求增加完成结果 Getter（供状态记录与检查）</p>
+<p class="en">源码注释：Provide a getter method for status logging and checking purposes</p>
+<details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Runtime/Online/BuildPatchServices/Private/Tests/Mock/HttpRequest.mock.h</li><li>Source/Runtime/Online/HTTP/Private/Curl/CurlHttp.cpp</li><li>Source/Runtime/Online/HTTP/Private/Curl/CurlHttp.h</li><li>Source/Runtime/Online/HTTP/Private/GenericPlatform/HttpRequestImpl.cpp</li><li>Source/Runtime/Online/HTTP/Public/GenericPlatform/HttpRequestImpl.h</li><li>Source/Runtime/Online/HTTP/Public/Interfaces/IHttpRequest.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/Online/HTTP/Public/Interfaces/IHttpBase.h:114 GetStatus()/IsFinished（有状态查询，无 XD 的 GetRequestCompletionResult）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 用状态查询近似</p>
+<p class="migline"><b>落地方式：</b>项目侧包装 IHttpRequest/子类记录完成结果</p>
+<p class="migline"><b>建议：</b>用 UE5 GetStatus 包装即可。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_SUPPORT_HTTP_REQUEST_COMPLETION_RESULT_GETTER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_EXTENDED_KISMET2_LIB">
+<h3 class="mname">XD_MISC_EXTENDED_KISMET2_LIB <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:278</span>
+</div>
+<p class="zh">Kismet2 蓝图库新增工具函数（如在世界中心保持相对位置创建蓝图）</p>
+<p class="en">源码注释：Provide a collection of new useful functionalities in Kismet2 library Currently added: - CreateBlueprintAtWorldCenterFromActorsAndKeepRelativePosition functionalities</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Plugins/BlueprintAssetBreakerTools/Source/BlueprintAssetBreakerTools/Private/BlueprintAssetBreakerToolsManager.cpp</li><li>Plugins/BlueprintAssetBreakerTools/Source/BlueprintAssetBreakerTools/Public/BlueprintAssetBreakerToolsManager.h</li><li>Source/Editor/UnrealEd/Private/Kismet2/Kismet2.cpp</li><li>Source/Editor/UnrealEd/Public/Kismet2/KismetEditorUtilities.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Editor/UnrealEd/Private/Kismet2/Kismet2.cpp:1898,1979-1986 FKismetEditorUtilities::CreateBlueprintFromActors + FCreateBlueprintFromActorsParams(RelativeToInstance)</p>
+<p class="migline"><b>覆盖说明：</b>UE5 原生提供相对位置聚合蓝图</p>
+<p class="migline"><b>落地方式：</b>UnrealEd Kismet2 内部</p>
+<p class="migline"><b>建议：</b>UE5 原生已覆盖。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_EXTENDED_KISMET2_LIB">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_LOG_REDUCTION">
+<h3 class="mname">XD_MISC_LOG_REDUCTION <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:281</span>
+</div>
+<p class="zh">减少 Shipping 构建的运行时日志量</p>
+<p class="en">源码注释：Reduce the amount of runtime log in shipping builds</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Core/Private/Logging/LogCategory.cpp</li><li>Source/Runtime/RHI/Private/PipelineFileCache.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 支持 LogSettings ini / -NoLogging / -LogCmds 及编译期 UE_LOG 裁剪</p>
+<p class="migline"><b>覆盖说明：</b>有机制但非等价整包裁剪</p>
+<p class="migline"><b>落地方式：</b>DefaultEngine.ini LogSettings + 编译期 LogVerbosity 裁剪 Shipping 日志</p>
+<p class="migline"><b>接入点：</b>LogSettings ini · ELogVerbosity 编译期级别</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>用 ini+编译期日志级别替代宏裁剪</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_LOG_REDUCTION">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME">
+<h3 class="mname">XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:284</span>
+</div>
+<p class="zh">媒体播放结束后可选择保留最后一帧而非清空 MediaTexture</p>
+<p class="en">源码注释：Make it an option whether to clear the UMediaTexture or keep the last frame data after media is being played</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/MediaAssets/Private/Assets/MediaTexture.cpp</li><li>Source/Runtime/MediaAssets/Public/MediaTexture.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Runtime/MediaAssets/Public/MediaTexture.h:64-66（AutoClear，默认 true），:68-70 为 ClearColor</p>
+<p class="migline"><b>覆盖说明：</b>UE5 用 AutoClear=false 达到保留末帧效果</p>
+<p class="migline"><b>落地方式：</b>资产侧设置 AutoClear=false（或项目封装）</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>用 UE5 AutoClear 配置替代宏。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_ASYNC_LOAD_FLUSH_DELEGATE">
+<h3 class="mname">XD_EXT_ASYNC_LOAD_FLUSH_DELEGATE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge use">源码引用 6</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:287</span>
+</div>
+<p class="zh">OnAsyncLoadingFlush 增加带参数版本（调试用）</p>
+<p class="en">源码注释：Add one parameter version of the original OnAsyncLoadingFlush for debugging</p>
+<details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/XDConsoleVariables.inc</li><li>Source/Runtime/Core/Private/Misc/CoreDelegates.cpp</li><li>Source/Runtime/Core/Public/Misc/CoreDelegates.h</li><li>Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading.cpp</li><li>Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading2.cpp</li><li>Source/Runtime/CoreUObject/Private/UObject/UObjectGlobals.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Public/Misc/CoreDelegates.h:98 仅有 OnAsyncLoadingFlush（无参）与 :101 OnAsyncLoadingFlushUpdate；无 XD 的 OneParam 版本</p>
+<p class="migline"><b>覆盖说明：</b>UE5 保留基础委托</p>
+<p class="migline"><b>落地方式：</b>项目模块 bind FCoreDelegates::OnAsyncLoadingFlush/OnAsyncLoadingFlushUpdate 自行记录上下文</p>
+<p class="migline"><b>建议：</b>纯调试委托，用 UE5 现有无参委托 + 项目侧上下文即可替代</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_ASYNC_LOAD_FLUSH_DELEGATE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_EDITOR_BEHAVIOR_REWORK">
+<h3 class="mname">XD_EXT_EDITOR_BEHAVIOR_REWORK <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:290</span>
+</div>
+<p class="zh">修正编辑器一些不合预期/反直觉的行为</p>
+<p class="en">源码注释：Change and fix editor unwanted or unexpected behavior</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/EditorWidgets/Private/SSearchableComboBox.cpp</li><li>Source/Editor/PropertyEditor/Private/ObjectPropertyNode.h</li><li>Source/Editor/UnrealEd/Private/Tools/UEdMode.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>XD 改动分散在 Tools/UEdMode.cpp:220、EditorWidgets/SSearchableComboBox.cpp:203 等，无 UE5 单一对应实现</p>
+<p class="migline"><b>覆盖说明：</b>多项编辑器行为微调，需逐条核对</p>
+<p class="migline"><b>落地方式：</b>多数可放项目编辑器插件/Config 覆盖</p>
+<p class="migline"><b>接入点：</b>ToolMenus · FEditorDelegates · UEdMode 扩展</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>逐条拆解，能配置化的走 ini，其余进项目插件。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_EDITOR_BEHAVIOR_REWORK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY">
+<h3 class="mname">XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:293</span>
+</div>
+<p class="zh">关闭音频 AnimNotify（WwiseAudio_EBP）的 UECheck 依赖校验</p>
+<p class="en">源码注释：Disable Audio AnimNotify UECheck for dependencies, using string matching: WwiseAudio_EBP</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>引擎 Source 内 0 引用（仅 UBT 定义），UE5 无对应能力</p>
+<p class="migline"><b>覆盖说明：</b>项目定制的 UECheck 排除项（WwiseAudio_EBP）</p>
+<p class="migline"><b>落地方式：</b>UECheck 排除清单走项目 ini/命令行参数</p>
+<p class="migline"><b>接入点：</b>UECheck 白名单 ini/命令行</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>改用配置排除，勿留引擎宏。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_ADD_SHADER_COMPILE_LOG">
+<h3 class="mname">XD_MISC_ADD_SHADER_COMPILE_LOG <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:297</span>
+</div>
+<p class="zh">ShaderCompileWorker 因缺少 UniformBuffer 条目崩溃前输出诊断日志</p>
+<p class="en">源码注释：Add diagnostic log before ShaderCompileWorker crashes on missing uniform buffer map entry Helps identify which shader include file is not collected by GetAllVirtualShaderSourcePaths</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderCore.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>none（Runtime/RenderCore/Private/ShaderParameterParser.cpp 已重写，无 XD 式 UniformBuffer 缺失诊断日志）</p>
+<p class="migline"><b>覆盖说明：</b>无对应诊断</p>
+<p class="migline"><b>落地方式：</b>需改 ShaderParameterParser 崩溃前日志</p>
+<p class="migline"><b>接入点：</b>FShaderParameterParser / CheckShaderMapDependencies</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>在 UE5 参数解析模块补崩溃前诊断日志</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ADD_SHADER_COMPILE_LOG">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_PC_D3D11RHI_VERIFY_SRV">
+<h3 class="mname">XD_EXT_PC_D3D11RHI_VERIFY_SRV <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:300</span>
+</div>
+<p class="zh">扩展 D3D11 CreateShaderResourceView 失败时的日志信息</p>
+<p class="en">源码注释：An extension to D3D11 CreateShaderResourceView, when creation fails log will contain more info</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 引擎源码无引用（0 处）</p>
+<p class="migline"><b>覆盖说明：</b>疑历史遗留或已并入其他日志</p>
+<p class="migline"><b>落地方式：</b>若确需，在 D3D11 SRV 创建失败处补日志</p>
+<p class="migline"><b>接入点：</b>FD3D11ViewableResource SRV 创建</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>SOURCE 无引用，确认后可删</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_PC_D3D11RHI_VERIFY_SRV">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_LOG_SHADER_DETAILED_DDC_KEY">
+<h3 class="mname">XD_MISC_LOG_SHADER_DETAILED_DDC_KEY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:303</span>
+</div>
+<p class="zh">DDC Miss 时输出材质 ShaderMap DDC Key 的分段明细（-LogMATSMDDCKey）</p>
+<p class="en">源码注释：Log detailed per-segment breakdown of material shader map DDC key on DDC miss, enabled by -LogMATSMDDCKey command line arg</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Materials/MaterialShader.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp:169 r.ShaderCompiler.DumpDDCKeys + DumpShaderDDCKeyToFile:276；Runtime/Engine/Public/MaterialShared.h:1652 OutDDCKeyDesc</p>
+<p class="migline"><b>覆盖说明：</b>有 DDC Key 转储与描述，分段明细粒度不同</p>
+<p class="migline"><b>落地方式：</b>开启 r.ShaderCompiler.DumpDDCKeys 输出到 Saved/ShaderDDCKeys</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>用 DumpDDCKeys + OutDDCKeyDesc 替代 -LogMATSMDDCKey</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_LOG_SHADER_DETAILED_DDC_KEY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Huang Chen</h2>
+<article class="macro" id="XD_PRE_MOUNT_PAK">
+<h3 class="mname">XD_PRE_MOUNT_PAK <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Huang Chen</span>
+<span class="badge use">源码引用 9</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:308</span>
+</div>
+<p class="zh">引擎初始化时预挂载指定 Pak 目录（提前读取热更资源）</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_MISC_PAK_FAIL_NO_PREMOUNT">XD_MISC_PAK_FAIL_NO_PREMOUNT</a></p>
+<p class="en">源码注释：Add new pak folder to read on engine init</p>
+<details class="usage"><summary>引用位置（9 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Core/Private/Android/AndroidPlatformMisc.cpp</li><li>Source/Runtime/Core/Private/Misc/Paths.cpp</li><li>Source/Runtime/Core/Public/Misc/Paths.h</li><li>Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading.cpp</li><li>Source/Runtime/Launch/Private/LaunchEngineLoop.cpp</li><li>Source/Runtime/MediaAssets/Private/Assets/FileMediaSource.cpp</li><li>Source/Runtime/PakFile/Private/IPlatformFilePak.cpp</li><li>Source/Runtime/PakFile/Public/IPlatformFilePak.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 L · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无预挂载阶段：grep bIsInInitPreMountPakProcedure / XDPreMountStatusReport / UpdatePremountConfigJson 无结果；CoreDelegates.h:118-155 仅标准 mount 委托，无赛季节日 json/热更预挂载概念</p>
+<p class="migline"><b>覆盖说明：</b>UE5.8 无等价能力</p>
+<p class="migline"><b>落地方式：</b>引擎只暴露挂载/失败/ShaderLibrary 打开时机委托；pak 目录扫描、赛季 json、熔断状态机全部放热更插件</p>
+<p class="migline"><b>接入点：</b>FCoreDelegates::PakFileMountFailedDelegate / GetOnPakFileMounted2 · FCoreDelegates::MountPak / MountPaksEx · AddShaderSourceDirectoryMapping / ShaderCodeLibrary 打开时机钩子</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>热更核心能力：把引擎改动压缩为“暴露时机委托”，策略与状态持久化进插件；预挂载时机需与 LaunchEngineLoop 初始化顺序重新对齐</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PRE_MOUNT_PAK">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Zhao Shuai Nan</h2>
+<article class="macro" id="XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM">
+<h3 class="mname">XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:313</span>
+</div>
+<p class="zh">提供接口返回实际需要预编译的 Shader 数量</p>
+<p class="en">源码注释：Adds an interface to return the actual number of pre-compilations needed.</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RenderCore/Public/ShaderPipelineCache.h:110 FShaderPipelineCache::NumPrecompilesRemaining</p>
+<p class="migline"><b>覆盖说明：</b>接口已存在（XD 宏本无引擎使用点）</p>
+<p class="migline"><b>落地方式：</b>项目模块直接调用 NumPrecompilesRemaining</p>
+<p class="migline"><b>接入点：</b>FShaderPipelineCache::NumPrecompilesRemaining</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>工程侧封装查询，无需改引擎</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_ANIMATION_TICK_OPTION">
+<h3 class="mname">XD_EXT_ANIMATION_TICK_OPTION <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:316</span>
+</div>
+<p class="zh">Actor 不在相机视野时不更新 LODStatus（动画 Tick 优化）</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_EXT_INVALID_LODSTATUS_UPDATE">XD_EXT_INVALID_LODSTATUS_UPDATE</a> <a class="rel" href="misc1.html#XD_EXT_ANIMATION_TICK_OPTION_WITH_DISPLACEMENT">XD_EXT_ANIMATION_TICK_OPTION_WITH_DISPLACEMENT</a></p>
+<p class="en">源码注释：Invalid LODStatus update when actor is not show in camera.</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>XD 源码 0 引用，仅为 _WITH_DISPLACEMENT 的遗留前缀</p>
+<p class="migline"><b>覆盖说明：</b>死宏</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>未使用，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_ANIMATION_TICK_OPTION">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_SHDADER_UNUSED_PBC_EVICT">
+<h3 class="mname">XD_EXT_SHDADER_UNUSED_PBC_EVICT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 8</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:319</span>
+</div>
+<p class="zh">切换关卡时淘汰仍在使用的程序二进制缓存（PBC）</p>
+<p class="rels">关联宏：<a class="rel" href="opt.html#XD_OPT_INCREMENTALLY_STORE_PROGRAM_BINARY_CACHE">XD_OPT_INCREMENTALLY_STORE_PROGRAM_BINARY_CACHE</a></p>
+<p class="en">源码注释：Evict PBC loaded while playing when level change.</p>
+<details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Launch/Private/LaunchEngineLoop.cpp</li><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li><li>Source/Runtime/OpenGLDrv/Public/OpenGLShaderResources.h</li><li>Source/Runtime/OpenGLDrv/Public/OpenGLShaders.h</li><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li><li>Source/Runtime/RenderCore/Public/ShaderPipelineCache.h</li><li>Source/Runtime/VulkanRHI/Private/VulkanPipeline.cpp</li><li>Source/Runtime/VulkanRHI/Private/VulkanPipeline.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/OpenGLShaders.cpp:82-96 r.OpenGL.ProgramLRUEvictTimeSeconds/ProgramLRUResidentCountBeforeEviction；VulkanChunkedPipelineCache.cpp:131 r.Vulkan.ChunkedPSOCache.ChunkEvictTime</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有按时间/容量的 PBC 淘汰机制</p>
+<p class="migline"><b>落地方式：</b>用上述 CVar 控制淘汰策略</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>换关卡淘汰用 ProgramLRUEvictTimeSeconds/ChunkEvictTime 配置</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_SHDADER_UNUSED_PBC_EVICT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_INVALID_LODSTATUS_UPDATE">
+<h3 class="mname">XD_EXT_INVALID_LODSTATUS_UPDATE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:322</span>
+</div>
+<p class="zh">停止在无渲染时调用 UpdateLODStatus</p>
+<p class="en">源码注释：Stops the call of the function UpdateLODStatus without rendering</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Components/SkinnedMeshComponent.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 SkinnedMeshComponent.cpp:1869 仍无条件调用 UpdateLODStatus；ShouldUpdateTransform(1805) 不含 bLODHasChanged</p>
+<p class="migline"><b>覆盖说明：</b>未上游</p>
+<p class="migline"><b>落地方式：</b>USkinnedMeshComponent Tick 核心</p>
+<p class="migline"><b>接入点：</b>USkinnedMeshComponent::TickComponent · ShouldUpdateTransform</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>改变骨骼更新时机，需回归动画/动作</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_INVALID_LODSTATUS_UPDATE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_VULKANGPU_TIMESTAMP_QUERY">
+<h3 class="mname">XD_MISC_VULKANGPU_TIMESTAMP_QUERY <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 6</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:325</span>
+</div>
+<p class="zh">支持高通芯片手机的 Vulkan GPU 时间戳查询（默认关闭）</p>
+<p class="en">源码注释：Support GPU timestamp query on Qualcomm chip mobile phones</p>
+<details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ProfilingDebugging/RealtimeGPUProfiler.cpp</li><li>Source/Runtime/RenderCore/Public/ProfilingDebugging/RealtimeGPUProfiler.h</li><li>Source/Runtime/Renderer/Private/MobileBasePassRendering.cpp</li><li>Source/Runtime/Renderer/Private/MobileShadingRenderer.cpp</li><li>Source/Runtime/Renderer/Private/MobileTranslucentRendering.cpp</li><li>Source/Runtime/VulkanRHI/Private/Android/VulkanAndroidPlatform.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/VulkanRHI/Private/VulkanContext.cpp:55 GRHIGlobals.SupportsTimestampRenderQueries / FVulkanQueryPool 时间戳查询</p>
+<p class="migline"><b>覆盖说明：</b>有标准 GPU 时间戳，无高通专项开关</p>
+<p class="migline"><b>落地方式：</b>用 r.GPUProfiler / 标准 GPU 时间戳 CVar</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>默认 0，改用 UE5 通用 GPU 时间戳即可</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_VULKANGPU_TIMESTAMP_QUERY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_ADD_INTERFACE_TO_GET_LOG_VERBOSITY">
+<h3 class="mname">XD_MISC_ADD_INTERFACE_TO_GET_LOG_VERBOSITY <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:328</span>
+</div>
+<p class="zh">提供获取日志 Verbosity 的接口</p>
+<p class="en">源码注释：Add an interface to get log verbosity.</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Core/Private/Logging/LogSuppressionInterface.cpp</li><li>Source/Runtime/Core/Public/Logging/LogCategory.h</li><li>Source/Runtime/Core/Public/Logging/LogSuppressionInterface.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Public/Logging/LogSuppressionInterface.h 无 GetVerbosityArray/GetVerbosityCurrentValueMap 接口</p>
+<p class="migline"><b>覆盖说明：</b>须保留查询接口</p>
+<p class="migline"><b>落地方式：</b>接口须在 Core LogSuppressionInterface 暴露，查询/展示逻辑项目侧</p>
+<p class="migline"><b>接入点：</b>FLogSuppressionInterface::GetVerbosityArray · FLogCategoryBase::GetDefaultVerbosity</p>
+<p class="migline"><b>机制：</b>Interface</p>
+<p class="migline"><b>建议：</b>引擎暴露接口，项目消费</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ADD_INTERFACE_TO_GET_LOG_VERBOSITY">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_ZERO_DEFAULT_BLEND_TIME">
+<h3 class="mname">XD_MISC_ZERO_DEFAULT_BLEND_TIME <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:331</span>
+</div>
+<p class="zh">动画蒙太奇默认过渡时间改为 0</p>
+<p class="en">源码注释：Set default anime montage blend time to zero.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Animation/AnimMontage.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 UAnimMontage 构造仍默认 0.25（Engine/Source/Runtime/Engine/Private/Animation/AnimMontage.cpp:76-77）</p>
+<p class="migline"><b>覆盖说明：</b>未上游</p>
+<p class="migline"><b>落地方式：</b>项目动画资产默认值/CDO 或子类</p>
+<p class="migline"><b>接入点：</b>UAnimMontage 构造默认值</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>用项目资产默认，勿改引擎默认</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ZERO_DEFAULT_BLEND_TIME">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_ANDROID_RESCALE_THE_MOBILE_BACK_BUFFER">
+<h3 class="mname">XD_MISC_ANDROID_RESCALE_THE_MOBILE_BACK_BUFFER <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:334</span>
+</div>
+<p class="zh">Android 按窄边框重缩放 BackBuffer（默认关闭）</p>
+<p class="en">源码注释：(Android)Rescale the BackBuffer to match the narrow border.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Public/Android/AndroidWindowUtils.h</li><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/Android/AndroidWindow.cpp:562 r.MobileContentScaleFactor</p>
+<p class="migline"><b>覆盖说明：</b>UE5 原生 BackBuffer 缩放 CVar</p>
+<p class="migline"><b>落地方式：</b>DeviceProfile + r.MobileContentScaleFactor</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>默认 0，直接用 UE5 CVar 替代</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ANDROID_RESCALE_THE_MOBILE_BACK_BUFFER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION">
+<h3 class="mname">XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:337</span>
+</div>
+<p class="zh">Android 模拟器使用原生分辨率以获得更好体验</p>
+<p class="en">源码注释：Android emulator use native screen resolution for good user experience</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Public/Android/AndroidWindowUtils.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无模拟器识别与原生分辨率分支（AndroidWindowUtils 无 XD 逻辑）</p>
+<p class="migline"><b>覆盖说明：</b>未覆盖</p>
+<p class="migline"><b>落地方式：</b>可用 DeviceProfile/r.MobileContentScaleFactor 近似；模拟器识别需引擎 hook</p>
+<p class="migline"><b>接入点：</b>AndroidWindowUtils::ApplyContentScaleFactor · FAndroidMisc::IsEmulator</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>建议合并进 Emulator DeviceProfile</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_IOS_RESCALE_THE_MOBILE_BACK_BUFFER">
+<h3 class="mname">XD_MISC_IOS_RESCALE_THE_MOBILE_BACK_BUFFER <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:340</span>
+</div>
+<p class="zh">iOS 按窄边框重缩放 BackBuffer（默认关闭）</p>
+<p class="en">源码注释：(IOS)Rescale the BackBuffer to match the narrow border.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/IOS/IOSView.cpp</li><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp:1020 r.MobileContentScaleFactor</p>
+<p class="migline"><b>覆盖说明：</b>UE5 原生缩放 CVar</p>
+<p class="migline"><b>落地方式：</b>DeviceProfile + r.MobileContentScaleFactor</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>默认 0，改用 UE5 CVar</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_IOS_RESCALE_THE_MOBILE_BACK_BUFFER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_PHYSX_UP_TO_342">
+<h3 class="mname">XD_MISC_PHYSX_UP_TO_342 <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:343</span>
+</div>
+<p class="zh">PhysX SDK 升级至 3.4.2</p>
+<p class="en">源码注释：Up PhysX sdk version to 3.4.2.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/PhysicsCore/Private/PhysXSupportCore.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 为 Chaos 物理，PhysX 已移除（Source 无 PhysX 物理模块）</p>
+<p class="migline"><b>覆盖说明：</b>物理后端已换代</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>PhysX 整体淘汰，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_PHYSX_UP_TO_342">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_USE_ELECTRA_MEDIA_PLAYERA_IN_APPLE_DEVICE">
+<h3 class="mname">XD_MISC_USE_ELECTRA_MEDIA_PLAYERA_IN_APPLE_DEVICE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:346</span>
+</div>
+<p class="zh">Apple 设备默认使用 Electra 媒体播放器</p>
+<p class="en">源码注释：Use Electra Media Player in Apple Device.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Plugins/Media/AvfMedia/Source/AvfMediaFactory/Private/AvfMediaFactoryModule.cpp</li><li>Plugins/Media/ElectraPlayer/Source/ElectraPlayerFactory/Private/ElectraPlayerFactoryModule.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Plugins/Media/ElectraPlayer/ElectraPlayer.uplugin:27 PlatformAllowList 含 IOS/TVOS；Runtime/MediaAssets/Private/Assets/BaseMediaSource.cpp:51 PlatformPlayerNames</p>
+<p class="migline"><b>覆盖说明：</b>Electra 在 Apple 平台可用且可配</p>
+<p class="migline"><b>落地方式：</b>DefaultEngine.ini 的 MediaPlayer/MediaSource PlatformPlayerNames 指定 ElectraPlayer</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>改为工程配置指定播放器，删除宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_USE_ELECTRA_MEDIA_PLAYERA_IN_APPLE_DEVICE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_ENABLE_DPI_AWARE_WHIT_PROCESS_PER_MONITOR_DPI_AWARE">
+<h3 class="mname">XD_MISC_ENABLE_DPI_AWARE_WHIT_PROCESS_PER_MONITOR_DPI_AWARE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:349</span>
+</div>
+<p class="zh">使用 PROCESS_PER_MONITOR_DPI_AWARE 启用多显示器 DPI 感知</p>
+<p class="en">源码注释：Enable DPI aware with macro PROCESS_PER_MONITOR_DPI_AWARE.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/Windows/WindowsApplication.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/Windows/WindowsPlatformApplicationMisc.cpp:291 SetHighDPIMode/SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)；WindowsApplication.cpp:4001 WM_DPICHANGED</p>
+<p class="migline"><b>覆盖说明：</b>UE5 原生 per-monitor DPI 感知</p>
+<p class="migline"><b>落地方式：</b>无需改动</p>
+<p class="migline"><b>建议：</b>UE5 已覆盖，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ENABLE_DPI_AWARE_WHIT_PROCESS_PER_MONITOR_DPI_AWARE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_COLLECT_LUA_MEM">
+<h3 class="mname">XD_MISC_COLLECT_LUA_MEM <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:352</span>
+</div>
+<p class="zh">采集 Lua 内存统计（供 MemReport 展示）</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无内置 Lua，无对应实现</p>
+<p class="migline"><b>覆盖说明：</b>依赖项目 Lua 方案</p>
+<p class="migline"><b>落地方式：</b>项目 UnLua/Lua 插件向 MemReport 注册自定义段落</p>
+<p class="migline"><b>接入点：</b>MemReport 自定义段落/tag</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>Lua 内存统计迁到项目 Lua 插件</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_COLLECT_LUA_MEM">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_COLLECT_PARTICLE_MEM_FROM_STAT">
+<h3 class="mname">XD_MISC_COLLECT_PARTICLE_MEM_FROM_STAT <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:355</span>
+</div>
+<p class="zh">从 STAT 中提取粒子相关内存数据（默认关闭）</p>
+<p class="note">⚠ XD_MISC_MEMREPORT_TIMER=1 时要求该项为 1。</p>
+<p class="en">源码注释：Pull the particle related memory data from STATs</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Core/Private/Stats/StatsCommand.cpp</li><li>Source/Runtime/Core/Public/Stats/Stats2.h</li><li>Source/Runtime/Engine/Private/Particles/ParticleMemoryStatManager.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Private/Particles/ParticleMemoryStatManager.cpp:16-32 FParticleMemoryStatManager 在 #if STATS 下统计 DynamicPSysCompMem/TotalGTParticleData 等，但无 XD 的 Stats2/LLM 导出通道</p>
+<p class="migline"><b>覆盖说明：</b>底层计数有，导出通道无</p>
+<p class="migline"><b>落地方式：</b>导出侧可做成项目统计插件/Console Command，读取 FParticleMemoryStatManager 计数</p>
+<p class="migline"><b>接入点：</b>FParticleMemoryStatManager 计数接口 · Stats2 自定义 stat 注册点</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>默认关闭的工具项，建议用项目统计插件+CVar 重做</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_COLLECT_PARTICLE_MEM_FROM_STAT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_MEMREPORT_TIMER">
+<h3 class="mname">XD_MISC_MEMREPORT_TIMER <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">Zhao Shuai Nan</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:358</span>
+</div>
+<p class="zh">定时自动生成 MemReport（默认关闭）</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/FileManagerGeneric.cpp</li><li>Source/Runtime/Core/Public/HAL/FileManager.h</li><li>Source/Runtime/Core/Public/HAL/FileManagerGeneric.h</li><li>Source/Runtime/Engine/Private/UnrealEngine.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/UnrealEngine.cpp:2826 FTimedMemReport 与 :2877 CVar TimedMemReport.Delay</p>
+<p class="migline"><b>覆盖说明：</b>UE5 原生定时 MemReport</p>
+<p class="migline"><b>落地方式：</b>直接使用 TimedMemReport.Delay 控制台变量</p>
+<p class="migline"><b>建议：</b>删除自定义定时器，改用 TimedMemReport.Delay</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_MEMREPORT_TIMER">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Lu Xun</h2>
+<article class="macro" id="XD_EXT_OUTPUT_SHADER_LINK_HASH">
+<h3 class="mname">XD_EXT_OUTPUT_SHADER_LINK_HASH <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:362</span>
+</div>
+<p class="zh">输出 Shader Link Hash（调试 Shader 组合，默认关闭）</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/OpenGLShaders.cpp:1550 CreateGLProgramFromBinary 打印 ProgramCRC（无 XD 式 Link Hash 字段）</p>
+<p class="migline"><b>覆盖说明：</b>有等价 CRC 诊断但非同一字段，默认关闭</p>
+<p class="migline"><b>落地方式：</b>项目侧 CVar 打开诊断日志</p>
+<p class="migline"><b>接入点：</b>r.OpenGL.* 诊断日志 CVar</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>作为调试 CVar 保留（默认关）</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_OUTPUT_SHADER_LINK_HASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_ADD_SOURCE_CONTROL_CONTENT_FILES_FILTER_CHECKBOX">
+<h3 class="mname">XD_EXT_ADD_SOURCE_CONTROL_CONTENT_FILES_FILTER_CHECKBOX <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:366</span>
+</div>
+<p class="zh">源码管理提交窗口新增“过滤临时文件”复选框</p>
+<p class="en">源码注释：Add a checkbox in UE4 SourceControl submit window to filter temporary files https://confluence.xindong.com/pages/viewpage.action?pageId=567643804</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/SourceControlWindows/Private/SSourceControlSubmit.cpp</li><li>Source/Editor/SourceControlWindows/Private/SSourceControlSubmit.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Editor/SourceControlWindows/Private/SSourceControlSubmit.cpp 无 filter/temp 过滤复选框（仅 bAllowUncheckFiles 列勾选）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无该扩展项</p>
+<p class="migline"><b>落地方式：</b>项目编辑器插件重挂提交窗口扩展/ToolMenus</p>
+<p class="migline"><b>接入点：</b>ToolMenus · SSourceControlSubmitWidget 扩展</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>迁到项目编辑器插件，避免改引擎 UI。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_ADD_SOURCE_CONTROL_CONTENT_FILES_FILTER_CHECKBOX">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_COMPRESS_TEXTURES_WITH_ASTCENC_3_3">
+<h3 class="mname">XD_MISC_COMPRESS_TEXTURES_WITH_ASTCENC_3_3 <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">编辑器与资源工具</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:372</span>
+</div>
+<p class="zh">使用 ASTCENC 3.3 压缩 ASTC 纹理（切换需升级格式版本号）</p>
+<p class="note">⚠ 修改该宏必须同步递增 TextureFormatASTC.cpp 的 BASE_ASTC_FORMAT_VERSION，否则不会重新压缩旧纹理。</p>
+<p class="en">源码注释：Update ASTCENC https://confluence.xindong.com/pages/viewpage.action?pageId=655227908 !!!!NOTE!!!! If you change this macro, you must increment BASE_ASTC_FORMAT_VERSION in TextureFormatASTC.cpp to make sure recompress all textures.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Developer/TextureFormatASTC/Private/TextureFormatASTC.cpp</li><li>Source/Developer/TextureFormatIntelISPCTexComp/Private/TextureFormatIntelISPCTexComp.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Source/Developer/TextureFormatASTC/Private/TextureFormatASTC.cpp（AstcEncThunk/EAstcEncThunk_*、AstcEncVersion 进 DDC key、BASE_ASTC_FORMAT_VERSION=48）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已用内置 astcenc thunk 并做版本化</p>
+<p class="migline"><b>落地方式：</b>Developer 纹理格式模块</p>
+<p class="migline"><b>建议：</b>UE5 只支持 astcenc 4.2.0 / 5.0.1（TextureFormatASTC.cpp:1016-1024 的 SupportedAstcEncVersions/AstcEncVersionStrings），不含 3.3；宏名义上的“3.3”不可复现，须按 4.2/5.0.1 重编并接受 DDC/画质差异（版本已进 DDC key）。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_COMPRESS_TEXTURES_WITH_ASTCENC_3_3">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_STOP_PSO_CACHING_IF_FAILES">
+<h3 class="mname">XD_MISC_STOP_PSO_CACHING_IF_FAILES <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 13</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:376</span>
+</div>
+<p class="zh">PSO 缓存系统因 I/O/驱动损坏时停止继续缓存（OpenGLES/Vulkan）</p>
+<p class="en">源码注释：Disable PSO cache when ShaderPipelineCache system is corrupted (i.e. PSO Caching could not continue) due to I/O or driven, used in OpenGLES and Vulkan. QA cases: https://xindong.atlassian.net/wiki/spaces/ENUE4/pages/892344582/PSO-+20231026</p>
+<details class="usage"><summary>引用位置（13 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Core/Private/Android/AndroidPlatformMisc.cpp</li><li>Source/Runtime/Core/Private/Apple/ApplePlatformMisc.cpp</li><li>Source/Runtime/Core/Private/HAL/FileManagerGeneric.cpp</li><li>Source/Runtime/Core/Public/Android/AndroidPlatformMisc.h</li><li>Source/Runtime/Core/Public/Apple/ApplePlatformMisc.h</li><li>Source/Runtime/Core/Public/HAL/FileManagerGeneric.h</li><li>Source/Runtime/Core/Public/Serialization/Archive.h</li><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/VulkanRHI/Private/VulkanChunkedPipelineCache.cpp:1067 失败时 GUseChunkedPSOCache=0；无统一 FShaderPipelineCacheExceptionCatcher/熔断</p>
+<p class="migline"><b>覆盖说明：</b>有局部禁用，缺统一熔断+异常捕获</p>
+<p class="migline"><b>落地方式：</b>RHI/SkatePipelineCache 异常处理</p>
+<p class="migline"><b>接入点：</b>FShaderPipelineCache 保存失败处理 · SetPlatformPSOCachePath</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>在 UE5 保存/创建失败处加熔断（OpenGL/Vulkan）</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_STOP_PSO_CACHING_IF_FAILES">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE">
+<h3 class="mname">XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:381</span>
+</div>
+<p class="zh">新赛季（XD_TORCHLIGHT_SEASON）变更时删除过期的 User Pipeline Cache 与 PBC</p>
+<p class="note">⚠ 依赖 XD_TORCHLIGHT_SEASON。</p>
+<p class="rels">关联宏：<a class="rel" href="projectfeatures.html#XD_TORCHLIGHT_SEASON">XD_TORCHLIGHT_SEASON</a></p>
+<p class="en">源码注释：Delete user pipeline cache file and PBC file in new season Jira: https://xindong.atlassian.net/browse/UE4-5466 Note: Depends on XD_TORCHLIGHT_SEASON!</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Private/PipelineFileCache.cpp:2067-2081 按 StaleTimespan 驱逐过期条目；ShaderPipelineCache.h:124 GetGameVersionForPSOFileCache / GameVersionKey</p>
+<p class="migline"><b>覆盖说明：</b>有按时间/版本失效机制，缺赛季号语义</p>
+<p class="migline"><b>落地方式：</b>DeviceProfile/ini 配 StaleTimespan + GameVersionKey，项目赛季号写入版本</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>用 GameVersionKey/StaleTimespan 替代赛季号失效逻辑</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_SLATE_FIX_COMBO_BOX_LIST_WIDTH">
+<h3 class="mname">XD_EXT_SLATE_FIX_COMBO_BOX_LIST_WIDTH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:385</span>
+</div>
+<p class="zh">ComboBox 下拉列表支持固定宽度（UE4-5581）</p>
+<p class="en">源码注释：Support fixed list width for combo box. Jira: https://xindong.atlassian.net/browse/UE4-5581</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Slate/Public/Widgets/Input/SComboBox.h</li><li>Source/Runtime/Slate/Public/Widgets/Input/SEditableComboBox.h</li><li>Source/Runtime/UMG/Private/Components/ComboBoxString.cpp</li><li>Source/Runtime/UMG/Public/Components/ComboBoxString.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Slate/Public/Widgets/Input/SComboBox.h（无 FixedListWidth/MenuWidth 参数，仅 CollapseMenuOnParentFocus/MenuRowPadding/SetMaxDesiredHeight）</p>
+<p class="migline"><b>覆盖说明：</b>固定下拉宽度未上游</p>
+<p class="migline"><b>落地方式：</b>项目模块中派生 SComboBox/SComboBoxString（或在 UMG 子类里 OnComboBoxOpening 调整菜单宽度）</p>
+<p class="migline"><b>接入点：</b>SComboBox::SetMenuContentWidgetToFocus/ComboBoxMenuContent(SBox)</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>做成项目 UI 插件组件，避免再改 Slate。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_SLATE_FIX_COMBO_BOX_LIST_WIDTH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_SLATE_SYMMETRIC_SAFE_ZONE">
+<h3 class="mname">XD_EXT_SLATE_SYMMETRIC_SAFE_ZONE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:389</span>
+</div>
+<p class="zh">支持对称安全区（刘海屏左右对称适配，UE4-6438）</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_EXT_OVERRIDE_SAFE_ZONE">XD_EXT_OVERRIDE_SAFE_ZONE</a></p>
+<p class="en">源码注释：Support symmetric safe zone Jira: https://xindong.atlassian.net/browse/UE4-6438</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Widgets/Layout/SSafeZone.cpp</li><li>Source/Runtime/Slate/Public/Widgets/Layout/SSafeZone.h</li><li>Source/Runtime/UMG/Private/Components/SafeZone.cpp</li><li>Source/Runtime/UMG/Public/Components/SafeZone.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Slate/Public/Widgets/Layout/SSafeZone.h（SafeAreaScale、PadLeft/Right/Top/Bottom、SetGlobalSafeZoneScale、WITH_EDITOR OverrideScreenSize/OverrideDpiScale）；UE5 无对称（左右取最大值）语义（grep Symmetric 无结果）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 提供按边缩放/忽略能力，但没有 XD 的左右对称化</p>
+<p class="migline"><b>落地方式：</b>项目插件内派生 SSafeZone/USafeZone，计算对称边距后设置 SafeAreaScale/Pad*</p>
+<p class="migline"><b>接入点：</b>SSafeZone::SetSafeAreaScale/SetSidesToPad · FSlateApplication::GetSafeZoneSize</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>把对称计算下沉到项目 UI 组件。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_SLATE_SYMMETRIC_SAFE_ZONE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_OVERRIDE_SAFE_ZONE">
+<h3 class="mname">XD_EXT_OVERRIDE_SAFE_ZONE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:393</span>
+</div>
+<p class="zh">提供控制台变量覆盖安全区（SafeZone）尺寸（UE4-6555）</p>
+<p class="en">源码注释：Supply Console variables to override SafeZone padding size. Jira:https://xindong.atlassian.net/browse/UE4-6555</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/Android/AndroidApplication.cpp</li><li>Source/Runtime/ApplicationCore/Private/GenericPlatform/GenericApplication.cpp</li><li>Source/Runtime/ApplicationCore/Private/IOS/IOSApplication.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/GenericPlatform/GenericApplication.cpp:111-115（SafeZone.EnableOverrides、SafeZone.Ratio.Left/Top/Right/Bottom）；IOSApplication.cpp:250-253（SafeZone.Landscape.Left/Top/Right/Bottom）；SSafeZone::SetGlobalSafeZoneScale</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已内建 SafeZone 覆盖 CVar，且名称与 XD 一致</p>
+<p class="migline"><b>落地方式：</b>直接用 SafeZone.EnableOverrides + SafeZone.Ratio.* 控制台变量</p>
+<p class="migline"><b>接入点：</b>SafeZone.EnableOverrides · SafeZone.Ratio.Left/Top/Right/Bottom</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>删除；QA 机型调试改用引擎自带 SafeZone CVar。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_OVERRIDE_SAFE_ZONE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA">
+<h3 class="mname">XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:399</span>
+</div>
+<p class="zh">粒子系统轴向对齐相机方向（需 Emitter 开启 bUseLocalSpace，UE4-6540）</p>
+<p class="en">源码注释：Orients the axis of the ParticleSystemComponent aligned with the ComponentToCamera direction, see ESystemAlignAxis for detail. You must enable the bUseLocalSpace of all emitters to ensure for this to work correctly. https://xindong.atlassian.net/wiki/spaces/ENUE4/pages/1214554852 Jira:https://xindong.atlassian.net/browse/UE4-6540</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Particles/FastParticleSystemComponent.h</li><li>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</li><li>Source/Runtime/Engine/Classes/Particles/ParticleSystemComponent.h</li><li>Source/Runtime/Engine/Private/Particles/FastParticleSystem/FastParticleSystemComponent.cpp</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 只有 Z 轴对齐：ParticleSystem.h:307 bOrientZAxisTowardCamera + ParticleSystemComponent.cpp:2390 OrientZAxisTowardCamera；无 XD 的 ESystemAlignAxis/AlineAxisWithCamera 任意轴</p>
+<p class="migline"><b>覆盖说明：</b>能力有但语义窄</p>
+<p class="migline"><b>落地方式：</b>轴向对齐逻辑可放项目 PSC 子类；但模板开关属性需在 UParticleSystem 加 schema 或走项目侧特化映射</p>
+<p class="migline"><b>接入点：</b>UParticleSystem 新增 AlineAxisWithCamera 枚举属性 · UParticleSystemComponent::TickComponent 对齐调用处</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>新增 UPROPERTY 会动资产 schema，建议以项目侧模板映射表替代属性</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_EXCLUDE_EMITTERS_FROM_PLATFORM">
+<h3 class="mname">XD_EXT_EXCLUDE_EMITTERS_FROM_PLATFORM <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:403</span>
+</div>
+<p class="zh">支持按平台（移动/桌面）排除指定粒子 Emitter（UE4-6822）</p>
+<p class="en">源码注释：Support to exclude particle emitters from platform (mobile or desktop). Jira:https://xindong.atlassian.net/browse/UE4-6822</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Particles/ParticleEmitter.h</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 配置化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 UParticleSystem::Serialize 内置 DetailModeBitmask 裁剪 + fx.PruneEmittersOnCookByDetailMode/DeviceProfile r.DetailMode（无平台排除标记）</p>
+<p class="migline"><b>覆盖说明：</b>只能按 detail mode 裁剪，非按平台</p>
+<p class="migline"><b>落地方式：</b>优先用 DeviceProfile+DetailModeBitmask 达成近似；若要精确平台排除，需在 UParticleEmitter 加 bExcludeFromMobile/Desktop（资产 schema）</p>
+<p class="migline"><b>接入点：</b>UParticleEmitter 平台排除属性 · UParticleSystem::Serialize Cook 裁剪处</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>涉及 Cook 资产裁剪确定性，优先 config 化替代</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_EXCLUDE_EMITTERS_FROM_PLATFORM">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_PREVIEW_RETAINER_BOX_EFFECT_IN_EDITOR">
+<h3 class="mname">XD_EXT_PREVIEW_RETAINER_BOX_EFFECT_IN_EDITOR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:407</span>
+</div>
+<p class="zh">编辑器中支持预览 RetainerBox 效果（UE4-7060）</p>
+<p class="en">源码注释：Support to preview retainer box effect in editor. Jira: https://xindong.atlassian.net/browse/UE4-7060</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/UMG/Private/Components/RetainerBox.cpp</li><li>Source/Runtime/UMG/Private/Slate/SRetainerWidget.cpp</li><li>Source/Runtime/UMG/Public/Components/RetainerBox.h</li><li>Source/Runtime/UMG/Public/Slate/SRetainerWidget.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/UMG/Public/Components/RetainerBox.h:171 bShowEffectsInDesigner；Public/Slate/SRetainerWidget.h:76-78 SetIsDesignTime/SetShowEffectsInDesigner；Private/Slate/SRetainerWidget.cpp:597 GEnableDesignerRetainedRendering</p>
+<p class="migline"><b>覆盖说明：</b>UE5 编辑器已支持 RetainerBox 效果预览</p>
+<p class="migline"><b>落地方式：</b>无需处理（编辑器默认开启）</p>
+<p class="migline"><b>建议：</b>删除。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_PREVIEW_RETAINER_BOX_EFFECT_IN_EDITOR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES">
+<h3 class="mname">XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 5</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:410</span>
+</div>
+<p class="zh">支持多个 PSO 缓存文件，实现 PSO 缓存热更</p>
+<p class="rels">关联宏：<a class="rel" href="opt.html#XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL">XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL</a> <a class="rel" href="misc2.html#XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE">XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</a></p>
+<p class="en">源码注释：Support multiple PSO cache files, which is used to hotupdate the PSO cache files.</p>
+<details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Commandlets/ShaderPipelineCacheToolsCommandlet.cpp</li><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Runtime/RHI/Private/PipelineFileCache.cpp</li><li>Source/Runtime/RHI/Private/Windows/WindowsDynamicRHI.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/RenderCore/Public/ShaderPipelineCache.h:260-272 ShaderCacheTasks(TMap&lt;FString,FShaderPipelineCacheTask&gt;)/PendingPrecompilePSOCacheKeys；头注释 per-scalability bucket 多文件；UnrealEd.MergeShaderPipelineCaches 命令</p>
+<p class="migline"><b>覆盖说明：</b>UE5.8 已支持多 PSO 缓存文件与合并</p>
+<p class="migline"><b>落地方式：</b>引擎已处理，Cook/热更侧配置多 cache</p>
+<p class="migline"><b>建议：</b>直接删除，热更多缓存改用原生多 task + 合并命令</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_UE5_WIDGET_PIXEL_SNAPPING">
+<h3 class="mname">XD_EXT_UE5_WIDGET_PIXEL_SNAPPING <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 13</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:414</span>
+</div>
+<p class="zh">移植 UE5 的 UWidget 像素对齐（Pixel Snapping）实现（UE4-7130）</p>
+<p class="rels">关联宏：<a class="rel" href="rendering.html#XD_DISABLE_SLATE_PIXEL_SNAPPING">XD_DISABLE_SLATE_PIXEL_SNAPPING</a></p>
+<p class="en">源码注释：Support UE5 UWidget pixel snapping Jira: https://xindong.atlassian.net/browse/UE4-7130</p>
+<details class="usage"><summary>引用位置（13 处 / 前 8 个文件）</summary><ul><li>Plugins/Media/MediaIOFramework/Source/MediaIOEditor/Public/Widgets/SMediaPermutationsSelector.inl</li><li>Source/Runtime/Slate/Private/Widgets/Views/SHeaderRow.cpp</li><li>Source/Runtime/SlateCore/Private/FastUpdate/WidgetProxy.cpp</li><li>Source/Runtime/SlateCore/Private/Rendering/DrawElements.cpp</li><li>Source/Runtime/SlateCore/Private/Widgets/SWidget.cpp</li><li>Source/Runtime/SlateCore/Public/FastUpdate/WidgetProxy.h</li><li>Source/Runtime/SlateCore/Public/Rendering/DrawElements.h</li><li>Source/Runtime/SlateCore/Public/Widgets/DeclarativeSyntaxSupport.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/SlateCore/Public/Widgets/WidgetPixelSnapping.h:14 EWidgetPixelSnapping；UMG/Public/Components/Widget.h:445/613-616；SlateCore/Public/Widgets/SWidget.h:1307-1310；SlateCore/Private/FastUpdate/WidgetProxy.cpp:286-303</p>
+<p class="migline"><b>覆盖说明：</b>XD 从 UE5 移植的能力 UE5 原生具备</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>删除；项目 5.8 直接用引擎 EWidgetPixelSnapping。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_UE5_WIDGET_PIXEL_SNAPPING">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_MESH_PARTICLES_USE_STATIC_MESH_MIN_LOD">
+<h3 class="mname">XD_MISC_MESH_PARTICLES_USE_STATIC_MESH_MIN_LOD <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">粒子与特效</span>
+<span class="badge">Lu Xun</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:418</span>
+</div>
+<p class="zh">用 StaticMesh 的 MinLOD 控制网格粒子 LOD（即使 fx.FXAllowParticleMeshLODs=0，UE4-7141）</p>
+<p class="en">源码注释：Use UStaticMesh MinLOD to control the mesh LOD of mesh particles, even if fx.FXAllowParticleMeshLODs = 0. Jira: https://xindong.atlassian.net/browse/UE4-7141</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 ParticleSystemRender.cpp:1157-1165 GetMeshLOD 已有 StaticMesh-&gt;GetMinLODIdx() 钳制逻辑，但被 if(!InOwnerProxy || !GFXAllowParticleMeshLODs) 提前返回（cvar fx.FXAllowParticleMeshLODs 默认 0，:82）</p>
+<p class="migline"><b>覆盖说明：</b>能力有，被开关挡住</p>
+<p class="migline"><b>落地方式：</b>打开 fx.FXAllowParticleMeshLODs（DefaultEngine.ini/DeviceProfile）+ 资产 StaticMesh MinLOD 设置</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>直接配置开启 UE5 原生路径，无需移植 XD 代码</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_MESH_PARTICLES_USE_STATIC_MESH_MIN_LOD">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_PSO_PRECOMPILE_LLM_TAG">
+<h3 class="mname">XD_MISC_PSO_PRECOMPILE_LLM_TAG <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">Lu Xun</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:422</span>
+</div>
+<p class="zh">在 LLM 中把 PSO 预编译内存与运行时 PSO 内存分开统计（TORCHLIGHT-251367）</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES">XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES</a></p>
+<p class="en">源码注释：Separate memory caused by PSO precompilation from runtime PSO memory in LLM. Jira: https://xindong.atlassian.net/browse/TORCHLIGHT-251367</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/LowLevelMemTracker.cpp</li><li>Source/Runtime/Core/Public/HAL/LowLevelMemTracker.h</li><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Public/HAL/LowLevelMemTracker.h:221 有 PSO 标签，但无 PSO_U 预编译独立标签</p>
+<p class="migline"><b>覆盖说明：</b>缺少预编译/运行时 PSO 分离统计</p>
+<p class="migline"><b>落地方式：</b>打标点在 RenderCore ShaderPipelineCache，须引擎新增 tag+插桩</p>
+<p class="migline"><b>接入点：</b>ELLMTag 新增 PSO_U · FShaderPipelineCache 内 LLM_SCOPE</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>保留 PSO 预编译独立 LLM 标签</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_PSO_PRECOMPILE_LLM_TAG">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Peng Tian Cheng</h2>
+<article class="macro" id="XD_MISC_LLM_GET_SMAPS_MEM">
+<h3 class="mname">XD_MISC_LLM_GET_SMAPS_MEM <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">Peng Tian Cheng</span>
+<span class="badge use">源码引用 6</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:426</span>
+</div>
+<p class="zh">Android 额外读取 /proc/self/smaps 内存数据（补充 LLM 统计）</p>
+<p class="en">源码注释：Get SMAPS MEM additionally For android because LLM use incorrect mem data from status now</p>
+<details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Runtime/Core/Private/Android/AndroidPlatformMemory.cpp</li><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li><li>Source/Runtime/Core/Private/HAL/LowLevelMemTracker.cpp</li><li>Source/Runtime/Core/Public/Android/AndroidPlatformMemory.h</li><li>Source/Runtime/Core/Public/GenericPlatform/GenericPlatformMemory.h</li><li>Source/Runtime/Core/Public/HAL/LowLevelMemTracker.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/Android/AndroidPlatformMemory.cpp:180 读 /proc/self/smaps_rollup；:728 CVar android.MemoryProbeInterval</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已会读 smaps，但未作为 LLM 标签</p>
+<p class="migline"><b>落地方式：</b>UE5 已读 smaps；若要 LLM SmapsPss 标签需引擎补丁</p>
+<p class="migline"><b>接入点：</b>FAndroidPlatformMemory smaps 读取 · ELLMTag SmapsPss</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>复用 UE5 smaps 读取，按需补 LLM 标签</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_LLM_GET_SMAPS_MEM">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_IOS_SAVE_MEMREPORT_AND_LLMCSV_IN_PUBLIC_PATH">
+<h3 class="mname">XD_MISC_IOS_SAVE_MEMREPORT_AND_LLMCSV_IN_PUBLIC_PATH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">内存与性能分析</span>
+<span class="badge">Peng Tian Cheng</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:431</span>
+</div>
+<p class="zh">iOS 的 MemReport 与 LLM CSV 保存到公共目录（NSDocumentDirectory，UE4-5958）</p>
+<p class="en">源码注释：Support Memreport files and LLM CSVs saving in public path for ios (public path: NSDocumentDirectory, private path: NSLibraryDirectory) Jira: https://xindong.atlassian.net/browse/UE4-5958 TODO: Move FPaths::ProjectSavedDir from NSLibraryDirectory to NSDocumentDirectory.</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/LowLevelMemTracker.cpp</li><li>Source/Runtime/Engine/Private/UnrealEngine.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 iOS 保存路径策略未核实（FPaths::ProjectSavedDir/Apple 目录）</p>
+<p class="migline"><b>覆盖说明：</b>证据不足</p>
+<p class="migline"><b>落地方式：</b>输出目录在 Engine/Core，可加命令行开关切公共目录</p>
+<p class="migline"><b>接入点：</b>UEngine::HandleMemReportCommand 路径 · FLLMCsvWriter 目录</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>iOS 公共目录导出需重打路径补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_IOS_SAVE_MEMREPORT_AND_LLMCSV_IN_PUBLIC_PATH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_SKELMESH_IMPORT_DEFAULT_SETTING">
+<h3 class="mname">XD_SKELMESH_IMPORT_DEFAULT_SETTING <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Peng Tian Cheng</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:433</span>
+</div>
+<p class="zh">骨骼网格导入使用项目默认设置（统一美术导入参数）</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Editor/UnrealEd/Classes/Factories/FbxImportUI.h</li><li>Source/Editor/UnrealEd/Private/Fbx/FbxFactory.cpp</li><li>Source/Editor/UnrealEd/Private/Fbx/FbxSkeletalMeshImport.cpp</li><li>Source/Runtime/Engine/Private/SkeletalMesh.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Interchange 导入框架 + FbxImportUI(config 属性)（Engine/Source/Editor/UnrealEd/Classes/Factories/FbxImportUI.h:178-209）可承载项目默认值</p>
+<p class="migline"><b>覆盖说明：</b>有配置化机制</p>
+<p class="migline"><b>落地方式：</b>Interchange Pipeline/项目默认导入设置</p>
+<p class="migline"><b>接入点：</b>UInterchangePipelineBase · UFbxImportUI config 字段</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>优先用 Interchange Pipeline，避免改引擎导入逻辑</p>
+<p class="migline"><a href="../migration/matrix.html#XD_SKELMESH_IMPORT_DEFAULT_SETTING">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX">
+<h3 class="mname">XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Peng Tian Cheng</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:435</span>
+</div>
+<p class="zh">支持只对指定材质索引应用参数覆盖</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/MeshComponent.h</li><li>Source/Runtime/Engine/Private/Components/MeshComponent.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Classes/Components/MeshComponent.h:210 SetScalarParameterValueOnMaterials(FName,float) 无 MatIndex 参数（XD 版为 const int MatIndex=-1）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 未提供按材质索引覆盖参数</p>
+<p class="migline"><b>落地方式：</b>项目模块封装 helper：GetMaterial(Index) + MID SetScalarParameterValue/SetVectorParameterValue，无需改引擎 API</p>
+<p class="migline"><b>建议：</b>纯项目侧工具函数即可替代引擎 API 扩展</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EMULATOR_EXTRA_INI">
+<h3 class="mname">XD_EMULATOR_EXTRA_INI <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Android / iOS / Mac</span>
+<span class="badge">Peng Tian Cheng</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:437</span>
+</div>
+<p class="zh">模拟器运行包时加载额外的 ini 覆盖配置</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Core/Private/Misc/ConfigCacheIni.cpp</li><li>Source/Runtime/Core/Public/Android/AndroidPlatformMisc.h</li><li>Source/Runtime/Core/Public/GenericPlatform/GenericPlatformMisc.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime 无 IsEmulator；仅 Runtime/Android/AndroidRuntimeSettings/Classes/AndroidRuntimeSettings.h:485 bForceEmulatorProfileSelectionInNonShippingBuilds</p>
+<p class="migline"><b>覆盖说明：</b>无 Emulator ini 目录叠加</p>
+<p class="migline"><b>落地方式：</b>可用 DeviceProfile + -deviceprofile 命令行逼近；Emulator 目录 ini 叠加需引擎 hook</p>
+<p class="migline"><b>接入点：</b>FConfigCacheIni::LoadGlobalIniFile 平台路径 · FAndroidMisc::IsEmulator</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>建议改用 DeviceProfile 机制替代 ini 覆盖</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EMULATOR_EXTRA_INI">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_SCREENRESOLUTION_SETTING_FOR_LIMITED_MONITOR">
+<h3 class="mname">XD_PC_SCREENRESOLUTION_SETTING_FOR_LIMITED_MONITOR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Peng Tian Cheng</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:439</span>
+</div>
+<p class="zh">受限显示器（小屏/特殊分辨率）下的屏幕分辨率设置处理</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 引擎源码无引用（0 处）</p>
+<p class="migline"><b>覆盖说明：</b>受限显示器分辨率处理，实现位置不明</p>
+<p class="migline"><b>落地方式：</b>项目侧在设置分辨率时校验显示器支持列表（FMonitorInfo）</p>
+<p class="migline"><b>接入点：</b>FDisplayMetrics/FMonitorInfo</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>确认 XD 实现位置后迁到项目侧</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_SCREENRESOLUTION_SETTING_FOR_LIMITED_MONITOR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Wang Xiao Bo</h2>
+<article class="macro" id="XD_EXT_SUPPORT_DUMP_FNAME">
+<h3 class="mname">XD_EXT_SUPPORT_DUMP_FNAME <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:442</span>
+</div>
+<p class="zh">支持 Dump FName 值（调试名称表）</p>
+<p class="en">源码注释：support dump FName values</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Core/Public/UObject/NameTypes.h</li><li>Source/Runtime/Engine/Private/World.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Public/UObject/NameTypes.h:340 FName::GetName(TCHAR(&amp;)[NAME_SIZE]) 已原生提供</p>
+<p class="migline"><b>覆盖说明：</b>核心能力已具备</p>
+<p class="migline"><b>落地方式：</b>DumpFName 控制台命令放项目模块，调用 FName::GetName</p>
+<p class="migline"><b>建议：</b>直接使用 UE5 FName::GetName</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_SUPPORT_DUMP_FNAME">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_SUPPORT_NO_BOOTSTRAP_EXE_IN_PACKAGESETTINGS">
+<h3 class="mname">XD_EXT_SUPPORT_NO_BOOTSTRAP_EXE_IN_PACKAGESETTINGS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:445</span>
+</div>
+<p class="zh">编辑器 PackagingSettings 支持 nobootstrapexe 配置</p>
+<p class="en">源码注释：support nobootstrapexe config in editor</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/MainFrame/Private/Frame/MainFrameActions.cpp</li><li>Source/Editor/UnrealEd/Classes/Settings/ProjectPackagingSettings.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Developer/DeveloperToolSettings/Classes/Settings/ProjectPackagingSettings.h 无 bootstrapexe 字段（grep bBuildBootstrapExe 无结果）；UAT 侧参数仍存在 Programs/AutomationTool/AutomationUtils/ProjectParams.cs:948 -nobootstrapexe</p>
+<p class="migline"><b>覆盖说明：</b>UE5 只有命令行侧能力</p>
+<p class="migline"><b>落地方式：</b>构建脚本直接传 -nobootstrapexe；如需编辑器 UI 则由项目 Settings 插件承载</p>
+<p class="migline"><b>接入点：</b>UProjectPackagingSettings 新字段或项目 Settings · FMainFrameActionCallbacks 拼 UAT 参数</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>最省事：构建脚本直接带 -nobootstrapexe，不必往引擎加字段</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_SUPPORT_NO_BOOTSTRAP_EXE_IN_PACKAGESETTINGS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_ALLOW_REQUEST_UI_UPDATE_DELEGATE_IN_CPP">
+<h3 class="mname">XD_MISC_ALLOW_REQUEST_UI_UPDATE_DELEGATE_IN_CPP <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">UI / Slate / UMG</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:448</span>
+</div>
+<p class="zh">允许 C++ 侧注册请求 UI 更新的委托</p>
+<p class="en">源码注释：...</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/GameFramework/GameUserSettings.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Classes/GameFramework/GameUserSettings.h:652 RequestUIUpdate()（公开）、:685 OnGameUserSettingsVideoRevert（公开）；:707 OnGameUserSettingsUINeedsUpdate 仍为 private UPROPERTY</p>
+<p class="migline"><b>覆盖说明：</b>UE5 公开了 RequestUIUpdate 与 VideoRevert 委托，但 UI 更新委托 C++ 侧仍不可绑定</p>
+<p class="migline"><b>落地方式：</b>需要访问 UGameUserSettings 私有委托</p>
+<p class="migline"><b>接入点：</b>UGameUserSettings::OnGameUserSettingsUINeedsUpdate 可见性/访问器</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>优先改用公开的 OnGameUserSettingsVideoRevert/RequestUIUpdate；确需 C++ 绑定再加访问器。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_ALLOW_REQUEST_UI_UPDATE_DELEGATE_IN_CPP">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PC_MISC_GET_HW_CURSORS">
+<h3 class="mname">XD_PC_MISC_GET_HW_CURSORS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:451</span>
+</div>
+<p class="zh">PC 支持获取/切换硬件光标</p>
+<p class="en">源码注释：allow get hardware cursors on pc</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/GameViewportClient.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Classes/Engine/GameViewportClient.h:645 SetHardwareCursor；Runtime/ApplicationCore/Public/GenericPlatform/ICursor.h:80-86 CreateCursorFromFile/RGBABuffer</p>
+<p class="migline"><b>覆盖说明：</b>UE5 原生支持自定义硬件光标</p>
+<p class="migline"><b>落地方式：</b>项目用 SetHardwareCursor/ICursor 设置自定义硬件光标</p>
+<p class="migline"><b>接入点：</b>UGameViewportClient::SetHardwareCursor</p>
+<p class="migline"><b>建议：</b>UE5 已覆盖，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PC_MISC_GET_HW_CURSORS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_STRICT_DS_CONTROLLER_SELECT">
+<h3 class="mname">XD_MISC_STRICT_DS_CONTROLLER_SELECT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">输入与手柄</span>
+<span class="badge">Wang Xiao Bo</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:454</span>
+</div>
+<p class="zh">Android 严格 DS（DS4/DualSense）手柄识别选择</p>
+<p class="en">源码注释：strict DS controller select on android.</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/Android/AndroidInputInterface.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Build/Android/Java/src/com/epicgames/unreal/GameActivity.java.template:7246-7251（设备 VID/PID 白名单表 DeviceInfoData）、:7277-7326 AndroidThunkJava_GetInputDeviceInfo（返回 vendorId/productId）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已向项目暴露 VID/PID，但没有 XD 的严格 DS4/DualSense 判定</p>
+<p class="migline"><b>落地方式：</b>项目侧用 AndroidThunkJava_GetInputDeviceInfo 的 VID/PID 做严格识别，必要时在项目 Android Java 源扩展</p>
+<p class="migline"><b>接入点：</b>AndroidThunkJava_GetInputDeviceInfo · FAndroidInputInterface 设备映射</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>把判定规则放到项目输入模块/配置表。</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_STRICT_DS_CONTROLLER_SELECT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Han Shu Bin</h2>
+<article class="macro" id="XD_EXT_ALLOW_USE_ORIGIN_PROXY_MATERIAL">
+<h3 class="mname">XD_EXT_ALLOW_USE_ORIGIN_PROXY_MATERIAL <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">光照、阴影与材质</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:458</span>
+</div>
+<p class="zh">网格处理器与 MarkRelevance 允许使用原始 Proxy 材质</p>
+<p class="en">源码注释：Allow use origin proxy material in mash processor and markrelevance.</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Engine/Private/StaticMeshRender.cpp</li><li>Source/Runtime/Engine/Public/MeshBatch.h</li><li>Source/Runtime/Renderer/Private/DepthRendering.cpp</li><li>Source/Runtime/Renderer/Private/SceneVisibility.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Engine/Public/MeshBatch.h:174-182 只有 MaterialRenderProxy，grep MaterialWithFullInfo 无结果；该字段是 XD 为 DisableColorWrite/自定义 Stencil 引入的</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无 MeshBatch 原始 Proxy 材质字段</p>
+<p class="migline"><b>落地方式：</b>需 FMeshBatch 新字段并改各 MeshPassProcessor/MarkRelevance 使用点，属渲染数据流</p>
+<p class="migline"><b>接入点：</b>FMeshBatch 新增 MaterialWithFullInfo · Runtime/Renderer/Private/DepthRendering.cpp · Runtime/Renderer/Private/SceneVisibility.cpp MarkRelevance</p>
+<p class="migline"><b>机制：</b>Schema</p>
+<p class="migline"><b>建议：</b>仅当继续保留 XD 的 DisableColorWrite/自定义 Stencil 特性时才一并移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_ALLOW_USE_ORIGIN_PROXY_MATERIAL">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_WINDOWS_FORCE_EXIT_WITH_CRASH">
+<h3 class="mname">XD_MISC_WINDOWS_FORCE_EXIT_WITH_CRASH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:461</span>
+</div>
+<p class="zh">Windows 平台强制以崩溃方式退出以生成崩溃报告</p>
+<p class="en">源码注释：support crash report on windows platform</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Core/Private/Windows/WindowsErrorOutputDevice.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/Windows/WindowsErrorOutputDevice.cpp:90 仅 FPlatformMisc::RequestExit(true)，未强制崩溃</p>
+<p class="migline"><b>覆盖说明：</b>UE5 不强制崩溃</p>
+<p class="migline"><b>落地方式：</b>位于 Windows ErrorOutputDevice，须引擎补丁</p>
+<p class="migline"><b>接入点：</b>FWindowsErrorOutputDevice::Serialize/HandleError</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>保留 Windows 强制崩溃出报告的补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_WINDOWS_FORCE_EXIT_WITH_CRASH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_SKELETAL_MESH_COMPONENT_ADD_DELEGATES">
+<h3 class="mname">XD_MISC_SKELETAL_MESH_COMPONENT_ADD_DELEGATES <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:464</span>
+</div>
+<p class="zh">骨骼网格组件 Begin/EndPlay、激活/失活增加委托</p>
+<p class="en">源码注释：Skeletal mesh begin play &amp; end play &amp; active &amp; deactive add delegates.</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Components/SkeletalMeshComponent.cpp</li><li>Source/Runtime/Engine/Private/XDRuntimeExtension/XDRuntimeExtension.cpp</li><li>Source/Runtime/Engine/Public/XDRuntimeExtension/XDRuntimeExtension.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无 XDRuntimeDelegates 等价静态 multicast</p>
+<p class="migline"><b>覆盖说明：</b>未上游</p>
+<p class="migline"><b>落地方式：</b>用 UActorComponent::OnComponentActivated/OnComponentDeactivated + 项目子类</p>
+<p class="migline"><b>接入点：</b>UActorComponent::OnComponentActivated · OnComponentDeactivated · USkeletalMeshComponent BeginPlay/EndPlay</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>引擎留扩展点，逻辑放项目</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_SKELETAL_MESH_COMPONENT_ADD_DELEGATES">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_EXT_ANIMATION_TICK_OPTION_CONTEXT_LOG">
+<h3 class="mname">XD_EXT_ANIMATION_TICK_OPTION_CONTEXT_LOG <span class="v off">= 0（关闭）</span></h3>
+<div class="badges">
+<span class="badge topic">世界、植被、地形与动画</span>
+<span class="badge">Han Shu Bin</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:467</span>
+</div>
+<p class="zh">动画 Tick 优化的上下文日志（默认关闭）</p>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>默认 0 且 0 引用</p>
+<p class="migline"><b>覆盖说明：</b>未启用</p>
+<p class="migline"><b>落地方式：</b>无需处理</p>
+<p class="migline"><b>建议：</b>调试宏，默认关闭，删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_EXT_ANIMATION_TICK_OPTION_CONTEXT_LOG">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<h2 class="author">Yu Hang</h2>
+<article class="macro" id="XD_MSIC_INI_COOK_BLACKLIST">
+<h3 class="mname">XD_MSIC_INI_COOK_BLACKLIST <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:471</span>
+</div>
+<p class="zh">改进 Cook ini 黑名单功能</p>
+<p class="en">源码注释：Improve UE4 Cook ini black list functionality.</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Editor/UnrealEd/Classes/CookOnTheSide/CookOnTheFlyServer.h</li><li>Source/Editor/UnrealEd/Private/Commandlets/CookCommandlet.cpp</li><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Editor/UnrealEd/Private/CookerSettings.cpp</li><li>Source/Editor/UnrealEd/Public/CookerSettings.h</li><li>Source/Runtime/Core/Private/Misc/ConfigCacheIni.cpp</li><li>Source/Runtime/Core/Public/Misc/ConfigCacheIni.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Editor/UnrealEd/Classes/CookOnTheSide/CookOnTheFlyServer.h:79 明确的 `//unused = 0x00080000`（正是 XD 的 AllowReCookByIniOtherThanWhitelist 位）；UE5 CookOnTheFlyServer.cpp:7775 IniSettingsOutOfDate 已改为 UE::ConfigAccessTracking 全量比对，无 DiffIniWhitelist/per-key 白名单</p>
+<p class="migline"><b>覆盖说明：</b>机制被整体替换，XD 特性无对应物</p>
+<p class="migline"><b>落地方式：</b>Cook 失效判定在 cooker</p>
+<p class="migline"><b>接入点：</b>UCookOnTheFlyServer::IniSettingsOutOfDate · ECookInitializationFlags 失效位（0x00080000 现为 unused）</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>UE5 改为 ConfigAccessTracking 全量 hash 比对，原白名单策略失效；若不重做，增量 Cook 会因无关 ini 变更被整体作废</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MSIC_INI_COOK_BLACKLIST">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MSIC_GENERIC_STACK_TRACE">
+<h3 class="mname">XD_MSIC_GENERIC_STACK_TRACE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">运行时接口与诊断</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:474</span>
+</div>
+<p class="zh">通用平台堆栈回溯信息，支持自定义深度</p>
+<p class="en">源码注释：Add Generic Platform Stack Trace Message with user defined depth</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Core/Private/GenericPlatform/GenericPlatformStackWalk.cpp</li><li>Source/Runtime/Core/Public/GenericPlatform/GenericPlatformStackWalk.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Public/GenericPlatform/GenericPlatformStackWalk.h:284 StackWalkAndDumpEx（无 XD 的 GetStackTrace(FString) 深栈接口）</p>
+<p class="migline"><b>覆盖说明：</b>有堆栈回溯能力但接口不同</p>
+<p class="migline"><b>落地方式：</b>基于 FPlatformStackWalk::StackWalkAndDumpEx 封装，放项目崩溃上报模块</p>
+<p class="migline"><b>接入点：</b>FPlatformStackWalk::StackWalkAndDumpEx · ThreadStackWalkAndDump</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>引擎留封装点，逻辑放项目上报模块</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MSIC_GENERIC_STACK_TRACE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_DUMP_COOKED_MD5">
+<h3 class="mname">XD_MISC_DUMP_COOKED_MD5 <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:478</span>
+</div>
+<p class="zh">把 Cook 产物 Hash 从 DevelopmentAssetRegistry.bin 导出，供增量打包比对（-XDDumpCookedMD5）</p>
+<p class="rels">关联宏：<a class="rel" href="opt.html#XD_OPT_ITERATIVE_PAK">XD_OPT_ITERATIVE_PAK</a></p>
+<p class="en">源码注释：Dump cooked hash from saved/cooked/{Platform}/{Project}/Metadata/DevelopmentAssetRegistry.bin into Engine/Program/AutomationTool/Saved/ This would allow XD_OPT_ITERATIVE_PAK to operate faster. This feature requires -XDDumpCookedMD5 parameters to pass in UAT when cooking</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Commandlets/AssetRegistryGenerator.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 grep XDDumpCookedMD5 无结果；Editor/UnrealEd/Private/Commandlets/AssetRegistryGenerator.cpp:2997 仅注释 AssetPackageData-&gt;CookedHash is assigned during CookByTheBookFinished，无 CSV 导出</p>
+<p class="migline"><b>覆盖说明：</b>增量 Pak 所需的 hash 清单在 UE5 无导出工具</p>
+<p class="migline"><b>落地方式：</b>项目 Commandlet 解析 Metadata/DevelopmentAssetRegistry.bin 的 AssetPackageData.CookedHash 导出 CSV</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>改成项目侧 Commandlet 读 DevelopmentAssetRegistry.bin，即可服务增量 Pak 比对，无需改引擎</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_DUMP_COOKED_MD5">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_SAVE_PACKAGE_MOVE_FAILURE_ERR_CODE">
+<h3 class="mname">XD_MISC_SAVE_PACKAGE_MOVE_FAILURE_ERR_CODE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:481</span>
+</div>
+<p class="zh">保存包体 I/O 失败时输出错误码</p>
+<p class="en">源码注释：Dump Error Code when facing a I/O failure on saving packages</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/UObject/SavePackage.cpp</li><li>Source/Runtime/CoreUObject/Private/UObject/SavePackage2.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/CoreUObject/Private/UObject/SavePackage2.cpp:3457/3502 仍只打印 &quot;Error saving '%s'&quot;，无 FPlatformMisc::GetLastError()/GetSystemErrorMessage 错误码</p>
+<p class="migline"><b>覆盖说明：</b>UE5.8 未修</p>
+<p class="migline"><b>落地方式：</b>保存失败日志在 SavePackageUObject</p>
+<p class="migline"><b>接入点：</b>SavePackage/SavePackage2 移动失败分支</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>小改动高收益（区分磁盘满/权限/文件占用），建议常开补丁</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_SAVE_PACKAGE_MOVE_FAILURE_ERR_CODE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR">
+<h3 class="mname">XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:484</span>
+</div>
+<p class="zh">Pak 致命错误时给玩家输出引导性日志/提示</p>
+<p class="en">源码注释：Add guiding fatal log to player on Pak failure</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Developer/PakFileUtilities/Private/PakFileUtilities.cpp</li><li>Source/Developer/PakFileUtilities/Private/SignedArchiveWriter.cpp</li><li>Source/Runtime/PakFile/Private/IPlatformFilePak.cpp</li><li>Source/Runtime/PakFile/Public/IPlatformFilePak.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 有 FCoreDelegates::PakFileMountFailedDelegate（CoreDelegates.h:152）与 FPakPlatformFile::bMountFailOnMissingUtoc（Runtime/PakFile/Public/IPlatformFilePak.h:2089），但无 pakchunk 损坏的玩家引导文案/崩溃处理</p>
+<p class="migline"><b>覆盖说明：</b>机制在，文案不在</p>
+<p class="migline"><b>落地方式：</b>项目热更/启动器模块 bind PakFileMountFailedDelegate，自行决定弹窗、文案与退出策略</p>
+<p class="migline"><b>接入点：</b>FCoreDelegates::PakFileMountFailedDelegate</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>玩家引导属运营/启动器逻辑，全部搬项目侧，引擎不再改 WindowsErrorOutputDevice</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_PAK_FAIL_NO_PREMOUNT">
+<h3 class="mname">XD_MISC_PAK_FAIL_NO_PREMOUNT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:488</span>
+</div>
+<p class="zh">Pak 相关失败时阻止预挂载，交给项目热更模块做完整性校验</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_PRE_MOUNT_PAK">XD_PRE_MOUNT_PAK</a> <a class="rel" href="misc1.html#XD_MISC_ADD_PAK_MOUNT_FAIL_DELEGATE">XD_MISC_ADD_PAK_MOUNT_FAIL_DELEGATE</a></p>
+<p class="en">源码注释：Turn All Pak related failure into premount semaphore increase to large number, so that we will not premount pak, and let project hot patch module double check pak integrity</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Core/Private/Misc/CoreDelegates.cpp</li><li>Source/Runtime/Core/Public/Misc/CoreDelegates.h</li><li>Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading.cpp</li><li>Source/Runtime/PakFile/Private/IPlatformFilePak.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 无预挂载阶段（grep bIsInInitPreMountPakProcedure / XDPreMountStatusReport 无结果），CoreDelegates.h:118-155 仅标准挂载委托</p>
+<p class="migline"><b>覆盖说明：</b>依赖 XD_PRE_MOUNT_PAK 的熔断机制，UE5 无对应概念</p>
+<p class="migline"><b>落地方式：</b>随热更插件一起实现：PakFileMountFailedDelegate 计数后决定是否禁用预挂载</p>
+<p class="migline"><b>接入点：</b>FCoreDelegates::PakFileMountFailedDelegate · 预挂载状态机（插件侧）</p>
+<p class="migline"><b>机制：</b>Delegate</p>
+<p class="migline"><b>建议：</b>与 XD_PRE_MOUNT_PAK 同命，建议合并成一个热更插件整体设计，不要分散进引擎多处</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_PAK_FAIL_NO_PREMOUNT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MEADIA_FILE_LOCALIZED_PATH">
+<h3 class="mname">XD_MEADIA_FILE_LOCALIZED_PATH <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 1</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:491</span>
+</div>
+<p class="zh">媒体文件支持解析本地化路径（Pak 或磁盘中查找）</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET">XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET</a></p>
+<p class="en">源码注释：Support resolving media localized path if it exists in pak or disk</p>
+<details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/MediaAssets/Private/Assets/FileMediaSource.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/MediaAssets/Private/Assets/FileMediaSource.cpp 无 PreMount/持久下载目录优先解析（grep 无结果，UE5 亦无 FPaths::ProjectPersistentDownloadDirPreMountDir）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 无等价实现</p>
+<p class="migline"><b>落地方式：</b>项目自定义 UMediaSource 子类或 UMediaPlayer 的 URL/路径解析委托，重定向到热更目录</p>
+<p class="migline"><b>机制：</b>Plugin</p>
+<p class="migline"><b>建议：</b>媒体路径策略是业务逻辑，放项目媒体源插件，不动 MediaAssets</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MEADIA_FILE_LOCALIZED_PATH">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET">
+<h3 class="mname">XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 2</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:494</span>
+</div>
+<p class="zh">支持手动设置 UPackage 本地化 Key 的稳定 GUID</p>
+<p class="en">源码注释：Support manually setting stable GUID for UPackage Localization Key</p>
+<details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/Internationalization/TextPackageNamespaceUtil.cpp</li><li>Source/Runtime/CoreUObject/Public/Internationalization/TextPackageNamespaceUtil.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 高</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/CoreUObject/Private/Internationalization/TextPackageNamespaceUtil.cpp:44-51 UE5 仍只用 TextNamespaceUtil::GenerateDeterministicPackageNamespace 自动写入 PackageLocalizationNamespace，无手动设置接口（grep SetPackageLocalizationKeyGuid 无结果）</p>
+<p class="migline"><b>覆盖说明：</b>UE5.8 未提供强制 GUID 能力</p>
+<p class="migline"><b>落地方式：</b>本地化 namespace 属 CoreUObject 包元数据</p>
+<p class="migline"><b>接入点：</b>TextNamespaceUtil::SetPackageLocalizationKeyGuid（新增） · PackageLocalizationNamespace meta 写入点</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>本地化 key GUID 变更会使既有翻译全部失配，属 schema 级风险，必须与本地化/翻译流程一起灰度</p>
+<p class="migline"><a href="../migration/matrix.html#XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_SHADER_KEEPDEBUG_INFO">
+<h3 class="mname">XD_MISC_SHADER_KEEPDEBUG_INFO <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">着色器与 PSO</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:498</span>
+</div>
+<p class="zh">低于 Shipping 的构建保留 USBC/metallib 调试信息（含 Xcode15 metallibsym）</p>
+<p class="en">源码注释：Support cook below shipping build to keep debug info in usbc/metallib This macro also support XCode15 metallibsym debug file</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Developer/Apple/MetalShaderFormat/Private/MetalShaderCompiler.cpp</li><li>Source/Developer/Apple/MetalShaderFormat/Private/MetalShaderFormat.cpp</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderCore.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
+<p class="migline"><b>UE5 依据：</b>Developer/Apple/MetalShaderFormat/Private/MetalShaderFormat.cpp:180 StripShaderCode/175 CanStripShaderCode、1338 bStripIndividualMetalLibs、361-405 MetaData/ShaderDebug 调试归档</p>
+<p class="migline"><b>覆盖说明：</b>有调试信息剥离/归档开关，无 XD 同名 CVar 与 USBC 语义</p>
+<p class="migline"><b>落地方式：</b>MetalShaderFormat/ShaderCodeArchive 编译期保留策略</p>
+<p class="migline"><b>接入点：</b>IShaderFormat::StripShaderCode · StripIndividualMetalLibs</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>以 StripShaderCode/StripIndividualMetalLibs 配置替代 XD_KeepDebugInfoBelowShipping</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_SHADER_KEEPDEBUG_INFO">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_COOK_STAT_EXT">
+<h3 class="mname">XD_MISC_COOK_STAT_EXT <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 17</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:501</span>
+</div>
+<p class="zh">扩展 Cook 统计与 Cook Profile，细化各阶段耗时</p>
+<p class="rels">关联宏：<a class="rel" href="tools.html#XD_TOOL_REPORT_COOK_TASK_TIMES">XD_TOOL_REPORT_COOK_TASK_TIMES</a> <a class="rel" href="misc2.html#XD_MISC_COOK_STALL_DIAGNOSTICS">XD_MISC_COOK_STALL_DIAGNOSTICS</a></p>
+<p class="en">源码注释：Support extending cook stat and cook profile for better understanding time spent on cook</p>
+<details class="usage"><summary>引用位置（17 处 / 前 8 个文件）</summary><ul><li>Source/Developer/Apple/MetalShaderFormat/Private/MetalShaderCompiler.cpp</li><li>Source/Developer/Apple/MetalShaderFormat/Private/MetalShaderFormat.cpp</li><li>Source/Developer/DerivedDataCache/Private/DerivedDataCache.cpp</li><li>Source/Developer/ShaderFormatOpenGL/Private/ShaderFormatOpenGL.cpp</li><li>Source/Developer/TextureFormatASTC/Private/TextureFormatASTC.cpp</li><li>Source/Developer/TextureFormatDXT/Private/TextureFormatDXT.cpp</li><li>Source/Developer/TextureFormatIntelISPCTexComp/Private/TextureFormatIntelISPCTexComp.cpp</li><li>Source/Developer/VulkanShaderFormat/Private/VulkanShaderFormat.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Core/Public/ProfilingDebugging/CookStats.h + ENABLE_COOK_STATS + FCookStatsManager 仍在；阶段细分已存在：Editor/UnrealEd/Private/Cooker/CookProfiling.cpp:309-335 分层 Cook.Profile（CookWallTimeSec/StartupWallTimeSec/ShaderFlush/Validation…）、:286-306 Load/Save/QueueSize 峰值计数器、:412 -CookStatsFile 导出 JSON；Editor/UnrealEd/Private/Commandlets/CookCommandlet.cpp:186-218 用 COOK_STAT/DetailedCookStats 打点。XD 独有的是与旧 cooker PumpRequest/PumpLoad/PumpSave 对应的命名，以及跨机汇总报表。</p>
+<p class="migline"><b>覆盖说明：</b>框架在，细分项不在</p>
+<p class="migline"><b>落地方式：</b>按 UE5 新状态机 CookDirector/FPackageData 补分段计时；或项目侧注册 CookStats 回调</p>
+<p class="migline"><b>接入点：</b>FCookStatsManager::FAutoRegisterCallback · CookDirector/FPackageData 阶段计时</p>
+<p class="migline"><b>机制：</b>Config</p>
+<p class="migline"><b>建议：</b>按 UE5 新 cooker 结构重写细分计时项，工作量主要在重新定位阶段边界</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_COOK_STAT_EXT">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_COOK_STALL_DIAGNOSTICS">
+<h3 class="mname">XD_MISC_COOK_STALL_DIAGNOSTICS <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 7</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:504</span>
+</div>
+<p class="zh">Cook 卡顿诊断（定位阻塞阶段）</p>
+<p class="rels">关联宏：<a class="rel" href="misc2.html#XD_MISC_COOK_SAVE_QUEUE_FIX">XD_MISC_COOK_SAVE_QUEUE_FIX</a></p>
+<p class="en">源码注释：Support cook stall diagnostics</p>
+<details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookPackageData.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookPackageData.h</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompilerDistributed.cpp</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompilerXGE.cpp</li><li>Source/Runtime/Engine/Public/ShaderCompiler.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp:41 引入 ProfilingDebugging/StallDetector.h、:103 r.ShaderCompiler.DebugDumpJobDiagnostics；Developer/TraceServices/Public/TraceServices/Model/CookProfilerProvider.h 提供 Cook 阶段级分析</p>
+<p class="migline"><b>覆盖说明：</b>UE5 有通用 stall/trace 诊断，无 XD 的磁盘/DDC 延迟自检</p>
+<p class="migline"><b>落地方式：</b>磁盘/DDC 延迟自检改放项目构建工具（UAT/C#）或项目 Editor 插件；Cook 内只留 CVar 开关</p>
+<p class="migline"><b>接入点：</b>Cook 阶段/ShaderCompiler 计时扩展点 · 项目侧 CookStats 回调</p>
+<p class="migline"><b>机制：</b>CVar</p>
+<p class="migline"><b>建议：</b>优先用 UE5 StallDetector/Insights Cook Profiler 替代，仅把 XD 独有的硬件延迟自检做成构建侧工具</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_COOK_STALL_DIAGNOSTICS">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_COOK_SAVE_QUEUE_FIX">
+<h3 class="mname">XD_MISC_COOK_SAVE_QUEUE_FIX <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 4</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:507</span>
+</div>
+<p class="zh">修复 Cook 保存队列卡死：把等待 CookedPlatformData 的包移入 stalled 队列，完成后再排空</p>
+<p class="rels">关联宏：<a class="rel" href="fixbug1.html#XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data">XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data</a></p>
+<p class="en">源码注释：Fix cook save queue stall by moving packages blocked on pending CookedPlatformData into a stalled queue and draining them after completion.</p>
+<details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Editor/UnrealEd/Classes/CookOnTheSide/CookOnTheFlyServer.h</li><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookPackageData.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookPackageData.h</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Editor/UnrealEd/Private/Cooker/CookDirector.cpp:2452 EPackageState::SaveStalledAssignedToWorker/Stall()、CookGenerationHelper.cpp:436 DemoteStalledPackages、CookGarbageCollect.cpp:749 GetSaveStalledSet</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已有完整 Save-stalled 队列机制</p>
+<p class="migline"><b>落地方式：</b>cooker 内部状态机</p>
+<p class="migline"><b>建议：</b>UE5 PackageData 状态机已原生含 stalled 队列与排空，无需移植</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_COOK_SAVE_QUEUE_FIX">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_COOK_SAVE_QUEUE_LOAD_THROTTLE">
+<h3 class="mname">XD_MISC_COOK_SAVE_QUEUE_LOAD_THROTTLE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">Cook / Pak / DDC / 热更</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:510</span>
+</div>
+<p class="zh">Mac 上 SaveQueue 达到阈值时软限流普通 Cook 加载</p>
+<p class="en">源码注释：Soft throttle normal cook loads on Mac when the SaveQueue reaches a configurable threshold.</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/UnrealEd/Classes/CookOnTheSide/CookOnTheFlyServer.h</li><li>Source/Editor/UnrealEd/Private/Commandlets/DerivedDataCacheCommandlet.cpp</li><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>UE5 Cooker 有自身限流/停滞判定（CookDirector.cpp:800 bIsStalled、:1137 SetWorkersStalled）但未见 XD 式 SaveQueue 阈值软限流；未确认等价</p>
+<p class="migline"><b>覆盖说明：</b>Mac 平台专属适配，UE5 架构已变</p>
+<p class="migline"><b>落地方式：</b>cooker 加载节流</p>
+<p class="migline"><b>接入点：</b>cooker 加载/保存调度点</p>
+<p class="migline"><b>机制：</b>Patch</p>
+<p class="migline"><b>建议：</b>先确认 UE5 Cooker 在 Mac 上是否仍出现 SaveQueue 打满；若已由新调度器解决则删宏</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_COOK_SAVE_QUEUE_LOAD_THROTTLE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+<article class="macro" id="XD_MISC_XCODE27_SCENELIFE_CYCLE">
+<h3 class="mname">XD_MISC_XCODE27_SCENELIFE_CYCLE <span class="v on">= 1（启用）</span></h3>
+<div class="badges">
+<span class="badge topic">PC / Windows / D3D</span>
+<span class="badge">Yu Hang</span>
+<span class="badge use">源码引用 3</span>
+<span class="badge src" title="XDBuildMiscConfiguration.cs">XDBuildMisc:513</span>
+</div>
+<p class="zh">为较新 Apple SDK 输出 UIKit Scene Manifest 与 SceneDelegate 钩子</p>
+<p class="en">源码注释：Emit the UIKit scene manifest and scene delegate hooks required by newer Apple SDKs.</p>
+<details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Programs/UnrealBuildTool/Platform/IOS/UEDeployIOS.cs</li><li>Source/Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp</li><li>Source/Runtime/ApplicationCore/Private/IOS/IOSView.cpp</li></ul></details>
+<div class="migblock">
+<div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
+<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Private/IOS/IOSSceneDelegate.cpp + IOSWindow.cpp（connectedScenes 场景模式）</p>
+<p class="migline"><b>覆盖说明：</b>UE5 已有 Scene Manifest/SceneDelegate</p>
+<p class="migline"><b>落地方式：</b>无需改动</p>
+<p class="migline"><b>建议：</b>UE5 已覆盖，直接删除</p>
+<p class="migline"><a href="../migration/matrix.html#XD_MISC_XCODE27_SCENELIFE_CYCLE">在迁移矩阵中查看 →</a></p>
+</div>
+</article>
+</div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

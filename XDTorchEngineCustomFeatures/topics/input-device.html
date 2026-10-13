@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>输入与手柄 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🎮 输入与手柄</h1><p class="lead">键鼠、手柄、触控与模拟器输入路由</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>手游输入的三条链路——触控（含 IME 文本输入）、手柄（Android/iOS/模拟器）、模拟器键鼠——都做了针对性的修复与扩展，重点解决「坐标不对、连接崩溃、按键重复、识别错误」。
+</div>
+
+<h2 class="sec">1. 触控与鼠标坐标</h2>
+<ul class="tight">
+<li><code>XD_MISC_GET_RAW_TOUCH_POSITIONS</code>：新增 <code>OnRawTouchStarted/Moved/Ended</code> 与原始触点坐标接口，贯穿 <code>RenderingCommon.h</code> → <code>SWidget</code> → <code>SViewport</code> → <code>PlayerInput</code> → <code>PlayerController</code>；用于需要「屏幕真实坐标」而非 UI 变换后坐标的场景（UE4-4557）。</li>
+<li><code>XD_FIX_BUG_ADD_REALTIME_MODE_FOR_GET_MOUSE_POS</code>：为获取鼠标位置增加实时模式，避免使用上一帧缓存坐标（UE4-5614）。</li>
+<li><code>XD_FIX_BUG_EMULATOR_GET_WRONG_MOUSE_POS</code>：修复模拟器下 <code>getMousePosition()</code> 坐标错误（UE4-5857）。</li>
+<li><code>XD_MISC_WIDGET_IGNORE_GESTURE_LONG_PRESS_EVENT</code>：控件忽略长按手势事件，避免交互中意外丢失焦点（有运行时 CVar）。</li>
+</ul>
+
+<h2 class="sec">2. 文本输入与输入法（IME）</h2>
+<ul class="tight">
+<li><code>XD_BUG_FIX_IOS_TEXT_INPUT_CRASH</code>：修复 iOS 中文输入法组字导致文本框崩溃。</li>
+<li><code>XD_BUG_FIX_TEXTFIELD_OPEN_FAILS_WHEN_SECOND_OPEN</code>：修复 iOS 12.3.1 输入框第二次打开失败。</li>
+<li><code>XD_BUG_FIX_SOME_IME_POP_UP_WITH_WRONG_POS</code>：修复搜狗等输入法候选框不跟随输入框位置的问题（Windows <code>TextStoreACP</code> / 输入法系统）。</li>
+</ul>
+
+<h2 class="sec">3. 手柄（Controller）</h2>
+<ul class="tight">
+<li><b>iOS</b>：<code>XD_FIX_IOS_CONTROLLER_CONCURRENT_CONNECT_CRASH</code>（连接/断开并发崩溃）、<code>XD_FIX_BUG_IOS_GAMEPAD_INVALID_PTR</code>（空指针）、<code>XD_BUG_FIX_IOS_CONTROLLER_CONNECTION_LOG_DUMP</code>（连接日志）、<code>XD_FIX_BUG_IOS_CONTROLLER_MENUE_KEY_RESPONSE_TWICE</code>（Menu 键响应两次）。</li>
+<li><b>Android</b>：<code>XD_FIX_BUG_ANDROID_GAMEPAD_INVALID_PTR</code>（实现在 Java 模板 <code>GameActivity.java.template</code>）、<code>XD_MISC_STRICT_DS_CONTROLLER_SELECT</code>（按 VID/PID 严格识别 DualShock/DualSense，避免被误判为其他设备）、<code>XD_FIX_BUG_FILTER_OUT_MOBILE_SIMULATOR_VIRTUAL_CONTROLLER</code>（过滤移动模拟器按 ESC 时误报的虚拟手柄）。</li>
+<li>底层接口：<code>IPlatformInputDeviceMapper</code>/<code>FGenericApplicationMessageHandler</code> 相关改动在 <code>ApplicationCore</code>，如需扩展新设备建议走同一入口。</li>
+</ul>
+
+<h2 class="sec">4. 模拟器输入（键鼠 + 手柄）</h2>
+<ul class="tight">
+<li><code>XD_EXT_EMULATOR_MOUSE_KEYBOARD_CONTROLLER_SUPPORT</code>：模拟器支持鼠标/键盘/手柄操作游戏，覆盖 <code>AndroidInputInterface</code>、<code>Launch</code>、<code>ApplicationCore</code>、<code>WebBrowser</code> 等；调试日志宏 <code>..._DEBUG</code>（默认 0）用于验证输入路由。</li>
+<li><code>XD_EXT_EMULATOR_GAMEPAD_CONTROLLER_SUPPORT</code>：模拟器手柄支持（含调试宏）。</li>
+<li><code>XD_MISC_ANDROID_EMULATOR_USE_NATIVE_RESOLUTION</code>、<code>XD_RENDERING_EMULATOR_CONTROL_MOUSE_ICON_VISIBILITY</code>：模拟器分辨率与鼠标光标显隐。</li>
+</ul>
+
+<h2 class="sec">5. 与输入相关的平台/UI 行为</h2>
+<ul class="tight">
+<li><code>XD_TORCHLIGHT_FOCUS_TO_GAMEVIEWPORT_ON_COMMIT</code>：文本提交后把焦点交还 GameViewport（<code>ClearKeyboardFocus</code> 会禁用全部键盘事件）。</li>
+<li><code>XD_MISC_GET_RAW_TOUCH_POSITIONS</code> 与安全区（<code>XD_EXT_SLATE_SYMMETRIC_SAFE_ZONE</code>、<code>XD_EXT_OVERRIDE_SAFE_ZONE</code>）配合使用，可解决刘海屏下的点击偏移。</li>
+<li><code>XD_BUG_FIX_ANDROID_WAIT_FOR_SAFE_ZONE_WAS_UPDATED_BEFORE_CHANGING_ORIENTATION</code>：切横竖屏前等待 Java 更新安全区，避免输入/UI 错位（UE4-4975）。</li>
+</ul>
+
+<h2 class="sec">6. 注意事项</h2>
+<ul class="tight">
+<li>Android 手柄的空指针修复在 <b>Java 模板</b>（<code>GameActivity.java.template</code>），只查 C++ 会漏。</li>
+<li>模拟器输入支持会改变移动端输入栈的行为，正式机型不受影响，但相关宏不建议随意关闭——QA 全靠它。</li>
+<li>多数输入修复同时暴露 CVar，线上可通过配置回退验证。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 15 个宏——UE5 已覆盖 <b>1</b>、部分覆盖 <b>4</b>、未覆盖 <b>7</b>；可完全工程化 <b>8</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">输入与手柄 相关宏（15）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_IOS_CONTROLLER_MENUE_KEY_RESPONSE_TWICE">XD_FIX_BUG_IOS_CONTROLLER_MENUE_KEY_RESPONSE_TWICE</a></td><td>修复 iOS 手柄 Menu 键响应两次</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_EMULATOR_GET_WRONG_MOUSE_POS">XD_FIX_BUG_EMULATOR_GET_WRONG_MOUSE_POS</a></td><td>修复模拟器下 getMousePosition 返回错误坐标（UE4-5857）</td><td class="tval">1</td><td class="tuse">9</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_FIX_IOS_CONTROLLER_CONCURRENT_CONNECT_CRASH">XD_FIX_IOS_CONTROLLER_CONCURRENT_CONNECT_CRASH</a></td><td>修复 iOS 手柄连接/断开时的崩溃</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_EMULATOR_GAMEPAD_CONTROLLER_SUPPORT">XD_EXT_EMULATOR_GAMEPAD_CONTROLLER_SUPPORT</a></td><td>模拟器支持手柄操作游戏</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_EMULATOR_MOUSE_KEYBOARD_CONTROLLER_SUPPORT">XD_EXT_EMULATOR_MOUSE_KEYBOARD_CONTROLLER_SUPPORT</a></td><td>模拟器支持鼠标/键盘/手柄操作游戏</td><td class="tval">1</td><td class="tuse">11</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_EMULATOR_MOUSE_KEYBOARD_CONTROLLER_SUPPORT_DEBUG">XD_EXT_EMULATOR_MOUSE_KEYBOARD_CONTROLLER_SUPPORT_DEBUG</a></td><td>模拟器键鼠输入路由的调试日志（默认关闭）</td><td class="tval">0</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_IOS_CONTROLLER_CONNECTION_LOG_DUMP">XD_BUG_FIX_IOS_CONTROLLER_CONNECTION_LOG_DUMP</a></td><td>增加 iOS 手柄连接日志</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ANDROID_GAMEPAD_INVALID_PTR">XD_FIX_BUG_ANDROID_GAMEPAD_INVALID_PTR</a></td><td>修复 Android 手柄空指针崩溃（UE4-4854）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_IOS_GAMEPAD_INVALID_PTR">XD_FIX_BUG_IOS_GAMEPAD_INVALID_PTR</a></td><td>修复 iOS 手柄空指针崩溃（UE4-4868）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_GET_RAW_TOUCH_POSITIONS">XD_MISC_GET_RAW_TOUCH_POSITIONS</a></td><td>提供获取原始触点坐标的接口（UE4-4557）</td><td class="tval">1</td><td class="tuse">14</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_WIDGET_IGNORE_GESTURE_LONG_PRESS_EVENT">XD_MISC_WIDGET_IGNORE_GESTURE_LONG_PRESS_EVENT</a></td><td>控件忽略长按手势事件（避免丢失焦点）</td><td class="tval">1</td><td class="tuse">9</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_STRICT_DS_CONTROLLER_SELECT">XD_MISC_STRICT_DS_CONTROLLER_SELECT</a></td><td>Android 严格 DS（DS4/DualSense）手柄识别选择</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_FILTER_OUT_MOBILE_SIMULATOR_VIRTUAL_CONTROLLER">XD_FIX_BUG_FILTER_OUT_MOBILE_SIMULATOR_VIRTUAL_CONTROLLER</a></td><td>过滤移动模拟器误报的虚拟手柄连接事件（按 ESC 时）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ADD_REALTIME_MODE_FOR_GET_MOUSE_POS">XD_FIX_BUG_ADD_REALTIME_MODE_FOR_GET_MOUSE_POS</a></td><td>为获取鼠标位置增加实时（非缓存）模式（UE4-5614）</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_EMULATOR_GAMEPAD_CONTROLLER_SUPPORT_DEBUG">XD_EXT_EMULATOR_GAMEPAD_CONTROLLER_SUPPORT_DEBUG</a></td><td>模拟器手柄支持调试日志（默认关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="ui-umg.html"><h3>🪟 UI / Slate / UMG</h3><p>与当前主题关联密切</p></a><a class="card" href="platform-mobile.html"><h3>📲 Android / iOS / Mac</h3><p>与当前主题关联密切</p></a><a class="card" href="project-features.html"><h3>🔥 火炬之光项目特性</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>粒子与特效 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>✨ 粒子与特效</h1><p class="lead">实例化、快速组件、内存池、Tick 调度与工具链</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>粒子是这套引擎改动量最大的系统（56 个宏）。整体思路是：<b>组件分层（普通/哑元/快速）+ 实例化合批 + 内存池 + 异步数据填充 + 精细 Tick 调度</b>，再配一整套编辑器工具与数据修复。
+</div>
+
+<h2 class="sec">1. 组件体系：普通 / 哑元 / 快速三种形态</h2>
+<ul class="tight">
+<li><code>XD_OPT_PARTICLE_COMPONENT_INTERFACE</code>：把 <code>UParticleSystemComponent</code> 抽象出基类 <code>UBaseParticleSystemComponent</code> 与纯虚接口 <code>IParticleComponentInterface</code>（<code>EParticleComponentType{PCT_Normal, PCT_Fast}</code>），上层管理代码统一通过接口调用真实 API。</li>
+<li><code>XD_OPT_DUMMY_PARTICLE_SYSTEM_COMPONENT</code>：<code>ConvertToDummyComponent()</code> 把不再需要渲染的粒子组件转为哑元——关闭渲染、释放 <code>EmitterInstances</code>，只保留占位。适合大量“平时不播、偶尔触发”的挂点。</li>
+<li><code>XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT</code>：<code>UFastParticleSystemComponent</code> 让渲染线程接管部分粒子重计算，避免帧末 GT→RT 的整包拷贝；由 CVar <code>fx.FPSC.Enable</code> 控制，<b>默认 0 且编辑器内禁用</b>，属于“打开需真机验证”的高收益优化。</li>
+<li><code>XD_OPT_SUPPORT_DIRECT_CONTROLL_PARTICLE_FUNCTIONS</code>：提供绕过组件生命周期、直接 spawn/destroy/改 Transform 的粒子 API，便于大规模特效管理器使用。</li>
+</ul>
+
+<h2 class="sec">2. 实例化与内存池（性能核心）</h2>
+<ul class="tight">
+<li><code>XD_OPT_PARTICLE_INSTANCING</code>：把多个 PSC 的同类 Emitter 合并为一次实例化渲染/模拟（<code>InstancedParticleManager</code> + 粒子顶点工厂改造 + Shader 侧实例数据）。配套 <code>XD_TOOL_GENERATE_PARTICLE_ID</code> 生成标识、<code>XD_OPT_PARTICLE_INSTANCING_DEBUG</code> 导出集合、<code>XD_OPT_PARTICLE_INSTANCING_DISABLE_ON_MAC_EDITOR</code> 规避 Mac 编辑器问题。</li>
+<li><code>XD_OPT_LOCK_FREE_PARTICLE_MEMORY_POOL</code>：粒子无锁内存池，用于 EmitterInstance Resize 与 GT→RT 数据传输。</li>
+<li><code>XD_OPT_PARTICLE_FAST_POOLS_ADD_EXTRA_CONTROLL</code>：小内存快池增加按特效类型的精细控制（如仅 Ribbon 使用快池），并有调试宏 <code>..._PRINT_DEBUG_LOGS</code>（Shipping 自动置 0）。</li>
+<li><code>XD_OPT_PARTICLE_ParticleDynamicData_MEMORY_FAST_POOL</code>：<code>FParticleDynamicData</code> 分配走快池。</li>
+<li><code>XD_OPT_PARTICLE_COMPONENT_INTERFACE</code> / <code>XD_OPT_DUMMY_...</code>：见上节。</li>
+</ul>
+
+<h2 class="sec">3. 多线程与异步数据填充</h2>
+<ul class="tight">
+<li><code>XD_OPT_PARTICLE_INSTANCE_MULTI_THREAD_FILL_DATA</code>：多线程填充实例数据（CVar <code>GFXAllowParallelFillParticleDatas</code>）。</li>
+<li><code>XD_OPT_PARTICLE_GET_DYNAMIC_MESH_ELEMENTS_USING_ASYNC</code>：粒子与实例化粒子通过 <code>FMeshElementCollector::AddHeavyTask</code> 异步收集 MeshElement（Sprite/Mesh/Trail 各有 CVar 开关）。</li>
+<li><code>XD_OPT_PARTICLE_UPDATE_DATA_COMMAND_USING_ASYNC</code>：<code>ParticleUpdateDataCommand</code> 异步提交。</li>
+<li><code>XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT</code>：让 RT 接管部分计算，从根上减少跨线程数据量。</li>
+</ul>
+
+<h2 class="sec">4. Tick 调度与可见性裁剪</h2>
+<ul class="tight">
+<li><code>XD_OPT_PRIMITIVE_FRUSTUM_CULLING_WITH_EXTENT_BOUNDING_BOXES</code>：给图元提供多个包围盒，GT 端做视锥剔除，结果驱动“停顿不可见循环粒子/降低不可见粒子数据量”。</li>
+<li><code>XD_OPT_PARTICLE_CONTROLL_PAUSE_OR_NOT</code>：粒子资产新增 <code>bPauseWhenNoVisible</code>，不可见时暂停。</li>
+<li><code>XD_OPTIMIZATION_FORCE_PARTICLE_SKIP_TICK</code> / <code>XD_OPTIMIZATION_ALLOW_PARTICLE_USE_CUSTOM_TICK_FREQUENCY</code>：强制跳过 Tick、不可见时使用自定义 Tick 频率降频。</li>
+<li><code>XD_OPTIMIZE_EFFECTIVE_PSC_TICKGROUP</code>：PSC 依据挂点父组件计算 TickGroup，避免管理器在多组重复 Tick。</li>
+<li><code>XD_OPTIMIZE_MORE_TICKGROUP_EVENT_BASIC</code>：各 TickGroup 提供 enter/leave 委托，供项目统计与任务调度。</li>
+</ul>
+
+<h2 class="sec">5. 渲染与外观扩展</h2>
+<ul class="tight">
+<li><code>XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA</code>：组件级全局亮度/Alpha 乘数（<code>bAllowModifyLuminance/bAllowModifyAlpha</code> + <code>SetLuminanceScale/SetAlphaScale</code>），通过额外 UBO 传给 Shader；配合 <code>XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE</code> 抑制过曝。</li>
+<li><code>XD_RENDERING_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</code> + <code>XD_RENDERING_AUTO_GENERATE_...</code>：粒子按 Emitter 顺序自动生成半透明渲染优先级，解决多层特效的排序穿插。</li>
+<li><code>XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA</code>：粒子系统轴向对齐相机（要求 Emitter 勾选 <code>bUseLocalSpace</code>）。</li>
+<li><code>XD_EXT_EXCLUDE_EMITTERS_FROM_PLATFORM</code>：Emitter 可标记 <code>bExcludeFromMobile/bExcludeFromDesktop</code>，Cook 时按平台裁剪。</li>
+<li><code>XD_MISC_MESH_PARTICLES_USE_STATIC_MESH_MIN_LOD</code>：Mesh 粒子用 StaticMesh 的 MinLOD 控制 LOD（即使 <code>fx.FXAllowParticleMeshLODs=0</code>）。</li>
+</ul>
+
+<h2 class="sec">6. 玩法/工具链扩展</h2>
+<ul class="tight">
+<li><code>XD_OPT_PARTICLE_SYSTEM_PRIMARY_CATEGORY_TAG</code> + <code>XD_PARTICLE_SYSTEM_ADD_ONE_TYPE_TAG</code>：粒子资产增加主分类标签与玩法标签，运行时可查询、编辑器可筛选，是特效分级管理的入口。</li>
+<li><code>XD_TOOL_DUMP_PARTICLE_COMPONENTS_INFO</code>、<code>XD_TOOL_ADD_PARTICLE_ACTIONS_MENU_ESTENSIONS</code>、<code>XD_TOOL_ADD_CASCADE_EDITOR_TOOLBAR_EXTENSIONS</code>、<code>XD_TOOL_PARTICLE_COLLISION_DISABLE_AS_DEFAULT</code>、<code>XD_TOOL_PARTICLE_SYSTEM_ADD_THOUGHT_AS_LOOPING</code>、<code>XD_TOOL_ALLOW_ACCESS_BOUNDING_GEOMETRY_BUFFER</code>：Dump、菜单扩展、默认值、标记与属性开放。</li>
+<li><code>XD_EXT_BROADCAST_PARTICLE_SPAWN_IN_ANIMNOTIFY</code>、<code>XD_MISC_SUPPORT_SKIP_OWNER_VISIBILITY_CHECK_WHEN_SPAWN_PARTICLE_INSTANCE</code>、<code>XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE</code>：动画通知生成粒子的时机广播、跳过 Owner 可见性检查、零寿命粒子自动销毁。</li>
+<li><code>XD_MISC_DEBUG_PARTICLE_MEM_ERROR</code>、<code>XD_MISC_DEBUG_PARTICLE_PERF</code>、<code>XD_MISC_COLLECT_PARTICLE_MEM_FROM_STAT</code>、<code>XD_OPT_PARTICLE_FAST_POOLS_PRINT_DEBUG_LOGS</code>：内存越界追踪、性能埋点与内存采集。</li>
+</ul>
+
+<h2 class="sec">7. 一批数据/逻辑修复（挑重点）</h2>
+<ul class="tight">
+<li><code>XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER</code>：NumInstances &gt; NumEmitters 时的悬垂指针。</li>
+<li><code>XD_BUG_FIX_CONSIDER_ROTATION_AND_SCALE_IN_EMITTER_SIMULATION_WORLD</code>：Emitter 模拟空间矩阵考虑旋转/缩放，并在接近零值时钳制，避免求逆异常。</li>
+<li><code>XD_BUG_FIX_MORE_ACCURATE_SOURCE_MOVEMENT_MODULE_IMPLEMENTAION</code>：SourceMovement 偏移计算更精确（考虑 LegacySpawn 与位置插值）。</li>
+<li><code>XD_BUG_FIX_GET_VALID_PARTICLE_DATA</code>、<code>XD_BUG_FIX_ERROR_RIBBON_DYNAMIC_DATA_REQUIRED_QUERY_RETURN_VALUE</code>、<code>XD_BUG_FIX_PARTICLE_BEAM_TRAIL_VERTEX_FACTORY_RETURN_POINTER</code>、<code>XD_BUG_FIX_MESH_PARTICLE_INVERSE_TRANSFORM_WITH_SCALE</code>：Beam/Ribbon/Mesh 粒子的数据与矩阵修复。</li>
+<li><code>XD_BUG_FIX_PARTICLE_ERROR_TICK_WITH_FIXED_TIME_MODE</code>、<code>XD_BUG_FIX_DISABLE_PSC_TICK_WHEN_GETS_NULL_WORLD</code>、<code>XD_BUG_FIX_DO_NOT_ADD_PSC_TO_MANAGER_WHEN_WORLD_TEARING_DOWN</code>、<code>XD_FIX_BUG_PARTICLE_EMITTER_STAT_COUNT_FAIL</code>、<code>XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL</code>：Tick、世界生命周期、统计与间接光的修复。</li>
+<li>三个默认关闭的潜在修复：<code>XD_BUG_FIX_PARTICLE_MODULE_SPAWN_RELATIVE_TIME_EXTRA_CALIBRATION</code>、<code>XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT</code>、<code>XD_BUG_FIX_PARTICLE_MODULE_SIZE_BY_TIME_SPAWN_INITIAL_SIZE</code>。</li>
+</ul>
+
+<h2 class="sec">8. 注意事项</h2>
+<ul class="tight">
+<li><code>XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT</code> 虽是宏 1，但运行时 <code>fx.FPSC.Enable</code> 默认 0，且编辑器内强制不用；同时它开启时会强制关闭粒子快池（<code>GEnableFastPools=0</code>），两者是取舍关系。</li>
+<li>四个 UBT 强制依赖：<code>PARTICLE_COMPONENT_INTERFACE → DUMMY_PARTICLE_SYSTEM_COMPONENT</code>、<code>GENERATE_PARTICLE_ID → PARTICLE_INSTANCING</code>、<code>INSTANCING_DEBUG → INSTANCING</code>、<code>FAST_POOLS_PRINT_DEBUG_LOGS → FAST_POOLS_ADD_EXTRA_CONTROLL</code>。</li>
+<li>粒子实例化原在 UBT 里按平台自动关闭（Mac 编辑器），现已改为 C++ 内判断，避免 Definitions.h 变化导致全量重编。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 56 个宏——UE5 已覆盖 <b>1</b>、部分覆盖 <b>23</b>、未覆盖 <b>29</b>；可完全工程化 <b>13</b>，深度侵入项 <b>2</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">粒子与特效 相关宏（56）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MORE_ACCURATE_SOURCE_MOVEMENT_MODULE_IMPLEMENTAION">XD_BUG_FIX_MORE_ACCURATE_SOURCE_MOVEMENT_MODULE_IMPLEMENTAION</a></td><td>修正 SourceMovement 粒子模块偏移计算（考虑 bUseLegacySpawningBehavior 与位置插值）</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_ParticleDynamicData_MEMORY_FAST_POOL">XD_OPT_PARTICLE_ParticleDynamicData_MEMORY_FAST_POOL</a></td><td>FParticleDynamicData 分配器使用内存快池</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_INSTANCING_DISABLE_ON_MAC_EDITOR">XD_OPT_PARTICLE_INSTANCING_DISABLE_ON_MAC_EDITOR</a></td><td>在 Mac 编辑器上禁用粒子实例化（规避平台问题）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_PARTICLE_SYSTEM_ADD_THOUGHT_AS_LOOPING">XD_TOOL_PARTICLE_SYSTEM_ADD_THOUGHT_AS_LOOPING</a></td><td>粒子系统新增“视为循环”属性标记</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_MESH_PARTICLES_USE_STATIC_MESH_MIN_LOD">XD_MISC_MESH_PARTICLES_USE_STATIC_MESH_MIN_LOD</a></td><td>用 StaticMesh 的 MinLOD 控制网格粒子 LOD（即使 fx.FXAllowParticleMeshLODs=0，UE4-7141）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA">XD_EXT_ALIGN_PARTICLE_SYSTEM_AXIS_WITH_CAMERA</a></td><td>粒子系统轴向对齐相机方向（需 Emitter 开启 bUseLocalSpace，UE4-6540）</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_COMPONENT_INTERFACE">XD_OPT_PARTICLE_COMPONENT_INTERFACE</a></td><td>统一 ParticleSystemComponent / BatchedParticleSystemComponent 的调用接口</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_DEBUG_PARTICLE_PERF">XD_MISC_DEBUG_PARTICLE_PERF</a></td><td>增加粒子性能统计标记</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PARTICLE_ERROR_TICK_WITH_FIXED_TIME_MODE">XD_BUG_FIX_PARTICLE_ERROR_TICK_WITH_FIXED_TIME_MODE</a></td><td>修复粒子组件固定时间步长模式 Tick 不生效</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_PARTICLE_EMITTER_STAT_COUNT_FAIL">XD_FIX_BUG_PARTICLE_EMITTER_STAT_COUNT_FAIL</a></td><td>修复粒子 Emitter 渲染线程计数统计错误</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ADD_CASCADE_EDITOR_TOOLBAR_EXTENSIONS">XD_TOOL_ADD_CASCADE_EDITOR_TOOLBAR_EXTENSIONS</a></td><td>新增 Cascade 编辑器工具栏扩展委托（XD_OnCascadeEditorToolBarExtend）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_CONSIDER_ROTATION_AND_SCALE_IN_EMITTER_SIMULATION_WORLD">XD_BUG_FIX_CONSIDER_ROTATION_AND_SCALE_IN_EMITTER_SIMULATION_WORLD</a></td><td>修正粒子 Emitter 模拟空间矩阵（考虑旋转与缩放，避免矩阵求逆异常）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ALLOW_ACCESS_BOUNDING_GEOMETRY_BUFFER">XD_TOOL_ALLOW_ACCESS_BOUNDING_GEOMETRY_BUFFER</a></td><td>允许访问 UParticleModuleRequired 的 BoundingGeometryBuffer 属性</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_INSTANCING">XD_OPT_PARTICLE_INSTANCING</a></td><td>粒子实例化（Particle Instancing）：相同特效合并为一次 DrawCall</td><td class="tval">1</td><td class="tuse">20</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PARTICLE_MODULE_SPAWN_RELATIVE_TIME_EXTRA_CALIBRATION">XD_BUG_FIX_PARTICLE_MODULE_SPAWN_RELATIVE_TIME_EXTRA_CALIBRATION</a></td><td>重校准粒子生成相对时间（生成过慢时会瞬间被杀死且缩放错误，默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_LOCK_FREE_PARTICLE_MEMORY_POOL">XD_OPT_LOCK_FREE_PARTICLE_MEMORY_POOL</a></td><td>粒子无锁内存池（用于 FEmitterInstance::Resize 与 GT→RT 数据传输）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT">XD_OPT_FAST_PARTICLE_SYSTEM_COMPONENT</a></td><td>UFastParticleSystemComponent：把部分粒子重计算搬到渲染线程</td><td class="tval">1</td><td class="tuse">26</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_UPDATE_DATA_COMMAND_USING_ASYNC">XD_OPT_PARTICLE_UPDATE_DATA_COMMAND_USING_ASYNC</a></td><td>ParticleUpdateDataCommand 使用异步方式提交</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_PARTICLE_BEAM_TRAIL_VERTEX_FACTORY_RETURN_POINTER">XD_BUG_FIX_PARTICLE_BEAM_TRAIL_VERTEX_FACTORY_RETURN_POINTER</a></td><td>修复 FParticleBeamTrailVertexFactory 返回指针未增加引用计数</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_ALLOW_PARTICLE_USE_CUSTOM_TICK_FREQUENCY">XD_OPTIMIZATION_ALLOW_PARTICLE_USE_CUSTOM_TICK_FREQUENCY</a></td><td>粒子在不可见时允许使用自定义 Tick 频率</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_PARTICLE_SYSTEM_ADD_ONE_TYPE_TAG">XD_PARTICLE_SYSTEM_ADD_ONE_TYPE_TAG</a></td><td>粒子系统新增一个类型标签属性（供游戏逻辑使用）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_EXCLUDE_EMITTERS_FROM_PLATFORM">XD_EXT_EXCLUDE_EMITTERS_FROM_PLATFORM</a></td><td>支持按平台（移动/桌面）排除指定粒子 Emitter（UE4-6822）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_DUMMY_PARTICLE_SYSTEM_COMPONENT">XD_OPT_DUMMY_PARTICLE_SYSTEM_COMPONENT</a></td><td>DummyParticleSystemComponent：玩法占位用的空粒子组件（禁用渲染并释放数据）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_COLLECT_INSTANCE_USING_MULTI_THREAD">XD_OPT_PARTICLE_COLLECT_INSTANCE_USING_MULTI_THREAD</a></td><td>多线程收集粒子实例数据</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_ERROR_RIBBON_DYNAMIC_DATA_REQUIRED_QUERY_RETURN_VALUE">XD_BUG_FIX_ERROR_RIBBON_DYNAMIC_DATA_REQUIRED_QUERY_RETURN_VALUE</a></td><td>修正 Ribbon 粒子 IsDynamicDataRequired 的返回值（原实现恒返回 true）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_SUPPORT_DIRECT_CONTROLL_PARTICLE_FUNCTIONS">XD_OPT_SUPPORT_DIRECT_CONTROLL_PARTICLE_FUNCTIONS</a></td><td>新增直接控制粒子的接口：生成/销毁/修改 Transform</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE">XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE</a></td><td>动画通知粒子寿命为 0 时在 NotifyState 结束时销毁粒子组件</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PARTICLE_MODULE_SIZE_BY_TIME_SPAWN_INITIAL_SIZE">XD_BUG_FIX_PARTICLE_MODULE_SIZE_BY_TIME_SPAWN_INITIAL_SIZE</a></td><td>修复按时间分布的粒子初始尺寸应始终取分布起点（默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_FAST_POOLS_ADD_EXTRA_CONTROLL">XD_OPT_PARTICLE_FAST_POOLS_ADD_EXTRA_CONTROLL</a></td><td>粒子小内存快速池增加精细控制（可按特效类型区分是否使用快池）</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZE_EFFECTIVE_PSC_TICKGROUP">XD_OPTIMIZE_EFFECTIVE_PSC_TICKGROUP</a></td><td>粒子系统管理器只在 TG_PrePhysics 和 TG_StartPhysics 两个 TickGroup 中 Tick</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ZERO_MATRIX_CAUSE_CRASH_WHEN_COCOLLECT_DYNAMIC_MESH">XD_FIX_BUG_ZERO_MATRIX_CAUSE_CRASH_WHEN_COCOLLECT_DYNAMIC_MESH</a></td><td>修复零矩阵导致 CollectDynamicMesh 崩溃（TORCHLIGHT-115990）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY">XD_RENDERING_AUTO_GENERATE_PER_MESHBATCH_TRANSLUCENTPASS_RENDERING_PRIORITY</a></td><td>按 Emitter 顺序自动生成粒子系统的半透明渲染优先级</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER">XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER</a></td><td>修复初始化粒子组件时 EmitterInstance 指针错乱</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_DEBUG_PARTICLE_MEM_ERROR">XD_MISC_DEBUG_PARTICLE_MEM_ERROR</a></td><td>增加粒子相关内存越界问题的追踪日志</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_DUMP_PARTICLE_COMPONENTS_INFO">XD_TOOL_DUMP_PARTICLE_COMPONENTS_INFO</a></td><td>Dump 当前场景粒子组件信息（调试用）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT">XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT</a></td><td>修复 Ribbon 粒子初始尺寸为 1 而非分布起始值（默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_COLLECT_PARTICLE_MEM_FROM_STAT">XD_MISC_COLLECT_PARTICLE_MEM_FROM_STAT</a></td><td>从 STAT 中提取粒子相关内存数据（默认关闭）</td><td class="tval">0</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_DISABLE_PSC_TICK_WHEN_GETS_NULL_WORLD">XD_BUG_FIX_DISABLE_PSC_TICK_WHEN_GETS_NULL_WORLD</a></td><td>粒子组件拿不到 World 时跳过 Tick（UE4-6512）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_SYSTEM_PRIMARY_CATEGORY_TAG">XD_OPT_PARTICLE_SYSTEM_PRIMARY_CATEGORY_TAG</a></td><td>粒子系统新增主分类标签（运行时可查询，用于分类/管理）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_FAST_POOLS_PRINT_DEBUG_LOGS">XD_OPT_PARTICLE_FAST_POOLS_PRINT_DEBUG_LOGS</a></td><td>粒子快速内存池的调试日志（默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PRIMITIVE_FRUSTUM_CULLING_WITH_EXTENT_BOUNDING_BOXES">XD_OPT_PRIMITIVE_FRUSTUM_CULLING_WITH_EXTENT_BOUNDING_BOXES</a></td><td>为图元提供额外包围盒以支持自定义视锥剔除</td><td class="tval">1</td><td class="tuse">13</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MESH_PARTICLE_INVERSE_TRANSFORM_WITH_SCALE">XD_BUG_FIX_MESH_PARTICLE_INVERSE_TRANSFORM_WITH_SCALE</a></td><td>修复 MeshParticleVertexFactory.ush 的 PseudoInverseTransform 未考虑缩放（TORCHLIGHT-226131）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_INSTANCE_MULTI_THREAD_FILL_DATA">XD_OPT_PARTICLE_INSTANCE_MULTI_THREAD_FILL_DATA</a></td><td>多线程填充粒子实例渲染数据（Collect 阶段）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ADD_PARTICLE_ACTIONS_MENU_ESTENSIONS">XD_TOOL_ADD_PARTICLE_ACTIONS_MENU_ESTENSIONS</a></td><td>新增粒子右键菜单扩展委托（XD_OnParticleActionMenuBuild）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_GET_VALID_PARTICLE_DATA">XD_BUG_FIX_GET_VALID_PARTICLE_DATA</a></td><td>Beam 粒子源模块改用 ParticleIndices 获取合法 ParticleData（UE4-6419）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_BROADCAST_PARTICLE_SPAWN_IN_ANIMNOTIFY">XD_EXT_BROADCAST_PARTICLE_SPAWN_IN_ANIMNOTIFY</a></td><td>AnimNotify 生成粒子时广播事件（供游戏侧接管时机）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA">XD_RENDEING_ADJUST_PARTICLE_LUMINANCE_AND_ALPHA</a></td><td>统一调整粒子的整体亮度与 Alpha（材质/组件级开关）</td><td class="tval">1</td><td class="tuse">24</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_GENERATE_PARTICLE_ID">XD_TOOL_GENERATE_PARTICLE_ID</a></td><td>为 XD 粒子实例化生成 ParticleID</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_PARTICLE_COLLISION_DISABLE_AS_DEFAULT">XD_TOOL_PARTICLE_COLLISION_DISABLE_AS_DEFAULT</a></td><td>粒子碰撞默认关闭（新建粒子模块时的默认值）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_FORCE_PARTICLE_SKIP_TICK">XD_OPTIMIZATION_FORCE_PARTICLE_SKIP_TICK</a></td><td>强制粒子组件跳过 Tick（可配置）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_DO_NOT_ADD_PSC_TO_MANAGER_WHEN_WORLD_TEARING_DOWN">XD_BUG_FIX_DO_NOT_ADD_PSC_TO_MANAGER_WHEN_WORLD_TEARING_DOWN</a></td><td>World 正在销毁时不再把 PSC 加入 ParticleSystemWorldManager（UE4-7072）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_INSTANCING_DEBUG">XD_OPT_PARTICLE_INSTANCING_DEBUG</a></td><td>粒子实例化调试：DumpCollections 输出所有粒子 ID 与资源名（默认关闭）</td><td class="tval">0</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_CONTROLL_PAUSE_OR_NOT">XD_OPT_PARTICLE_CONTROLL_PAUSE_OR_NOT</a></td><td>扩展接口：允许游戏逻辑暂停/恢复粒子系统</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_SUPPORT_SKIP_OWNER_VISIBILITY_CHECK_WHEN_SPAWN_PARTICLE_INSTANCE">XD_MISC_SUPPORT_SKIP_OWNER_VISIBILITY_CHECK_WHEN_SPAWN_PARTICLE_INSTANCE</a></td><td>生成粒子实例时可通过接口跳过 Owner 可见性检查（TORCHLIGHT-61407）</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL">XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL</a></td><td>修复粒子间接光（Indirect Lighting）数据获取失败</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PARTICLE_GET_DYNAMIC_MESH_ELEMENTS_USING_ASYNC">XD_OPT_PARTICLE_GET_DYNAMIC_MESH_ELEMENTS_USING_ASYNC</a></td><td>粒子与实例化粒子使用异步方式填充 DynamicMeshElements</td><td class="tval">1</td><td class="tuse">3</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="rendering-core.html"><h3>🎨 渲染管线与排序</h3><p>与当前主题关联密切</p></a><a class="card" href="mobile-rendering.html"><h3>📱 移动端渲染优化</h3><p>与当前主题关联密切</p></a><a class="card" href="memory-profiling.html"><h3>📊 内存与性能分析</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cook / Pak / DDC / 热更 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>📦 Cook / Pak / DDC / 热更</h1><p class="lead">打包、增量 Cook、Pak 挂载与热更资源链路</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>围绕「确定性 Cook → 增量打包 → 预挂载热更」这条流水线做了完整改造：Cook 更快更稳、两次 Cook 产物可复现、Pak 可迭代复用、资源可按赛季热更与本地化管理。
+</div>
+
+<h2 class="sec">1. 流水线全景</h2>
+<ol>
+<li><b>Cook 阶段</b>：Cherry-Pick 精简 cook、内存/停顿诊断、SaveQueue 卡死修复与限流、迭代 Cook 删除修复、Ini cook 黑名单。</li>
+<li><b>确定性 / DDC 阶段</b>：消除 Material ShaderMap、MapBuildData、静态网格 UV、ubulk 等产物中的不确定因素，配合 <code>-XDDumpCookedMD5</code> 与 <code>CheckCookDeterministic.py</code> 做校验。</li>
+<li><b>Pak 阶段</b>：异步压缩调优、复用上次压缩结果的迭代打包（Iterative Pak）、任务耗时报告。</li>
+<li><b>运行期 Pak</b>：按 <code>mount_&lt;season&gt;.json</code> 预挂载、挂载失败委托、失败熔断不预挂载、可选自定义加密。</li>
+<li><b>热更 / 版本 / 本地化</b>：<code>XD_TORCHLIGHT_SEASON</code> 贯穿 PSO/PBC/ShaderLib/预挂载配置；本地化包缓存刷新、Package Localization Key GUID、媒体本地化路径。</li>
+</ol>
+
+<h2 class="sec">2. Pak 生成与迭代打包</h2>
+<ul class="tight">
+<li><code>XD_OPT_CREATE_PAK_WORKS</code>：打开自定义异步压缩策略，一次性预投递 1024 个压缩任务，使压缩充分并行（<code>Developer/PakFileUtilities/PakFileUtilities.cpp</code>）。</li>
+<li><code>XD_OPT_ITERATIVE_PAK</code>：核心优化。复用上一次 Pak 的压缩结果，只重新压缩变化的文件，并带 SHA1 校验。</li>
+<li>迭代打包相关命令行：<code>-XDShouldIterativePak</code>、<code>-XDIterativePak_PakFilesDir=</code>、<code>-XDIterativePak_PakDiffFile=</code>、<code>-XDIterativePak_DoubleCheckHash</code>、<code>-XDIterativePak_Verbose</code>。</li>
+<li><code>XD_MISC_DUMP_COOKED_MD5</code>：Cook 时把 <code>DevelopmentAssetRegistry.bin</code> 中的 Hash 导出到 AutomationTool 目录，迭代打包时直接用（否则要重新算全量 MD5，会吃掉大部分收益）。</li>
+<li><code>XD_OPT_PAK_FAST_WRITE</code>（默认 <span class="v off">0</span>）：大缓冲 + 异步写 Pak；作者注释「Mac 上写出错、收益有限」故关闭。</li>
+<li><code>XD_TOOL_REPORT_PAK_TASK_TIMES</code>：输出 <code>&lt;pak&gt;_report.json</code> 记录各任务耗时。</li>
+</ul>
+
+<h2 class="sec">3. 运行期 Pak 挂载与容错</h2>
+<ul class="tight">
+<li><code>XD_PRE_MOUNT_PAK</code>：引擎初始化时按 <code>mount_&lt;SEASON&gt;.json</code>（<code>PRE_MOUNT_PAK_DIR</code>）解析并预先挂载热更 Pak，可指定最小版本；配合 Project ShaderLib 预挂载。</li>
+<li><code>XD_MISC_ADD_PAK_MOUNT_FAIL_DELEGATE</code> + <code>XD_MISC_PAK_FAIL_NO_PREMOUNT</code>：挂载失败时广播委托，并把预挂载信号量拉高，禁止后续预挂载，交由项目热补丁模块做完整性校验与修复。</li>
+<li><code>XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR</code>：Pak 致命错误前输出用户可读的引导日志（Windows 还会弹窗）。</li>
+<li><code>XD_MISC_PAK_FILE_ENCRY</code>：替换 Pak Magic 并增加自定义加密版本位，防止 Pak 被随意解包。</li>
+</ul>
+
+<h2 class="sec">4. Cook 主流程优化</h2>
+<ul class="tight">
+<li><code>XD_OPT_COOK_ENABLE_CHERRY_PICK</code>：按清单（<code>-XDCherryPickManifest=</code> 或 ini）只 Cook 指定种子包，配合 XDLivePatch 做小型热更包。</li>
+<li><code>XD_OPT_COOK_MAX_MEMORY_USAGE</code>（默认 <span class="v off">0</span>）：周期统计内存并强制 Flush Shader 编译，压低 Cook 峰值内存。</li>
+<li><code>XD_MISC_COOK_STALL_DIAGNOSTICS</code> / <code>XD_TOOL_REPORT_COOK_TASK_TIMES</code>：Cook 停顿采样与层级计时，定位「时间都去哪了」。</li>
+<li><code>XD_MISC_COOK_SAVE_QUEUE_FIX</code> + <code>XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data</code>：把卡在 pending <code>CookedPlatformData</code> 的包移入 stalled 队列延后处理，修复 Cook 卡死。</li>
+<li><code>XD_MISC_COOK_SAVE_QUEUE_LOAD_THROTTLE</code>：Mac/Windows 上 SaveQueue 超过阈值时软限流加载，避免内存与队列互相拖垮。</li>
+<li><code>XD_MSIC_INI_COOK_BLACKLIST</code>：记录 ini 读写历史，Cook 时按 ini 黑名单剔除无关配置，避免「改个 ini 就全量重 Cook」。</li>
+<li><code>XD_BUG_FIX_ITERATIVE_COOK_DELETE_PACKAGE_NOT_COMPLETE</code>、<code>XD_MISC_*COOK_PACKAGE_NEVER_END*</code>、<code>XD_MISC_SAVE_PACKAGE_MOVE_FAILURE_ERR_CODE</code>：迭代 Cook 删除遗漏、计数卡死、保存失败错误码等细节修复。</li>
+<li><code>XD_OPT_COOK_MAC_PARALLEL_USAGE</code>：Mac 上 Shader 编译与纹理压缩双 Worker 并行。</li>
+</ul>
+
+<h2 class="sec">5. DDC 与 Cook 确定性</h2>
+<p>这一组宏解决的是「同样的输入，两次 Cook 得到不同产物」——这是热更差分、增量打包、资源 MD5 比对的前提。</p>
+<ul class="tight">
+<li><code>XD_BUG_FIX_GENERATE_DETERMINED_MATSM_DDC</code>：材质 ShaderMap DDC 确定化（含空 <code>MaterialExpression</code> 告警）。</li>
+<li><code>XD_BUG_FIX_GENERATE_DETERMINED_MAP_BUILD_DATA_COOKING_RESULTS</code>：MapBuildData 结果确定化（<code>CleanupWorldInternal</code> 增加 <code>bWorldChanged</code>）。</li>
+<li><code>XD_BUG_FIX_GENERATE_DETERMINED_STATIC_MESH_TEXCOORDS</code>：修正导入时 Lightmap UV 索引越界写入 DDC 的问题。</li>
+<li><code>XD_BUG_FIX_KEEP_SAME_UBULK_FILE_WHEN_CHECK_COOK_DETERMINISTIC</code>：diff cook 传入 <code>SavePackageContext</code>，保证 ubulk 稳定。</li>
+<li><code>XD_BUG_FIX_COOK_DETERMINED_PSO</code> + <code>XD_BUG_FIX_BUILD_PSO_WITH_SHADER_HASH</code>：stable.upipelinecache 确定化。</li>
+<li><code>XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES</code>：iOS/Metal Shader output hash 稳定。</li>
+<li><code>XD_BUG_FIX_GENERATE_LANDSCAPE_MOBILE_DATA_WHEN_SAVING</code>：保存地形时生成 MobileData，避免重 Cook 产生差异。</li>
+<li><code>XD_TOOL_COOK_DETERMINISTIC_CHECK</code> + <code>Tools/CheckCookDeterministic.py</code>：两次 Cook 的 AssetRegistry 对比校验。</li>
+<li><code>XD_SKELMESH_CHECK_DDC_KEY_MISS_MATCH_TOOL</code>、<code>XD_BUG_FIX_WRONG_LOD_VERTICES_NUM_DDC</code>：骨骼网格 DDC Key 一致性检查。</li>
+<li><code>XD_FORCE_SATATICMESH_LOD_STREAM_BULK</code> / <code>XD_FORCE_ANIMATION_STREAM_BULK</code>（默认 <span class="v off">0</span>）：把静态网格 LOD 渲染数据、动画数据拆入 ubulk 以降低常驻内存，开启会显著改变 I/O 结构，需评估。</li>
+</ul>
+
+<h2 class="sec">6. 热更、赛季与本地化</h2>
+<ul class="tight">
+<li><code>XD_TORCHLIGHT_SEASON</code>（当前 <b>16</b>）：一切版本/清理逻辑的枢纽——预挂载配置名、ShaderLib 头版本、PSO/PBC 缓存版本。每赛季手动递增，即自动清理旧缓存。</li>
+<li><code>XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</code>：未配置 game version 时用赛季号，换季即失效旧 <code>upipelinecache</code>/PBC。</li>
+<li><code>XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE</code>：暴露本地化包缓存刷新委托，解决异步加载时本地化资源找不到的问题。</li>
+<li><code>XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET</code>：支持手动为 UPackage 本地化 Key 指定稳定 GUID，避免每次 Cook 生成不同 Key。</li>
+<li><code>XD_MEADIA_FILE_LOCALIZED_PATH</code>：媒体文件支持 <code>Content/L10N/&lt;Culture&gt;/</code> 本地化路径查找。</li>
+<li><code>XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX</code>：Pak Chunk 归属判定时忽略 Cook ini 的干扰（通过 <code>XD_OnShouldIgnorePackageFromPakChunk</code> 委托可进一步排除包）。</li>
+<li><code>XD_EXT_USE_PRIORITY_WHEN_PACKAGING</code>：按 <code>PrimaryAssetLabel.Priority</code> 决定 Chunk 覆盖关系；注意项目已禁用 <code>-labelpriority</code> 命令行。</li>
+</ul>
+
+<h2 class="sec">7. 常用命令行速查</h2>
+<table class="mtable">
+<thead><tr><th>参数</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td class="tname">-XDDumpCookedMD5</td><td>Cook 时导出产物 MD5，加速迭代打包</td></tr>
+<tr><td class="tname">-XDShouldIterativePak</td><td>开启迭代打包</td></tr>
+<tr><td class="tname">-XDIterativePak_PakFilesDir= / -XDIterativePak_PakDiffFile=</td><td>指定上次 Pak 目录与差异清单</td></tr>
+<tr><td class="tname">-XD CherryPickManifest=</td><td>指定 Cherry-Pick Cook 清单</td></tr>
+<tr><td class="tname">-LogMATSMDDCKey</td><td>打印材质 ShaderMap DDC Key 明细</td></tr>
+</tbody></table>
+
+<h2 class="sec">8. 注意事项</h2>
+<ul class="tight">
+<li><b>确定性宏多是「告警 + 纠正」</b>：要根治问题需按提示重新保存相关资产（材质、静态网格、骨骼网格）。</li>
+<li><b>迭代打包收益依赖 MD5 导出</b>：UAT cook 时忘记传 <code>-XDDumpCookedMD5</code>，加速效果会大打折扣。</li>
+<li><b>外部依赖</b>：Cherry-Pick 与 <code>XD_OPT_SHADER_LIB_SRIP</code> 需要 XDLivePatch 插件；Wwise 两个宏在本引擎树内无消费点，由 Wwise 插件实现。</li>
+<li><b>平台限制</b>：SaveQueue 限流仅 Mac/Windows；Pak 弹窗仅 Windows；<code>XD_OPT_PAK_FAST_WRITE</code> 因 Mac 问题默认关闭。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 50 个宏——UE5 已覆盖 <b>3</b>、部分覆盖 <b>16</b>、未覆盖 <b>23</b>；可完全工程化 <b>19</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">Cook / Pak / DDC / 热更 相关宏（50）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/opt.html#XD_OPT_COOK_ENABLE_CHERRY_PICK">XD_OPT_COOK_ENABLE_CHERRY_PICK</a></td><td>Cook 支持 Cherry Pick 指定文件单独打进 Pak（热更用，依赖 XDLivePatch）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_COOK_STAT_EXT">XD_MISC_COOK_STAT_EXT</a></td><td>扩展 Cook 统计与 Cook Profile，细化各阶段耗时</td><td class="tval">1</td><td class="tuse">17</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_CHAOSSOLVERACTOR_ICON_ERROR_WHEN_COOKING">XD_BUG_FIX_CHAOSSOLVERACTOR_ICON_ERROR_WHEN_COOKING</a></td><td>Cook 时禁用 ChaosSolverActor 的 Sprite 组件以修复图标错误（UE4-3630）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_ADDITIONAL_ASSET_REGISTRY_TAGS_FOR_WWISE">XD_MISC_ADDITIONAL_ASSET_REGISTRY_TAGS_FOR_WWISE</a></td><td>Wwise 资产增加 AssetRegistry Tag，支持标签搜索</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_ADD_PAK_MOUNT_FAIL_DELEGATE">XD_MISC_ADD_PAK_MOUNT_FAIL_DELEGATE</a></td><td>Pak 挂载失败时暴露失败委托（供热更模块处理）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_COOK_MAX_MEMORY_USAGE">XD_OPT_COOK_MAX_MEMORY_USAGE</a></td><td>Cook 过程最大内存占用优化（当前关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_DUMP_COOKED_MD5">XD_MISC_DUMP_COOKED_MD5</a></td><td>把 Cook 产物 Hash 从 DevelopmentAssetRegistry.bin 导出，供增量打包比对（-XDDumpCookedMD5）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_COOK_DETERMINED_PSO">XD_BUG_FIX_COOK_DETERMINED_PSO</a></td><td>生成确定性的 stable.upipelinecache（UE4-3865）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_PAK_FILE_ENCRY">XD_MISC_PAK_FILE_ENCRY</a></td><td>Pak 文件加密（自定义加密实现）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_GENERATE_DETERMINED_MAP_BUILD_DATA_COOKING_RESULTS">XD_BUG_FIX_GENERATE_DETERMINED_MAP_BUILD_DATA_COOKING_RESULTS</a></td><td>生成确定性的 MapBuildData Cook 结果（UE4-3769）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_CREATE_PAK_WORKS">XD_OPT_CREATE_PAK_WORKS</a></td><td>打包 Pak 过程的性能优化（减少重复工作与拷贝）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ASSET_AUDIT_EXT_COL">XD_TOOL_ASSET_AUDIT_EXT_COL</a></td><td>资源审计工具扩展列：追踪决定 Pak Chunk 的引用链</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_SUPPORT_NO_BOOTSTRAP_EXE_IN_PACKAGESETTINGS">XD_EXT_SUPPORT_NO_BOOTSTRAP_EXE_IN_PACKAGESETTINGS</a></td><td>编辑器 PackagingSettings 支持 nobootstrapexe 配置</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_SKELMESH_CHECK_DDC_KEY_MISS_MATCH_TOOL">XD_SKELMESH_CHECK_DDC_KEY_MISS_MATCH_TOOL</a></td><td>骨骼网格 DDC Key 不匹配检查工具</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_COOK_SAVE_QUEUE_LOAD_THROTTLE">XD_MISC_COOK_SAVE_QUEUE_LOAD_THROTTLE</a></td><td>Mac 上 SaveQueue 达到阈值时软限流普通 Cook 加载</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_ITERATIVE_PAK">XD_OPT_ITERATIVE_PAK</a></td><td>增量 Pak：复用上次 Pak 的压缩结果，避免重复压缩</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR">XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR</a></td><td>Pak 致命错误时给玩家输出引导性日志/提示</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_KEEP_SAME_UBULK_FILE_WHEN_CHECK_COOK_DETERMINISTIC">XD_BUG_FIX_KEEP_SAME_UBULK_FILE_WHEN_CHECK_COOK_DETERMINISTIC</a></td><td>编辑器保存时传入 SavePackageContext，保证 ubulk 文件确定性（UE4-4246）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_PAK_ERROR_POP_UP_TIPS_WINDOWS">XD_EXT_PAK_ERROR_POP_UP_TIPS_WINDOWS</a></td><td>Pak 文件错误弹窗提示（引导修复/重新下载）</td><td class="tval">1</td><td class="tuse">9</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_PRE_MOUNT_PAK">XD_PRE_MOUNT_PAK</a></td><td>引擎初始化时预挂载指定 Pak 目录（提前读取热更资源）</td><td class="tval">1</td><td class="tuse">9</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_USE_PRIORITY_WHEN_PACKAGING">XD_EXT_USE_PRIORITY_WHEN_PACKAGING</a></td><td>打包时使用 PrimaryAssetLabel.Priority 决定 Chunk（需 -labelpriority 参数）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_COOK_STALL_DIAGNOSTICS">XD_MISC_COOK_STALL_DIAGNOSTICS</a></td><td>Cook 卡顿诊断（定位阻塞阶段）</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_WWISE_ASSET_REGISTRY_FREE">XD_MISC_WWISE_ASSET_REGISTRY_FREE</a></td><td>Wwise（含 Ak*）对象不再注册进 AssetRegistry</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_COOK_DETERMINISTIC_CHECK">XD_TOOL_COOK_DETERMINISTIC_CHECK</a></td><td>Cook 确定性检查（配合 /trunk/Tools/CheckCookDeterministic.py 使用）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_COOK_SAVE_QUEUE_FIX">XD_MISC_COOK_SAVE_QUEUE_FIX</a></td><td>修复 Cook 保存队列卡死：把等待 CookedPlatformData 的包移入 stalled 队列，完成后再排空</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_ASYNC_LOAD_FLUSH_DELEGATE">XD_EXT_ASYNC_LOAD_FLUSH_DELEGATE</a></td><td>OnAsyncLoadingFlush 增加带参数版本（调试用）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_FIX_COOK_PACKAGE_NEVER_END_BUG">XD_MISC_FIX_COOK_PACKAGE_NEVER_END_BUG</a></td><td>修复 Cook 包体计数永不结束的问题</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_ITERATIVE_COOK_DELETE_PACKAGE_NOT_COMPLETE">XD_BUG_FIX_ITERATIVE_COOK_DELETE_PACKAGE_NOT_COMPLETE</a></td><td>修复增量 Cook 未清理失效包的问题</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_LOG_COOK_TEXTURE_GROUP_SETTINGS">XD_TOOL_LOG_COOK_TEXTURE_GROUP_SETTINGS</a></td><td>Cook 纹理时输出纹理组的设置信息</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_WARNING_COMPONENTS_THAT_NEED_TO_BE_REBUILT_LIGHTING">XD_TOOL_WARNING_COMPONENTS_THAT_NEED_TO_BE_REBUILT_LIGHTING</a></td><td>Cook 时警告需要重建光照的组件</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_REPORT_PAK_TASK_TIMES">XD_TOOL_REPORT_PAK_TASK_TIMES</a></td><td>输出 Pak 打包各任务耗时统计报告文件</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_NEW_INTERFACE_GET_FILE_NO_EXIST_DETAIL_REASON">XD_MISC_NEW_INTERFACE_GET_FILE_NO_EXIST_DETAIL_REASON</a></td><td>文件不存在时输出详细原因（Pak/磁盘查找链路）</td><td class="tval">1</td><td class="tuse">13</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PAK_FAST_WRITE">XD_OPT_PAK_FAST_WRITE</a></td><td>Pak 磁盘写入提速（已禁用：Mac 上写入出错且收益有限）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MSIC_INI_COOK_BLACKLIST">XD_MSIC_INI_COOK_BLACKLIST</a></td><td>改进 Cook ini 黑名单功能</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_DUMP_ASYNC_LOADING_FILE_ERROR_DETAILS">XD_BUG_FIX_DUMP_ASYNC_LOADING_FILE_ERROR_DETAILS</a></td><td>异步加载文件失败时输出详细原因</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES">XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES</a></td><td>为 iOS 生成稳定的 Shader OutputHash，避免重 Cook 后不必要的热更（UE4-3470）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_COOK_MAC_PARALLEL_USAGE">XD_OPT_COOK_MAC_PARALLEL_USAGE</a></td><td>Mac 平台 Cook 并行化（Shader 编译与纹理压缩 Worker）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data_Debug">XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data_Debug</a></td><td>上述 Cook 卡死修复的调试开关（默认关闭）</td><td class="tval">0</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data">XD_FIX_BUG_Infinite_Wait_When_Cook_Platform_Data</a></td><td>修复 Cook 时等待 CookedPlatformData 完成导致卡死（UE4-4780）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_GENERATE_DETERMINED_MATSM_DDC">XD_BUG_FIX_GENERATE_DETERMINED_MATSM_DDC</a></td><td>生成确定性的材质 ShaderMap（MATSM）DDC</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_SAVE_PACKAGE_MOVE_FAILURE_ERR_CODE">XD_MISC_SAVE_PACKAGE_MOVE_FAILURE_ERR_CODE</a></td><td>保存包体 I/O 失败时输出错误码</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_GENERATE_DETERMINED_STATIC_MESH_TEXCOORDS">XD_BUG_FIX_GENERATE_DETERMINED_STATIC_MESH_TEXCOORDS</a></td><td>修复静态网格导入时 UV 通道不足导致 DDC 不确定</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_PAK_FAIL_NO_PREMOUNT">XD_MISC_PAK_FAIL_NO_PREMOUNT</a></td><td>Pak 相关失败时阻止预挂载，交给项目热更模块做完整性校验</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_DEBUG_COOK_ISSUE_PACKAGES_NEVER_DEC">XD_MISC_DEBUG_COOK_ISSUE_PACKAGES_NEVER_DEC</a></td><td>Cook 卡在 “Packages Remain n Total m” 问题的调试代码</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_DUMP_DETAIL_OPEN_PACKAGE_FAIL_REASON">XD_TOOL_DUMP_DETAIL_OPEN_PACKAGE_FAIL_REASON</a></td><td>FPackageReader::OpenPackageFile 失败时输出更详细的失败原因</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_WRONG_LOD_VERTICES_NUM_DDC">XD_BUG_FIX_WRONG_LOD_VERTICES_NUM_DDC</a></td><td>修复骨骼 LOD 顶点数未写入 DDC 导致的数据错误</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET">XD_PACKAGE_LOCALIZATION_KEY_GUID_MANUAL_SET</a></td><td>支持手动设置 UPackage 本地化 Key 的稳定 GUID</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MEADIA_FILE_LOCALIZED_PATH">XD_MEADIA_FILE_LOCALIZED_PATH</a></td><td>媒体文件支持解析本地化路径（Pak 或磁盘中查找）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_REPORT_COOK_TASK_TIMES">XD_TOOL_REPORT_COOK_TASK_TIMES</a></td><td>输出 Cook 各任务耗时统计报告文件</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_TEXTURE_MIP_LOAD_CRASH_WHEN_NO_UBULK">XD_BUG_FIX_TEXTURE_MIP_LOAD_CRASH_WHEN_NO_UBULK</a></td><td>修复没有 ubulk 时纹理 Mip 加载崩溃（TORCHLIGHT-251687）</td><td class="tval">1</td><td class="tuse">7</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="shader-pso.html"><h3>🧩 着色器与 PSO</h3><p>与当前主题关联密切</p></a><a class="card" href="project-features.html"><h3>🔥 火炬之光项目特性</h3><p>与当前主题关联密切</p></a><a class="card" href="editor-tools.html"><h3>🛠️ 编辑器与资源工具</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

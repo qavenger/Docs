@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>移动端渲染优化 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>📱 移动端渲染优化</h1><p class="lead">GLES/Vulkan 移动管线的性能与效果开关</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>移动端渲染不做「另起炉灶」，而是在 UE4 移动管线上逐项省带宽、省 Pass、省采样：Bloom/Tonemap/Depth/ShadowMask/反射捕获/遮挡剔除，每一项都有 CVar 或宏可开关。
+</div>
+
+<h2 class="sec">1. 移动端 BasePass 与图元提交</h2>
+<ul class="tight">
+<li><code>XD_OPT_DONT_UPDATE_PRIMITIVE_UBO_WHEN_PARAMS_NOT_CHANGE</code>：对比 PrimitiveShaderParameters，内容未变就不上传 UBO，降低移动端驱动调用开销。</li>
+<li><code>XD_OPT_MOBILE_USE_COARSE_STATIC_SHADOW_MASK_TEXTURE</code>：先用粗粒度静态阴影遮罩判断，完全受光/完全阴影的像素跳过逐像素 ShadowMask 采样。</li>
+<li><code>XD_OPTIMIZATION_MOVABLE_DIRECTIONAL_LIGHT_PERMUTATION</code>：控制是否为 Mobile 可移动平行光编译 Shader 排列（不用就不编）。</li>
+<li><code>XD_OPTIMIZATION_PPMATERIAL_USE_IN_BASEPASS</code>：控制后处理材质是否参与 Mobile BasePass 排列编译。</li>
+<li><code>XD_OPT_MOBILE_LANDSCAPE_POINT_LIGHTING</code>（默认 <span class="v off">0</span>）：地形点光源的 VS/PS 协同裁剪。</li>
+</ul>
+
+<h2 class="sec">2. 后处理：Bloom / Tonemap / Upscale</h2>
+<ul class="tight">
+<li><code>XD_OPT_FAST_BLOOM</code>：移动端 Bloom 快速路径（重排降采样与采样结构）。</li>
+<li><code>XD_OPT_MOBILE_BLOOM_SETUP_PASS_MERGE_SAMPLES</code>（默认 <span class="v off">0</span>）：Bloom Setup Pass 合并采样以减少带宽。</li>
+<li><code>XD_OPT_CACHE_TONEMAP_LUT_TEXTURE</code>：缓存 Tonemap LUT 结果（CVar <code>r.EnableLUTCache</code>）。</li>
+<li><code>XD_OPT_MOBILE_UPSCALE_PASS_DISABLE_WHEN_SIZE_DIFF_LITTLE</code>：Tonemap 输出与 BackBuffer 尺寸接近时跳过 Upscale。</li>
+<li><code>XD_OPT_MOBILE_DISABLE_DISTORTION_BY_DEFAULT</code>：新增 <code>r.Mobile.DisableDistortion</code>，移动端默认关闭扭曲，避免额外 Pass。</li>
+</ul>
+
+<h2 class="sec">3. 深度与显存（Memoryless）</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_MOBILE_IOS_DEPTH_FETCH</code>：iOS 从深度 RT 采样深度，MSAA + DOF 场景的必需项（<b>UBT 强制为 1</b>，关闭会崩溃）。</li>
+<li><code>XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH</code> + <code>XD_OPT_ANDROID_GL_FORCE_REMOVE_DEPTH_RESOLVE_PASS</code>：Android 直接采样深度并去掉多余的 Depth Resolve Pass。</li>
+<li><code>XD_BUG_FIX_DEPTH_TEXTURE_SHOULD_NOT_MEMORYLESS_WHEN_PP_ACCESS</code>：后处理需要读深度时禁用 Memoryless。</li>
+<li><code>XD_BUG_FIX_MOBILE_CUSTOM_DEPTH_FALLBACK_DEVICE_Z</code>、<code>XD_BUG_FIX_EMULATOR_DEPTH</code>：自定义深度无效值与模拟器 DXT 平台的深度处理适配。</li>
+<li><code>XD_BUG_FIX_QUANTIZE_WINDOW_SIZE</code>：iOS 窗口/视图尺寸取整以匹配 SceneColorMobile，消除 Tonemap 前后的缩放（UE4-2524）。</li>
+</ul>
+
+<h2 class="sec">4. 反射、遮挡与画质档位</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_MOBILE_USE_SPECIFIED_REFLECTION_CAPTURE</code>：组件/场景可指定使用的反射捕获，避免移动端只按距离取最近捕获导致反射跳变。</li>
+<li><code>XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE</code>（默认 <span class="v off">0</span>）：关闭 HQ 反射时，为球面反射捕获增加距离钳制与局部反射向量。</li>
+<li><code>XD_OPT_MOBILE_CONTROLL_HARDWARD_OCCLUSION_CULLING</code>：项目设置新增移动端硬件遮挡剔除开关，避免被 PC 设置误影响。</li>
+<li><code>XD_RENDERING_LANDSCAPE_LOD_BIAS</code> / <code>XD_OPT_MOBILE_LANDSCAPE_NO_LOD_MORPH</code>：地形 LOD 档位与 LOD 形变开关。</li>
+<li><code>XD_BUG_FIX_RUNTIME_TEXTURE_LODBIAS</code>、<code>XD_MISC_MOBILE_USE_MIN_LOD_SIMULATE_LOD_BIAS</code>：按设备档位设置纹理 LOD Bias，GLES 用 MIN_LOD 模拟。</li>
+<li><code>XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR</code>：修复帧率 &gt;60 时渲染线程多等一个 VSync。</li>
+<li><code>XD_FIX_BUG_MOBILE_SCENE_CAPTURE_TONE_CURVE_HDR_CRASH</code>：移动预览 + FinalToneCurveHDR 抓拍的崩溃修复。</li>
+</ul>
+
+<h2 class="sec">5. 注意事项</h2>
+<ul class="tight">
+<li>移动端优化大多提供 CVar（<code>r.Mobile.*</code>、<code>r.EnableLUTCache</code>、<code>r.LandscapeLODBias</code> 等），宏开启不代表线上默认生效，画质档位在 DeviceProfile 中配置。</li>
+<li>部分宏默认 0（地形点光、Bloom 合并采样），是「有收益但需真机验证」的候选优化，改动后重点回归低端机。</li>
+<li>Depth Fetch 相关宏与移动端 Memoryless RenderTarget 强相关，涉及 iOS 时务必保持 <code>XD_RENDERING_MOBILE_IOS_DEPTH_FETCH=1</code>。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 23 个宏——UE5 已覆盖 <b>2</b>、部分覆盖 <b>17</b>、未覆盖 <b>3</b>；可完全工程化 <b>8</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">移动端渲染优化 相关宏（23）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_MOBILE_USE_SPECIFIED_REFLECTION_CAPTURE">XD_RENDERING_MOBILE_USE_SPECIFIED_REFLECTION_CAPTURE</a></td><td>允许指定某个反射捕获（Reflection Capture）作为移动端反射来源</td><td class="tval">1</td><td class="tuse">13</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MOBILE_DISABLE_DISTORTION_BY_DEFAULT">XD_OPT_MOBILE_DISABLE_DISTORTION_BY_DEFAULT</a></td><td>新增 r.Mobile.DisableDistortion 并默认关闭移动端扭曲效果</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_MOBILE_SCENE_CAPTURE_TONE_CURVE_HDR_CRASH">XD_FIX_BUG_MOBILE_SCENE_CAPTURE_TONE_CURVE_HDR_CRASH</a></td><td>修复 CaptureSource=SCS_FinalToneCurveHDR 且移动预览模式下编辑器崩溃</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MOBILE_BLOOM_SETUP_PASS_MERGE_SAMPLES">XD_OPT_MOBILE_BLOOM_SETUP_PASS_MERGE_SAMPLES</a></td><td>移动端 Bloom Setup Pass 合并采样次数以减少带宽（当前关闭）</td><td class="tval">0</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_QUANTIZE_WINDOW_SIZE">XD_BUG_FIX_QUANTIZE_WINDOW_SIZE</a></td><td>iOS 窗口/视图尺寸取整量化以匹配 SceneColorMobile，消除 Tonemap 前后缩放（UE4-2524）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_MOVABLE_DIRECTIONAL_LIGHT_PERMUTATION">XD_OPTIMIZATION_MOVABLE_DIRECTIONAL_LIGHT_PERMUTATION</a></td><td>暴露接口控制是否编译 Mobile 可移动平行光 Shader 变体</td><td class="tval">1</td><td class="tuse">11</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_EMULATOR_DEPTH">XD_BUG_FIX_EMULATOR_DEPTH</a></td><td>模拟器（DXT 纹理格式平台）下的移动端深度处理适配</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR">XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR</a></td><td>修复移动端帧率超过 60 时渲染线程可能多等一个 VSync 的问题</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_ANDROID_GL_FORCE_REMOVE_DEPTH_RESOLVE_PASS">XD_OPT_ANDROID_GL_FORCE_REMOVE_DEPTH_RESOLVE_PASS</a></td><td>Android OpenGL 上移除多余的深度解析（Depth Resolve）Pass</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MOBILE_CONTROLL_HARDWARD_OCCLUSION_CULLING">XD_OPT_MOBILE_CONTROLL_HARDWARD_OCCLUSION_CULLING</a></td><td>项目设置中新增移动端硬件遮挡剔除开关（避免PC设置影响移动端）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_DONT_UPDATE_PRIMITIVE_UBO_WHEN_PARAMS_NOT_CHANGE">XD_OPT_DONT_UPDATE_PRIMITIVE_UBO_WHEN_PARAMS_NOT_CHANGE</a></td><td>图元 Shader 参数未变化时跳过 UBO 更新</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE">XD_RENDERING_MOBILE_ENHANCE_REFLECTION_CATPURE</a></td><td>移动端球面反射捕获增强：距离钳制 + 计算局部反射向量（当前关闭）</td><td class="tval">0</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MOBILE_USE_COARSE_STATIC_SHADOW_MASK_TEXTURE">XD_OPT_MOBILE_USE_COARSE_STATIC_SHADOW_MASK_TEXTURE</a></td><td>移动端先用粗略阴影遮罩纹理判定，再采样逐像素阴影</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW">XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW</a></td><td>移动端禁用点光源动态阴影，保证 PC 与移动端效果一致</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MOBILE_CUSTOM_DEPTH_FALLBACK_DEVICE_Z">XD_BUG_FIX_MOBILE_CUSTOM_DEPTH_FALLBACK_DEVICE_Z</a></td><td>移动端无有效 CustomDepth 时使用反向 Z 远平面值，避免被当作真实深度参与换算</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MOBILE_UPSCALE_PASS_DISABLE_WHEN_SIZE_DIFF_LITTLE">XD_OPT_MOBILE_UPSCALE_PASS_DISABLE_WHEN_SIZE_DIFF_LITTLE</a></td><td>当 Tonemap 输出与 BackBuffer 尺寸仅差一点时跳过 Upscale Pass</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_FAST_BLOOM">XD_OPT_FAST_BLOOM</a></td><td>移动端 Bloom 快速优化（减少降采样/采样次数）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_MOBILE_IOS_DEPTH_FETCH">XD_RENDERING_MOBILE_IOS_DEPTH_FETCH</a></td><td>iOS 支持从深度 RT 采样深度（开启 MSAA+DOF 场景的必需项）</td><td class="tval">1</td><td class="tuse">11</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_MOBILE_USE_MIN_LOD_SIMULATE_LOD_BIAS">XD_MISC_MOBILE_USE_MIN_LOD_SIMULATE_LOD_BIAS</a></td><td>OpenGL ES 不支持纹理 LOD Bias，改用 GL_TEXTURE_MIN_LOD 模拟</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_RUNTIME_TEXTURE_LODBIAS">XD_BUG_FIX_RUNTIME_TEXTURE_LODBIAS</a></td><td>恢复运行时按设备档位（IOS_Mid/Android_Low）设置纹理 LODBias 的能力</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH">XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH</a></td><td>Android 强制从深度 RT 采样深度（不使用深度解析 Pass）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_DEPTH_TEXTURE_SHOULD_NOT_MEMORYLESS_WHEN_PP_ACCESS">XD_BUG_FIX_DEPTH_TEXTURE_SHOULD_NOT_MEMORYLESS_WHEN_PP_ACCESS</a></td><td>后处理需要读取深度时深度纹理不能使用 Memoryless</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_PPMATERIAL_USE_IN_BASEPASS">XD_OPTIMIZATION_PPMATERIAL_USE_IN_BASEPASS</a></td><td>暴露接口控制是否为 Mobile BasePass 编译 PostProcess 材质变体</td><td class="tval">1</td><td class="tuse">8</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="rendering-core.html"><h3>🎨 渲染管线与排序</h3><p>与当前主题关联密切</p></a><a class="card" href="platform-mobile.html"><h3>📲 Android / iOS / Mac</h3><p>与当前主题关联密切</p></a><a class="card" href="memory-profiling.html"><h3>📊 内存与性能分析</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

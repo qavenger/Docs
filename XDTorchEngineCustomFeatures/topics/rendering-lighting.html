@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>光照、阴影与材质 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>💡 光照、阴影与材质</h1><p class="lead">阴影/光照、ToonLit 材质、Bloom 与后处理</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>这块包含三部分：<b>光照/阴影</b>的精细控制与移动端一致性、<b>ToonLit 卡通材质</b>体系（火炬之光画面风格的核心）、以及 <b>Bloom/LUT/DLSS/GTAO</b> 等后处理定制。
+</div>
+
+<h2 class="sec">1. 光照与阴影</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_PC_PER_LIGHT_PER_OBJECT_SHADOW_PROJECTION_CONTROL</code>：为光源与投射阴影的物体分别增加开关，控制「某光源是否对某物体投影」，用于角色打光/过场的精细控制。</li>
+<li><code>XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK</code>：被隐藏的次要平行光仍写入 Deferred ShadowMask，保持其阴影遮蔽不跳变。</li>
+<li><code>XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW</code>：移动端（ES3.1 及以下）点光源不再投射动态阴影，PC/移动效果一致，同时省下阴影 Pass。</li>
+<li><code>XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP</code>：强制所有 LOD 共享 LOD0 的 Lightmap（<code>bForceLODsShareLightmap</code>），光照图体积与烘焙时间大幅下降。</li>
+<li><code>XD_RENDERING_LIGHTMAP_BIAS</code>：暴露 Lightmap Bias（WorldSettings 级），微调采样偏移解决漏光/黑边。</li>
+<li><code>XD_TOOL_SUPPORT_NO_BAKED_LIGHTMAP_DIRECTIONALITY_GLOBALLY_MOBILE</code>：移动端全局关闭 Lightmap 方向性（<code>r.DisableBakedLightMapDirectonality</code>），烘培贴图由 RGBA 变 RGB(A)，包体显著减小。</li>
+<li><code>XD_OPT_STATIC_POINT_LIGHT_SET_HIDDEN_IN_GAME</code>：静态点光源可 HiddenInGame 且保留烘焙照明，减少运行时动态光源列表。</li>
+<li><code>XD_RENDERING_LIGHTMASS_DISABLE_BackfacingHitsFraction</code>（默认 <span class="v off">0</span>）：关闭 UE4.24 新增的背面命中比例处理（该特性让植被偏暗）。</li>
+<li><code>XD_OPTIMIZATION_SHADOWS_FORCE_LOD</code>（默认 <span class="v off">0</span>）：阴影 Pass 用低 LOD 骨骼网格。</li>
+<li><code>XD_EXT_ADJUST_FOG_INTENSITY_RANGE</code>：放宽雾强度可设置范围。</li>
+<li><code>XD_RENDERING_ALLOW_TRANSLUCENCY_OBJ_CAST_CSM_SHADOW</code>：允许半透明物体向级联阴影投射（注意它构建期依赖 CustomUnlit 系列宏）。</li>
+<li>稳定性：<code>XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC</code>（独立 ShadowProjectionDepthPassMeshProcessor）、<code>XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED</code>、<code>XD_BUG_FIX_VOLUME_LIGHTMAP_ADD_TO_SCENE_CRASH</code>、<code>XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP</code>、<code>XD_BUG_FIX_ILCDATA</code>（间接光照缓存空数据保护）。</li>
+</ul>
+
+<h2 class="sec">2. ToonLit 卡通材质体系</h2>
+<ul class="tight">
+<li><code>XD_RENDERING_TOON_LIT_SHADING_MODEL</code>：在着色模型列表中新增 <b>ToonLit</b> 卡通光照模型，材质编辑器、材质编译器、渲染器与所有 Shader（Clustered Deferred / Mobile 等）全部打通，是火炬之光卡通渲染的核心。</li>
+<li><code>XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE</code>：引擎级 Ramp（渐变）贴图 remap——材质无需自己采样即可获得统一的色阶过渡。</li>
+<li><code>XD_RENDERING_CUSTOM_GI</code>：材质新增 <code>MP_CustomGI</code>/<code>MP_GIScale</code> 自定义 GI 通道，编辑器、HLSL 翻译器、材质烘焙导出全链路支持；卡通渲染里可手工控制环境光贡献。</li>
+<li><code>XD_RENDERING_OPAQUE_UNLIT_DISABLE_FOG</code>：Opaque Unlit 材质可单独关闭雾效，避免远景雾把天空盒/特效染灰（TORCHLIGHT-240925）。</li>
+<li><code>XD_OPT_MATERIAL_NO_DYNAMIC_POINTLIGHT</code>：材质可声明不参与动态点光计算，降低大量点光源场景开销。</li>
+<li><code>XD_RENDERING_MATERIAL_CUSTOM_NODE_INPUT_ADD_FULL_PRECISION_SETTING</code> / <code>XD_HIGHP_CUSTOM_NODE_OUTPUT</code>：Custom 节点支持 UseFullPrecision（highp），移动端需要精度的计算（世界坐标等）不再被 mediump 削掉。</li>
+<li>材质工作流：<code>XD_MISC_NO_SHADER_COMPILER_WHEN_MATERIAL_UPDATED</code>（改材质不立刻编译 Shader，为策划省时间）、<code>XD_EXT_MAT_INSTANCE_EDITOR_PRINT_MOBILE_INSTRUCTION</code>、<code>XD_EXT_LOG_COMPILE_ISSUE_MATERIAL_NAMES</code>、<code>XD_HELP_PRINT_MAT_FUNCTION_NAME_WITH_REMOVED_MATERIAL_EXPRESSION</code>、<code>XD_EXT_ALLOW_USE_ORIGIN_PROXY_MATERIAL</code>、<code>XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX</code>、<code>XD_TOOL_DEBUG_MATERIAL_AUTOMATICALLY_SET_USAGE_IN_EDITOR</code>。</li>
+</ul>
+
+<h2 class="sec">3. 后处理</h2>
+<ul class="tight">
+<li><code>XD_BLOOM_CLAMP</code>：Bloom 降采样阶段限制输入亮度，抑制高亮素材造成的全屏泛光。</li>
+<li><code>XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE</code>：限制 Bloom 取样的最小 RGB（与粒子亮度调节配合，控制特效过曝上限）。</li>
+<li><code>XD_TOOL_ADDITIVE_BLEND_MATERIAL_ADD_ALPHA_COLOR_MULTIPLIER</code>：为 Additive 混合材质提供 <code>View.AdditiveColorMultiplier</code>/<code>AdditiveAlphaMultiplier</code> 全局乘数。</li>
+<li><code>XD_OPT_CACHE_TONEMAP_LUT_TEXTURE</code>：缓存 Color Grading LUT 的计算结果，避免每帧重复生成。</li>
+<li><code>XD_PC_DLSS_SUPER_SAMPLING</code>：DLSS 超采样集成（额外降采样 Pass + 上采样），把内部分辨率结果交给 DLSS。</li>
+<li><code>XD_CASCADE_RADIANCE</code>：级联辐射度体系——新增 <code>EMeshPass::CascadeRadianceCustomDepth</code> 与 <code>CascadeRadianceCustomDepth.cpp</code>，对标记物体渲染自定义深度，再在指定深度区间做辐射叠加，用于体积光/光柱/雾气。注意<b>代码仅 <code>PLATFORM_WINDOWS</code> 生效</b>。</li>
+<li><code>XD_BUG_FIX_GTAO</code>：修复 PC GTAO 环境光遮蔽问题（源自 UE5.7，TORCHLIGHT-239877）。</li>
+</ul>
+
+<h2 class="sec">4. 注意事项</h2>
+<ul class="tight">
+<li><b>Shader 联动最重</b>：ToonLit / Ramp / CustomGI / 雾效开关都会改变材质编译结果，改宏后必须清 DDC 重编 Shader；材质质量档（Quality Level）也要同步验证。</li>
+<li><b>移动端一致性</b>：<code>XD_MOBILE_RENDERING_POINT_LIGHT_DISABLE_DYNAMIC_SHADOW</code> 与 <code>XD_OPT_STATIC_POINT_LIGHT_SET_HIDDEN_IN_GAME</code> 都是为了 PC/移动效果一致，改动前确认双端对比。</li>
+<li><b>平台限制</b>：CascadeRadiance 仅 Windows；DLSS 需要对应显卡与插件支持。</li>
+<li><b>Lightmap 两个宏成对使用</b>：共享 LOD0 Lightmap 与全局关闭方向性一起用，收益最大（贴图减半 + 烘焙时间下降）。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 35 个宏——UE5 已覆盖 <b>8</b>、部分覆盖 <b>10</b>、未覆盖 <b>17</b>；可完全工程化 <b>14</b>，深度侵入项 <b>1</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">光照、阴影与材质 相关宏（35）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_OPAQUE_UNLIT_DISABLE_FOG">XD_RENDERING_OPAQUE_UNLIT_DISABLE_FOG</a></td><td>Opaque Unlit 材质可单独关闭雾效叠加</td><td class="tval">1</td><td class="tuse">12</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_MAT_INSTANCE_EDITOR_PRINT_MOBILE_INSTRUCTION">XD_EXT_MAT_INSTANCE_EDITOR_PRINT_MOBILE_INSTRUCTION</a></td><td>材质实例编辑器打印移动端指令数/使用说明</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC">XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC</a></td><td>修复 PC 阴影投影 Pass 深度状态错误（新增 FShadowProjectionDepthPassMeshProcessor）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_HELP_PRINT_MAT_FUNCTION_NAME_WITH_REMOVED_MATERIAL_EXPRESSION">XD_HELP_PRINT_MAT_FUNCTION_NAME_WITH_REMOVED_MATERIAL_EXPRESSION</a></td><td>打印包含已删除材质表达式的材质函数名，提示需要重新保存</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP">XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP</a></td><td>移除 Volume Lightmap 中多余的资源状态转换（同步 UE 官方修复）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP">XD_RENDERING_FORCE_STATIC_MESH_SHARE_LIGHT_MAP</a></td><td>强制静态网格所有 LOD 共享 LOD0 的 Lightmap UV/贴图，避免每级 LOD 重复烘焙</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_LIGHTMASS_DISABLE_BackfacingHitsFraction">XD_RENDERING_LIGHTMASS_DISABLE_BackfacingHitsFraction</a></td><td>关闭 Lightmass 的 BackfacingHitsFraction 改进（UE4.24 新特性导致植被偏暗）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_BLOOM_CLAMP">XD_BLOOM_CLAMP</a></td><td>Bloom 亮度钳制（在降采样阶段限制输入亮度）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_ALLOW_TRANSLUCENCY_OBJ_CAST_CSM_SHADOW">XD_RENDERING_ALLOW_TRANSLUCENCY_OBJ_CAST_CSM_SHADOW</a></td><td>允许半透明物体向 CSM 级联阴影投射阴影（配合 CustomUnlit 渲染路径）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_TOON_LIT_SHADING_MODEL">XD_RENDERING_TOON_LIT_SHADING_MODEL</a></td><td>新增 ToonLit 卡通光照着色模型（火炬之光卡通渲染核心）</td><td class="tval">1</td><td class="tuse">45</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE">XD_RENDERING_ADJUST_BLOOM_MIN_RGB_VALUE</a></td><td>限制 Bloom 取样的最小 RGB 值（配合粒子亮度调整，抑制特效过曝）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK">XD_PC_RENDERING_SUPPORT_HIDE_SECONDARY_DIRECTIONAL_LIGHTS_DEFERRED_SHADOWMASK</a></td><td>PC 支持被隐藏的次要平行光仍写入 Deferred ShadowMask（保留其阴影遮蔽）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_VOLUME_LIGHTMAP_ADD_TO_SCENE_CRASH">XD_BUG_FIX_VOLUME_LIGHTMAP_ADD_TO_SCENE_CRASH</a></td><td>修复 FPrecomputedVolumetricLightmap::AddToScene 崩溃</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_MATERIAL_NO_DYNAMIC_POINTLIGHT">XD_OPT_MATERIAL_NO_DYNAMIC_POINTLIGHT</a></td><td>材质可声明不参与动态点光源计算</td><td class="tval">1</td><td class="tuse">13</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_DEBUG_MATERIAL_AUTOMATICALLY_SET_USAGE_IN_EDITOR">XD_TOOL_DEBUG_MATERIAL_AUTOMATICALLY_SET_USAGE_IN_EDITOR</a></td><td>调试 UMaterial::bAutomaticallySetUsageInEditor 行为的日志</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_MATERIAL_CUSTOM_NODE_INPUT_ADD_FULL_PRECISION_SETTING">XD_RENDERING_MATERIAL_CUSTOM_NODE_INPUT_ADD_FULL_PRECISION_SETTING</a></td><td>材质 Custom 节点新增 UseFullPrecision 开关，开启后局部变量使用 highp float</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_CUSTOM_GI">XD_RENDERING_CUSTOM_GI</a></td><td>材质新增自定义 GI（CustomGI）通道，可在材质中指定 GI 来源与亮度</td><td class="tval">1</td><td class="tuse">13</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_PC_PER_LIGHT_PER_OBJECT_SHADOW_PROJECTION_CONTROL">XD_RENDERING_PC_PER_LIGHT_PER_OBJECT_SHADOW_PROJECTION_CONTROL</a></td><td>PC 端支持在光源与投射阴影物体上分别配置“是否相互影响”</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_SHADOWS_FORCE_LOD">XD_OPTIMIZATION_SHADOWS_FORCE_LOD</a></td><td>阴影 Pass 优化：绘制阴影时强制使用骨骼网格的低 LOD（当前关闭）</td><td class="tval">0</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE">XD_RENDERING_TOON_LIT_ADD_RAMP_TEXTURE</a></td><td>ToonLit 材质新增引擎级 Ramp 渐变贴图采样</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_LIGHTMAP_BIAS">XD_RENDERING_LIGHTMAP_BIAS</a></td><td>暴露 Lightmap Bias 控制接口（材质/组件级）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_CACHE_TONEMAP_LUT_TEXTURE">XD_OPT_CACHE_TONEMAP_LUT_TEXTURE</a></td><td>缓存 Tonemap LUT Pass 的结果纹理</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_NO_SHADER_COMPILER_WHEN_MATERIAL_UPDATED">XD_MISC_NO_SHADER_COMPILER_WHEN_MATERIAL_UPDATED</a></td><td>材质修改后不立即编译 Shader（为策划节省等待时间）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_HIGHP_CUSTOM_NODE_OUTPUT">XD_HIGHP_CUSTOM_NODE_OUTPUT</a></td><td>材质 Custom 节点输出使用 highp（保留项）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_ALLOW_USE_ORIGIN_PROXY_MATERIAL">XD_EXT_ALLOW_USE_ORIGIN_PROXY_MATERIAL</a></td><td>网格处理器与 MarkRelevance 允许使用原始 Proxy 材质</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_ADJUST_FOG_INTENSITY_RANGE">XD_EXT_ADJUST_FOG_INTENSITY_RANGE</a></td><td>调整雾强度可设置范围（支持更大/更小强度）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_CASCADE_RADIANCE">XD_CASCADE_RADIANCE</a></td><td>CascadeRadiance：基于自定义深度的级联辐射/光柱后处理体系</td><td class="tval">1</td><td class="tuse">30</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_LOG_COMPILE_ISSUE_MATERIAL_NAMES">XD_EXT_LOG_COMPILE_ISSUE_MATERIAL_NAMES</a></td><td>材质编译问题时输出材质名，便于定位</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED">XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED</a></td><td>修复常量材质实例（MIC）上 CastDynamicShadowAsMasked 不生效的问题</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/rendering.html#XD_PC_DLSS_SUPER_SAMPLING">XD_PC_DLSS_SUPER_SAMPLING</a></td><td>DLSS 超采样：额外降采样 Pass + DLSS 上采样集成</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX">XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX</a></td><td>支持只对指定材质索引应用参数覆盖</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_GTAO">XD_BUG_FIX_GTAO</a></td><td>修复源自 UE5.7 的 PC GTAO 环境光遮蔽问题（TORCHLIGHT-239877）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_STATIC_POINT_LIGHT_SET_HIDDEN_IN_GAME">XD_OPT_STATIC_POINT_LIGHT_SET_HIDDEN_IN_GAME</a></td><td>允许把纯静态点光源设为 HiddenInGame 仍保留其烘焙照明</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_ILCDATA">XD_BUG_FIX_ILCDATA</a></td><td>间接光照缓存（VolumetricLightmap/ILC）数据为空或尺寸异常时的保护与告警</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ADDITIVE_BLEND_MATERIAL_ADD_ALPHA_COLOR_MULTIPLIER">XD_TOOL_ADDITIVE_BLEND_MATERIAL_ADD_ALPHA_COLOR_MULTIPLIER</a></td><td>PC BasePass 为 Additive 混合材质提供附加颜色/透明度乘数（View.AdditiveColorMultiplier）</td><td class="tval">1</td><td class="tuse">3</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="rendering-core.html"><h3>🎨 渲染管线与排序</h3><p>与当前主题关联密切</p></a><a class="card" href="mobile-rendering.html"><h3>📱 移动端渲染优化</h3><p>与当前主题关联密切</p></a><a class="card" href="project-features.html"><h3>🔥 火炬之光项目特性</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

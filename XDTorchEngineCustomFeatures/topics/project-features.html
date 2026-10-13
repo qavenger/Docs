@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>火炬之光项目特性 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🔥 火炬之光项目特性</h1><p class="lead">XD_TORCHLIGHT_* 项目级定制</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b><code>XD_TORCHLIGHT_*</code> 是项目组（而非引擎组）维护的特性开关：UI 工作流、物理动画、地形、DLSS、热更赛季号与一批引擎行为微调。它们默认值即项目现状，多数由策划/美术工作流决定。
+</div>
+
+<h2 class="sec">1. 赛季与热更</h2>
+<ul class="tight">
+<li><code>XD_TORCHLIGHT_SEASON</code>（当前 <b>16</b>）：赛季号，是热更体系的枢纽——预挂载配置 <code>mount_&lt;season&gt;.json</code>、ShaderLib 头版本、PSO/PBC 缓存版本都引用它。<b>每赛季手动递增</b>即可自动清理旧缓存。</li>
+<li><code>XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX</code>：Pak Chunk 划分时忽略 Cook ini 干扰，修正 Chunk 归属。</li>
+<li><code>XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE</code>：暴露本地化包缓存刷新委托，保证异步加载能命中本地化资源。</li>
+<li><code>XD_FORCE_SATATICMESH_LOD_STREAM_BULK</code> / <code>XD_FORCE_ANIMATION_STREAM_BULK</code>（默认 <span class="v off">0</span>）：把静态网格 LOD 渲染数据/动画数据拆入 ubulk 流式文件，降低常驻内存；开启会显著改变 I/O 结构。</li>
+</ul>
+
+<h2 class="sec">2. 渲染与画质</h2>
+<ul class="tight">
+<li><code>XD_CSM_SHADOW_OPT</code>：级联阴影（CSM）优化，配合移动端点光动态阴影关闭保证双端一致。</li>
+<li><code>XD_TORCHLIGHT_USE_DLSS</code>：项目级 DLSS 开关（与 <code>XD_PC_DLSS_SUPER_SAMPLING</code> 配合）。</li>
+<li><code>XD_MATERIAL_DYNAMIC_SWITCH</code> + <code>XD_MATERIAL_SELECTOR_SWITCH_NUM</code>（7）：动态材质开关与材质 Selector 的最大节点数——用少量材质 + 运行时切换替代大量材质变体，直接减少 Shader 编译与包体。</li>
+<li><code>XD_TORCHLIGHT_LANDSCAPE_GENERATE_MID_BY_DEFAULT</code>（默认 <span class="v off">0</span>）：地形默认生成动态材质实例。</li>
+</ul>
+
+<h2 class="sec">3. UI 工作流（PSD / 蓝湖 / HDUI）</h2>
+<ul class="tight">
+<li><code>XD_TORCHLIGHT_WIDGET_ADD_PSID</code>：控件保存 PSD2UMG 同步的原始 Photoshop 节点 ID（PsId/SkipAdjust/PSDDelta，仅编辑器），便于 UI 迭代时把引擎控件与 PSD 图层对应起来。</li>
+<li><code>XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE</code>：从蓝湖复制粘贴 UI 代码时按规则校正资源对象。</li>
+<li><code>XD_TORCHLIGHT_UMG_AUTOWRAP</code>：UMG 设计器自动换行命令与布局调整逻辑。</li>
+<li><code>XD_TORCHLIGHT_MARGIN_HDUI_SCALE</code>：HDUI 九宫格边距按缩放系数换算。</li>
+<li><code>XD_TORCHLIGHT_SASSETPICKER_IGNORE_HDUI_ASSETS</code>：资源选择器过滤 hdui 目录资源。</li>
+<li><code>XD_TORCHLIGHT_WIDGET_CUSTOMIZE_TITLE_BAR</code>、<code>XD_TORCHLIGHT_WIDGET_NEW_INTERFACE</code>、<code>XD_TORCHLIGHT_SLISTPANEL_ADD_ELISTITEMALIGNMENT_EVENLUFIXWIDE</code>、<code>XD_TORCHLIGHT_FOCUS_TO_GAMEVIEWPORT_ON_COMMIT</code>、<code>XD_TORCHLIGHT_RELEASE_INSTANCEDECORATORS_IN_URICHTEXTBLOCK</code>：标题栏、控件接口、列表排列、文本提交焦点、富文本装饰器释放。</li>
+<li><code>XD_TL_SlateVectorArtData_AddNewCreateMethod</code>：SlateVectorArtData 运行时重建方法。</li>
+</ul>
+
+<h2 class="sec">4. 动画、物理与导入</h2>
+<ul class="tight">
+<li><code>XD_TORCHLIGHT_PHYSICSANIM_ADJUST</code>：物理动画调整（骨骼物理混合/模拟参数），适配角色物理表现。</li>
+<li><code>XD_TORCHLIGHT_IMPORTSCENECONVERT_FORCEFRONTXAXIS</code>：导入场景转换强制 +X 为正面朝向，统一美术资源方向。</li>
+<li><code>XD_TORCHLIGHT_TASK_GRAPH_EXT</code>：TaskGraph 扩展，供项目并行任务使用。</li>
+<li><code>XD_TORCHLIGHT_RUNTIME_DEVICE_PROFILE</code>：运行时切换 DeviceProfile（按设备/画质档位动态调整分辨率与特效等级）。</li>
+<li><code>XD_TORCHLIGHT_DISABLE_IDLE_TIMER</code>：禁用引擎空闲计时器。</li>
+<li><code>XD_TORCHLIGHT_GAMEVIEWPORT_ALLOW_OVERRIDE_COMMAND_HANDLE</code>：允许项目重写 GameViewportClient 的命令处理。</li>
+</ul>
+
+<h2 class="sec">5. 前端与提交工具</h2>
+<ul class="tight">
+<li><code>XD_FE_P4_SUBMITTER_TOOL</code>：P4 Submitter 工具（Perforce 提交流程辅助）。</li>
+<li><code>XD_PRE_CHECKIN_EVENT_SEND</code>：提交前事件发送，可接 CI/检查流程。</li>
+</ul>
+
+<h2 class="sec">6. 注意事项</h2>
+<ul class="tight">
+<li><b>赛季号必须人工维护</b>：忘了递增会导致旧 PSO/PBC/预挂载配置继续生效，热更后表现为「改了没效果」或「缓存冲突」。</li>
+<li><code>XD_TORCHLIGHT_SLISTPANEL_ADD_ELISTITEMALIGNMENT_EVENLUFIXWIDE</code> 仅作为改动标记：相关代码在 <code>SListPanel.cpp</code> 中无 <code>#if</code> 保护、直接生效；且其名称拼写与代码注释里的 <code>EVENLYFIXSIZE</code> 不一致，检索时留意。</li>
+<li><code>XD_TORCHLIGHT_USE_DLSS</code> 在引擎 Source 内无使用点，实际由 <code>XD_PC_DLSS_SUPER_SAMPLING</code> 的项目侧配置消费。</li>
+<li>uubulk 拆分（<code>XD_FORCE_*_STREAM_BULK</code>）默认关闭，属于「内存不够时再开」的调节阀。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 29 个宏——UE5 已覆盖 <b>5</b>、部分覆盖 <b>12</b>、未覆盖 <b>12</b>；可完全工程化 <b>11</b>，深度侵入项 <b>1</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">火炬之光项目特性 相关宏（29）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_SLISTPANEL_ADD_ELISTITEMALIGNMENT_EVENLUFIXWIDE">XD_TORCHLIGHT_SLISTPANEL_ADD_ELISTITEMALIGNMENT_EVENLUFIXWIDE</a></td><td>SListPanel 新增 EListItemAlignment::EvenlyFixWide 对齐方式（标记宏）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_USE_DLSS">XD_TORCHLIGHT_USE_DLSS</a></td><td>项目级 DLSS 开关（配合 XD_PC_DLSS_SUPER_SAMPLING 使用）</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_DISABLE_IDLE_TIMER">XD_TORCHLIGHT_DISABLE_IDLE_TIMER</a></td><td>禁用引擎空闲计时器（避免帧率被空闲降频影响）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE">XD_TORCHLIGHT_UPDATE_LOCALIZED_PACKAGE_CACHE</a></td><td>暴露本地化包缓存更新委托，保证异步加载能正确命中本地化资源</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_IMPORTSCENECONVERT_FORCEFRONTXAXIS">XD_TORCHLIGHT_IMPORTSCENECONVERT_FORCEFRONTXAXIS</a></td><td>导入场景转换时强制以 +X 作为模型正面朝向</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_SASSETPICKER_IGNORE_HDUI_ASSETS">XD_TORCHLIGHT_SASSETPICKER_IGNORE_HDUI_ASSETS</a></td><td>资源选择器过滤时忽略 hdui 目录下的资源</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_GAMEVIEWPORT_ALLOW_OVERRIDE_COMMAND_HANDLE">XD_TORCHLIGHT_GAMEVIEWPORT_ALLOW_OVERRIDE_COMMAND_HANDLE</a></td><td>允许项目重写 GameViewportClient 的命令处理（HandleCommand）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_LANDSCAPE_GENERATE_MID_BY_DEFAULT">XD_TORCHLIGHT_LANDSCAPE_GENERATE_MID_BY_DEFAULT</a></td><td>Landscape 默认生成 MID（默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_UMG_AUTOWRAP">XD_TORCHLIGHT_UMG_AUTOWRAP</a></td><td>UMG 设计器自动换行（AutoWrap）命令与布局调整逻辑</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_WIDGET_CUSTOMIZE_TITLE_BAR">XD_TORCHLIGHT_WIDGET_CUSTOMIZE_TITLE_BAR</a></td><td>控件自定义标题栏（游戏内窗口/弹窗统一 TitleBar 样式）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_MATERIAL_SELECTOR_SWITCH_NUM">XD_MATERIAL_SELECTOR_SWITCH_NUM</a></td><td>材质 Selector Switch 的最大节点数（当前 7）</td><td class="tval">7</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_SEASON">XD_TORCHLIGHT_SEASON</a></td><td>赛季号（当前 16），用于热更版本与缓存清理判定</td><td class="tval">16</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_WIDGET_NEW_INTERFACE">XD_TORCHLIGHT_WIDGET_NEW_INTERFACE</a></td><td>UMG 控件新增接口（供项目扩展控件行为）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_FOCUS_TO_GAMEVIEWPORT_ON_COMMIT">XD_TORCHLIGHT_FOCUS_TO_GAMEVIEWPORT_ON_COMMIT</a></td><td>输入提交时用 SetAllUserFocusToGameViewport 替代 ClearKeyboardFocus</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_MATERIAL_DYNAMIC_SWITCH">XD_MATERIAL_DYNAMIC_SWITCH</a></td><td>材质 Selector Switch（多选一静态开关组）支持动态切换与编辑器参数复制</td><td class="tval">1</td><td class="tuse">28</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_PHYSICSANIM_ADJUST">XD_TORCHLIGHT_PHYSICSANIM_ADJUST</a></td><td>物理动画（PhysicsAnim）行为调整：骨骼物理混合与模拟参数修正</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_TASK_GRAPH_EXT">XD_TORCHLIGHT_TASK_GRAPH_EXT</a></td><td>TaskGraph 扩展（新增任务类型/调度接口，供项目并行任务使用）</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/frontend.html#XD_FE_P4_SUBMITTER_TOOL">XD_FE_P4_SUBMITTER_TOOL</a></td><td>P4 Submitter 工具（Perforce 提交流程辅助）</td><td class="tval">1</td><td class="tuse">7</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_FORCE_SATATICMESH_LOD_STREAM_BULK">XD_FORCE_SATATICMESH_LOD_STREAM_BULK</a></td><td>把静态网格 LOD 渲染数据拆入 ubulk 流式文件（默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/frontend.html#XD_TL_SlateVectorArtData_AddNewCreateMethod">XD_TL_SlateVectorArtData_AddNewCreateMethod</a></td><td>SlateVectorArtData 新增运行时创建方法（运行时动态构建矢量图数据）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_MARGIN_HDUI_SCALE">XD_TORCHLIGHT_MARGIN_HDUI_SCALE</a></td><td>HDUI 布局的 Margin 按 UI 缩放比例换算</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_RUNTIME_DEVICE_PROFILE">XD_TORCHLIGHT_RUNTIME_DEVICE_PROFILE</a></td><td>运行时设备档案（DeviceProfile）切换支持</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_RELEASE_INSTANCEDECORATORS_IN_URICHTEXTBLOCK">XD_TORCHLIGHT_RELEASE_INSTANCEDECORATORS_IN_URICHTEXTBLOCK</a></td><td>URichTextBlock 释放 InstancedDecorators 引用（避免资源滞留内存）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE">XD_TORCHLIGHT_WIDGETBLUEPRINTEDITOR_PASTEWIDGET_LANHU_RULE</a></td><td>从蓝湖（LanHu）复制粘贴 UI 代码时的资源对象修正规则</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_WIDGET_ADD_PSID">XD_TORCHLIGHT_WIDGET_ADD_PSID</a></td><td>Widget 保存 PSD2UMG 同步的原始 Photoshop 节点 ID（仅编辑器）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX">XD_TORCHLIGHT_IGNORE_PAK_CHUNK_FIX</a></td><td>Pak Chunk 划分时忽略 Cook ini 的影响（修正 Chunk 归属）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_FORCE_ANIMATION_STREAM_BULK">XD_FORCE_ANIMATION_STREAM_BULK</a></td><td>把动画 Sequence 数据拆入 ubulk 流式文件（默认关闭）</td><td class="tval">0</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/projectfeatures.html#XD_CSM_SHADOW_OPT">XD_CSM_SHADOW_OPT</a></td><td>级联阴影（CSM）优化：新增 DirectionalCSMShadowBoundRadiusScale 缩放阴影包围半径并补偿淡出比例</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/frontend.html#XD_PRE_CHECKIN_EVENT_SEND">XD_PRE_CHECKIN_EVENT_SEND</a></td><td>提交前事件发送（CI/检查流程挂钩）</td><td class="tval">1</td><td class="tuse">6</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="cook-pak.html"><h3>📦 Cook / Pak / DDC / 热更</h3><p>与当前主题关联密切</p></a><a class="card" href="ui-umg.html"><h3>🪟 UI / Slate / UMG</h3><p>与当前主题关联密切</p></a><a class="card" href="rendering-lighting.html"><h3>💡 光照、阴影与材质</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

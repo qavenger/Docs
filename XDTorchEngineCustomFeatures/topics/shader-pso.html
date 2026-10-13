@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>着色器与 PSO · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🧩 着色器与 PSO</h1><p class="lead">PSO 预编译/缓存、Shader 库、DDC 与编译流水线</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>把 UE4.26 的 PSO（Pipeline State Object）/程序二进制缓存（PBC）/Shader 库三套体系，改造成「能热更、能熔断、能被项目接管、能在移动端平滑预热」的形态，并在 Cook 阶段保证产物确定性。
+</div>
+
+<h2 class="sec">1. 为什么要做这些改造</h2>
+<p>UE4.26 的 PSO 体系在移动端和长线运营项目上有三个痛点：</p>
+<ul class="tight">
+<li><b>首次进入战斗/新场景时的编译卡顿</b>——PSO 需要在运行时现场链接（GLES/Vulkan 尤其昂贵），表现为第一次施法、第一次开大招掉帧。</li>
+<li><b>热更困难</b>——<code>.upipelinecache</code> 与 Shader 库绑定 Cook 产物，赛季更新包体时容易失效或与新 Shader 不匹配。</li>
+<li><b>异常不可控</b>——驱动/IO 损坏时 UE 默认行为是 Fatal 崩溃，缺少熔断与回退。</li>
+</ul>
+<p>心动引擎围绕 <code>Runtime/RenderCore/ShaderPipelineCache.*</code>、<code>Runtime/RHI/PipelineFileCache.*</code>、<code>Runtime/OpenGLDrv</code>、<code>Runtime/VulkanRHI</code> 与 <code>ShaderCodeLibrary</code> 做了一整条链路的改造。</p>
+
+<h2 class="sec">2. 功能分组</h2>
+
+<h3>2.1 PSO 预编译调度：平滑、限时、可中断</h3>
+<ul class="tight">
+<li><code>XD_OPT_PRECOMPILE_PSO_SMOOTHLY</code>：把 <code>FShaderPipelineCache</code> 改成高频 Tickable，并用 <code>GFrameNumberRenderThread</code> 限制「每帧最多处理一次」，让 PSO 预编译分摊到多帧，避免一次性长时间卡死（<code>RenderCore/Private/ShaderPipelineCache.cpp</code>）。</li>
+<li><code>XD_BUG_FIX_MAX_PSO_PRECOMPILE_TIME_NON_FIRST_RUN</code>：新增 CVar <code>r.ShaderPipelineCache.MaxPrecompileTimeNonFirstRun</code>，非首次启动（缓存已有效）时收紧前台预编译墙钟上限，尽快把控制权还给玩家。</li>
+<li><code>XD_BUG_FIX_PSO_PRECOMPILE_REMAINING_REAL_COUNT_WHEN_COMPLETE</code>：修正剩余数量统计，不再用时间比例估算，进度条不会「永远差一点」。</li>
+<li><code>XD_BUG_FIX_PSO_PRECOMPILIING_STUCK</code>：Android 预编译批结束时强制 <code>ImmediateFlush(FlushRHIThread)</code>，修复 RHI 线程 <code>LastPrecompilingFence</code> 卡住导致游戏停在 Logo 的问题。</li>
+<li><code>XD_BUG_FIX_DONT_WAIT_PSO_PRECOMPILE_COMPLETED_WHEN_BATCH_JOB_PAUSED</code>：批处理已暂停时跳过 Android 启动阶段的 busy-wait。</li>
+</ul>
+
+<h3>2.2 PSO 缓存文件：多文件合并与赛季清理</h3>
+<ul class="tight">
+<li><code>XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES</code>：支持多份 <code>.stable.upipelinecache</code>（对应多次热更），新增 <code>MergeStableGameCacheFiles()</code> 按 CL 或文件大小排序合并，输出合并文件到 Saved；Windows 侧把 PSO 启用推迟到热更状态检查之后。</li>
+<li><code>XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</code>：ini 未配置游戏版本时用 <code>XD_TORCHLIGHT_SEASON</code> 作为 game version，赛季号一变旧缓存自动失效。</li>
+<li><code>XD_BUG_FIX_PSO_INCREMENTAL_SAVE_TOC_GUID</code>：增量保存时先拷贝 TOC 再序列化，避免 FileGuid 被清零。</li>
+<li><code>XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL</code>（默认 <span class="v off">0</span>）：按机型物理内存选择 Low/All 档 PSO 子集加载，低端机省内存；需要时再开启。</li>
+<li><code>XD_BUG_FIX_BUILD_PSO_WITH_SHADER_HASH</code>：Cook 时用 ShaderHash 构建 stable cache，防止 Shader 代码变化后缓存里出现非法 VS~PS 组合。</li>
+<li><code>XD_BUG_FIX_WARNING_WHEN_PSO_MAPS_TO_MULTIPLE_SHADERS</code>：一个 stable PSO 映射多个 Shader 时从 Error 降级为 Warning，不阻断出包。</li>
+</ul>
+
+<h3>2.3 驱动级 PBC（程序二进制缓存）</h3>
+<ul class="tight">
+<li><code>XD_OPT_INCREMENTALLY_STORE_PROGRAM_BINARY_CACHE</code>：OpenGL 的 PBC 支持增量构建/存储（<code>GLProgramBinaryCache</code>），不再每次全量重写。</li>
+<li><code>XD_EXT_ANDROID_FORCE_PBC_RELOCATION</code>：PBC 强制放内部存储，修复部分机型 SD 卡上的 pbc 非法导致崩溃（UE4-2196）。</li>
+<li><code>XD_BUG_FIX_DISABLE_PROGRAM_BINARY_IN_MUMU_EMULATOR</code>：MuMu 模拟器（x86_64 Android）禁用 PBC。</li>
+<li><code>XD_OPT_RESTART_APPLICATION_WHEN_VULKAN_PSO_FILE_CACHE_COMPLETED</code>：Vulkan PSO 文件缓存生成后按 CVar <code>r.Vulkan.RestartAndroidAfterPrecompile</code> 重启应用使其生效。</li>
+<li><code>XD_EXT_SHDADER_UNUSED_PBC_EVICT</code>：换关卡时驱逐已加载的 PBC，释放内存。</li>
+<li><code>XD_MISC_PSO_PRECOMPILE_LLM_TAG</code>：新增 LLM 标签 <code>PSOU</code>，把预编译内存与运行时 PSO 内存分开统计。</li>
+</ul>
+
+<h3>2.4 熔断、LRU 与容错</h3>
+<ul class="tight">
+<li><code>XD_MISC_STOP_PSO_CACHING_IF_FAILES</code>：新增异常捕获与熔断机制（<code>FShaderPipelineCacheExceptionCatcher</code>），OpenGL/Vulkan 在保存或创建失败时停止后续缓存，避免 IO/驱动异常被当成崩溃。</li>
+<li><code>XD_MISC_PSO_LRU_FALLBACK_TO_COMPILE</code>、<code>XD_MISC_PSO_LRU_AVOID_REPEATED_EVICTION</code>、<code>XD_BUG_FIX_LRU_ASYNC_PRELOAD_OVERWRITE_EVICTED</code>：LRU 驱逐/恢复链路的三个容错点，避免 LinkedProgram 被孤立导致 ensure。</li>
+<li><code>XD_BUG_FIX_DUPLICATE_FOPENGLPROGRAMKEY</code>、<code>XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY</code>、<code>XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD</code>、<code>XD_BUG_FIX_PSO_FOUND_DUPLICATED_PROGRAM_KEY_WHEN_LOADING_PROGRAM_BINARY_CACHE</code>：GL 程序缓存加载/链接失败时改为容错/回退，而不是 Fatal。</li>
+<li><code>XD_BUG_FIX_SHADER_COMPILING_CRASH</code>：跟踪被取消的 ShaderMap 作业，防止半成品 Shader 触发 check。</li>
+</ul>
+
+<h3>2.5 项目接管与重启统一</h3>
+<ul class="tight">
+<li><code>XD_EXT_USE_PSO_PROJECT_TAKEOVER_POINTS</code>：在 <code>CoreDelegates</code> 暴露 3 个 PSO 接管委托（EngineLoop 前后重定义批行为、Android 启动预编译检查）以及 Android 强制重启接管点；宏开启但无人绑定时行为与原生一致。</li>
+<li><code>XD_EXT_USE_SHARED_REBOOT_REQUEST</code>：重启请求统一走 <code>FPlatformMisc::RegisterRestartApplicationRequest()</code>，Android 走 JNI，Generic 平台只告警。</li>
+<li><code>XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM</code>：只声明宏、Engine 内无使用点，属项目层接口。</li>
+</ul>
+
+<h3>2.6 Shader 库：热更与增量 Cook</h3>
+<ul class="tight">
+<li><code>XD_OPT_SHADER_LIB_SRIP</code>：按资源路径把 Shader 剥离到可热更的独立 ShaderLib，配合 XDLivePatch 插件实现部分 Shader 热更。</li>
+<li><code>XD_BUG_FIX_PATCH_SHADER_LIB_ADDITIONAL_ERROR_BOOL_FLAG</code>：<code>CreatePatchLibrary()</code> 增加错误出参（UE4.26 原实现恒返回 true，调用者无法判断失败）。</li>
+<li><code>XD_BUG_FIX_SHADER_LIB_ASSET_INFO_NOT_COMPLETE</code>：修复 assetinfo.json 为空/未随 Cook 拷贝/热更未生成三个问题。</li>
+<li><code>XD_BUG_FIX_SUPPORT_ITERATIVE_SHADER_LIBRARY_COOKING_FOR_NATIVE_SHADER_LIBRARY_PLATFORM</code>：Metal 等原生库平台支持增量 Shader 库 Cook（UE4-3692）。</li>
+<li><code>XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES</code>：iOS/Metal 生成稳定 output hash，避免重 Cook 后无谓热更（UE4-3470）。</li>
+</ul>
+
+<h3>2.7 字节码压缩与调试信息</h3>
+<ul class="tight">
+<li><code>XD_OPT_SHADER_BYTE_CODE_PREFER_OODLE_COMPRESSION_FORMAT</code>：Shader 库默认压缩从 LZ4 换成 Oodle。</li>
+<li><code>XD_OPT_OPENGL_USBC_COMPRESS</code> / <code>XD_OPT_VULKAN_USBC_COMPRESS</code> / <code>XD_OPT_METAL_METALLIB_COMPRESS</code>：各平台生成原生/进一步压缩的 Shader 库格式，缩短加载时间、减小包体。</li>
+<li><code>XD_MISC_SHADER_KEEPDEBUG_INFO</code>：低于 Shipping 的构建保留 USBC/metallib 调试信息（CVar <code>r.Shaders.XD_KeepDebugInfoBelowShipping</code>），兼顾线上崩溃排查。</li>
+</ul>
+
+<h3>2.8 变体裁剪与编译诊断</h3>
+<ul class="tight">
+<li><code>XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_EDITOR_ONLY / _MOBILE_DEFERRED_RENDERING / _VIRTUAL_TEXTURING / _SKYATMOSPHERE / _TONEMAPPER</code>：按项目实际用到的渲染特性裁剪全局 Shader 变体，直接减少 PSO 总量与编译时间。</li>
+<li><code>XD_OPTIMIZATION_PPMATERIAL_USE_IN_BASEPASS</code>、<code>XD_OPTIMIZATION_MOVABLE_DIRECTIONAL_LIGHT_PERMUTATION</code>：为移动端 BasePass / 可移动平行光增加「是否编译该排列」的开关。</li>
+<li><code>XD_MISC_ADD_SHADER_COMPILE_LOG</code>、<code>XD_MISC_LOG_SHADER_DETAILED_DDC_KEY</code>、<code>XD_FIX_BUG_SOLVE_FAIL_TO_FIND_SHADER_MAP</code>、<code>XD_TOOL_STAT_GL_PROGRAM_MEM_SIZE</code>：编译失败诊断与 GL Program 内存统计。</li>
+</ul>
+
+<h2 class="sec">3. 调试与验证入口</h2>
+<ul class="tight">
+<li>统计命令：<code>stat Shaders</code>（含 GL Program 内存）、<code>r.ShaderPipelineCache.*</code> 系列 CVar。</li>
+<li>Cook 侧：<code>ShaderPipelineCacheToolsCommandlet</code> 生成/合并 <code>.stable.upipelinecache</code>；<code>-LogMATSMDDCKey</code> 打印 DDC Key。</li>
+<li>赛季清理：改 <code>XD_TORCHLIGHT_SEASON</code> 即可让旧 PSO/PBC 全部失效，是热更前最常用的开关。</li>
+</ul>
+
+<h2 class="sec">4. 注意事项</h2>
+<ul class="tight">
+<li><b>平台限定</b>：Vulkan 重启仅 Android；MuMu 检测仅在 <code>USE_ANDROID_OPENGL &amp;&amp; UE_ANDROID_X86_64</code> 下生效；metallib 压缩仅 Apple。</li>
+<li><b>依赖</b>：<code>XD_OPT_SHADER_LIB_SRIP</code>/<code>XD_OPT_COOK_ENABLE_CHERRY_PICK</code> 需要 XDLivePatch 插件配合；<code>XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</code> 依赖 <code>XD_TORCHLIGHT_SEASON</code>。</li>
+<li><b>默认关闭</b>：<code>XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL=0</code>、<code>XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_TONEMAPPER=0</code>，改动前先确认收益。</li>
+<li><b>命名注意</b>：源码里存在历史拼写，如 <code>XD_EXT_SHDADER_UNUSED_PBC_EVICT</code>（SHDADER）、<code>XD_FIX_BUG_SOLVE_FAIL_TO_FIND_SHADER_MAP</code>，检索时以实际宏名为准。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 50 个宏——UE5 已覆盖 <b>11</b>、部分覆盖 <b>28</b>、未覆盖 <b>10</b>；可完全工程化 <b>29</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">着色器与 PSO 相关宏（50）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_LOG_SHADER_DETAILED_DDC_KEY">XD_MISC_LOG_SHADER_DETAILED_DDC_KEY</a></td><td>DDC Miss 时输出材质 ShaderMap DDC Key 的分段明细（-LogMATSMDDCKey）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_SHADER_BYTE_CODE_PREFER_OODLE_COMPRESSION_FORMAT">XD_OPT_SHADER_BYTE_CODE_PREFER_OODLE_COMPRESSION_FORMAT</a></td><td>Shader 字节码默认优先使用 Oodle 压缩格式</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_PATCH_SHADER_LIB_ADDITIONAL_ERROR_BOOL_FLAG">XD_BUG_FIX_PATCH_SHADER_LIB_ADDITIONAL_ERROR_BOOL_FLAG</a></td><td>Patch ShaderLib 生成失败时返回错误标志（UE4.26 原实现恒返回 true）</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_INCREMENTALLY_STORE_PROGRAM_BINARY_CACHE">XD_OPT_INCREMENTALLY_STORE_PROGRAM_BINARY_CACHE</a></td><td>OpenGLES 程序二进制缓存（PBC）增量保存</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SHADER_PATCH_CRASH_AT_HASH_TABLE_INITIALIZE">XD_BUG_FIX_SHADER_PATCH_CRASH_AT_HASH_TABLE_INITIALIZE</a></td><td>修复 ShaderPatch 中 HashTable 重初始化导致的 check(HashSize==0) 崩溃</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_WARNING_WHEN_PSO_MAPS_TO_MULTIPLE_SHADERS">XD_BUG_FIX_WARNING_WHEN_PSO_MAPS_TO_MULTIPLE_SHADERS</a></td><td>stable PSO 映射到多个 Shader 时不再报错（仅警告）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_METAL_METALLIB_COMPRESS">XD_OPT_METAL_METALLIB_COMPRESS</a></td><td>Metal metallib 进一步压缩以便放入 Pak</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_SHDADER_UNUSED_PBC_EVICT">XD_EXT_SHDADER_UNUSED_PBC_EVICT</a></td><td>切换关卡时淘汰仍在使用的程序二进制缓存（PBC）</td><td class="tval">1</td><td class="tuse">8</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE">XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</a></td><td>新赛季（XD_TORCHLIGHT_SEASON）变更时删除过期的 User Pipeline Cache 与 PBC</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_ANDROID_FORCE_PBC_RELOCATION">XD_EXT_ANDROID_FORCE_PBC_RELOCATION</a></td><td>Android 程序二进制缓存（PBC）强制存放在本地存储而非 SD 卡（UE4-2196）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_SHADER_LIB_SRIP">XD_OPT_SHADER_LIB_SRIP</a></td><td>允许把部分 Shader 剥离到独立 ShaderLib，用于热更（依赖 XDLivePatch 插件）</td><td class="tval">1</td><td class="tuse">12</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_OPENGL_USBC_COMPRESS">XD_OPT_OPENGL_USBC_COMPRESS</a></td><td>OpenGL(ES) 生成原生格式的 USBC（类似 Metal 的 metallib）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_SHADER_COMPILING_CRASH">XD_BUG_FIX_SHADER_COMPILING_CRASH</a></td><td>修复着色器编译被取消时残留半成品 Shader 导致的 check 崩溃（取消时丢弃所有相关 Shader）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_VULKAN_USBC_COMPRESS">XD_OPT_VULKAN_USBC_COMPRESS</a></td><td>Vulkan 生成原生格式的 USBC（Shader 代码库压缩/原生化）</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SHADER_LIB_ASSET_INFO_NOT_COMPLETE">XD_BUG_FIX_SHADER_LIB_ASSET_INFO_NOT_COMPLETE</a></td><td>修复 ShaderLib assetinfo.json 不完整/未拷贝/热更时未生成的问题</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_PSO_LRU_AVOID_REPEATED_EVICTION">XD_MISC_PSO_LRU_AVOID_REPEATED_EVICTION</a></td><td>避免 PSO LRU 重复淘汰（double eviction）导致的问题</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_STORE_ONLY_ACTIVE_SHADER_MAP_SUPPORT_CONFIG">XD_OPT_STORE_ONLY_ACTIVE_SHADER_MAP_SUPPORT_CONFIG</a></td><td>提供 r.StoreOnlyActiveShaderMaps 控制是否只保存激活的 ShaderMap</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_OUTPUT_SHADER_LINK_HASH">XD_EXT_OUTPUT_SHADER_LINK_HASH</a></td><td>输出 Shader Link Hash（调试 Shader 组合，默认关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_LRU_ASYNC_PRELOAD_OVERWRITE_EVICTED">XD_BUG_FIX_LRU_ASYNC_PRELOAD_OVERWRITE_EVICTED</a></td><td>避免异步预加载覆盖已被淘汰的 Program 导致 LRU ensure 失败（TORCHLIGHT-256098）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY">XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY</a></td><td>从二进制创建 GL Program 崩溃时跳过并回退到运行时编译</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_BUILD_PSO_WITH_SHADER_HASH">XD_BUG_FIX_BUILD_PSO_WITH_SHADER_HASH</a></td><td>stable.upipelinecache 携带 ShaderHash，避免 Shader 变化后 PSO 组合失效（TORCHLIGHT-226143）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SAVE_INCREMENTAL_USER_PIPELINE_CACHE_WHEN_SHUTDOWN">XD_BUG_FIX_SAVE_INCREMENTAL_USER_PIPELINE_CACHE_WHEN_SHUTDOWN</a></td><td>退出时保存增量 User Pipeline Cache（UE4-5469）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_USE_PSO_PROJECT_TAKEOVER_POINTS">XD_EXT_USE_PSO_PROJECT_TAKEOVER_POINTS</a></td><td>在 PSO 流程中预留项目接管点（委托形式，不接管则不改变行为）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_EDITOR_ONLY">XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_EDITOR_ONLY</a></td><td>减少全局着色器变体：编辑器专用变体裁剪（系列开关之一）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PSO_FOUND_DUPLICATED_PROGRAM_KEY_WHEN_LOADING_PROGRAM_BINARY_CACHE">XD_BUG_FIX_PSO_FOUND_DUPLICATED_PROGRAM_KEY_WHEN_LOADING_PROGRAM_BINARY_CACHE</a></td><td>修复 LinkProgram 早于 PSO 预编译执行导致 Program Key 重复</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MAX_PSO_PRECOMPILE_TIME_NON_FIRST_RUN">XD_BUG_FIX_MAX_PSO_PRECOMPILE_TIME_NON_FIRST_RUN</a></td><td>非首次运行限制 PSO 预编译最大耗时（TORCHLIGHT-254075）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_DISABLE_PROGRAM_BINARY_IN_MUMU_EMULATOR">XD_BUG_FIX_DISABLE_PROGRAM_BINARY_IN_MUMU_EMULATOR</a></td><td>MuMu 模拟器中禁用 Program Binary Cache（UE4-5871/6109）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_PSO_PRECOMPILE_REMAINING_REAL_COUNT_WHEN_COMPLETE">XD_BUG_FIX_PSO_PRECOMPILE_REMAINING_REAL_COUNT_WHEN_COMPLETE</a></td><td>修复 PSO 预编译完成时剩余计数不为 0 的问题（TORCHLIGHT-262300）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_RESTART_APPLICATION_WHEN_VULKAN_PSO_FILE_CACHE_COMPLETED">XD_OPT_RESTART_APPLICATION_WHEN_VULKAN_PSO_FILE_CACHE_COMPLETED</a></td><td>Vulkan PSO 文件缓存完成后重启应用以生效（UE4-5575）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_TONEMAPPER">XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_TONEMAPPER</a></td><td>裁剪 Tonemapper 相关全局着色器变体（当前关闭）</td><td class="tval">0</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PSO_PRECOMPILIING_STUCK">XD_BUG_FIX_PSO_PRECOMPILIING_STUCK</a></td><td>修复 RHI 线程无法完成 LastPreCompilingFence 导致卡在 Logo</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_ADD_SHADER_COMPILE_LOG">XD_MISC_ADD_SHADER_COMPILE_LOG</a></td><td>ShaderCompileWorker 因缺少 UniformBuffer 条目崩溃前输出诊断日志</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_PRECOMPILE_PSO_SMOOTHLY">XD_OPT_PRECOMPILE_PSO_SMOOTHLY</a></td><td>OpenGLES PSO 预编译过程平滑化（分散到多帧，避免卡顿）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_PSO_LRU_FALLBACK_TO_COMPILE">XD_MISC_PSO_LRU_FALLBACK_TO_COMPILE</a></td><td>从 Program Binary 创建失败时回退到现场编译，而不是 Fatal</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_STOP_PSO_CACHING_IF_FAILES">XD_MISC_STOP_PSO_CACHING_IF_FAILES</a></td><td>PSO 缓存系统因 I/O/驱动损坏时停止继续缓存（OpenGLES/Vulkan）</td><td class="tval">1</td><td class="tuse">13</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES">XD_MISC_SUPPORT_MULTIPLE_PSO_CACHE_FILES</a></td><td>支持多个 PSO 缓存文件，实现 PSO 缓存热更</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_VIRTUAL_TEXTURING">XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_VIRTUAL_TEXTURING</a></td><td>裁剪虚拟纹理（Virtual Texturing）相关全局着色器变体</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_REVERSE_ASSIGNMENT_DIRECTION_IN_SHADER_OUTPUT_OPTIMIZATION">XD_BUG_FIX_REVERSE_ASSIGNMENT_DIRECTION_IN_SHADER_OUTPUT_OPTIMIZATION</a></td><td>修复 Shader 输出优化中赋值方向写反（含自定义语义的数组，UE4-6052）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_STAT_GL_PROGRAM_MEM_SIZE">XD_TOOL_STAT_GL_PROGRAM_MEM_SIZE</a></td><td>Stat Shaders 时同时显示 GPU Program 内存占用</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_SHADER_KEEPDEBUG_INFO">XD_MISC_SHADER_KEEPDEBUG_INFO</a></td><td>低于 Shipping 的构建保留 USBC/metallib 调试信息（含 Xcode15 metallibsym）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_MOBILE_DEFERRED_RENDERING">XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_MOBILE_DEFERRED_RENDERING</a></td><td>裁剪移动端延迟渲染相关的全局着色器变体</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD">XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD</a></td><td>防止 OpenGL 预编译阶段 Link 失败导致崩溃</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_PSO_INCREMENTAL_SAVE_TOC_GUID">XD_BUG_FIX_PSO_INCREMENTAL_SAVE_TOC_GUID</a></td><td>增量保存时保留运行时 TOC FileGuid（TORCHLIGHT-263193）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_SKYATMOSPHERE">XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_SKYATMOSPHERE</a></td><td>裁剪 SkyAtmosphere 相关全局着色器变体</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM">XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM</a></td><td>提供接口返回实际需要预编译的 Shader 数量</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/opt.html#XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL">XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL</a></td><td>按材质质量档位分别加载 PSO 缓存以节省内存（当前关闭）</td><td class="tval">0</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_DONT_WAIT_PSO_PRECOMPILE_COMPLETED_WHEN_BATCH_JOB_PAUSED">XD_BUG_FIX_DONT_WAIT_PSO_PRECOMPILE_COMPLETED_WHEN_BATCH_JOB_PAUSED</a></td><td>批量任务暂停时不再等待 PSO 预编译完成</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_DUPLICATE_FOPENGLPROGRAMKEY">XD_BUG_FIX_DUPLICATE_FOPENGLPROGRAMKEY</a></td><td>修复 OpenGL ProgramKey 重复检查误报（UE4-2597）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SUPPORT_ITERATIVE_SHADER_LIBRARY_COOKING_FOR_NATIVE_SHADER_LIBRARY_PLATFORM">XD_BUG_FIX_SUPPORT_ITERATIVE_SHADER_LIBRARY_COOKING_FOR_NATIVE_SHADER_LIBRARY_PLATFORM</a></td><td>Metal 等原生 ShaderLib 平台支持增量 Shader 库 Cook（UE4-3692）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_SOLVE_FAIL_TO_FIND_SHADER_MAP">XD_FIX_BUG_SOLVE_FAIL_TO_FIND_SHADER_MAP</a></td><td>关闭 CHECK_SHADERMAP_DEPENDENCIES 校验（编辑器专属数据会干扰 Shader 大小比较）</td><td class="tval">1</td><td class="tuse">1</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="cook-pak.html"><h3>📦 Cook / Pak / DDC / 热更</h3><p>与当前主题关联密切</p></a><a class="card" href="memory-profiling.html"><h3>📊 内存与性能分析</h3><p>与当前主题关联密切</p></a><a class="card" href="mobile-rendering.html"><h3>📱 移动端渲染优化</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

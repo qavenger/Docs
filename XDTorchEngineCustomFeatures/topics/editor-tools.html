@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>编辑器与资源工具 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a></nav>
+  <main class="content"><h1>🛠️ 编辑器与资源工具</h1><p class="lead">资源校验、源码管理、Dump 与调试工具</p>
+<div class="callout" style="background:var(--bg2);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:12px 16px;margin:14px 0">
+<b>一句话概括：</b>把「美术/策划会在编辑器里踩的坑」和「CI 会漏的问题」都变成可检查、可自动修复、可导出的工程能力：资源校验、MapCheck、源码管理、纹理压缩、序列化升级与一批诊断 Dump。
+</div>
+
+<h2 class="sec">1. 资源与材质校验</h2>
+<ul class="tight">
+<li><code>XD_HELP_PRINT_BAD_ASSET_FILE_NAME</code>：加载到损坏/非法资产时打印文件名（<code>LinkerLoad</code>），快速定位是哪张图/哪个材质坏了。</li>
+<li><code>XD_HELP_PRINT_MAT_FUNCTION_NAME_WITH_REMOVED_MATERIAL_EXPRESSION</code>：打印包含已删除材质表达式的材质函数名，提示需要重新保存——这是「材质莫名编译失败」的常见原因。</li>
+<li><code>XD_TOOL_SOLVE_UNMATCHED_OVERRIDDEN_MAT_WITH_STATIC_MESH_MATERIALS</code> + <code>XD_MISC_MAP_CHECK_ADJUST_STATIC_MESH_ACTOR_SAME_POSITION_METHOD</code>：MapCheck 时自动修正与静态网格材质不匹配的 Override，并检查位置重叠的静态网格 Actor（UE4-3559）。</li>
+<li><code>XD_TOOL_NOTIFY_WRONG_MATERIAL_USAGE</code>：材质错误用法上报，供检查工具收集。</li>
+<li><code>XD_TOOL_WARNING_COMPONENTS_THAT_NEED_TO_BE_REBUILT_LIGHTING</code>：Cook 结束时 Dump 缺少预计算光照的组件。</li>
+<li><code>XD_SKELMESH_CHECK_DDC_KEY_MISS_MATCH_TOOL</code>：骨骼网格 DDC Key 不匹配检测。</li>
+<li><code>XD_MISC_EXTENDED_KISMET2_LIB</code>：蓝图工具函数扩展（如保持相对位置在世界中心创建蓝图）。</li>
+<li><code>XD_SERIALIZE_UPGRADE_FIXUP_STATIC_MESH_NONUSED_PROPERTY</code>：序列化升级补齐静态网格废弃属性，避免老资源升级后数据缺失。</li>
+</ul>
+
+<h2 class="sec">2. 源码管理与提交流程</h2>
+<ul class="tight">
+<li><code>XD_EXT_ADD_SOURCE_CONTROL_CONTENT_FILES_FILTER_CHECKBOX</code>：Submit 窗口新增「过滤临时文件」复选框，避免误提交。</li>
+<li><code>XD_FE_P4_SUBMITTER_TOOL</code>：Perforce 设置面板支持 PyP4Submitter 路径（自定义提交工具）。</li>
+<li><code>XD_PRE_CHECKIN_EVENT_SEND</code>：CheckIn 前广播 <code>OnCheckinPackages(bool&amp;, files)</code>，外部可拦截/校验。</li>
+<li><code>XD_BUG_FIX_P4_SOURCE_CONTROL_PATH_CASE_SENSITIVITY</code>：P4 fstat 缓存 Key 大小写敏感修复（该宏在引擎 Source 内未检索到使用点，可能与 P4 插件版本有关）。</li>
+<li><code>XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY</code>：屏蔽 Wwise Audio AnimNotify 的 UECheck 依赖校验（本树内未见使用点，Wwise 插件侧消费）。</li>
+</ul>
+
+<h2 class="sec">3. 纹理压缩与纹理管线</h2>
+<ul class="tight">
+<li><code>XD_MISC_COMPRESS_TEXTURES_WITH_ASTCENC_3_3</code>：ASTC 纹理改用 ASTCENC 3.3 压缩。<b>注意</b>：切换该宏必须同步递增 <code>TextureFormatASTC.cpp</code> 的 <code>BASE_ASTC_FORMAT_VERSION</code>，否则旧纹理不会重新压缩。</li>
+<li><code>XD_BUG_FIX_BC7_TEX_COMPRESSION</code>：修复 BC7 ISPC 压缩器总用 mode7 导致 Alpha 通道被污染。</li>
+<li><code>XD_TOOL_LOG_ANDROID_ETC2_TEXTURE_FILE_NAME</code>：ETC2 压缩崩溃时打印纹理文件名。</li>
+<li><code>XD_TOOL_LOG_COOK_TEXTURE_GROUP_SETTINGS</code>：Cook 时打印纹理组 LOD 设置，便于核对打包体积。</li>
+</ul>
+
+<h2 class="sec">4. 诊断与 Dump 工具</h2>
+<ul class="tight">
+<li><code>XD_TOOL_DUMP_XD_CONSOLE_VARIABLES</code>：注册 <code>DumpConsoleCommands_XD</code> 命令，专列所有 <code>xd.*</code> 控制台变量及当前值（UBT 强制要求该宏为 1）。</li>
+<li><code>XD_TOOL_DUMP_DETAIL_OPEN_PACKAGE_FAIL_REASON</code>：打开包失败时输出详细原因。</li>
+<li><code>XD_TOOL_DEBUG_LEVEL_LOADING_STOP</code>：关卡加载停止相关调试。</li>
+<li><code>XD_TOOL_VISUALIZE_LIGHTMAP_MIPS</code>（默认 <span class="v off">0</span>）：按 Mip 给 Lightmap 上纯色，验证 Mip 使用情况（配合移动端关闭 Lightmap 方向性）。</li>
+<li><code>XD_TOOL_PIXEL_PICKING_ROLE</code>（默认 <span class="v off">0</span>）：角色像素拾取，可通过蓝图调用（截图/校准工具使用）。</li>
+<li><code>XD_TOOL_STAT_GL_PROGRAM_MEM_SIZE</code>：<code>stat Shaders</code> 显示 GL Program 显存。</li>
+<li><code>XD_TOOL_HIGH_RES_SHOT_SUPPORT_CAPTURE_UI</code>：HighResShot 支持把 UI 一起截进去（宣传截图常用）。</li>
+<li><code>XD_TOOL_EXPORT_MATERIAL_ANALYZER_RESULT</code>：材质分析结果导出 JSON（引擎 Source 内未检索到消费点，可能由编辑器插件调用）。</li>
+<li><code>XD_TOOL_ADD_SAVE_DELEGATES_FOR_EDITOR</code>：资产保存前后广播委托（UBT 强制为 1，是其它保存期逻辑的基础设施）。</li>
+<li><code>XD_TOOL_DEBUG_MONOLITHIC_INFO</code>：<code>#pragma message</code> 打印编译路径，代码已被 <code>#if 0</code> 屏蔽，属历史遗留。</li>
+</ul>
+
+<h2 class="sec">5. 编辑器行为修复</h2>
+<ul class="tight">
+<li><code>XD_BUG_FIX_PREVIEW_CAMERA_SHAKE_WHEN_MOVE_LOCKED_ACTOR</code>：移动锁定 Actor 时预览相机抖动。</li>
+<li><code>XD_BUG_FIX_EDITOR_PREVIEW_FEATURE_LEVEL_NOT_MATCH_UI</code>：预览特性等级与 UI 显示不一致（UE4-529）。</li>
+<li><code>XD_BUG_FIX_WRONG_MAT_EDITOR_VIEWPORT_SIZE_WHEN_NOT_TONEMAP_FILM</code>：材质编辑器视口尺寸错误。</li>
+<li><code>XD_BUG_FIX_EDITOR_POSTPROCESS_STILL_RUN_IN_GAME_MODE</code>：ShaderDrawDebug 等编辑器后处理在 Game 模式仍运行。</li>
+<li><code>XD_BUG_FIX_MATERIAL_PARAM_COLLECTION_MULTI_SELECTION_CRASH</code>：多选 MPC 崩溃（UE4-3494）。</li>
+<li><code>XD_BUG_FIX_EDITOR_TRANSACTION_BUFFER_NULLPTR</code>：<code>GEditor-&gt;Trans</code> 空指针。</li>
+<li><code>XD_FIX_BUG_FReferencerFinder_GetAllReferencers_Crash</code>、<code>XD_FIX_UNINITIALIZED_bIsUObjectWrapper</code>、<code>XD_BUG_FIX_SpriteCategoryVisibility_OUT_OF_INDEX</code>、<code>XD_BUG_FIX_PAPER2D_COMMANDLET_IMPORT_ISSUE</code>：引用查找器崩溃、GraphPin 未初始化、Sprite 分类数组越界、SpriteSheet 导入崩溃。</li>
+<li><code>XD_EXT_EDITOR_BEHAVIOR_REWORK</code>、<code>XD_EXT_BROADCAST_CUSTOM_OBJECT_DUPLICATION_METHOD</code>、<code>XD_MISC_EDITOR_PREVIEW_SUPPORT_CUSTOM_DEPTH</code>（默认 <span class="v off">0</span>）：编辑器交互重做、对象复制广播、预览支持 CustomDepth。</li>
+</ul>
+
+<h2 class="sec">6. 注意事项</h2>
+<ul class="tight">
+<li><code>XD_TOOL_DUMP_XD_CONSOLE_VARIABLES</code> 与 <code>XD_TOOL_ADD_SAVE_DELEGATES_FOR_EDITOR</code> 是 UBT 强制为 1 的基础设施宏，不要关闭。</li>
+<li>ASTC 宏切换必须同步版本号，否则会出现「改了压缩器但包体没变」的假象。</li>
+<li>部分工具宏默认 0，属于「按需打开」——启用后记得回归性能（Pixel Picking、Lightmap Mip 可视化会影响渲染输出）。</li>
+</ul>
+
+<div class="migsummary"><b>UE5 迁移概览</b>：本主题 30 个宏——UE5 已覆盖 <b>14</b>、部分覆盖 <b>6</b>、未覆盖 <b>7</b>；可完全工程化 <b>4</b>，深度侵入项 <b>0</b>。<a href="../migration/matrix.html">进入迁移矩阵筛选本主题 →</a></div>
+<h2 class="sec" id="macrolist">编辑器与资源工具 相关宏（30）</h2>
+<div class="toolbar"><input class="filter" placeholder="筛选宏名/说明…" data-scope="#topiclist"></div>
+<div id="topiclist"><table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>值</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_FIX_UNINITIALIZED_bIsUObjectWrapper">XD_FIX_UNINITIALIZED_bIsUObjectWrapper</a></td><td>修复构造 FEdGraphPinType 时 bIsUObjectWrapper 未初始化（UE4-3862）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_EXTENDED_KISMET2_LIB">XD_MISC_EXTENDED_KISMET2_LIB</a></td><td>Kismet2 蓝图库新增工具函数（如在世界中心保持相对位置创建蓝图）</td><td class="tval">1</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_EDITOR_PREVIEW_SUPPORT_CUSTOM_DEPTH">XD_MISC_EDITOR_PREVIEW_SUPPORT_CUSTOM_DEPTH</a></td><td>编辑器预览（ES3.1 模式）支持 CustomDepth 效果（默认关闭）</td><td class="tval">0</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MATERIAL_PARAM_COLLECTION_MULTI_SELECTION_CRASH">XD_BUG_FIX_MATERIAL_PARAM_COLLECTION_MULTI_SELECTION_CRASH</a></td><td>修复编辑器中多选材质参数集合（MPC）崩溃（UE4-3494）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_EDITOR_PREVIEW_FEATURE_LEVEL_NOT_MATCH_UI">XD_BUG_FIX_EDITOR_PREVIEW_FEATURE_LEVEL_NOT_MATCH_UI</a></td><td>修复编辑器预览实际特性等级与 UI 显示不一致（显示 ES3.1 实际 SM5）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_COMPRESS_TEXTURES_WITH_ASTCENC_3_3">XD_MISC_COMPRESS_TEXTURES_WITH_ASTCENC_3_3</a></td><td>使用 ASTCENC 3.3 压缩 ASTC 纹理（切换需升级格式版本号）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_ADD_SAVE_DELEGATES_FOR_EDITOR">XD_TOOL_ADD_SAVE_DELEGATES_FOR_EDITOR</a></td><td>编辑器新增保存前后的扩展委托</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_BROADCAST_CUSTOM_OBJECT_DUPLICATION_METHOD">XD_EXT_BROADCAST_CUSTOM_OBJECT_DUPLICATION_METHOD</a></td><td>对象（Actor/Component）复制时广播自定义复制通知（编辑器为主）</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_EDITOR_BEHAVIOR_REWORK">XD_EXT_EDITOR_BEHAVIOR_REWORK</a></td><td>修正编辑器一些不合预期/反直觉的行为</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY">XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY</a></td><td>关闭音频 AnimNotify（WwiseAudio_EBP）的 UECheck 依赖校验</td><td class="tval">1</td><td class="tuse">0</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_HELP_PRINT_BAD_ASSET_FILE_NAME">XD_HELP_PRINT_BAD_ASSET_FILE_NAME</a></td><td>打印损坏/非法资源的文件名（资源检查辅助）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_SpriteCategoryVisibility_OUT_OF_INDEX">XD_BUG_FIX_SpriteCategoryVisibility_OUT_OF_INDEX</a></td><td>修复 SpriteCategoryVisibility 数组越界崩溃</td><td class="tval">1</td><td class="tuse">5</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_SOLVE_UNMATCHED_OVERRIDDEN_MAT_WITH_STATIC_MESH_MATERIALS">XD_TOOL_SOLVE_UNMATCHED_OVERRIDDEN_MAT_WITH_STATIC_MESH_MATERIALS</a></td><td>地图检查时自动修正与静态网格材质不匹配的 Override 材质</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_P4_SOURCE_CONTROL_PATH_CASE_SENSITIVITY">XD_BUG_FIX_P4_SOURCE_CONTROL_PATH_CASE_SENSITIVITY</a></td><td>修复 P4 fstat 缓存 Key 大小写敏感问题</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_PIXEL_PICKING_ROLE">XD_TOOL_PIXEL_PICKING_ROLE</a></td><td>像素拾取角色功能（鼠标点选屏幕像素反查角色/物体）</td><td class="tval">0</td><td class="tuse">21</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_FReferencerFinder_GetAllReferencers_Crash">XD_FIX_BUG_FReferencerFinder_GetAllReferencers_Crash</a></td><td>修复 FReferencerFinder::GetAllReferencers 崩溃（TORCHLIGHT-86072）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_SERIALIZE_UPGRADE_FIXUP_STATIC_MESH_NONUSED_PROPERTY">XD_SERIALIZE_UPGRADE_FIXUP_STATIC_MESH_NONUSED_PROPERTY</a></td><td>序列化升级：清理静态网格已废弃的 DummyPlanarMaterialIndex 属性</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_EXPORT_MATERIAL_ANALYZER_RESULT">XD_TOOL_EXPORT_MATERIAL_ANALYZER_RESULT</a></td><td>把材质分析器（Material Analyzer）结果导出为 JSON</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_EDITOR_POSTPROCESS_STILL_RUN_IN_GAME_MODE">XD_BUG_FIX_EDITOR_POSTPROCESS_STILL_RUN_IN_GAME_MODE</a></td><td>修复 ShaderDrawDebug 等编辑器后处理在 Game 模式仍运行的报错</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_NOTIFY_WRONG_MATERIAL_USAGE">XD_TOOL_NOTIFY_WRONG_MATERIAL_USAGE</a></td><td>材质错误用法检查提示（供检查工具收集）</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_BC7_TEX_COMPRESSION">XD_BUG_FIX_BC7_TEX_COMPRESSION</a></td><td>修复 BC7 ISPC 压缩器总用 mode7 导致 Alpha 通道被污染</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PREVIEW_CAMERA_SHAKE_WHEN_MOVE_LOCKED_ACTOR">XD_BUG_FIX_PREVIEW_CAMERA_SHAKE_WHEN_MOVE_LOCKED_ACTOR</a></td><td>修复移动被锁定的 Actor 时预览相机剧烈抖动</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_LOG_ANDROID_ETC2_TEXTURE_FILE_NAME">XD_TOOL_LOG_ANDROID_ETC2_TEXTURE_FILE_NAME</a></td><td>Android ETC2 纹理压缩崩溃调试：输出出错纹理文件名</td><td class="tval">1</td><td class="tuse">3</td></tr>
+<tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_ADD_SOURCE_CONTROL_CONTENT_FILES_FILTER_CHECKBOX">XD_EXT_ADD_SOURCE_CONTROL_CONTENT_FILES_FILTER_CHECKBOX</a></td><td>源码管理提交窗口新增“过滤临时文件”复选框</td><td class="tval">1</td><td class="tuse">2</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_VISUALIZE_LIGHTMAP_MIPS">XD_TOOL_VISUALIZE_LIGHTMAP_MIPS</a></td><td>用纯色填充 Lightmap 各 Mip 以便可视化 Mip 使用情况</td><td class="tval">0</td><td class="tuse">4</td></tr>
+<tr><td class="tname"><a href="../ref/tools.html#XD_TOOL_HIGH_RES_SHOT_SUPPORT_CAPTURE_UI">XD_TOOL_HIGH_RES_SHOT_SUPPORT_CAPTURE_UI</a></td><td>HighResShot 高清截图支持把 UI 一并截入</td><td class="tval">1</td><td class="tuse">6</td></tr>
+<tr><td class="tname"><a href="../ref/misc1.html#XD_MISC_MAP_CHECK_ADJUST_STATIC_MESH_ACTOR_SAME_POSITION_METHOD">XD_MISC_MAP_CHECK_ADJUST_STATIC_MESH_ACTOR_SAME_POSITION_METHOD</a></td><td>地图检查：遍历静态网格 Actor 检查是否位置重叠（UE4-3559）</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_WRONG_MAT_EDITOR_VIEWPORT_SIZE_WHEN_NOT_TONEMAP_FILM">XD_BUG_FIX_WRONG_MAT_EDITOR_VIEWPORT_SIZE_WHEN_NOT_TONEMAP_FILM</a></td><td>修复 r.Mobile.TonemapperFilm=0 时打开材质编辑器最后一个 OverrideInput 视口尺寸错误</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_PAPER2D_COMMANDLET_IMPORT_ISSUE">XD_BUG_FIX_PAPER2D_COMMANDLET_IMPORT_ISSUE</a></td><td>修复导入 Sprite Sheet 时崩溃</td><td class="tval">1</td><td class="tuse">1</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_EDITOR_TRANSACTION_BUFFER_NULLPTR">XD_BUG_FIX_EDITOR_TRANSACTION_BUFFER_NULLPTR</a></td><td>修复访问 GEditor-&gt;Trans 为空导致的崩溃</td><td class="tval">1</td><td class="tuse">1</td></tr></tbody></table></div>
+<h2 class="sec">相关主题</h2><div class="cards"><a class="card" href="index.html"><h3>📚 全部主题</h3><p>返回主题脉络总览</p></a><a class="card" href="cook-pak.html"><h3>📦 Cook / Pak / DDC / 热更</h3><p>与当前主题关联密切</p></a><a class="card" href="mechanism.html"><h3>⚙️ 宏系统与构建机制</h3><p>与当前主题关联密切</p></a><a class="card" href="ui-umg.html"><h3>🪟 UI / Slate / UMG</h3><p>与当前主题关联密切</p></a></div></main>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>
