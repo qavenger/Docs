@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>工具特性（XDToolsFeatures） · 心动定制 UE4.26 引擎特性文档</title>
-<link rel="stylesheet" href="../assets/style.css?v=91888f28">
+<link rel="stylesheet" href="../assets/style.css?v=00a24d5d">
 <noscript><style>.tabpane{display:block !important}.tabbar{display:none !important}</style></noscript>
 </head>
 <body class="">
@@ -62,7 +62,7 @@
 <details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/XDConsoleVariables.inc</li><li>Source/Runtime/Slate/Private/Widgets/Layout/SConstraintCanvas.cpp</li><li>Source/Runtime/Slate/Public/Widgets/Layout/SConstraintCanvas.h</li><li>Source/Runtime/UMG/Private/Components/CanvasPanel.cpp</li><li>Source/Runtime/UMG/Public/Components/CanvasPanel.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 已提供 USlateSettings::bExplicitCanvasChildZOrder（Runtime/Slate/Public/SlateSettings.h:21-25，UPROPERTY(config)）；SConstraintCanvas.cpp:294-305 按 ZOrder 分层；ElementBatcher.cpp:255-262 仅层号相同才合并</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 已提供 USlateSettings::bExplicitCanvasChildZOrder（Runtime/Slate/Public/SlateSettings.h:21-25，UPROPERTY(config)）；SConstraintCanvas.cpp:294-305 按 ZOrder 分层；ElementBatcher.cpp:255-262 仅层号相同才合并</p>
 <p class="migline"><b>覆盖说明：</b>UE5 的 bExplicitCanvasChildZOrder 按 ZOrder 分层、同层合批，覆盖 XD 指定 ZOrder 组共享同层语义</p>
 <p class="migline"><b>落地方式：</b>DefaultEngine.ini 设 [/Script/Slate.SlateSettings] bExplicitCanvasChildZOrder=True（按 ZOrder 自动分层，同层可合批），无需插件；仅当需要白名单式局部启用时再考虑项目派生类</p>
 <p class="migline"><b>接入点：</b>SConstraintCanvas::OnArrangeChildren 层号分配（ArrangedChildLayers） · USlateSettings::bExplicitCanvasChildZOrder</p>
@@ -86,7 +86,7 @@
 <details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Core/Private/HAL/ConsoleManager.cpp</li><li>Source/Runtime/Core/Private/Misc/Parse.cpp</li><li>Source/Runtime/Core/Public/Misc/Parse.h</li><li>Source/Runtime/Engine/Classes/Engine/Engine.h</li><li>Source/Runtime/Engine/Private/UnrealEngine.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 有通用 DumpConsoleCommands / ConsoleCommandLibrary_DumpLibrary（Runtime/Core/Private/Misc/Parse.cpp）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 有通用 DumpConsoleCommands / ConsoleCommandLibrary_DumpLibrary（Runtime/Core/Private/Misc/Parse.cpp）</p>
 <p class="migline"><b>覆盖说明：</b>有通用 dump，无 xd.* 前缀过滤</p>
 <p class="migline"><b>落地方式：</b>项目模块注册 xd.* dump 控制台命令，复用 ConsoleCommandLibrary</p>
 <p class="migline"><b>接入点：</b>ConsoleCommandLibrary_DumpLibrary</p>
@@ -109,7 +109,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Core/Private/Misc/FileHelper.cpp</li><li>Source/Runtime/Core/Private/Misc/OutputDeviceFile.cpp</li><li>Source/Runtime/Core/Public/Misc/OutputDeviceFile.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/Misc/OutputDeviceFile.cpp 备份/清理逻辑（无 XD 的 _BK 单备份开关）</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/Core/Private/Misc/OutputDeviceFile.cpp 备份/清理逻辑（无 XD 的 _BK 单备份开关）</p>
 <p class="migline"><b>覆盖说明：</b>须保留日志备份策略</p>
 <p class="migline"><b>落地方式：</b>备份/清理逻辑在 Core OutputDeviceFile/FileHelper，须引擎补丁</p>
 <p class="migline"><b>接入点：</b>FOutputDeviceFile 备份命名 · FMaintenance::DeleteOldLogs</p>
@@ -132,7 +132,7 @@
 <details class="usage"><summary>引用位置（21 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/CustomUnlitPassPixelShader.usf</li><li>Shaders/Private/ShadingModelsMaterial.ush</li><li>Source/Runtime/Engine/Classes/Engine/World.h</li><li>Source/Runtime/Engine/Classes/GameFramework/PlayerController.h</li><li>Source/Runtime/Engine/Private/LevelTick.cpp</li><li>Source/Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp</li><li>Source/Runtime/Engine/Private/PlayerController.cpp</li><li>Source/Runtime/Engine/Private/SceneView.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 插件化 · 工作量 L · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>XD 涉及 PlayerController/SceneView/SceneRendering/RHIGPUReadback 全链路（21 处）；UE5 无同名功能，仅有 FRHIGPUMemoryReadback 基础读回</p>
+<p class="migline"><b>覆盖度依据：</b>XD 涉及 PlayerController/SceneView/SceneRendering/RHIGPUReadback 全链路（21 处）；UE5 无同名功能，仅有 FRHIGPUMemoryReadback 基础读回</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有读回原语但无角色像素拾取</p>
 <p class="migline"><b>落地方式：</b>项目插件 + FSceneViewExtension/RHIGPUReadback 实现</p>
 <p class="migline"><b>接入点：</b>FRHIGPUMemoryReadback · FSceneViewExtension · SceneRendering 读回点</p>
@@ -156,7 +156,7 @@
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Shaders/Private/LightmapCommon.ush</li><li>Shaders/Private/MobileBasePassPixelShader.usf</li><li>Source/Runtime/Engine/Private/LightMap.cpp</li><li>Source/Runtime/Renderer/Private/MobileBasePassRendering.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>Source/Runtime/Engine/Private/LightMap.cpp:940 GVisualizeLightmapTextures（对全部 mip 用同一颜色，非逐 mip 着色）</p>
+<p class="migline"><b>覆盖度依据：</b>Source/Runtime/Engine/Private/LightMap.cpp:940 GVisualizeLightmapTextures（对全部 mip 用同一颜色，非逐 mip 着色）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有 lightmap 可视化但非逐 mip</p>
 <p class="migline"><b>落地方式：</b>Engine LightMap/着色路径</p>
 <p class="migline"><b>接入点：</b>FLightMap2D · GenerateLightmapMipsAndDilate*</p>
@@ -179,7 +179,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Developer/TextureCompressor/Private/TextureCompressorModule.cpp</li><li>Source/Developer/TextureCompressor/Public/TextureCompressorModule.h</li><li>Source/Runtime/Engine/Private/TextureDerivedData.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Source/Runtime/Engine/Private/TextureDerivedData.cpp:796,808,1812 等多处失败日志已带 Texture 路径/名称</p>
+<p class="migline"><b>覆盖度依据：</b>Source/Runtime/Engine/Private/TextureDerivedData.cpp:796,808,1812 等多处失败日志已带 Texture 路径/名称</p>
 <p class="migline"><b>覆盖说明：</b>UE5 纹理失败日志已含文件名</p>
 <p class="migline"><b>落地方式：</b>Engine 纹理构建</p>
 <p class="migline"><b>建议：</b>UE5 已输出纹理名。</p>
@@ -199,7 +199,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/TextureDerivedData.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/Engine/Private/TextureDerivedData.cpp 在 UE5 无 'log texture group settings' 输出（grep 无结果）</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/Engine/Private/TextureDerivedData.cpp 在 UE5 无 'log texture group settings' 输出（grep 无结果）</p>
 <p class="migline"><b>覆盖说明：</b>UE5.8 无该诊断</p>
 <p class="migline"><b>落地方式：</b>项目 Commandlet 读取 DeviceProfiles/TextureLODGroups 打印；引擎侧只留 CVar 开关</p>
 <p class="migline"><b>接入点：</b>Cook 纹理时的 TextureLODSettings 打印点（CVar 控制）</p>
@@ -222,7 +222,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/OpenGLDrv/Private/OpenGLShaders.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderCore.cpp</li><li>Source/Runtime/RenderCore/Public/ShaderCore.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/OpenGLDrv/Private/OpenGLShaders.cpp:332 STAT_OpenGLProgramBinaryMemory；Runtime/OpenGLDrv/Private/OpenGLDrvPrivate.h:102 STAT_OpenGLShaderLRUProgramMemory（STATGROUP_OpenGLRHI）</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/OpenGLDrv/Private/OpenGLShaders.cpp:332 STAT_OpenGLProgramBinaryMemory；Runtime/OpenGLDrv/Private/OpenGLDrvPrivate.h:102 STAT_OpenGLShaderLRUProgramMemory（STATGROUP_OpenGLRHI）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有 GL Program/LRU 内存统计</p>
 <p class="migline"><b>落地方式：</b>OpenGLDrv stat 组扩展</p>
 <p class="migline"><b>接入点：</b>STATGROUP_OpenGLRHI Program/LRU 内存 stat</p>
@@ -245,7 +245,7 @@
 <details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Editor/LevelEditor/Private/HighResScreenshotUI.cpp</li><li>Source/Editor/LevelEditor/Private/HighresScreenshotUI.h</li><li>Source/Editor/UnrealEd/Private/EditorViewportClient.cpp</li><li>Source/Runtime/Engine/Private/HighResScreenshot.cpp</li><li>Source/Runtime/Engine/Private/UnrealClient.cpp</li><li>Source/Runtime/Engine/Public/HighResScreenshot.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>Source/Runtime/Engine/Public/HighResScreenshot.h:14-30 FHighResScreenshotConfig 无 UI 合成开关（Editor/LevelEditor/Private/HighResScreenshotUI.cpp 仅截图对话框）</p>
+<p class="migline"><b>覆盖度依据：</b>Source/Runtime/Engine/Public/HighResScreenshot.h:14-30 FHighResScreenshotConfig 无 UI 合成开关（Editor/LevelEditor/Private/HighResScreenshotUI.cpp 仅截图对话框）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 截图不含 Slate UI</p>
 <p class="migline"><b>落地方式：</b>项目/编辑器插件用 FHighResScreenshotConfig 组合 Slate 渲染</p>
 <p class="migline"><b>接入点：</b>FHighResScreenshotConfig · FScreenshotRequest</p>
@@ -268,7 +268,7 @@
 <details class="usage"><summary>引用位置（12 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Apple/MetalRHI/Private/MetalCommandEncoder.cpp</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalCommandList.cpp</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalCommandList.h</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalCommands.cpp</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalDynamicRHI.h</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalProfiler.cpp</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalProfiler.h</li><li>Source/Runtime/Engine/Private/UnrealClient.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 Runtime/RHI 有 GPUProfiler（stat GPU / r.GPUStats 系列）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 Runtime/RHI 有 GPUProfiler（stat GPU / r.GPUStats 系列）</p>
 <p class="migline"><b>覆盖说明：</b>有 GPU 计时框架，阶段覆盖不同</p>
 <p class="migline"><b>落地方式：</b>GPU 阶段采样用 GPUProfiler 事件/ISceneViewExtension 扩展</p>
 <p class="migline"><b>接入点：</b>GPUProfiler 事件 · r.GPUStats CVar</p>
@@ -291,7 +291,7 @@
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Shaders/Private/SlateElementPixelShader.usf</li><li>Source/Runtime/SlateRHIRenderer/Private/SlateRHIRenderingPolicy.cpp</li><li>Source/Runtime/SlateRHIRenderer/Private/SlateRHIRenderingPolicy.h</li><li>Source/Runtime/SlateRHIRenderer/Private/SlateShaders.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/SlateRHIRenderer/Private/SlateRHIRenderer.cpp:155-160 Slate.ShowBatching、:992-996（WITH_SLATE_VISUALIZERS 清屏与叠加）</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/SlateRHIRenderer/Private/SlateRHIRenderer.cpp:155-160 Slate.ShowBatching、:992-996（WITH_SLATE_VISUALIZERS 清屏与叠加）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有批次可视化，但不绘制每个批次的 LayerId 数字</p>
 <p class="migline"><b>落地方式：</b>项目调试插件/自定义 SlateRenderer 里扩展可视化</p>
 <p class="migline"><b>接入点：</b>Slate.ShowBatching 可视化路径（SlateRHIRenderer） · FSlateRenderBatch::GetLayer</p>
@@ -313,7 +313,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/World.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 有 FParticleSystemWorldManager::Dump()（ParticleSystemManager.h:145）与 Editor ParticleSystemAuditCommandlet（UnrealEd/Private/Commandlets/ParticleSystemAuditCommandlet.cpp），但无 XD 的运行时场景组件转储</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 有 FParticleSystemWorldManager::Dump()（ParticleSystemManager.h:145）与 Editor ParticleSystemAuditCommandlet（UnrealEd/Private/Commandlets/ParticleSystemAuditCommandlet.cpp），但无 XD 的运行时场景组件转储</p>
 <p class="migline"><b>覆盖说明：</b>调试工具有部分等价</p>
 <p class="migline"><b>落地方式：</b>项目插件注册 Console Command 遍历 UWorld 的 UParticleSystemComponent 输出信息</p>
 <p class="migline"><b>建议：</b>纯调试工具，做成项目 Console Command</p>
@@ -334,7 +334,7 @@
 <details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Core/Private/Android/AndroidPlatformMemory.cpp</li><li>Source/Runtime/Core/Private/Apple/ApplePlatformMemory.cpp</li><li>Source/Runtime/Core/Private/Mac/MacPlatformMemory.cpp</li><li>Source/Runtime/Core/Private/Unix/UnixPlatformMemory.cpp</li><li>Source/Runtime/Core/Private/Windows/WindowsPlatformMemory.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/Core/Private/Windows/WindowsPlatformMemory.cpp:181-184 -ansimalloc / FORCE_ANSI_ALLOCATOR</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/Core/Private/Windows/WindowsPlatformMemory.cpp:181-184 -ansimalloc / FORCE_ANSI_ALLOCATOR</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已提供强制 Ansi 分配器开关</p>
 <p class="migline"><b>落地方式：</b>用命令行 -ansimalloc</p>
 <p class="migline"><b>建议：</b>改用 UE5 原生 -ansimalloc</p>
@@ -354,7 +354,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Materials/Material.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Engine/Private/Materials/Material.cpp:1189/1893/1947 保留 bAutomaticallySetUsageInEditor 及 LogMaterial 警告（含 'recompile every editor launch until resaved'），但无 XD 的 r.DebugAutomaticallySetUsageInEditor CVar</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 Runtime/Engine/Private/Materials/Material.cpp:1189/1893/1947 保留 bAutomaticallySetUsageInEditor 及 LogMaterial 警告（含 'recompile every editor launch until resaved'），但无 XD 的 r.DebugAutomaticallySetUsageInEditor CVar</p>
 <p class="migline"><b>覆盖说明：</b>行为与日志等价，仅缺调试 CVar</p>
 <p class="migline"><b>落地方式：</b>日志 UE5 已有；如需开关可在引擎加 Editor CVar 早退（XD Material.cpp:2512 落点）</p>
 <p class="migline"><b>接入点：</b>UMaterial 使用标记调试分支 / Editor CVar r.DebugAutomaticallySetUsageInEditor</p>
@@ -376,7 +376,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Core/Public/Modules/Boilerplate/ModuleBoilerplate.h</li><li>Source/Runtime/Core/Public/Modules/ModuleManager.h</li><li>Source/Runtime/UE4Game/Private/UE4Game.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>#pragma message 编译期输出，UE5 无此专用开关</p>
+<p class="migline"><b>覆盖度依据：</b>#pragma message 编译期输出，UE5 无此专用开关</p>
 <p class="migline"><b>覆盖说明：</b>编译期调试</p>
 <p class="migline"><b>落地方式：</b>项目 Target.cs/Build.cs 加 #pragma message</p>
 <p class="migline"><b>机制：</b>Config</p>
@@ -398,7 +398,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/AssetRegistry/Private/PackageReader.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/AssetRegistry/Private/PackageReader.cpp 无 XD 的详细失败原因输出（grep OpenPackageFileFailReason/FileOpenDetail 无结果）</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/AssetRegistry/Private/PackageReader.cpp 无 XD 的详细失败原因输出（grep OpenPackageFileFailReason/FileOpenDetail 无结果）</p>
 <p class="migline"><b>覆盖说明：</b>UE5.8 未提供</p>
 <p class="migline"><b>落地方式：</b>解析逻辑在 AssetRegistry PackageReader</p>
 <p class="migline"><b>接入点：</b>FPackageReader::OpenPackageFile 失败分支</p>
@@ -420,7 +420,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/Fonts/SlateFontRenderer.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/SlateCore/Private/Fonts/SlateFontRenderer.cpp:46-49 Slate.Font.DetectAsyncLoadingFontFaces、:368-380 IsFaceLoading 分支；UE5 有字体诊断 CVar 但无完整渲染数据打印</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/SlateCore/Private/Fonts/SlateFontRenderer.cpp:46-49 Slate.Font.DetectAsyncLoadingFontFaces、:368-380 IsFaceLoading 分支；UE5 有字体诊断 CVar 但无完整渲染数据打印</p>
 <p class="migline"><b>覆盖说明：</b>部分覆盖（诊断手段），XD 的 FreeType 打印未上游</p>
 <p class="migline"><b>落地方式：</b>默认关闭的调试项，可用 CVar/项目日志替代</p>
 <p class="migline"><b>接入点：</b>Slate.Font.* CVar · FSlateFontRenderer 日志</p>
@@ -443,7 +443,7 @@
 <details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Editor/UnrealEd/Classes/Commandlets/CookCommandlet.h</li><li>Source/Editor/UnrealEd/Private/Commandlets/CookCommandlet.cpp</li><li>Source/Editor/UnrealEd/Private/CookOnTheFlyServer.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookProfiling.cpp</li><li>Source/Editor/UnrealEd/Private/Cooker/CookProfiling.h</li><li>Source/Runtime/Engine/Private/ShaderCompiler/ShaderCompiler.cpp</li><li>Source/Runtime/Engine/Public/ShaderCompiler.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 有 FCookStatsManager（Runtime/Core/Public/ProfilingDebugging/CookStats.h:111-117）与分层 Cook.Profile 采集：Editor/UnrealEd/Private/Cooker/CookProfiling.cpp:266-335（CookOnTheFlyServer.Package.Load/Save、QueueSize PeakRequest/PeakLoad/PeakSave）、:309-335 分层计时、:412 `-CookStatsFile=` 直接产出 JSON 报告文件（含 DDC 每资产类型统计、ShaderCompilerStats）；DDC.Usage 字符串在 Developer/DerivedDataCache/Private/DerivedDataCache.cpp:66 与 CookProfiling.cpp:363，不在 CookCommandlet.cpp。缺的只是 XD 的文本格式 CookTask/PackageTaskReporter 报告。</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 有 FCookStatsManager（Runtime/Core/Public/ProfilingDebugging/CookStats.h:111-117）与分层 Cook.Profile 采集：Editor/UnrealEd/Private/Cooker/CookProfiling.cpp:266-335（CookOnTheFlyServer.Package.Load/Save、QueueSize PeakRequest/PeakLoad/PeakSave）、:309-335 分层计时、:412 `-CookStatsFile=` 直接产出 JSON 报告文件（含 DDC 每资产类型统计、ShaderCompilerStats）；DDC.Usage 字符串在 Developer/DerivedDataCache/Private/DerivedDataCache.cpp:66 与 CookProfiling.cpp:363，不在 CookCommandlet.cpp。缺的只是 XD 的文本格式 CookTask/PackageTaskReporter 报告。</p>
 <p class="migline"><b>覆盖说明：</b>框架与 JSON 报告出口都在，缺的只是 XD 文本格式 CookTask/PackageTaskReporter 报告</p>
 <p class="migline"><b>落地方式：</b>项目侧 UAT/C# 聚合 CookStats/Insights 导出生成报告</p>
 <p class="migline"><b>接入点：</b>FCookStatsManager 回调 · UE::Cook 阶段计时扩展点</p>
@@ -466,7 +466,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Programs/UnrealPak/Private/UnrealPak.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Programs/UnrealPak/Private/UnrealPak.cpp:14-37 已无 PackageTaskReporter 集成；但 PakFileUtilities.cpp:2304 有 TRACE_CPUPROFILER_EVENT_SCOPE(CreateFileHandle) 与 DETAILED_UNREALPAK_TIMING 框架</p>
+<p class="migline"><b>覆盖度依据：</b>Programs/UnrealPak/Private/UnrealPak.cpp:14-37 已无 PackageTaskReporter 集成；但 PakFileUtilities.cpp:2304 有 TRACE_CPUPROFILER_EVENT_SCOPE(CreateFileHandle) 与 DETAILED_UNREALPAK_TIMING 框架</p>
 <p class="migline"><b>覆盖说明：</b>有 trace，无计时报告文件</p>
 <p class="migline"><b>落地方式：</b>在 UAT/C# 构建脚本侧计时并产出报告</p>
 <p class="migline"><b>接入点：</b>UnrealPak 入口计时/DPakTaskReporter</p>
@@ -489,7 +489,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Shaders/Private/BasePassPixelShader.usf</li><li>Source/Runtime/Renderer/Private/BasePassRendering.h</li><li>Source/Runtime/Renderer/Private/BasePassRendering.inl</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 BasePassRendering.h 无 View.AdditiveColorMultiplier 及对 Additive 材质的附加颜色/透明度乘数</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 BasePassRendering.h 无 View.AdditiveColorMultiplier 及对 Additive 材质的附加颜色/透明度乘数</p>
 <p class="migline"><b>覆盖说明：</b>UE5 无该工具用途的 basepass 乘数</p>
 <p class="migline"><b>落地方式：</b>编辑器工具侧 + BasePass shader 参数，可收敛到项目/插件</p>
 <p class="migline"><b>接入点：</b>BasePassRendering shader 参数 · FViewInfo AdditiveColorMultiplier</p>
@@ -512,7 +512,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Plugins/Editor/MaterialAnalyzer/Source/MaterialAnalyzer.Build.cs</li><li>Plugins/Editor/MaterialAnalyzer/Source/Private/SMaterialAnalyzer.cpp</li><li>Plugins/Editor/MaterialAnalyzer/Source/Private/SMaterialAnalyzer.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Plugins/Editor/MaterialAnalyzer/Source/Private/SMaterialAnalyzer.cpp:404-419 OnExportAnalyzedMaterialToCSV（仅 CSV，无 JSON）</p>
+<p class="migline"><b>覆盖度依据：</b>Plugins/Editor/MaterialAnalyzer/Source/Private/SMaterialAnalyzer.cpp:404-419 OnExportAnalyzedMaterialToCSV（仅 CSV，无 JSON）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有 Material Analyzer 插件但输出格式不同</p>
 <p class="migline"><b>落地方式：</b>在 MaterialAnalyzer 插件/项目插件中增加 JSON 导出</p>
 <p class="migline"><b>接入点：</b>SMaterialAnalyzer · MaterialAnalyzer 插件</p>
@@ -534,7 +534,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading.cpp</li><li>Source/Runtime/PakFile/Private/IPlatformFilePak.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>默认关闭的自定义关卡加载调试日志，UE5 无</p>
+<p class="migline"><b>覆盖度依据：</b>默认关闭的自定义关卡加载调试日志，UE5 无</p>
 <p class="migline"><b>覆盖说明：</b>调试卷</p>
 <p class="migline"><b>落地方式：</b>用 LogLevel/LogStreaming verbosity 配置或项目日志打点</p>
 <p class="migline"><b>机制：</b>Config</p>
@@ -558,7 +558,7 @@
 <details class="usage"><summary>引用位置（12 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/LandscapeVertexFactory.ush</li><li>Shaders/Private/LightmapCommon.ush</li><li>Shaders/Private/LocalVertexFactory.ush</li><li>Shaders/Private/LocalVertexFactoryCommon.ush</li><li>Source/Editor/UnrealEd/Private/StaticLightingSystem/StaticLightingPrivate.h</li><li>Source/Editor/UnrealEd/Private/StaticLightingSystem/StaticLightingSystem.cpp</li><li>Source/Runtime/Core/Private/HAL/XDConsoleVariables.inc</li><li>Source/Runtime/Engine/Classes/Components/InstancedStaticMeshComponent.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 配置化 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 仅 per-material UMaterial::bUseLightmapDirectionality（Engine/Source/Runtime/Engine/Public/Materials/Material.h:964），无全局 r.DisableBakedLightMapDirectonality</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 仅 per-material UMaterial::bUseLightmapDirectionality（Engine/Source/Runtime/Engine/Public/Materials/Material.h:964），无全局 r.DisableBakedLightMapDirectonality</p>
 <p class="migline"><b>覆盖说明：</b>无全局移动端开关</p>
 <p class="migline"><b>落地方式：</b>项目材质默认 + 烘焙/Cook 开关</p>
 <p class="migline"><b>接入点：</b>UMaterial::bUseLightmapDirectionality · LightMap.cpp 烘焙 · ULightMapTexture2D 格式</p>
@@ -582,7 +582,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/StaticMesh.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 全仓无 DummyPlanarMaterialIndex（XD 在 StaticMesh.cpp:265-283 兼容旧版跳过该 int32）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 全仓无 DummyPlanarMaterialIndex（XD 在 StaticMesh.cpp:265-283 兼容旧版跳过该 int32）</p>
 <p class="migline"><b>覆盖说明：</b>属性已在 UE5 移除；旧 UE4 包升级仍需验证</p>
 <p class="migline"><b>落地方式：</b>Engine 序列化兼容</p>
 <p class="migline"><b>接入点：</b>FRenderingObjectVersion · FStaticMeshSection 序列化</p>
@@ -605,7 +605,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/StaticMeshComponent.h</li><li>Source/Runtime/Engine/Private/Components/StaticMeshComponent.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 无该静态网格 Override 材质修正（XD 在 StaticMeshComponent.cpp:388-562 增加）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 无该静态网格 Override 材质修正（XD 在 StaticMeshComponent.cpp:388-562 增加）</p>
 <p class="migline"><b>覆盖说明：</b>自定义 MapCheck 修正</p>
 <p class="migline"><b>落地方式：</b>项目编辑器插件/commandlet 在 MapCheck 时修正</p>
 <p class="migline"><b>接入点：</b>FEditorDelegates · MapCheck/Commandlet</p>
@@ -628,7 +628,7 @@
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Developer/AssetTools/Private/AssetTypeActions/AssetTypeActions_ParticleSystem.cpp</li><li>Source/Editor/CascadeParticleOptimizationStrategiesEdExt/Private/AssetActionMenuExtentions.cpp</li><li>Source/Editor/UnrealEd/Private/XDEditorExtension/XDEditorExtension.cpp</li><li>Source/Editor/UnrealEd/Public/XDEditorExtension/XDEditorExtension.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 Plugins/FX/Cascade/Source/Cascade/Private/AssetDefinition_ParticleSystem.cpp:124 UToolMenus::RegisterStartupCallback 注册粒子资产菜单动作，是可扩展的工具体系</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 Plugins/FX/Cascade/Source/Cascade/Private/AssetDefinition_ParticleSystem.cpp:124 UToolMenus::RegisterStartupCallback 注册粒子资产菜单动作，是可扩展的工具体系</p>
 <p class="migline"><b>覆盖说明：</b>有 UToolMenus 扩展点，直接替换 XD 委托</p>
 <p class="migline"><b>落地方式：</b>项目插件用 UToolMenus::Get()-&gt;ExtendMenu(&quot;AssetEditor.ParticleSystem...&quot;) 注入菜单项</p>
 <p class="migline"><b>接入点：</b>UToolMenus 资产菜单扩展点</p>
@@ -650,7 +650,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Editor/Cascade/Private/Cascade.cpp</li><li>Source/Editor/CascadeParticleOptimizationStrategiesEdExt/Private/CascadeEditorToolbarExtentions.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 中 Cascade 编辑器已改为插件 Plugins/FX/Cascade（Cascade.cpp:2128 仍用局部 FExtender 构建工具栏，未提供全局扩展委托；另有 Cascade.Build.cs/uplugin）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 中 Cascade 编辑器已改为插件 Plugins/FX/Cascade（Cascade.cpp:2128 仍用局部 FExtender 构建工具栏，未提供全局扩展委托；另有 Cascade.Build.cs/uplugin）</p>
 <p class="migline"><b>覆盖说明：</b>模块位置变了，无等价委托</p>
 <p class="migline"><b>落地方式：</b>可在项目插件里用 UToolMenus 扩展 Cascade 资产编辑器工具栏，必要时 fork Plugins/FX/Cascade 加 delegate</p>
 <p class="migline"><b>接入点：</b>Plugins/FX/Cascade 工具栏构建处 · UToolMenus::ExtendMenu 扩展点</p>
@@ -672,7 +672,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Particles/ParticleModules.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 ParticleModules.cpp:3431 UParticleModuleTypeDataMesh 构造函数仍 bCollisionsConsiderPartilceSize = true（XD 置 false）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 ParticleModules.cpp:3431 UParticleModuleTypeDataMesh 构造函数仍 bCollisionsConsiderPartilceSize = true（XD 置 false）</p>
 <p class="migline"><b>覆盖说明：</b>默认值未改</p>
 <p class="migline"><b>落地方式：</b>CDO 默认值在引擎类，可在项目启动时改 CDO 或资产后处理脚本；不能纯 Config 覆盖（非 config 属性）</p>
 <p class="migline"><b>接入点：</b>UParticleModuleTypeDataMesh CDO 默认值</p>
@@ -695,7 +695,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Private/Materials/Material.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 无该材质误用上报委托（XD 在 Runtime/Engine/Private/Materials/Material.cpp:2586 增加）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 无该材质误用上报委托（XD 在 Runtime/Engine/Private/Materials/Material.cpp:2586 增加）</p>
 <p class="migline"><b>覆盖说明：</b>自定义检查上报点</p>
 <p class="migline"><b>落地方式：</b>项目编辑器插件/commandlet 扫描材质用法上报</p>
 <p class="migline"><b>接入点：</b>FMaterial 检查委托/Commandlet</p>
@@ -717,7 +717,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Particles/ParticleModuleRequired.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 ParticleModuleRequired.h:467 GetBoundingGeometrySRV()/514 FSubUVBoundingGeometryBuffer* BoundingGeometryBuffer 存在于同头文件，XD 只是把访问口提到可用的 WITH_EDITOR 路径</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 ParticleModuleRequired.h:467 GetBoundingGeometrySRV()/514 FSubUVBoundingGeometryBuffer* BoundingGeometryBuffer 存在于同头文件，XD 只是把访问口提到可用的 WITH_EDITOR 路径</p>
 <p class="migline"><b>覆盖说明：</b>数据可访问性大体具备，访问口位置不同</p>
 <p class="migline"><b>落地方式：</b>需要引擎头文件可见性调整（Cannot project-side bypass）</p>
 <p class="migline"><b>接入点：</b>UParticleModuleRequired 的 BoundingGeometryBuffer 访问器</p>
@@ -741,7 +741,7 @@
 <details class="usage"><summary>引用位置（9 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/CascadeParticleOptimizationStrategies/Private/XDAOEStrategy.cpp</li><li>Source/Runtime/CascadeParticleOptimizationStrategies/Private/XDSIGStrategy.cpp</li><li>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</li><li>Source/Runtime/Engine/Private/LevelTick.cpp</li><li>Source/Runtime/Engine/Private/Particles/FastParticleSystem/FastParticleSystemComponent.cpp</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li><li>Source/Runtime/Engine/Private/XDRuntimeExtension/XDRuntimeExtension.cpp</li><li>Source/Runtime/Engine/Public/EngineStats.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 原生 FWorldDelegates(LevelTick.cpp:1522 等)、UParticleSystemComponent 事件、骨骼网格委托等；无 XD 统一 XDRuntimeDelegates 集合</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 原生 FWorldDelegates(LevelTick.cpp:1522 等)、UParticleSystemComponent 事件、骨骼网格委托等；无 XD 统一 XDRuntimeDelegates 集合</p>
 <p class="migline"><b>覆盖说明：</b>UE5 分散原生委托可替代大部分</p>
 <p class="migline"><b>落地方式：</b>项目模块绑定 FWorldDelegates/组件委托，替代 XD 自建广播</p>
 <p class="migline"><b>接入点：</b>FWorldDelegates · UParticleSystemComponent::OnSystemFinished · FCoreDelegates</p>
@@ -763,7 +763,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/MoviePlayer/Private/MoviePlayerThreading.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/MoviePlayer/Public/MoviePlayer.h:228-236（OnMoviePlaybackStarted/OnMoviePlaybackTick/OnMoviePlaybackFinished/OnMovieClipFinished）、DefaultGameMoviePlayer.h:99-103</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/MoviePlayer/Public/MoviePlayer.h:228-236（OnMoviePlaybackStarted/OnMoviePlaybackTick/OnMoviePlaybackFinished/OnMovieClipFinished）、DefaultGameMoviePlayer.h:99-103</p>
 <p class="migline"><b>覆盖说明：</b>UE5 提供播放期 tick 委托，但没有 XD 的“Slate 加载期 PreTick”时点</p>
 <p class="migline"><b>落地方式：</b>项目侧绑定 IGameMoviePlayer::OnMoviePlaybackTick 驱动 Loading 动画</p>
 <p class="migline"><b>接入点：</b>IGameMoviePlayer::OnMoviePlaybackTick · FCoreDelegates::IsLoadingMovieCurrentlyPlaying</p>
@@ -786,7 +786,7 @@
 <details class="usage"><summary>引用位置（37 处 / 前 8 个文件）</summary><ul><li>Source/Editor/UMGEditor/Private/Customizations/TextVerticalJustifyCustomization.cpp</li><li>Source/Editor/UMGEditor/Private/Customizations/TextVerticalJustifyCustomization.h</li><li>Source/Editor/UMGEditor/Private/Details/SWidgetDetailsView.cpp</li><li>Source/Runtime/Slate/Private/Framework/Text/TextLayout.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Input/SEditableText.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Input/SEditableTextBox.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Input/SMultiLineEditableTextBox.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Text/SInlineEditableTextBlock.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 L · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 全 Runtime grep VerticalJustification 无结果；SRichTextBlock.h/STextBlock.h 仅有 ETextJustify 水平对齐与 VAlign（布局用）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 全 Runtime grep VerticalJustification 无结果；SRichTextBlock.h/STextBlock.h 仅有 ETextJustify 水平对齐与 VAlign（布局用）</p>
 <p class="migline"><b>覆盖说明：</b>文本垂直对齐至今未上游</p>
 <p class="migline"><b>落地方式：</b>需贯穿 FTextLayout/STextBlock/SRichTextBlock/可编辑文本与 UMG 面板</p>
 <p class="migline"><b>接入点：</b>FTextLayout/FSlateTextBlockLayout · STextBlock/SRichTextBlock/SMultiLineEditableText · UMG UTextBlock 面板自定义</p>
@@ -809,7 +809,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/SkeletalMesh.h</li><li>Source/Runtime/Engine/Private/SkeletalMesh.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 无 GetGUIDFromFileHash（grep 无结果）；仅 DDC 用 USkeletalMesh::InvalidateDeriveDataCacheGUID(SkeletalMesh.cpp:5661)</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 无 GetGUIDFromFileHash（grep 无结果）；仅 DDC 用 USkeletalMesh::InvalidateDeriveDataCacheGUID(SkeletalMesh.cpp:5661)</p>
 <p class="migline"><b>覆盖说明：</b>未上游</p>
 <p class="migline"><b>落地方式：</b>编辑器工具/资产注册扩展生成稳定 GUID</p>
 <p class="migline"><b>接入点：</b>USkeletalMesh 编辑器扩展 · AssetRegistry 标签</p>
@@ -832,7 +832,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 ParticleSystem.h:589 IsLooping() 只返回 bAnyEmitterLoopsForever，无 bThoughtAsLooping 属性</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 ParticleSystem.h:589 IsLooping() 只返回 bAnyEmitterLoopsForever，无 bThoughtAsLooping 属性</p>
 <p class="migline"><b>覆盖说明：</b>无上游等价属性</p>
 <p class="migline"><b>落地方式：</b>可在项目侧维护“视为循环”映射表（DataAsset/AssetRegistry tag），或在 UParticleSystem 加 UPROPERTY</p>
 <p class="migline"><b>接入点：</b>UParticleSystem bThoughtAsLooping 属性</p>
@@ -855,7 +855,7 @@
 <details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/D3D12RHI/Private/D3D12RHIPrivate.h</li><li>Source/Runtime/D3D12RHI/Private/Windows/WindowsD3D12Device.cpp</li><li>Source/Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h</li><li>Source/Runtime/Engine/Private/KismetSystemLibrary.cpp</li><li>Source/Runtime/RHI/Public/DynamicRHI.h</li><li>Source/Runtime/RHI/Public/RHI.h</li><li>Source/Runtime/Windows/D3D11RHI/Private/D3D11RHIPrivate.h</li><li>Source/Runtime/Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/ApplicationCore/Public/GenericPlatform/GenericApplication.h:339 FMonitorInfo(NativeHandle/Name/DPI)+FDisplayMetrics；Runtime/RHI/Public/DynamicRHI.h:733 RHIGetAvailableResolutionsForDisplay</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/ApplicationCore/Public/GenericPlatform/GenericApplication.h:339 FMonitorInfo(NativeHandle/Name/DPI)+FDisplayMetrics；Runtime/RHI/Public/DynamicRHI.h:733 RHIGetAvailableResolutionsForDisplay</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有显示器信息与按句柄分辨率查询，无 XD 的适配器聚合结构</p>
 <p class="migline"><b>落地方式：</b>项目用 FDisplayMetrics/FMonitorInfo 枚举显示器</p>
 <p class="migline"><b>接入点：</b>FDisplayMetrics::MonitorInfo</p>
@@ -878,7 +878,7 @@
 <details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/D3D12RHI/Private/D3D12RHIPrivate.h</li><li>Source/Runtime/D3D12RHI/Private/Windows/WindowsD3D12Device.cpp</li><li>Source/Runtime/RHI/Public/DynamicRHI.h</li><li>Source/Runtime/Windows/D3D11RHI/Private/D3D11RHIPrivate.h</li><li>Source/Runtime/Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/RHI/Public/DynamicRHI.h:733 RHIGetAvailableResolutionsForDisplay(...,NativeMonitorHandle)；Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp:1724 与 D3D12RHI/Private/Windows/WindowsD3D12Device.cpp:2215 实现</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/RHI/Public/DynamicRHI.h:733 RHIGetAvailableResolutionsForDisplay(...,NativeMonitorHandle)；Windows/D3D11RHI/Private/Windows/WindowsD3D11Device.cpp:1724 与 D3D12RHI/Private/Windows/WindowsD3D12Device.cpp:2215 实现</p>
 <p class="migline"><b>覆盖说明：</b>UE5 原生按显示器句柄取分辨率</p>
 <p class="migline"><b>落地方式：</b>项目调用 RHIGetAvailableResolutionsForDisplay</p>
 <p class="migline"><b>接入点：</b>RHIGetAvailableResolutionsForDisplay</p>
@@ -902,7 +902,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Toolkits/AssetEditorToolkit.cpp</li><li>Source/Editor/UnrealEd/Private/XDEditorExtension/XDEditorExtension.cpp</li><li>Source/Editor/UnrealEd/Public/XDEditorExtension/XDEditorExtension.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Editor/UnrealEd/Private/UnrealEdMisc.cpp:317 FCoreUObjectDelegates::OnObjectPreSave；Source/Runtime/CoreUObject/Public/UObject/Package.h:275,285 PreSavePackageWithContextEvent/PackageSavedWithContextEvent</p>
+<p class="migline"><b>覆盖度依据：</b>Editor/UnrealEd/Private/UnrealEdMisc.cpp:317 FCoreUObjectDelegates::OnObjectPreSave；Source/Runtime/CoreUObject/Public/UObject/Package.h:275,285 PreSavePackageWithContextEvent/PackageSavedWithContextEvent</p>
 <p class="migline"><b>覆盖说明：</b>UE5 原生资产保存前后委托齐备</p>
 <p class="migline"><b>落地方式：</b>项目模块绑定 FCoreUObjectDelegates/UPackage 保存委托</p>
 <p class="migline"><b>接入点：</b>FCoreUObjectDelegates::OnObjectPreSave · UPackage::PreSavePackageWithContextEvent</p>
@@ -925,7 +925,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Core/Private/Misc/AssertionMacros.cpp</li><li>Source/Runtime/Core/Private/Misc/CoreGlobals.cpp</li><li>Source/Runtime/Core/Public/CoreGlobals.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/Core/Public/CoreGlobals.h:103/106 GErrorHist[16384]、GErrorExceptionDescription[4096]（XD 用 65500）</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/Core/Public/CoreGlobals.h:103/106 GErrorHist[16384]、GErrorExceptionDescription[4096]（XD 用 65500）</p>
 <p class="migline"><b>覆盖说明：</b>缓冲尺寸小于 XD</p>
 <p class="migline"><b>落地方式：</b>全局缓冲在 Core，须引擎补丁</p>
 <p class="migline"><b>接入点：</b>GErrorHist/GErrorExceptionDescription 尺寸 · FDebug 断言栈缓冲</p>
@@ -948,7 +948,7 @@
 <details class="usage"><summary>引用位置（13 处 / 前 8 个文件）</summary><ul><li>Source/Runtime/Apple/MetalRHI/Private/MetalRHI.cpp</li><li>Source/Runtime/Apple/MetalRHI/Private/MetalShaders.cpp</li><li>Source/Runtime/Core/Private/GenericPlatform/GenericPlatformMallocCrash.cpp</li><li>Source/Runtime/Core/Private/GenericPlatform/GenericPlatformMisc.cpp</li><li>Source/Runtime/Core/Private/HAL/ThreadHeartBeat.cpp</li><li>Source/Runtime/Core/Public/GenericPlatform/GenericPlatformMisc.h</li><li>Source/Runtime/D3D12RHI/Private/D3D12Util.cpp</li><li>Source/Runtime/Launch/Private/Android/LaunchAndroid.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 FPlatformMisc::RequestExit(bool,const TCHAR*) 带原因；多处 RequestExit(true,...)（如 WindowsErrorOutputDevice.cpp:90）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 FPlatformMisc::RequestExit(bool,const TCHAR*) 带原因；多处 RequestExit(true,...)（如 WindowsErrorOutputDevice.cpp:90）</p>
 <p class="migline"><b>覆盖说明：</b>有原因字符串但无统一 flush 上报</p>
 <p class="migline"><b>落地方式：</b>退出原因上报可项目侧订阅；日志 flush 入口须引擎</p>
 <p class="migline"><b>接入点：</b>FPlatformMisc::RequestExit 原因参数</p>
@@ -969,7 +969,7 @@
 <p class="rels">关联宏：<a class="rel" href="opt.html#XD_OPT_LLM_CSV_EXTENSIONS">XD_OPT_LLM_CSV_EXTENSIONS</a></p>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 有等价即时落盘：Runtime/Core/Private/HAL/LLM/LLM.cpp:975-981 注册 LLMSnapshot→PublishDataSingleFrame(:1848)→PublishDataSingleFrameInner(:3488-3500，置 bPublishSingleFrame 下一帧写 CSV，需 -llmdisableautopublish)；缺的只是 XD 的 LLMCSVNow/PublishCsvNow 命令名</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 有等价即时落盘：Runtime/Core/Private/HAL/LLM/LLM.cpp:975-981 注册 LLMSnapshot→PublishDataSingleFrame(:1848)→PublishDataSingleFrameInner(:3488-3500，置 bPublishSingleFrame 下一帧写 CSV，需 -llmdisableautopublish)；缺的只是 XD 的 LLMCSVNow/PublishCsvNow 命令名</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已有 LLMSnapshot→PublishDataSingleFrame 即时落盘等价（需 -llmdisableautopublish），仅缺 XD 命名命令</p>
 <p class="migline"><b>落地方式：</b>LLM 控制台命令在 Core/HAL/LLM，须引擎补丁</p>
 <p class="migline"><b>接入点：</b>FLowLevelMemTracker 命令处理 · FLLMCsvWriter</p>
@@ -990,7 +990,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/Serialization/AsyncLoading.cpp</li><li>Source/Runtime/CoreUObject/Private/UObject/Obj.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 LowLevelMemTracker.h 无 LLM_SCOPE_UOBJECT_BREAKDOWN 宏</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 LowLevelMemTracker.h 无 LLM_SCOPE_UOBJECT_BREAKDOWN 宏</p>
 <p class="migline"><b>覆盖说明：</b>须保留</p>
 <p class="migline"><b>落地方式：</b>UObject 分配打标在 CoreUObject，须引擎补丁</p>
 <p class="migline"><b>接入点：</b>UObject::PostLoad 内 LLM_SCOPE_UOBJECT_BREAKDOWN · ELLMTagSet::Assets</p>
@@ -1013,7 +1013,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Launch/Private/IOS/LaunchIOS.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 Runtime/Launch/Private/IOS/LaunchIOS.cpp 无 BackgroundTask 起止日志（BeginBackgroundTask/EndBackgroundTask 无命中）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 Runtime/Launch/Private/IOS/LaunchIOS.cpp 无 BackgroundTask 起止日志（BeginBackgroundTask/EndBackgroundTask 无命中）</p>
 <p class="migline"><b>覆盖说明：</b>仅调试日志</p>
 <p class="migline"><b>落地方式：</b>删除或改 CVar 调试日志</p>
 <p class="migline"><b>建议：</b>后台任务调试日志，无需迁移</p>
@@ -1036,7 +1036,7 @@
 <details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Particles/TypeData/ParticleModuleTypeDataAnimTrail.h</li><li>Source/Runtime/Engine/Classes/Particles/TypeData/ParticleModuleTypeDataBase.h</li><li>Source/Runtime/Engine/Classes/Particles/TypeData/ParticleModuleTypeDataBeam2.h</li><li>Source/Runtime/Engine/Classes/Particles/TypeData/ParticleModuleTypeDataGpu.h</li><li>Source/Runtime/Engine/Classes/Particles/TypeData/ParticleModuleTypeDataMesh.h</li><li>Source/Runtime/Engine/Classes/Particles/TypeData/ParticleModuleTypeDataRibbon.h</li><li>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 无 XD 粒子 ID（无粒子实例化，ParticleModuleTypeData* 亦无 XDParticleID 序列化字段）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 无 XD 粒子 ID（无粒子实例化，ParticleModuleTypeData* 亦无 XDParticleID 序列化字段）</p>
 <p class="migline"><b>覆盖说明：</b>实例化附属能力</p>
 <p class="migline"><b>落地方式：</b>必须随实例化一起在引擎侧生成</p>
 <p class="migline"><b>接入点：</b>UParticleModuleTypeDataBase 数据字段 · 实例化收集阶段的 ID 分配</p>
@@ -1059,7 +1059,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Commandlets/CookCommandlet.cpp</li><li>Source/Runtime/Engine/Classes/Components/PrimitiveComponent.h</li><li>Source/Runtime/Engine/Private/Components/PrimitiveComponent.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 无 Cook 期该组件收集：Components/PrimitiveComponent.cpp 无对应代码；仅有编辑器侧提示 Editor/UnrealEd/Classes/Settings/LevelEditorViewportSettings.h:131 与 Editor/UnrealEd/Private/StaticLightingSystem/StaticLightingSystem.cpp:1095</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 无 Cook 期该组件收集：Components/PrimitiveComponent.cpp 无对应代码；仅有编辑器侧提示 Editor/UnrealEd/Classes/Settings/LevelEditorViewportSettings.h:131 与 Editor/UnrealEd/Private/StaticLightingSystem/StaticLightingSystem.cpp:1095</p>
 <p class="migline"><b>覆盖说明：</b>UE5.8 无 Cook 期告警</p>
 <p class="migline"><b>落地方式：</b>项目 Editor 插件/资产校验 Commandlet 扫描关卡组件 IsPrecomputedLightingValid()</p>
 <p class="migline"><b>机制：</b>Plugin</p>
@@ -1082,7 +1082,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Commandlets/DiffAssetRegistriesCommandlet.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Editor/UnrealEd/Private/Commandlets/DiffAssetRegistriesCommandlet.cpp 在 UE5 仍存在（:374 ConsistencyCheck、:686 SummarizeDeterminism），但无 -CheckAssetRegistryConfig 开关与 ProjectDir 相对路径/新旧 registry 双 Serialize 修正</p>
+<p class="migline"><b>覆盖度依据：</b>Editor/UnrealEd/Private/Commandlets/DiffAssetRegistriesCommandlet.cpp 在 UE5 仍存在（:374 ConsistencyCheck、:686 SummarizeDeterminism），但无 -CheckAssetRegistryConfig 开关与 ProjectDir 相对路径/新旧 registry 双 Serialize 修正</p>
 <p class="migline"><b>覆盖说明：</b>命令存在，XD 增强缺失</p>
 <p class="migline"><b>落地方式：</b>作为项目 Tools 补丁或项目 Commandlet 实现，不改引擎核心</p>
 <p class="migline"><b>机制：</b>Plugin</p>
@@ -1103,7 +1103,7 @@
 <details class="usage"><summary>引用位置（6 处 / 前 6 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Framework/Application/SlateApplication.cpp</li><li>Source/Runtime/Slate/Private/Framework/Application/SlateUser.cpp</li><li>Source/Runtime/SlateCore/Private/Input/HittestGrid.cpp</li><li>Source/Runtime/SlateCore/Private/Layout/Geometry.cpp</li><li>Source/Runtime/SlateCore/Private/Widgets/SWindow.cpp</li><li>Source/Runtime/SlateCore/Public/Debugging/SlateDebugging.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Runtime/SlateCore/Public/Debugging/SlateDebugging.h 与 Private/Debugging/SlateDebugging.cpp（WITH_SLATE_DEBUGGING）、Slate 调试器（悬停/焦点/输入可视化）</p>
+<p class="migline"><b>覆盖度依据：</b>Runtime/SlateCore/Public/Debugging/SlateDebugging.h 与 Private/Debugging/SlateDebugging.cpp（WITH_SLATE_DEBUGGING）、Slate 调试器（悬停/焦点/输入可视化）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 内建 Slate 调试体系</p>
 <p class="migline"><b>落地方式：</b>打开 WITH_SLATE_DEBUGGING 并使用 Slate Debugger</p>
 <p class="migline"><b>建议：</b>删除；默认值本就是 0，改引擎自带调试器。</p>
@@ -1125,7 +1125,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Plugins/Editor/AssetManagerEditor/Source/AssetManagerEditor/Private/AssetManagerEditorModule.cpp</li><li>Plugins/Editor/AssetManagerEditor/Source/AssetManagerEditor/Private/SAssetAuditBrowser.cpp</li><li>Plugins/Editor/AssetManagerEditor/Source/AssetManagerEditor/Public/AssetManagerEditorModule.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-unknown">待确认</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>引擎 Source 中除 UBT 开关外无引用（grep 无结果）</p>
+<p class="migline"><b>覆盖度依据：</b>引擎 Source 中除 UBT 开关外无引用（grep 无结果）</p>
 <p class="migline"><b>覆盖说明：</b>引用=0，可能实现在项目插件或已下线</p>
 <p class="migline"><b>落地方式：</b>Asset Audit 列扩展可在项目 Editor 插件实现</p>
 <p class="migline"><b>机制：</b>Plugin</p>
@@ -1147,7 +1147,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/SkeletalMesh.h</li><li>Source/Runtime/Engine/Private/SkeletalMeshRenderData.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>grep bDerivedDataKeyMissMatch 在 UE5 无结果；Runtime/Engine/Private/SkeletalMeshRenderData.cpp:367-375 UE5 仍只内部重烘，无对外标记或工具</p>
+<p class="migline"><b>覆盖度依据：</b>grep bDerivedDataKeyMissMatch 在 UE5 无结果；Runtime/Engine/Private/SkeletalMeshRenderData.cpp:367-375 UE5 仍只内部重烘，无对外标记或工具</p>
 <p class="migline"><b>覆盖说明：</b>UE5.8 无该检查工具</p>
 <p class="migline"><b>落地方式：</b>项目 Editor 插件/资产校验 Commandlet 复算 BuildSkeletalMeshDerivedDataKey 并比对</p>
 <p class="migline"><b>机制：</b>Plugin</p>
@@ -1170,7 +1170,7 @@
 <details class="usage"><summary>引用位置（78 处 / 前 8 个文件）</summary><ul><li>Shaders/Private/AdvancedPaintCopyTexture.usf</li><li>Source/Editor/LandscapeEditor/LandscapeEditor.Build.cs</li><li>Source/Editor/LandscapeEditor/Private/AdvancedPaint/AdvancedLandscapeLayerInfoDetailCustomization.cpp</li><li>Source/Editor/LandscapeEditor/Private/AdvancedPaint/AdvancedLandscapeLayerInfoDetailCustomization.h</li><li>Source/Editor/LandscapeEditor/Private/AdvancedPaint/AdvancedLandscapeLayerInfoFactory.cpp</li><li>Source/Editor/LandscapeEditor/Private/AdvancedPaint/AdvancedLandscapeLayerInfoFactory.h</li><li>Source/Editor/LandscapeEditor/Private/AdvancedPaint/AdvancedLandscapeLayerInfoThumbnailRenderer.cpp</li><li>Source/Editor/LandscapeEditor/Private/AdvancedPaint/AdvancedLandscapeLayerInfoThumbnailRenderer.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-3">深度侵入</span> <span class="migmeta">处置 保留引擎 · 工作量 L · 风险 高</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 Landscape 无 AdvancedPaint/IdMap/AdvancedChannel（Engine/Source/Runtime/Landscape grep 无结果），仅 EditLayers/RVT</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 Landscape 无 AdvancedPaint/IdMap/AdvancedChannel（Engine/Source/Runtime/Landscape grep 无结果），仅 EditLayers/RVT</p>
 <p class="migline"><b>覆盖说明：</b>未被覆盖</p>
 <p class="migline"><b>落地方式：</b>含材质表达式/Shader/LandscapeEdit/序列化</p>
 <p class="migline"><b>接入点：</b>ULandscapeComponent · ULandscapeEditInterface 高级 Alpha 数据 · AdvancedTextureArray/ID4/LayerBlend 材质节点 · LandscapeRender 通道分配</p>
@@ -1195,6 +1195,6 @@
 </aside>
 </div>
 <div class="statbar" id="statbar"><span class="sb-title">迁移决策</span><div class="sb-items"><a class="sb" href="../migration/roadmap.html#phase-drop-covered" title="A1 直接删除（UE5 已覆盖）：98 个宏">A1 删除·已覆盖 <b>98</b></a><a class="sb" href="../migration/roadmap.html#phase-drop-other" title="A2 直接删除（废弃/无引用/待复核）：49 个宏">A2 删除·其他原因 <b>49</b></a><a class="sb" href="../migration/roadmap.html#phase-patch" title="B 常开补丁：48 个宏">B 常开补丁 <b>48</b></a><a class="sb" href="../migration/roadmap.html#phase-config" title="C 配置化：66 个宏">C 配置化 <b>66</b></a><a class="sb" href="../migration/roadmap.html#phase-plugin" title="D 插件化：51 个宏">D 插件化 <b>51</b></a><a class="sb" href="../migration/roadmap.html#phase-hook" title="E 接入点改造：28 个宏">E 接入点 <b>28</b></a><a class="sb" href="../migration/roadmap.html#phase-port" title="F 代码移植：195 个宏">F 移植 <b>195</b></a><a class="sb" href="../migration/roadmap.html#phase-keep" title="G 暂留引擎（重点跟进）：14 个宏">G 暂留引擎 <b>14</b></a></div><span class="sb-total">合计 <b>549</b></span><button type="button" class="sb-toggle" id="sbToggle" title="收起 / 展开">▾</button></div>
-<script src="../assets/app.js?v=91888f28"></script>
+<script src="../assets/app.js?v=00a24d5d"></script>
 </body>
 </html>

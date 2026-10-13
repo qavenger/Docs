@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>项目特性（XDCustomizedProjectFeatures） · 心动定制 UE4.26 引擎特性文档</title>
-<link rel="stylesheet" href="../assets/style.css?v=91888f28">
+<link rel="stylesheet" href="../assets/style.css?v=00a24d5d">
 <noscript><style>.tabpane{display:block !important}.tabbar{display:none !important}</style></noscript>
 </head>
 <body class="">
@@ -61,7 +61,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/SkeletalMeshComponent.h</li><li>Source/Runtime/Engine/Private/Components/SkeletalMeshComponent.cpp</li><li>Source/Runtime/Engine/Private/PhysicsEngine/PhysAnim.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Private/PhysicsEngine/PhysAnim.cpp（无 bNotPhysicsLocation 分支；仅 :344 Blend）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Private/PhysicsEngine/PhysAnim.cpp（无 bNotPhysicsLocation 分支；仅 :344 Blend）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 未包含 XD 的骨骼物理混合/位置保护逻辑</p>
 <p class="migline"><b>落地方式：</b>逻辑在引擎 PhysicsAnim 与 SkeletalMeshComponent 内部，项目无法接管；建议参数化为 CVar 后由项目配置</p>
 <p class="migline"><b>接入点：</b>PhysAnim 中 bNotPhysicsLocation 位置保护分支 · SkeletalMeshComponent 物理混合参数暴露</p>
@@ -83,7 +83,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Editor/UnrealEd/Private/Fbx/FbxMainImport.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UnrealEd/Private/Fbx/FbxMainImport.cpp:220/1536（bForceFrontXAxis、ECoordinateSystemPolicy::MatchUpForwardAxes）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UnrealEd/Private/Fbx/FbxMainImport.cpp:220/1536（bForceFrontXAxis、ECoordinateSystemPolicy::MatchUpForwardAxes）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有坐标系策略与 bForceFrontXAxis，但没有 XD 的 JointOrientationMatrix(0,0,-90) 修正</p>
 <p class="migline"><b>落地方式：</b>仅配置 bForceFrontXAxis/CoordinateSystemPolicy 无法复现（UE 原生 JointOrientationMatrix 仍为 (-90,-90,0)）；需改/替换 FFbxImporter 该分支（Source/Editor/UnrealEd/Private/Fbx/FbxMainImport.cpp:1559-1561）</p>
 <p class="migline"><b>接入点：</b>UFbxImportUI.bForceFrontXAxis / ECoordinateSystemPolicy · FbxMainImport JointOrientationMatrix 分支</p>
@@ -106,7 +106,7 @@
 <details class="usage"><summary>引用位置（5 处 / 前 5 个文件）</summary><ul><li>Source/Runtime/Core/Public/Async/ParallelFor.h</li><li>Source/Runtime/Engine/Classes/Components/ActorComponent.h</li><li>Source/Runtime/Engine/Classes/Engine/World.h</li><li>Source/Runtime/Engine/Private/Components/ActorComponent.cpp</li><li>Source/Runtime/Engine/Private/LevelTick.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>Source/Runtime/Core/Public/Async/ParallelFor.h:556（仅 ParallelForWithPreWork/BeforeHelping）；Source/Runtime/Engine/Classes/Components/ActorComponent.h:762 OnPreEndOfFrameSync / :1160 RequiresPreEndOfFrameSync；Source/Runtime/Engine/Private/LevelTick.cpp:1017-1020,1183（原生注册+调用）；World.h:1647</p>
+<p class="migline"><b>覆盖度依据：</b>Source/Runtime/Core/Public/Async/ParallelFor.h:556（仅 ParallelForWithPreWork/BeforeHelping）；Source/Runtime/Engine/Classes/Components/ActorComponent.h:762 OnPreEndOfFrameSync / :1160 RequiresPreEndOfFrameSync；Source/Runtime/Engine/Private/LevelTick.cpp:1017-1020,1183（原生注册+调用）；World.h:1647</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已有组件级 OnPreEndOfFrameSync/RequiresPreEndOfFrameSync 原生扩展；仅缺 ParallelFor AfterHelping 回调</p>
 <p class="migline"><b>落地方式：</b>项目任务调度/并行逻辑放项目模块；引擎侧只需在 ParallelFor 与 LevelTick 留出回调扩展点</p>
 <p class="migline"><b>接入点：</b>ParallelForWithPreWork 增加 AfterHelping 回调 · UWorld/ActorComponent 增加 EndOfFrameSync 广播与注册接口</p>
@@ -128,7 +128,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/Widgets/SWindow.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/SlateCore/Public/Widgets/SWindow.h:1107 SWindow::MakeWindowTitleBar virtual；Application/SlateApplicationBase.h:436 亦为纯虚可定制；参考 Editor/PIEPreviewDeviceProfileSelector/SPIEPreviewWindow</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/SlateCore/Public/Widgets/SWindow.h:1107 SWindow::MakeWindowTitleBar virtual；Application/SlateApplicationBase.h:436 亦为纯虚可定制；参考 Editor/PIEPreviewDeviceProfileSelector/SPIEPreviewWindow</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已提供窗口标题栏定制虚函数，等价能力存在</p>
 <p class="migline"><b>落地方式：</b>项目 SWindow 子类或自定义 FSlateApplication 重写 MakeWindowTitleBar（FWindowTitleBarArgs 含 CenterContent/对齐）</p>
 <p class="migline"><b>机制：</b>Interface</p>
@@ -150,7 +150,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Engine/GameViewportClient.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 已提供可覆写入口：GameViewportClient.h:209 UGameViewportClient::Exec 为 public virtual（:234 HandleToggleFullscreenCommand 非 virtual 不构成障碍）；类可由 ini 替换（Engine.h:807 GameViewportClientClassName，globalconfig）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 已提供可覆写入口：GameViewportClient.h:209 UGameViewportClient::Exec 为 public virtual（:234 HandleToggleFullscreenCommand 非 virtual 不构成障碍）；类可由 ini 替换（Engine.h:807 GameViewportClientClassName，globalconfig）</p>
 <p class="migline"><b>覆盖说明：</b>UGameViewportClient::Exec 已是 public virtual，且类可经 ini 替换，无需开放命令覆写</p>
 <p class="migline"><b>落地方式：</b>项目派生 UGameViewportClient 并重写 virtual Exec()，在调用 Super 前拦截 TOGGLEFULLSCREEN 等命令即可</p>
 <p class="migline"><b>机制：</b>Plugin</p>
@@ -172,7 +172,7 @@
 <details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelector/Private/AndroidDeviceProfileSelector.cpp</li><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelector/Public/AndroidDeviceProfileSelector.h</li><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelectorRuntime/Private/AndroidDeviceProfileSelectorRuntimeModule.cpp</li><li>Plugins/Runtime/AndroidDeviceProfileSelector/Source/AndroidDeviceProfileSelectorRuntime/Private/AndroidDeviceProfileSelectorRuntimeModule.h</li><li>Plugins/Runtime/IOSDeviceProfileSelector/Source/IOSDeviceProfileSelector/Private/IOSDeviceProfileSelectorModule.cpp</li><li>Plugins/Runtime/IOSDeviceProfileSelector/Source/IOSDeviceProfileSelector/Private/IOSDeviceProfileSelectorModule.h</li><li>Source/Runtime/Engine/Private/DeviceProfiles/DeviceProfileManager.cpp</li><li>Source/Runtime/Engine/Public/IDeviceProfileSelectorModule.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/IDeviceProfileSelectorModule.h（公开接口）；Classes/DeviceProfiles/DeviceProfileManager.h:129 SetOverrideDeviceProfile / :304 SetActiveDeviceProfile</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/IDeviceProfileSelectorModule.h（公开接口）；Classes/DeviceProfiles/DeviceProfileManager.h:129 SetOverrideDeviceProfile / :304 SetActiveDeviceProfile</p>
 <p class="migline"><b>覆盖说明：</b>UE5 支持运行时切换单个 DP 与选择器模块，但无 XD 的多 DP 运行时合并(CVar 聚合)</p>
 <p class="migline"><b>落地方式：</b>项目实现 IDeviceProfileSelectorModule 选 DP，运行时用 SetOverrideDeviceProfile；多档合并需引擎在 DeviceProfileManager 加扩展点</p>
 <p class="migline"><b>接入点：</b>IDeviceProfileSelectorModule（已有 ModularFeature 扩展点） · UDeviceProfileManager 多档 CVar 聚合入口（如需）</p>
@@ -193,7 +193,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp</li><li>Source/Runtime/ApplicationCore/Public/IOS/IOSAppDelegate.h</li><li>Source/Runtime/Core/Public/Misc/CoreDelegates.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp:554-605（bEnableIdleTimer 配置 + setIdleTimerDisabled NO→YES 技巧 + IsIdleTimerEnabled）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/ApplicationCore/Private/IOS/IOSAppDelegate.cpp:554-605（bEnableIdleTimer 配置 + setIdleTimerDisabled NO→YES 技巧 + IsIdleTimerEnabled）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已内置同一技巧，并暴露 IOSRuntimeSettings.bEnableIdleTimer 开关</p>
 <p class="migline"><b>落地方式：</b>在 IOSRuntimeSettings / DefaultDeviceProfiles.ini 设 bEnableIdleTimer=False 即可，无需引擎改动</p>
 <p class="migline"><b>机制：</b>Config</p>
@@ -215,7 +215,7 @@
 <details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Runtime/CoreUObject/Private/Internationalization/PackageLocalizationCache.cpp</li><li>Source/Runtime/CoreUObject/Private/Internationalization/PackageLocalizationManager.cpp</li><li>Source/Runtime/CoreUObject/Public/Internationalization/IPackageLocalizationCache.h</li><li>Source/Runtime/CoreUObject/Public/Internationalization/PackageLocalizationCache.h</li><li>Source/Runtime/CoreUObject/Public/Internationalization/PackageLocalizationManager.h</li><li>Source/Runtime/Engine/Private/Internationalization/EnginePackageLocalizationCache.cpp</li><li>Source/Runtime/Engine/Public/Internationalization/EnginePackageLocalizationCache.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 已公开等价 API：Runtime/CoreUObject/Public/Internationalization/PackageLocalizationManager.h:67-75 FPackageLocalizationManager::InvalidateRootSourcePath()+ConditionalUpdateCache()，无需新增委托</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 已公开等价 API：Runtime/CoreUObject/Public/Internationalization/PackageLocalizationManager.h:67-75 FPackageLocalizationManager::InvalidateRootSourcePath()+ConditionalUpdateCache()，无需新增委托</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已公开 InvalidateRootSourcePath()/ConditionalUpdateCache()，语义等价 XD 的 UpdateLocalizedPackageCache</p>
 <p class="migline"><b>落地方式：</b>项目直接调用 InvalidateRootSourcePath()+ConditionalUpdateCache() 触发热更重载，无需引擎改</p>
 <p class="migline"><b>建议：</b>UE5 已公开等价 API，删除宏；项目直接调用即可</p>
@@ -237,7 +237,7 @@
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Apple/MetalRHI/Public/MetalShaderResources.h</li><li>Source/Runtime/PakFile/Private/IPlatformFilePak.cpp</li><li>Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp</li><li>Source/Runtime/RenderCore/Public/ShaderCodeArchive.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp:696（[ShaderPipelineCache] GameVersion 可配置，回退 FEngineVersion::Current().GetChangelist()）；Public/ShaderCodeArchive.h 独立 EAssetInfoVersion</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/RenderCore/Private/ShaderPipelineCache.cpp:696（[ShaderPipelineCache] GameVersion 可配置，回退 FEngineVersion::Current().GetChangelist()）；Public/ShaderCodeArchive.h 独立 EAssetInfoVersion</p>
 <p class="migline"><b>覆盖说明：</b>UE5 无赛季号概念，但把相关版本号改成配置/版本号机制是现成的</p>
 <p class="migline"><b>落地方式：</b>赛季号放 DefaultGame.ini（PSO GameVersion）、Pak 命名与 BuildVersion 配置；代码内改用 FEngineVersion/FApp::GetBuildVersion 或读 ini，不再编译期硬编码</p>
 <p class="migline"><b>接入点：</b>ShaderPipelineCache GameVersion ini 项 · ShaderCodeArchive/平台 shader library 头部版本改为从配置/Version 读取</p>
@@ -260,7 +260,7 @@
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/AssetRegistry/Private/AssetRegistry.cpp</li><li>Source/Runtime/Core/Private/Misc/CoreDelegates.cpp</li><li>Source/Runtime/Core/Public/Misc/CoreDelegates.h</li><li>Source/Runtime/Engine/Private/AssetManager.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 接入点 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Classes/Engine/AssetManager.h:889 GetPackageChunkIds / :842 ModifyCook（virtual）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Classes/Engine/AssetManager.h:889 GetPackageChunkIds / :842 ModifyCook（virtual）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 提供 chunk 归属虚函数可覆写，但无 XD 的忽略委托与 AssetRegistry 依赖清理修正</p>
 <p class="migline"><b>落地方式：</b>项目派生 UAssetManager 覆写 GetPackageChunkIds/ModifyCook 控制 chunk；忽略逻辑改由引擎一处委托（FCoreDelegates 风格）暴露</p>
 <p class="migline"><b>接入点：</b>UAssetManager::GetPackageChunkIds（已有虚函数） · AssetRegistry 管理依赖清理处暴露 ShouldIgnorePackage 委托</p>
@@ -283,7 +283,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Engine/Private/StaticMesh.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/StaticMeshResources.h:463（FByteBulkData StreamingBulkData）；Runtime/Engine/Private/StaticMesh.cpp:984 序列化</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/StaticMeshResources.h:463（FByteBulkData StreamingBulkData）；Runtime/Engine/Private/StaticMesh.cpp:984 序列化</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已有 LOD 渲染数据 bulk 流式能力，但无 XD 的强制全部 LOD 进 ubulk 开关</p>
 <p class="migline"><b>落地方式：</b>bulk flags 在 cook 侧 FStaticMeshLODResources 序列化时决定，需引擎薄封装成配置项后才能由项目 ini 控制</p>
 <p class="migline"><b>接入点：</b>FStaticMeshLODResources 序列化/cook 时 bulk data flags 的配置入口</p>
@@ -306,7 +306,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Private/Animation/AnimCompressionTypes.cpp</li><li>Source/Runtime/Engine/Private/Animation/AnimSequence.cpp</li><li>Source/Runtime/Engine/Public/Animation/AnimCompressionTypes.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 常开补丁 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Private/Animation/AnimCompressionTypes.cpp:1672（bUseBulkDataForSave 由 ETargetPlatformFeatures::MemoryMappedAnimation 决定）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Private/Animation/AnimCompressionTypes.cpp:1672（bUseBulkDataForSave 由 ETargetPlatformFeatures::MemoryMappedAnimation 决定）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已可按平台特性把压缩动画数据写入 ubulk；XD 是强制开关</p>
 <p class="migline"><b>落地方式：</b>该特性不是 ini 开关：ETargetPlatformFeatures::MemoryMappedAnimation 由平台属性硬编码（AndroidPlatformProperties.h:128-131 已返回 true、IOSPlatformProperties.h:81 true、GenericPlatformProperties.h:268 false），项目只能依赖平台已有取值，或在项目平台扩展/引擎侧调整</p>
 <p class="migline"><b>接入点：</b>ETargetPlatformFeatures::MemoryMappedAnimation · TargetPlatform 属性</p>
@@ -330,7 +330,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h</li><li>Source/Runtime/Engine/Private/Components/DirectionalLightComponent.cpp</li><li>Source/Runtime/Engine/Private/Components/LightComponent.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h（无 DirectionalCSMShadowBoundRadiusScale）；Renderer 无对应 CSM 半径缩放/淡出补偿</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Classes/Components/DirectionalLightComponent.h（无 DirectionalCSMShadowBoundRadiusScale）；Renderer 无对应 CSM 半径缩放/淡出补偿</p>
 <p class="migline"><b>覆盖说明：</b>UE5 完整路径追踪阴影(VSM/CSM)未提供 XD 的包围半径缩放与 fadeout 补偿</p>
 <p class="migline"><b>落地方式：</b>FDirectionalLightSceneProxy 为 Renderer/Private 内部类型，项目无法派生；须在引擎加 UPROPERTY 并贯穿场景代理与 CSM 设置</p>
 <p class="migline"><b>接入点：</b>UDirectionalLightComponent 新增 DirectionalCSMShadowBoundRadiusScale UPROPERTY · FDirectionalLightSceneProxy 传递字段 · FScene 中 CSM 阴影包围球半径与 ShadowDistanceFadeoutFraction 补偿</p>
@@ -354,7 +354,7 @@
 <details class="usage"><summary>引用位置（28 处 / 前 8 个文件）</summary><ul><li>Source/Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.cpp</li><li>Source/Editor/MaterialEditor/Private/MaterialPropertyHelpers.cpp</li><li>Source/Editor/UnrealEd/Classes/MaterialEditor/DEditorStaticSwitchParameterValue.h</li><li>Source/Editor/UnrealEd/Private/EditorParameters.cpp</li><li>Source/Editor/UnrealEd/Private/PlayLevel.cpp</li><li>Source/Editor/UnrealEd/Private/PreviewMaterial.cpp</li><li>Source/Runtime/Engine/Classes/Materials/Material.h</li><li>Source/Runtime/Engine/Classes/Materials/MaterialExpressionStaticSwitchParameter.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-3">深度侵入</span> <span class="migmeta">处置 移植 · 工作量 L · 风险 高</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/StaticParameterSet.h（FStaticSwitchParameter 无 SelectorValue/SelectorBits；无 Selector Switch 概念）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Engine/Public/StaticParameterSet.h（FStaticSwitchParameter 无 SelectorValue/SelectorBits；无 Selector Switch 概念）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 静态参数集无多选一 Selector 语义</p>
 <p class="migline"><b>落地方式：</b>涉及 FStaticParameterSet/FStaticSwitchParameter 反射 schema、材质编译与 shader permutation hash、MaterialInstance/PreviewMaterial，必须留在引擎</p>
 <p class="migline"><b>接入点：</b>FStaticSwitchParameter 增加 SelectorValue/SelectorBits 字段与序列化/hash · MaterialCompiler/UniformExpression 的 selector 求值 · FMaterialParameterValueResolver、MaterialInstance 参数复制、PreviewMaterial 同步</p>
@@ -377,7 +377,7 @@
 <details class="usage"><summary>引用位置（4 处 / 前 4 个文件）</summary><ul><li>Source/Runtime/Engine/Classes/Materials/MaterialExpressionStaticSwitchParameter.h</li><li>Source/Runtime/Engine/Private/Materials/HLSLMaterialTranslator.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialExpressions.cpp</li><li>Source/Runtime/Engine/Private/Materials/MaterialInstance.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>none（UE5 无 Selector Switch，无对应常量）</p>
+<p class="migline"><b>覆盖度依据：</b>none（UE5 无 Selector Switch，无对应常量）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 无该能力，仅作为 XD selector 实现的上限常量</p>
 <p class="migline"><b>落地方式：</b>数值本身应改为 ini/CVar（如 r.Material.SelectorSwitchMaxNum），但仍需引擎读取该配置</p>
 <p class="migline"><b>接入点：</b>材质编译侧读取配置的最大 selector 数量（避免编译期硬编码 7）</p>
@@ -399,7 +399,7 @@
 <details class="usage"><summary>引用位置（2 处 / 前 2 个文件）</summary><ul><li>Source/Runtime/UMG/Private/UserWidget.cpp</li><li>Source/Runtime/UMG/Public/Blueprint/UserWidget.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h:1426（仅 GetWidgetFromName，无 GetAllWidgets/GetWidgetFromPsId）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h:1426（仅 GetWidgetFromName，无 GetAllWidgets/GetWidgetFromPsId）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 UUserWidget 无批量取控件与按 PsId 查找接口</p>
 <p class="migline"><b>落地方式：</b>项目 UUserWidget 子类 + BlueprintFunctionLibrary 实现 GetAllWidgets（可访问 WidgetTree），PsId 查找依赖 PSID 字段方案</p>
 <p class="migline"><b>接入点：</b>UUserWidget 新增 GetAllWidgets/GetWidgetFromPsId（如必须放在基类）</p>
@@ -422,7 +422,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Landscape/Private/Landscape.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Source/Runtime/Landscape/Private/Landscape.cpp:1768（默认 false）；对照 UE4 XD Source/Runtime/Landscape/Private/Landscape.cpp:1086-1090（宏下为 true）</p>
+<p class="migline"><b>覆盖度依据：</b>Source/Runtime/Landscape/Private/Landscape.cpp:1768（默认 false）；对照 UE4 XD Source/Runtime/Landscape/Private/Landscape.cpp:1086-1090（宏下为 true）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 属性原生存在但默认 false，XD 宏为 true，默认行为相反</p>
 <p class="migline"><b>落地方式：</b>在项目 Landscape 子类/蓝图或 Landscape 工具设置里改默认，不必改引擎</p>
 <p class="migline"><b>机制：</b>Config</p>
@@ -441,7 +441,7 @@
 <p class="rels">关联宏：<a class="rel" href="rendering.html#XD_PC_DLSS_SUPER_SAMPLING">XD_PC_DLSS_SUPER_SAMPLING</a></p>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/RHI/Public/DataDrivenShaderPlatformInfo.h:135（bSupportsDLSSShaders）；Engine/Plugins 无内置 DLSS 插件</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/RHI/Public/DataDrivenShaderPlatformInfo.h:135（bSupportsDLSSShaders）；Engine/Plugins 无内置 DLSS 插件</p>
 <p class="migline"><b>覆盖说明：</b>UE5 核心仅留 DLSS shader 平台标志，DLSS 本体由 NVIDIA Streamline 插件提供</p>
 <p class="migline"><b>落地方式：</b>项目 Config（DefaultEngine.ini/DeviceProfile）+ DLSS 插件开关；编译宏改为运行时/配置开关</p>
 <p class="migline"><b>机制：</b>Config</p>
@@ -462,7 +462,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/UMG/Private/Components/RichTextBlock.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-covered">UE5 已覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 删除 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>UE5 已修复该泄漏：Source/Runtime/UMG/Private/Components/RichTextBlock.cpp:59-65 ReleaseSlateResources 已无条件 InstanceDecorators.Empty()（RichTextBlock.h:258 InstanceDecorators 仍在）</p>
+<p class="migline"><b>覆盖度依据：</b>UE5 已修复该泄漏：Source/Runtime/UMG/Private/Components/RichTextBlock.cpp:59-65 ReleaseSlateResources 已无条件 InstanceDecorators.Empty()（RichTextBlock.h:258 InstanceDecorators 仍在）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已无条件执行 InstanceDecorators.Empty()，原生等价修复</p>
 <p class="migline"><b>落地方式：</b>无需处理，UE5 原生已清理 InstanceDecorators</p>
 <p class="migline"><b>建议：</b>UE5 已原生修复该泄漏，删除宏即可</p>
@@ -483,7 +483,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/SlateCore/Private/Rendering/ElementBatcher.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/SlateCore/Public/Layout/Margin.h（FMargin 仅 Left/Top/Right/Bottom，无 HduiScale）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/SlateCore/Public/Layout/Margin.h（FMargin 仅 Left/Top/Right/Bottom，无 HduiScale）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 无 Margin 的 UI 缩放字段</p>
 <p class="migline"><b>落地方式：</b>需要给 SlateCore FMargin 增加字段并在 ElementBatcher 命中其换算，属 SlateCore 结构改动</p>
 <p class="migline"><b>接入点：</b>FMargin 新增 HduiScale 字段（含序列化/UHT） · FSlateElementBatcher 九宫格 Margin 计算分支</p>
@@ -506,7 +506,7 @@
 <details class="usage"><summary>引用位置（1 处 / 前 1 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Widgets/Text/SlateEditableTextLayout.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 配置化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>Source/Runtime/Slate/Private/Widgets/Text/SlateEditableTextLayout.cpp:1728（受 OwnerWidget-&gt;ShouldClearKeyboardFocusOnCommit() 控制）；Source/Runtime/Slate/Public/Widgets/Text/ISlateEditableTextWidget.h:229；Source/Runtime/UMG/Public/Components/EditableText.h:92-93,200,229</p>
+<p class="migline"><b>覆盖度依据：</b>Source/Runtime/Slate/Private/Widgets/Text/SlateEditableTextLayout.cpp:1728（受 OwnerWidget-&gt;ShouldClearKeyboardFocusOnCommit() 控制）；Source/Runtime/Slate/Public/Widgets/Text/ISlateEditableTextWidget.h:229；Source/Runtime/UMG/Public/Components/EditableText.h:92-93,200,229</p>
 <p class="migline"><b>覆盖说明：</b>UE5 已有 ShouldClearKeyboardFocusOnCommit()/ClearKeyboardFocusOnCommit 可覆写开关，默认行为仍清除焦点</p>
 <p class="migline"><b>落地方式：</b>项目侧用 EditableText.ClearKeyboardFocusOnCommit 或覆写 ShouldClearKeyboardFocusOnCommit() 控制；如需全局开关再在 Slate 加 CVar</p>
 <p class="migline"><b>接入点：</b>SlateEditableTextLayout 提交分支的 CVar 开关</p>
@@ -529,7 +529,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Runtime/Slate/Private/Widgets/Views/SListPanel.cpp</li><li>Source/Runtime/Slate/Private/Widgets/Views/SListPanel.h</li><li>Source/Runtime/Slate/Public/Widgets/Views/STableViewBase.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 S · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Slate/Public/Widgets/Views/STableViewBase.h:33（EListItemAlignment 无 EvenlyFixWide）；SListPanel.cpp 布局分支亦无</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/Slate/Public/Widgets/Views/STableViewBase.h:33（EListItemAlignment 无 EvenlyFixWide）；SListPanel.cpp 布局分支亦无</p>
 <p class="migline"><b>覆盖说明：</b>UE5 未包含该对齐方式（仅 Fill/EvenlyDistributed/EvenlySize/EvenlyWide 等）</p>
 <p class="migline"><b>落地方式：</b>枚举与 SListPanel 布局算法均在引擎 Slate 私有实现中，无法项目侧扩展</p>
 <p class="migline"><b>接入点：</b>EListItemAlignment 新增 EvenlyFixWide 枚举项 · SListPanel GetItemSize/GetItemPadding 分支</p>
@@ -552,7 +552,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/ContentBrowser/Private/FrontendFilters.cpp</li><li>Source/Editor/ContentBrowser/Private/FrontendFilters.h</li><li>Source/Editor/ContentBrowser/Private/SAssetPicker.cpp</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-partial">部分覆盖</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-0">无需侵入</span> <span class="migmeta">处置 插件化 · 工作量 S · 风险 低</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/ContentBrowser/Public/ContentBrowserFrontEndFilterExtension.h:19（AddFrontEndFilterExtensions ModularFeature）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/ContentBrowser/Public/ContentBrowserFrontEndFilterExtension.h:19（AddFrontEndFilterExtensions ModularFeature）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 有前端过滤器扩展机制，但无 hdui 目录忽略逻辑</p>
 <p class="migline"><b>落地方式：</b>项目 Editor 插件实现 FContentBrowserFrontEndFilterExtension，在 AddFrontEndFilterExtensions 上加 hdui 排除过滤器</p>
 <p class="migline"><b>机制：</b>ModularFeature</p>
@@ -574,7 +574,7 @@
 <details class="usage"><summary>引用位置（8 处 / 前 8 个文件）</summary><ul><li>Source/Editor/UMGEditor/Private/WidgetBlueprint.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditor.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.h</li><li>Source/Editor/UMGEditor/Public/WidgetBlueprint.h</li><li>Source/Editor/UMGEditor/Public/WidgetBlueprintEditor.h</li><li>Source/Runtime/Slate/Private/Framework/Commands/GenericCommands.cpp</li><li>Source/Runtime/Slate/Public/Framework/Commands/GenericCommands.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.cpp（无蓝湖/资源对象修正逻辑；FWidgetBlueprintEditor::PasteWidgets 非 virtual）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.cpp（无蓝湖/资源对象修正逻辑；FWidgetBlueprintEditor::PasteWidgets 非 virtual）</p>
 <p class="migline"><b>覆盖说明：</b>项目专有粘贴规则，UE5 无</p>
 <p class="migline"><b>落地方式：</b>引擎在 FWidgetBlueprintEditorUtils 粘贴路径留扩展点（委托/虚函数），蓝湖修正规则放项目 Editor 插件</p>
 <p class="migline"><b>接入点：</b>FWidgetBlueprintEditorUtils::PasteWidgets 扩展点 · FWidgetBlueprintEditor ToolkitCommands 增加 Replace/Paste 变体命令</p>
@@ -597,7 +597,7 @@
 <details class="usage"><summary>引用位置（7 处 / 前 7 个文件）</summary><ul><li>Source/Editor/UMGEditor/Private/Designer/SDesignerView.cpp</li><li>Source/Editor/UMGEditor/Private/UMGEditorActions.cpp</li><li>Source/Editor/UMGEditor/Private/UMGEditorActions.h</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditor.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.cpp</li><li>Source/Editor/UMGEditor/Private/WidgetBlueprintEditorUtils.h</li><li>Source/Editor/UMGEditor/Public/WidgetBlueprintEditor.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-1">仅加接入点</span> <span class="migmeta">处置 插件化 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UMGEditor（grep AutoWrap 无命中）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Editor/UMGEditor（grep AutoWrap 无命中）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 UMG 设计器无自动换行命令</p>
 <p class="migline"><b>落地方式：</b>项目 Editor 插件用 FDesignerExtension（Editor/UMGEditor/Public/DesignerExtension.h）+ 给 FWidgetBlueprintEditor ToolkitCommands 注册命令，布局改写逻辑放插件</p>
 <p class="migline"><b>接入点：</b>FDesignerExtension / IHasDesignerExtensibility · FWidgetBlueprintEditor ToolkitCommands 注册入口 · SDesignerView 布局刷新接口</p>
@@ -622,7 +622,7 @@
 <details class="usage"><summary>引用位置（3 处 / 前 3 个文件）</summary><ul><li>Source/Editor/UMGEditor/Private/Customizations/UMGDetailCustomizations.cpp</li><li>Source/Runtime/UMG/Private/Components/Widget.cpp</li><li>Source/Runtime/UMG/Public/Components/Widget.h</li></ul></details>
 <div class="migblock">
 <div class="mighead">UE5 迁移视角 <span class="migstatus s-none">未覆盖</span> <span class="migproj p-partial">需接入点</span> <span class="mighook h-2">结构性改动</span> <span class="migmeta">处置 移植 · 工作量 M · 风险 中</span></div>
-<p class="migline"><b>UE5 依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/UMG/Public/Components/Widget.h（无 PsId 属性）</p>
+<p class="migline"><b>覆盖度依据：</b>E:/TorchLight_UE5/Engine/Engine/Source/Runtime/UMG/Public/Components/Widget.h（无 PsId 属性）</p>
 <p class="migline"><b>覆盖说明：</b>UE5 UWidget 无 PSD 节点 ID 字段</p>
 <p class="migline"><b>落地方式：</b>UPROPERTY 必须落在 UWidget 或项目统一控件基类上；若要求所有控件可见则需引擎加字段，否则项目自建基类控件承载 PsId</p>
 <p class="migline"><b>接入点：</b>UWidget 新增 PsId（FName, EditorOnly）UPROPERTY 与细节面板</p>
@@ -647,6 +647,6 @@
 </aside>
 </div>
 <div class="statbar" id="statbar"><span class="sb-title">迁移决策</span><div class="sb-items"><a class="sb" href="../migration/roadmap.html#phase-drop-covered" title="A1 直接删除（UE5 已覆盖）：98 个宏">A1 删除·已覆盖 <b>98</b></a><a class="sb" href="../migration/roadmap.html#phase-drop-other" title="A2 直接删除（废弃/无引用/待复核）：49 个宏">A2 删除·其他原因 <b>49</b></a><a class="sb" href="../migration/roadmap.html#phase-patch" title="B 常开补丁：48 个宏">B 常开补丁 <b>48</b></a><a class="sb" href="../migration/roadmap.html#phase-config" title="C 配置化：66 个宏">C 配置化 <b>66</b></a><a class="sb" href="../migration/roadmap.html#phase-plugin" title="D 插件化：51 个宏">D 插件化 <b>51</b></a><a class="sb" href="../migration/roadmap.html#phase-hook" title="E 接入点改造：28 个宏">E 接入点 <b>28</b></a><a class="sb" href="../migration/roadmap.html#phase-port" title="F 代码移植：195 个宏">F 移植 <b>195</b></a><a class="sb" href="../migration/roadmap.html#phase-keep" title="G 暂留引擎（重点跟进）：14 个宏">G 暂留引擎 <b>14</b></a></div><span class="sb-total">合计 <b>549</b></span><button type="button" class="sb-toggle" id="sbToggle" title="收起 / 展开">▾</button></div>
-<script src="../assets/app.js?v=91888f28"></script>
+<script src="../assets/app.js?v=00a24d5d"></script>
 </body>
 </html>
