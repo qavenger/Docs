@@ -197,3 +197,20 @@
     if (clearBtn) clearBtn.addEventListener('click', function(){ apply('', '', false); });
   }
 })();
+
+/* ---- 表格横向溢出时才启用内部滚动（否则保持表头 sticky） ---- */
+(function(){
+  var wraps = document.querySelectorAll('.tablewrap');
+  if (!wraps.length) return;
+  var syncWrap = function(){
+    Array.prototype.forEach.call(wraps, function(w){
+      var t = w.querySelector('table');
+      if (!t) return;
+      var need = t.scrollWidth > w.clientWidth + 2;
+      w.classList.toggle('scrolling', need);
+    });
+  };
+  syncWrap();
+  window.addEventListener('resize', syncWrap);
+  setTimeout(syncWrap, 300);
+})();
