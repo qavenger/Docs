@@ -139,34 +139,71 @@
 /* ---- 页签（tabs）+ 矩阵交叉筛选 ---- */
 (function(){
   // tabs
+  var tabRoots = [];
+  var scrollToRoot = function(root){
+    var top = root.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - 66;
+    if (window.scrollTo) window.scrollTo(0, top > 0 ? top : 0);
+    else if (root.scrollIntoView) root.scrollIntoView({block:'start'});
+  };
   Array.prototype.forEach.call(document.querySelectorAll('[data-tabs]'), function(root){
     var btns = root.querySelectorAll('.tabbtn[data-tab]');
     var panes = root.querySelectorAll('.tabpane[data-pane]');
-    var activate = function(key, scroll){
+    var has = function(key){
+      var found = false;
+      Array.prototype.forEach.call(btns, function(b){ if (b.getAttribute('data-tab') === key) found = true; });
+      return found;
+    };
+    var activate = function(key, scroll, updateHash){
       Array.prototype.forEach.call(btns, function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === key); });
       Array.prototype.forEach.call(panes, function(p){ p.classList.toggle('active', p.getAttribute('data-pane') === key); });
-      if (scroll && root.scrollIntoView) root.scrollIntoView({block:'start'});
+      if (scroll) scrollToRoot(root);
+      if (updateHash && history.replaceState) history.replaceState(null, '', '#' + key);
     };
     Array.prototype.forEach.call(btns, function(b){
       b.addEventListener('click', function(){
-        var k = b.getAttribute('data-tab');
-        activate(k, false);
-        if (history.replaceState) history.replaceState(null, '', '#' + k);
+        activate(b.getAttribute('data-tab'), false, true);
       });
     });
     Array.prototype.forEach.call(document.querySelectorAll('.tocchips a[data-tab]'), function(a){
       a.addEventListener('click', function(ev){
         ev.preventDefault();
-        activate(a.getAttribute('data-tab'), true);
-        if (history.replaceState) history.replaceState(null, '', '#' + a.getAttribute('data-tab'));
+        activate(a.getAttribute('data-tab'), true, true);
       });
     });
+    tabRoots.push({root: root, activate: activate, has: has});
     var h = (location.hash || '').replace('#', '');
-    if (h) {
-      var hit = null;
-      Array.prototype.forEach.call(btns, function(b){ if (b.getAttribute('data-tab') === h) hit = h; });
-      if (hit) activate(hit, false);
-    }
+    if (h && has(h)) activate(h, false, false);
+  });
+  // 同页锚点跳转（底部统计条 / 其他链接）也要切换页签
+  var onHash = function(ev){
+    var h = (location.hash || '').replace('#', '');
+    if (!h) return;
+    var hit = false;
+    tabRoots.forEach(function(t){
+      if (t.has(h)) { t.activate(h, false, false); hit = true; }
+    });
+    if (hit) setTimeout(function(){ scrollToRoot(tabRoots[0].root); }, 0);
+  };
+  window.addEventListener('hashchange', onHash);
+  if (location.hash) onHash();
+  // 点击底部统计条时：若目标就是当前页，直接切页签（不依赖 hashchange，重复点击同一项也生效）
+  Array.prototype.forEach.call(document.querySelectorAll('a[href*="#phase-"]'), function(a){
+    a.addEventListener('click', function(ev){
+      var href = a.getAttribute('href') || '';
+      var i = href.indexOf('#');
+      if (i < 0) return;
+      var frag = href.slice(i + 1);
+      var file = href.slice(0, i);
+      if (file !== '') {
+        var cur = location.pathname.split('/').pop();
+        if (file.split('/').pop() !== cur) return;
+      }
+      var target = null;
+      tabRoots.forEach(function(t){ if (t.has(frag)) target = t; });
+      if (!target) return;
+      ev.preventDefault();
+      target.activate(frag, true, true);
+    });
   });
   // 矩阵交叉筛选
   var mx = document.getElementById('mxmatrix');
