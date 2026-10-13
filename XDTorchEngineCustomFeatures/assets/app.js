@@ -289,3 +289,47 @@
     if (nav.classList.contains('open') && !nav.contains(e.target) && !btn.contains(e.target)) sync(false);
   });
 })();
+
+/* ---- 表头点击排序（.mtable th[data-sort]，默认宏名升序） ---- */
+(function(){
+  function cmp(a, b, key, dir){
+    var va = a.getAttribute('data-s-' + key) || '';
+    var vb = b.getAttribute('data-s-' + key) || '';
+    var isNum = /^-?\d+(\.\d+)?$/.test(va) && /^-?\d+(\.\d+)?$/.test(vb);
+    var c;
+    if (isNum) { c = parseFloat(va) - parseFloat(vb); }
+    else {
+      try { c = va.localeCompare(vb, 'zh-Hans-CN'); }
+      catch (e) { c = (va < vb) ? -1 : (va > vb ? 1 : 0); }
+    }
+    if (c === 0) {
+      var na = a.getAttribute('data-s-name') || '', nb = b.getAttribute('data-s-name') || '';
+      c = (na < nb) ? -1 : (na > nb ? 1 : 0);
+    }
+    return c * dir;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('table.mtable'), function(table){
+    var ths = table.querySelectorAll('thead th[data-sort]');
+    var tbody = table.querySelector('tbody');
+    if (!ths.length || !tbody) return;
+    var curKey = null, curDir = 1;
+    var apply = function(key, dir){
+      var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+      rows.sort(function(a, b){ return cmp(a, b, key, dir); });
+      rows.forEach(function(r){ tbody.appendChild(r); });
+      Array.prototype.forEach.call(ths, function(th){
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.getAttribute('data-sort') === key) th.classList.add(dir > 0 ? 'sort-asc' : 'sort-desc');
+      });
+    };
+    Array.prototype.forEach.call(ths, function(th){
+      th.addEventListener('click', function(){
+        var key = th.getAttribute('data-sort');
+        if (curKey === key) curDir = -curDir; else { curKey = key; curDir = 1; }
+        apply(curKey, curDir);
+      });
+    });
+    curKey = 'name'; curDir = 1;
+    apply('name', 1);   // 默认：宏名升序
+  });
+})();
