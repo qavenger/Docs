@@ -107,7 +107,7 @@
   var el = document.getElementById('legend');
   if (!el) return;
   var btn = document.getElementById('legendToggle');
-  var mq = window.matchMedia ? window.matchMedia('(max-width:1300px)') : {matches:false};
+  var mq = window.matchMedia ? window.matchMedia('(max-width:1360px)') : {matches:false};
   var KEY = 'xd-doc-legend';
   var pref = null;
   try { pref = localStorage.getItem(KEY); } catch(e){}
