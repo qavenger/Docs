@@ -101,3 +101,37 @@
   Array.prototype.forEach.call(sels, function(s){ s.addEventListener('change', apply); });
   apply();
 })();
+
+/* ---- 标签说明面板：全局常驻 ---- */
+(function(){
+  var el = document.getElementById('legend');
+  if (!el) return;
+  var btn = document.getElementById('legendToggle');
+  var mq = window.matchMedia ? window.matchMedia('(max-width:1300px)') : {matches:false};
+  var KEY = 'xd-doc-legend';
+  var pref = null;
+  try { pref = localStorage.getItem(KEY); } catch(e){}
+  var open = pref === null ? true : pref === '1';
+  var narrowOpen = false;
+  var fab = document.createElement('button');
+  fab.id = 'legendFab'; fab.type = 'button'; fab.textContent = '标签说明';
+  fab.title = '查看页面标签的含义';
+  document.body.appendChild(fab);
+  var apply = function(){
+    var isNarrow = !!mq.matches;
+    el.classList.toggle('collapsed', !open && !isNarrow);
+    el.classList.toggle('show', isNarrow && narrowOpen);
+    if (btn) btn.textContent = open ? '－' : '＋';
+    fab.textContent = (isNarrow && narrowOpen) ? '× 关闭' : '标签说明';
+  };
+  var toggle = function(){
+    if (mq.matches) { narrowOpen = !narrowOpen; }
+    else { open = !open; try { localStorage.setItem(KEY, open ? '1' : '0'); } catch(e){} }
+    apply();
+  };
+  if (btn) btn.addEventListener('click', toggle);
+  fab.addEventListener('click', toggle);
+  if (mq.addEventListener) mq.addEventListener('change', apply);
+  else if (mq.addListener) mq.addListener(apply);
+  apply();
+})();
