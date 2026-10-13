@@ -214,3 +214,22 @@
   window.addEventListener('resize', syncWrap);
   setTimeout(syncWrap, 300);
 })();
+
+/* ---- 底部统计条折叠 ---- */
+(function(){
+  var sb = document.getElementById('statbar');
+  if (!sb) return;
+  var btn = document.getElementById('sbToggle');
+  var KEY = 'xd-doc-statbar';
+  var open = true;
+  try { var v = localStorage.getItem(KEY); if (v === '0') open = false; } catch(e){}
+  var sync = function(){
+    sb.classList.toggle('collapsed', !open);
+    if (btn) btn.textContent = open ? '▾' : '▴';
+  };
+  if (btn) btn.addEventListener('click', function(){
+    open = !open; sync();
+    try { localStorage.setItem(KEY, open ? '1' : '0'); } catch(e){}
+  });
+  sync();
+})();
