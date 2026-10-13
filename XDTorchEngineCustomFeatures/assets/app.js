@@ -233,3 +233,22 @@
   });
   sync();
 })();
+
+/* ---- 手机竖屏：左侧导航抽屉 ---- */
+(function(){
+  var btn = document.getElementById('navToggle');
+  var nav = document.querySelector('.sidenav');
+  if (!btn || !nav) return;
+  var sync = function(open){ nav.classList.toggle('open', !!open); };
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    sync(!nav.classList.contains('open'));
+  });
+  nav.addEventListener('click', function(e){
+    var t = e.target;
+    if (t && t.tagName === 'A') sync(false);
+  });
+  document.addEventListener('click', function(e){
+    if (nav.classList.contains('open') && !nav.contains(e.target) && !btn.contains(e.target)) sync(false);
+  });
+})();
