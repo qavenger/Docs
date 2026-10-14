@@ -45,7 +45,7 @@
 <a href="../migration/hooks.html">🔌 最小侵入接入点</a>
 <a href="../migration/roadmap.html">🗺️ 迁移路线图</a>
 <a href="../migration/by-team.html">👥 开发者 × 模块</a></nav>
-  <main class="content"><h1 class="plantitle">修改草案 · XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE</h1><p class="lead">动画通知粒子寿命为 0 时在 NotifyState 结束时销毁粒子组件</p><div class="planmeta"><span class="migstatus s-partial">部分覆盖</span> <span class="migdisp d-plugin">插件化</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="badge">工作量 S</span><span class="badge">风险 低</span><span class="badge">开发者 Ran Qing Sen</span><span class="badge">主要模块 Engine</span></div><p class="planline"><b>一句话结论：</b>用项目 AnimNotify 子类实现，避免改引擎 AnimNotify</p><h2 class="sec">可主动舍弃性（UE5 架构更替）</h2><p class="planline"><span class="abtag ab-reclaim">直接舍弃</span> <b>Cascade 粒子 → Niagara</b></p><p class="planline"><b>判定依据：</b>UE5 特效体系已全面转向 Niagara，Cascade 仅保留兼容维护；项目迁移到 UE5 后特效会重做，针对 Cascade 运行时的定制可在迁移时直接不带过去。</p><p class="planline"><b>舍弃前提：</b>前提：迁移后在 UE5 用 Niagara 重做特效（不再走 Cascade 运行时）</p><p class="planline"><b>UE5 替代能力：</b>Niagara（NiagaraSystem / NiagaraComponent / NiagaraDataInterface）</p><p class="planline"><b>相关文件：</b><code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code> <code>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</code></p><h2 class="sec">1. UE5 现状与证据</h2><p class="planline"><b>结论依据：</b>UE5 AnimNotifyState_TimedParticleEffect.cpp:25/:58-60 已有 bDestroyAtEnd→DestroyComponent，但无 XD 的 IsAnyEmitterHasInfiniteLifetime 判定（ParticleSystem.h UE5 侧无该接口）</p><p class="planline"><b>覆盖说明：</b>有销毁开关，无自动判定</p><table class="mtable"><thead><tr><th>证据路径（UE5.8.2）</th><th>行号</th><th>核对结果</th></tr></thead><tbody><tr><td class="tname">AnimNotifyState_TimedParticleEffect.cpp</td><td class="tval">25</td><td>✅ 已命中：<code>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</code></td></tr><tr><td class="tname">ParticleSystem.h</td><td class="tval">—</td><td>✅ 已命中：<code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code></td></tr></tbody></table><p class="planline"><b>覆盖度：</b><span class="migstatus s-partial">部分覆盖</span>&nbsp;&nbsp;<b>处置：</b><span class="migdisp d-plugin">插件化</span></p><h2 class="sec">2. 修改步骤（插件化）</h2><ol class="plansteps"><li><b>确定插件/模块归属</b><div class="stepbody">项目子类 UAnimNotifyState_TimedParticleEffect 覆盖 NotifyEnd，遍历 Template-&gt;Emitters 判定寿命后在项目侧 DestroyComponent</div></li><li><b>实现主体逻辑</b><div class="stepbody">把原引擎内实现迁到插件：<code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code>、<code>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</code>、<code>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</code>。引擎侧只保留必要接口/事件。</div></li><li><b>模块与构建规则</b><div class="stepbody">Editor 工具放 Editor 模块（Shipping 自动剔除）；运行时逻辑放 Runtime 模块；如需引擎接口，见「引擎改动」列。</div></li></ol><h2 class="sec">3. 代码级实现（开发用）</h2><p class="planline"><span class="ctag ct-api">改接口/改名</span> <b>改动方式：</b>UE5 AnimNotify 接口签名增加了 const FAnimNotifyEventReference&amp; 参数（NotifyBegin/NotifyEnd），逻辑照搬但要适配新签名并补 UParticleSystem 辅助函数。</p><p class="planline"><b>代码脉络：</b>XDBuildMiscConfiguration.cs:114 定义。UE4 AnimNotifyState_TimedParticleEffect.cpp:23-28 NotifyBegin 里 `if(!bDestroyAtEnd &amp;&amp; PSTemplate) bDestroyAtEnd = PSTemplate-&gt;IsAnyEmitterHasInfiniteLifetime();`；该函数实现于 ParticleComponents.cpp:3795-3859（遍历 Emitters/LODLevels，用 UParticleModuleLifetimeBase::GetMaxLifetime()&lt;=0 判定，且无 LifetimeModule 也视为无限），声明于 ParticleSystem.h:693-706（含 bAlreadyCheck/bHasAny 缓存）。</p><div class="dsteps"><div class="dstep"><div class="dhead"><b>步骤 1</b><code>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</code><span class="danchor">UAnimNotifyState_TimedParticleEffect::NotifyBegin (UE5 :25)</span></div><p class="daction">把 UE4 的 bDestroyAtEnd 自动判定搬进 UE5 NotifyBegin（注意新增 EventReference 参数）</p><pre class="code before"><code>void UAnimNotifyState_TimedParticleEffect::NotifyBegin(USkeletalMeshComponent * MeshComp, class UAnimSequenceBase * Animation, float TotalDuration)
+  <main class="content"><h1 class="plantitle">修改草案 · XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE</h1><p class="lead">动画通知粒子寿命为 0 时在 NotifyState 结束时销毁粒子组件</p><div class="planmeta"><span class="migstatus s-partial">部分覆盖</span> <span class="migdisp d-plugin">插件化</span> <span class="migproj p-yes">可工程化</span> <span class="mighook h-1">仅加接入点</span> <span class="badge">工作量 S</span><span class="badge">风险 低</span><span class="badge">开发者 Ran Qing Sen</span><span class="badge">主要模块 Engine</span></div><p class="planline"><b>一句话结论：</b>用项目 AnimNotify 子类实现，避免改引擎 AnimNotify</p><h2 class="sec">可主动舍弃性（UE5 架构更替）</h2><p class="planline"><span class="abtag ab-reclaim">直接舍弃</span> <b>Cascade 粒子 → Niagara</b></p><p class="planline"><b>判定依据：</b>UE5 特效体系已全面转向 Niagara，Cascade 仅保留兼容维护；项目迁移到 UE5 后特效会重做，针对 Cascade 运行时的定制可在迁移时直接不带过去。</p><p class="planline"><b>舍弃前提：</b>前提：迁移后在 UE5 用 Niagara 重做特效（不再走 Cascade 运行时）</p><p class="planline"><b>UE5 替代能力：</b>Niagara（NiagaraSystem / NiagaraComponent / NiagaraDataInterface）</p><p class="planline"><b>相关文件：</b><code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code> <code>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</code></p><h2 class="sec">1. UE5 现状与证据</h2><p class="planline"><b>结论依据：</b>UE5 AnimNotifyState_TimedParticleEffect.cpp:25/:58-60 已有 bDestroyAtEnd→DestroyComponent，但无 XD 的 IsAnyEmitterHasInfiniteLifetime 判定（ParticleSystem.h UE5 侧无该接口）</p><p class="planline"><b>覆盖说明：</b>有销毁开关，无自动判定</p><table class="mtable"><thead><tr><th>证据路径（UE5.8.2）</th><th>行号</th><th>核对结果</th></tr></thead><tbody><tr><td class="tname">AnimNotifyState_TimedParticleEffect.cpp</td><td class="tval">25</td><td>✅ 已命中：<code>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</code></td></tr><tr><td class="tname">ParticleSystem.h</td><td class="tval">—</td><td>✅ 已命中：<code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code></td></tr></tbody></table><p class="planline"><b>覆盖度：</b><span class="migstatus s-partial">部分覆盖</span>&nbsp;&nbsp;<b>处置：</b><span class="migdisp d-plugin">插件化</span></p><h2 class="sec">2. 修改步骤（插件化）</h2><ol class="plansteps"><li><b>确定插件/模块归属</b><div class="stepbody">项目子类 UAnimNotifyState_TimedParticleEffect 覆盖 NotifyEnd，遍历 Template-&gt;Emitters 判定寿命后在项目侧 DestroyComponent</div></li><li><b>实现主体逻辑</b><div class="stepbody">把原引擎内实现迁到插件：<code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code>、<code>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</code>、<code>Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</code>。引擎侧只保留必要接口/事件。</div></li><li><b>模块与构建规则</b><div class="stepbody">Editor 工具放 Editor 模块（Shipping 自动剔除）；运行时逻辑放 Runtime 模块；如需引擎接口，见「引擎改动」列。</div></li></ol><h2 class="sec">3. 代码级实现（开发用）</h2><p class="planline"><span class="rvtag rv-fix">独立 Agent 审核并修正</span>修正 2 处　提出问题 3 条</p><p class="planline"><b>审核意见：</b>核实通过的三处 UE4 位置：AnimNotifyState_TimedParticleEffect.cpp:23-28、ParticleComponents.cpp:3795-3858、ParticleSystem.h:693-706；UE5 侧 &quot;bDestroyAtEnd 分支已有、ParticleSystem.h 无该接口、Notify 签名已加 FAnimNotifyEventReference&quot; 也全部为真，api-adapt 分类合理。唯一必须修的是 before 丢掉了 `if (Emitter)` 空指针保护与缓存逻辑。</p><p class="planline"><span class="ctag ct-api">改接口/改名</span> <b>改动方式：</b>UE5 AnimNotify 接口签名增加了 const FAnimNotifyEventReference&amp; 参数（NotifyBegin/NotifyEnd），逻辑照搬但要适配新签名并补 UParticleSystem 辅助函数。</p><p class="planline"><b>代码脉络：</b>XDBuildMiscConfiguration.cs:114 定义。UE4 AnimNotifyState_TimedParticleEffect.cpp:23-28 NotifyBegin 里 `if(!bDestroyAtEnd &amp;&amp; PSTemplate) bDestroyAtEnd = PSTemplate-&gt;IsAnyEmitterHasInfiniteLifetime();`；该函数实现于 ParticleComponents.cpp:3795-3859（遍历 Emitters/LODLevels，用 UParticleModuleLifetimeBase::GetMaxLifetime()&lt;=0 判定，且无 LifetimeModule 也视为无限），声明于 ParticleSystem.h:693-706（含 bAlreadyCheck/bHasAny 缓存）。</p><div class="dsteps"><div class="dstep"><div class="dhead"><b>步骤 1</b><code>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</code><span class="danchor">UAnimNotifyState_TimedParticleEffect::NotifyBegin (UE5 AnimNotifyState_TimedParticleEffect.cpp:20，含 const FAnimNotifyEventReference&amp; EventReference)；bDestroyAtEnd 分支在 :58-64</span></div><p class="daction">把 UE4 的 bDestroyAtEnd 自动判定搬进 UE5 NotifyBegin（注意新增 EventReference 参数）</p><pre class="code before"><code>void UAnimNotifyState_TimedParticleEffect::NotifyBegin(USkeletalMeshComponent * MeshComp, class UAnimSequenceBase * Animation, float TotalDuration)
 {
 #if XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE
     if (!bDestroyAtEnd &amp;&amp; PSTemplate) { bDestroyAtEnd = PSTemplate-&gt;IsAnyEmitterHasInfiniteLifetime(); }
@@ -58,14 +58,53 @@
 	Received_NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 }</code></pre><p class="dnote">⚠ UE5 :58-60 已有 bDestroyAtEnd→DestroyComponent 分支，无需改 NotifyEnd。</p></div><div class="dstep"><div class="dhead"><b>步骤 2</b><code>Source/Runtime/Engine/Private/Particles/ParticleSystem.cpp</code><span class="danchor">UParticleSystem::IsAnyEmitterHasInfiniteLifetime（UE4 ParticleComponents.cpp:3795）</span></div><p class="daction">把该函数整体复制到 UE5 ParticleSystem.cpp，并在 ParticleSystem.h 声明</p><pre class="code before"><code>bool UParticleSystem::IsAnyEmitterHasInfiniteLifetime()
 {
-    for (auto&amp; Emitter : Emitters) { for (auto&amp; LodLevel : Emitter-&gt;LODLevels) {
-        if (LodLevel &amp;&amp; LodLevel-&gt;bEnabled &amp;&amp; LodLevel-&gt;RequiredModule &amp;&amp; !LodLevel-&gt;RequiredModule-&gt;bKillOnDeactivate) {
-            bool InfiniteLifetime = false; bool bFoundLifetimeModule = false;
-            for (auto&amp; ParticleModule : LodLevel-&gt;Modules) { if (auto* LifetimeModule = Cast&lt;UParticleModuleLifetimeBase&gt;(ParticleModule)) { if (LifetimeModule-&gt;GetMaxLifetime() &lt;= 0.0f) InfiniteLifetime = true; bFoundLifetimeModule = true; break; } }
-            if (!bFoundLifetimeModule) InfiniteLifetime = true;
-            if (InfiniteLifetime) return true; } } }
-    return false;
-}</code></pre><pre class="code after"><code>// 同源码加在 UE5 ParticleSystem.cpp；头文件加入 ParticleSystem.h 的 public 段
+#if XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE
+#if !UE_EDITOR
+	if (bAlreadyCheckAnyEmitterHasInfiniteLifetime)
+	{
+		return bHasAnyEmitterHasInfiniteLifetime;
+	}
+#endif
+	for (auto&amp; Emitter : Emitters)
+	{
+		if (!Emitter) { continue; }   // 必须保留：Cook 平台排除会把 Emitters[i] 置为 nullptr (ParticleComponents.cpp:3037)
+		for (auto&amp; LodLevel : Emitter-&gt;LODLevels)
+		{
+			if (LodLevel &amp;&amp; LodLevel-&gt;bEnabled &amp;&amp; LodLevel-&gt;RequiredModule &amp;&amp; !LodLevel-&gt;RequiredModule-&gt;bKillOnDeactivate)
+			{
+				bool InfiniteLifetime = false;
+				bool bFoundLifetimeModule = false;
+				for (auto&amp; ParticleModule : LodLevel-&gt;Modules)
+				{
+					if (auto* LifetimeModule = Cast&lt;UParticleModuleLifetimeBase&gt;(ParticleModule))
+					{
+						if (LifetimeModule-&gt;GetMaxLifetime() &lt;= 0.0f) { InfiniteLifetime = true; }
+						bFoundLifetimeModule = true;
+						break;
+					}
+				}
+				if (!bFoundLifetimeModule) { InfiniteLifetime = true; }
+				if (InfiniteLifetime)
+				{
+#if !UE_EDITOR
+					bAlreadyCheckAnyEmitterHasInfiniteLifetime = true;
+					bHasAnyEmitterHasInfiniteLifetime = true;
+#endif
+					return true;
+				}
+			}
+		}
+	}
+#if !UE_EDITOR
+	bAlreadyCheckAnyEmitterHasInfiniteLifetime = true;
+	bHasAnyEmitterHasInfiniteLifetime = false;
+#endif
+	return false;
+#else
+	return false;
+#endif
+}
+// 逐字对照 UE4 Particles/ParticleComponents.cpp:3795-3858；声明加在 UE5 ParticleSystem.h 的 public 段（UE4 对应 ParticleSystem.h:693-706）</code></pre><pre class="code after"><code>// 同源码加在 UE5 ParticleSystem.cpp；头文件加入 ParticleSystem.h 的 public 段
 UFUNCTION(BlueprintCallable, Category=&quot;Particle System&quot;)
 bool IsAnyEmitterHasInfiniteLifetime();</code></pre><p class="dnote">⚠ UE5 LODLevel 仍为 TArray&lt;TObjectPtr&lt;UParticleLODLevel&gt;&gt;，RequiredModule/bKillOnDeactivate 字段名未变，直接可用；缓存字段可选。</p></div></div><h3 class="sub">风险评估</h3><p class="planline"><b>原代码风险：</b>每次调用遍历所有 emitter/LOD/module，虽非热路径但若在 NotifyBegin 每帧触发会有开销（UE4 用 bAlreadyCheck 缓存缓解）。</p><p class="planline"><b>移植风险：</b>改的是公共 AnimNotify（所有项目复用），B 类资产行为会变；UE5 Notify 签名已变，漏改 EventReference 会编译失败。</p><h3 class="sub">开发自检</h3><ul class="tight"><li>含 constant 0 寿命 emitter 的粒子在 NotifyState 结束时组件被 Destroy</li><li>有限寿命粒子仍走 DeactivateSystem 正常播完</li></ul><p class="planline"><b>结论置信度：</b>medium — UE5 AnimNotifyState_TimedParticleEffect.h 是否已有可复用的判定/开关需再确认；bKillOnDeactivate 语义是否与 UE4 完全一致。</p><h2 class="sec">4. UE5 对应文件（按同名匹配）</h2><table class="mtable"><thead><tr><th>UE4 引用文件</th><th>UE5 对应文件</th></tr></thead><tbody><tr><td class="tname">Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</td><td><code>Source/Runtime/Engine/Classes/Particles/ParticleSystem.h</code></td></tr><tr><td class="tname">Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</td><td><code>Source/Runtime/Engine/Private/Animation/AnimNotifyState_TimedParticleEffect.cpp</code></td></tr><tr><td class="tname">Source/Runtime/Engine/Private/Particles/ParticleComponents.cpp</td><td><span class="planwarn">未找到同名文件</span></td></tr></tbody></table><h2 class="sec">5. UE4 侧改动位置（原实现）</h2><ul class="tight"><li><code>Source/Runtime/Engine</code>（3 处）</li></ul><p class="planline">共 3 处引用；完整列表见参考卡片。</p><h2 class="sec">6. 验证清单</h2><ul class="tight"><li>插件模块在 Editor / Shipping 下依赖与打包正确（工具代码不进包体）</li><li>无插件时引擎行为不回退</li><li>清理 Engine/项目 DerivedDataCache 并重编 Shader（如涉及）</li></ul><h2 class="sec">7. 相关</h2><p class="planline">参考卡片：<a href="../ref/misc1.html#XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE">XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE</a> · 评估矩阵：<a href="../migration/matrix.html#XD_MISC_PARTICLE_DESTORY_WHEN_HAS_ZERO_LIFE_USED_IN_ANIM_NOTIFY_STATE">定位该行</a> · 草案索引：<a href="index.html">全部草案</a></p></main>
   <aside class="legend" id="legend" aria-label="标签说明">
