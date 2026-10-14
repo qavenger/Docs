@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>草案审核质量报告 · 心动定制 UE4.26 引擎特性文档</title>
-<link rel="stylesheet" href="../assets/style.css?v=7325269b">
+<link rel="stylesheet" href="../assets/style.css?v=5c522e1b">
 <noscript><style>.tabpane{display:block !important}.tabbar{display:none !important}</style></noscript>
 </head>
 <body class="">
@@ -53,7 +53,7 @@
 </div>
 
 <h2 class="sec">审核概况</h2>
-<div class="tablewrap"><table class="mtable"><thead><tr><th>指标</th><th>数值</th><th>说明</th></tr></thead><tbody><tr><td class="tname">已审核宏</td><td>185</td><td>占已产出草案 380 个的 49%</td></tr><tr><td class="tname">审核通过（ok）</td><td>94</td><td>抽查全部通过，无需改动</td></tr><tr><td class="tname">审核并修正（fix）</td><td>88</td><td>审核员给出可直接替换的修正，已落回草案</td></tr><tr><td class="tname">需重做（reject）</td><td>3</td><td>核心内容不成立</td></tr><tr><td class="tname">采纳字段修正</td><td>171</td><td>草案字段被实际替换的次数</td></tr><tr><td class="tname">高风险问题</td><td>51</td><td>会导致编译失败或功能错误</td></tr></tbody></table></div>
+<div class="tablewrap"><table class="mtable"><thead><tr><th>指标</th><th>数值</th><th>说明</th></tr></thead><tbody><tr><td class="tname">已审核宏</td><td>185</td><td>占已产出草案 388 个的 48%</td></tr><tr><td class="tname">审核通过（ok）</td><td>94</td><td>抽查全部通过，无需改动</td></tr><tr><td class="tname">审核并修正（fix）</td><td>88</td><td>审核员给出可直接替换的修正，已落回草案</td></tr><tr><td class="tname">需重做（reject）</td><td>3</td><td>核心内容不成立</td></tr><tr><td class="tname">采纳字段修正</td><td>171</td><td>草案字段被实际替换的次数</td></tr><tr><td class="tname">高风险问题</td><td>51</td><td>会导致编译失败或功能错误</td></tr></tbody></table></div>
 
 <h2 class="sec">问题分布<span class="seccount">291 条</span></h2>
 <p class="planline"><b>按等级：</b>低 139　中 101　高风险 51</p><p class="planline"><b>按字段：</b><code>steps</code> 209　<code>thread</code> 50　<code>change_type</code> 16　<code>name</code> 5　<code>change_type_reason</code> 4　<code>uncertain</code> 3　<code>verify</code> 2　<code>risk_original</code> 1　<code>risk_port</code> 1</p>
@@ -91,11 +91,7 @@
  const FVector OrigScale = ComponentTransform.GetScale3D();
  const auto ClampSign = [](float V)-&gt;float { return (V &lt; 0.f) ? -0.001f : 0.001f; };
  ComponentTransform.SetScale3D(FVector(ClampSign(OrigScale.X)</td></tr>
-<tr id="XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY"><td class="tname"><a href="../plans/xd_bug_fix_crash_on_create_gl_program_from_binary.html">XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY</a></td><td><code>steps[1].after</code></td><td class="rvbefore">if (!bSuccess)
-{
-	UE_LOGF(LogRHI, Warning, &quot;RestoreGLProgramFromBinary failed [%ls], evicting&quot;, *ProgramKey.ToString());
-	// 标记为需重新编译，不 Fatal
-}</td></tr>
+<tr id="XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY"><td class="tname"><a href="../plans/xd_bug_fix_crash_on_create_gl_program_from_binary.html">XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY</a></td><td><code>change_type_reason</code></td><td class="rvbefore">UE5 PBC 反序列化链已重写（CompleteLoadedGLProgramRequest_internal→OnGLProgramLoadedFromBinaryCache），返回 void 且失败仍 Fatal，须按新结构重加回退。</td></tr>
 <tr id="XD_BUG_FIX_DEPTH_TEXTURE_SHOULD_NOT_MEMORYLESS_WHEN_PP_ACCESS"><td class="tname"><a href="../plans/xd_bug_fix_depth_texture_should_not_memoryless_when_pp_access.html">XD_BUG_FIX_DEPTH_TEXTURE_SHOULD_NOT_MEMORYLESS_WHEN_PP_ACCESS</a></td><td><code>steps[1].before</code></td><td class="rvbefore">#if XD_BUG_FIX_DEPTH_TEXTURE_SHOULD_NOT_MEMORYLESS_WHEN_PP_ACCESS
     bPostProcessNeedsDepthContent ||
 #endif</td></tr>
@@ -112,7 +108,7 @@ const int32 ActualElements = VolumetricLightmapData.BrickData.AmbientVector.Data
 if (ExpectedElements&lt;=0 || ActualElements&lt;=0 || ExpectedElements!=Act</td></tr>
 <tr id="XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL"><td class="tname"><a href="../plans/xd_bug_fix_indrective_light_data_of_particle_fail.html">XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL</a></td><td><code>steps[0].after</code></td><td class="rvbefore">// ctor 内（基类已置 true）
 bWillEverBeLit = (Desc.MaterialRelevance.ShadingModelMask != EMaterialShadingModel::MSM_CustomUnlit);</td></tr>
-<tr id="XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES"><td class="tname"><a href="../plans/xd_bug_fix_ios_generate_stable_shader_outputhashes.html">XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES</a></td><td><code>change_type_reason</code></td><td class="rvbefore">涉及 Metal 工具链版本解析与 Shader 库 OutputHash/打包路径，UE5 shader 库已改结构，须按新实现重写。</td></tr>
+<tr id="XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES"><td class="tname"><a href="../plans/xd_bug_fix_ios_generate_stable_shader_outputhashes.html">XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES</a></td><td><code>steps[0].note</code></td><td class="rvbefore">UE5 PackedVersion 只有 Major/Minor，Target 需 Patch，必须拆型。</td></tr>
 <tr id="XD_BUG_FIX_ITERATE_CHECK_MATERIAL_LOAD"><td class="tname"><a href="../plans/xd_bug_fix_iterate_check_material_load.html">XD_BUG_FIX_ITERATE_CHECK_MATERIAL_LOAD</a></td><td><code>steps[1].after</code></td><td class="rvbefore">// UE5 Public/Materials/MaterialFunction.h:105（private 段）
 TArray&lt;TObjectPtr&lt;class UMaterialExpressionMaterialFunctionCall&gt;&gt; DependentFunctionExpressionCandidates;
 // 用 UMaterial::GetDependentFunctions / IterateDependentFunctions 代替直接访问</td></tr>
@@ -122,7 +118,71 @@ TArray&lt;TObjectPtr&lt;class UMaterialExpressionMaterialFunctionCall&gt;&gt; De
 	TEXT(&quot;非首启时收紧 PSO 前台预编译墙钟；&lt;=0 表示不收紧。&quot;), ECVF_Default | ECVF_RenderThreadSafe);
 
 float FShaderPipelineCache</td></tr>
-<tr id="XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR"><td class="tname"><a href="../plans/xd_bug_fix_mobile_render_thread_swap_buffer_interval_error.html">XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR</a></td><td><code>change_type</code></td><td class="rvbefore">abandon</td></tr></tbody></table></div>
+<tr id="XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR"><td class="tname"><a href="../plans/xd_bug_fix_mobile_render_thread_swap_buffer_interval_error.html">XD_BUG_FIX_MOBILE_RENDER_THREAD_SWAP_BUFFER_INTERVAL_ERROR</a></td><td><code>change_type_reason</code></td><td class="rvbefore">UE5 帧节奏重写为按 DriverRefreshNanos 计算相对间隔，XD 修的 60Hz 假设双倍等待已不存在。</td></tr></tbody></table></div>
+
+<h2 class="sec">跨维度分歧（早期结论 × 代码级分析）</h2>
+<p class="lead">代码级分析（第二遍、看源码、带行号）与早期迁移处置结论不一致的宏共 <b>62</b> 个。这些地方往往有价值：要么是早期分析低估了 UE5 的覆盖（可以不做），要么是低估了移植成本（需完全重构）。建议以代码级分析为准并回写评估矩阵。</p><div class="tablewrap"><table class="mtable"><thead><tr><th>宏</th><th>早期结论</th><th>代码级分析</th><th>分歧说明</th></tr></thead><tbody><tr id="XD_BUG_FIX_ANDROID_WAIT_FOR_SAFE_ZONE_WAS_UPDATED_BEFORE_CHANGING_ORIENTATION"><td class="tname"><a href="../plans/xd_bug_fix_android_wait_for_safe_zone_was_updated_before_changing_orientation.html">XD_BUG_FIX_ANDROID_WAIT_FOR_SAFE_ZONE_WAS_UPDATED_BEFORE_CHANGING_ORIENTATION</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_BC7_TEX_COMPRESSION"><td class="tname"><a href="../plans/xd_bug_fix_bc7_tex_compression.html">XD_BUG_FIX_BC7_TEX_COMPRESSION</a></td><td>删除</td><td>简单移植</td><td>早期结论=UE5 已覆盖，代码级分析=仍需移植/改接口（需复核覆盖是否完整）</td></tr>
+<tr id="XD_BUG_FIX_DUPLICATE_FOPENGLPROGRAMKEY"><td class="tname"><a href="../plans/xd_bug_fix_duplicate_fopenglprogramkey.html">XD_BUG_FIX_DUPLICATE_FOPENGLPROGRAMKEY</a></td><td>删除</td><td>简单移植</td><td>早期结论=UE5 已覆盖，代码级分析=仍需移植/改接口（需复核覆盖是否完整）</td></tr>
+<tr id="XD_BUG_FIX_FONT_GLYPH_INVALID_SIZE_DUMP"><td class="tname"><a href="../plans/xd_bug_fix_font_glyph_invalid_size_dump.html">XD_BUG_FIX_FONT_GLYPH_INVALID_SIZE_DUMP</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_IOS_TEXT_INPUT_CRASH"><td class="tname"><a href="../plans/xd_bug_fix_ios_text_input_crash.html">XD_BUG_FIX_IOS_TEXT_INPUT_CRASH</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_IOS_UI_CACHEDELEMENTDATA_CRASH"><td class="tname"><a href="../plans/xd_bug_fix_ios_ui_cachedelementdata_crash.html">XD_BUG_FIX_IOS_UI_CACHEDELEMENTDATA_CRASH</a></td><td>常开补丁</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_ITERATIVE_COOK_DELETE_PACKAGE_NOT_COMPLETE"><td class="tname"><a href="../plans/xd_bug_fix_iterative_cook_delete_package_not_complete.html">XD_BUG_FIX_ITERATIVE_COOK_DELETE_PACKAGE_NOT_COMPLETE</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_MOUSE_LEAVE_WIDGETS_WHEN_CLICK_FASTLY_DEBUG"><td class="tname"><a href="../plans/xd_bug_fix_mouse_leave_widgets_when_click_fastly_debug.html">XD_BUG_FIX_MOUSE_LEAVE_WIDGETS_WHEN_CLICK_FASTLY_DEBUG</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD"><td class="tname"><a href="../plans/xd_bug_fix_opengl_shaders_relink_faild.html">XD_BUG_FIX_OPENGL_SHADERS_RELINK_FAILD</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW"><td class="tname"><a href="../plans/xd_bug_fix_sequencer_keyframe_duplicate_no_update_on_draw.html">XD_BUG_FIX_SEQUENCER_KEYFRAME_DUPLICATE_NO_UPDATE_ON_DRAW</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_SYNC_RELEASE_RHI_RESOURCE"><td class="tname"><a href="../plans/xd_bug_fix_sync_release_rhi_resource.html">XD_BUG_FIX_SYNC_RELEASE_RHI_RESOURCE</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR"><td class="tname"><a href="../plans/xd_bug_fix_use_corrsponding_world_feature_level_in_editor.html">XD_BUG_FIX_USE_CORRSPONDING_WORLD_FEATURE_LEVEL_IN_EDITOR</a></td><td>删除</td><td>改接口/改名</td><td>早期结论=UE5 已覆盖，代码级分析=仍需移植/改接口（需复核覆盖是否完整）</td></tr>
+<tr id="XD_BUG_FIX_USE_CUSTOM_DEPTH_OF_CURRENT_RENDERER"><td class="tname"><a href="../plans/xd_bug_fix_use_custom_depth_of_current_renderer.html">XD_BUG_FIX_USE_CUSTOM_DEPTH_OF_CURRENT_RENDERER</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_VKACQUIRENEXTIMAGE_SWAPCHAIN"><td class="tname"><a href="../plans/xd_bug_fix_vkacquirenextimage_swapchain.html">XD_BUG_FIX_VKACQUIRENEXTIMAGE_SWAPCHAIN</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT_TESTING"><td class="tname"><a href="../plans/xd_bug_fix_vkacquirenextimage_timeout_testing.html">XD_BUG_FIX_VKACQUIRENEXTIMAGE_TIMEOUT_TESTING</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_BUG_FIX_VK_DEFRAG_CRITICAL_SECTION"><td class="tname"><a href="../plans/xd_bug_fix_vk_defrag_critical_section.html">XD_BUG_FIX_VK_DEFRAG_CRITICAL_SECTION</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_EXT_ADD_ANDROID_GET_SCREEN_SIZE_INTERFACE"><td class="tname"><a href="../plans/xd_ext_add_android_get_screen_size_interface.html">XD_EXT_ADD_ANDROID_GET_SCREEN_SIZE_INTERFACE</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX"><td class="tname"><a href="../plans/xd_ext_applyparams_for_specific_mat_index.html">XD_EXT_APPLYPARAMS_FOR_SPECIFIC_MAT_INDEX</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_EXT_BROADCAST_PARTICLE_SPAWN_IN_ANIMNOTIFY"><td class="tname"><a href="../plans/xd_ext_broadcast_particle_spawn_in_animnotify.html">XD_EXT_BROADCAST_PARTICLE_SPAWN_IN_ANIMNOTIFY</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM"><td class="tname"><a href="../plans/xd_ext_check_actual_shader_precompile_num.html">XD_EXT_CHECK_ACTUAL_SHADER_PRECOMPILE_NUM</a></td><td>接入点</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_EXT_DEBUG_RENDERING_FUNC"><td class="tname"><a href="../plans/xd_ext_debug_rendering_func.html">XD_EXT_DEBUG_RENDERING_FUNC</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_EXT_EDITOR_BEHAVIOR_REWORK"><td class="tname"><a href="../plans/xd_ext_editor_behavior_rework.html">XD_EXT_EDITOR_BEHAVIOR_REWORK</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_EXT_SHDADER_UNUSED_PBC_EVICT"><td class="tname"><a href="../plans/xd_ext_shdader_unused_pbc_evict.html">XD_EXT_SHDADER_UNUSED_PBC_EVICT</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_FE_P4_SUBMITTER_TOOL"><td class="tname"><a href="../plans/xd_fe_p4_submitter_tool.html">XD_FE_P4_SUBMITTER_TOOL</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE"><td class="tname"><a href="../plans/xd_fix_bug_electra_player_block_gt_when_release.html">XD_FIX_BUG_ELECTRA_PLAYER_BLOCK_GT_WHEN_RELEASE</a></td><td>常开补丁</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_FORCE_SATATICMESH_LOD_STREAM_BULK"><td class="tname"><a href="../plans/xd_force_sataticmesh_lod_stream_bulk.html">XD_FORCE_SATATICMESH_LOD_STREAM_BULK</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_ADDITIONAL_ASSET_REGISTRY_TAGS_FOR_WWISE"><td class="tname"><a href="../plans/xd_misc_additional_asset_registry_tags_for_wwise.html">XD_MISC_ADDITIONAL_ASSET_REGISTRY_TAGS_FOR_WWISE</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE"><td class="tname"><a href="../plans/xd_misc_clean_obsolete_pso_cache_and_program_cache.html">XD_MISC_CLEAN_OBSOLETE_PSO_CACHE_AND_PROGRAM_CACHE</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_COOK_SAVE_QUEUE_FIX"><td class="tname"><a href="../plans/xd_misc_cook_save_queue_fix.html">XD_MISC_COOK_SAVE_QUEUE_FIX</a></td><td>删除</td><td>完全重构</td><td>早期结论=UE5 已覆盖，代码级分析=需完全重构</td></tr>
+<tr id="XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY"><td class="tname"><a href="../plans/xd_misc_disable_uecheck_for_audio_animnotify.html">XD_MISC_DISABLE_UECHECK_FOR_AUDIO_ANIMNOTIFY</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_EXTENDED_KISMET2_LIB"><td class="tname"><a href="../plans/xd_misc_extended_kismet2_lib.html">XD_MISC_EXTENDED_KISMET2_LIB</a></td><td>删除</td><td>简单移植</td><td>早期结论=UE5 已覆盖，代码级分析=仍需移植/改接口（需复核覆盖是否完整）</td></tr>
+<tr id="XD_MISC_FATAL_ERROR_PRINT_FILE_NAME_IN_SHIPPING_MODE"><td class="tname"><a href="../plans/xd_misc_fatal_error_print_file_name_in_shipping_mode.html">XD_MISC_FATAL_ERROR_PRINT_FILE_NAME_IN_SHIPPING_MODE</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME"><td class="tname"><a href="../plans/xd_misc_media_texture_allow_keep_last_frame.html">XD_MISC_MEDIA_TEXTURE_ALLOW_KEEP_LAST_FRAME</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR"><td class="tname"><a href="../plans/xd_misc_notify_user_on_pak_fatal_error.html">XD_MISC_NOTIFY_USER_ON_PAK_FATAL_ERROR</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_PSO_LRU_AVOID_REPEATED_EVICTION"><td class="tname"><a href="../plans/xd_misc_pso_lru_avoid_repeated_eviction.html">XD_MISC_PSO_LRU_AVOID_REPEATED_EVICTION</a></td><td>删除</td><td>完全重构</td><td>早期结论=UE5 已覆盖，代码级分析=需完全重构</td></tr>
+<tr id="XD_MISC_USE_ELECTRA_MEDIA_PLAYERA_IN_APPLE_DEVICE"><td class="tname"><a href="../plans/xd_misc_use_electra_media_playera_in_apple_device.html">XD_MISC_USE_ELECTRA_MEDIA_PLAYERA_IN_APPLE_DEVICE</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_VULKANGPU_TIMESTAMP_QUERY"><td class="tname"><a href="../plans/xd_misc_vulkangpu_timestamp_query.html">XD_MISC_VULKANGPU_TIMESTAMP_QUERY</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MISC_WWISE_ASSET_REGISTRY_FREE"><td class="tname"><a href="../plans/xd_misc_wwise_asset_registry_free.html">XD_MISC_WWISE_ASSET_REGISTRY_FREE</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_MSIC_INI_COOK_BLACKLIST"><td class="tname"><a href="../plans/xd_msic_ini_cook_blacklist.html">XD_MSIC_INI_COOK_BLACKLIST</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPTIMIZATION_FORCE_PARTICLE_SKIP_TICK"><td class="tname"><a href="../plans/xd_optimization_force_particle_skip_tick.html">XD_OPTIMIZATION_FORCE_PARTICLE_SKIP_TICK</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_MOBILE_DEFERRED_RENDERING"><td class="tname"><a href="../plans/xd_optimization_global_shader_permutation_mobile_deferred_rendering.html">XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_MOBILE_DEFERRED_RENDERING</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_TONEMAPPER"><td class="tname"><a href="../plans/xd_optimization_global_shader_permutation_tonemapper.html">XD_OPTIMIZATION_GLOBAL_SHADER_PERMUTATION_TONEMAPPER</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPTIMIZATION_WWISE_PERF_GC_ISSUE"><td class="tname"><a href="../plans/xd_optimization_wwise_perf_gc_issue.html">XD_OPTIMIZATION_WWISE_PERF_GC_ISSUE</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPTIMIZATION_WWISE_PERF_GC_ISSUE_DEBUG"><td class="tname"><a href="../plans/xd_optimization_wwise_perf_gc_issue_debug.html">XD_OPTIMIZATION_WWISE_PERF_GC_ISSUE_DEBUG</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_ANALYSIS_ANDROID_PLATFORM_UNTRACKED_MEMORY"><td class="tname"><a href="../plans/xd_opt_analysis_android_platform_untracked_memory.html">XD_OPT_ANALYSIS_ANDROID_PLATFORM_UNTRACKED_MEMORY</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_ANDROID_GL_FORCE_REMOVE_DEPTH_RESOLVE_PASS"><td class="tname"><a href="../plans/xd_opt_android_gl_force_remove_depth_resolve_pass.html">XD_OPT_ANDROID_GL_FORCE_REMOVE_DEPTH_RESOLVE_PASS</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_COOK_MAC_PARALLEL_USAGE"><td class="tname"><a href="../plans/xd_opt_cook_mac_parallel_usage.html">XD_OPT_COOK_MAC_PARALLEL_USAGE</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_DUMMY_PARTICLE_SYSTEM_COMPONENT"><td class="tname"><a href="../plans/xd_opt_dummy_particle_system_component.html">XD_OPT_DUMMY_PARTICLE_SYSTEM_COMPONENT</a></td><td>插件化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_FAST_BLOOM"><td class="tname"><a href="../plans/xd_opt_fast_bloom.html">XD_OPT_FAST_BLOOM</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL"><td class="tname"><a href="../plans/xd_opt_load_pso_cache_by_quality_level.html">XD_OPT_LOAD_PSO_CACHE_BY_QUALITY_LEVEL</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_MEMORY_LIGHT_PRIMITIVE_INTERACTION_ALLOC"><td class="tname"><a href="../plans/xd_opt_memory_light_primitive_interaction_alloc.html">XD_OPT_MEMORY_LIGHT_PRIMITIVE_INTERACTION_ALLOC</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_MOBILE_CONTROLL_HARDWARD_OCCLUSION_CULLING"><td class="tname"><a href="../plans/xd_opt_mobile_controll_hardward_occlusion_culling.html">XD_OPT_MOBILE_CONTROLL_HARDWARD_OCCLUSION_CULLING</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_OPENGL_USBC_COMPRESS"><td class="tname"><a href="../plans/xd_opt_opengl_usbc_compress.html">XD_OPT_OPENGL_USBC_COMPRESS</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_PARTICLE_COLLECT_INSTANCE_USING_MULTI_THREAD"><td class="tname"><a href="../plans/xd_opt_particle_collect_instance_using_multi_thread.html">XD_OPT_PARTICLE_COLLECT_INSTANCE_USING_MULTI_THREAD</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_PARTICLE_GET_DYNAMIC_MESH_ELEMENTS_USING_ASYNC"><td class="tname"><a href="../plans/xd_opt_particle_get_dynamic_mesh_elements_using_async.html">XD_OPT_PARTICLE_GET_DYNAMIC_MESH_ELEMENTS_USING_ASYNC</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_OPT_SUPPORT_DIRECT_CONTROLL_PARTICLE_FUNCTIONS"><td class="tname"><a href="../plans/xd_opt_support_direct_controll_particle_functions.html">XD_OPT_SUPPORT_DIRECT_CONTROLL_PARTICLE_FUNCTIONS</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_RENDERING_FORCE_FEATURE_GATHER4"><td class="tname"><a href="../plans/xd_rendering_force_feature_gather4.html">XD_RENDERING_FORCE_FEATURE_GATHER4</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_RENDERING_METAL_HALF"><td class="tname"><a href="../plans/xd_rendering_metal_half.html">XD_RENDERING_METAL_HALF</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH"><td class="tname"><a href="../plans/xd_rendering_mobile_android_force_depth_fetch.html">XD_RENDERING_MOBILE_ANDROID_FORCE_DEPTH_FETCH</a></td><td>配置化</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_RENDERING_MOBILE_IOS_DEPTH_FETCH"><td class="tname"><a href="../plans/xd_rendering_mobile_ios_depth_fetch.html">XD_RENDERING_MOBILE_IOS_DEPTH_FETCH</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_TOOL_LLM_COMMAND_CSV_IMMEDIATE"><td class="tname"><a href="../plans/xd_tool_llm_command_csv_immediate.html">XD_TOOL_LLM_COMMAND_CSV_IMMEDIATE</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr>
+<tr id="XD_TOOL_LLM_UOBJECT_BREAKDOWN"><td class="tname"><a href="../plans/xd_tool_llm_uobject_breakdown.html">XD_TOOL_LLM_UOBJECT_BREAKDOWN</a></td><td>移植</td><td>建议舍弃</td><td>早期结论=要移植，代码级分析=建议舍弃</td></tr></tbody></table></div>
 
 <h2 class="sec">问题明细</h2>
 <div class="tablewrap"><table class="mtable"><thead><tr><th>宏</th><th>判定</th><th>字段</th><th>等级</th><th>问题（含审核员核实到的证据）</th></tr></thead><tbody><tr id="XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND"><td class="tname"><a href="../plans/xd_bug_fix_add_log_debug_parameter_collection_not_found.html">XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND</a></td><td><span class="rvtag rv-fix">修正</span></td><td><code>steps[1].after</code></td><td>high</td><td>调入处形参是 `const FSceneInterface* Scene`（UE5 ShaderBaseClasses.cpp:340），而 GetParameterCollectionDebugName 是 FScene 的成员；草案写 `Scene-&gt;GetParameterCollectionDebugName(...)` 无法编译。UE4 版在 ShaderBaseClasses.cpp:109-112 内部做了 `(const FScene*)SceneInterface` 转换，草案丢失了该转换。</td></tr>
@@ -432,6 +492,6 @@ float FShaderPipelineCache</td></tr>
 </aside>
 </div>
 <div class="statbar" id="statbar"><span class="sb-title">迁移决策</span><div class="sb-items"><a class="sb" href="../migration/roadmap.html#phase-drop-covered" title="A1 直接删除（UE5 已覆盖）：98 个宏">A1 删除·已覆盖 <b>98</b></a><a class="sb" href="../migration/roadmap.html#phase-drop-other" title="A2 直接删除（废弃/无引用/待复核）：49 个宏">A2 删除·其他原因 <b>49</b></a><a class="sb" href="../migration/roadmap.html#phase-patch" title="B 常开补丁：48 个宏">B 常开补丁 <b>48</b></a><a class="sb" href="../migration/roadmap.html#phase-config" title="C 配置化：66 个宏">C 配置化 <b>66</b></a><a class="sb" href="../migration/roadmap.html#phase-plugin" title="D 插件化：51 个宏">D 插件化 <b>51</b></a><a class="sb" href="../migration/roadmap.html#phase-hook" title="E 接入点改造：28 个宏">E 接入点 <b>28</b></a><a class="sb" href="../migration/roadmap.html#phase-port" title="F 代码移植：195 个宏">F 移植 <b>195</b></a><a class="sb" href="../migration/roadmap.html#phase-keep" title="G 暂留引擎（重点跟进）：14 个宏">G 暂留引擎 <b>14</b></a></div><span class="sb-total">合计 <b>549</b></span><button type="button" class="sb-toggle" id="sbToggle" title="收起 / 展开">▾</button></div>
-<script src="../assets/app.js?v=7325269b"></script>
+<script src="../assets/app.js?v=5c522e1b"></script>
 </body>
 </html>
