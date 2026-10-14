@@ -46,16 +46,40 @@
 <a href="../migration/hooks.html">🔌 最小侵入接入点</a>
 <a href="../migration/roadmap.html">🗺️ 迁移路线图</a>
 <a href="../migration/by-team.html">👥 开发者 × 模块</a></nav>
-  <main class="content"><h1 class="plantitle">修改草案 · XD_BUG_FIX_AVF_TASK_QUEUE</h1><p class="lead">修复 AVF 播放器 TaskQueue 释放后使用（use-after-free）</p><div class="planmeta"><span class="migstatus s-partial">部分覆盖</span> <span class="migdisp d-patch">常开补丁</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="badge">工作量 S</span><span class="badge">风险 中</span><span class="badge">开发者 Yu Hang</span><span class="badge">主要模块 Plugins/AvfMedia</span></div><p class="planline"><b>一句话结论：</b>作为 AVF 插件常开补丁比对移植。</p><h2 class="sec">1. UE5 现状与证据</h2><p class="planline"><b>结论依据：</b>AvfMediaPlayer.cpp:296-1020 使用 PlayerTasks.Enqueue 与线程安全队列（结构与 XD 修复同源，未逐点核对）</p><p class="planline"><b>覆盖说明：</b>UE5 AVF 插件已重写队列用法，需复核 use-after-free</p><table class="mtable"><thead><tr><th>证据路径（UE5.8.2）</th><th>行号</th><th>核对结果</th></tr></thead><tbody><tr><td class="tname">AvfMediaPlayer.cpp</td><td class="tval">296</td><td>✅ 已命中：<code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</code></td></tr></tbody></table><p class="planline"><b>覆盖度：</b><span class="migstatus s-partial">部分覆盖</span>&nbsp;&nbsp;<b>处置：</b><span class="migdisp d-patch">常开补丁</span></p><h2 class="sec">2. 修改步骤（常开补丁）</h2><ol class="plansteps"><li><b>在 UE5 上复核问题</b><div class="stepbody">UE5 证据：AvfMediaPlayer.cpp:296-1020 使用 PlayerTasks.Enqueue 与线程安全队列（结构与 XD 修复同源，未逐点核对）。先在 UE5 复现原问题；若已不存在，则按「删除」处理。</div></li><li><b>在 UE5 fork 重新应用补丁</b><div class="stepbody">原实现位置：<code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</code>、<code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.h</code>。引擎侧改动点：引擎 AVF 插件内部。补丁应保持最小范围，避免改公共接口。</div></li><li><b>登记为常开补丁</b><div class="stepbody">在 Feature Registry 记录：问题、修法、验证方式、回滚方式；不再挂编译开关。</div></li></ol><h2 class="sec">3. 代码级实现（开发用）</h2><p class="planline"><span class="rvtag rv-pending">待独立 Agent 审核</span>该草案尚未进入审核轮次：审核会打开 UE5 源码逐条核对行号、函数与 <code>after</code> 代码 引用的 API 是否存在。</p><p class="planline"><span class="ctag ct-refactor">完全重构</span> <b>改动方式：</b>UE5 队列已重写为成员 TQueue + [this] 捕获，XD 的静态 ID 表守卫无法照搬。</p><p class="planline"><b>代码脉络：</b>UE4 AvfMediaPlayer.h:162-215 把成员 TQueue 换成静态 TMap&lt;int32,TArray&lt;TFunction&lt;void()&gt;&gt;&gt; GPlayerTasks + XDPlayerTaskProxy/IsPlayerTaskIDValid，析构 L339 注销 ID，Open L759、Seek L1016 的回调先判 ID 再 Enqueue，避免析构后入队 UAF；UE5 h:154 只有成员 TQueue PlayerTasks，回调改捕 [this]。</p><div class="dsteps"><div class="dstep"><div class="dhead"><b>步骤 1</b><code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.h</code><span class="danchor">UE5 L154</span></div><p class="daction">按 UE4 h:162-215 恢复静态 ID 表守卫</p><pre class="code before"><code>	/** Tasks to be executed on the player thread. */
+  <main class="content"><h1 class="plantitle">修改草案 · XD_BUG_FIX_AVF_TASK_QUEUE</h1><p class="lead">修复 AVF 播放器 TaskQueue 释放后使用（use-after-free）</p><div class="planmeta"><span class="migstatus s-partial">部分覆盖</span> <span class="migdisp d-patch">常开补丁</span> <span class="migproj p-no">引擎内实现</span> <span class="mighook h-0">引擎内补丁</span> <span class="badge">工作量 S</span><span class="badge">风险 中</span><span class="badge">开发者 Yu Hang</span><span class="badge">主要模块 Plugins/AvfMedia</span></div><p class="planline"><b>一句话结论：</b>作为 AVF 插件常开补丁比对移植。</p><h2 class="sec">1. UE5 现状与证据</h2><p class="planline"><b>结论依据：</b>AvfMediaPlayer.cpp:296-1020 使用 PlayerTasks.Enqueue 与线程安全队列（结构与 XD 修复同源，未逐点核对）</p><p class="planline"><b>覆盖说明：</b>UE5 AVF 插件已重写队列用法，需复核 use-after-free</p><table class="mtable"><thead><tr><th>证据路径（UE5.8.2）</th><th>行号</th><th>核对结果</th></tr></thead><tbody><tr><td class="tname">AvfMediaPlayer.cpp</td><td class="tval">296</td><td>✅ 已命中：<code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</code></td></tr></tbody></table><p class="planline"><b>覆盖度：</b><span class="migstatus s-partial">部分覆盖</span>&nbsp;&nbsp;<b>处置：</b><span class="migdisp d-patch">常开补丁</span></p><h2 class="sec">2. 修改步骤（常开补丁）</h2><ol class="plansteps"><li><b>在 UE5 上复核问题</b><div class="stepbody">UE5 证据：AvfMediaPlayer.cpp:296-1020 使用 PlayerTasks.Enqueue 与线程安全队列（结构与 XD 修复同源，未逐点核对）。先在 UE5 复现原问题；若已不存在，则按「删除」处理。</div></li><li><b>在 UE5 fork 重新应用补丁</b><div class="stepbody">原实现位置：<code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</code>、<code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.h</code>。引擎侧改动点：引擎 AVF 插件内部。补丁应保持最小范围，避免改公共接口。</div></li><li><b>登记为常开补丁</b><div class="stepbody">在 Feature Registry 记录：问题、修法、验证方式、回滚方式；不再挂编译开关。</div></li></ol><h2 class="sec">3. 代码级实现（开发用）</h2><p class="planline"><span class="rvtag rv-fix">独立 Agent 审核并修正</span>修正 2 处　提出问题 2 条　其中高风险 1 条</p><p class="planline"><b>审核意见：</b>thread/anchor 大体属实（UE4 h:162-223 静态 TMap 守卫、析构 cpp:339、Open:759、Seek:1016；UE5 h:154 成员 TQueue），FCriticalSection 在 UE5 仍有效（HAL/CriticalSection.h:53 `using FCriticalSection = UE::FPlatformRecursiveMutex;`），refactor 分类合理；最大风险是 after 用空结构体+占位注释冒充实现。</p><p class="planline"><span class="ctag ct-refactor">完全重构</span> <b>改动方式：</b>UE5 队列已重写为成员 TQueue + [this] 捕获，XD 的静态 ID 表守卫无法照搬。</p><p class="planline"><b>代码脉络：</b>UE4 AvfMediaPlayer.h:162-215 把成员 TQueue 换成静态 TMap&lt;int32,TArray&lt;TFunction&lt;void()&gt;&gt;&gt; GPlayerTasks + XDPlayerTaskProxy/IsPlayerTaskIDValid，析构 L339 注销 ID，Open L759、Seek L1016 的回调先判 ID 再 Enqueue，避免析构后入队 UAF；UE5 h:154 只有成员 TQueue PlayerTasks，回调改捕 [this]。</p><div class="dsteps"><div class="dstep"><div class="dhead"><b>步骤 1</b><code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.h</code><span class="danchor">UE5 L154</span></div><p class="daction">按 UE4 h:162-215 恢复静态 ID 表守卫</p><pre class="code before"><code>	/** Tasks to be executed on the player thread. */
 	TQueue&lt;TFunction&lt;void()&gt;&gt; PlayerTasks;</code></pre><pre class="code after"><code>#if XD_BUG_FIX_AVF_TASK_QUEUE
-	int32 PlayerTasksID; static int32 GPlayerTasksID;
+	int32 PlayerTasksID;
+	static int32 GPlayerTasksID;
 	static FCriticalSection GPlayerTasksCriticalSection;
 	static TMap&lt;int32, TArray&lt;TFunction&lt;void()&gt;&gt;&gt; GPlayerTasks;
-	static bool IsPlayerTaskIDValid(int32 ID);
-	struct XDPlayerTaskProxy { /* Enqueue/Dequeue 照 UE4 h:177-215 */ };
+	static bool IsPlayerTaskIDValid(int32 ID)
+	{
+		FScopeLock Lock{&amp;GPlayerTasksCriticalSection};
+		auto QueueProxy = GPlayerTasks.Find(ID);
+		return QueueProxy != nullptr;
+	}
+	struct XDPlayerTaskProxy
+	{
+		XDPlayerTaskProxy(int32 ID) : CurrentPlayerTasksID(ID) {}
+		bool Enqueue(TFunction&lt;void()&gt;&amp;&amp; Task) const
+		{
+			FScopeLock Lock{&amp;GPlayerTasksCriticalSection};
+			auto QueueProxy = GPlayerTasks.Find(CurrentPlayerTasksID);
+			if (QueueProxy) { QueueProxy-&gt;EmplaceAt(0, Task); return true; }
+			return false;
+		}
+		bool Dequeue(TFunction&lt;void()&gt;&amp; Task) const
+		{
+			FScopeLock Lock{&amp;GPlayerTasksCriticalSection};
+			auto QueueProxy = GPlayerTasks.Find(CurrentPlayerTasksID);
+			if (QueueProxy) { if (QueueProxy-&gt;Num() &gt; 0) { Task = QueueProxy-&gt;Pop(); return true; } return false; }
+			return false;
+		}
+		int32 CurrentPlayerTasksID;
+	};
 #else
 	TQueue&lt;TFunction&lt;void()&gt;&gt; PlayerTasks;
-#endif</code></pre><p class="dnote">⚠ 需补 #include &quot;Misc/ScopeLock.h&quot;；UE5 无平台 CriticalSection 分支。</p></div><div class="dstep"><div class="dhead"><b>步骤 2</b><code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</code><span class="danchor">UE5 L377/400/761/900/999</span></div><p class="daction">入队点改用 proxy，block 内加 ID 校验</p><pre class="code before"><code>	PlayerTasks.Enqueue([this]()
+#endif</code></pre><p class="dnote">⚠ 需补 #include &quot;Misc/ScopeLock.h&quot;；UE5 无平台 CriticalSection 分支。</p></div><div class="dstep"><div class="dhead"><b>步骤 2</b><code>Plugins/Media/AvfMedia/Source/AvfMedia/Private/Player/AvfMediaPlayer.cpp</code><span class="danchor">UE5 L377/388/400/435/447/454/761/774/999</span></div><p class="daction">入队点改用 proxy，block 内加 ID 校验</p><pre class="code before"><code>	PlayerTasks.Enqueue([this]()
 	{
 		bSeeking = false;
 		EventSink.ReceiveMediaEvent(EMediaEvent::SeekCompleted);
