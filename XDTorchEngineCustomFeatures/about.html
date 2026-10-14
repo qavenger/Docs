@@ -59,9 +59,9 @@
 <tr><td class="tname">特性宏总数</td><td>566</td><td>分布在 XDBuild*Configuration.cs 的 7 个类里</td></tr>
 <tr><td class="tname">参与迁移分析</td><td>549</td><td>另有 17 个宏按原需求排除（CustomUnlit 家族、描边、SmoothNormal、HDR 输出、DepthStencil 修复）</td></tr>
 <tr><td class="tname">代码级修改草案</td><td>549</td><td>每个宏一份，含代码脉络、改动方式、before/after 代码、风险评估</td></tr>
-<tr><td class="tname">独立 Agent 审核</td><td>见审核报告</td><td>去源码实证核对行号/函数/API 是否真实，给出修正</td></tr>
-<tr><td class="tname">可主动舍弃候选</td><td>见可舍弃页</td><td>因 UE5 架构更替（Cascade→Niagara、PhysX→Chaos、旧工具链等）可不必迁移</td></tr>
-<tr><td class="tname">跨维度分歧</td><td>见审核报告</td><td>早期处置结论与代码级分析不一致处，附取舍建议</td></tr>
+<tr><td class="tname">独立 Agent 审核</td><td>403 个已过审</td><td>去源码实证核对行号/函数/API 是否真实，给出修正</td></tr>
+<tr><td class="tname">可主动舍弃候选</td><td>92 个（含 15 项待确认）</td><td>因 UE5 架构更替（Cascade→Niagara、PhysX→Chaos、旧工具链等）可不必迁移</td></tr>
+<tr><td class="tname">跨维度分歧</td><td>90 处</td><td>早期处置结论与代码级分析不一致处，附取舍建议</td></tr>
 </tbody></table></div>
 
 <h2 class="sec">二、怎么用这份文档</h2>
@@ -86,7 +86,7 @@
 
 <h2 class="sec">四、代码级草案是怎么产出的</h2>
 <ol>
-<li><b>源码定位</b>：用 <code>find + grep</code> 扫描引擎目录（Source / Shaders / Plugins / Config / Build），排除中间产物后得到每个宏的全部引用位置（文件:行 + 代码原文），共 6,035 处。</li>
+<li><b>源码定位</b>：用 <code>find + grep</code> 扫描引擎目录（Source / Shaders / Plugins / Config / Build），排除中间产物后得到每个宏的全部引用位置（文件:行 + 代码原文），共 6035 处。</li>
 <li><b>逐宏分析</b>：每个批次 8 个宏交给一个分析 Agent，要求先 grep/read 真实源码，再产出「代码脉络 + 改动方式（简单移植 / 改接口改名 / 完全重构 / 建议舍弃）+ 分步 before/after 代码 + 原代码风险 + 移植风险 + 自检 + 置信度」。</li>
 <li><b>独立审核</b>：另一位 Agent 逐条实证核对——行号/函数名是否存在、<code>before</code> 是否真出自 UE4 源码、<code>after</code> 引用的类/函数/枚举在 UE5 是否真实存在，问题必须带证据，修正必须可直接替换。</li>
 <li><b>交叉审计</b>：把早期处置结论与代码级分析做交叉比对，标出分歧（多数是"早期以为要移植、实际可以不做"）。</li>
