@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>根因溯源汇总 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="../assets/style.css?v=4caef181">
+<noscript><style>.tabpane{display:block !important}.tabbar{display:none !important}</style></noscript>
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="../index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <div class="topactions">
+    <button id="navToggle" class="navtoggle" title="目录">☰ 目录</button>
+    <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="../index.html">🏠 首页</a>
+<a href="../about.html">ℹ️ 关于本文档</a>
+<a href="../topics/index.html">📚 主题脉络</a>
+<a href="../topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="../topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="../topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="../topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="../topics/particles.html">✨ 粒子与特效</a>
+<a href="../topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="../topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="../topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="../topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="../topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="../topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="../topics/input-device.html">🎮 输入与手柄</a>
+<a href="../topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="../topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="../topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="../topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="../ref/index.html">📖 全量参考</a>
+<a href="../plans/index.html">📝 修改草案</a>
+<a href="../search/index.html">🔍 搜索</a>
+<a href="../migration/index.html">🚚 UE5 迁移总览</a>
+<a href="../migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/reclaim.html">⛔ 可主动舍弃</a>
+<a href="../migration/review-report.html">✅ 草案审核报告</a>
+<a href="../migration/checklist.html">📋 迁移实施清单</a>
+<a href="../migration/rootcause.html">🔬 根因溯源</a>
+<a href="../migration/project-side.html">📦 可工程化清单</a>
+<a href="../migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="../migration/roadmap.html">🗺️ 迁移路线图</a>
+<a href="../migration/by-team.html">👥 开发者 × 模块</a></nav>
+  <main class="content"><p class="lead"><b>这一步回答的是「这个宏为什么存在」</b>——不是"UE4 有问题、UE5 这么改"这种表层描述，而要一路追到上游：<b>它是谁引入的、上游后来修没修、调用方依赖什么语义、代码库惯例是什么、能不能反证"故意为之"</b>，最后按根因决定迁移动作。</p>
+
+<div class="callout">
+<p><b>为什么值得花这个力气：</b>抽样实证的结论是——<b>大多数 XD 的 bugfix 补丁，UE5 上游已经自己修好了</b>（等价重写、直接删除、或换成更完整的实现）。<br>
+这类宏<b>不需要重新移植</b>，直接从 UE4 fork 和迁移清单里划掉即可。已确认 <b>17</b> 个宏的根因，其中 <b>14</b> 个属于「上游已修 → 可直接删除」。</p>
+</div>
+
+<h2 class="sec">根因分类与迁移动作</h2>
+<div class="tablewrap"><table class="mtable"><thead><tr><th>根因定性</th><th>数量</th><th>迁移动作</th><th>说明</th></tr></thead><tbody><tr><td class="tname"><span class="rctag rc-fixed">上游已自行修复（该宏可直接删除）</span></td><td>14</td><td>① 删除</td><td>上游已修，直接删宏与分支</td></tr>
+<tr><td class="tname"><span class="rctag rc-bug">上游缺陷（需上游修复或长期携带补丁）</span></td><td>2</td><td>⑥ 携带补丁</td><td>上游未修，需长期携带并反馈上游</td></tr>
+<tr><td class="tname"><span class="rctag rc-miss">上游缺失能力（UE5 可能已补）</span></td><td>1</td><td>④/⑤ 视需求</td><td>上游无此能力，按业务决定工程化或自建</td></tr></tbody></table></div>
+
+<div class="callout warn">
+<p><b>怎么用这份清单：</b>①「上游已修」组直接按<code>① 删除</code>处理，页面上给出了 UE5 的对应证据（文件:行），删除前照抄一遍即可确认；<br>
+②「上游缺陷未修」组要按<code>⑥ 携带补丁</code>处理，并用页面里的"自检用例"回归，同时可把最小复现反馈给 Epic；<br>
+③「上游能力缺失」组要看业务是否真的需要该能力（如 iOS 日志读写一致性），再决定工程化还是自建。</p>
+</div>
+
+<h2 class="sec">逐宏清单（按根因分组）</h2>
+<details class="group" open><summary><span class="gname">上游已自行修复（该宏可直接删除）</span><span class="gcount">14 个宏</span><span class="gchips"><span class="gchip">① 删除</span></span></summary><p class="lead">上游已修，直接删宏与分支</p><div class="tablewrap"><table class="mtable"><thead><tr><th>宏</th><th>根因与上游状态</th><th>迁移方案</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_AVF_NO_PREROLL">XD_AVF_NO_PREROLL</a><a class="planmini" href="../plans/xd_avf_no_preroll.html">📝</a></td><td>上游已在 UE5 自行修复（用等价方式绕过不可靠的 preroll 回调）→ 该宏可直接删除</td><td>直接删除 XD_AVF_NO_PREROLL 及其在 AvfMediaPlayer.cpp 中的分支，改用 UE5 上游实现；删除后复核 MediaOpened 只被触发一次。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_CHECK_NULL_PTR_WHEN_PENDING_DELETE_ANIM_TRAIL_NODE">XD_BUG_FIX_CHECK_NULL_PTR_WHEN_PENDING_DELETE_ANIM_TRAIL_NODE</a><a class="planmini" href="../plans/xd_bug_fix_check_null_ptr_when_pending_delete_anim_trail_node.html">📝</a></td><td>上游已在同一函数内置 IsValid 判断（与 XD 修法一致）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_CHECK_NULL_PTR_WHEN_PENDING_DELETE_ANIM_TRAIL_NODE 宏定义；UE5 源码无需改动。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_CODE_REFERENCED_ASSETS">XD_BUG_FIX_CODE_REFERENCED_ASSETS</a><a class="planmini" href="../plans/xd_bug_fix_code_referenced_assets.html">📝</a></td><td>上游已在 UE5 改用软引用（TSoftObjectPtr + 按需 LoadSynchronous）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_CODE_REFERENCED_ASSETS 及其分支，采用 UE5 的 TSoftObjectPtr + MaterialLifetimePtr 实现；删除后复核体积云默认材质不再被 CDO 硬引用。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_LIST_VIEW_SCROLL_BAR_BRUSH_ADAPT">XD_BUG_FIX_LIST_VIEW_SCROLL_BAR_BRUSH_ADAPT</a><a class="planmini" href="../plans/xd_bug_fix_list_view_scroll_bar_brush_adapt.html">📝</a></td><td>上游已用&quot;样式失效重建&quot;覆盖该问题（SScrollBar 有 InvalidateStyle 机制）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_LIST_VIEW_SCROLL_BAR_BRUSH_ADAPT 及 SScrollBar 中的属性代理改造，采用 UE5 的失效机制。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_MATERIAL_PARAM_COLLECTION_MULTI_SELECTION_CRASH">XD_BUG_FIX_MATERIAL_PARAM_COLLECTION_MULTI_SELECTION_CRASH</a><a class="planmini" href="../plans/xd_bug_fix_material_param_collection_multi_selection_crash.html">📝</a></td><td>上游已在同名函数内处理 MultipleValues（逻辑等价且更完整）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_MATERIAL_PARAM_COLLECTION_MULTI_SELECTION_CRASH 宏定义；UE5 源码无需改动。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED">XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED</a><a class="planmini" href="../plans/xd_bug_fix_mic_does_not_cast_dynamic_shadow_as_masked.html">📝</a></td><td>上游已在 UE5 提供等价实现（UMaterialInstance::GetCastDynamicShadowAsMasked + IsMasked 分支）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_MIC_DOES_NOT_CAST_DYNAMIC_SHADOW_AS_MASKED 及 MaterialInstance 中的覆写/新增函数，采用 UE5 上游实现；删除后确认半透明材质的动态阴影表现与 UE4 一致。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_PARSE_PROJECTNAME_FROM_COMMANDLINE">XD_BUG_FIX_PARSE_PROJECTNAME_FROM_COMMANDLINE</a><a class="planmini" href="../plans/xd_bug_fix_parse_projectname_from_commandline.html">📝</a></td><td>上游已在 UE5 原生支持（FParse::Value 解析 project=）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_PARSE_PROJECTNAME_FROM_COMMANDLINE 及其分支，采用 UE5 的 FParse::Value 实现。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP">XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP</a><a class="planmini" href="../plans/xd_bug_fix_remove_incorrect_transition_from_volume_lightmap.html">📝</a></td><td>上游已在 UE5 主线删除这些多余屏障（grep 计数为 0）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_REMOVE_INCORRECT_TRANSITION_FROM_VOLUME_LIGHTMAP 宏定义；UE5 源码无需改动（上游已删除屏障）。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SHADER_PATCH_CRASH_AT_HASH_TABLE_INITIALIZE">XD_BUG_FIX_SHADER_PATCH_CRASH_AT_HASH_TABLE_INITIALIZE</a><a class="planmini" href="../plans/xd_bug_fix_shader_patch_crash_at_hash_table_initialize.html">📝</a></td><td>上游已移除 FHashTable::Initialize 及其调用（崩溃点不存在）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_SHADER_PATCH_CRASH_AT_HASH_TABLE_INITIALIZE 及 HashTable.h/ShaderCodeArchive.cpp 中的相关改动；删除后回归 shader 库 patch 流程。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC">XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC</a><a class="planmini" href="../plans/xd_bug_fix_wrong_shadow_projection_depth_in_pc.html">📝</a></td><td>上游已用构造参数实现同一修复（无需 XD 的独立 MeshProcessor 类）→ 该宏可直接删除</td><td>删除 XD_BUG_FIX_WRONG_SHADOW_PROJECTION_DEPTH_IN_PC 及 DepthRendering/ShadowSetup 中的相关改动，采用 UE5 的构造参数实现；删除后回归 PC 阴影投影表现。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME">XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME</a><a class="planmini" href="../plans/xd_fix_bug_http_thread_invalid_sleep_time.html">📝</a></td><td>上游已在 UE5 自行修复同一问题（钳制负的循环耗时，并注释了 Windows 时钟基准根因）→ 该宏可直接删除</td><td>删除 XD_FIX_BUG_HTTP_THREAD_INVALID_SLEEP_TIME 宏与其钳制分支，采用 UE5 上游实现；删除后确认 HttpThread 的 Active/Idle 两条路径 sleep 时长均为非负。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME">XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME</a><a class="planmini" href="../plans/xd_fix_bug_pc_monitor_queried_error_when_switch_desktop_mode_runtime.html">📝</a></td><td>上游已内建 DXGI 工厂失效重建（多处在用 IsCurrent() 检测并重建）→ 该宏可直接删除</td><td>删除 XD_FIX_BUG_PC_MONITOR_QUERIED_ERROR_WHEN_SWITCH_DESKTOP_MODE_RUNTIME 宏及相关检查，采用 UE5 内建机制。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_REMOVE_NONUSED_CHECK_IN_FREE_OBJECTS">XD_FIX_BUG_REMOVE_NONUSED_CHECK_IN_FREE_OBJECTS</a><a class="planmini" href="../plans/xd_fix_bug_remove_nonused_check_in_free_objects.html">📝</a></td><td>上游已删除该 check（UE5 FreeUObject 无 check(!IsLoading())）→ 该宏可直接删除</td><td>删除 XD_FIX_BUG_REMOVE_NONUSED_CHECK_IN_FREE_OBJECTS 宏及 UObjectAllocator.cpp 中的 #if/#else；UE5 源码无需改动。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_FIX_UNINITIALIZED_bIsUObjectWrapper">XD_FIX_UNINITIALIZED_bIsUObjectWrapper</a><a class="planmini" href="../plans/xd_fix_uninitialized_bisuobjectwrapper.html">📝</a></td><td>上游已在 UE5 修复同一问题（构造函数默认初始化 + 反序列化修正），且注释点明「uninitialized memory」→ 该宏可直接删除</td><td>删除 XD_FIX_UNINITIALIZED_bIsUObjectWrapper 及 EdGraphPin 中的两处补丁，采用 UE5 上游实现。</td></tr></tbody></table></div></details>
+<details class="group"><summary><span class="gname">上游缺陷（需上游修复或长期携带补丁）</span><span class="gcount">2 个宏</span><span class="gchips"><span class="gchip">⑥ 携带补丁</span></span></summary><p class="lead">上游未修，需长期携带并反馈上游</p><div class="tablewrap"><table class="mtable"><thead><tr><th>宏</th><th>根因与上游状态</th><th>迁移方案</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_AVF_TASK_QUEUE">XD_BUG_FIX_AVF_TASK_QUEUE</a><a class="planmini" href="../plans/xd_bug_fix_avf_task_queue.html">📝</a></td><td>上游缺陷且仍未修：AVF 播放器任务队列缺生命周期守卫（9 处 Enqueue 裸捕 [this]，Close 不清队列、无弱引用/ID 校验）</td><td>UE5 二选一（推荐①，与 XD 现状一致、改动最小且行为可比对）：①沿用 XD 的 ID 表守卫：恢复静态 GPlayerTasks + XDPlayerTaskProxy/IsPlayerTaskIDValid，析构时注销 ID，Open/Seek/状态回调入队前先校验 ID；②改用 MakeWeakLambda + 析构前置 bIsClosing 并在消费点二次校验（注意覆盖「关闭后到达」的回调）。无论哪种，都要保证入队与消费两侧都做检查。</td></tr>
+<tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_PATCH_SHADER_LIB_ADDITIONAL_ERROR_BOOL_FLAG">XD_BUG_FIX_PATCH_SHADER_LIB_ADDITIONAL_ERROR_BOOL_FLAG</a><a class="planmini" href="../plans/xd_bug_fix_patch_shader_lib_additional_error_bool_flag.html">📝</a></td><td>上游恒真缺陷（4.23 引入，4.23→UE5.8.2→ue5-main/ue6-main 均未修）</td><td>UE5 迁移按 XD 的 bError 语义做（推荐）：外层保持 |= 聚合（或改为显式逐项判断），把 bError 作为唯一失败信号；或先修正内层 no-op 语义（无差异视为成功）后再用 &amp;= 聚合。二者择一，不要混用。</td></tr></tbody></table></div></details>
+<details class="group"><summary><span class="gname">上游缺失能力（UE5 可能已补）</span><span class="gcount">1 个宏</span><span class="gchips"><span class="gchip">④/⑤ 视需求</span></span></summary><p class="lead">上游无此能力，按业务决定工程化或自建</p><div class="tablewrap"><table class="mtable"><thead><tr><th>宏</th><th>根因与上游状态</th><th>迁移方案</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUGFIX_IOS_LOSTLOG">XD_BUGFIX_IOS_LOSTLOG</a><a class="planmini" href="../plans/xd_bugfix_ios_lostlog.html">📝</a></td><td>上游 iOS 文件路径逻辑「写读不对称」：写入可进公共目录（Documents），读取路径固定只查沙盒 read/private</td><td>UE5 按 XD 的三点补丁移植：在 FileExists、ConvertToAbsolutePathForExternalAppForRead、GetTimeStamp 中对 &quot;*.log &amp;&amp; bCreatePublicFiles&quot; 走&quot;先查公共目录、未命中再回退原逻辑&quot;的分支；注意 UE5 已把 ConvertToIOSPath 改名为 ConvertToPlatformPath（api-adapt 的由来）。更干净的做法（可选）：在 IOSPlatformFile 内部提供统一的 ResolveReadPath()，让所有读入口共用同一套查找顺序，避免以后再漏点。</td></tr></tbody></table></div></details>
+
+<div class="callout">
+<p><b>每个宏的完整根因</b>（引入提交、上游历史、反证清单、陷阱提醒、自检用例）在对应草案页的 <b>「0. 根因溯源」</b> 一节，点宏名即可跳转。</p>
+</div>
+</main>
+  <aside class="legend" id="legend" aria-label="标签说明">
+<div class="lhead"><b>标签说明</b><button type="button" id="legendToggle" title="收起 / 展开">－</button></div>
+<div class="lbody">
+<p class="lrule">颜色规则：<b class="c-cover">覆盖度</b>=红绿灯 · <b class="c-proj">工程化</b>=蓝色系 · <b class="c-hook">侵入</b>=紫色系 · <b class="c-disp">处置</b>=中性灰。<br>分级方式：工程化/侵入用「实心 → 底色 → 描边 → 虚线」四级形态表示程度递进（实心最强）。</p>
+<h4>UE5 覆盖度</h4><div class="litem"><span class="lbl migstatus s-covered">UE5 已覆盖</span><span class="ltext">UE5.8 原生等价，可直接删除</span></div><div class="litem"><span class="lbl migstatus s-partial">部分覆盖</span><span class="ltext">UE5 有同类能力，只迁差异部分</span></div><div class="litem"><span class="lbl migstatus s-none">未覆盖</span><span class="ltext">UE5 没有该能力，需迁移或补丁</span></div><div class="litem"><span class="lbl migstatus s-unknown">待确认</span><span class="ltext">证据不足，迁移前需人工确认</span></div>
+<h4>落地位置（工程化可行性）</h4><div class="litem"><span class="lbl migproj p-yes">可工程化</span><span class="ltext">放项目/插件/配置即可，不动引擎</span></div><div class="litem"><span class="lbl migproj p-partial">需接入点</span><span class="ltext">引擎留少量 Hook，逻辑在工程侧</span></div><div class="litem"><span class="lbl migproj p-no">引擎内实现</span><span class="ltext">必须改引擎核心</span></div><div class="litem"><span class="lbl na-badge">—</span><span class="ltext">处置=删除的行不适用（已删除/不迁移）</span></div>
+<h4>引擎改动方式</h4><div class="litem"><span class="lbl mighook h-0">L0 无需改引擎</span><span class="ltext">纯工程/插件/配置即可（对应「可工程化」）</span></div><div class="litem"><span class="lbl mighook h-0">L0 引擎内补丁</span><span class="ltext">需改引擎源码，但不必新增扩展点（对应「引擎内实现」）</span></div><div class="litem"><span class="lbl mighook h-1">L1 仅加接入点</span><span class="ltext">引擎只需暴露 Delegate / Interface / CVar 等扩展点</span></div><div class="litem"><span class="lbl mighook h-2">L2 结构性改动</span><span class="ltext">枚举 slot / 新 Pass / schema 字段</span></div><div class="litem"><span class="lbl mighook h-3">L3 深度侵入</span><span class="ltext">核心结构/生命周期/序列化，慎入</span></div>
+<h4>迁移处置</h4><div class="litem"><span class="lbl migdisp">删除</span><span class="ltext">UE5 已覆盖，直接删</span></div><div class="litem"><span class="lbl migdisp">常开补丁</span><span class="ltext">确认的 bugfix，作为 fork 常开补丁</span></div><div class="litem"><span class="lbl migdisp">配置化</span><span class="ltext">改为 CVar / ini / DeviceProfile / 命令行</span></div><div class="litem"><span class="lbl migdisp">插件化</span><span class="ltext">迁到项目模块 / 编辑器插件</span></div><div class="litem"><span class="lbl migdisp">接入点</span><span class="ltext">引擎只留 Hook，逻辑在插件</span></div><div class="litem"><span class="lbl migdisp">移植</span><span class="ltext">代码保留，适配后移植</span></div><div class="litem"><span class="lbl migdisp">保留引擎</span><span class="ltext">深度绑定，暂留并登记 Feature Card</span></div>
+<h4>工作量与风险</h4><div class="litem"><span class="lbl lbl-plain">S / M / L</span><span class="ltext">半天内 / 数天 / 周级</span></div><div class="litem"><span class="lbl lbl-plain">低 / 中 / 高</span><span class="ltext">涉反射、资产、Shader、Cook 的默认高风险</span></div>
+<h4>文档通用标签</h4><div class="litem"><span class="lbl lbl-on">= 1 启用</span><span class="ltext">宏当前开启（默认生效）</span></div><div class="litem"><span class="lbl lbl-off">= 0 关闭</span><span class="ltext">宏当前关闭或预留</span></div><div class="litem"><span class="lbl badge topic">主题</span><span class="ltext">所属功能域，可点击跳转</span></div><div class="litem"><span class="lbl badge use">源码引用 N</span><span class="ltext">在 Source / Shaders / Plugins 中出现的次数</span></div><div class="litem"><span class="lbl badge">作者</span><span class="ltext">宏定义处的署名（XDBuild*.cs）</span></div><div class="litem"><span class="lbl badge src">文件:行</span><span class="ltext">宏在配置源文件中的定义位置</span></div>
+<p class="lfoot">完整结论见 <a href="../migration/index.html">UE5 迁移总览</a> · <a href="../migration/matrix.html">评估矩阵</a></p>
+</div>
+</aside>
+</div>
+<div class="statbar" id="statbar"><span class="sb-title">迁移决策</span><div class="sb-items"><a class="sb" href="../migration/roadmap.html#phase-drop-covered" title="A1 直接删除（UE5 已覆盖）：98 个宏">A1 删除·已覆盖 <b>98</b></a><a class="sb" href="../migration/roadmap.html#phase-drop-other" title="A2 直接删除（废弃/无引用/待复核）：49 个宏">A2 删除·其他原因 <b>49</b></a><a class="sb" href="../migration/roadmap.html#phase-patch" title="B 常开补丁：48 个宏">B 常开补丁 <b>48</b></a><a class="sb" href="../migration/roadmap.html#phase-config" title="C 配置化：66 个宏">C 配置化 <b>66</b></a><a class="sb" href="../migration/roadmap.html#phase-plugin" title="D 插件化：51 个宏">D 插件化 <b>51</b></a><a class="sb" href="../migration/roadmap.html#phase-hook" title="E 接入点改造：28 个宏">E 接入点 <b>28</b></a><a class="sb" href="../migration/roadmap.html#phase-port" title="F 代码移植：195 个宏">F 移植 <b>195</b></a><a class="sb" href="../migration/roadmap.html#phase-keep" title="G 暂留引擎（重点跟进）：14 个宏">G 暂留引擎 <b>14</b></a></div><span class="sb-total">合计 <b>549</b></span><button type="button" class="sb-toggle" id="sbToggle" title="收起 / 展开">▾</button></div>
+<script src="../assets/app.js?v=4caef181"></script>
+</body>
+</html>
