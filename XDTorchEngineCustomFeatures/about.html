@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>关于本文档 · 心动定制 UE4.26 引擎特性文档</title>
+<link rel="stylesheet" href="assets/style.css?v=04d597b4">
+<noscript><style>.tabpane{display:block !important}.tabbar{display:none !important}</style></noscript>
+</head>
+<body class="">
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="logo">XD</span><span class="brandtext">心动定制 UE4.26 引擎特性文档</span></a>
+  <div class="topactions">
+    <button id="navToggle" class="navtoggle" title="目录">☰ 目录</button>
+    <button id="themeBtn" class="themebtn" title="切换主题">◐</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="sidenav"><a href="index.html">🏠 首页</a>
+<a href="about.html" class="active">ℹ️ 关于本文档</a>
+<a href="topics/index.html">📚 主题脉络</a>
+<a href="topics/mechanism.html">⚙️ 宏系统与构建机制</a>
+<a href="topics/rendering-core.html">🎨 渲染管线与排序</a>
+<a href="topics/rendering-lighting.html">💡 光照、阴影与材质</a>
+<a href="topics/mobile-rendering.html">📱 移动端渲染优化</a>
+<a href="topics/particles.html">✨ 粒子与特效</a>
+<a href="topics/shader-pso.html">🧩 着色器与 PSO</a>
+<a href="topics/cook-pak.html">📦 Cook / Pak / DDC / 热更</a>
+<a href="topics/memory-profiling.html">📊 内存与性能分析</a>
+<a href="topics/platform-pc.html">🖥️ PC / Windows / D3D</a>
+<a href="topics/platform-mobile.html">📲 Android / iOS / Mac</a>
+<a href="topics/ui-umg.html">🪟 UI / Slate / UMG</a>
+<a href="topics/input-device.html">🎮 输入与手柄</a>
+<a href="topics/world-scene.html">🌳 世界、植被、地形与动画</a>
+<a href="topics/editor-tools.html">🛠️ 编辑器与资源工具</a>
+<a href="topics/runtime-misc.html">🧭 运行时接口与诊断</a>
+<a href="topics/project-features.html">🔥 火炬之光项目特性</a>
+<a href="ref/index.html">📖 全量参考</a>
+<a href="plans/index.html">📝 修改草案</a>
+<a href="search/index.html">🔍 搜索</a>
+<a href="migration/index.html">🚚 UE5 迁移总览</a>
+<a href="migration/matrix.html">📋 迁移评估矩阵</a>
+<a href="migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="migration/reclaim.html">⛔ 可主动舍弃</a>
+<a href="migration/review-report.html">✅ 草案审核报告</a>
+<a href="migration/checklist.html">📋 迁移实施清单</a>
+<a href="migration/project-side.html">📦 可工程化清单</a>
+<a href="migration/hooks.html">🔌 最小侵入接入点</a>
+<a href="migration/roadmap.html">🗺️ 迁移路线图</a>
+<a href="migration/by-team.html">👥 开发者 × 模块</a></nav>
+  <main class="content"><h1>关于本文档</h1>
+
+<p class="lead">本文档把心动定制 UE4.26 引擎里的全部特性宏整理成可查、可评估、可排期的工程资料，并针对迁移目标 <b>UE5.8.2</b> 给出逐宏的迁移结论与<b>代码级修改草案</b>。</p>
+
+<h2 class="sec">一、范围与结论速览</h2>
+<div class="tablewrap"><table class="mtable">
+<thead><tr><th>项</th><th>数量</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="tname">特性宏总数</td><td>566</td><td>分布在 XDBuild*Configuration.cs 的 7 个类里</td></tr>
+<tr><td class="tname">参与迁移分析</td><td>549</td><td>另有 17 个宏按原需求排除（CustomUnlit 家族、描边、SmoothNormal、HDR 输出、DepthStencil 修复）</td></tr>
+<tr><td class="tname">代码级修改草案</td><td>549</td><td>每个宏一份，含代码脉络、改动方式、before/after 代码、风险评估</td></tr>
+<tr><td class="tname">独立 Agent 审核</td><td>见审核报告</td><td>去源码实证核对行号/函数/API 是否真实，给出修正</td></tr>
+<tr><td class="tname">可主动舍弃候选</td><td>见可舍弃页</td><td>因 UE5 架构更替（Cascade→Niagara、PhysX→Chaos、旧工具链等）可不必迁移</td></tr>
+<tr><td class="tname">跨维度分歧</td><td>见审核报告</td><td>早期处置结论与代码级分析不一致处，附取舍建议</td></tr>
+</tbody></table></div>
+
+<h2 class="sec">二、怎么用这份文档</h2>
+<ol>
+<li><b>要排期</b> → 看 <a href="migration/checklist.html">迁移实施清单</a>：按落地动作分成 7 组，组内按工作量排序，带工作量/风险/改动方式。</li>
+<li><b>要决策某项能不能不做</b> → 看 <a href="migration/reclaim.html">可主动舍弃</a>：92 个候选 + 15 项待确认，附舍弃前提与 UE5 替代能力，还有与草案的交叉核对。</li>
+<li><b>要具体改法</b> → 看任意 <a href="plans/index.html">修改草案</a>：代码脉络（文件:行）、改动方式、分步 before/after 代码、风险与自检。</li>
+<li><b>要核对结论</b> → 看 <a href="migration/review-report.html">草案审核报告</a>：审核结论、问题明细（带证据）、修正示例、跨维度分歧。</li>
+<li><b>要按人/按模块看</b> → 看 <a href="migration/by-team.html">开发者 × 模块视图</a> 与 <a href="migration/matrix.html">全量评估矩阵</a>。</li>
+<li><b>要看宏本身</b> → 看 <a href="ref/index.html">全量参考卡片</a>（每个宏的作用、注释、引用位置、上下文）或 <a href="topics/index.html">主题脉络</a>。</li>
+</ol>
+
+<h2 class="sec">三、四个分析维度</h2>
+<div class="tablewrap"><table class="mtable">
+<thead><tr><th>维度</th><th>回答什么</th><th>取值</th></tr></thead>
+<tbody>
+<tr><td class="tname">覆盖度</td><td>UE5 是否已经提供该能力</td><td>已覆盖 / 部分覆盖 / 未覆盖 / 待确认</td></tr>
+<tr><td class="tname">落地位置</td><td>能力应该写在哪</td><td>可工程化（配置） / 需接入点 / 引擎内实现</td></tr>
+<tr><td class="tname">引擎改动</td><td>要不要改引擎、改多深</td><td>无需改引擎 / 引擎内补丁 / L1 仅加接入点 / L2 结构性改动 / L3 深度侵入</td></tr>
+<tr><td class="tname">可舍弃性</td><td>是否因架构更替可主动不做</td><td>直接舍弃 / 需在新体系重做 / 需评估</td></tr>
+</tbody></table></div>
+
+<h2 class="sec">四、代码级草案是怎么产出的</h2>
+<ol>
+<li><b>源码定位</b>：用 <code>find + grep</code> 扫描引擎目录（Source / Shaders / Plugins / Config / Build），排除中间产物后得到每个宏的全部引用位置（文件:行 + 代码原文），共 6,035 处。</li>
+<li><b>逐宏分析</b>：每个批次 8 个宏交给一个分析 Agent，要求先 grep/read 真实源码，再产出「代码脉络 + 改动方式（简单移植 / 改接口改名 / 完全重构 / 建议舍弃）+ 分步 before/after 代码 + 原代码风险 + 移植风险 + 自检 + 置信度」。</li>
+<li><b>独立审核</b>：另一位 Agent 逐条实证核对——行号/函数名是否存在、<code>before</code> 是否真出自 UE4 源码、<code>after</code> 引用的类/函数/枚举在 UE5 是否真实存在，问题必须带证据，修正必须可直接替换。</li>
+<li><b>交叉审计</b>：把早期处置结论与代码级分析做交叉比对，标出分歧（多数是"早期以为要移植、实际可以不做"）。</li>
+</ol>
+
+<h2 class="sec">五、口径与提醒</h2>
+<ul class="linklist">
+<li>本文档的迁移结论针对 <b>UE5.8.2</b>；工程 <code>E:\TorchLight_UE5</code>、迁移工程 <code>F:\UE5_Projects\Torchlight_Migrate</code>。</li>
+<li>「可舍弃」的判定都写在<b>前提成立</b>的条件下（例如"迁移后用 Niagara 重做特效"）；前提变化时对应宏要回到移植清单。</li>
+<li>草案是<b>给技术同学评估用的工程草案</b>，不是最终实现；改动前请以草案页的「代码脉络 + UE4 侧改动位置」自行复核。</li>
+<li>置信度标 <code>low</code> 或被审核标为「需重做」的条目，请优先人工确认其「不确定点」。</li>
+</ul>
+</main>
+  <aside class="legend" id="legend" aria-label="标签说明">
+<div class="lhead"><b>标签说明</b><button type="button" id="legendToggle" title="收起 / 展开">－</button></div>
+<div class="lbody">
+<p class="lrule">颜色规则：<b class="c-cover">覆盖度</b>=红绿灯 · <b class="c-proj">工程化</b>=蓝色系 · <b class="c-hook">侵入</b>=紫色系 · <b class="c-disp">处置</b>=中性灰。<br>分级方式：工程化/侵入用「实心 → 底色 → 描边 → 虚线」四级形态表示程度递进（实心最强）。</p>
+<h4>UE5 覆盖度</h4><div class="litem"><span class="lbl migstatus s-covered">UE5 已覆盖</span><span class="ltext">UE5.8 原生等价，可直接删除</span></div><div class="litem"><span class="lbl migstatus s-partial">部分覆盖</span><span class="ltext">UE5 有同类能力，只迁差异部分</span></div><div class="litem"><span class="lbl migstatus s-none">未覆盖</span><span class="ltext">UE5 没有该能力，需迁移或补丁</span></div><div class="litem"><span class="lbl migstatus s-unknown">待确认</span><span class="ltext">证据不足，迁移前需人工确认</span></div>
+<h4>落地位置（工程化可行性）</h4><div class="litem"><span class="lbl migproj p-yes">可工程化</span><span class="ltext">放项目/插件/配置即可，不动引擎</span></div><div class="litem"><span class="lbl migproj p-partial">需接入点</span><span class="ltext">引擎留少量 Hook，逻辑在工程侧</span></div><div class="litem"><span class="lbl migproj p-no">引擎内实现</span><span class="ltext">必须改引擎核心</span></div><div class="litem"><span class="lbl na-badge">—</span><span class="ltext">处置=删除的行不适用（已删除/不迁移）</span></div>
+<h4>引擎改动方式</h4><div class="litem"><span class="lbl mighook h-0">L0 无需改引擎</span><span class="ltext">纯工程/插件/配置即可（对应「可工程化」）</span></div><div class="litem"><span class="lbl mighook h-0">L0 引擎内补丁</span><span class="ltext">需改引擎源码，但不必新增扩展点（对应「引擎内实现」）</span></div><div class="litem"><span class="lbl mighook h-1">L1 仅加接入点</span><span class="ltext">引擎只需暴露 Delegate / Interface / CVar 等扩展点</span></div><div class="litem"><span class="lbl mighook h-2">L2 结构性改动</span><span class="ltext">枚举 slot / 新 Pass / schema 字段</span></div><div class="litem"><span class="lbl mighook h-3">L3 深度侵入</span><span class="ltext">核心结构/生命周期/序列化，慎入</span></div>
+<h4>迁移处置</h4><div class="litem"><span class="lbl migdisp">删除</span><span class="ltext">UE5 已覆盖，直接删</span></div><div class="litem"><span class="lbl migdisp">常开补丁</span><span class="ltext">确认的 bugfix，作为 fork 常开补丁</span></div><div class="litem"><span class="lbl migdisp">配置化</span><span class="ltext">改为 CVar / ini / DeviceProfile / 命令行</span></div><div class="litem"><span class="lbl migdisp">插件化</span><span class="ltext">迁到项目模块 / 编辑器插件</span></div><div class="litem"><span class="lbl migdisp">接入点</span><span class="ltext">引擎只留 Hook，逻辑在插件</span></div><div class="litem"><span class="lbl migdisp">移植</span><span class="ltext">代码保留，适配后移植</span></div><div class="litem"><span class="lbl migdisp">保留引擎</span><span class="ltext">深度绑定，暂留并登记 Feature Card</span></div>
+<h4>工作量与风险</h4><div class="litem"><span class="lbl lbl-plain">S / M / L</span><span class="ltext">半天内 / 数天 / 周级</span></div><div class="litem"><span class="lbl lbl-plain">低 / 中 / 高</span><span class="ltext">涉反射、资产、Shader、Cook 的默认高风险</span></div>
+<h4>文档通用标签</h4><div class="litem"><span class="lbl lbl-on">= 1 启用</span><span class="ltext">宏当前开启（默认生效）</span></div><div class="litem"><span class="lbl lbl-off">= 0 关闭</span><span class="ltext">宏当前关闭或预留</span></div><div class="litem"><span class="lbl badge topic">主题</span><span class="ltext">所属功能域，可点击跳转</span></div><div class="litem"><span class="lbl badge use">源码引用 N</span><span class="ltext">在 Source / Shaders / Plugins 中出现的次数</span></div><div class="litem"><span class="lbl badge">作者</span><span class="ltext">宏定义处的署名（XDBuild*.cs）</span></div><div class="litem"><span class="lbl badge src">文件:行</span><span class="ltext">宏在配置源文件中的定义位置</span></div>
+<p class="lfoot">完整结论见 <a href="migration/index.html">UE5 迁移总览</a> · <a href="migration/matrix.html">评估矩阵</a></p>
+</div>
+</aside>
+</div>
+<div class="statbar" id="statbar"><span class="sb-title">迁移决策</span><div class="sb-items"><a class="sb" href="migration/roadmap.html#phase-drop-covered" title="A1 直接删除（UE5 已覆盖）：98 个宏">A1 删除·已覆盖 <b>98</b></a><a class="sb" href="migration/roadmap.html#phase-drop-other" title="A2 直接删除（废弃/无引用/待复核）：49 个宏">A2 删除·其他原因 <b>49</b></a><a class="sb" href="migration/roadmap.html#phase-patch" title="B 常开补丁：48 个宏">B 常开补丁 <b>48</b></a><a class="sb" href="migration/roadmap.html#phase-config" title="C 配置化：66 个宏">C 配置化 <b>66</b></a><a class="sb" href="migration/roadmap.html#phase-plugin" title="D 插件化：51 个宏">D 插件化 <b>51</b></a><a class="sb" href="migration/roadmap.html#phase-hook" title="E 接入点改造：28 个宏">E 接入点 <b>28</b></a><a class="sb" href="migration/roadmap.html#phase-port" title="F 代码移植：195 个宏">F 移植 <b>195</b></a><a class="sb" href="migration/roadmap.html#phase-keep" title="G 暂留引擎（重点跟进）：14 个宏">G 暂留引擎 <b>14</b></a></div><span class="sb-total">合计 <b>549</b></span><button type="button" class="sb-toggle" id="sbToggle" title="收起 / 展开">▾</button></div>
+<script src="assets/app.js?v=04d597b4"></script>
+</body>
+</html>
