@@ -46,14 +46,14 @@
 <a href="../migration/hooks.html">🔌 最小侵入接入点</a>
 <a href="../migration/roadmap.html">🗺️ 迁移路线图</a>
 <a href="../migration/by-team.html">👥 开发者 × 模块</a></nav>
-  <main class="content"><p class="lead"><b>结论先行：</b>代码级草案在交付前由<b>另一个独立 Agent</b> 逐宏实证复核——打开 UE5 源码核对行号、函数、以及草案里 <code>after</code> 代码引用的类/函数/枚举是否真实存在。目前已审核 <b>145</b> 个宏：通过 <b>85</b> 个、判定需修正 <b>58</b> 个，共采纳 <b>0</b> 处字段修正，其中 <b>42</b> 个宏存在高风险问题（会导致编译不过或功能错误）。</p>
+  <main class="content"><p class="lead"><b>结论先行：</b>代码级草案在交付前由<b>另一个独立 Agent</b> 逐宏实证复核——打开 UE5 源码核对行号、函数、以及草案里 <code>after</code> 代码引用的类/函数/枚举是否真实存在。目前已审核 <b>145</b> 个宏：通过 <b>85</b> 个、判定需修正 <b>58</b> 个，共采纳 <b>129</b> 处字段修正，其中 <b>42</b> 个宏存在高风险问题（会导致编译不过或功能错误）。</p>
 
 <div class="callout">
 <p><b>为什么要单独审核：</b>草案是给技术人员直接照着改代码的，一处编造的行号或一个 UE5 里不存在的 API，就会让开发在错误方向上浪费半天。<br>审核不是复述，而是<b>去源码里验证</b>：每条问题都必须带证据（文件:行），修正必须给出可直接替换的内容。</p>
 </div>
 
 <h2 class="sec">审核概况</h2>
-<div class="tablewrap"><table class="mtable"><thead><tr><th>指标</th><th>数值</th><th>说明</th></tr></thead><tbody><tr><td class="tname">已审核宏</td><td>145</td><td>占已产出草案 312 个的 46%</td></tr><tr><td class="tname">审核通过（ok）</td><td>85</td><td>抽查全部通过，无需改动</td></tr><tr><td class="tname">审核并修正（fix）</td><td>58</td><td>审核员给出可直接替换的修正，已落回草案</td></tr><tr><td class="tname">需重做（reject）</td><td>2</td><td>核心内容不成立</td></tr><tr><td class="tname">采纳字段修正</td><td>0</td><td>草案字段被实际替换的次数</td></tr><tr><td class="tname">高风险问题</td><td>42</td><td>会导致编译失败或功能错误</td></tr></tbody></table></div>
+<div class="tablewrap"><table class="mtable"><thead><tr><th>指标</th><th>数值</th><th>说明</th></tr></thead><tbody><tr><td class="tname">已审核宏</td><td>145</td><td>占已产出草案 340 个的 43%</td></tr><tr><td class="tname">审核通过（ok）</td><td>85</td><td>抽查全部通过，无需改动</td></tr><tr><td class="tname">审核并修正（fix）</td><td>58</td><td>审核员给出可直接替换的修正，已落回草案</td></tr><tr><td class="tname">需重做（reject）</td><td>2</td><td>核心内容不成立</td></tr><tr><td class="tname">采纳字段修正</td><td>129</td><td>草案字段被实际替换的次数</td></tr><tr><td class="tname">高风险问题</td><td>42</td><td>会导致编译失败或功能错误</td></tr></tbody></table></div>
 
 <h2 class="sec">问题分布<span class="seccount">215 条</span></h2>
 <p class="planline"><b>按等级：</b>低 107　中 66　高风险 42</p><p class="planline"><b>按字段：</b><code>steps</code> 159　<code>thread</code> 35　<code>change_type</code> 11　<code>change_type_reason</code> 4　<code>uncertain</code> 3　<code>verify</code> 2　<code>risk_original</code> 1</p>
@@ -72,7 +72,60 @@
 
 <h2 class="sec">修正示例（审核前 → 审核后）</h2>
 <p class="lead">审核给出的修正会直接落回草案页，下面是真实示例：</p>
+<div class="tablewrap"><table class="mtable"><thead><tr><th>宏</th><th>被修正字段</th><th>审核前的内容（截断）</th></tr></thead><tbody><tr id="XD_BLOOM_CLAMP"><td class="tname"><a href="../plans/xd_bloom_clamp.html">XD_BLOOM_CLAMP</a></td><td><code>steps[2].after</code></td><td class="rvbefore">FScreenPassTexture AddDownsamplePass(FRDGBuilder&amp; GraphBuilder, const FViewInfo&amp; View, const FDownsamplePassInputs&amp; Inputs, bool bBloomDownSample = false)</td></tr>
+<tr id="XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND"><td class="tname"><a href="../plans/xd_bug_fix_add_log_debug_parameter_collection_not_found.html">XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND</a></td><td><code>steps[1].after</code></td><td class="rvbefore">if (!UniformBuffer)
+{
+#if XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND &amp;&amp; (!UE_BUILD_SHIPPING)
+    UE_LOG(LogRenderer, Error, TEXT(&quot;ParameterCollection %s not found (Material=%s)&quot;),
+        *Scene-&gt;GetParameterCollectionDebugName(ParameterCollection</td></tr>
+<tr id="XD_BUG_FIX_CHAOSSOLVERACTOR_ICON_ERROR_WHEN_COOKING"><td class="tname"><a href="../plans/xd_bug_fix_chaossolveractor_icon_error_when_cooking.html">XD_BUG_FIX_CHAOSSOLVERACTOR_ICON_ERROR_WHEN_COOKING</a></td><td><code>thread</code></td><td class="rvbefore">宏在 AChaosSolverActor 构造函数生效：ChaosSolverActor.cpp:263-271 在 WITH_EDITORONLY_DATA 下判 IsRunningCommandlet()，为真则不建 Sprite 子对象，277 行才局部构造 FConstructorStatics，避免 Cook 解析 /Engine/EditorResources/S_Solver 图标。UE5 同文件 244/252 行仍无条件创建。</td></tr>
+<tr id="XD_BUG_FIX_CONSIDER_ROTATION_AND_SCALE_IN_EMITTER_SIMULATION_WORLD"><td class="tname"><a href="../plans/xd_bug_fix_consider_rotation_and_scale_in_emitter_simulation_world.html">XD_BUG_FIX_CONSIDER_ROTATION_AND_SCALE_IN_EMITTER_SIMULATION_WORLD</a></td><td><code>steps[0].after</code></td><td class="rvbefore">if (ComponentTransform.GetScale3D().IsNearlyZero())
+{
+ const FVector OrigScale = ComponentTransform.GetScale3D();
+ const auto ClampSign = [](float V)-&gt;float { return (V &lt; 0.f) ? -0.001f : 0.001f; };
+ ComponentTransform.SetScale3D(FVector(ClampSign(OrigScale.X)</td></tr>
+<tr id="XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY"><td class="tname"><a href="../plans/xd_bug_fix_crash_on_create_gl_program_from_binary.html">XD_BUG_FIX_CRASH_ON_CREATE_GL_PROGRAM_FROM_BINARY</a></td><td><code>steps[1].after</code></td><td class="rvbefore">if (!bSuccess)
+{
+	UE_LOGF(LogRHI, Warning, &quot;RestoreGLProgramFromBinary failed [%ls], evicting&quot;, *ProgramKey.ToString());
+	// 标记为需重新编译，不 Fatal
+}</td></tr>
+<tr id="XD_BUG_FIX_ERROR_RIBBON_DYNAMIC_DATA_REQUIRED_QUERY_RETURN_VALUE"><td class="tname"><a href="../plans/xd_bug_fix_error_ribbon_dynamic_data_required_query_return_value.html">XD_BUG_FIX_ERROR_RIBBON_DYNAMIC_DATA_REQUIRED_QUERY_RETURN_VALUE</a></td><td><code>steps[0].after</code></td><td class="rvbefore">bool FParticleRibbonEmitterInstance::IsDynamicDataRequired(UParticleLODLevel* InCurrentLODLevel)
+{
+ if (FParticleEmitterInstance::IsDynamicDataRequired(InCurrentLODLevel) == true)
+ { if ((ActiveParticles &lt; 2)) { return false; } }
+ return false; // XD: 不再无条件 tr</td></tr>
+<tr id="XD_BUG_FIX_GENERATE_DETERMINED_MATSM_DDC"><td class="tname"><a href="../plans/xd_bug_fix_generate_determined_matsm_ddc.html">XD_BUG_FIX_GENERATE_DETERMINED_MATSM_DDC</a></td><td><code>steps[1].after</code></td><td class="rvbefore">// 项目 Editor 插件：遍历资产收集 Expressions 含 nullptr 的材质并输出 resave 清单</td></tr>
+<tr id="XD_BUG_FIX_GET_VALID_PARTICLE_DATA"><td class="tname"><a href="../plans/xd_bug_fix_get_valid_particle_data.html">XD_BUG_FIX_GET_VALID_PARTICLE_DATA</a></td><td><code>steps[1].anchor</code></td><td class="rvbefore">Update 目标粒子取值（UE5:~2444-2456）</td></tr>
+<tr id="XD_BUG_FIX_ILCDATA"><td class="tname"><a href="../plans/xd_bug_fix_ilcdata.html">XD_BUG_FIX_ILCDATA</a></td><td><code>steps[1].after</code></td><td class="rvbefore">const int32 ExpectedElements = VolumetricLightmapData.BrickDataDimensions.X*Y*Z;
+const int32 ActualElements = VolumetricLightmapData.BrickData.AmbientVector.Data.Num()/sizeof(FFloat3Packed);
+if (ExpectedElements&lt;=0 || ActualElements&lt;=0 || ExpectedElements!=Act</td></tr>
+<tr id="XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL"><td class="tname"><a href="../plans/xd_bug_fix_indrective_light_data_of_particle_fail.html">XD_BUG_FIX_INDRECTIVE_LIGHT_DATA_OF_PARTICLE_FAIL</a></td><td><code>steps[0].after</code></td><td class="rvbefore">// ctor 内（基类已置 true）
+bWillEverBeLit = (Desc.MaterialRelevance.ShadingModelMask != EMaterialShadingModel::MSM_CustomUnlit);</td></tr>
+<tr id="XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES"><td class="tname"><a href="../plans/xd_bug_fix_ios_generate_stable_shader_outputhashes.html">XD_BUG_FIX_IOS_GENERATE_STABLE_SHADER_OUTPUTHASHES</a></td><td><code>change_type_reason</code></td><td class="rvbefore">涉及 Metal 工具链版本解析与 Shader 库 OutputHash/打包路径，UE5 shader 库已改结构，须按新实现重写。</td></tr>
+<tr id="XD_BUG_FIX_ITERATE_CHECK_MATERIAL_LOAD"><td class="tname"><a href="../plans/xd_bug_fix_iterate_check_material_load.html">XD_BUG_FIX_ITERATE_CHECK_MATERIAL_LOAD</a></td><td><code>steps[1].anchor</code></td><td class="rvbefore">MaterialFunction.h:75 与 MaterialExpressionMaterialFunctionCall.h:82 的 public: 插桩</td></tr>
+<tr id="XD_BUG_FIX_MAX_PSO_PRECOMPILE_TIME_NON_FIRST_RUN"><td class="tname"><a href="../plans/xd_bug_fix_max_pso_precompile_time_non_first_run.html">XD_BUG_FIX_MAX_PSO_PRECOMPILE_TIME_NON_FIRST_RUN</a></td><td><code>steps[0].after</code></td><td class="rvbefore">static TAutoConsoleVariable&lt;float&gt; CVarPSOFileCacheMaxPrecompileTimeNonFirstRun(
+	TEXT(&quot;r.ShaderPipelineCache.MaxPrecompileTimeNonFirstRun&quot;), (float)0.f,
+	TEXT(&quot;非首启时收紧 PSO 前台预编译墙钟；&lt;=0 表示不收紧。&quot;), ECVF_Default | ECVF_RenderThreadSafe);
 
+float FShaderPipelineCache</td></tr>
+<tr id="XD_BUG_FIX_MORE_ACCURATE_SOURCE_MOVEMENT_MODULE_IMPLEMENTAION"><td class="tname"><a href="../plans/xd_bug_fix_more_accurate_source_movement_module_implementaion.html">XD_BUG_FIX_MORE_ACCURATE_SOURCE_MOVEMENT_MODULE_IMPLEMENTAION</a></td><td><code>steps[1].after</code></td><td class="rvbefore">FVector Scale = SourceMovementScale.GetValue(Particle.RelativeTime, Context.GetDistributionData());
+float Interp = 0.f;
+if (Context.Owner.ParticlesPostSpawnLocationInterpPercentages &amp;&amp; i &lt; Context.Owner.ParticlesPostSpawnLocationInterpPercentages-&gt;Num())
+{ Int</td></tr>
+<tr id="XD_BUG_FIX_MOUSE_LEAVE_WIDGETS_WHEN_CLICK_FASTLY"><td class="tname"><a href="../plans/xd_bug_fix_mouse_leave_widgets_when_click_fastly.html">XD_BUG_FIX_MOUSE_LEAVE_WIDGETS_WHEN_CLICK_FASTLY</a></td><td><code>steps[1].after</code></td><td class="rvbefore">// SlateUser.h:72 改签名为 SetPointerCaptor(uint32, TSharedRef&lt;const SWidget&gt;, const FWidgetPath&amp;, FWidgetPath&amp; OutNewCaptorPath)
+FWidgetPath OutNewCaptorPath;
+if (SlateUser-&gt;SetPointerCaptor(PointerIndex, RequestedMouseCaptor.ToSharedRef(), CurrentEventPath, OutN</td></tr>
+<tr id="XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER"><td class="tname"><a href="../plans/xd_bug_fix_particle_init_tangled_emitter_instance_pointer.html">XD_BUG_FIX_PARTICLE_INIT_TANGLED_EMITTER_INSTANCE_POINTER</a></td><td><code>steps[0].after</code></td><td class="rvbefore">int32 NumInstances = EmitterInstances.Num();
+int32 NumEmitters = Template-&gt;Emitters.Num();
+const bool bIsFirstCreate = NumInstances == 0;
+if (NumInstances &gt; NumEmitters)
+{
+    for (int32 Idx = NumEmitters; Idx &lt; NumInstances; Idx++)
+    { if (FParticleEmitterI</td></tr>
+<tr id="XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT"><td class="tname"><a href="../plans/xd_bug_fix_particle_ribbon_emitter_instance_currentsizes_init.html">XD_BUG_FIX_PARTICLE_RIBBON_EMITTER_INSTANCE_CURRENTSIZES_INIT</a></td><td><code>change_type</code></td><td class="rvbefore">port-as-is</td></tr>
+<tr id="XD_BUG_FIX_RICHTEXT_CLICK_FAILD_IN_SCALEBOX"><td class="tname"><a href="../plans/xd_bug_fix_richtext_click_faild_in_scalebox.html">XD_BUG_FIX_RICHTEXT_CLICK_FAILD_IN_SCALEBOX</a></td><td><code>steps[1].after</code></td><td class="rvbefore">const FVector2D ChildDesiredSize = ChildSlot.GetWidget()-&gt;GetDesiredSize(); // UE5 原样，保持与布局一致</td></tr>
+<tr id="XD_BUG_FIX_TEXTURE_MIP_LOAD_CRASH_WHEN_NO_UBULK"><td class="tname"><a href="../plans/xd_bug_fix_texture_mip_load_crash_when_no_ubulk.html">XD_BUG_FIX_TEXTURE_MIP_LOAD_CRASH_WHEN_NO_UBULK</a></td><td><code>change_type</code></td><td class="rvbefore">port-as-is</td></tr>
+<tr id="XD_BUG_FIX_UNDRAWN_CANVASRT_SRV"><td class="tname"><a href="../plans/xd_bug_fix_undrawn_canvasrt_srv.html">XD_BUG_FIX_UNDRAWN_CANVASRT_SRV</a></td><td><code>uncertain</code></td><td class="rvbefore">UE5 Flush_RenderThread 有两处空绘制提前返回(:766 RDG 版、:789 RHI 版)，转换加在哪处需按调用栈确认。</td></tr></tbody></table></div>
 
 <h2 class="sec">问题明细</h2>
 <div class="tablewrap"><table class="mtable"><thead><tr><th>宏</th><th>判定</th><th>字段</th><th>等级</th><th>问题（含审核员核实到的证据）</th></tr></thead><tbody><tr id="XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND"><td class="tname"><a href="../plans/xd_bug_fix_add_log_debug_parameter_collection_not_found.html">XD_BUG_FIX_ADD_LOG_DEBUG_PARAMETER_COLLECTION_NOT_FOUND</a></td><td><span class="rvtag rv-fix">修正</span></td><td><code>steps[1].after</code></td><td>high</td><td>调入处形参是 `const FSceneInterface* Scene`（UE5 ShaderBaseClasses.cpp:340），而 GetParameterCollectionDebugName 是 FScene 的成员；草案写 `Scene-&gt;GetParameterCollectionDebugName(...)` 无法编译。UE4 版在 ShaderBaseClasses.cpp:109-112 内部做了 `(const FScene*)SceneInterface` 转换，草案丢失了该转换。</td></tr>
