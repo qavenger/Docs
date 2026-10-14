@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UE5 迁移总览 · 心动定制 UE4.26 引擎特性文档</title>
-<link rel="stylesheet" href="../assets/style.css?v=3bc93071">
+<link rel="stylesheet" href="../assets/style.css?v=5ef68afb">
 <noscript><style>.tabpane{display:block !important}.tabbar{display:none !important}</style></noscript>
 </head>
 <body class="">
@@ -40,6 +40,7 @@
 <a href="../migration/index.html">🚚 UE5 迁移总览</a>
 <a href="../migration/matrix.html">📋 迁移评估矩阵</a>
 <a href="../migration/drop.html">🗑️ 可丢弃清单</a>
+<a href="../migration/reclaim.html">⛔ 可主动舍弃</a>
 <a href="../migration/project-side.html">📦 可工程化清单</a>
 <a href="../migration/hooks.html">🔌 最小侵入接入点</a>
 <a href="../migration/roadmap.html">🗺️ 迁移路线图</a>
@@ -91,8 +92,8 @@
 </tbody></table>
 <p class="lead">风险分布：高 37 / 中 240 / 低 272；引擎改动：不动引擎 149 / 引擎内补丁 30 / 仅加接入点 187 / 结构性改动 171 / 深度侵入 12。</p>
 
-<h2 class="sec">3.1 最值得先看的两个清单</h2>
-<p class="lead">下面两张表是排期时最常用的入口：前者是「UE5 已提供、引用量大」的可删除项；后者是真正需要逐个评估的深度侵入项。</p>
+<h2 class="sec">3.1 最值得先看的三个清单</h2>
+<p class="lead">下面三张表是排期时最常用的入口：第一张是「UE5 已提供、引用量大」的可删除项；第二张是可以<b>主动不做</b>的架构更替项；第三张是真正需要逐个评估的深度侵入项。</p>
 <h3>可优先删除（按源码引用量排序）</h3>
 <table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>覆盖度依据</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/fixbug2.html#XD_BUG_FIX_SLATE_ASYNC_LOADING_FONT_MISSING_TEXT">XD_BUG_FIX_SLATE_ASYNC_LOADING_FONT_MISSING_TEXT</a></td><td>修复异步字体加载未完成时文本被错误缓存导致文字缺失</td><td>Runtime/Slate/Public/Framework/Text/TextLayout.h:735 LoadingFontFaces、:800 bLoadingFontFacesOnPreviousLayout；SRichTextBl</td><td class="tval">17</td></tr>
 <tr><td class="tname"><a href="../ref/misc2.html#XD_EXT_UE5_WIDGET_PIXEL_SNAPPING">XD_EXT_UE5_WIDGET_PIXEL_SNAPPING</a></td><td>移植 UE5 的 UWidget 像素对齐（Pixel Snapping）实现（UE4-7130）</td><td>Runtime/SlateCore/Public/Widgets/WidgetPixelSnapping.h:14 EWidgetPixelSnapping；UMG/Public/Components/Widget.h:445/613-61</td><td class="tval">13</td></tr>
@@ -106,6 +107,9 @@
 <tr><td class="tname"><a href="../ref/misc1.html#XD_EXT_LOG_COMPILE_ISSUE_MATERIAL_NAMES">XD_EXT_LOG_COMPILE_ISSUE_MATERIAL_NAMES</a></td><td>材质编译问题时输出材质名，便于定位</td><td>Runtime/Engine/Private/Materials/MaterialShader.cpp:2992/3004 FinishCompileShader(..., GetFriendlyName()) 已把材质名带入 DebugD</td><td class="tval">7</td></tr>
 <tr><td class="tname"><a href="../ref/fixbug1.html#XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS">XD_FIX_BUG_ANDROID_X64_COMPILE_ERRORS</a></td><td>修复 Android x86_64 平台编译链接错误</td><td>Runtime/Android/AndroidRuntimeSettings/Classes/AndroidRuntimeSettings.h:454 bBuildForX8664</td><td class="tval">7</td></tr>
 <tr><td class="tname"><a href="../ref/opt.html#XD_OPT_SHADER_BYTE_CODE_PREFER_OODLE_COMPRESSION_FORMAT">XD_OPT_SHADER_BYTE_CODE_PREFER_OODLE_COMPRESSION_FORMAT</a></td><td>Shader 字节码默认优先使用 Oodle 压缩格式</td><td>Runtime/RenderCore/Public/ShaderCore.h:178 GetShaderCompressionFormat()；Runtime/RenderCore/Private/ShaderCore.cpp:4285 “</td><td class="tval">6</td></tr></tbody></table>
+<h3>可主动舍弃（UE5 架构更替）</h3>
+<p class="lead">81 个宏服务于 UE5 已架构性替换的子系统（Cascade 粒子 → Niagara、PhysX/Apex → Chaos、旧工具链/RHI 适配等），
+迁移时可以主动不做；其中不少连等价实现都不需要，少数需要在新技术上重做能力。完整清单、处理方式与舍弃前提见 <a href="reclaim.html">可主动舍弃</a>。</p>
 <h3>深度侵入清单（L3，须逐个评估）</h3>
 <table class="mtable"><thead><tr><th>宏</th><th>作用</th><th>机制</th><th>建议</th><th>引用</th></tr></thead><tbody><tr><td class="tname"><a href="../ref/tools.html#XD_LANDSCAPE_ADVANCE_PAINTING_TOOL">XD_LANDSCAPE_ADVANCE_PAINTING_TOOL</a></td><td>Landscape 高级绘制：引入 IdMap 支持多图层材质与渲染</td><td>Patch</td><td>深度侵入，含 Shader 与序列化，须整体移植并清 DDC</td><td class="tval">78</td></tr>
 <tr><td class="tname"><a href="../ref/rendering.html#XD_RENDERING_TOON_LIT_SHADING_MODEL">XD_RENDERING_TOON_LIT_SHADING_MODEL</a></td><td>新增 ToonLit 卡通光照着色模型（火炬之光卡通渲染核心）</td><td>Schema</td><td>建议先做 Substrate Toon 与项目美术风格对比评估；保留 MSM_ToonLit 会带来枚举/序列化/shader permutation 深度侵入</td><td class="tval">45</td></tr>
@@ -142,7 +146,7 @@
 <p class="note" style="display:block">范围说明：迁移分析覆盖 549 个未被排除的宏；原需求中「不需要」的 17 个宏（CustomUnlit 家族、描边、SmoothNormal、HDR 输出、DepthStencil 修复）不参与迁移评估，清单见 <a href="../ref/excluded.html">已排除的宏</a>。分析与结论均针对团队当前迁移目标 <b>UE5.8.2</b>。</p>
 <ul class="tight">
 <li><b>按宏查</b>：进入 <a href="matrix.html">全量评估矩阵</a>，可按 UE5 覆盖度 / 处置 / 引擎改动方式 / 风险筛选，或搜索宏名。</li>
-<li><b>按动作查</b>：<a href="drop.html">可丢弃清单</a> / <a href="project-side.html">可工程化清单</a> / <a href="hooks.html">最小侵入接入点</a> / <a href="roadmap.html">迁移路线图</a>。</li>
+<li><b>按动作查</b>：<a href="drop.html">可丢弃清单</a> / <a href="reclaim.html">可主动舍弃</a> / <a href="project-side.html">可工程化清单</a> / <a href="hooks.html">最小侵入接入点</a> / <a href="roadmap.html">迁移路线图</a>。</li>
 <li><b>看细节</b>：每个宏在「全量参考」的条目里新增了「UE5 迁移视角」区块（覆盖度、工程化、接入点、建议）。</li>
 </ul>
 
@@ -165,6 +169,6 @@
 </aside>
 </div>
 <div class="statbar" id="statbar"><span class="sb-title">迁移决策</span><div class="sb-items"><a class="sb" href="../migration/roadmap.html#phase-drop-covered" title="A1 直接删除（UE5 已覆盖）：98 个宏">A1 删除·已覆盖 <b>98</b></a><a class="sb" href="../migration/roadmap.html#phase-drop-other" title="A2 直接删除（废弃/无引用/待复核）：49 个宏">A2 删除·其他原因 <b>49</b></a><a class="sb" href="../migration/roadmap.html#phase-patch" title="B 常开补丁：48 个宏">B 常开补丁 <b>48</b></a><a class="sb" href="../migration/roadmap.html#phase-config" title="C 配置化：66 个宏">C 配置化 <b>66</b></a><a class="sb" href="../migration/roadmap.html#phase-plugin" title="D 插件化：51 个宏">D 插件化 <b>51</b></a><a class="sb" href="../migration/roadmap.html#phase-hook" title="E 接入点改造：28 个宏">E 接入点 <b>28</b></a><a class="sb" href="../migration/roadmap.html#phase-port" title="F 代码移植：195 个宏">F 移植 <b>195</b></a><a class="sb" href="../migration/roadmap.html#phase-keep" title="G 暂留引擎（重点跟进）：14 个宏">G 暂留引擎 <b>14</b></a></div><span class="sb-total">合计 <b>549</b></span><button type="button" class="sb-toggle" id="sbToggle" title="收起 / 展开">▾</button></div>
-<script src="../assets/app.js?v=3bc93071"></script>
+<script src="../assets/app.js?v=5ef68afb"></script>
 </body>
 </html>
