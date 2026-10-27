@@ -78,8 +78,8 @@
       file: 'gi_module_prt_probes.html',
       group: 'direction',
       prerequisites: ['sh', 'probes'],
-      stages: 7,
-      summary: '区分缓存答案与缓存传输算子，并加入 SH PRT 与空间 Transfer Probe。',
+      stages: 8,
+      summary: '走进一个可 WASD 行走、可点选搬动的康奈尔盒：从向量点乘与可见性，到用 9 个 SH 数字装下天空，把 PRT “几何慢烘一次、换光快算很多次”讲到初中生也能懂。',
     },
     {
       id: 'rcgi',
@@ -119,7 +119,7 @@
       group: 'assembly',
       prerequisites: ['rsm', 'voxelgi', 'ddgi', 'prt', 'rcgi'],
       stages: 9,
-      summary: '在 D3D12/Vulkan RenderGraph 中连接基础 Pass、切换方案并预览中间资源。',
+      summary: 'Voxel/RSM/SSGI/SH Probe/RCGI/DDGI-lite/PRT 七方案在同一 D3D12/Vulkan RenderGraph 场景中运行、验证并预览中间资源；RCGI 另有 WebGPU compute 镜像。',
     },
   ];
   window.GI_LESSONS = Object.freeze(lessons.map((lesson) => Object.freeze({

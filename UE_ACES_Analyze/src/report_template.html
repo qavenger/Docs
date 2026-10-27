@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>为什么切到 ACES 2.0 画面会变灰？— UE5 Filmic 与 Standard ACES 对比</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,.10); --wash: rgba(11,11,11,.035);
+  --code-bg: #f1f0ec; --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --good: #0ca30c; --warning: #fab219; --critical: #d03b3b; --shadow: rgba(0,0,0,.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --wash: rgba(255,255,255,.04);
+    --code-bg: #232321; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --shadow: rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --wash: rgba(255,255,255,.04);
+  --code-bg: #232321; --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --shadow: rgba(0,0,0,.45);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 56px; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.78 "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: inherit; text-decoration-color: var(--axis); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--ink2); }
+b, strong { font-weight: 600; }
+.topbar { position: sticky; top: 0; z-index: 20; background: var(--page); border-bottom: 1px solid var(--border); }
+.topbar .in { max-width: 1080px; margin: 0 auto; padding: 8px 20px; display: flex; gap: 14px; align-items: center; }
+.topbar .brand { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.topbar nav { display: flex; gap: 16px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; flex: 1; }
+.topbar nav::-webkit-scrollbar { display: none; }
+.topbar nav a { color: var(--ink2); text-decoration: none; font-size: 13px; }
+.topbar nav a:hover { color: var(--ink); }
+button { font: inherit; }
+.theme-btn, .seg button, .copy { border: 1px solid var(--border); background: var(--surface); color: var(--ink2);
+  border-radius: 8px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+.theme-btn:hover, .seg button:hover, .copy:hover { color: var(--ink); border-color: var(--axis); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.seg button.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+main { max-width: 1080px; margin: 0 auto; padding: 0 20px 80px; }
+.hero { padding: 46px 4px 10px; }
+.kicker { font-size: 13px; color: var(--muted); letter-spacing: .08em; margin: 0 0 6px; }
+h1 { font-size: 34px; line-height: 1.32; margin: 0 0 12px; font-weight: 700; letter-spacing: .01em; }
+.lead { font-size: 18px; color: var(--ink2); margin: 0 0 14px; }
+.meta { font-size: 13px; color: var(--muted); margin: 3px 0; }
+section.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 30px; margin: 22px 0; }
+h2 { font-size: 24px; line-height: 1.4; margin: 0 0 4px; }
+.sub { color: var(--ink2); margin: 0 0 16px; }
+h3 { font-size: 18px; line-height: 1.45; margin: 38px 0 8px; display: flex; align-items: center; gap: 10px; }
+h4 { font-size: 15px; margin: 18px 0 6px; }
+.badge { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--axis);
+  font-size: 13px; font-weight: 600; flex: none; color: var(--ink); background: var(--surface); line-height: 1; }
+.badge.sm { width: 20px; height: 20px; font-size: 11px; vertical-align: -3px; }
+p { margin: 10px 0; }
+ul, ol { margin: 8px 0; padding-left: 1.4em; }
+li { margin: 4px 0; }
+.big { font-size: 17px; line-height: 1.8; }
+.muted { color: var(--muted); }
+.ink2 { color: var(--ink2); }
+.small { font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 18px 0; }
+.stat { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--page); }
+.stat .l { font-size: 13px; color: var(--ink2); }
+.stat .v { font-size: 28px; font-weight: 600; line-height: 1.3; margin: 4px 0 2px; }
+.stat .d { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.causes { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 12px; }
+.causes li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; margin: 0; }
+.causes li .badge { margin-top: 2px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+.box { border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; background: var(--page); }
+.box h4 { margin: 0 0 6px; }
+.box ul, .box ol { padding-left: 1.2em; }
+.note { border-left: 3px solid var(--axis); background: var(--wash); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 16px 0; }
+.note .lab { font-weight: 600; margin-right: 6px; }
+.note.warn .lab::before { content: "⚠"; color: var(--warning); margin-right: 6px; }
+.note.tip .lab::before { content: "✓"; color: var(--good); margin-right: 6px; font-weight: 700; }
+.ok::before { content: "✔ "; color: var(--good); font-weight: 700; }
+.bad::before { content: "✘ "; color: var(--critical); font-weight: 700; }
+code { font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: .9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre.code { position: relative; background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; overflow-x: auto;
+  font: 13px/1.65 Consolas, "Cascadia Mono", "Courier New", monospace; margin: 12px 0; white-space: pre; }
+pre.code .c { color: var(--muted); }
+.copy { position: absolute; top: 8px; right: 8px; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table.t { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
+table.t th, table.t td { padding: 9px 10px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+table.t th { color: var(--ink2); font-weight: 600; font-size: 13px; white-space: nowrap; }
+table.t td.num, table.t th.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+table.t tr:last-child td { border-bottom: 0; }
+table.vs td:first-child { color: var(--ink2); white-space: nowrap; font-weight: 600; }
+table.vs td { width: 42%; }
+table.vs td:first-child { width: 16%; }
+figure { margin: 20px 0; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+.fig-title { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
+.fig-sub { font-size: 13px; color: var(--ink2); margin: 0 0 10px; }
+/* charts */
+.chart { margin: 20px 0 6px; }
+.chart .ytitle { font-size: 12px; color: var(--muted); margin: 0 0 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink2); margin: 0 0 6px; }
+.lg-item { display: inline-flex; align-items: center; gap: 7px; }
+.lg-line { width: 18px; height: 2px; border-radius: 1px; display: inline-block; }
+.lg-rect { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.views { margin: 4px 0 8px; }
+.plot { position: relative; outline: none; }
+.plot:focus-visible { box-shadow: 0 0 0 2px var(--axis); border-radius: 6px; }
+.chart-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.chart-svg .tick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart-svg .cat { font-size: 12px; fill: var(--ink2); }
+.chart-svg .mark-label { font-size: 11px; fill: var(--ink2); }
+.chart-svg .axis-title { font-size: 11px; fill: var(--muted); }
+.chart-svg .bar-label { font-size: 11px; fill: var(--ink2); font-variant-numeric: tabular-nums; }
+.chart-svg .bar { transition: opacity .12s; }
+.chart-svg .bar.hot { opacity: .78; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 26px var(--shadow);
+  border-radius: 10px; padding: 8px 11px; font-size: 12.5px; min-width: 190px; max-width: 280px; z-index: 5; line-height: 1.55; }
+.tip-title { color: var(--ink2); margin-bottom: 3px; font-size: 12px; }
+.tip-row { display: grid; grid-template-columns: 14px auto 1fr; gap: 7px; align-items: center; }
+.tip-key { width: 12px; height: 2px; border-radius: 1px; }
+.tip-key.rect { height: 10px; width: 10px; border-radius: 2px; }
+.tip-val { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tip-lab { color: var(--ink2); }
+details.tblw { margin: 6px 0 0; }
+details.tblw summary { cursor: pointer; color: var(--ink2); font-size: 13px; }
+details.tblw table.t { font-size: 12.5px; }
+/* compare slider */
+.ctrl { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin: 8px 0 12px; }
+.ctrl .lab { font-size: 13px; color: var(--muted); margin-right: 6px; }
+.cmp { position: relative; border-radius: 10px; overflow: hidden; user-select: none; -webkit-user-select: none; background: #000; touch-action: pan-y; }
+.cmp img { display: block; width: 100%; height: auto; pointer-events: none; }
+.cmp .over { position: absolute; inset: 0; }
+.cmp .over img { width: 100%; height: 100%; }
+.cmp .handle { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); pointer-events: none; }
+.cmp .knob { position: absolute; top: 50%; left: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 8px rgba(0,0,0,.45); display: grid; place-items: center; color: #222; font-size: 13px; }
+.cmp .tag { position: absolute; top: 10px; font-size: 12px; padding: 3px 9px; border-radius: 6px; background: rgba(0,0,0,.62); color: #fff; pointer-events: none; max-width: 46%; }
+.cmp .tag.l { left: 10px; } .cmp .tag.r { right: 10px; text-align: right; }
+.cmp input[type=range] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: ew-resize; }
+.cmp:focus-within .knob { box-shadow: 0 0 0 3px rgba(255,255,255,.6), 0 1px 8px rgba(0,0,0,.45); }
+/* strips */
+.strips { display: grid; grid-template-columns: 170px 1fr; gap: 8px 14px; align-items: center; }
+.strips .nm { font-size: 13px; color: var(--ink2); display: flex; align-items: center; gap: 8px; line-height: 1.35; }
+.strips .bar { position: relative; }
+.strips img { width: 100%; height: 30px; display: block; border-radius: 4px; }
+.strips .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--ink2); }
+.axis-row { position: relative; height: 18px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.axis-row span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+/* sweeps */
+.sweeps { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.sw-h { font-size: 13px; color: var(--ink2); margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+.sw-grid { display: grid; grid-template-columns: 52px 1fr; gap: 8px; }
+.sw-names { position: relative; }
+.sw-names span { position: absolute; right: 0; transform: translateY(-50%); font-size: 12px; color: var(--ink2); white-space: nowrap; }
+.sw-grid img { width: 100%; height: auto; display: block; border-radius: 4px; }
+.sw-axis { margin-left: 60px; }
+/* checker */
+.checkers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.checkers img { width: 100%; height: auto; display: block; border-radius: 6px; }
+.checkers .cap { font-size: 12.5px; color: var(--ink2); margin-top: 6px; display: flex; gap: 7px; align-items: baseline; line-height: 1.45; }
+.key { width: 14px; height: 2px; border-radius: 1px; display: inline-block; flex: none; transform: translateY(-3px); }
+/* pipeline */
+.pipe { display: grid; grid-template-columns: 1fr 22px .85fr 22px 1fr 22px 1.9fr 22px 1.35fr 22px 1fr; align-items: stretch; margin: 18px 0 8px; }
+.pipe .st { border: 1px solid var(--border); border-radius: 10px; padding: 10px 11px; background: var(--page); font-size: 12.5px; line-height: 1.55; min-width: 0; }
+.pipe .t { font-weight: 600; font-size: 13px; margin-bottom: 3px; color: var(--ink); }
+.pipe .s { color: var(--muted); }
+.pipe .opt { color: var(--ink2); padding: 4px 0; border-top: 1px dashed transparent; }
+.pipe .opt + .opt { border-top: 1px solid var(--grid); }
+.pipe .ar { position: relative; }
+.pipe .ar::after { content: ""; position: absolute; top: 50%; left: 4px; right: 4px; height: 1px; background: var(--axis); }
+.pipe .ar::before { content: ""; position: absolute; top: calc(50% - 4px); right: 3px; border: 4px solid transparent; border-left: 6px solid var(--axis); border-right: 0; }
+/* glossary */
+.gloss { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.gloss div { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--page); font-size: 13px; color: var(--ink2); line-height: 1.6; }
+.gloss b { color: var(--ink); display: block; font-size: 13.5px; }
+.steps { counter-reset: st; list-style: none; padding: 0; margin: 14px 0; }
+.steps > li { counter-increment: st; position: relative; padding: 0 0 0 40px; margin: 0 0 16px; }
+.steps > li::before { content: counter(st); position: absolute; left: 0; top: 1px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--axis);
+  display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.steps > li > b:first-child { display: block; margin-bottom: 2px; }
+.src { font-size: 13px; }
+.src li { margin: 5px 0; }
+footer { color: var(--muted); font-size: 12.5px; text-align: center; padding: 10px 20px 40px; }
+@media (max-width: 860px) {
+  .pipe { grid-template-columns: 1fr; }
+  .pipe .ar { height: 20px; }
+  .pipe .ar::after { top: 3px; bottom: 3px; left: 50%; right: auto; width: 1px; height: auto; }
+  .pipe .ar::before { top: auto; bottom: 2px; left: calc(50% - 4px); right: auto; border: 4px solid transparent; border-top: 6px solid var(--axis); border-bottom: 0; }
+  .checkers { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .two, .sweeps { grid-template-columns: 1fr; }
+  section.card { padding: 22px 18px; border-radius: 12px; }
+  h1 { font-size: 27px; }
+  .lead { font-size: 16px; }
+  .strips { grid-template-columns: 1fr; gap: 4px 0; }
+  .strips .nm { margin-top: 6px; }
+  .topbar .brand { display: none; }
+}
+@media (max-width: 720px) {
+  table.t.stack thead { display: none; }
+  table.t.stack, table.t.stack tbody, table.t.stack tr, table.t.stack td { display: block; width: auto !important; }
+  table.t.stack tr { border-bottom: 1px solid var(--grid); padding: 8px 0; }
+  table.t.stack tr:last-child { border-bottom: 0; }
+  table.t.stack td { border: 0; padding: 3px 0; text-align: left !important; white-space: normal !important; }
+  table.t.stack td::before { content: attr(data-label); display: block; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.5; }
+  table.t.stack td.lead { display: block; font-weight: 600; color: var(--ink); padding-bottom: 4px; }
+  table.t.stack td.lead::before { content: none; }
+  .sw-names span { font-size: 11px; }
+}
+table.t td.nw { white-space: nowrap; }
+@media print { .topbar, .theme-btn, .copy, .views, .ctrl { display: none !important; } section.card { break-inside: avoid-page; } }
+</style>
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <span class="brand">ACES 2.0 vs Filmic</span>
+  <nav aria-label="目录">
+    <a href="#tldr">一分钟看懂</a><a href="#look">看效果</a><a href="#why">原因</a><a href="#short">短期方案</a>
+    <a href="#long">长期方案</a><a href="#versus">优劣对比</a><a href="#gloss">名词</a><a href="#appendix">附录</a>
+  </nav>
+  <button class="theme-btn" id="theme" type="button" aria-label="切换浅色 / 深色主题">主题：跟随系统</button>
+</div></div>
+
+<main>
+<header class="hero">
+  <p class="kicker">UE5 画质升级 · 色调映射（Tonemapper）</p>
+  <h1>为什么切到 ACES 2.0，画面会变灰？</h1>
+  <p class="lead">Filmic 与 Standard ACES（ACES 2.0）的差异、变灰的原因、短期与长期方案——写给美术的版本。</p>
+  <p class="meta">依据：工程引擎 UE 5.8.2 源码逐行复刻 + OpenColorIO 2.6 官方 ACES 2.0 实现，并用工程实际截图验证 · 2026-10-26</p>
+  <p class="meta">注：工程用的 UE 5.8.2 已经带了 Standard ACES 和 ACES 2.0（<code>r.HDR.Aces.Version</code> 默认就是 2），本文结论以 5.8.2 源码为准。以后升级到 5.8.4 等新版本时，附录列出了全部源码位置，可以逐条复核。</p>
+</header>
+<noscript><p class="note">图表与对比滑块需要启用 JavaScript；文字结论不受影响。</p></noscript>
+
+<!-- ============================================================ 一分钟看懂 -->
+<section class="card" id="tldr">
+  <h2>一分钟看懂</h2>
+  <p class="big">切到 Standard ACES 之后，<b>整体亮度其实没变</b>：18% 中灰在两种模式下都显示为像素值 ≈ {{mid_f0}}。变的是<b>两头和颜色</b>：暗部被抬亮、亮部被压低、颜色变淡。对比度一降，画面就“灰”了。</p>
+  <div class="stats">
+    <div class="stat"><div class="l">18% 中灰的像素值</div><div class="v">{{mid_f}} → {{mid_ad}}</div><div class="d">Filmic → ACES 2.0 默认，几乎不变</div></div>
+    <div class="stat"><div class="l">暗部亮度（比中灰暗 5 档）</div><div class="v">×{{m5_ratio}}</div><div class="d">屏幕亮度 {{m5_f}}% → {{m5_ad}}%，暗部被抬亮</div></div>
+    <div class="stat"><div class="l">中间调对比度</div><div class="v">−{{slope_drop_ad}}%</div><div class="d">中灰附近每亮 1 档：{{slope_f}} → {{slope_ad}} 个像素值</div></div>
+    <div class="stat"><div class="l">色卡平均彩度</div><div class="v">−{{chk_drop_ad}}%</div><div class="d">ColorChecker 18 个彩色块：{{chk_f}} → {{chk_ad}}</div></div>
+  </div>
+  <p>造成这种变化的是四件事，影响从大到小：</p>
+  <ul class="causes">
+    <li><span class="badge">①</span><div><b>显示编码对不上（影响最大，一行配置就能修）。</b>在后处理体积（PPV）里选 Standard ACES 后，UE 默认按 <b>BT.1886（Gamma 2.4，暗室看电视的标准）</b>输出；电脑和手机屏幕按 <b>sRGB（约 Gamma 2.2）</b>显示，结果暗部整体被抬亮。</div></li>
+    <li><span class="badge">②</span><div><b>ACES 2.0 的曲线本身更柔。</b>中间调对比度比 Filmic 低约 {{slope_drop_as}}%，到 99% 白需要的亮度是 Filmic 的 3 倍多，相当于把空间留给了高光层次。所以同一盏灯、同一张贴图，亮部会更暗、更平。</div></li>
+    <li><span class="badge">③</span><div><b>颜色处理方式不同。</b>Filmic 对 R、G、B 三个通道分别压缩，会顺带加饱和，并让亮色偏色（火焰发黄、蓝光发青）。ACES 2.0 保持色相，代价是正常亮度下颜色淡一些，色卡平均彩度低约 {{chk_drop_as}}%。</div></li>
+    <li><span class="badge">④</span><div><b>Filmic 专属参数全部失效：</b>Film Slope / Toe / Shoulder / Black Clip / White Clip、Blue Correction、Tone Curve Amount、Color Grading LUT 贴图。工程正式内容里有 {{scan_film_ship}} 张地图改过 Film 参数，1 张用了 LUT 贴图。</div></li>
+  </ul>
+  <div class="two">
+    <div class="box">
+      <h4>短期：先把画面救回来</h4>
+      <ul>
+        <li><b>不急着切</b>：存量关卡继续用 Filmic，零成本。</li>
+        <li><b>要切</b>：DefaultEngine.ini 加一行 <code>r.LUT.TonemappingSDRInvEOTF=0</code>，把编码改回 sRGB。再按需补偿：曝光 {{comp_ev}} 档、全局对比度 ×{{comp_con}}、饱和度 ×{{comp_sat}}。</li>
+        <li>这样与原 Filmic 画面的平均色差能从 <b>{{de_ad}}</b> 降到 <b>{{de_as}}</b>（只改编码），再降到 <b>{{de_ac}}</b>（加补偿）。</li>
+      </ul>
+      <p class="small"><a href="#short">→ 具体做法</a></p>
+    </div>
+    <div class="box">
+      <h4>长期：以 ACES 2.0 为基准重打光</h4>
+      <ul>
+        <li>正好配合 PBR 重打光：统一“ACES 2.0 + sRGB 编码”，建一张标定场景，固定曝光体系。</li>
+        <li>自发光、特效、天空按档位重调：ACES 下亮部要多给约 1 档。</li>
+        <li>项目的 Look 用 Color Grading 预设来做；LUT 贴图在 ACES 下不生效。</li>
+        <li>DCC 预览要对齐 UE 额外乘的 ×1.5（+0.58 档）。</li>
+      </ul>
+      <p class="small"><a href="#long">→ 完整路线</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 先看效果 -->
+<section class="card" id="look">
+  <h2>先看效果：同一画面的四种输出</h2>
+  <p class="sub">左边是原截图（Filmic），右边可以切换三种 ACES 输出。拖动中线对比。</p>
+  <div class="ctrl">
+    <div><span class="lab">场景</span><span class="seg" id="cmp-scene"></span></div>
+    <div><span class="lab">右侧</span><span class="seg" id="cmp-right"></span></div>
+  </div>
+  <div class="cmp" id="cmp">
+    <img id="cmp-left" alt="Filmic 原截图">
+    <div class="over" id="cmp-over"><img id="cmp-right-img" alt="ACES 输出"></div>
+    <div class="handle" id="cmp-handle"><div class="knob" aria-hidden="true">⇆</div></div>
+    <span class="tag l">Filmic（原截图）</span><span class="tag r" id="cmp-tag-r"></span>
+    <input type="range" min="0" max="100" step="0.5" value="50" id="cmp-range" aria-label="拖动对比分界线">
+  </div>
+  <p class="small muted" style="margin-top:8px">做法：把 Filmic 截图按 UE 源码的 Filmic 公式反推回场景亮度，再送进 ACES 2.0 计算。UI 已裁掉。地牢场景 {{res_dg}}% 的像素反推误差超过 2 个像素值；选角场景火焰区约 {{res_sr}}% 的像素有 2–6 个像素值误差，不影响结论。这是近似效果，最终以引擎内切换为准。</p>
+  <div class="scroll"><table class="t stack" id="look-table">
+    <thead><tr><th>指标（地牢 / 选角）</th><th class="num">Filmic</th><th class="num">ACES 默认</th><th class="num">+ sRGB 编码</th><th class="num">+ 补偿</th></tr></thead>
+    <tbody>
+      <tr><td>最暗 5% 区域的感知亮度（0 黑 – 100 白）</td><td class="num">{{dungeon_filmic_p05}} / {{selectrole_filmic_p05}}</td><td class="num">{{dungeon_aces_default_p05}} / {{selectrole_aces_default_p05}}</td><td class="num">{{dungeon_aces_srgb_p05}} / {{selectrole_aces_srgb_p05}}</td><td class="num">{{dungeon_aces_comp_p05}} / {{selectrole_aces_comp_p05}}</td></tr>
+      <tr><td>最亮 5% 区域的感知亮度</td><td class="num">{{dungeon_filmic_p95}} / {{selectrole_filmic_p95}}</td><td class="num">{{dungeon_aces_default_p95}} / {{selectrole_aces_default_p95}}</td><td class="num">{{dungeon_aces_srgb_p95}} / {{selectrole_aces_srgb_p95}}</td><td class="num">{{dungeon_aces_comp_p95}} / {{selectrole_aces_comp_p95}}</td></tr>
+      <tr><td>平均彩度（越大越艳）</td><td class="num">{{dungeon_filmic_C}} / {{selectrole_filmic_C}}</td><td class="num">{{dungeon_aces_default_C}} / {{selectrole_aces_default_C}}</td><td class="num">{{dungeon_aces_srgb_C}} / {{selectrole_aces_srgb_C}}</td><td class="num">{{dungeon_aces_comp_C}} / {{selectrole_aces_comp_C}}</td></tr>
+      <tr><td>与 Filmic 的平均色差（越小越像）</td><td class="num">0 / 0</td><td class="num">{{dungeon_aces_default_dE}} / {{selectrole_aces_default_dE}}</td><td class="num">{{dungeon_aces_srgb_dE}} / {{selectrole_aces_srgb_dE}}</td><td class="num">{{dungeon_aces_comp_dE}} / {{selectrole_aces_comp_dE}}</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">感知亮度、彩度、色差都在 OKLab 感知色彩空间里计算（×100）。色差的经验尺度：≤ 2 要并排仔细看才分得出，4–5 一眼就能看出来。</p>
+</section>
+
+<!-- ============================================================ 原因 -->
+<section class="card" id="why">
+  <h2>为什么会变灰：拆成四个原因</h2>
+  <p class="sub">一帧画面从渲染到屏幕要经过下面几步。圆圈数字标出了四个原因各自发生在哪一步。</p>
+  <div class="pipe" role="img" aria-label="画面流程：场景颜色 → 曝光 → 白平衡与 Color Grading → 色调映射 → 显示编码 → 显示器">
+    <div class="st"><div class="t">场景颜色</div><div class="s">光照 × 材质，HDR 线性值，可以远大于 1</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">曝光</div><div class="s">Exposure Compensation（工程关了自动曝光）</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">白平衡 · Color Grading</div><div class="s">Global / Shadows / Midtones / Highlights，两种模式都生效</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">色调映射 Tonemapper</div>
+      <div class="opt"><b>Filmic</b>：Blue Correction → Film 曲线（RGB 逐通道 <span class="badge sm">③</span>）→ LUT 贴图 <span class="badge sm">④</span></div>
+      <div class="opt"><b>ACES 2.0</b>：先 ×1.5 → ACES 2.0 输出变换（固定曲线 <span class="badge sm">②</span>，保色相 <span class="badge sm">③</span>）</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">显示编码</div>
+      <div class="opt"><b>Filmic</b>：<span class="ok">sRGB</span></div>
+      <div class="opt"><b>ACES 默认</b>：<span class="bad">BT.1886（Gamma 2.4）</span> <span class="badge sm">①</span></div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">显示器</div><div class="s">电脑 / 手机：sRGB（约 Gamma 2.2）</div></div>
+  </div>
+
+  <!-- ① 编码 -->
+  <h3 id="why-encode"><span class="badge">①</span>显示编码：给显示器的“翻译方式”变了（影响最大）</h3>
+  <p>渲染算出来的是“光有多亮”。最后一步要把它翻译成 0–255 的像素值发给显示器，显示器再按自己的规则翻译回亮度。<b>两边必须用同一本“字典”</b>：</p>
+  <ul>
+    <li><b>Filmic</b> 按 sRGB 编码；电脑屏幕、手机屏幕按 sRGB 显示：<span class="ok">配对</span>。</li>
+    <li><b>Standard ACES</b> 在 UE 里默认按 <b>BT.1886（Gamma 2.4）</b>编码。这是暗室里看电视、调色监视器的标准，而普通屏幕仍按约 2.2 解码：<span class="bad">不配对</span>。同样的暗部亮度被编成更大的像素值，显示出来就亮了，阴影发灰。</li>
+  </ul>
+  <p>引擎源码的说明写得很直白：<i>“The default for ACES is BT.1886 to prioritize compatibility between SDR and Rec. 2100 for HDR.”</i> Epic 是为了让 SDR 和 HDR 电视的观感一致才选了 BT.1886；但我们的玩家绝大多数用的是 sRGB 屏幕。这个默认值只在 PPV 选了 Standard ACES 时启用（Filmic 一直是 sRGB）。可以用 <code>r.LUT.TonemappingSDRInvEOTF</code> 改：0 = sRGB，1 = BT.1886。</p>
+
+  <div class="chart" id="chart-tone">
+    <p class="fig-title">灰阶曲线：场景亮度 → 屏幕像素值</p>
+    <p class="fig-sub">横轴是比 18% 中灰亮或暗几档（1 档 = 亮度 ×2），纵轴是最终发给屏幕的像素值（0–255）。把鼠标放到图上可以看每档的具体数值。</p>
+  </div>
+
+  <figure>
+    <p class="fig-title">同样的灰阶条，在你的屏幕上直接看</p>
+    <div class="strips" id="strips"></div>
+    <figcaption>每条从左到右是 −8 档到 +8 档的中性灰，中间的竖线是 18% 中灰。ACES 默认那条左半段明显更亮，这就是“发灰”。改成 sRGB 编码后暗部回到 Filmic 的水平，但右半段（亮部）仍然更暗、更平，那是原因 ②。</figcaption>
+  </figure>
+
+  <p>具体数字：比中灰暗 3 档 / 5 档的地方，Filmic 的屏幕亮度是 {{m3_f}}% / {{m5_f}}%，ACES 默认是 <b>{{m3_ad}}% / {{m5_ad}}%（×{{m3_ratio}} / ×{{m5_ratio}}）</b>。改成 sRGB 编码后是 {{m3_as}}% / {{m5_as}}%，与 Filmic 基本一致。</p>
+
+  <div class="note warn"><span class="lab">A/B 对比的坑</span>
+    控制台的 <code>r.LUT.TonemappingMethod 1</code> 只会把曲线换成 ACES，<b>编码仍然跟着 PPV 走</b>（源码里编码默认值读的是 PPV 的设置，不是这个控制台变量）。所以在控制台里切，看到的是“ACES + sRGB”；在 PPV 里切，看到的是“ACES + BT.1886”，两种方法的结果不一样。反过来，PPV 选了 ACES、控制台强制 Filmic 时，Filmic 也会被按 BT.1886 编码，同样发灰。团队讨论“ACES 好不好看”之前，先统一切换方法（<a href="#ab">下面有命令</a>）。
+  </div>
+
+  <!-- ② 曲线 -->
+  <h3 id="why-curve"><span class="badge">②</span>曲线形状：ACES 2.0 更柔，把空间留给了高光</h3>
+  <p>编码修好之后（上图青色线），暗部和 Filmic 基本重合，但从中灰往上 ACES 2.0 一直更低、更平：</p>
+  <ul>
+    <li><b>中间调对比度</b>：中灰附近每亮 1 档，Filmic 增加 {{slope_f}} 个像素值，ACES 2.0 只增加 {{slope_as}}，低 {{slope_drop_as}}%。</li>
+    <li><b>高光到白的距离</b>：Filmic 在比中灰亮 {{ev99_f}} 档（中灰的 {{x99_f}} 倍）时就到了 99% 白；ACES 2.0 要到 {{ev99_a}} 档（中灰的 {{x99_a}} 倍）。比中灰亮 2 档的地方，Filmic 是 {{cp2_f}}，ACES 是 {{cp2_as}}。</li>
+    <li><b>为什么中灰刚好一样？</b>UE 在 ACES 前面额外乘了 1.5（<code>r.HDR.Aces.SceneColorMultiplier</code>，约 +0.58 档），配合 BT.1886 编码，正好让中灰与 Filmic 对齐（{{mid_ad}} vs {{mid_f}}）。可见 Epic 有意保证“整体亮度不变”，只是两头对不齐。</li>
+  </ul>
+  <p>换成美术的直觉：<b>中间调不用动；想让亮部像以前一样亮，ACES 下要多给能量</b>，越亮的地方要多给得越多：</p>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>想在屏幕上达到的像素值</th><th class="num">Filmic 需要（档）</th><th class="num">ACES + sRGB 需要（档）</th><th class="num">差多少</th><th class="num">相当于强度 ×</th></tr></thead>
+    <tbody>
+      <tr><td>118（中灰）</td><td class="num">{{evm_118_filmic}}</td><td class="num">{{evm_118_aces_srgb}}</td><td class="num">{{evm_118_d}}</td><td class="num">{{evm_118_x}}</td></tr>
+      <tr><td>180（亮面）</td><td class="num">{{evm_180_filmic}}</td><td class="num">{{evm_180_aces_srgb}}</td><td class="num">{{evm_180_d}}</td><td class="num">{{evm_180_x}}</td></tr>
+      <tr><td>220（高光）</td><td class="num">{{evm_220_filmic}}</td><td class="num">{{evm_220_aces_srgb}}</td><td class="num">{{evm_220_d}}</td><td class="num">{{evm_220_x}}</td></tr>
+      <tr><td>245（接近白）</td><td class="num">{{evm_245_filmic}}</td><td class="num">{{evm_245_aces_srgb}}</td><td class="num">{{evm_245_d}}</td><td class="num">{{evm_245_x}}</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">“档”指相对 18% 中灰的曝光档位。表里的倍数是灰阶的结果；彩色自发光还会受原因 ③ 影响。</p>
+  <p>这不是 ACES 的缺陷，而是取舍。Filmic 很快把亮部压到白，画面“实”、出片快，但强光、火焰、天空容易糊成一片。ACES 2.0 给高光留了 3 倍多的余量，层次更多，也是它能自然适配 HDR 屏幕的原因。代价是默认观感更平，需要在上面自己做 Look。</p>
+
+  <!-- ③ 颜色 -->
+  <h3 id="why-color"><span class="badge">③</span>颜色：Filmic 逐通道压缩，ACES 2.0 保色相</h3>
+  <p><b>Filmic</b> 把 R、G、B 三个通道各自套同一条 S 曲线。亮的通道先被压平，暗的通道后被压，所以一个颜色越亮，就越往黄、青、品红偏，同时中等亮度的颜色被“顺带”加了饱和。<b>ACES 2.0</b> 在色貌空间里只压亮度，彩度单独控制，所以色相基本不变，亮到头是“变白”而不是“变色”。下面每一行是同一个颜色从 −2 档逐渐提亮到 +8 档：</p>
+  <figure>
+    <div class="sweeps" id="sweeps"></div>
+    <figcaption>左：Filmic，火焰橙一路变成黄色，魔法蓝变成天青，血红偏橙，奥术紫偏粉。右：ACES 2.0，色相保持不变，逐渐淡到白。</figcaption>
+  </figure>
+  <div class="chart" id="chart-hue">
+    <p class="fig-title">从 −2 档提亮到 +6 档，色相最多偏了多少度</p>
+    <p class="fig-sub">数值越大，表示越亮时颜色变得越多（OKLCH 色相角）。</p>
+  </div>
+  <p>Filmic 下火焰橙最多偏 {{hue_or_f}}°，魔法蓝偏 {{hue_bl_f}}°，血红偏 {{hue_rd_f}}°，奥术紫偏 {{hue_pu_f}}°；ACES 2.0 全部不超过 {{hue_max_a}}°。</p>
+  <div class="note"><span class="lab">对特效 / 自发光的影响</span>
+    以前火焰的“黄白芯”、魔法光的“青白芯”，很大一部分是 Filmic 偏色“送”的。ACES 下颜色不会自己变，火焰会更橙、更红（对比滑块里的选角场景）。想要黄白芯，就要在特效贴图或颜色渐变里明确做出来。好处是：特效颜色调成什么样，屏幕上就是什么样，不会因为亮度一变就跑色。
+  </div>
+
+  <figure>
+    <p class="fig-title">ColorChecker 色卡在正常曝光下的样子</p>
+    <div class="checkers" id="checkers"></div>
+    <figcaption>标准 24 色卡，按 18% 灰卡显示为中灰的曝光渲染。可以看到 ACES 默认整体偏灰、偏淡，白块不够白、黑块不够黑；加补偿后接近 Filmic。</figcaption>
+  </figure>
+  <div class="chart" id="chart-sat">
+    <p class="fig-title">平均彩度随曝光的变化（色卡 18 个彩色块）</p>
+    <p class="fig-sub">正常曝光附近 ACES 2.0 更淡；但比正常亮 1.5 档以上时，ACES 反而比 Filmic 更保色。Filmic 的亮色会很快被压成白色或黄色。</p>
+  </div>
+
+  <!-- ④ 参数失效 -->
+  <h3 id="why-params"><span class="badge">④</span>这些 Filmic 设置在 ACES 下不生效</h3>
+  <p>枚举的提示文字写着 “Film settings do not apply to this method”。实际上不止 Film 参数，源码里 ACES 分支跳过了整个 Filmic 处理函数：</p>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>设置</th><th>Standard ACES 下</th><th>工程里用到的地方（正式内容 Content/Art）</th></tr></thead>
+    <tbody>
+      <tr><td>Film Slope / Toe / Shoulder / Black Clip / White Clip</td><td><span class="bad">不生效</span></td><td>{{scan_film_ship}} 张地图改过 Film Slope：HD_MiLiuZhiHuan000_Landscape、YongShuangBingPo_Landscape、YongShuangBingPo_Landscape_02（全工程共 {{scan_film_all}} 个包设置过 Film 参数，其余是测试地图和插件资源）</td></tr>
+      <tr><td>Color Grading LUT（LUT 贴图）及其强度</td><td><span class="bad">不生效</span></td><td>1 张：SD_GeBuLinYingDi02_Landscape（T_PC_BeiFangShanDi_Lut_01_01）。另有 18 张勾了 LUT 覆盖但没指定贴图，不受影响</td></tr>
+      <tr><td>Blue Correction、Tone Curve Amount</td><td><span class="bad">不生效</span></td><td>只有插件蓝图 BP_FastStylizedProceduralSky 设置过</td></tr>
+      <tr><td><code>r.Color.Min / Mid / Max</code>、显示 Gamma 微调</td><td><span class="bad">不生效</span></td><td>工程未设置</td></tr>
+      <tr><td>曝光、白平衡、Color Grading（全局 / 暗部 / 中间调 / 高光）、Expand Gamut、Scene Color Tint、Bloom、暗角、颗粒、淡入淡出</td><td><span class="ok">仍生效</span></td><td>{{scan_exp_ship}} 个改过曝光补偿，{{scan_sat_ship}} 个改过饱和度，{{scan_con_ship}} 个改过对比度。参数仍然生效，但曲线变了，同样的数值视觉效果会不同</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note warn"><span class="lab">注意</span>
+    磁盘上已经有 2 张地图的 PPV 存成了 Standard ACES：<code>XZ_PC_YuJinZhiXiBiNanSuo200_Landscape</code>（主城 PC 地形子关卡）和 <code>LoginScene_PC</code>，都在 10-23 保存，应该是你测试时留下的。如果暂时不切，记得改回 Filmic 或者不要提交。
+  </div>
+
+  <!-- 贡献 -->
+  <h3 id="why-share">四个原因各占多少</h3>
+  <p>用“与原 Filmic 画面的平均色差”来衡量，依次叠加修正：</p>
+  <div class="chart" id="chart-de">
+    <p class="fig-title">与原 Filmic 画面的平均色差（越小越像）</p>
+    <p class="fig-sub">地牢和选角是工程截图；色卡取 −1 / 0 / +1 档三种曝光。</p>
+  </div>
+  <p>在<b>暗场景</b>（地牢）里，编码一项就占了约 {{dg_share}}% 的差异（{{dg_ad}} → {{dg_as}}）。在<b>强光特效场景</b>（选角）里，编码只占约 {{sr_share}}%（{{sr_ad}} → {{sr_as}}），剩下的主要来自曲线和颜色。色卡几乎全是中间调和亮色，所以改编码帮助很小（{{ckde_ad}} → {{ckde_as}}），要靠补偿（→ {{ckde_ac}}）。剩下的差异是 ACES 2.0 本来的样子：更多高光层次、颜色不跑偏。这部分不需要、也不应该完全“修”回去。</p>
+</section>
+
+<!-- ============================================================ 短期 -->
+<section class="card" id="short">
+  <h2>短期方案：不重做美术，先把画面救回来</h2>
+  <p class="sub">目标：在 PBR 重打光完成之前，既可以继续用 Filmic，也可以先切 ACES 而不让画面变灰。</p>
+  <ol class="steps">
+    <li><b>先决定要不要现在切</b>
+      存量关卡的灯光、材质、特效都是在 Filmic 下调的，<b>继续用 Filmic 是零成本、零风险的选择</b>。建议只在新做或重打光的关卡里用 ACES，旧关卡等重打光时再切。下面的 2–5 步是“必须现在切”时的做法。</li>
+    <li><b>必做：把输出编码改回 sRGB</b>
+      解决“暗部发灰”这个最大的问题，只影响 Standard ACES，Filmic 不受影响：
+<pre class="code"><button class="copy" type="button">复制</button>; Config/DefaultEngine.ini
+[/Script/Engine.RendererSettings]
+<span class="c">; Standard ACES 在 SDR 下按 sRGB 编码（默认 -1：PPV 选 ACES 时用 BT.1886 / Gamma 2.4，普通屏幕暗部发灰）</span>
+r.LUT.TonemappingSDRInvEOTF=0</pre>
+      效果：与 Filmic 的平均色差 {{de_ad}} → {{de_as}}（地牢场景 {{dg_ad}} → {{dg_as}}）。这个变量每帧读取，编辑器里用控制台输入同名命令可以立即看到效果。</li>
+    <li><b>可选：把观感补偿到接近 Filmic</b>
+      下面三个数是用两张工程截图加色卡拟合出来的，与 Filmic 最接近（平均色差 {{de_as}} → {{de_ac}}）：
+      <div class="scroll"><table class="t stack">
+        <thead><tr><th>参数</th><th>在哪里改</th><th class="num">值</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td class="nw">曝光</td><td><code>r.HDR.Aces.SceneColorMultiplier={{comp_mult}}</code>（默认 1.5，只影响 ACES）；或者 PPV → Exposure Compensation</td><td class="num">{{comp_ev}} 档</td><td>中灰对齐 Filmic</td></tr>
+          <tr><td class="nw">对比度</td><td>PPV → Color Grading → Global → Contrast（亮度 Y 那一项）</td><td class="num">×{{comp_con}}</td><td>补回中间调对比度和亮部</td></tr>
+          <tr><td class="nw">饱和度</td><td>PPV → Color Grading → Global → Saturation（Y）</td><td class="num">×{{comp_sat}}</td><td>对比度加上去后饱和度会略高，轻微回收</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">“×”的意思是在原值上乘：UE 的 Contrast 是以 0.18 为支点的幂运算，Saturation 是围绕亮度的插值，两次叠加正好等于两个系数相乘。所以已经改过对比度、饱和度的地图（正式内容里分别有 {{scan_con_ship}} 个和 {{scan_sat_ship}} 个）用“原值 × 系数”，没改过的直接填系数。补偿后的灰阶曲线是第一张图里的黄色线。</p>
+      <p class="small muted">备选：如果以后要做 HDR 输出，并且要求 SDR/HDR 观感严格一致，也可以保留 BT.1886 编码，改用曝光 {{b2_ev}} 档（SceneColorMultiplier {{b2_mult}}）、对比度 ×{{b2_con}}、饱和度 ×{{b2_sat}}，色差为 {{de_b2}}，数值上更接近，但对比度要加得更猛。对 PC / 手机项目，第 2 步的 sRGB 编码在原理上更正确，推荐用它。</p></li>
+    <li><b>检查清单：切换前逐项看一遍</b>
+      <ul>
+        <li>3 张改过 Film Slope 的正式地图（HD_MiLiuZhiHuan000、YongShuangBingPo ×2）：这个参数失效后要用 Contrast 重新找感觉。</li>
+        <li>SD_GeBuLinYingDi02 的 LUT 贴图会失效：要么用 Color Grading 重调，要么这张图先留在 Filmic。</li>
+        <li>火焰、魔法、刀光等高饱和特效：颜色不再偏黄、偏青，亮度也偏暗，需要特效同学确认。</li>
+        <li>天空、自发光、灯光高光：要达到原来的亮度大约要多 1 档（见原因 ② 的表）。</li>
+        <li>用 SceneCapture 渲到 UI 的画面（角色展示、头像）同样走 Tonemapper，也会变。</li>
+        <li>前面提到的 2 张已经存成 ACES 的地图。</li>
+      </ul></li>
+    <li id="ab"><b>统一的 A/B 对比方法（编辑器 / PIE 控制台）</b>
+<pre class="code"><button class="copy" type="button">复制</button>r.LUT.TonemappingMethod 0         <span class="c">// 强制 Filmic</span>
+r.LUT.TonemappingMethod 1         <span class="c">// 强制 Standard ACES（ACES 2.0）</span>
+r.LUT.TonemappingSDRInvEOTF 0     <span class="c">// 编码 = sRGB</span>
+r.LUT.TonemappingSDRInvEOTF 1     <span class="c">// 编码 = BT.1886（= 在 PPV 里选 ACES 时的默认）</span>
+r.HDR.Aces.SceneColorMultiplier {{comp_mult}}  <span class="c">// ACES 曝光补偿（默认 1.5）</span>
+r.LUT.TonemappingMethod -1        <span class="c">// 恢复：跟随 PPV</span>
+r.LUT.TonemappingSDRInvEOTF -1    <span class="c">// 恢复：跟随默认规则</span></pre>
+      <p class="small">两个变量要一起设，才能确定看到的是哪种组合。“ACES 默认”是 <code>1 / 1</code>，“ACES + sRGB”是 <code>1 / 0</code>，Filmic 是 <code>0 / 0</code>。</p></li>
+    <li><b>不要用局部后处理体积来切换</b>
+      Tonemapping Method 是“开关型”属性，不做混合：只要体积权重大于 0 就整个切过去（源码 <code>SET_PP(TonemappingMethod)</code>）。角色走进带 Blend Radius 的局部体积时，画面会瞬间跳变。请在每张图的全局（Unbound）PPV 上整图切换。</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 长期 -->
+<section class="card" id="long">
+  <h2>长期方案：以 ACES 2.0 为基准的 PBR 重打光</h2>
+  <p class="sub">既然美术效果本来就要按 PBR 重新打光，这是切到 ACES 2.0 最合适的时机。目标是让“美术在屏幕上看到的”和“物理上应该是的”一致，再在上面叠项目自己的风格。</p>
+  <ol class="steps">
+    <li><b>定死输出标准</b>
+      全项目统一用 Standard ACES（<code>r.HDR.Aces.Version=2</code>）加 sRGB 编码（<code>r.LUT.TonemappingSDRInvEOTF=0</code>），编辑器视口、PIE、打包包体保持一致。移动端走的是同一套 LUT 生成代码，结论通用。美术的显示器统一校准到 sRGB（Gamma 2.2、D65 白点）。</li>
+    <li><b>做一张“标定场景”（Look-dev 地图）</b>
+      放 18% 灰卡、ColorChecker 色卡、白 / 灰 / 镜面三颗球、常用材质样本，以及白天、室内、地牢、夜晚几套典型灯光。所有灯光、材质、特效先在这里过一遍再进关卡。本文的灰阶条和色卡图可以直接当参照。</li>
+    <li><b>建立曝光体系</b>
+      工程关了自动曝光（<code>r.EyeAdaptationQuality=0</code>），曝光由 PPV 的 Exposure Compensation 决定。约定每类场景主光下 18% 灰显示为像素值约 110–118，用物理单位（lux / 坎德拉 / EV100）记录主光强度。ACES 2.0 的灯光直觉：比中灰亮 {{ev90_a}} 档约到 90% 白（像素值 230），{{ev99_a}} 档才到 99% 白；Filmic 分别是 {{ev90_f}} 档和 {{ev99_f}} 档。</li>
+    <li><b>材质与自发光规范</b>
+      Albedo 控制在 sRGB 约 50–240（线性约 0.03–0.87），不要纯黑、纯白、纯饱和。自发光、天空、灯罩、UI 3D 元素按“比中灰亮几档”来定强度：ACES 下要达到原来的亮度大约多 1 档（亮部）到 1.5 档（接近白）。</li>
+    <li><b>特效重调</b>
+      火焰、魔法等高饱和特效的“白芯 / 黄芯”在贴图或颜色曲线里明确做出来，不再依赖 Tonemapper 偏色。好处是颜色所见即所得：调成什么色，越亮也还是那个色。</li>
+    <li><b>项目 Look 用 Color Grading 做，不用 LUT 贴图</b>
+      ACES 2.0 默认是“中性原片”。项目风格（对比、饱和、暗部偏冷、高光偏暖等）用 Color Grading 的全局 / 暗部 / 中间调 / 高光分区来做，整理成几套 PPV 预设，按场景类型复用。LUT 贴图在 ACES 下不生效。实在需要 LUT 式调色，可以用 After Tonemapping 的后处理材质，但有额外开销，移动端要慎用。</li>
+    <li><b>DCC 和 UE 对齐</b>
+      Substance Painter、Nuke、DaVinci Resolve、Maya / Houdini 等支持 OCIO 的软件，用 ACES 2.0 配置（sRGB 显示、SDR 100 nit）预览时，<b>要额外 +0.58 档曝光</b>，因为 UE 在 ACES 前乘了 1.5。另一种做法是把 UE 的 <code>r.HDR.Aces.SceneColorMultiplier</code> 设回 1.0，与行业标准完全一致，再用场景曝光补回这 0.58 档。两种做法选一种，全项目统一。</li>
+    <li><b>为 HDR 输出留好路</b>
+      ACES 2.0 的 SDR 和 HDR 是同一曲线家族，开 HDR 后自动按屏幕峰值亮度展开，观感一致。Filmic 在 HDR 下是“先算出 SDR 结果，再反推扩展”，一致性较差。以后要支持 HDR 屏幕，ACES 是更省事的基础。</li>
+    <li><b>逐关卡迁移、逐关卡验收</b>
+      按关卡整图切换（见短期第 5 步），优先切新做或重打光的关卡。每张图切换前后在固定机位截图对比，并在标定场景里检查中灰和白点。验收时用统一的 A/B 命令，避免前面那个“控制台切与 PPV 切结果不同”的误会。</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 优劣 -->
+<section class="card" id="versus">
+  <h2>Filmic vs ACES 2.0：优劣对比（美术版）</h2>
+  <p class="sub">一句话：<b>Filmic 像“自带滤镜的相机”</b>，好看、省事，但亮部会偏色、层次少。<b>ACES 2.0 像“原片”</b>，干净、准确、高光层次多，但要自己调出风格。</p>
+  <div class="scroll"><table class="t vs stack">
+    <thead><tr><th>维度</th><th>Filmic（UE4 以来的默认）</th><th>ACES 2.0（Standard ACES）</th></tr></thead>
+    <tbody>
+      <tr><td>中间调对比</td><td><span class="ok">高</span>：中灰附近每档 {{slope_f}} 个像素值，画面“实”，出片快</td><td>低约 {{slope_drop_as}}%（每档 {{slope_as}}）：默认偏平，需要自己加对比</td></tr>
+      <tr><td>暗部</td><td><span class="ok">干净</span>，压得住</td><td><span class="bad">默认发灰</span>：UE 默认的 BT.1886 编码在普通屏幕上把暗部抬亮；改成 sRGB 编码后与 Filmic 接近</td></tr>
+      <tr><td>高光</td><td><span class="bad">容易糊白</span>：{{ev99_f}} 档（中灰的 {{x99_f}} 倍）就到 99% 白，强光、火焰、天空亮部层次少</td><td><span class="ok">层次多</span>：{{ev99_a}} 档（中灰的 {{x99_a}} 倍）才到 99% 白，过渡到白更自然</td></tr>
+      <tr><td>色相</td><td><span class="bad">越亮越偏</span>：火焰橙→黄 {{hue_or_f}}°、魔法蓝→青 {{hue_bl_f}}°、血红→橙 {{hue_rd_f}}°</td><td><span class="ok">保色相</span>（≤ {{hue_max_a}}°）：亮了是“变白”，不是“变色”</td></tr>
+      <tr><td>饱和度</td><td>中等亮度更艳（色卡平均彩度 {{chk_f}}）</td><td>正常曝光下淡一些（{{chk_as}}，−{{chk_drop_as}}%）；很亮的颜色反而比 Filmic 更保色</td></tr>
+      <tr><td>可调性</td><td><span class="ok">曲线可调</span>：Film Slope / Toe / Shoulder / Clip、LUT 贴图、Blue Correction</td><td><span class="bad">曲线固定</span>：只能在曲线前用曝光和 Color Grading 调，LUT 贴图不生效</td></tr>
+      <tr><td>SDR / HDR 一致性</td><td>一般：HDR 是从 SDR 结果反推再扩展</td><td><span class="ok">一致</span>：同一曲线家族，按屏幕峰值自动适配</td></tr>
+      <tr><td>行业标准 / 工具链</td><td>UE 私有曲线，DCC 里没法用同一标准预览</td><td><span class="ok">行业标准</span>：ACES 2.0 / OpenColorIO，DCC、影视、外包流程可以对齐（注意 UE 额外的 ×1.5）</td></tr>
+      <tr><td>迁移成本</td><td><span class="ok">零</span>：现有美术都是在它下面调的</td><td>需要重新校准灯光、自发光、特效、调色，正好配合 PBR 重打光</td></tr>
+      <tr><td>运行时性能</td><td colspan="2">相同：两者都烘焙成 3D LUT，每帧只查表；LUT 只在参数变化时重算（ACES 2.0 重算稍贵，但不是每帧）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="two">
+    <div class="box"><h4>适合继续用 Filmic 的情况</h4><ul>
+      <li>存量关卡，没有重打光计划</li><li>依赖 LUT 贴图或 Film 参数做出的强风格化画面</li><li>上线时间紧，没有精力回归</li></ul></div>
+    <div class="box"><h4>适合切到 ACES 2.0 的情况</h4><ul>
+      <li>按 PBR 重打光的关卡（你们现在的计划）</li><li>强光、火焰、魔法特效多，Filmic 下经常糊白、跑色</li><li>以后要支持 HDR 屏幕，或者要和 DCC、预渲染 CG 对齐</li></ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ 名词 -->
+<section class="card" id="gloss">
+  <h2>名词小抄</h2>
+  <div class="gloss">
+    <div><b>档（EV / Stop）</b>亮度翻一倍 = 亮 1 档。本文横轴都以 18% 中灰为 0 档。</div>
+    <div><b>18% 中灰</b>反射率 18% 的灰卡，是曝光的基准。正常曝光下显示为像素值约 110–118。</div>
+    <div><b>色调映射（Tonemapper）</b>把可以无限亮的场景亮度压进屏幕能显示的 0–1 范围的那条曲线。Filmic 和 ACES 就是两种曲线。</div>
+    <div><b>显示编码（sRGB / BT.1886）</b>把 0–1 的亮度翻译成像素值的规则，必须和屏幕的显示方式配对。sRGB ≈ Gamma 2.2（电脑、手机），BT.1886 = Gamma 2.4（暗室电视）。</div>
+    <div><b>逐通道 / 保色相</b>逐通道：R、G、B 各压各的，简单但会偏色。保色相：只压亮度、单独控制彩度，色相不变。</div>
+    <div><b>彩度 / 色相</b>彩度是“有多鲜艳”，色相是“是什么颜色”（红、橙、黄…）。本文都在 OKLab 感知色彩空间里度量。</div>
+    <div><b>ACES 2.0</b>美国电影艺术与科学学院（AMPAS）维护的色彩管理标准，2.0 版重写了显示端的输出变换（也就是 Tonemapping）。UE 5.8 的 Standard ACES 默认用它。</div>
+    <div><b>PPV</b>Post Process Volume，后处理体积。Tonemapping Method 在 PPV → Film 分类里（显示名 Method）。</div>
+  </div>
+</section>
+
+<!-- ============================================================ 附录 -->
+<section class="card" id="appendix">
+  <h2>附录</h2>
+  <h4>A. 源码依据（工程引擎 E:\TorchLight_UE5\Engine\Engine，官方 5.8.2，只读）</h4>
+  <ul class="src">
+    <li><code>Shaders/Private/PostProcessCombineLUTs.usf</code>：<code>ApplyToneCurve</code>（294–342）。ACES 分支只调用 <code>ComputeGradedColor</code>（236–245），Filmic 分支调用 <code>ComputeFilmColorNoGamma</code>（160–234），其中依次是 Blue Correction（181）、<code>FilmToneMap</code>（184）、LUT 贴图（193–226）、<code>ColorCorrection</code>（229），之后还有 Gamma 微调（305）。<code>CombineLUTsCommon</code>（344–481）：两种模式共用的白平衡、Expand Gamut（377–401）、<code>ColorCorrectAll</code>（403），以及 SDR 编码选择：sRGB 或 <code>pow(x, 1/2.4)</code>（410–422）。</li>
+    <li><code>Shaders/Private/PostProcessCombineLUTsInner.usf</code>：<code>ComputeOutputACES</code>（59–84），ACES 2.0 输入先乘 <code>TotalSceneColorMultiplier</code>（67）。</li>
+    <li><code>Source/Runtime/Renderer/Private/PostProcess/PostProcessCombineLUTs.cpp</code>：<code>r.LUT.TonemappingMethod</code>（72–78）、<code>r.LUT.TonemappingSDRInvEOTF</code> 及其说明原文（80–88）。编码默认值 = PPV 的 <code>TonemappingMethod == StandardACES</code>（458–462，读的是 PPV 设置，不是控制台覆盖），而曲线选择 <code>GetTonemappingMethod</code> 会应用控制台覆盖（319–325）。<code>TotalSceneColorMultiplier = PaperWhite / 203 × 1.5</code>（627–628），SDR 视口 PaperWhite = 203。</li>
+    <li><code>Source/Runtime/RenderCore/Private/RenderCore.cpp</code>：<code>r.HDR.Aces.SceneColorMultiplier</code> 默认 1.5（386），<code>r.HDR.Aces.Version</code> 默认 2（400；说明文字里写的 “1.3 (default)” 与实际默认值不符）。</li>
+    <li><code>Shaders/Private/TonemapCommon.ush</code>：<code>FilmToneMap</code>（110–225），包括 Glow、Red modifier、逐通道 S 曲线和前后去饱和。<code>Source/Runtime/Engine/Private/Scene.cpp</code>（436–449）：默认 BlueCorrection 0.6、ExpandGamut 1、Film Slope 0.88 / Toe 0.55 / Shoulder 0.26 / BlackClip 0 / WhiteClip 0.04。</li>
+    <li><code>Shaders/Private/ACES/ACESTonescale.ush</code>：ACES 2.0 tonescale 常数（18% 灰 → 10.013 nit，SDR 在场景值 128 时到顶）。<code>Source/Runtime/Engine/Classes/Engine/Scene.h</code>（74–77）：<code>ETonemappingMethod</code>，StandardACES 的提示是 “Film settings do not apply to this method.”</li>
+    <li><code>Source/Runtime/Engine/Private/SceneView.cpp</code>（1682）：<code>SET_PP(TonemappingMethod)</code>，开关型，不插值。<code>Source/Runtime/Renderer/Private/MobileShadingRenderer.cpp</code>（2221）：移动端调用同一个 <code>AddCombineLUTPass</code>。</li>
+  </ul>
+  <h4>B. 计算方法与可信度</h4>
+  <ul class="small">
+    <li><b>Filmic</b>：把上面的 Filmic 处理按源码逐行移植到 Python（numpy），参数为 UE 默认值。中灰 0.18 → 显示 0.18，与源码设计一致。</li>
+    <li><b>ACES 2.0</b>：输出变换使用 OpenColorIO 2.6 内置的官方实现（ACES2065-1 → SDR 100 nit Rec.709），前后按 UE 源码补上 ×1.5、外层 LUT 的裁剪和编码。用 UE 源码里的 tonescale 公式逐点核对灰阶，与 OCIO 的结果相对误差小于 1×10⁻⁶。场景值超过 128 时 OCIO 会裁到峰值，UE 同样有 <code>clamp_zero_to_peakLuminance</code>。</li>
+    <li><b>没有模拟的部分</b>：3D LUT 的插值误差（UE 用 32³ LUT 加 PQ 编码，误差很小）、Bloom 等在 Tonemapper 之前的效果（截图反推时已包含在场景值里）、显示器个体差异。屏幕亮度按标准 sRGB 显示器计算。</li>
+    <li><b>截图反推</b>：用完整的 Filmic 正向模型做逐像素迭代求逆，地牢场景平均残差 0.002 个像素值，{{res_dg}}% 的像素超过 2。选角场景的火焰区比 Filmic 能输出的颜色还要纯，约 {{res_sr}}% 的像素有 2–6 个像素值的误差。</li>
+    <li><b>补偿参数</b>：以“与 Filmic 的平均 OKLab 色差”为目标，在两张截图（约 9 万个采样像素）和色卡（−1 / 0 / +1 档）上做坐标下降拟合，再取到 0.05 的整数档复算。</li>
+  </ul>
+  <h4>C. 工程扫描（只读，2026-10-26）</h4>
+  <p class="small">用 ripgrep 扫描 <code>Content</code> 下所有 .umap / .uasset 名字表里的 <code>bOverride_*</code>，只有开启了覆盖的属性才会出现在名字表里。再解析导入表，确认 LUT 实际引用的贴图。完整结果见 <code>data/project_scan.json</code>。</p>
+  <h4>D. 复现</h4>
+  <pre class="code"><button class="copy" type="button">复制</button><span class="c"># 依赖：Python 3.11 + numpy + Pillow + PyOpenColorIO 2.6（本机 Python311 已装）</span>
+cd F:\XD_EngineAI\UE_ACES_Analyze\src
+python -I validate.py           <span class="c"># 模型核对 + 灰阶关键数字</span>
+python -I fit_compensation.py   <span class="c"># 拟合短期补偿参数 → data/fit.json</span>
+python -I make_assets.py        <span class="c"># 生成 img/ 与 data/report_data.json</span>
+python -I build_html.py         <span class="c"># 生成本页 index.html</span></pre>
+</section>
+<footer>本报告只读取了工程与引擎源码，没有修改任何工程文件。图表数据可以在每张图下方的“数据表”里查看。</footer>
+</main>
+
+<script type="application/json" id="report-data">/*__REPORT_DATA__*/</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("report-data").textContent);
+  var NS = "http://www.w3.org/2000/svg";
+  var S = {
+    filmic: { label: "Filmic（UE 默认）", color: "--s1" },
+    aces_default: { label: "ACES 2.0 默认（BT.1886 编码）", color: "--s2" },
+    aces_srgb: { label: "ACES 2.0 + sRGB 编码", color: "--s3" },
+    aces_comp: { label: "ACES 2.0 + sRGB + 补偿", color: "--s4" }
+  };
+  var ORDER = ["filmic", "aces_default", "aces_srgb", "aces_comp"];
+  function cv(n) { return "var(" + n + ")"; }
+  function sv(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function h(tag, cls, parent, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function evText(v) { return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + " 档"; }
+  function evTick(v) { return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v); }
+  function onWidth(el, fn) {
+    var last = 0, raf = 0;
+    var ro = new ResizeObserver(function () {
+      var w = el.clientWidth;
+      if (Math.abs(w - last) < 1) return;
+      last = w;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(fn);
+    });
+    ro.observe(el);
+  }
+  function legend(root, keys, kind, labels) {
+    var lg = h("div", "legend", root);
+    keys.forEach(function (k) {
+      var it = h("span", "lg-item", lg);
+      var sw = h("span", kind === "bar" ? "lg-rect" : "lg-line", it);
+      sw.style.background = cv(S[k].color);
+      h("span", null, it, (labels && labels[k]) || S[k].label);
+    });
+  }
+  function table(root, head, rows) {
+    var det = h("details", "tblw", root);
+    h("summary", null, det, "查看数据表");
+    var wrap = h("div", "scroll", det);
+    var t = h("table", "t", wrap);
+    var tr = h("tr", null, h("thead", null, t));
+    head.forEach(function (c, i) { h("th", i ? "num" : null, tr, c); });
+    var tb = h("tbody", null, t);
+    rows.forEach(function (r) {
+      var tr2 = h("tr", null, tb);
+      r.forEach(function (c, i) { h("td", i ? "num" : null, tr2, c); });
+    });
+  }
+  function placeTip(tip, plot, px) {
+    var tw = tip.offsetWidth, W = plot.clientWidth;
+    var L = px + 16;
+    if (L + tw > W - 4) L = px - tw - 16;
+    if (L < 4) L = Math.max(4, Math.min(W - tw - 4, px - tw / 2));
+    tip.style.left = L + "px";
+    tip.style.top = "6px";
+  }
+
+  // ---------------------------------------------------------------- line chart
+  function lineChart(root, cfg) {
+    legend(root, cfg.keys, "line", cfg.labels);
+    var view = 0;
+    if (cfg.views) {
+      var vb = h("div", "views seg", root);
+      cfg.views.forEach(function (v, i) {
+        var b = h("button", i === 0 ? "on" : null, vb, v.name);
+        b.type = "button";
+        b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+        b.addEventListener("click", function () {
+          view = i;
+          Array.prototype.forEach.call(vb.children, function (x, j) { x.classList.toggle("on", j === i); x.setAttribute("aria-pressed", j === i ? "true" : "false"); });
+          draw();
+        });
+      });
+    }
+    if (cfg.yTitle) h("div", "ytitle", root, cfg.yTitle);
+    var plot = h("div", "plot", root);
+    plot.tabIndex = 0;
+    plot.setAttribute("role", "img");
+    plot.setAttribute("aria-label", cfg.aria);
+    var tip = h("div", "tip", plot);
+    tip.hidden = true;
+    var svgEl = null, G = null, idx = null;
+    function cur() { return cfg.views ? cfg.views[view] : cfg; }
+    function draw() {
+      var v = cur();
+      var W = Math.max(280, plot.clientWidth), H = cfg.height || 300;
+      var m = { l: 40, r: 12, t: 12, b: 38 };
+      var pw = W - m.l - m.r, ph = H - m.t - m.b;
+      var x0 = v.xDomain[0], x1 = v.xDomain[1], y0 = v.yDomain[0], y1 = v.yDomain[1];
+      var X = function (x) { return m.l + (x - x0) / (x1 - x0) * pw; };
+      var Y = function (y) { return m.t + (1 - (y - y0) / (y1 - y0)) * ph; };
+      if (svgEl) svgEl.remove();
+      svgEl = sv("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H, "class": "chart-svg", "aria-hidden": "true" });
+      plot.insertBefore(svgEl, tip);
+      v.yTicks.forEach(function (t) {
+        var y = Y(t);
+        var ln = sv("line", { x1: m.l, x2: m.l + pw, y1: y, y2: y }, svgEl);
+        ln.style.stroke = cv(t === y0 ? "--axis" : "--grid"); ln.style.strokeWidth = "1";
+        var tx = sv("text", { x: m.l - 7, y: y + 4, "text-anchor": "end", "class": "tick" }, svgEl);
+        tx.textContent = (cfg.yFmt || String)(t);
+      });
+      var step = pw < 420 && v.xTicks.length > 7 ? 2 : 1;
+      v.xTicks.forEach(function (t, i) {
+        if (i % step) return;
+        var tx = sv("text", { x: X(t), y: m.t + ph + 17, "text-anchor": "middle", "class": "tick" }, svgEl);
+        tx.textContent = (cfg.xFmt || String)(t);
+      });
+      var at = sv("text", { x: m.l + pw, y: H - 3, "text-anchor": "end", "class": "axis-title" }, svgEl);
+      at.textContent = cfg.xTitle;
+      (cfg.marks || []).forEach(function (mk) {
+        if (mk.x < x0 || mk.x > x1) return;
+        var x = X(mk.x);
+        var ln = sv("line", { x1: x, x2: x, y1: m.t, y2: m.t + ph }, svgEl);
+        ln.style.stroke = cv("--axis"); ln.style.strokeWidth = "1";
+        var tx = sv("text", { x: x + 5, y: m.t + 12, "class": "mark-label" }, svgEl);
+        tx.textContent = mk.label;
+      });
+      var cid = "clip" + Math.random().toString(36).slice(2);
+      var cp = sv("clipPath", { id: cid }, svgEl);
+      sv("rect", { x: m.l - 2, y: m.t - 2, width: pw + 4, height: ph + 4 }, cp);
+      var g = sv("g", { "clip-path": "url(#" + cid + ")" }, svgEl);
+      cfg.keys.forEach(function (k) {
+        var vals = cfg.data[k], d = "";
+        cfg.x.forEach(function (xv, i) {
+          if (xv < x0 - 1e-9 || xv > x1 + 1e-9) return;
+          d += (d ? "L" : "M") + X(xv).toFixed(1) + "," + Y(vals[i]).toFixed(1);
+        });
+        var p = sv("path", { d: d, fill: "none" }, g);
+        p.style.stroke = cv(S[k].color); p.style.strokeWidth = "2"; p.style.strokeLinejoin = "round"; p.style.strokeLinecap = "round";
+      });
+      var hl = sv("g", null, svgEl);
+      hl.style.display = "none";
+      var cross = sv("line", { y1: m.t, y2: m.t + ph }, hl);
+      cross.style.stroke = cv("--ink2"); cross.style.strokeWidth = "1";
+      var dots = cfg.keys.map(function (k) {
+        var c = sv("circle", { r: 4 }, hl);
+        c.style.fill = cv(S[k].color); c.style.stroke = cv("--surface"); c.style.strokeWidth = "2";
+        return c;
+      });
+      var ov = sv("rect", { x: m.l, y: m.t, width: pw, height: ph, fill: "transparent" }, svgEl);
+      ov.style.cursor = "crosshair";
+      G = { X: X, Y: Y, m: m, pw: pw, ph: ph, hl: hl, cross: cross, dots: dots, W: W, x0: x0, x1: x1 };
+      ov.addEventListener("pointermove", function (e) {
+        var r = svgEl.getBoundingClientRect();
+        var px = (e.clientX - r.left) * (W / r.width);
+        show(nearest(x0 + (px - m.l) / pw * (x1 - x0)));
+      });
+      ov.addEventListener("pointerleave", hide);
+      if (idx != null) show(idx);
+    }
+    function nearest(xv) {
+      var best = 0, bd = 1e9;
+      cfg.x.forEach(function (x, i) { var d = Math.abs(x - xv); if (d < bd) { bd = d; best = i; } });
+      return best;
+    }
+    function show(i) {
+      var xv = cfg.x[i];
+      if (xv < G.x0 - 1e-9 || xv > G.x1 + 1e-9) { hide(); return; }
+      idx = i;
+      G.hl.style.display = "";
+      var x = G.X(xv);
+      G.cross.setAttribute("x1", x); G.cross.setAttribute("x2", x);
+      cfg.keys.forEach(function (k, j) {
+        var y = Math.min(Math.max(G.Y(cfg.data[k][i]), G.m.t), G.m.t + G.ph);
+        G.dots[j].setAttribute("cx", x); G.dots[j].setAttribute("cy", y);
+      });
+      tip.hidden = false;
+      tip.textContent = "";
+      h("div", "tip-title", tip, cfg.tipTitle(xv));
+      cfg.keys.forEach(function (k) {
+        var row = h("div", "tip-row", tip);
+        h("span", "tip-key", row).style.background = cv(S[k].color);
+        h("strong", "tip-val", row, cfg.valFmt(cfg.data[k][i]));
+        h("span", "tip-lab", row, (cfg.labels && cfg.labels[k]) || S[k].label);
+      });
+      var r = svgEl.getBoundingClientRect();
+      placeTip(tip, plot, x * (r.width / G.W));
+    }
+    function hide() { idx = null; if (G) G.hl.style.display = "none"; tip.hidden = true; }
+    plot.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        var v = cur();
+        var i = idx == null ? nearest((v.xDomain[0] + v.xDomain[1]) / 2) : idx + (e.key === "ArrowRight" ? cfg.kbStep : -cfg.kbStep);
+        i = Math.max(0, Math.min(cfg.x.length - 1, i));
+        show(i);
+      } else if (e.key === "Escape") hide();
+    });
+    plot.addEventListener("focus", function () { if (idx == null) show(nearest(cfg.focusX || 0)); });
+    plot.addEventListener("blur", hide);
+    draw();
+    onWidth(plot, draw);
+    var rows = [];
+    cfg.x.forEach(function (xv, i) {
+      if (!cfg.tableFilter(xv)) return;
+      rows.push([cfg.tableX(xv)].concat(cfg.keys.map(function (k) { return cfg.valFmt(cfg.data[k][i]); })));
+    });
+    table(root, [cfg.tableXName].concat(cfg.keys.map(function (k) { return (cfg.labels && cfg.labels[k]) || S[k].label; })), rows);
+  }
+
+  // ---------------------------------------------------------------- bar chart
+  function barChart(root, cfg) {
+    legend(root, cfg.keys, "bar", cfg.labels);
+    if (cfg.yTitle) h("div", "ytitle", root, cfg.yTitle);
+    var plot = h("div", "plot", root);
+    var tip = h("div", "tip", plot);
+    tip.hidden = true;
+    var svgEl = null;
+    function draw() {
+      var W = Math.max(280, plot.clientWidth), H = cfg.height || 260;
+      var m = { l: 36, r: 8, t: 20, b: 34 };
+      var pw = W - m.l - m.r, ph = H - m.t - m.b;
+      var y0 = cfg.yDomain[0], y1 = cfg.yDomain[1];
+      var Y = function (y) { return m.t + (1 - (y - y0) / (y1 - y0)) * ph; };
+      if (svgEl) svgEl.remove();
+      svgEl = sv("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H, "class": "chart-svg", role: "img", "aria-label": cfg.aria });
+      plot.insertBefore(svgEl, tip);
+      cfg.yTicks.forEach(function (t) {
+        var y = Y(t);
+        var ln = sv("line", { x1: m.l, x2: m.l + pw, y1: y, y2: y }, svgEl);
+        ln.style.stroke = cv(t === y0 ? "--axis" : "--grid"); ln.style.strokeWidth = "1";
+        var tx = sv("text", { x: m.l - 7, y: y + 4, "text-anchor": "end", "class": "tick" }, svgEl);
+        tx.textContent = cfg.yFmt(t);
+      });
+      var nC = cfg.cats.length, nS = cfg.keys.length, band = pw / nC;
+      var barW = Math.max(4, Math.min(24, (band * 0.74 - (nS - 1) * 2) / nS));
+      var groupW = nS * barW + (nS - 1) * 2;
+      var showLabels = barW >= 17;
+      cfg.cats.forEach(function (cat, ci) {
+        var cx = m.l + band * (ci + 0.5);
+        var ct = sv("text", { x: cx, y: m.t + ph + 18, "text-anchor": "middle", "class": "cat" }, svgEl);
+        ct.textContent = cat;
+        cfg.keys.forEach(function (k, si) {
+          var v = cfg.data[k][ci];
+          var x = cx - groupW / 2 + si * (barW + 2);
+          var y = Y(v), yb = Y(y0);
+          var r = Math.min(4, barW / 2, Math.max(0, yb - y));
+          var d = "M" + x + "," + yb + "V" + (y + r) + "Q" + x + "," + y + " " + (x + r) + "," + y + "H" + (x + barW - r) +
+            "Q" + (x + barW) + "," + y + " " + (x + barW) + "," + (y + r) + "V" + yb + "Z";
+          var p = sv("path", { d: d, "class": "bar" }, svgEl);
+          p.style.fill = cv(S[k].color);
+          if (showLabels) {
+            var lt = sv("text", { x: x + barW / 2, y: y - 5, "text-anchor": "middle", "class": "bar-label" }, svgEl);
+            lt.textContent = cfg.valFmt(v);
+          }
+          var hit = sv("rect", { x: x - 1, y: m.t, width: barW + 2, height: ph, fill: "transparent", tabindex: "0" }, svgEl);
+          var on = function () {
+            p.classList.add("hot");
+            tip.hidden = false; tip.textContent = "";
+            h("div", "tip-title", tip, cat);
+            var row = h("div", "tip-row", tip);
+            var key = h("span", "tip-key rect", row); key.style.background = cv(S[k].color);
+            h("strong", "tip-val", row, cfg.valFmt(v) + (cfg.unit || ""));
+            h("span", "tip-lab", row, (cfg.labels && cfg.labels[k]) || S[k].label);
+            var rr = svgEl.getBoundingClientRect();
+            placeTip(tip, plot, (x + barW / 2) * (rr.width / W));
+          };
+          var off = function () { p.classList.remove("hot"); tip.hidden = true; };
+          hit.addEventListener("pointerenter", on); hit.addEventListener("pointerleave", off);
+          hit.addEventListener("focus", on); hit.addEventListener("blur", off);
+        });
+      });
+    }
+    draw();
+    onWidth(plot, draw);
+    table(root, [cfg.tableCatName].concat(cfg.keys.map(function (k) { return (cfg.labels && cfg.labels[k]) || S[k].label; })),
+      cfg.cats.map(function (c, ci) { return [c].concat(cfg.keys.map(function (k) { return cfg.valFmt(cfg.data[k][ci]) + (cfg.unit || ""); })); }));
+  }
+
+  // ---------------------------------------------------------------- charts
+  var tone = D.tone;
+  lineChart(document.getElementById("chart-tone"), {
+    x: tone.ev, data: tone, keys: ORDER,
+    views: [
+      { name: "全范围", xDomain: [-8, 10], yDomain: [0, 255], xTicks: [-8, -6, -4, -2, 0, 2, 4, 6, 8, 10], yTicks: [0, 64, 128, 192, 255] },
+      { name: "暗部放大（−8 ~ 0 档）", xDomain: [-8, 0], yDomain: [0, 128], xTicks: [-8, -7, -6, -5, -4, -3, -2, -1, 0], yTicks: [0, 32, 64, 96, 128] },
+      { name: "亮部放大（0 ~ +10 档）", xDomain: [0, 10], yDomain: [96, 255], xTicks: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], yTicks: [96, 128, 160, 192, 224, 255] }
+    ],
+    xFmt: evTick, yFmt: String, valFmt: function (v) { return v.toFixed(1); },
+    xTitle: "相对 18% 中灰的曝光档位", yTitle: "屏幕像素值（0–255）",
+    marks: [{ x: 0, label: "18% 中灰" }],
+    tipTitle: function (xv) { return evText(xv) + " · 场景亮度 " + (0.18 * Math.pow(2, xv)).toPrecision(3); },
+    aria: "灰阶曲线：Filmic、ACES 2.0 默认、ACES 2.0 加 sRGB 编码、再加补偿四条曲线的屏幕像素值随曝光档位的变化",
+    kbStep: 5, focusX: 0,
+    tableXName: "档位", tableX: evText, tableFilter: function (x) { return Math.abs(x - Math.round(x)) < 1e-6; }
+  });
+
+  var sat = D.sat;
+  lineChart(document.getElementById("chart-sat"), {
+    x: sat.ev, data: sat, keys: ORDER, height: 270,
+    xDomain: [-3, 6], yDomain: [0, 16], xTicks: [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6], yTicks: [0, 4, 8, 12, 16],
+    xFmt: evTick, yFmt: String, valFmt: function (v) { return v.toFixed(2); },
+    xTitle: "相对正常曝光的档位", yTitle: "平均彩度（OKLCH C × 100）",
+    marks: [{ x: 0, label: "正常曝光" }],
+    tipTitle: function (xv) { return "曝光 " + evText(xv); },
+    aria: "色卡平均彩度随曝光变化：正常曝光附近 Filmic 最高，亮 1.5 档以后 ACES 更高",
+    kbStep: 1, focusX: 0,
+    tableXName: "曝光", tableX: evText, tableFilter: function (x) { return Math.abs(x * 2 - Math.round(x * 2)) < 1e-6; }
+  });
+
+  var hue = D.hue;
+  barChart(document.getElementById("chart-hue"), {
+    cats: hue.names, keys: ["filmic", "aces_srgb"], data: hue,
+    labels: { filmic: "Filmic（UE 默认）", aces_srgb: "ACES 2.0" },
+    yDomain: [0, 50], yTicks: [0, 10, 20, 30, 40, 50], yFmt: function (v) { return v + "°"; },
+    valFmt: function (v) { return v.toFixed(0); }, unit: "°", yTitle: "最大色相偏移（度）", height: 250,
+    aria: "高饱和颜色提亮时的最大色相偏移：Filmic 火焰橙 47 度、魔法蓝 38 度，ACES 2.0 全部不超过 5 度",
+    tableCatName: "颜色"
+  });
+
+  var dE = D.dE;
+  barChart(document.getElementById("chart-de"), {
+    cats: dE.cats, keys: ["aces_default", "aces_srgb", "aces_comp"], data: dE,
+    yDomain: [0, 6], yTicks: [0, 1, 2, 3, 4, 5, 6], yFmt: String,
+    valFmt: function (v) { return v.toFixed(1); }, yTitle: "平均色差（OKLab × 100）", height: 250,
+    aria: "与原 Filmic 画面的平均色差：改 sRGB 编码与加补偿后依次下降",
+    tableCatName: "样本"
+  });
+
+  // ---------------------------------------------------------------- strips
+  var strips = document.getElementById("strips");
+  ORDER.forEach(function (k) {
+    var nm = h("div", "nm", strips);
+    h("span", "key", nm).style.background = cv(S[k].color);
+    h("span", null, nm, S[k].label);
+    var bar = h("div", "bar", strips);
+    var img = h("img", null, bar); img.src = "img/strip_" + k + ".png"; img.alt = S[k].label + " 的灰阶条"; img.loading = "lazy";
+    h("span", "mid", bar);
+  });
+  h("div", null, strips);
+  var ax = h("div", "axis-row", strips);
+  for (var e = -8; e <= 8; e += 2) {
+    var sp = h("span", null, ax, evTick(e) + (e === 8 ? " 档" : ""));
+    sp.style.left = ((e + 8) / 16 * 100) + "%";
+    if (e === -8) sp.style.transform = "none"; else if (e === 8) sp.style.transform = "translateX(-100%)";
+  }
+
+  // ---------------------------------------------------------------- sweeps
+  var sweeps = document.getElementById("sweeps");
+  var SH = 7 * 48 + 6 * 2;
+  [["filmic", "Filmic（UE 默认）"], ["aces_srgb", "ACES 2.0（+ sRGB 编码）"]].forEach(function (p) {
+    var sw = h("div", "sw", sweeps);
+    var hd = h("div", "sw-h", sw);
+    h("span", "key", hd).style.background = cv(S[p[0]].color);
+    h("span", null, hd, p[1]);
+    var grid = h("div", "sw-grid", sw);
+    var names = h("div", "sw-names", grid);
+    hue.names.forEach(function (n, i) { var s = h("span", null, names, n); s.style.top = ((i * 50 + 24) / SH * 100) + "%"; });
+    var img = h("img", null, grid); img.src = "img/sweep_" + p[0] + ".png"; img.alt = p[1] + "：7 种高饱和颜色从 −2 档提亮到 +8 档"; img.loading = "lazy";
+    var axr = h("div", "axis-row sw-axis", sw);
+    var evs = D.sweep_ev;
+    [-2, 0, 2, 4, 6, 8].forEach(function (e) {
+      var j = evs.indexOf(e);
+      var s = h("span", null, axr, evTick(e) + (e === 8 ? " 档" : ""));
+      s.style.left = ((j + 0.5) / evs.length * 100) + "%";
+      if (e === -2) { s.style.left = "0%"; s.style.transform = "none"; }
+      if (e === 8) { s.style.left = "100%"; s.style.transform = "translateX(-100%)"; }
+    });
+  });
+
+  // ---------------------------------------------------------------- checkers
+  var checkers = document.getElementById("checkers");
+  ORDER.forEach(function (k) {
+    var c = h("div", null, checkers);
+    var img = h("img", null, c); img.src = "img/checker_" + k + ".png"; img.alt = S[k].label + " 下的 ColorChecker 色卡"; img.loading = "lazy";
+    var cap = h("div", "cap", c);
+    h("span", "key", cap).style.background = cv(S[k].color);
+    h("span", null, cap, S[k].label + " · 平均彩度 " + D.checker[k].C_mean.toFixed(1));
+  });
+
+  // ---------------------------------------------------------------- compare slider
+  var SCENES = [["dungeon", "地牢（暗场景）"], ["selectrole", "选角（强光特效）"]];
+  var RIGHTS = ["aces_default", "aces_srgb", "aces_comp"];
+  var RLAB = { aces_default: "ACES 2.0 默认", aces_srgb: "+ sRGB 编码", aces_comp: "+ sRGB + 补偿" };
+  var st = { scene: "dungeon", right: "aces_default", pos: 50 };
+  var cmp = document.getElementById("cmp"), over = document.getElementById("cmp-over"), handle = document.getElementById("cmp-handle");
+  var leftImg = document.getElementById("cmp-left"), rightImg = document.getElementById("cmp-right-img");
+  var tagR = document.getElementById("cmp-tag-r"), range = document.getElementById("cmp-range");
+  function seg(id, items, key) {
+    var box = document.getElementById(id);
+    items.forEach(function (it) {
+      var b = h("button", it[0] === st[key] ? "on" : null, box, it[1]);
+      b.type = "button";
+      b.setAttribute("aria-pressed", it[0] === st[key] ? "true" : "false");
+      b.addEventListener("click", function () {
+        st[key] = it[0];
+        Array.prototype.forEach.call(box.children, function (x) { var on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on ? "true" : "false"); });
+        upd();
+      });
+    });
+  }
+  function upd() {
+    leftImg.src = "img/scene_" + st.scene + "_filmic.jpg";
+    rightImg.src = "img/scene_" + st.scene + "_" + st.right + ".jpg";
+    tagR.textContent = S[st.right].label;
+    over.style.clipPath = "inset(0 0 0 " + st.pos + "%)";
+    handle.style.left = st.pos + "%";
+  }
+  seg("cmp-scene", SCENES, "scene");
+  seg("cmp-right", RIGHTS.map(function (k) { return [k, RLAB[k]]; }), "right");
+  range.addEventListener("input", function () { st.pos = +range.value; upd(); });
+  upd();
+  SCENES.forEach(function (s) { ["filmic"].concat(RIGHTS).forEach(function (k) { var im = new Image(); im.src = "img/scene_" + s[0] + "_" + k + ".jpg"; }); });
+
+  // ---------------------------------------------------------------- 手机端堆叠表格：给每格补上列名
+  Array.prototype.forEach.call(document.querySelectorAll("table.t.stack"), function (t) {
+    var heads = Array.prototype.map.call(t.querySelectorAll("thead th"), function (th) { return th.textContent; });
+    Array.prototype.forEach.call(t.querySelectorAll("tbody tr"), function (tr) {
+      Array.prototype.forEach.call(tr.children, function (td, i) {
+        if (i === 0) td.classList.add("lead"); else td.setAttribute("data-label", heads[i] || "");
+      });
+    });
+  });
+
+  // ---------------------------------------------------------------- copy & theme
+  Array.prototype.forEach.call(document.querySelectorAll("pre.code"), function (pre) {
+    var btn = pre.querySelector(".copy");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      var text = Array.prototype.filter.call(pre.childNodes, function (n) { return n !== btn; }).map(function (n) { return n.textContent; }).join("").replace(/^\n/, "");
+      var done = function () { btn.textContent = "已复制"; setTimeout(function () { btn.textContent = "复制"; }, 1500); };
+      if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+      function fallback() {
+        var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); done(); } catch (e) { btn.textContent = "复制失败"; }
+        ta.remove();
+      }
+    });
+  });
+  var themeBtn = document.getElementById("theme"), modes = ["auto", "light", "dark"], mi = 0;
+  var MODE_LABEL = { auto: "主题：跟随系统", light: "主题：浅色", dark: "主题：深色" };
+  themeBtn.addEventListener("click", function () {
+    mi = (mi + 1) % 3;
+    var md = modes[mi];
+    if (md === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", md);
+    themeBtn.textContent = MODE_LABEL[md];
+  });
+})();
+</script>
+</body>
+</html>

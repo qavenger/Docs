@@ -208,7 +208,28 @@ for cascade 从近到远:
         <article class="card third"><h3>教学版省略了什么</h3><ul><li><b>普通表面的二次再发射 / 多跳：</b>当前 interval 只在命中 emissive 时返回 radiance，命中普通墙返回 0；因此它验证的是 emissive→query 的 single-transport 核心，而不是完整多跳材质 GI。</li><li>若要完整 GI，还需先生成 secondary surface radiance，再做迭代传播或等价的多跳更新。</li><li>生产级方向插值与双线性修正。</li><li>优化的 radiance interval packing。</li><li>屏幕边界、动态几何和复杂材质。</li><li>3D 球方向、内存压缩和调度优化。</li></ul></article>
         <article class="card third"><h3>进入 3D 要新增什么</h3><ul><li>体素/SDF/DXR 可见性表示。</li><li>三维 Probe lattice 和球方向参数化。</li><li>更高的方向与内存预算。</li><li>volume slice / raymarch debug views。</li></ul></article>
       </div>
-      <div class="callout good" style="margin-top:16px"><b>与 RenderGraph Workbench 的连接：</b>原生教学版将沿用“Build Intervals → Merge → Resolve → Debug”资源链，但 ray source 会明确标成 voxel/SDF teaching-lite；框架目前没有硬件 Ray Query，文档不会伪造该能力。</div>
+      <div class="callout good" style="margin-top:16px"><b>与 RenderGraph Workbench 的连接：</b>原生版已经落地——<a href="RenderGraph_GI_Lab/index.html">Workbench 的 rcgi 方案</a>用 <code>RC.01-04 Cast → RC.05-07 Merge → RC.08 Resolve</code> 九个 Pass 在 D3D12/Vulkan 上跑同一 flatland 算法（场景为 3D 房间在 y=0.9 的切片），ray source 明确是解析 SDF；框架没有硬件 Ray Query，文档不伪造该能力。下方的 WebGPU compute 版跑的也是同一条 cast+merge 链。</div>
+    </div></section>
+
+    <section class="section" id="webgpu"><div class="wrap">
+      <div class="head"><div><div class="k">STAGE 06.5 · GPU BASED · WEBGPU COMPUTE</div><h2>同一条 cast + merge 链，这次全部在浏览器 GPU 上</h2></div><p>与原生 Workbench 的 <code>rcgi</code> 方案同一算法、同一房间切片、同一光源轨迹：WGSL compute 一次 dispatch 投射四层级联的全部 65,536 条区间射线，三次 merge dispatch 自远及近合并，fragment 阶段做 probe 双线性 + 方向平均。浏览器（Dawn）在 Windows 上把它映射到 D3D12，在 Linux/Android 上映射到 Vulkan——与原生路径互为对照。若 WebGPU 不可用，本卡片降级为说明文字，页面其余 CPU 教学实验不受影响。</p></div>
+      <div class="lab">
+        <div class="lab-head"><div><b>WebGPU Flatland Radiance Cascades</b><p>4×128² interval atlas · cast(16,16,4) · merge×3 · fullscreen resolve · 每帧重建，0 history reads</p></div><span id="rcgpuBadge">WebGPU 检测中…</span></div>
+        <div class="controls" style="grid-template-columns:repeat(3,1fr)">
+          <div class="control"><label>显示模式</label><select id="rcgpuMode"><option value="0">最终 fluence + 几何叠加</option><option value="1">仅 cast C0（无 merge 对照）</option><option value="2">merged C0 atlas 原始数据</option></select></div>
+          <div class="control"><button id="rcgpuPlay" type="button">暂停光源动画</button></div>
+          <div class="control"><label>光源相位 <output id="rcgpuTimeOut">0.0s</output></label><input id="rcgpuTime" type="range" min="0" max="12.5" step="0.05" value="0" disabled></div>
+        </div>
+        <div class="canvas-shell"><canvas id="rcgpuCanvas" width="640" height="400" aria-label="WebGPU Radiance Cascades fluence 俯视图"></canvas><div class="overlay" id="rcgpuOverlay">等待 WebGPU…</div></div>
+        <div class="stats" style="padding:0 14px 14px">
+          <div class="stat"><b>65,536</b><span>interval rays / 帧（128²×4 层）</span></div>
+          <div class="stat"><b>4 + 3 + 1</b><span>cast / merge / resolve dispatch</span></div>
+          <div class="stat"><b id="rcgpuBackend">—</b><span>adapter</span></div>
+          <div class="stat"><b id="rcgpuFrameMs">—</b><span>JS 帧间隔（含 vsync）</span></div>
+          <div class="stat"><b>0</b><span>history reads</span></div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:14px"><b>与原生实现逐行对应：</b>WGSL 的 <code>castIntervals</code> ⇔ <code>shaders/gi/rc_cast.hlsl</code>（几何级数区间、命中发光盘收集 radiance、命中被直射的遮挡边界收集反弹色）；<code>mergeCascade</code> ⇔ <code>rc_merge.hlsl</code>（transmittance 门控 + 4 父探针双线性 × 4 子方向平均）；fragment ⇔ <code>rc_resolve.hlsl</code>。源码就在本页 <code>&lt;script&gt;</code> 中，可直接查看。</div>
     </div></section>
 
     <section class="section" id="tradeoffs"><div class="wrap">
@@ -714,6 +735,408 @@ for cascade 从近到远:
     syncStateFromControls(true);
     animationFrame = requestAnimationFrame(animate);
     addEventListener('beforeunload', () => cancelAnimationFrame(animationFrame), { once: true });
+  })();
+  </script>
+  <script>
+  // WebGPU flatland Radiance Cascades - the same cast+merge chain as the
+  // native RenderGraph rcgi scheme (shaders/gi/rc_cast.hlsl / rc_merge.hlsl /
+  // rc_resolve.hlsl), ported to WGSL. Fails soft: any missing capability
+  // downgrades this one card to explanatory text without console errors.
+  (() => {
+    'use strict';
+    const canvas = document.getElementById('rcgpuCanvas');
+    const badge = document.getElementById('rcgpuBadge');
+    const overlay = document.getElementById('rcgpuOverlay');
+    const backendOut = document.getElementById('rcgpuBackend');
+    const frameOut = document.getElementById('rcgpuFrameMs');
+    const modeSelect = document.getElementById('rcgpuMode');
+    const playButton = document.getElementById('rcgpuPlay');
+    const timeSlider = document.getElementById('rcgpuTime');
+    const timeOut = document.getElementById('rcgpuTimeOut');
+    if (!canvas) return;
+
+    function fallback(reason) {
+      badge.textContent = 'WebGPU 不可用 · 卡片降级';
+      badge.style.color = '#ffc76d';
+      overlay.textContent = reason;
+      backendOut.textContent = 'n/a';
+      const context2d = canvas.getContext('2d');
+      if (!context2d) return;
+      context2d.fillStyle = '#04121c';
+      context2d.fillRect(0, 0, canvas.width, canvas.height);
+      context2d.fillStyle = '#9db1c0';
+      context2d.font = '15px "Segoe UI", sans-serif';
+      context2d.textAlign = 'center';
+      context2d.fillText('此浏览器环境未启用 WebGPU。', canvas.width / 2, canvas.height / 2 - 14);
+      context2d.fillText('CPU 教学实验与原生 D3D12/Vulkan 路径不受影响。', canvas.width / 2, canvas.height / 2 + 14);
+    }
+
+    const wgsl = `
+      const DOMAIN_MIN = vec2f(-3.95, -3.95);
+      const DOMAIN_EXTENT = 7.9;
+      const ATLAS = 128u;
+      const LEVEL_STRIDE = 16384u; // 128*128
+      const BASE_INTERVAL = 0.35;
+      const LIGHT_RADIUS = 0.34;
+      const SLICE_Y = 0.9;
+      const LIGHT_COLOR = vec3f(1.0, 0.76, 0.42);
+      const LIGHT_INTENSITY = 7.5;
+      const PI = 3.14159265;
+
+      struct Params { lightPos: vec2f, mode: f32, time: f32 };
+      @group(0) @binding(0) var<uniform> params: Params;
+      @group(0) @binding(1) var<storage, read_write> castBuf: array<vec4f>;
+      @group(0) @binding(2) var<storage, read_write> mergedBuf: array<vec4f>;
+      @group(0) @binding(3) var<uniform> mergeLevel: vec4u;
+      // Fragment-stage aliases: read_write storage is compute-only in base
+      // WebGPU, so the render pipeline binds the same buffers read-only.
+      // Duplicate @binding numbers are legal because no entry point uses
+      // both declarations.
+      @group(0) @binding(1) var<storage, read> castRead: array<vec4f>;
+      @group(0) @binding(2) var<storage, read> mergedRead: array<vec4f>;
+
+      fn sdBox3(p: vec3f, center: vec3f, halfExtent: vec3f) -> f32 {
+        let q = abs(p - center) - halfExtent;
+        return length(max(q, vec3f(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
+      }
+      fn sdSphere3(p: vec3f, center: vec3f, radius: f32) -> f32 {
+        return length(p - center) - radius;
+      }
+      // Identical primitive list to sampleAnalyticScene(), evaluated on the
+      // y = SLICE_Y plane, so the flatland scene matches the native scheme.
+      fn sliceScene(plane: vec2f) -> vec4f { // xyz = albedo, w = distance
+        let p = vec3f(plane.x, SLICE_Y, plane.y);
+        var bestD = 1e5;
+        var albedo = vec3f(0.55, 0.58, 0.62);
+        var d = sdBox3(p, vec3f(0.0, -0.22, 0.0), vec3f(4.0, 0.22, 4.0));
+        if (d < bestD) { bestD = d; albedo = vec3f(0.56, 0.58, 0.62); }
+        d = sdBox3(p, vec3f(0.0, 1.35, -3.72), vec3f(4.0, 1.55, 0.20));
+        if (d < bestD) { bestD = d; albedo = vec3f(0.54, 0.58, 0.64); }
+        d = sdBox3(p, vec3f(-3.72, 1.35, 0.0), vec3f(0.20, 1.55, 4.0));
+        if (d < bestD) { bestD = d; albedo = vec3f(0.62, 0.23, 0.18); }
+        d = sdBox3(p, vec3f(3.72, 1.35, 0.0), vec3f(0.20, 1.55, 4.0));
+        if (d < bestD) { bestD = d; albedo = vec3f(0.18, 0.28, 0.64); }
+        d = sdBox3(p, vec3f(0.15, 0.85, -0.15), vec3f(0.72, 0.85, 0.72));
+        if (d < bestD) { bestD = d; albedo = vec3f(0.82, 0.47, 0.16); }
+        d = sdSphere3(p, vec3f(1.85, 0.72, -0.65), 0.72);
+        if (d < bestD) { bestD = d; albedo = vec3f(0.18, 0.67, 0.55); }
+        d = sdBox3(p, vec3f(-1.60, 0.50, -1.55), vec3f(0.45, 0.50, 0.45));
+        if (d < bestD) { bestD = d; albedo = vec3f(0.72, 0.20, 0.45); }
+        return vec4f(albedo, bestD);
+      }
+      fn emitterDistance(plane: vec2f) -> f32 {
+        return length(plane - params.lightPos) - LIGHT_RADIUS;
+      }
+      fn sliceNormal(plane: vec2f) -> vec2f {
+        let e = 0.014;
+        let dx = sliceScene(plane + vec2f(e, 0.0)).w - sliceScene(plane - vec2f(e, 0.0)).w;
+        let dz = sliceScene(plane + vec2f(0.0, e)).w - sliceScene(plane - vec2f(0.0, e)).w;
+        let n = vec2f(dx, dz);
+        let l2 = dot(n, n);
+        if (l2 > 1e-8) { return n * inverseSqrt(l2); }
+        return vec2f(0.0, 1.0);
+      }
+      fn directLight2D(surface: vec2f, normal: vec2f) -> vec3f {
+        let toLight = params.lightPos - surface;
+        let d2 = max(dot(toLight, toLight), 0.04);
+        let dir = toLight * inverseSqrt(d2);
+        let cosine = saturate(dot(normal, dir));
+        let attenuation = 1.0 / (1.0 + 0.32 * d2);
+        let maxDist = sqrt(d2) - LIGHT_RADIUS;
+        var travelled = 0.05;
+        var visibility = 1.0;
+        for (var i = 0u; i < 32u; i++) {
+          if (travelled >= maxDist - 0.03) { break; }
+          let sceneD = sliceScene(surface + dir * travelled).w;
+          if (sceneD < 0.012) { visibility = 0.0; break; }
+          travelled += clamp(sceneD * 0.8, 0.012, 0.30);
+        }
+        return LIGHT_COLOR * (LIGHT_INTENSITY * 0.35 * attenuation * cosine * visibility);
+      }
+      fn probeCount(level: u32) -> u32 { return 64u >> level; }
+      fn sqrtDirs(level: u32) -> u32 { return 2u << level; }
+      fn intervalStart(level: u32) -> f32 {
+        return BASE_INTERVAL * (pow(4.0, f32(level)) - 1.0) / 3.0;
+      }
+      fn texelIndex(level: u32, texel: vec2u) -> u32 {
+        return level * LEVEL_STRIDE + texel.y * ATLAS + texel.x;
+      }
+
+      @compute @workgroup_size(8, 8, 1)
+      fn castIntervals(@builtin(global_invocation_id) id: vec3u) {
+        if (id.x >= ATLAS || id.y >= ATLAS) { return; }
+        let level = id.z;
+        let sd = sqrtDirs(level);
+        let probe = id.xy / sd;
+        let dirTile = id.xy % sd;
+        let dirIndex = dirTile.y * sd + dirTile.x;
+        let dirTotal = sd * sd;
+        let origin = DOMAIN_MIN + (vec2f(probe) + 0.5) / f32(probeCount(level)) * DOMAIN_EXTENT;
+        let angle = (f32(dirIndex) + 0.5) * 2.0 * PI / f32(dirTotal);
+        let dir = vec2f(cos(angle), sin(angle));
+        let tEnd = intervalStart(level + 1u);
+        var radiance = vec3f(0.0);
+        var transmittance = 1.0;
+        if (sliceScene(origin).w < 0.0) {
+          transmittance = 0.0; // probes inside walls stay opaque
+        } else {
+          var travelled = intervalStart(level);
+          for (var i = 0u; i < 48u; i++) {
+            if (travelled >= tEnd) { break; }
+            let position = origin + dir * travelled;
+            let eD = emitterDistance(position);
+            let scene = sliceScene(position);
+            if (eD < 0.012) {
+              radiance = LIGHT_COLOR * (LIGHT_INTENSITY * 0.55);
+              transmittance = 0.0; break;
+            }
+            if (scene.w < 0.012) {
+              let n = sliceNormal(position);
+              radiance = scene.xyz * directLight2D(position + n * 0.03, n);
+              transmittance = 0.0; break;
+            }
+            travelled += clamp(min(scene.w, eD) * 0.82, 0.012, 0.5);
+          }
+        }
+        castBuf[texelIndex(level, id.xy)] = vec4f(radiance, transmittance);
+      }
+
+      fn coarserLoad(level: u32, parentProbe: vec2u, parentDir: u32) -> vec4f {
+        let sd = sqrtDirs(level + 1u);
+        let tile = vec2u(parentDir % sd, parentDir / sd);
+        let texel = parentProbe * sd + tile;
+        let index = texelIndex(level + 1u, texel);
+        if (level + 1u == 3u) { return castBuf[index]; }
+        return mergedBuf[index];
+      }
+
+      @compute @workgroup_size(8, 8, 1)
+      fn mergeCascade(@builtin(global_invocation_id) id: vec3u) {
+        if (id.x >= ATLAS || id.y >= ATLAS) { return; }
+        let level = mergeLevel.x;
+        let sd = sqrtDirs(level);
+        let probe = id.xy / sd;
+        let dirTile = id.xy % sd;
+        let dirIndex = dirTile.y * sd + dirTile.x;
+        let nearField = castBuf[texelIndex(level, id.xy)];
+        if (nearField.w <= 0.0) {
+          mergedBuf[texelIndex(level, id.xy)] = nearField;
+          return;
+        }
+        let parentCount = probeCount(level + 1u);
+        let parentCoord = (vec2f(probe) + 0.5) * 0.5 - 0.5;
+        let clamped = clamp(parentCoord, vec2f(0.0), vec2f(f32(parentCount) - 1.001));
+        let base = vec2u(clamped);
+        let fraction = saturate(clamped - vec2f(base));
+        var farField = vec3f(0.0);
+        for (var corner = 0u; corner < 4u; corner++) {
+          let offset = vec2u(corner & 1u, corner >> 1u);
+          let parentProbe = min(base + offset, vec2u(parentCount - 1u));
+          let bilinear = mix(vec2f(1.0) - fraction, fraction, vec2f(offset));
+          let weight = bilinear.x * bilinear.y;
+          var parentRadiance = vec3f(0.0);
+          for (var child = 0u; child < 4u; child++) {
+            parentRadiance += coarserLoad(level, parentProbe, dirIndex * 4u + child).xyz;
+          }
+          farField += parentRadiance * (0.25 * weight);
+        }
+        mergedBuf[texelIndex(level, id.xy)] =
+          vec4f(nearField.xyz + nearField.w * farField, nearField.w);
+      }
+
+      struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+      @vertex
+      fn vsFullscreen(@builtin(vertex_index) vertexIndex: u32) -> VSOut {
+        var out: VSOut;
+        let uv = vec2f(f32((vertexIndex << 1u) & 2u), f32(vertexIndex & 2u));
+        out.pos = vec4f(uv * vec2f(2.0, -2.0) + vec2f(-1.0, 1.0), 0.0, 1.0);
+        out.uv = uv;
+        return out;
+      }
+      fn fluenceAt(plane: vec2f, castOnly: bool) -> vec3f {
+        let pc = probeCount(0u);
+        let grid = (plane - DOMAIN_MIN) / DOMAIN_EXTENT * f32(pc) - 0.5;
+        let clamped = clamp(grid, vec2f(0.0), vec2f(f32(pc) - 1.001));
+        let base = vec2u(clamped);
+        let fraction = saturate(clamped - vec2f(base));
+        var fluence = vec3f(0.0);
+        for (var corner = 0u; corner < 4u; corner++) {
+          let offset = vec2u(corner & 1u, corner >> 1u);
+          let probe = min(base + offset, vec2u(pc - 1u));
+          let bilinear = mix(vec2f(1.0) - fraction, fraction, vec2f(offset));
+          let weight = bilinear.x * bilinear.y;
+          var dirSum = vec3f(0.0);
+          for (var direction = 0u; direction < 4u; direction++) {
+            let tile = vec2u(direction % 2u, direction / 2u);
+            let index = texelIndex(0u, probe * 2u + tile);
+            if (castOnly) { dirSum += castRead[index].xyz; }
+            else { dirSum += mergedRead[index].xyz; }
+          }
+          fluence += dirSum * (0.25 * weight);
+        }
+        return fluence;
+      }
+      @fragment
+      fn fsResolve(in: VSOut) -> @location(0) vec4f {
+        let mode = params.mode;
+        if (mode > 1.5) { // raw merged C0 atlas
+          let texel = vec2u(clamp(in.uv, vec2f(0.0), vec2f(0.999)) * f32(ATLAS));
+          let value = mergedRead[texelIndex(0u, texel)].xyz * 1.4;
+          return vec4f(value / (vec3f(1.0) + value), 1.0);
+        }
+        let plane = DOMAIN_MIN + vec2f(in.uv.x, 1.0 - in.uv.y) * DOMAIN_EXTENT;
+        var color = fluenceAt(plane, mode > 0.5) * 1.35;
+        let scene = sliceScene(plane);
+        if (emitterDistance(plane) < 0.0) {
+          color = LIGHT_COLOR * (LIGHT_INTENSITY * 0.55);
+        } else if (scene.w < 0.0) {
+          color = scene.xyz * 0.16 + color * 0.22;
+        } else if (scene.w < 0.045) {
+          color += scene.xyz * 0.25;
+        }
+        return vec4f(color / (vec3f(1.0) + color * 0.55), 1.0);
+      }
+    `;
+
+    (async () => {
+      if (!navigator.gpu) { fallback('navigator.gpu 不存在（需要较新的 Edge/Chrome）'); return; }
+      let device;
+      let adapterLabel = 'WebGPU adapter';
+      try {
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) { fallback('requestAdapter() 返回 null'); return; }
+        if (adapter.info && (adapter.info.description || adapter.info.vendor)) {
+          adapterLabel = adapter.info.description || adapter.info.vendor;
+        }
+        device = await adapter.requestDevice();
+      } catch (error) {
+        fallback('设备创建失败：' + error);
+        return;
+      }
+      device.lost.then(() => { fallback('GPU 设备丢失'); }).catch(() => {});
+      device.addEventListener('uncapturederror', (event) => {
+        event.preventDefault();
+        badge.textContent = 'WebGPU 运行告警 · 见 overlay';
+        overlay.textContent = String(event.error && event.error.message || event.error);
+      });
+
+      const context = canvas.getContext('webgpu');
+      if (!context) { fallback('canvas.getContext("webgpu") 失败'); return; }
+      const format = navigator.gpu.getPreferredCanvasFormat();
+      context.configure({ device, format, alphaMode: 'opaque' });
+
+      const module = device.createShaderModule({ code: wgsl });
+      const bufferBytes = 4 * 16384 * 16; // 4 levels * 128^2 texels * vec4f
+      const castBuffer = device.createBuffer({ size: bufferBytes, usage: GPUBufferUsage.STORAGE });
+      const mergedBuffer = device.createBuffer({ size: bufferBytes, usage: GPUBufferUsage.STORAGE });
+      const paramsBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+      const mergeLevelBuffers = [0, 1, 2].map((level) => {
+        const buffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+        device.queue.writeBuffer(buffer, 0, new Uint32Array([level, 0, 0, 0]));
+        return buffer;
+      });
+
+      // layout:'auto' gives each pipeline exactly the bindings its entry
+      // point uses (fragment gets the read-only aliases, compute the
+      // read_write ones).
+      const castPipeline = device.createComputePipeline({
+        layout: 'auto', compute: { module, entryPoint: 'castIntervals' },
+      });
+      const mergePipeline = device.createComputePipeline({
+        layout: 'auto', compute: { module, entryPoint: 'mergeCascade' },
+      });
+      const renderPipeline = device.createRenderPipeline({
+        layout: 'auto',
+        vertex: { module, entryPoint: 'vsFullscreen' },
+        fragment: { module, entryPoint: 'fsResolve', targets: [{ format }] },
+        primitive: { topology: 'triangle-list' },
+      });
+      const castBindGroup = device.createBindGroup({
+        layout: castPipeline.getBindGroupLayout(0),
+        entries: [
+          { binding: 0, resource: { buffer: paramsBuffer } },
+          { binding: 1, resource: { buffer: castBuffer } },
+        ],
+      });
+      const mergeBindGroups = mergeLevelBuffers.map((levelBuffer) => device.createBindGroup({
+        layout: mergePipeline.getBindGroupLayout(0),
+        entries: [
+          { binding: 1, resource: { buffer: castBuffer } },
+          { binding: 2, resource: { buffer: mergedBuffer } },
+          { binding: 3, resource: { buffer: levelBuffer } },
+        ],
+      }));
+      const renderBindGroup = device.createBindGroup({
+        layout: renderPipeline.getBindGroupLayout(0),
+        entries: [
+          { binding: 0, resource: { buffer: paramsBuffer } },
+          { binding: 1, resource: { buffer: castBuffer } },
+          { binding: 2, resource: { buffer: mergedBuffer } },
+        ],
+      });
+
+      badge.textContent = 'WebGPU compute 运行中';
+      badge.style.color = '#6fe2a6';
+      backendOut.textContent = adapterLabel.length > 26 ? adapterLabel.slice(0, 26) + '…' : adapterLabel;
+      timeSlider.disabled = false;
+
+      let playing = true;
+      let animatedTime = 0;
+      let lastStamp = 0;
+      playButton.addEventListener('click', () => {
+        playing = !playing;
+        playButton.textContent = playing ? '暂停光源动画' : '播放光源动画';
+      });
+      timeSlider.addEventListener('input', () => {
+        playing = false;
+        playButton.textContent = '播放光源动画';
+        animatedTime = Number(timeSlider.value);
+      });
+
+      function frame(stamp) {
+        const deltaMs = lastStamp ? stamp - lastStamp : 16;
+        lastStamp = stamp;
+        if (playing) {
+          animatedTime = (animatedTime + deltaMs / 1000) % 12.5;
+          timeSlider.value = String(animatedTime.toFixed(2));
+        }
+        frameOut.textContent = deltaMs.toFixed(1) + ' ms';
+        timeOut.textContent = animatedTime.toFixed(1) + 's';
+        const lightX = -2.35 + 4.55 * (0.5 + 0.5 * Math.sin(animatedTime * 1.73));
+        const lightZ = 1.55 + 1.15 * Math.sin(animatedTime * 1.11 + 0.7);
+        const mode = Number(modeSelect.value);
+        overlay.textContent = 'light=(' + lightX.toFixed(2) + ', ' + lightZ.toFixed(2) + ') · '
+          + (mode === 0 ? 'merged fluence + geometry' : mode === 1 ? 'cast-only C0（无 merge）' : 'merged C0 atlas');
+        device.queue.writeBuffer(paramsBuffer, 0, new Float32Array([lightX, lightZ, mode, animatedTime]));
+
+        const encoder = device.createCommandEncoder();
+        const compute = encoder.beginComputePass();
+        compute.setPipeline(castPipeline);
+        compute.setBindGroup(0, castBindGroup);
+        compute.dispatchWorkgroups(16, 16, 4);
+        compute.setPipeline(mergePipeline);
+        for (const level of [2, 1, 0]) {
+          compute.setBindGroup(0, mergeBindGroups[level]);
+          compute.dispatchWorkgroups(16, 16, 1);
+        }
+        compute.end();
+        const render = encoder.beginRenderPass({
+          colorAttachments: [{
+            view: context.getCurrentTexture().createView(),
+            loadOp: 'clear',
+            clearValue: { r: 0.01, g: 0.03, b: 0.05, a: 1 },
+            storeOp: 'store',
+          }],
+        });
+        render.setPipeline(renderPipeline);
+        render.setBindGroup(0, renderBindGroup);
+        render.draw(3);
+        render.end();
+        device.queue.submit([encoder.finish()]);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })().catch((error) => { fallback('初始化异常：' + error); });
   })();
   </script>
 </body>

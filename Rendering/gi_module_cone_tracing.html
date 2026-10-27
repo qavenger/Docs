@@ -95,7 +95,7 @@ function sampleMipChain(position, lod, mips) {
     <section id="trace"><div class="wrap">
       <div class="head"><div><div class="k">Stage 03 · one cone, full trace</div><h2>看见每一个真实样本与 front-to-back 累计</h2></div><p>画布显示同一 16³ field 的可旋转投影。紫环是 footprint，白点是采样位置；表格来自本次实际 trace，而非说明性假数据。</p></div>
       <div class="trace-layout">
-        <aside class="card full trace-side">
+        <aside class="card trace-side" style="grid-column:auto">
           <label>aperture <input id="traceAperture" type="range" min="8" max="70" value="34"><output id="traceApertureOut">34°</output></label>
           <label>yaw <input id="traceYaw" type="range" min="-65" max="65" value="20"><output id="traceYawOut">20°</output></label>
           <label>pitch <input id="tracePitch" type="range" min="5" max="60" value="26"><output id="tracePitchOut">26°</output></label>
@@ -380,7 +380,8 @@ function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
       const mapped = color.map((value) => Math.round(clamp(1 - Math.exp(-value * exposure), 0, 1) * 255));
       return `rgb(${mapped.join(",")})`;
     }
-    function drawSlice(canvas, level, slice, mode) {
+    function drawSlice(canvas, level, slice, mode, options = {}) {
+      const { label = true, unpremultiply = false, exposure = 1.7 } = options;
       const ctx = canvas.getContext("2d");
       ctx.fillStyle = "#03060c"; ctx.fillRect(0,0,canvas.width,canvas.height);
       const size = level.size;
@@ -392,16 +393,24 @@ function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
         for (let x = 0; x < size; x += 1) {
           const index = ((z * size + y) * size + x) * 4;
           const sample = Array.from(level.data.slice(index,index+4));
+          // unpremultiply shows "average radiance of the occupied part"
+          // so coarse mips do not fade to black just because 8-child
+          // averaging dilutes premultiplied RGB with empty space.
+          const color = unpremultiply
+            ? sample.slice(0,3).map((value) => value / Math.max(sample[3], 0.03))
+            : sample.slice(0,3);
           ctx.fillStyle = mode === "occupancy"
             ? (sample[3] > 0.02 ? "#7892a3" : "#07101a")
-            : rgb(sample.slice(0,3), 1.7);
+            : rgb(color, exposure);
           ctx.globalAlpha = mode === "occupancy" ? clamp(sample[3] + 0.2,0.15,1) : 1;
           ctx.fillRect(left+x*cell, top+(size-1-y)*cell, Math.ceil(cell), Math.ceil(cell));
           ctx.strokeStyle = "#ffffff0d"; ctx.strokeRect(left+x*cell, top+(size-1-y)*cell, cell, cell);
         }
       }
       ctx.globalAlpha = 1;
-      ctx.fillStyle = "#aab7cb"; ctx.font = "11px ui-monospace"; ctx.fillText(`Z=${z} · ${size}³`, 8, 16);
+      if (label) {
+        ctx.fillStyle = "#aab7cb"; ctx.font = "11px ui-monospace"; ctx.fillText(`Z=${z} · ${size}³`, 8, 16);
+      }
     }
     drawSlice($("recapOcc"), MIPS[0], 8, "occupancy");
     drawSlice($("recapRad"), MIPS[0], 8, "radiance");
@@ -410,9 +419,11 @@ function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
       ctx.fillStyle="#03060c";ctx.fillRect(0,0,canvas.width,canvas.height);
       MIPS.slice(0,4).forEach((level,index)=>{
         const temp=document.createElement("canvas");temp.width=150;temp.height=105;
-        drawSlice(temp,level,Math.floor(level.size/2),"radiance");
+        drawSlice(temp,level,Math.floor(level.size/2),"radiance",{label:false,unpremultiply:true});
         const x=(index%2)*160,y=Math.floor(index/2)*118;
-        ctx.drawImage(temp,x,y,150,105);ctx.fillStyle="#d5cfff";ctx.fillText(`L${index} ${level.size}³`,x+5,y+15);
+        ctx.drawImage(temp,x,y,150,105);
+        ctx.fillStyle="#0a1020c8";ctx.fillRect(x+2,y+3,58,15);
+        ctx.fillStyle="#d5cfff";ctx.font="11px ui-monospace";ctx.fillText(`L${index} ${level.size}³`,x+5,y+15);
       });
     })();
 
@@ -445,7 +456,16 @@ function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
         ctx.fillStyle="#eef";ctx.font="11px ui-monospace";ctx.fillText(weight.toFixed(3),px-19,py+4);
       }
       const px=165+f[0]*215+f[2]*45,py=235-f[1]*145-f[2]*35;
+      // Connect the query point to all 8 corners so the weights read as
+      // "distance to each corner", not as floating numbers.
+      for(let z=0;z<2;z++)for(let y=0;y<2;y++)for(let x=0;x<2;x++){
+        const cx=165+x*215+z*45,cy=235-y*145-z*35;
+        const weight=(x?f[0]:1-f[0])*(y?f[1]:1-f[1])*(z?f[2]:1-f[2]);
+        ctx.strokeStyle=`rgba(255,195,108,${0.12+weight*0.55})`;ctx.lineWidth=1+weight*2.5;
+        ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(cx,cy);ctx.stroke();
+      }
       ctx.fillStyle="#ffc36c";ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#ffd89b";ctx.font="12px 'Segoe UI',sans-serif";ctx.fillText("采样点",px+12,py+4);
       $("triReadout").textContent=`Σw=${sum.toFixed(3)}`;
     }
     function drawLod() {
@@ -459,7 +479,7 @@ function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
 
     const traceState={yaw:-.60,pitch:.32,drag:false,lastX:0,lastY:0,result:null};
     function rotate3(point){const cy=Math.cos(traceState.yaw),sy=Math.sin(traceState.yaw),cp=Math.cos(traceState.pitch),sp=Math.sin(traceState.pitch),x=point[0]*cy-point[2]*sy,z0=point[0]*sy+point[2]*cy,y=point[1]*cp-z0*sp,z=point[1]*sp+z0*cp;return[x,y,z]}
-    function project3(point,canvas){const p=rotate3(point),scale=Math.min(canvas.width,canvas.height)*.34/(2.8+p[2]*.25);return[canvas.width*.5+p[0]*scale,canvas.height*.52-p[1]*scale,p[2],scale]}
+    function project3(point,canvas){const p=rotate3(point),scale=Math.min(canvas.width,canvas.height)*.85/(2.8+p[2]*.25);return[canvas.width*.5+p[0]*scale,canvas.height*.52-p[1]*scale,p[2],scale]}
     function drawArrow(ctx,a,b,color){ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();const angle=Math.atan2(b[1]-a[1],b[0]-a[0]);ctx.beginPath();ctx.moveTo(b[0],b[1]);ctx.lineTo(b[0]-Math.cos(angle-.55)*12,b[1]-Math.sin(angle-.55)*12);ctx.lineTo(b[0]-Math.cos(angle+.55)*12,b[1]-Math.sin(angle+.55)*12);ctx.closePath();ctx.fill()}
     function traceDirection(){const yaw=Number($("traceYaw").value)*Math.PI/180,pitch=Number($("tracePitch").value)*Math.PI/180;return normalize([Math.cos(pitch)*Math.cos(yaw),Math.sin(pitch),Math.cos(pitch)*Math.sin(yaw)])}
     function runTrace(){
@@ -473,7 +493,12 @@ function traceCone(origin, direction, aperture, stepFactor, forceLevel0) {
     function drawTrace(){
       const canvas=$("traceCanvas"),ctx=canvas.getContext("2d");ctx.fillStyle="#02050a";ctx.fillRect(0,0,canvas.width,canvas.height);
       const points=FIELD.voxels.map(v=>({v,p:project3(v.position,canvas)})).sort((a,b)=>b.p[2]-a.p[2]);
-      points.forEach(({v,p})=>{const size=Math.max(2,p[3]*FIELD.cellSize*.56);ctx.globalAlpha=.68;ctx.fillStyle=rgb(v.rgb,1.5);ctx.fillRect(p[0]-size/2,p[1]-size/2,size,size)});ctx.globalAlpha=1;
+      points.forEach(({v,p})=>{const size=Math.max(2,p[3]*FIELD.cellSize*.56);
+        // Unlit voxels get a dim slate base so scene geometry stays visible
+        // against the dark background instead of vanishing entirely.
+        const lit=v.rgb[0]+v.rgb[1]+v.rgb[2]>.02;
+        ctx.globalAlpha=lit?.68:.45;ctx.fillStyle=lit?rgb(v.rgb,1.5):"#233240";
+        ctx.fillRect(p[0]-size/2,p[1]-size/2,size,size)});ctx.globalAlpha=1;
       const light=FIELD.light,center=project3([0,.45,0],canvas),start=project3(light.toLight.map((v,i)=>[0,.45,0][i]+v*.75),canvas);drawArrow(ctx,start,center,"#ffd262");
       const origin=project3(ORIGIN,canvas);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(origin[0],origin[1],7,0,Math.PI*2);ctx.fill();
       const direction=traceDirection();traceState.result.samples.forEach((s,i)=>{const p=project3(s.position,canvas),edgeWorld=[s.position[0],s.position[1]+s.diameter*.5,s.position[2]],edge=project3(edgeWorld,canvas),radius=Math.max(3,Math.abs(edge[1]-p[1]));ctx.strokeStyle=`rgba(182,159,255,${.95-i*.02})`;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(p[0],p[1],Math.max(3,radius*.42),radius,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#fff";ctx.fillRect(p[0]-2,p[1]-2,4,4)});

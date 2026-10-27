@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="RenderGraph 原生 Voxel GI Lab：从 Texture3D 体素化、分离 LOD、Cone Resolve 到 D3D12/Vulkan 验收。">
-  <title>RenderGraph GI Lab · 原生 Voxel GI</title>
+  <meta name="description" content="RenderGraph 原生 GI 工作台：Voxel、RSM、SSGI、SH Probe、Radiance Cascades 五方案共用同一解析场景与验证骨架，D3D12/Vulkan 双后端验收。">
+  <title>RenderGraph GI Lab · 原生五方案 GI 工作台</title>
   <link rel="stylesheet" href="../gi_course.css">
   <style>
     :root{--bg:#071018;--panel:#0d1924;--line:#284153;--text:#e8f4fa;--muted:#9db1c0;--cyan:#58daf1;--violet:#aa96ff;--amber:#ffc76d;--green:#6fe2a6;--red:#ff7d89}
     *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);background:radial-gradient(circle at 77% -12%,#233a5c 0,transparent 36rem),var(--bg);font:15px/1.72 Inter,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(1180px,calc(100% - 32px));margin:auto}.top{position:sticky;top:0;z-index:30;border-bottom:1px solid #ffffff14;background:#071018e8;backdrop-filter:blur(12px)}.top .wrap{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{font-weight:800}.nav{display:flex;flex-wrap:wrap;gap:15px;font-size:13px}.hero{padding:76px 0 48px;border-bottom:1px solid #1b2d3b}.eyebrow{color:var(--violet);font:750 12px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.14em}.hero h1{max-width:980px;margin:13px 0 16px;font-size:clamp(38px,6vw,70px);line-height:1.04}.hero p{max-width:920px;color:#bed0db;font-size:18px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.chip{border:1px solid #3b5063;border-radius:99px;padding:6px 11px;color:#c7d6df;background:#0d1b27;font-size:12px}.chip.hot{border-color:#7369b5;color:#d1c8ff}.section{padding:56px 0;border-bottom:1px solid #172835}.head{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:end;margin-bottom:24px}.head h2{margin:7px 0 0;font-size:clamp(27px,4vw,43px);line-height:1.13}.head p{margin:0;color:var(--muted)}.k{color:var(--violet);font:750 11px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.13em}.callout{padding:15px 17px;border-left:4px solid var(--amber);border-radius:0 11px 11px 0;background:#271f0e;color:#ead8b6}.callout.good{border-color:var(--green);background:#0d251d}.callout.bad{border-color:var(--red);background:#2a151b}.preview{display:grid;grid-template-columns:1.3fr .7fr;gap:15px}.preview figure{margin:0;border:1px solid #345369;border-radius:15px;overflow:hidden;background:#04090e}.preview img{display:block;width:100%;height:auto;image-rendering:auto}.preview figcaption{padding:10px 13px;color:#9fb4c2;font-size:12px}.metrics{display:grid;gap:9px}.metric{padding:13px;border:1px solid #2f4a5d;border-radius:11px;background:#0a1721}.metric b{display:block;color:#edf8fc;font:750 20px ui-monospace,Consolas,monospace}.metric span{color:var(--muted);font-size:11px}.graph-wrap{position:relative;min-width:940px;height:520px}.graph-wrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.graph-wrap path{fill:none;stroke:#41657b;stroke-width:3;marker-end:url(#arrow)}.graph-wrap path.hot{stroke:#aa96ff}.rg-button{position:absolute;width:178px;border:1px solid #3c5d70;border-radius:10px;padding:0;background:#0b1822;color:#eaf5fa;text-align:left;cursor:pointer;box-shadow:0 11px 24px #0005}.rg-button b{display:block;padding:9px 10px;border-bottom:1px solid #304958;font-size:12px}.rg-button span{display:block;padding:7px 10px;color:#9eb2bf;font:10px/1.45 ui-monospace,Consolas,monospace}.rg-button:hover,.rg-button.active{border-color:#aa96ff;box-shadow:0 0 0 2px #aa96ff33,0 11px 24px #0006}.node-detail{display:grid;grid-template-columns:160px 1fr;gap:14px;margin-top:12px;padding:15px;border:1px solid #355569;border-radius:12px;background:#0a1721}.node-detail code{color:#ffc76d}.io-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}.io-list div{padding:9px;border:1px solid #294353;border-radius:8px;color:#b8cad4;font-size:12px}.io-list b{display:block;color:#e6f1f6}.resource-table,.compare{width:100%;border-collapse:collapse}.resource-table th,.resource-table td,.compare th,.compare td{padding:10px;border:1px solid #294252;text-align:left;vertical-align:top}.resource-table th,.compare th{background:#102331}.resource-table td,.compare td{color:#b8cad4}.duo{display:grid;grid-template-columns:1fr 1fr;gap:13px}.command{border:1px solid #2e4b5d;border-radius:12px;background:#07131c;overflow:hidden}.command h3{margin:0;padding:10px 13px;border-bottom:1px solid #2e4b5d;font-size:13px}.command pre{margin:0;padding:14px;overflow:auto;color:#d6e7ef;font:12px/1.65 Consolas,monospace}.pipeline-map{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.map-card{padding:14px;border:1px solid #2e4a5c;border-radius:11px;background:#0a1721}.map-card b{display:block;margin-bottom:4px}.map-card span{color:var(--muted);font-size:12px}.footer{padding:32px 0 52px}.footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}@media(max-width:850px){.head{grid-template-columns:1fr}.preview,.duo{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.pipeline-map{grid-template-columns:1fr 1fr}.node-detail{grid-template-columns:1fr}.graph-scroll{overflow:auto}}@media(max-width:520px){.nav{display:none}.metrics,.pipeline-map{grid-template-columns:1fr}.hero{padding-top:48px}}
     .hero h1{max-width:1080px;font-size:clamp(38px,5.3vw,64px)}.preview-images{display:grid;gap:15px}.graph-wrap>svg>path{fill:none;stroke:#41657b;stroke-width:3;marker-end:url(#arrow)}.graph-wrap>svg>path.hot{stroke:#aa96ff}.graph-wrap marker path{fill:#41657b;stroke:none;marker-end:none}
+    .scheme-gallery{display:grid;gap:16px}.scheme-card{border:1px solid #2e4a5c;border-radius:15px;background:#0a1721;padding:15px 17px}.scheme-card header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:11px}.scheme-card header b{font-size:15px}.scheme-card header span{color:var(--violet);font:700 11px/1.4 ui-monospace,Consolas,monospace}.scheme-imgs{display:grid;grid-template-columns:1fr 1fr;gap:12px}.scheme-imgs figure{margin:0;border:1px solid #345369;border-radius:11px;overflow:hidden;background:#04090e}.scheme-imgs img{display:block;width:100%;height:auto}.scheme-imgs figcaption{padding:8px 11px;color:#9fb4c2;font-size:12px}.scheme-card>p{margin:11px 0 0;color:#b8cad4;font-size:13px}@media(max-width:850px){.scheme-imgs{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -17,33 +18,76 @@
   <main>
     <section class="hero"><div class="wrap">
       <div class="eyebrow">MODULE 11 · NATIVE RENDERGRAPH GI WORKBENCH</div>
-      <h1>不再只画流程图。<br>让六个 Pass 在 GPU 上真正跑完。</h1>
-      <p>这个 Lab 已直接扩展 <code>F:\RenderGraph</code>：32³ Texture3D 当前帧体素化、三层独立 Volume LOD、五锥 diffuse gather、HDR Resolve 与 Present。D3D12 和 Vulkan 使用同一份 C++ RenderGraph 与 HLSL；验证帧从 GPU readback 得到，不是网页模拟图。</p>
-      <div class="chips"><span class="chip hot">Native C++20 / HLSL</span><span class="chip">D3D12 PASS</span><span class="chip">Vulkan PASS</span><span class="chip">6 passes</span><span class="chip">5 transient textures</span><span class="chip">12 barriers</span><span class="chip">history reads = 0</span></div>
+      <h1>七个 GI 方案，同一场景，<br>都在 GPU 上真正跑完。</h1>
+      <p>这个 Lab 已直接扩展 <code>F:\RenderGraph</code>：<code>08_gi_workbench --scheme=voxel|rsm|ssgi|probe|rcgi|ddgi|prt</code> 在同一解析 SDF 房间、同一工作台相机、同一逐帧移动点光源和同一 direct 项下，切换七条完全不同的 GI Pass 链。D3D12 和 Vulkan 使用同一份 C++ RenderGraph 与 HLSL；所有预览图都是 GPU readback，不是网页模拟图。RCGI 另有 <a href="../gi_module_rcgi.html#webgpu">WebGPU compute 镜像</a>，同一条 cast+merge 链跑在浏览器 GPU 上。</p>
+      <div class="chips"><span class="chip hot">Native C++20 / HLSL</span><span class="chip">D3D12 7/7 PASS</span><span class="chip">Vulkan 7/7 PASS</span><span class="chip">Voxel Cone Tracing</span><span class="chip">RSM</span><span class="chip">SSGI</span><span class="chip">SH Probes</span><span class="chip">Radiance Cascades (2D)</span><span class="chip">DDGI teaching-lite</span><span class="chip">PRT transfer</span><span class="chip hot">WebGPU 镜像 (RCGI)</span></div>
     </div></section>
 
     <section class="section" id="stage0"><div class="wrap">
-      <div class="head"><div><div class="k">STAGE 00 · ACTUAL GPU OUTPUT</div><h2>先看交付结果，再拆资源与代码</h2></div><p>两张图由 <code>08_gi_workbench.exe --validate</code> 的 D3D12 GPU readback 生成：第一张是最终合成，第二张只显示间接光。它们与右侧数值来自同一次运行。</p></div>
-      <div class="preview">
-        <div class="preview-images">
-          <figure><img src="assets/native_voxel_gi.bmp" alt="RenderGraph 原生 Voxel GI GPU 最终输出"><figcaption>320×180 · Final GI view · 当前帧移动点光源 · ACES present</figcaption></figure>
-          <figure><img src="assets/native_voxel_gi_indirect.bmp" alt="RenderGraph 原生 Voxel GI GPU 间接光输出"><figcaption>320×180 · Indirect-only view · 独立断言不是 direct-only 假阳性</figcaption></figure>
-        </div>
-        <div class="metrics">
-          <div class="metric"><b>54.671</b><span>frame 0 mean luma（0–255）</span></div>
-          <div class="metric"><b>51,582 / 57,600</b><span>non-black pixels</span></div>
-          <div class="metric"><b>20.712</b><span>indirect-only mean luma（0–255）</span></div>
-          <div class="metric"><b>50,608 / 57,600</b><span>indirect-only non-black pixels</span></div>
-          <div class="metric"><b>6 / 0</b><span>executed / culled passes</span></div>
-          <div class="metric"><b>5 / 12</b><span>transient textures / barriers</span></div>
-          <div class="metric"><b>0</b><span>history reads；每帧重建完整 volume</span></div>
-        </div>
+      <div class="head"><div><div class="k">STAGE 00 · ACTUAL GPU OUTPUT</div><h2>先看交付结果，再拆资源与代码</h2></div><p>每行两张图都由 <code>08_gi_workbench.exe --validate --capture-bmp=…</code> 的 D3D12 GPU readback 生成：左边是最终合成，右边是 indirect-only（天空渲黑，指标只度量间接光能量）。七个方案共享同一场景、相机、光源与 direct 项，所以左列几乎相同、右列的差异就是各方案 indirect 的真实性格。</p></div>
+      <div class="scheme-gallery">
+        <article class="scheme-card">
+          <header><b>voxel · Voxel Cone Tracing</b><span>6 pass · 5 tex · 12 barrier</span></header>
+          <div class="scheme-imgs">
+            <figure><img src="assets/native_gi_voxel.bmp" alt="原生 Voxel GI 最终输出"><figcaption>Final · mean 54.671</figcaption></figure>
+            <figure><img src="assets/native_gi_voxel_indirect.bmp" alt="原生 Voxel GI 间接光"><figcaption>Indirect-only · mean 9.111 · 柔和的体素锥 gather</figcaption></figure>
+          </div>
+          <p>32³→4³ 四级 Texture3D，5 锥 front-to-back gather。对应 <a href="../gi_module_voxel_gi.html">Voxel GI 课</a>。</p>
+        </article>
+        <article class="scheme-card">
+          <header><b>rsm · Reflective Shadow Maps</b><span>3 pass · 4 tex · 10 barrier</span></header>
+          <div class="scheme-imgs">
+            <figure><img src="assets/native_gi_rsm.bmp" alt="原生 RSM 最终输出"><figcaption>Final · mean 52.342</figcaption></figure>
+            <figure><img src="assets/native_gi_rsm_indirect.bmp" alt="原生 RSM 间接光"><figcaption>Indirect-only · mean 4.694 · 集中在直射区附近的 1/d⁴ 反弹</figcaption></figure>
+          </div>
+          <p>256² 光源视角 MRT（position/normal/flux）+ 96 VPL 重要性圆盘 gather，故意不测 VPL 可见性。对应 <a href="../gi_module_rsm.html">RSM 课</a>。</p>
+        </article>
+        <article class="scheme-card">
+          <header><b>ssgi · Screen-Space GI</b><span>4 pass · 6 tex · 14 barrier</span></header>
+          <div class="scheme-imgs">
+            <figure><img src="assets/native_gi_ssgi.bmp" alt="原生 SSGI 最终输出"><figcaption>Final · mean 55.467</figcaption></figure>
+            <figure><img src="assets/native_gi_ssgi_indirect.bmp" alt="原生 SSGI 间接光"><figcaption>Indirect-only · mean 11.604 · 单帧噪点是屏幕空间家族的本性</figcaption></figure>
+          </div>
+          <p>相机 GBuffer → 6 射线 × 12 步屏幕空间步进（遮挡判据只有 GBuffer 深度）→ 合成。对应 <a href="../gi_module_ssao_ssgi.html">SSAO/SSGI 课</a>。</p>
+        </article>
+        <article class="scheme-card">
+          <header><b>probe · SH Irradiance Probes</b><span>3 pass · 4 tex · 10 barrier</span></header>
+          <div class="scheme-imgs">
+            <figure><img src="assets/native_gi_probe.bmp" alt="原生 SH Probe 最终输出"><figcaption>Final · mean 68.066</figcaption></figure>
+            <figure><img src="assets/native_gi_probe_indirect.bmp" alt="原生 SH Probe 间接光"><figcaption>Indirect-only · mean 41.363 · 平滑的红蓝墙渗色</figcaption></figure>
+          </div>
+          <p>8×4×8 SH-L1 探针每帧重烘（64 Fibonacci 射线），resolve 用 SDF 可见性权重；debug view 1 切回纯三线性对照漏光。对应 <a href="../gi_module_probes.html">Probe 课</a> 与 <a href="../gi_module_sh.html">SH 课</a>。</p>
+        </article>
+        <article class="scheme-card">
+          <header><b>rcgi · Radiance Cascades（Flatland）</b><span>9 pass · 8 tex · 18 barrier</span></header>
+          <div class="scheme-imgs">
+            <figure><img src="assets/native_gi_rcgi.bmp" alt="原生 Radiance Cascades 最终输出"><figcaption>Final（俯视 fluence 图）· mean 65.578</figcaption></figure>
+            <figure><img src="assets/native_gi_rcgi_indirect.bmp" alt="原生 Radiance Cascades fluence"><figcaption>Fluence-only · mean 55.484 · 半影与角度环纹清晰可见</figcaption></figure>
+          </div>
+          <p>真实的 cast+merge 级联（四张 128² atlas：探针减半 ⇄ 方向翻四倍），场景是 3D 房间在 y=0.9 的切片；被直射的遮挡体边界会再发射反弹色，所以合并后的场是一次反弹 GI。对应 <a href="../gi_module_rcgi.html">RCGI 课</a>，同页还有<a href="../gi_module_rcgi.html#webgpu">同一算法的 WebGPU compute 版</a>。</p>
+        </article>
+        <article class="scheme-card">
+          <header><b>ddgi · DDGI Teaching-Lite</b><span>4 pass · 2 tex + 4 imported history · 10 barrier</span></header>
+          <div class="scheme-imgs">
+            <figure><img src="assets/native_gi_ddgi.bmp" alt="原生 DDGI teaching-lite 最终输出"><figcaption>Final · mean 55.566 · hysteresis=0.88</figcaption></figure>
+            <figure><img src="assets/native_gi_ddgi_indirect.bmp" alt="原生 DDGI teaching-lite 间接光"><figcaption>Indirect-only · mean 10.215 · octahedral atlas 卷积照明</figcaption></figure>
+          </div>
+          <p>每探针 8×8 octahedral radiance/moments atlas + 余弦卷积 irradiance + Chebyshev 可见性——以及真实的时序 hysteresis：这是唯一带历史读的方案（上一帧 atlas 以 imported 资源 ping-pong 进图）。debug view 1 关闭 Chebyshev 直接对照漏光。省略项（射线旋转、border texel、relocation/scrolling、硬件 RT）逐条写明。对应 <a href="../gi_module_ddgi.html">DDGI 课</a>。</p>
+        </article>
+        <article class="scheme-card">
+          <header><b>prt · PRT Transfer Probes</b><span>4 pass · 3 tex · 8 barrier</span></header>
+          <div class="scheme-imgs">
+            <figure><img src="assets/native_gi_prt.bmp" alt="原生 PRT 最终输出"><figcaption>Final · mean 55.547</figcaption></figure>
+            <figure><img src="assets/native_gi_prt_indirect.bmp" alt="原生 PRT 间接光"><figcaption>Indirect-only · mean 11.408 · 环境光被可见性 transfer 遮罩</figcaption></figure>
+          </div>
+          <p>课程的核心区分做成了 Pass 结构：<code>PRT.01</code> 烘缓存"传输算子"（SH-L1 可见性，与光无关），<code>PRT.02</code> 每帧构建环境 SH（天空 + 跟随点光的远距 lobe），<code>PRT.03</code> 把两者按系数相乘重照明。debug view 1 绕过 transfer,对照环境遮蔽的价值。对应 <a href="../gi_module_prt_probes.html">PRT 课</a>。</p>
+        </article>
       </div>
       <div class="callout good" style="margin-top:15px"><b>可携带：</b>本页、截图与 <a href="assets/rendergraph_gi_source_snapshot.zip">GI 扩展源码快照 ZIP</a> 都使用相对链接。复制整个 <code>Rendering</code> 目录后仍可阅读；ZIP 完整保存了本次新增/修改的 sample 08、HLSL、manifest 与顶层 CMake 入口，需叠加到兼容的 RenderGraph 工程，未包含 <code>engine/</code> 和 <code>third_party/</code>，不能单独构建。</div>
     </div></section>
 
     <section class="section" id="stage1"><div class="wrap">
-      <div class="head"><div><div class="k">STAGE 01 · EXECUTED DAG</div><h2>点击节点，看真实读写契约</h2></div><p>这些不是建议名称，而是 C++ 传给 <code>RenderGraph::addPass</code> 的实际名称。资源声明驱动依赖、自动 barrier 与 culling。</p></div>
+      <div class="head"><div><div class="k">STAGE 01 · EXECUTED DAG</div><h2>点击节点，看真实读写契约（voxel 方案）</h2></div><p>这些不是建议名称，而是 C++ 传给 <code>RenderGraph::addPass</code> 的实际名称。资源声明驱动依赖、自动 barrier 与 culling。下面各 Stage 深挖 voxel 链路；其余六条方案链的资源 / Pass / 边全部记录在 <code>samples/08_gi_workbench/graph_manifest.json</code>（随源码快照 ZIP 携带）。</p></div>
       <article class="gi-stage">
         <div class="gi-stage-head"><span class="gi-stage-num">01</span><div><h3>六 Pass / 八条数据边</h3><p>点击任意节点，检查其输入、输出、dispatch/draw 和源入口。</p></div><span class="gi-stage-tag">交互 DAG</span></div>
         <div class="gi-stage-body">
@@ -220,50 +264,65 @@ if (transmittance &lt;= 0.025)
     </div></section>
 
     <section class="section" id="stage6"><div class="wrap">
-      <div class="head"><div><div class="k">STAGE 06 · VALIDATION</div><h2>两后端、两光源位置、三张 GPU 结果</h2></div><p>验证不是只检查“程序没崩”。它检查图结构、最终图像、移动光响应，并额外渲染 indirect-only view，防止“只有直接光也能通过”的假阳性。</p></div>
-      <table class="compare"><thead><tr><th>检查</th><th>D3D12</th><th>Vulkan</th><th>通过条件</th></tr></thead><tbody>
-        <tr><td>设备 / shader target</td><td>RTX 5060 Ti · DXIL</td><td>RTX 5060 Ti · SPIR-V</td><td>相同 C++ graph 与 HLSL 入口编译执行</td></tr>
-        <tr><td>Frame 0</td><td>mean 54.671 · hash 7021018693590246120</td><td>mean 54.671 · 同 hash</td><td>mean &gt; 4；non-black &gt; 80%</td></tr>
-        <tr><td>Frame 1 moving light</td><td>mean 54.343 · 新 hash</td><td>mean 54.343 · 同新 hash</td><td>hash 改变且 mean 差 &gt; 0.02</td></tr>
-        <tr><td>Indirect-only</td><td>mean 20.712 · 50,608 non-black</td><td>mean / coverage 相同；浮点末位使 hash 可不同</td><td>mean &gt; 0.10；non-black &gt; 5%；hash ≠ final</td></tr>
-        <tr><td>RDG stats</td><td>6 pass · 0 culled · 5 texture · 12 barrier</td><td>相同</td><td>精确匹配资源链</td></tr>
-        <tr><td>History</td><td>0 reads</td><td>0 reads</td><td>两个 frame 都重建 L0→L3</td></tr>
+      <div class="head"><div><div class="k">STAGE 06 · VALIDATION</div><h2>五方案 × 双后端 × 四帧统一验证骨架</h2></div><p>每个方案都跑同一套四帧检查：最终帧、移动光帧、indirect-only（天空渲黑）、方案自己的 debug view。debug view 检查确保“它宣称展示的对照”真的存在——probe 的 leaky-vs-visibility、rcgi 的 merge-vs-no-merge 都必须让图像发生变化才算通过。</p></div>
+      <table class="compare"><thead><tr><th>方案</th><th>RDG stats（须精确匹配）</th><th>final / indirect mean</th><th>debug view 必须改变图像</th><th>双后端一致性</th></tr></thead><tbody>
+        <tr><td>voxel</td><td>6 pass · 5 tex · 12 barrier</td><td>54.671 / 9.111</td><td>occupancy slice</td><td>hash 逐字节相同</td></tr>
+        <tr><td>rsm</td><td>3 pass · 4 tex · 10 barrier</td><td>52.342 / 4.694</td><td>RSM flux map</td><td>统计量相同 · hash 浮点末位可不同</td></tr>
+        <tr><td>ssgi</td><td>4 pass · 6 tex · 14 barrier</td><td>55.467 / 11.604</td><td>ambient occlusion</td><td>统计量相同 · hash 浮点末位可不同</td></tr>
+        <tr><td>probe</td><td>3 pass · 4 tex · 10 barrier</td><td>68.066 / 41.363</td><td>leaky trilinear（漏光对照）</td><td>hash 逐字节相同</td></tr>
+        <tr><td>rcgi</td><td>9 pass · 8 tex · 18 barrier</td><td>65.578 / 55.484</td><td>cast-only C0（无 merge 对照）</td><td>统计量相同 · hash 浮点末位可不同</td></tr>
+        <tr><td>ddgi</td><td>4 pass · 2 tex（+4 imported history）· 10 barrier</td><td>55.566 / 10.215</td><td>Chebyshev off（漏光对照）</td><td>统计量相同 · hash 浮点末位可不同</td></tr>
+        <tr><td>prt</td><td>4 pass · 3 tex · 8 barrier</td><td>55.547 / 11.408</td><td>transfer 绕过（未遮罩环境对照）</td><td>统计量相同 · hash 浮点末位可不同</td></tr>
       </tbody></table>
       <div class="gi-checks">
-        <div class="gi-check pass"><b>D3D12 validation</b><span>PASS · current-frame Voxel GI</span></div>
-        <div class="gi-check pass"><b>Vulkan validation</b><span>PASS · final hash 相同，indirect 数值断言通过</span></div>
-        <div class="gi-check pass"><b>Portable docs</b><span>相对 href/src + source ZIP</span></div>
+        <div class="gi-check pass"><b>D3D12 validation</b><span>PASS · 7/7 schemes · 每方案 4 帧检查</span></div>
+        <div class="gi-check pass"><b>Vulkan validation</b><span>PASS · 7/7 schemes · voxel/probe 与 D3D12 hash 逐字节一致</span></div>
+        <div class="gi-check pass"><b>共享公平性</b><span>同一 SDF 场景 / 相机 / 点光 / direct 项，indirect 差异全部来自方案本身；ddgi 是唯一按设计读历史的方案</span></div>
       </div>
+      <div class="callout" style="margin-top:14px"><b>hash 政策：</b>voxel 与 probe 的 GPU readback 在两后端逐字节一致；rsm / ssgi / rcgi 含大量超越函数（每像素随机旋转、pow 区间），mean 与覆盖率完全一致但保留浮点末位 hash 差异——与既有 indirect-only 比对采用同一政策，不假装逐字节。</div>
     </div></section>
 
     <section class="section" id="stage7"><div class="wrap">
-      <div class="head"><div><div class="k">STAGE 07 · RUN & DEBUG</div><h2>四种原生预览入口</h2></div><p>命令都从 RenderGraph 工程根目录执行；Debug view 仍运行完整上游链，只改变 Resolve 的显示方式。</p></div>
+      <div class="head"><div><div class="k">STAGE 07 · RUN & DEBUG</div><h2>方案切换与原生预览入口</h2></div><p>命令都从 RenderGraph 工程根目录执行；Debug view 仍运行完整上游链，只改变 Resolve 的显示方式。<code>--view=debug1/debug2</code> 在每个方案里含义不同（见 Stage 06 表）。</p></div>
       <div class="duo">
-        <div class="command"><h3>构建与双后端验收</h3><pre>cmake --build build --config Debug --target 08_gi_workbench
+        <div class="command"><h3>构建与双后端验收</h3><pre>cmake --build build --config Release --target 08_gi_workbench
 
-.\build\bin\Debug\08_gi_workbench.exe --validate
-.\build\bin\Debug\08_gi_workbench.exe --validate --vulkan</pre></div>
-        <div class="command"><h3>交互窗口 / 中间资源</h3><pre>.\build\bin\Debug\08_gi_workbench.exe
-.\build\bin\Debug\08_gi_workbench.exe --view=occupancy
-.\build\bin\Debug\08_gi_workbench.exe --view=radiance
-.\build\bin\Debug\08_gi_workbench.exe --view=indirect
+# 一次验证全部五个方案：
+.\build\bin\Release\08_gi_workbench.exe --validate
+.\build\bin\Release\08_gi_workbench.exe --validate --vulkan
 
-# 任一命令可追加 --vulkan</pre></div>
+# 单方案验证 + 导出预览图：
+.\build\bin\Release\08_gi_workbench.exe --validate ^
+    --scheme=rcgi --capture-bmp=out\native_gi.bmp</pre></div>
+        <div class="command"><h3>交互窗口 / 方案与视图切换</h3><pre>.\build\bin\Release\08_gi_workbench.exe --scheme=voxel
+.\build\bin\Release\08_gi_workbench.exe --scheme=rsm --view=debug1
+.\build\bin\Release\08_gi_workbench.exe --scheme=ssgi --view=indirect
+.\build\bin\Release\08_gi_workbench.exe --scheme=probe --view=debug1
+.\build\bin\Release\08_gi_workbench.exe --scheme=rcgi --view=debug2
+.\build\bin\Release\08_gi_workbench.exe --scheme=ddgi --view=debug1
+.\build\bin\Release\08_gi_workbench.exe --scheme=prt --view=debug2
+
+# 任一命令可追加 --vulkan
+# 旧别名 --view=occupancy / --view=radiance 仍可用</pre></div>
       </div>
-      <div class="gi-task-grid"><div class="gi-task do"><b>操作</b><span>先开 occupancy slice，确认表面 shell 与墙/箱体位置。</span></div><div class="gi-task watch"><b>再看</b><span>radiance slice 中点光源移动会让被照表面实时换色。</span></div><div class="gi-task expect"><b>最后</b><span>indirect only 应保留墙面与地面的颜色反弹，而不是 direct shadow。</span></div></div>
+      <div class="gi-task-grid"><div class="gi-task do"><b>操作</b><span>probe 方案先开 --view=debug1（纯三线性），盯住红墙背面的漏光。</span></div><div class="gi-task watch"><b>再看</b><span>切回默认视图：SDF 可见性权重让墙背面的漏光消失，代价是 8 次 segment march。</span></div><div class="gi-task expect"><b>最后</b><span>rcgi 的 --view=debug1（无 merge）只剩近场，加上 merge 后远场光与半影才回来——这就是级联合并在补的东西。</span></div></div>
     </div></section>
 
     <section class="section" id="stage8"><div class="wrap">
       <div class="head"><div><div class="k">STAGE 08 · WHAT NEXT</div><h2>当前框架能做什么，不能假装做什么</h2></div><p>这个样例优先建立可运行、可验收的 GI 骨架；下列分歧决定下一轮工程扩展。</p></div>
       <div class="pipeline-map">
         <div class="map-card"><b>已落地 · Voxel GI</b><span>Texture3D、分离 LOD、当前帧光注入、多锥 gather、跨后端验证。</span></div>
-        <div class="map-card"><b>可复用到 · DDGI teaching-lite</b><span>用现有 voxel/SDF 作为 Probe ray source；需新增 Probe buffer/atlas 与 scrolling 更新。</span></div>
-        <div class="map-card"><b>可复用到 · RCGI teaching-lite</b><span>用 voxel/SDF 构建 interval field；需新增方向/区间 buffer 和 merge pass。</span></div>
-        <div class="map-card"><b>当前缺口 · HWRT</b><span>RHI 没有 BLAS/TLAS、Ray Query 或 DispatchRays；不能把 DDGI 写成真正 DXR 版本。</span></div>
-        <div class="map-card"><b>当前缺口 · Subresource RDG</b><span>RDG 只跟踪整资源状态，所以 L0–L3 使用四张 Texture3D。</span></div>
-        <div class="map-card"><b>当前缺口 · GraphDoc</b><span>编辑器只表达 2D texture pins；原生 C++ path 先承载 3D volume。</span></div>
+        <div class="map-card"><b>已落地 · RSM</b><span>光源视角 MRT + 96 VPL gather；VPL 可见性缺失作为教学对照保留。</span></div>
+        <div class="map-card"><b>已落地 · SSGI</b><span>相机 GBuffer + 屏幕空间步进；离屏能量损失与单帧噪点如实呈现（无时序累积）。</span></div>
+        <div class="map-card"><b>已落地 · SH Probes</b><span>SH-L1 网格每帧重烘 + SDF 可见性权重；leaky 对照一键切换。</span></div>
+        <div class="map-card"><b>已落地 · RCGI（2D）</b><span>真实 cast+merge 级联，flatland 切片俯视预览；merge-vs-no-merge 对照内建；WebGPU compute 镜像在 RCGI 课程页。</span></div>
+        <div class="map-card"><b>已落地 · DDGI teaching-lite</b><span>octahedral atlas + 距离矩 + Chebyshev + 真实 hysteresis（历史 atlas ping-pong 导入原生链）；relocation/scrolling/射线旋转仍如实标注省略。</span></div>
+        <div class="map-card"><b>已落地 · PRT transfer</b><span>可见性 transfer 烘焙 × 每帧环境 SH，缓存算子而非答案的结构落在 Pass 图上。</span></div>
+        <div class="map-card"><b>当前缺口 · HWRT</b><span>RHI 没有 BLAS/TLAS、Ray Query 或 DispatchRays；所有方案的 ray source 都是解析 SDF，不冒充 DXR。3D Radiance Cascades 仍在教学层。</span></div>
+        <div class="map-card"><b>当前缺口 · Subresource RDG</b><span>RDG 只跟踪整资源状态，所以 voxel L0–L3 使用四张 Texture3D。</span></div>
+        <div class="map-card"><b>当前缺口 · GraphDoc</b><span>编辑器还不能表达 Texture3D pins；五条方案链先由原生 C++ path 承载，结构记录在 graph_manifest.json。</span></div>
       </div>
-      <div class="callout" style="margin-top:15px"><b>继续组合：</b><a href="../gi_module_voxel_gi.html">完整 Voxel GI 页面</a>解释每个中间纹理；<a href="../gi_module_ddgi.html">DDGI</a>与<a href="../gi_module_rcgi.html">RCGI</a>页面提供同一 ray source 下的算法实验。所有链接均相对于本页。</div>
+      <div class="callout" style="margin-top:15px"><b>继续组合：</b>每张方案卡都链接到对应的算法课（<a href="../gi_module_voxel_gi.html">Voxel GI</a>、<a href="../gi_module_rsm.html">RSM</a>、<a href="../gi_module_ssao_ssgi.html">SSAO/SSGI</a>、<a href="../gi_module_probes.html">Probes</a>、<a href="../gi_module_rcgi.html">RCGI</a>）；课程页解释原理与失效模式，本页证明它们真的在 RenderGraph 上跑。所有链接均相对于本页。</div>
     </div></section>
   </main>
   <footer class="footer"><div class="wrap"><span>GI Field Guide · Native RenderGraph Lab</span><span><a href="../gi_module_ddgi.html">← DDGI</a> · <a href="../index.html">目录</a> · <a href="assets/rendergraph_gi_source_snapshot.zip">源码快照</a></span></div></footer>
