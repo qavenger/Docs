@@ -322,6 +322,33 @@ details.more summary { font-weight: 600; color: var(--ink); font-size: 14px; }
 }
 table.t td.nw { white-space: nowrap; }
 /* 章节与总览 */
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 14px 0; }
+.trio > * { min-width: 0; }
+kbd { font: 12px Consolas, "Cascadia Mono", monospace; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface); }
+/* 第三章：控制台变量 */
+table.t.cvm { font-size: 12.5px; }
+table.t.cvm td:first-child { min-width: 260px; }
+table.t.cvm code { font-size: 12px; }
+.cvl { display: block; color: var(--muted); font-size: 12px; margin-top: 1px; }
+.pj { font-weight: 600; color: var(--ink); }
+.pj::before { content: "●"; color: var(--s2); font-size: 9px; margin-right: 3px; vertical-align: 2px; }
+.eng { display: block; color: var(--muted); font-size: 11px; }
+.cvm-note { margin-top: -4px; }
+.knobs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+.knob { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--page); font-size: 13.5px; line-height: 1.65; min-width: 0; }
+.knob p { margin: 4px 0; }
+.knob-h { font-weight: 600; font-size: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.knob-tag { font-size: 11px; font-weight: 600; color: var(--surface); background: var(--ink2); border-radius: 999px; padding: 0 8px; line-height: 18px; }
+.knob-v { color: var(--muted); font-size: 12.5px; }
+.knob-v code { font-size: 11.5px; }
+.knob-r { color: var(--ink2); border-top: 1px dashed var(--grid); padding-top: 6px; }
+.knob-r b { color: var(--ink); margin-right: 6px; }
+details.cvidx { margin: 6px 0 14px; }
+@media (max-width: 720px) {
+  table.t.cvm td:first-child, table.t.cvm th:first-child { min-width: 150px; position: sticky; left: 0; background: var(--surface); z-index: 1; }
+}
+details.cvidx summary { cursor: pointer; color: var(--ink2); font-size: 13px; }
+details.cvidx table.t { font-size: 12px; }
 .chain { display: flex; flex-wrap: wrap; gap: 6px 4px; align-items: center; margin: 6px 0 10px; font-size: 13px; line-height: 1.4; }
 .chain > span { border: 1px solid var(--border); border-radius: 8px; padding: 3px 8px; background: var(--surface); color: var(--ink); }
 .chain i { font-style: normal; color: var(--muted); padding: 0 1px; }
@@ -387,6 +414,7 @@ table.t td.nw { white-space: nowrap; }
 .mix-r .bar.phys { background: linear-gradient(90deg, var(--wash) 0%, var(--wash) 25%, var(--s2) 100%); }
 .mix-r .bar.ppv { background: linear-gradient(90deg, var(--wash) 0%, var(--wash) 35%, var(--s4) 65%, var(--s4) 100%); }
 @media (max-width: 860px) {
+  .knobs, .trio { grid-template-columns: 1fr; }
   .layers { grid-template-columns: 1fr; }
   .dist.five { grid-template-columns: repeat(3, 1fr); }
 }
@@ -408,7 +436,7 @@ table.t td.nw { white-space: nowrap; }
   <span class="brand">PBR 画面重构指南</span>
   <nav aria-label="目录">
     <a href="#tldr">总览</a><a href="#ch1">一 · ACES 2.0</a><a href="#ch2">二 · PBR 重构</a><a href="#p-light">灯光</a><a href="#p-expo">曝光与过渡</a>
-    <a href="#p-lumen">Lumen</a><a href="#p-fx">特效</a><a href="#p-grade">调色与氛围</a><a href="#gloss">名词</a><a href="#appendix">附录</a>
+    <a href="#p-lumen">Lumen</a><a href="#p-fx">特效</a><a href="#p-grade">调色与氛围</a><a href="#ch3">三 · 性能变量</a><a href="#gloss">名词</a><a href="#appendix">附录</a>
   </nav>
   <button class="theme-btn" id="theme" type="button" aria-label="切换浅色 / 深色主题">主题：跟随系统</button>
 </div></div>
@@ -417,9 +445,9 @@ table.t td.nw { white-space: nowrap; }
 <header class="hero">
   <p class="kicker">火炬之光 UE5 · 画面标准 · PBR 全流程重构</p>
   <h1>UE5 全流程 PBR 画面重构指南</h1>
-  <p class="lead">从 Filmic 换到 ACES 2.0，再到物理相机、天空大气、灯光校准、Lumen 和后期调色：为什么这样改、具体怎么操作、怎么验收。写给美术和 TA。</p>
+  <p class="lead">从 Filmic 换到 ACES 2.0，再到物理相机、天空大气、灯光校准、Lumen 和后期调色：为什么这样改、具体怎么操作、怎么验收；最后是效果与性能均衡的控制台变量。写给美术和 TA。</p>
   <p class="meta">依据：工程引擎 UE 5.8.4 源码逐行核对 + OpenColorIO 2.6 官方 ACES 2.0 实现 + 工程截图与资源扫描 · 2026-10-27</p>
-  <p class="meta">版本：10-26 初版只对比 Filmic 与 ACES 2.0；10-27 改为完整的 PBR 重构流程（物理相机、PPV 曝光过渡与区域氛围过渡、天空大气、Lumen、调色、特效贴图示例），原内容收为第一章。正文里带虚线的名词可以悬停查看解释。</p>
+  <p class="meta">版本：10-26 初版只对比 Filmic 与 ACES 2.0；10-27 改为完整的 PBR 重构流程（物理相机、PPV 曝光过渡与区域氛围过渡、天空大气、Lumen、调色、特效贴图示例），原内容收为第一章；同日补充第三章：效果与性能均衡的控制台变量。正文里带虚线的名词可以悬停查看解释。</p>
   <p class="meta">注：引擎已于 2026-10-27 升级到 5.8.4。本文涉及的色调映射、曝光源码与 5.8.2 相同（<code>git diff 5.8.2-release HEAD</code> 为空），附录里的行号两个版本都适用；<code>r.HDR.Aces.Version</code> 默认就是 2。</p>
 </header>
 <noscript><p class="note">图表与对比滑块需要启用 JavaScript；文字结论不受影响。</p></noscript>
@@ -440,6 +468,7 @@ table.t td.nw { white-space: nowrap; }
       <tr><td>全局光照</td><td>Lumen + MegaLights，可用硬件光追</td><td>不变；缓存光照的曝光范围调大，用路径追踪做参考</td><td><a href="#p-lumen">2.9</a></td></tr>
       <tr><td>自发光、特效</td><td>按曝光 ×1 定强度，依赖 Filmic 的偏色出黄芯</td><td>发光体按尼特，玩法类跟着曝光走；特效贴图按 ACES 重画渐变</td><td><a href="#p-fx">2.10</a></td></tr>
       <tr><td>风格</td><td>Film 参数（3 张）、LUT 贴图（1 张）、零散调色</td><td>Color Grading 共享预设 + 区域 PPV；不再用 LUT 贴图</td><td><a href="#p-grade">2.11</a></td></tr>
+      <tr><td>画质与性能</td><td>菜单 Epic 预设用电影档阴影；Windows 关闭了网格距离场</td><td>以引擎分档为基础，只改有依据的几项，按目标机器实测</td><td><a href="#ch3">第三章</a></td></tr>
     </tbody>
   </table></div>
   <p class="fig-title">改造流程（第二章）</p>
@@ -458,9 +487,10 @@ table.t td.nw { white-space: nowrap; }
     <li><a href="#p-dcc"><span class="n">2.12 · 工具</span><b>DCC 对齐</b>OCIO 预览 +0.58 档</a></li>
     <li><a href="#p-accept"><span class="n">2.13 · 落地</span><b>逐关卡迁移与验收</b>先等效换算，再物理重打光</a></li>
   </ol>
-  <div class="two">
+  <div class="trio">
     <div class="box"><h4>第一章：ACES 2.0</h4><p>色彩输出是整套流程的尺子。这一章对比 Filmic 和 ACES 2.0，解释切过去为什么会变灰，以及重构完成前就要切时的过渡做法。</p><p class="small"><a href="#ch1">→ 第一章</a></p></div>
     <div class="box"><h4>第二章：全流程 PBR 重构</h4><p>从工程设置、材质规范、灯光校准、曝光与过渡、Lumen、自发光特效，到后期调色和逐关卡验收，每一节都写了为什么、怎么做、怎么验收。</p><p class="small"><a href="#ch2">→ 第二章</a></p></div>
+    <div class="box"><h4>第三章：效果与性能</h4><p>Lumen、阴影、MegaLights、天空大气、雾、分辨率和后处理的常用控制台变量：在哪里设、各档位的值、调高调低的代价，以及本项目的起步配置。</p><p class="small"><a href="#ch3">→ 第三章</a></p></div>
   </div>
 </section>
 
@@ -1224,7 +1254,7 @@ r.LUT.TonemappingSDRInvEOTF=0                   <span class="c">; ACES 用 sRGB 
     <thead><tr><th>参数（PPV → Global Illumination / Reflections）</th><th class="num">默认</th><th>建议</th></tr></thead>
     <tbody>
       <tr><td>Global Illumination Method / Reflection Method</td><td class="num">Lumen</td><td>保持 Lumen</td></tr>
-      <tr><td>Lumen Scene Lighting Quality / Final Gather Quality</td><td class="num">1 / 1</td><td>先保持 1；高画质档再给 2（噪点、漏光更少，开销更大）</td></tr>
+      <tr><td>Lumen Scene Lighting Quality / Final Gather Quality</td><td class="num">1 / 1</td><td>保持 1。PPV 的 Final Gather Quality 是乘在变量上的：填 2 时每个屏幕探针的光线 ×4，开销接近电影档（<a href="#cv-howto">3.1</a>）；要提画质，按档位改变量（<a href="#cv-gi">3.3</a>）</td></tr>
       <tr><td>Lumen Scene Detail</td><td class="num">1</td><td>保持 1；小物体进不了 Lumen 场景时再加</td></tr>
       <tr><td>Lumen Scene View Distance / Max Trace Distance</td><td class="num">20000 cm</td><td>保持默认。源码注释：Max Trace Distance 太小，天光会漏进大山洞</td></tr>
       <tr><td>Ray Lighting Mode</td><td class="num">Project Default</td><td>高画质反射可以试 Hit Lighting for Reflections（需要硬件光追）</td></tr>
@@ -1453,6 +1483,380 @@ r.LUT.TonemappingSDRInvEOTF=0                   <span class="c">; ACES 用 sRGB 
   <p>ACES 2.0 的 SDR 和 HDR 是同一曲线家族，开 HDR 后自动按屏幕峰值亮度展开，观感一致；Filmic 在 HDR 下是“先算出 SDR 结果，再反推扩展”，一致性较差。物理单位的灯光和自发光在 HDR 下也能直接用上更高的亮度范围。以后要支持 HDR 屏幕，这套流程不需要返工。</p>
 </section>
 
+<!-- ============================================================ 第三章 -->
+<div class="chapter" id="ch3">
+  <p class="ch-k">第三章</p>
+  <h2 class="ch-t">效果与性能：常用控制台变量</h2>
+  <p class="ch-s">按 UE 5.8.4 源码和 Epic 官方的画质分档整理：每个变量写清楚在哪里设、各档位的值、调高调低的效果和代价，以及本项目的建议。表格里的默认值和各档数值都由脚本直接从引擎源码和 ini 读出（<code>src/make_cvars.py</code>），不是凭记忆。</p>
+</div>
+
+<!-- ---------------------------------------------------------- 3.1 怎么设 -->
+<section class="card" id="cv-howto">
+  <h2>3.1 先搞懂：变量写在哪、谁说了算</h2>
+  <p class="sub">控制台变量（CVar）是引擎的开关和旋钮。同一个变量可以从很多地方设置，最后生效的是<b>优先级最高</b>的那一处；改了不生效，十有八九是被更高优先级挡住了。</p>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>设置位置</th><th>写法</th><th>优先级</th><th>适合做什么</th></tr></thead>
+    <tbody>
+      <tr><td>画质分档（Scalability）</td><td><code>Config/DefaultScalability.ini</code>，每档一节，如 <code>[GlobalIlluminationQuality@3]</code>；Windows 平台再被 <code>Config/Windows/WindowsScalability.ini</code> 覆盖</td><td>低</td><td><b>按档位区分效果与性能，主要写在这里</b></td></tr>
+      <tr><td>本项目的游戏设置菜单</td><td><code>GameGraphicsSettingsLibrary</code> 按 <code>Config/Windows/WindowsGame.ini</code> 的 Presets 写 <code>sg.*</code> 和部分 <code>r.*</code></td><td>同上</td><td>玩家可调的项</td></tr>
+      <tr><td>项目设置</td><td>Project Settings → Rendering，存在 <code>DefaultEngine.ini</code> 的 <code>[/Script/Engine.RendererSettings]</code></td><td>中</td><td>功能开关：Lumen、虚拟阴影、MegaLights、硬件光追、距离场</td></tr>
+      <tr><td>全局 ini</td><td><code>DefaultEngine.ini</code> 的 <code>[SystemSettings]</code> 或 <code>[ConsoleVariables]</code></td><td>较高</td><td>所有档位都一样、不希望被菜单改动的值</td></tr>
+      <tr><td>设备配置</td><td><code>Config/DefaultDeviceProfiles.ini</code> 里的 <code>+CVars=</code>（也能写 <code>sg.*</code> 选档）</td><td>高</td><td>按平台、按机型</td></tr>
+      <tr><td>控制台</td><td>编辑器或游戏里按 <kbd>~</kbd> 输入，如 <code>r.Lumen.ScreenProbeGather.DownsampleFactor 32</code></td><td>最高</td><td>临时试验，重启后失效</td></tr>
+    </tbody>
+  </table></div>
+  <div class="two">
+    <div class="note"><span class="lab">优先级（弱 → 强，源码 IConsoleManager.h）</span>
+      构造默认 &lt; Scalability &lt; GameSetting &lt; ProjectSetting &lt; SystemSettingsIni &lt; DeviceProfile &lt; … &lt; ConsoleVariablesIni &lt; 命令行 &lt; 代码 &lt; 控制台。
+      <p class="small" style="margin:8px 0 0">低优先级的设置会被高优先级挡住。例：把 <code>r.VolumetricFog</code> 写进 <code>[SystemSettings]</code>，游戏菜单（用 Scalability 优先级写）就再也改不动它。所以<b>想分档就写 Scalability，想全档统一才写 [SystemSettings]</b>。</p>
+    </div>
+    <div class="note good"><span class="lab">查看当前值和来源</span>
+      控制台只输入变量名不带值，会打印 <code>r.X = "16"  LastSetBy: Scalability</code>，一眼就知道是谁设的；变量名后加 <code>?</code> 打印源码里的说明。<code>Scalability 2</code> 把所有分组一次切到“高”，<code>sg.GlobalIlluminationQuality 2</code> 只切 GI 一组。
+    </div>
+  </div>
+
+  <h4>画质分组与档位</h4>
+  <p>引擎把变量分成 10 个组，每组 5 档：0 低、1 中、2 高、3 极高（Epic）、4 电影（Cinematic），各档的值写在引擎的 <code>Engine/Config/BaseScalability.ini</code>。Epic 的定位（Lumen 性能指南，5.8）：<b>极高 = 主机 30 fps 预算，高 = 60 fps</b>，每降一档开销大约减半；电影档给离线渲染用。</p>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>分组</th><th>管哪些</th><th>本章</th></tr></thead>
+    <tbody>
+      <tr><td><code>sg.GlobalIlluminationQuality</code></td><td>Lumen 全局光照、Surface Cache、光追场景、距离场 AO</td><td><a href="#cv-gi">3.3</a></td></tr>
+      <tr><td><code>sg.ReflectionQuality</code></td><td>Lumen 反射、屏幕空间反射</td><td><a href="#cv-refl">3.4</a></td></tr>
+      <tr><td><code>sg.ShadowQuality</code></td><td>虚拟阴影贴图、MegaLights、体积雾开关与分辨率</td><td><a href="#cv-vsm">3.5</a>、<a href="#cv-ml">3.6</a>、<a href="#cv-fog">3.8</a></td></tr>
+      <tr><td><code>sg.EffectsQuality</code></td><td>天空大气、半透明光照体积、材质质量、Niagara 品质</td><td><a href="#cv-sky">3.7</a></td></tr>
+      <tr><td><code>sg.AntiAliasingQuality</code></td><td>TSR 的历史分辨率、闪烁抑制等</td><td><a href="#cv-res">3.9</a></td></tr>
+      <tr><td><code>sg.PostProcessQuality</code></td><td>Bloom、景深、动态模糊、曝光</td><td><a href="#cv-post">3.10</a></td></tr>
+      <tr><td><code>sg.ViewDistanceQuality</code> / <code>Texture</code> / <code>Foliage</code> / <code>Shading</code></td><td>视距、贴图流送、植被密度、头发与各向异性材质</td><td>本文不展开</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>PPV 里的质量滑条是乘在变量上的</h4>
+  <p>后处理体积的 Lumen 质量参数不是独立的设置，而是在变量的基础上再放大，所以它们是很贵的旋钮：</p>
+  <ul>
+    <li><b>Final Gather Quality</b>（默认 1）：每个屏幕探针的光线 = 变量值 × √质量，再取 2 的幂（源码 LumenScreenProbeGather.cpp 452–457）。填 2 时 8×8 变成 16×16，<b>光线数 ×4</b>，和电影档一样；≥ 6 时探针间距再减半。</li>
+    <li><b>Lumen Scene Lighting Quality</b>（默认 1）：多次反弹的半球探针分辨率 × √质量，≥ 6 时探针间距减半（LumenRadiosity.cpp 207–224）。</li>
+  </ul>
+  <p class="small">所以第二章 2.9 的建议是保持 1：要提高画质，按档位改变量，不要在 PPV 里拉滑条。</p>
+
+  <h4>怎么测：一次只改一个变量</h4>
+  <ol class="sub-steps">
+    <li>选 3 张有代表性的图（主城白天、地牢、特效多的战斗场景），各存一个相机书签，固定机位、固定分辨率。</li>
+    <li><code>stat unit</code> 看帧时间是卡在 Game、Draw 还是 GPU；<code>stat gpu</code> 看每个 pass 的 GPU 毫秒；<code>ProfileGPU</code>（<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>,</kbd>）看单帧的详细分解。</li>
+    <li>测单个功能时临时输入 <code>r.RDG.AsyncCompute 0</code>，让 Lumen 等异步 pass 不和别的重叠，读数才准；<b>只用于测量，不要写进配置</b>，最终性能要在异步开着时再测一遍。</li>
+    <li>改一个变量，记一次读数和截图，再改下一个。Epic 给 Lumen 的预算：内部分辨率 1080p 时，30 fps 档约 8 ms、60 fps 档约 4 ms（GI + 反射 + Surface Cache 一共）。</li>
+  </ol>
+</section>
+
+<!-- ---------------------------------------------------------- 3.2 本项目现状 -->
+<section class="card" id="cv-project">
+  <h2>3.2 本项目的现状（扫描 2026-10-27）</h2>
+  <p class="sub">先看清楚项目现在的配置，后面各节的建议都以此为前提。</p>
+  <h4>① 游戏设置菜单的四档预设（Windows）</h4>
+  <p><code>Config/Windows/WindowsGame.ini</code> 的 <code>[/Script/UE_game.GameGraphicsConfig]</code> 定义了四档，选档时 <code>GameGraphicsSettingsLibrary</code> 先把所有画质分组设成同一档，再按分项覆盖：</p>
+  <div class="scroll"><table class="t">
+    <thead><tr><th>菜单预设</th><th class="num">画质分组</th><th class="num">渲染分辨率</th><th class="num">阴影组</th><th class="num">特效组</th><th class="num">抗锯齿组</th><th>体积雾</th></tr></thead>
+    <tbody>
+      <tr><td>Low</td><td class="num">0 低</td><td class="num">50%</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>关</td></tr>
+      <tr><td>Medium</td><td class="num">1 中</td><td class="num">80%</td><td class="num">2</td><td class="num">1</td><td class="num">2</td><td>关</td></tr>
+      <tr><td>High</td><td class="num">2 高</td><td class="num">100%</td><td class="num">3</td><td class="num">2</td><td class="num">2</td><td>关</td></tr>
+      <tr><td>Epic</td><td class="num">3 极高</td><td class="num">100%</td><td class="num"><b>4 电影</b></td><td class="num">2</td><td class="num">2</td><td>开</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">GI、反射、后处理组跟着“画质分组”走；阴影、特效、抗锯齿按上表单独覆盖。渲染分辨率由菜单直接写 <code>r.ScreenPercentage</code>。</p>
+
+  <h4>② 值得注意的五件事</h4>
+  <ol class="steps">
+    <li><b>Epic 预设的阴影用的是电影档</b>
+      <code>sg_ShadowQuality=4</code> 对应 <code>[ShadowQuality@Cine]</code>：虚拟阴影的软阴影光线 16 条 × 每条 8 个采样（极高档 8 × 4）、页池 8192、MegaLights 关掉降采样按全分辨率算。电影档是给离线渲染准备的，实时游戏里阴影投影的开销会成倍增加。建议 Epic 预设改用 3（<a href="#cv-vsm">3.5</a>）。</li>
+    <li><b>Windows 平台关掉了网格距离场</b>
+      <code>Config/Windows/WindowsEngine.ini</code>（<code>Config/PC/</code> 下有同样一份）在 <code>[/Script/Engine.RendererSettings]</code> 写了 <code>r.GenerateMeshDistanceFields=False</code>，覆盖了 <code>DefaultEngine.ini</code> 的 True。后果：Lumen 只能用硬件光追；不支持硬件光追的显卡会退回软件追踪，而软件追踪要追的正是网格距离场（全局距离场也由它合成），GI 会明显变差；距离场 AO、距离场阴影也不可用。MegaLights 同样依赖光追。<b>需要拍板</b>：把“支持硬件光追”定为 PC 最低配置，或者在 Windows 上重新打开距离场（网格构建时间和内存会增加）。控制台输入 <code>r.GenerateMeshDistanceFields</code> 可以确认当前值。</li>
+    <li><b>项目的阴影分档基本只改了传统阴影参数</b>
+      <code>DefaultScalability.ini</code> / <code>WindowsScalability.ini</code> 的 <code>[ShadowQuality@N]</code> 改的是 <code>r.Shadow.CSM.*</code>、<code>r.Shadow.MaxCSMResolution</code> 这类级联阴影参数（菜单也会写 <code>r.Shadow.MaxCSMResolution</code>）。工程开了虚拟阴影贴图，太阳不走级联阴影，这些值基本不起作用；虚拟阴影和 MegaLights 实际用的是引擎 BaseScalability 的值。另外项目在所有档位都把 <code>r.Shadow.RadiusThreshold</code> 设成了 0（引擎 0.06 / 0.05 / 0.04 / 0.01），也就是再小的物体也画进阴影，非 Nanite 物体多时会增加阴影深度的开销。</li>
+    <li><b>Lumen GI 打开时，菜单里的 AO 选项不起作用</b>
+      Lumen 用自己的近距离 AO（Short Range AO）代替 SSAO：只有 <code>r.Lumen.DiffuseIndirect.SSAO=1</code> 并且关掉 Short Range AO 时才会再渲染 SSAO（源码 LumenDiffuseIndirect.cpp 309–313）。所以 <code>r.AmbientOcclusionLevels</code> 等只在 Low 预设（Lumen 关闭）时有用；同理，<code>r.SSR.Quality</code> 只在 Lumen 反射关闭的 Low、Medium 档有用。</li>
+    <li><b>后处理分档里曝光还是锁定的</b>
+      <code>[PostProcessQuality@N]</code> 各档都是 <code>r.EyeAdaptationQuality=0</code>，按第二章 <a href="#p-config">2.4</a> 改成 2。</li>
+  </ol>
+  <p class="small muted">另外两点前提：工程开了 MegaLights（<code>r.MegaLights.EnableForProject=True</code>）和硬件光追（<code>r.RayTracing=True</code>，Lumen 默认优先用它）；软件追踪的模式在 5.8 默认是“Global Tracing”（<code>r.Lumen.TraceMeshSDFs</code> 默认 0，项目没改）。</p>
+</section>
+
+<!-- ---------------------------------------------------------- 3.3 Lumen GI -->
+<section class="card" id="cv-gi">
+  <h2>3.3 Lumen 全局光照</h2>
+  <p class="sub">分组 <code>sg.GlobalIlluminationQuality</code>：极高 = 屏幕探针每 16 像素一个；高 = 32 像素（官方的 60 fps 档）；中 = 改用更便宜的辐照度场（“Lumen Lite”）；低 = 关掉 Lumen，只剩天光。</p>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.Lumen.DiffuseIndirect.Allow</code><span class="cvl">Lumen GI 开关</span></td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Lumen.FinalGatherMethod</code><span class="cvl">最终采集：0 辐照度场 / 1 屏幕探针</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.DownsampleFactor</code><span class="cvl">屏幕探针间距（像素）</span></td><td class="num">16</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">32</td><td class="num">16</td><td class="num">8</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.TracingOctahedronResolution</code><span class="cvl">每个探针的光线（边长）</span></td><td class="num">8</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">8</td><td class="num">8</td><td class="num">16</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.NumAdaptiveProbes</code><span class="cvl">自适应补充探针</span></td><td class="num">8</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">16</td><td class="num">8</td><td class="num">4</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.RadianceCache.ProbeResolution</code><span class="cvl">辐射缓存探针分辨率</span></td><td class="num">32</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">16</td><td class="num">32</td><td class="num">32</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.RadianceCache.NumProbesToTraceBudget</code><span class="cvl">辐射缓存每帧更新探针数</span></td><td class="num">100</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">100</td><td class="num">150</td><td class="num">350</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.StochasticInterpolation</code><span class="cvl">随机插值（1 更省）</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.IrradianceFormat</code><span class="cvl">辐照度格式：0 球谐 / 1 八面体</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.ShortRangeAO.DownsampleFactor</code><span class="cvl">近距离 AO 降采样</span></td><td class="num">2</td><td class="num"><span class="muted">—</span></td><td class="num">1</td><td class="num">2</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.ShortRangeAO.BentNormal</code><span class="cvl">弯曲法线（高光遮蔽更准）</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.LumenScene.SurfaceCache.AtlasSize</code><span class="cvl">Surface Cache 图集尺寸</span></td><td class="num">4096</td><td class="num"><span class="muted">—</span></td><td class="num">2048</td><td class="num">3584</td><td class="num">4096</td><td class="num">4096</td></tr><tr><td><code>r.LumenScene.SurfaceCache.CardMaxResolution</code><span class="cvl">单张卡片最大分辨率</span></td><td class="num">512</td><td class="num"><span class="muted">—</span></td><td class="num">256</td><td class="num">512</td><td class="num">512</td><td class="num">512</td></tr><tr><td><code>r.LumenScene.DirectLighting.UpdateFactor</code><span class="cvl">直接光：每帧更新 1/N</span></td><td class="num">32</td><td class="num"><span class="muted">—</span></td><td class="num">128</td><td class="num">64</td><td class="num">32</td><td class="num">32</td></tr><tr><td><code>r.LumenScene.DirectLighting.MaxLightsPerTile</code><span class="cvl">每块缓存最多几盏灯</span></td><td class="num">8</td><td class="num"><span class="muted">—</span></td><td class="num">4</td><td class="num">4</td><td class="num">8</td><td class="num">8</td></tr><tr><td><code>r.LumenScene.Radiosity.UpdateFactor</code><span class="cvl">多次反弹：每帧更新 1/N</span></td><td class="num">64</td><td class="num"><span class="muted">—</span></td><td class="num">128</td><td class="num">128</td><td class="num">64</td><td class="num">64</td></tr><tr><td><code>r.LumenScene.Radiosity.ProbeSpacing</code><span class="cvl">多次反弹探针间距</span></td><td class="num">4</td><td class="num"><span class="muted">—</span></td><td class="num">4</td><td class="num">8</td><td class="num">4</td><td class="num">4</td></tr><tr><td><code>r.LumenScene.Radiosity.HemisphereProbeResolution</code><span class="cvl">多次反弹每探针光线（边长）</span></td><td class="num">4</td><td class="num"><span class="muted">—</span></td><td class="num">3</td><td class="num">3</td><td class="num">4</td><td class="num">4</td></tr><tr><td><code>r.Lumen.TraceMeshSDFs.Allow</code><span class="cvl">软件追踪：允许网格距离场</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Lumen.TranslucencyVolume.GridPixelSize</code><span class="cvl">半透明光照体积格子（像素）</span></td><td class="num">32</td><td class="num"><span class="muted">—</span></td><td class="num">128</td><td class="num">64</td><td class="num">32</td><td class="num">32</td></tr><tr><td><code>r.Lumen.HardwareRayTracing.HitLighting.Allowed</code><span class="cvl">允许命中点光照</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.RayTracing.Scene.BuildMode</code><span class="cvl">光追场景：0 快速构建 / 1 快速追踪</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.RayTracing.Geometry.SkeletalMeshes</code><span class="cvl">骨骼网格进光追场景</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.SkylightIntensityMultiplier</code><span class="cvl">天光强度倍数</span></td><td class="num">1</td><td class="num">0.8</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[GlobalIlluminationQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <div class="knobs">
+    <div class="knob"><p class="knob-h">屏幕探针间距<span class="knob-tag">第一旋钮</span></p>
+      <p class="knob-v"><code>r.Lumen.ScreenProbeGather.DownsampleFactor</code></p>
+      <p>每 N×N 像素放一个屏幕探针。N 翻倍，探针数变成 ¼：间接光更糊，小物体的间接阴影变弱。</p>
+      <p class="knob-r"><b>建议</b>极高 16、高 32，保持引擎默认；8 是电影档，不要在游戏里用。</p></div>
+    <div class="knob"><p class="knob-h">每个探针的光线</p>
+      <p class="knob-v"><code>r.Lumen.ScreenProbeGather.TracingOctahedronResolution</code></p>
+      <p>值是边长，光线数是它的平方：8 → 64 条。越低方向性越差，粗糙表面的反射也变差。PPV 的 Final Gather Quality 会再乘它（3.1）。</p>
+      <p class="knob-r"><b>建议</b>保持 8。</p></div>
+    <div class="knob"><p class="knob-h">世界空间辐射缓存<span class="knob-tag">第二旋钮</span></p>
+      <p class="knob-v"><code>…RadianceCache.ProbeResolution</code> · <code>…RadianceCache.NumProbesToTraceBudget</code></p>
+      <p>远处的间接光来自一组世界空间探针：分辨率决定质量，每帧更新几个探针决定开销。预算太低，镜头快速移动时光照会“跳”。</p>
+      <p class="knob-r"><b>建议</b>俯视角镜头移动平缓，高档的 16 / 100 就够；传送、快速闪现后如果看到光照延迟，再加预算。</p></div>
+    <div class="knob"><p class="knob-h">Surface Cache 的更新速度</p>
+      <p class="knob-v"><code>r.LumenScene.DirectLighting.UpdateFactor</code> · <code>r.LumenScene.Radiosity.UpdateFactor</code></p>
+      <p>每帧只更新 1/N 的表面缓存。N 越大越省，但灯光变化（火把闪烁、开关灯、昼夜）传到间接光的速度越慢。<code>MaxLightsPerTile</code> 限制每块缓存参与计算的灯数，所以总灯数多也不太影响这里的开销。</p>
+      <p class="knob-r"><b>建议</b>保持各档默认；有大量闪烁光源的地图，用更低的直接光 UpdateFactor 换响应速度。</p></div>
+    <div class="knob"><p class="knob-h">时间累积</p>
+      <p class="knob-v"><code>r.Lumen.ScreenProbeGather.Temporal.MaxFramesAccumulated</code>（默认 10）</p>
+      <p>累积的帧数越少，光照变化响应越快，但噪点和闪烁越多。</p>
+      <p class="knob-r"><b>建议</b>保持默认；火光拖影明显时试 6–8。</p></div>
+    <div class="knob"><p class="knob-h">萤火虫抑制</p>
+      <p class="knob-v"><code>r.Lumen.ScreenProbeGather.MaxRayIntensity</code>（默认 10）</p>
+      <p>把单条光线的亮度钳在这个值以下，减少小而亮的自发光造成的闪点。按预曝光之后的值计算，所以和第二章的物理曝光无关。</p>
+      <p class="knob-r"><b>建议</b>保持默认；比它更好的办法是重要光源用真实的灯，小自发光不负责照明（2.9）。</p></div>
+    <div class="knob"><p class="knob-h">硬件光追的场景规模</p>
+      <p class="knob-v"><code>r.RayTracing.Culling</code>（3）· <code>.Radius</code>（30000 cm）· <code>.Angle</code>（1°）</p>
+      <p>光追的加速结构（TLAS）每帧重建，开销和实例数成正比，Epic 建议裁剪后控制在 10 万以下；用 <code>stat SceneRendering</code> 里的 Ray tracing active instances 查看。裁剪按距离或投影角度去掉远处的小物体。</p>
+      <p class="knob-r"><b>建议</b>俯视角看不到 300 米外，可以试 <code>r.RayTracing.Culling.Radius=15000</code>（Epic 文档的示例值）；草、成片的小石子关掉 Visible In Ray Tracing。</p></div>
+    <div class="knob"><p class="knob-h">命中点光照</p>
+      <p class="knob-v"><code>r.Lumen.HardwareRayTracing.LightingMode</code>（默认 0）</p>
+      <p>0 = 光线命中后读 Surface Cache，最快；1 = GI 和反射都在命中点重算材质和光照；2 = 只对反射这样做。1、2 都很贵，Epic 不建议游戏使用。</p>
+      <p class="knob-r"><b>建议</b>保持 0（项目设置里的 Ray Lighting Mode 同理）。</p></div>
+    <div class="knob"><p class="knob-h">最后手段：积分降采样</p>
+      <p class="knob-v"><code>r.Lumen.ScreenProbeGather.IntegrateDownsampleFactor</code>（默认 1）</p>
+      <p>设为 2 时积分在半分辨率做，快很多，但更噪，法线贴图上的细节变糊。Epic 各档都没有开它。</p>
+      <p class="knob-r"><b>建议</b>只给低配机兜底用。</p></div>
+    <div class="knob"><p class="knob-h">异步计算与调试</p>
+      <p class="knob-v"><code>r.Lumen.AsyncCompute</code>（1）· <code>r.Lumen.Visualize</code></p>
+      <p>Lumen 默认在异步计算队列上和别的 pass 重叠。<code>r.Lumen.Visualize 2</code> 是性能总览（哪些像素在追光线），<code>5</code> 是 Surface Cache 覆盖情况。</p>
+      <p class="knob-r"><b>建议</b>保持开；调试视图只在排查时用，它本身也有开销。</p></div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 3.4 Lumen 反射 -->
+<section class="card" id="cv-refl">
+  <h2>3.4 Lumen 反射</h2>
+  <p class="sub">分组 <code>sg.ReflectionQuality</code>：极高、高都用 Lumen 反射（高档半分辨率追踪）；中、低档关掉 Lumen 反射改用屏幕空间反射，粗糙表面的高光仍由 Lumen GI 提供。</p>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.Lumen.Reflections.Allow</code><span class="cvl">Lumen 反射开关</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Lumen.Reflections.DownsampleFactor</code><span class="cvl">反射降采样</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">2</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Lumen.Reflections.MaxRoughnessToTraceForFoliage</code><span class="cvl">植被追反射的粗糙度上限</span></td><td class="num">0.2</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">0.2</td><td class="num">0.4</td><td class="num">0.4</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.MaxRoughnessToEvaluateRoughSpecularForFoliage</code><span class="cvl">植被粗糙高光的上限</span></td><td class="num">0.8</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">0.4</td><td class="num">0.8</td><td class="num">0.8</td></tr><tr><td><code>r.Lumen.Reflections.ScreenSpaceReconstruction.NumSamples</code><span class="cvl">屏幕空间重建采样数</span></td><td class="num">5</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">3</td><td class="num">5</td><td class="num">5</td></tr><tr><td><code>r.Lumen.Reflections.ScreenSpaceReconstruction.MinWeight</code><span class="cvl">重建最小权重</span></td><td class="num">0</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td></tr><tr><td><code>r.Lumen.TranslucencyReflections.FrontLayer.Allow</code><span class="cvl">允许半透明前层反射</span></td><td class="num">1</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">0</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Lumen.TranslucencyReflections.FrontLayer.Enable</code><span class="cvl">开启半透明前层反射</span></td><td class="num">0</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">0</td><td class="num">0</td><td class="num">1</td></tr><tr><td><code>r.SSR.Quality</code><span class="cvl">屏幕空间反射质量</span></td><td class="num">3</td><td class="num">0</td><td class="num">2</td><td class="num">2</td><td class="num">3</td><td class="num">4</td></tr><tr><td><code>r.SSR.HalfResSceneColor</code><span class="cvl">SSR 用半分辨率场景色</span></td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[ReflectionQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <div class="knobs">
+    <div class="knob"><p class="knob-h">粗糙度阈值<span class="knob-tag">第一旋钮</span></p>
+      <p class="knob-v">PPV 的 Max Roughness To Trace（默认 0.4）· <code>r.Lumen.Reflections.MaxRoughnessToTraceClamp</code></p>
+      <p>粗糙度低于阈值的像素才专门追反射光线，更粗糙的直接用 GI 的结果近似，几乎免费。阈值越低，追反射的像素越少。Clamp 变量可以按档位给 PPV 的值设上限。</p>
+      <p class="knob-r"><b>建议</b>保持 0.4；性能紧张的档位用 Clamp 限到 0.3。用 <code>r.Lumen.Visualize 7</code> 看哪些像素在追反射。</p></div>
+    <div class="knob"><p class="knob-h">植被的阈值</p>
+      <p class="knob-v"><code>r.Lumen.Reflections.MaxRoughnessToTraceForFoliage</code></p>
+      <p>双面植被、次表面材质像素单独的阈值（高 0.2、极高 0.4）。Epic：设为 0 能省下明显的开销，几乎看不出差别。</p>
+      <p class="knob-r"><b>建议</b>高档设 0。</p></div>
+    <div class="knob"><p class="knob-h">反射降采样</p>
+      <p class="knob-v"><code>r.Lumen.Reflections.DownsampleFactor</code> · <code>…DownsampleCheckerboard</code></p>
+      <p>1 = 每像素一条；2 = 每 2×2 一条，更糊也更不稳定；棋盘格是介于两者之间的折中（每两个像素一条）。</p>
+      <p class="knob-r"><b>建议</b>保持各档默认；高档画面里湿地、水面闪烁明显时，试棋盘格。</p></div>
+    <div class="knob"><p class="knob-h">直接关掉 Lumen 反射</p>
+      <p class="knob-v"><code>r.Lumen.Reflections.Allow 0</code></p>
+      <p>换成屏幕空间反射，粗糙高光仍由 GI 提供。Epic 在 Xbox Series S 上这样做省了约 1 ms。</p>
+      <p class="knob-r"><b>建议</b>中、低档已经是这样；俯视角大多是粗糙地面，反射本来就便宜，高档以上不必关。</p></div>
+    <div class="knob"><p class="knob-h">半透明的高质量反射</p>
+      <p class="knob-v"><code>r.Lumen.TranslucencyReflections.FrontLayer.Enable</code>（项目设置 High Quality Translucency Reflections）</p>
+      <p>给最前面一层半透明（玻璃、水面）追镜面反射，其余层用辐射缓存的模糊反射。开销明显，默认只在电影档打开。</p>
+      <p class="knob-r"><b>建议</b>保持关；确实需要的区域用 PPV 局部打开。</p></div>
+    <div class="knob"><p class="knob-h">实验：复用辐射缓存</p>
+      <p class="knob-v"><code>r.Lumen.Reflections.RadianceCache</code>（默认 0）</p>
+      <p>粗糙反射的光线变短，远处改从 GI 的辐射缓存插值。只有大量像素的粗糙度在 0.2–0.4 之间时才有收益。</p>
+      <p class="knob-r"><b>建议</b>先不开；金属、湿地多的地图可以试。</p></div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 3.5 阴影 -->
+<section class="card" id="cv-vsm">
+  <h2>3.5 阴影：虚拟阴影贴图</h2>
+  <p class="sub">分组 <code>sg.ShadowQuality</code>。虚拟阴影有两块开销：<b>画阴影深度</b>（几何越多越贵，非 Nanite 物体尤其贵）和<b>阴影投影</b>（= 每像素的灯数 × 软阴影光线数 × 每条光线的采样数）。两块分开看，对症下药。</p>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.ShadowQuality</code><span class="cvl">阴影过滤质量（0 关闭动态阴影）</span></td><td class="num">5</td><td class="num">0</td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 2">2</span><span class="eng">（引擎 3）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 4">4</span><span class="eng">（引擎 5）</span></td><td class="num">5</td><td class="num">5</td></tr><tr><td><code>r.Shadow.Virtual.MaxPhysicalPages</code><span class="cvl">物理页池（显存）</span></td><td class="num">2048</td><td class="num">512</td><td class="num">512</td><td class="num">2048</td><td class="num">4096</td><td class="num">8192</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasDirectional</code><span class="cvl">平行光分辨率偏移</span></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">−1.5</td><td class="num">−1.5</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasDirectionalMoving</code><span class="cvl">平行光移动时</span></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">−1.5</td><td class="num">−1.5</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasLocal</code><span class="cvl">本地光分辨率偏移</span></td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasLocalMoving</code><span class="cvl">本地光移动时</span></td><td class="num">1</td><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="num">1</td><td class="num">0</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.RayCountDirectional</code><span class="cvl">平行光软阴影光线数</span></td><td class="num">7</td><td class="num">0</td><td class="num">4</td><td class="num">8</td><td class="num">8</td><td class="num">16</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.SamplesPerRayDirectional</code><span class="cvl">平行光每条光线采样</span></td><td class="num">8</td><td class="num">2</td><td class="num">2</td><td class="num">4</td><td class="num">4</td><td class="num">8</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.RayCountLocal</code><span class="cvl">本地光软阴影光线数</span></td><td class="num">7</td><td class="num">0</td><td class="num">4</td><td class="num">4</td><td class="num">8</td><td class="num">16</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.SamplesPerRayLocal</code><span class="cvl">本地光每条光线采样</span></td><td class="num">8</td><td class="num">2</td><td class="num">2</td><td class="num">4</td><td class="num">4</td><td class="num">8</td></tr><tr><td><code>r.Shadow.Virtual.MarkCoarsePagesLocal</code><span class="cvl">本地光粗页标记</span></td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Shadow.RadiusThreshold</code><span class="cvl">太小的投影物剔除（屏幕半径）</span></td><td class="num">0.01</td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 0.06）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 0.05）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 0.04）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 0.01）</span></td><td class="num">0</td></tr><tr><td><code>r.DistanceFieldShadowing</code><span class="cvl">距离场阴影</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.CapsuleShadows</code><span class="cvl">胶囊阴影</span></td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.LightFunctionQuality</code><span class="cvl">灯光函数质量</span></td><td class="num">2</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[ShadowQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <div class="knobs">
+    <div class="knob"><p class="knob-h">分辨率偏移</p>
+      <p class="knob-v"><code>r.Shadow.Virtual.ResolutionLodBiasDirectional</code> · <code>…Local</code> · <code>…Moving</code></p>
+      <p>−1 分辨率翻倍，+1 减半。极高档平行光是 −1.5（约 2.8 倍），高档 0。移动中的灯缓存不住，单独用更低的分辨率。</p>
+      <p class="knob-r"><b>建议</b>俯视角镜头距离固定，0 ~ −1 已经很清晰；−1.5 留给近景展示和截图。</p></div>
+    <div class="knob"><p class="knob-h">软阴影（SMRT）</p>
+      <p class="knob-v"><code>…SMRT.RayCountDirectional</code> · <code>…SMRT.SamplesPerRayDirectional</code>（本地光同名 Local）</p>
+      <p>光线数少了半影有噪点，设 0 就是硬阴影；每条光线的采样少了，最大软度受限。Epic：4–8 个采样就够。决定投影开销的是“每像素灯数 × 光线数 × 采样数”，和页数、缓存无关。</p>
+      <p class="knob-r"><b>建议</b>先把灯的 Source Radius、太阳的 Source Angle 调到合理（太大既贵又会扭曲半影），再考虑降光线数；Epic 预设别用电影档的 16 × 8。</p></div>
+    <div class="knob"><p class="knob-h">物理页池</p>
+      <p class="knob-v"><code>r.Shadow.Virtual.MaxPhysicalPages</code></p>
+      <p>不够时阴影会出现棋盘格或缺块，日志会报警告。只占显存，不直接增加每帧开销。</p>
+      <p class="knob-r"><b>建议</b>保持各档默认；用 <code>r.Shadow.Virtual.Stats 1</code> 看实际占用（需要时先 <code>r.ShaderPrint 1</code>）。</p></div>
+    <div class="knob"><p class="knob-h">缓存与失效</p>
+      <p class="knob-v"><code>r.Shadow.Virtual.Cache</code>（1）</p>
+      <p>静止的物体和灯，阴影页可以一直复用。会让缓存失效的：灯移动或旋转、物体移动、WPO 动画（草、旗子）、骨骼动画。</p>
+      <p class="knob-r"><b>建议</b>保持开。植被设 World Position Offset Disable Distance，WPO 材质填 Max World Position Offset Displacement；大型建筑做成 Nanite。视图模式 → Virtual Shadow Map → Cache 看哪里在失效（红色）。</p></div>
+    <div class="knob"><p class="knob-h">非 Nanite 物体</p>
+      <p class="knob-v"><code>r.Shadow.RadiusThreshold</code> · <code>r.Shadow.Virtual.MarkPixelPagesMipModeLocal</code></p>
+      <p>非 Nanite 物体画进虚拟阴影要贵得多，Epic 建议所有支持的网格（包括低模）都用 Nanite。RadiusThreshold 在 CPU 上剔除屏幕上太小的投影物；MipMode 1 / 2 减少本地光为非 Nanite 物体分配的 mip。</p>
+      <p class="knob-r"><b>建议</b>项目目前所有档位都是 RadiusThreshold 0；中低档可以试引擎值（0.05 / 0.06），看小物件的阴影是否还能接受。</p></div>
+    <div class="knob"><p class="knob-h">接触阴影、胶囊阴影</p>
+      <p class="knob-v"><code>r.ContactShadows</code> · <code>r.CapsuleShadows</code></p>
+      <p>接触阴影按灯的 Contact Shadow Length 在屏幕空间补出小缝隙里的阴影，很便宜；胶囊阴影给角色做柔和的间接阴影（菜单在 High 以上开）。</p>
+      <p class="knob-r"><b>建议</b>本地光多、但不想每盏都投射完整阴影时，用接触阴影补细节。</p></div>
+  </div>
+  <p class="small muted">平行光的虚拟阴影覆盖 <code>r.Shadow.Virtual.Clipmap.FirstLevel</code>（6，约 64 cm）到 <code>LastLevel</code>（22，约 40 km）；没有内容的层级几乎不花钱，不需要调。</p>
+</section>
+
+<!-- ---------------------------------------------------------- 3.6 MegaLights -->
+<section class="card" id="cv-ml">
+  <h2>3.6 MegaLights：大量本地光源</h2>
+  <p class="sub">项目已开启（<code>r.MegaLights.EnableForProject=True</code>）。MegaLights 用随机采样渲染有阴影的本地光，<b>开销基本恒定，质量随着同一像素上的灯数增加而下降</b>，和传统延迟光照“灯越多越贵”正好相反。它的设置也在 <code>sg.ShadowQuality</code> 分组里。</p>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.MegaLights.NumSamplesPerPixel</code><span class="cvl">每个降采样像素的采样数</span></td><td class="num">4</td><td class="num">2</td><td class="num">2</td><td class="num">4</td><td class="num">4</td><td class="num">4</td></tr><tr><td><code>r.MegaLights.DownsampleMode</code><span class="cvl">降采样：0 全分辨率 / 1 棋盘格 / 2 半分辨率</span></td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">2</td><td class="num">0</td></tr><tr><td><code>r.MegaLights.ScreenTraces.Quality</code><span class="cvl">屏幕追踪：0 半分辨率 / 1 全分辨率</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.MegaLights.FrontLayerTranslucency.Allow</code><span class="cvl">半透明前层单独计算</span></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.MegaLights.Spatial.UseHistorySpatialVariance</code><span class="cvl">降噪用历史方差</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.MegaLights.Volume.GridPixelSize</code><span class="cvl">体积网格（像素）</span></td><td class="num">8</td><td class="num">16</td><td class="num">16</td><td class="num">16</td><td class="num">8</td><td class="num">8</td></tr><tr><td><code>r.MegaLights.Volume.GridSizeZ</code><span class="cvl">体积网格深度层数</span></td><td class="num">128</td><td class="num">64</td><td class="num">64</td><td class="num">64</td><td class="num">128</td><td class="num">128</td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[ShadowQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <div class="knobs">
+    <div class="knob"><p class="knob-h">三个主要旋钮<span class="knob-tag">第一旋钮</span></p>
+      <p class="knob-v"><code>r.MegaLights.DownsampleMode</code> · <code>r.MegaLights.NumSamplesPerPixel</code> · 内部分辨率</p>
+      <p>降采样 0 = 全分辨率、1 = 棋盘格、2 = 半分辨率（各档默认）；每个降采样像素的采样数 1 / 2 / 4。再加上同一像素上叠了几盏灯，这三项决定了开销。</p>
+      <p class="knob-r"><b>建议</b>保持各档默认；电影档的全分辨率不适合游戏（3.2 的 Epic 预设问题）。</p></div>
+    <div class="knob"><p class="knob-h">平行光不走 MegaLights</p>
+      <p class="knob-v"><code>r.MegaLights.DirectionalLights</code>（默认 0）</p>
+      <p>太阳仍按普通延迟光照 + 虚拟阴影渲染。Epic 建议强太阳保持这样，MegaLights 只给月光这类暗而柔的平行光用。</p>
+      <p class="knob-r"><b>建议</b>保持 0。室内被太阳“抢”采样导致噪点时，用 PPV 在室内调暗太阳。</p></div>
+    <div class="knob"><p class="knob-h">内容侧比变量更有效</p>
+      <p class="knob-v">灯的 Attenuation Radius、锥角、矩形光遮光板、Allow MegaLights</p>
+      <p>收紧每盏灯的影响范围，把成簇的小灯合并成一个面光源，不要放覆盖整张图的大灯，灯不要埋进几何体里。这些都能减少噪点和拖影。</p>
+      <p class="knob-r"><b>建议</b>写进灯光规范（2.7 ④），比改变量更治本。</p></div>
+    <div class="knob"><p class="knob-h">提前剔除与 CPU</p>
+      <p class="knob-v"><code>r.MegaLights.LightAttenuationFalloff</code>（0.18）· <code>r.Visibility.LocalLightPrimitiveInteraction</code>（2）</p>
+      <p>前者按“可能贡献的能量”提前剔掉太暗的灯，值越低越省，但灯可能被提前切掉；后者默认在开 MegaLights 时自动跳过逐灯的物体交互计算，省渲染线程时间。</p>
+      <p class="knob-r"><b>建议</b>保持默认。</p></div>
+    <div class="knob"><p class="knob-h">低配关闭与调试</p>
+      <p class="knob-v"><code>r.MegaLights.Allowed 0</code> · <code>r.MegaLights.Visualize 1</code></p>
+      <p>Allowed 可以在 Scalability 或设备配置里关掉 MegaLights，退回普通延迟光照；Visualize 看光追场景和降噪状态，<code>r.MegaLights.Visualize.LightComplexity</code> 看每个像素被几盏灯影响。</p>
+      <p class="knob-r"><b>建议</b>没有硬件光追的机器上关掉（3.2 ②）。</p></div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 3.7 天空 -->
+<section class="card" id="cv-sky">
+  <h2>3.7 天空大气、天光与体积云</h2>
+  <p class="sub">天空大气靠几张低分辨率查找表（LUT）渲染，本身很便宜；设置在 <code>sg.EffectsQuality</code> 分组里。俯视角能看到的天空很少，空气透视的距离也短，<b>一般保持默认就好</b>。</p>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.SkyAtmosphere.FastSkyLUT</code><span class="cvl">天空用查找表</span></td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">0</td></tr><tr><td><code>r.SkyAtmosphere.FastSkyLUT.SampleCountMax</code><span class="cvl">查找表最大采样</span></td><td class="num">32</td><td class="num">16</td><td class="num">32</td><td class="num">64</td><td class="num">128</td><td class="num">256</td></tr><tr><td><code>r.SkyAtmosphere.SampleCountMax</code><span class="cvl">逐像素最大采样</span></td><td class="num">32</td><td class="num">16</td><td class="num">32</td><td class="num">64</td><td class="num">128</td><td class="num">256</td></tr><tr><td><code>r.SkyAtmosphere.AerialPerspectiveLUT.FastApplyOnOpaque</code><span class="cvl">不透明物体的空气透视用查找表</span></td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">0</td></tr><tr><td><code>r.SkyAtmosphere.AerialPerspectiveLUT.SampleCountMaxPerSlice</code><span class="cvl">空气透视每层采样</span></td><td class="num">2</td><td class="num">1</td><td class="num">1</td><td class="num">2</td><td class="num">4</td><td class="num">8</td></tr><tr><td><code>r.SkyAtmosphere.AerialPerspectiveLUT.DepthResolution</code><span class="cvl">空气透视深度层数</span></td><td class="num">16</td><td class="num">8</td><td class="num">16</td><td class="num">16</td><td class="num">16</td><td class="num">32</td></tr><tr><td><code>r.SkyAtmosphere.TransmittanceLUT.UseSmallFormat</code><span class="cvl">透过率表用小格式</span></td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[EffectsQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <div class="knobs">
+    <div class="knob"><p class="knob-h">查找表还是逐像素</p>
+      <p class="knob-v"><code>r.SkyAtmosphere.FastSkyLUT</code> · <code>r.SkyAtmosphere.AerialPerspectiveLUT.FastApplyOnOpaque</code></p>
+      <p>各档默认都走查找表；只有电影档两个都设 0，改为逐像素计算，条纹更少但更贵（主要差别在地球阴影、散射光晕这类高频细节）。</p>
+      <p class="knob-r"><b>建议</b>保持 1；只在过场截图需要时临时设 0。</p></div>
+    <div class="knob"><p class="knob-h">采样数与分辨率</p>
+      <p class="knob-v"><code>r.SkyAtmosphere.SampleCountMax</code> · <code>…FastSkyLUT.Width / Height</code>（192 × 104）</p>
+      <p>采样数不够时会有噪点、色环；查找表分辨率决定光束、云影的清晰度，Epic 建议从 256 开始调。空气透视的体积纹理调大很占显存。</p>
+      <p class="knob-r"><b>建议</b>俯视角不需要调。</p></div>
+    <div class="knob"><p class="knob-h">天光实时捕获</p>
+      <p class="knob-v"><code>r.SkyLight.RealTimeReflectionCapture.TimeSlice</code>（1）· <code>…TimeSlice.SkyCloudCubeFacePerFrame</code>（2）</p>
+      <p>把捕获和卷积分到多帧做，降低每帧开销；云的六个面也可以分帧画，代价是太阳快速移动时有延迟。<code>…ShadowFromOpaque</code>（0）让不透明物体在天空和云上投影，默认关。</p>
+      <p class="knob-r"><b>建议</b>保持默认；天光组件的 Cubemap Resolution 保持 128 左右，它主要影响反射的清晰度。</p></div>
+    <div class="knob"><p class="knob-h">体积云（如果使用）</p>
+      <p class="knob-v"><code>r.VolumetricRenderTarget.Mode</code>（0）· <code>r.VolumetricCloud.ViewRaySampleMaxCount</code>（768）</p>
+      <p>模式 0 = 四分之一分辨率追踪、半分辨率重建（默认，最省）；1 = 半分辨率追踪；3 = 电影档全分辨率。天光捕获里的云用 <code>…ReflectionRaySampleMaxCount</code>（80），云影贴图上限 2048。</p>
+      <p class="knob-r"><b>建议</b>保持模式 0。</p></div>
+  </div>
+  <p class="small muted">低档关掉 Lumen 后天光没有遮蔽，引擎用 <code>r.SkylightIntensityMultiplier</code>（低档 0.8）把天光调暗一点，防止画面发白。</p>
+</section>
+
+<!-- ---------------------------------------------------------- 3.8 雾 -->
+<section class="card" id="cv-fog">
+  <h2>3.8 雾：高度雾、体积雾、Local Fog Volume</h2>
+  <p class="sub">指数高度雾本身很便宜；贵的是体积雾，它是一个跟着镜头的 3D 体素网格，开关和分辨率在 <code>sg.ShadowQuality</code> 分组里（引擎从“高”档开始打开，本项目菜单只在 Epic 预设打开）。</p>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.VolumetricFog</code><span class="cvl">体积雾开关</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.VolumetricFog.GridPixelSize</code><span class="cvl">体素尺寸（像素）</span></td><td class="num">16</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">16</td><td class="num">8</td><td class="num">4</td></tr><tr><td><code>r.VolumetricFog.GridSizeZ</code><span class="cvl">深度层数</span></td><td class="num">64</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">64</td><td class="num">128</td><td class="num">128</td></tr><tr><td><code>r.VolumetricFog.HistoryMissSupersampleCount</code><span class="cvl">历史失效时的补采样</span></td><td class="num">4</td><td class="num"><span class="muted">—</span></td><td class="num"><span class="muted">—</span></td><td class="num">4</td><td class="num">4</td><td class="num">16</td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[ShadowQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <div class="knobs">
+    <div class="knob"><p class="knob-h">体素分辨率<span class="knob-tag">第一旋钮</span></p>
+      <p class="knob-v"><code>r.VolumetricFog.GridPixelSize</code> · <code>r.VolumetricFog.GridSizeZ</code></p>
+      <p>每 N×N 像素一个体素：8 → 16，体素数变成 ¼；Z 是深度方向的切片数。分辨率低了，光束和阴影更糊、更容易闪。</p>
+      <p class="knob-r"><b>建议</b>想在 High 预设也开体积雾，用高档的 16 / 64 起步；极高 8 / 128。</p></div>
+    <div class="knob"><p class="knob-h">时间累积</p>
+      <p class="knob-v"><code>r.VolumetricFog.HistoryWeight</code>（0.9）· <code>…HistoryMissSupersampleCount</code></p>
+      <p>每帧保留多少历史：越高越稳，但光照变化（闪烁的火把）响应越慢。历史失效时（镜头切换）的补采样数会带来不稳定的额外开销。</p>
+      <p class="knob-r"><b>建议</b>保持默认。</p></div>
+    <div class="knob"><p class="knob-h">MegaLights 的体积</p>
+      <p class="knob-v"><code>r.MegaLights.Volume</code>（1）· <code>…Volume.GridPixelSize</code> · <code>…GridSizeZ</code></p>
+      <p>开了 MegaLights 时，本地光照进体积雾和半透明走 MegaLights 自己的体积网格，分辨率单独控制；平行光仍走普通体积雾。</p>
+      <p class="knob-r"><b>建议</b>和体积雾用同一档的分辨率。</p></div>
+    <div class="knob"><p class="knob-h">Local Fog Volume</p>
+      <p class="knob-v"><code>r.LocalFogVolume.RenderIntoVolumetricFog</code>（1）· <code>…GlobalStartDistance</code>（1000 cm）</p>
+      <p>开体积雾时局部雾会融进体积雾。离镜头 10 米以内的局部雾默认不显示：俯视角镜头离地面通常十几米，一般不受影响，镜头拉近时要调小。半透明要吃到局部雾需要打开项目设置的 <code>r.LocalFogVolume.ApplyOnTranslucent</code>（默认关，有额外开销）。</p>
+      <p class="knob-r"><b>建议</b>熔岩区的热气、烟尘（2.11）优先用它，比整图的体积雾便宜。</p></div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 3.9 分辨率 -->
+<section class="card" id="cv-res">
+  <h2>3.9 分辨率、TSR 与动态分辨率</h2>
+  <p class="sub">Lumen、MegaLights、阴影投影、体积雾的开销都和<b>内部像素数</b>成正比，所以渲染分辨率是最大的单个旋钮。Epic 的做法是内部 1080p、用 TSR 输出 4K，认为这比原生 4K 配低画质更好看。</p>
+  <div class="two">
+    <div>
+      <h4>渲染分辨率</h4>
+      <ul>
+        <li><code>r.ScreenPercentage</code>：本项目菜单直接写 50 / 80 / 100（Low / Medium / High、Epic）。</li>
+        <li>不写时（≤ 0）按显示分辨率自动选（引擎 <code>[Rendering.AutoScreenPercentage]</code>）：720p 显示按 100%，1080p 约 73%，1440p 约 61%，4K 为 50%。</li>
+        <li>内部像素数和百分比的平方成正比：80% ≈ 0.64 倍像素，67% ≈ 0.45 倍。</li>
+      </ul>
+    </div>
+    <div>
+      <h4>动态分辨率</h4>
+      <ul>
+        <li><code>r.DynamicRes.OperationMode</code>（默认 0，关）：2 = 不管玩家设置都打开。</li>
+        <li><code>r.DynamicRes.FrameTimeBudget</code>（默认 33.3 ms）：目标帧时间，60 fps 填 16.7；配合 <code>r.DynamicRes.MinScreenPercentage</code> 设下限。</li>
+        <li>技能特效集中爆发时，掉分辨率比掉帧好接受；适合帧率波动大的战斗场景。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.TSR.History.ScreenPercentage</code><span class="cvl">历史缓冲分辨率（%）</span></td><td class="num">100</td><td class="num">100</td><td class="num">100</td><td class="num">100</td><td class="num">200</td><td class="num">200</td></tr><tr><td><code>r.TSR.History.UpdateQuality</code><span class="cvl">历史更新质量</span></td><td class="num">3</td><td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">3</td><td class="num">3</td></tr><tr><td><code>r.TSR.ShadingRejection.Flickering</code><span class="cvl">闪烁抑制</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.TSR.RejectionAntiAliasingQuality</code><span class="cvl">历史失效处的空间抗锯齿</span></td><td class="num">3</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">2</td><td class="num">2</td></tr><tr><td><code>r.TSR.ReprojectionField</code><span class="cvl">重投影场</span></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.TSR.Resurrection</code><span class="cvl">找回被遮挡过的历史</span></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[AntiAliasingQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <div class="knobs">
+    <div class="knob"><p class="knob-h">TSR 历史分辨率</p>
+      <p class="knob-v"><code>r.TSR.History.ScreenPercentage</code></p>
+      <p>历史缓冲按输出分辨率的多少倍存：极高档 200，细节更锐利、更稳定，开销也更高；高档 100。只支持 100–200。</p>
+      <p class="knob-r"><b>建议</b>本项目菜单的“抗锯齿开”对应高档（100），合适。</p></div>
+    <div class="knob"><p class="knob-h">闪烁抑制</p>
+      <p class="knob-v"><code>r.TSR.ShadingRejection.Flickering</code></p>
+      <p>检测到亮度规律性闪烁（摩尔纹、Lumen 噪点、细密植被）的像素，允许一定拖影来稳住画面。副作用：运动矢量不对的物体可能拖影，用 <code>r.TSR.Visualize 7</code> 查看它在哪里起作用。</p>
+      <p class="knob-r"><b>建议</b>保持高档以上开。</p></div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 3.10 后处理 -->
+<section class="card" id="cv-post">
+  <h2>3.10 后处理</h2>
+  <p class="sub">分组 <code>sg.PostProcessQuality</code>。后处理整体开销不大，但 Bloom、景深在高分辨率下也能到 1 ms 量级。标 <span class="pj"></span>的是本项目的 Scalability ini 改过的值。</p>
+  <div class="scroll"><table class="t cvm"><thead><tr><th>变量</th><th class="num">源码默认</th><th class="num">低</th><th class="num">中</th><th class="num">高</th><th class="num">极高</th><th class="num">电影</th></tr></thead><tbody><tr><td><code>r.BloomQuality</code><span class="cvl">Bloom 质量</span></td><td class="num">5</td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 4）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 2">2</span><span class="eng">（引擎 4）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 4">4</span><span class="eng">（引擎 5）</span></td><td class="num">5</td><td class="num">5</td></tr><tr><td><code>r.Bloom.ScreenPercentage</code><span class="cvl">卷积 Bloom 分辨率（%）</span></td><td class="num">100</td><td class="num">25</td><td class="num">35.355</td><td class="num">50</td><td class="num">50</td><td class="num">100</td></tr><tr><td><code>r.DepthOfFieldQuality</code><span class="cvl">景深质量</span></td><td class="num">2</td><td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">2</td><td class="num">4</td></tr><tr><td><code>r.MotionBlurQuality</code><span class="cvl">动态模糊质量</span></td><td class="num">4</td><td class="num">0</td><td class="num">3</td><td class="num">3</td><td class="num">4</td><td class="num">4</td></tr><tr><td><code>r.Tonemapper.Quality</code><span class="cvl">Tonemapper 着色器组合</span></td><td class="num">5</td><td class="num">0</td><td class="num">2</td><td class="num">5</td><td class="num">5</td><td class="num">5</td></tr><tr><td><code>r.LightShaftQuality</code><span class="cvl">光束（Light Shaft）</span></td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.Filter.SizeScale</code><span class="cvl">模糊滤波尺寸</span></td><td class="num">1</td><td class="num">0.6</td><td class="num">0.7</td><td class="num">0.8</td><td class="num">1</td><td class="num">1</td></tr><tr><td><code>r.AmbientOcclusionLevels</code><span class="cvl">SSAO 层级（Lumen 关闭时才用）</span></td><td class="num">−1</td><td class="num">0</td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 −1）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 1">1</span><span class="eng">（引擎 −1）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 1">1</span><span class="eng">（引擎 −1）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 1">1</span><span class="eng">（引擎 −1）</span></td></tr><tr><td><code>r.EyeAdaptationQuality</code><span class="cvl">曝光（自动 / 手动曝光的计算）</span></td><td class="num">2</td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 2）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 2）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 2）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 2）</span></td><td class="num"><span class="pj" title="本项目 Windows/WindowsScalability.ini 改为 0">0</span><span class="eng">（引擎 2）</span></td></tr></tbody></table></div><p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[PostProcessQuality@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>
+  <ul>
+    <li><b>Bloom</b>：<code>r.BloomQuality</code> 0 关、5 最好；PPV 的 Bloom 方法选 Convolution（FFT 卷积）时，<code>r.Bloom.ScreenPercentage</code> 决定卷积的分辨率，很贵，只在需要镜头光晕形状时用。</li>
+    <li><b>景深、动态模糊</b>：俯视角玩法镜头一般不需要；过场用 Cine Camera 时再打开。<code>r.DepthOfFieldQuality</code>、<code>r.MotionBlurQuality</code> 只决定开了以后的质量。</li>
+    <li><b>Tonemapper 质量</b>：<code>r.Tonemapper.Quality</code> 只是选择更省的着色器组合（2 起带暗角、4 起带颗粒）；开销很小。</li>
+    <li><b>局部曝光</b>（第二章 2.8）：开销很小，作为 Look 的一部分保留。</li>
+  </ul>
+</section>
+
+<!-- ---------------------------------------------------------- 3.11 推荐 -->
+<section class="card" id="cv-reco">
+  <h2>3.11 本项目的起步配置</h2>
+  <p class="sub">以引擎各档默认为基础，只改有明确依据的几项。改完按 3.1 的方法在目标机器上测，再决定是否保留。</p>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>改什么</th><th>写在哪</th><th>为什么</th></tr></thead>
+    <tbody>
+      <tr><td>Epic 预设的阴影：<code>sg_ShadowQuality</code> 4 → 3</td><td><code>Config/Windows/WindowsGame.ini</code> 的 Shadow=(… Epic …)</td><td>电影档的软阴影和 MegaLights 全分辨率是离线渲染用的（3.2 ①）</td></tr>
+      <tr><td>决定 Windows 的距离场：要求硬件光追，或删掉 <code>r.GenerateMeshDistanceFields=False</code></td><td><code>Config/Windows/WindowsEngine.ini</code>（和 <code>Config/PC/</code> 那份）</td><td>不改的话，没有硬件光追的显卡上 Lumen 几乎没有几何可追（3.2 ②）</td></tr>
+      <tr><td><code>r.EyeAdaptation.CachedLightingPreExposure=8</code></td><td><code>DefaultEngine.ini</code> [/Script/Engine.RendererSettings]</td><td>物理曝光下晴天的 Lumen 缓存不被截断（2.4）</td></tr>
+      <tr><td><code>r.RayTracing.Culling.Radius=15000</code></td><td><code>DefaultEngine.ini</code> [SystemSettings]</td><td>俯视角看不到 300 米外，减少光追场景的实例数（3.3）</td></tr>
+      <tr><td><code>r.Lumen.Reflections.MaxRoughnessToTraceForFoliage=0</code></td><td><code>DefaultScalability.ini</code> [ReflectionQuality@2]</td><td>Epic：植被不追反射光线，省得多、看不出（3.4）</td></tr>
+      <tr><td>体积雾是否在 High 预设打开</td><td><code>WindowsGame.ini</code> 的 OtherParams（<code>r_VolumetricFog</code>）</td><td>引擎从高档就开（16 px / 64 层）；本项目的火光、雾气效果依赖它（3.8）</td></tr>
+      <tr><td>中低档试 <code>r.Shadow.RadiusThreshold</code> 引擎值</td><td><code>DefaultScalability.ini</code> / <code>WindowsScalability.ini</code> [ShadowQuality@0/1]</td><td>项目所有档位都是 0，小物件也画进阴影（3.5）</td></tr>
+    </tbody>
+  </table></div>
+<pre class="code"><button class="copy" type="button">复制</button><span class="c">; Config/DefaultEngine.ini</span>
+[/Script/Engine.RendererSettings]
+r.EyeAdaptation.CachedLightingPreExposure=8
+
+[SystemSettings]
+r.RayTracing.Culling.Radius=15000        <span class="c">; 俯视角：光追场景只保留 150 米内（默认 300 米）</span>
+
+<span class="c">; Config/DefaultScalability.ini（只写和引擎不同的项，其余沿用 BaseScalability.ini）</span>
+[ReflectionQuality@2]
+r.Lumen.Reflections.MaxRoughnessToTraceForFoliage=0
+
+<span class="c">; Config/Windows/WindowsGame.ini（游戏设置菜单）：Shadow=( … (Epic, (sg_ShadowQuality=3, …)) )</span></pre>
+  <div class="note warn"><span class="lab">注意</span>
+    这些都要在目标显卡上测过再定：本文的依据是引擎源码、Epic 的分档和官方文档，没有在本项目的场景里实测。每改一项，用固定机位比较 <code>stat gpu</code> 的读数和截图；画面变化不可接受就退回。
+  </div>
+</section>
+
 <!-- ============================================================ 名词 -->
 <section class="card" id="gloss">
   <h2>名词小抄</h2>
@@ -1495,6 +1899,11 @@ r.LUT.TonemappingSDRInvEOTF=0                   <span class="c">; ACES 用 sRGB 
     <div id="g-perch" data-terms="逐通道|保色相"><b>逐通道 / 保色相</b>逐通道：R、G、B 各压各的，简单但会偏色。保色相：只压亮度、单独控制彩度，色相不变。</div>
     <div id="g-chroma" data-terms="彩度|色相"><b>彩度 / 色相</b>彩度是“有多鲜艳”，色相是“是什么颜色”（红、橙、黄…）。本文都在 OKLab 感知色彩空间里度量。</div>
     <div id="g-aces" data-terms="ACES 2\.0|Standard ACES"><b>ACES 2.0</b>美国电影艺术与科学学院（AMPAS）维护的色彩管理标准，2.0 版重写了显示端的输出变换（也就是 Tonemapping）。UE 5.8 的 Standard ACES 默认用它。</div>
+    <div id="g-cvar" data-terms="控制台变量|CVar"><b>控制台变量（CVar）</b>引擎的开关和旋钮，比如 <code>r.Lumen.ScreenProbeGather.DownsampleFactor</code>。可以写在画质分档、项目设置、ini、设备配置里，也可以在控制台临时输入；同一个变量以优先级最高的来源为准（3.1）。</div>
+    <div id="g-sg" data-terms="画质分档|画质分组|Scalability"><b>画质分档（Scalability）</b>引擎把画质变量分成 GI、反射、阴影、特效、后处理等组，每组 0 低 / 1 中 / 2 高 / 3 极高 / 4 电影五档，用 <code>sg.*</code> 选档，各档的值写在 <code>BaseScalability.ini</code>。Epic 的极高档按 30 fps、高档按 60 fps 设计。</div>
+    <div id="g-tsr" data-terms="TSR"><b>TSR</b>Temporal Super Resolution，UE5 默认的抗锯齿和超分辨率：用较低的内部分辨率渲染，结合历史帧重建到输出分辨率。Lumen 等功能的开销和内部像素数成正比，所以它是最大的性能旋钮。</div>
+    <div id="g-rt" data-terms="硬件光追|软件追踪|软件光追"><b>硬件光追 / 软件追踪</b>Lumen 追踪光线的两种方式。硬件光追用显卡的光追单元，质量更好，开销和场景实例数有关；软件追踪追的是距离场（网格距离场或合并后的全局距离场），没有硬件光追的显卡用它兜底。</div>
+    <div id="g-sc" data-terms="Surface Cache|表面缓存"><b>Surface Cache（表面缓存）</b>Lumen 给场景里的物体贴上一组低分辨率“卡片”，在上面缓存材质和光照；光线命中物体时直接读缓存，不重新计算材质。缓存每帧只更新一部分，所以灯光变化传到间接光会有延迟。</div>
     <div id="g-ppv" data-terms="PPV|后处理体积"><b>PPV</b>Post Process Volume，后处理体积。勾 Unbound 的是全局 PPV，作用于整张图；不勾的只在体积内（加上 Blend Radius 的过渡带）生效，权重按镜头位置计算。Tonemapping Method 在 PPV → Film 分类里（显示名 Method）。</div>
   </div>
 </section>
@@ -1528,6 +1937,17 @@ r.LUT.TonemappingSDRInvEOTF=0                   <span class="c">; ACES 用 sRGB 
     <li><b>漫反射模型</b>：<code>Source/Runtime/RenderCore/Private/RenderUtils.cpp</code>（2154–2157）<code>r.Substrate.RoughDiffuse</code> 默认 0，工程未开启，漫反射为 Lambert（BaseColor ÷ π）。</li>
     <li><b>外部参考</b>：UE 官方文档《<a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/physically-based-materials-in-unreal-engine">Physically Based Materials</a>》的实测 BaseColor（非金属只给亮度、金属给 RGB）；Adobe Substance《<a href="https://www.adobe.com/learn/substance-3d-designer/web/the-pbr-guide-part-2">The PBR Guide, Part 2</a>》的非金属 sRGB 30–50 ~ 240、金属 180–255；Wikipedia《<a href="https://en.wikipedia.org/wiki/Lux">Lux</a>》的典型照度、《<a href="https://en.wikipedia.org/wiki/Orders_of_magnitude_(luminance)">Orders of magnitude (luminance)</a>》的典型亮度、《<a href="https://en.wikipedia.org/wiki/Sunny_16_rule">Sunny 16 rule</a>》。</li>
   </ul>
+  <h4>A3. 第三章的依据：控制台变量（5.8.4）</h4>
+  <ul class="src">
+    <li><b>设置位置与优先级</b>：<code>Source/Runtime/Core/Public/HAL/IConsoleManager.h</code>（152–187）<code>ECVF_SetBy*</code> 由弱到强的顺序；画质分档按 <code>ECVF_SetByScalability</code> 写入（<code>Engine/Private/Scalability.cpp</code> 446）；<code>[/Script/Engine.RendererSettings]</code> 按 ProjectSetting（<code>Launch/Private/LaunchEngineLoop.cpp</code> 2817）；<code>[SystemSettings]</code> 与 <code>[ConsoleVariables]</code> 按 SystemSettingsIni（<code>Engine/Private/SystemSettings.cpp</code> 80、<code>Core/Private/Misc/ConfigCacheIni.cpp</code> 6971）；设备配置按 DeviceProfile（<code>Engine/Private/DeviceProfiles/DeviceProfileManager.cpp</code> 733）；控制台打印 <code>LastSetBy</code>（<code>Core/Private/HAL/ConsoleManager.cpp</code> 3247）。</li>
+    <li><b>画质分档的值</b>：引擎 <code>Engine/Config/BaseScalability.ini</code>，<code>[GlobalIlluminationQuality@*]</code> 318–513、<code>[ReflectionQuality@*]</code> 514–563、<code>[ShadowQuality@*]</code> 132–317、<code>[EffectsQuality@*]</code> 798–963、<code>[AntiAliasingQuality@*]</code> 52–109、<code>[PostProcessQuality@*]</code> 564–739；每组 5 档（<code>sg.*.NumLevels</code> 默认 5，<code>Scalability.cpp</code> 120–125），“相对最高档”的换算见 1061–1077。</li>
+    <li><b>PPV 质量滑条</b>：<code>Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code>（452–457 光线数 × √Final Gather Quality；486 质量 ≥ 6 时探针间距减半）；<code>LumenRadiosity.cpp</code>（207–224）。</li>
+    <li><b>Lumen 与 SSAO、距离场</b>：<code>LumenDiffuseIndirect.cpp</code>（97–110 <code>r.Lumen.TraceMeshSDFs</code> 由项目设置驱动；160–166 与 309–313 Lumen GI 下 SSAO 的条件；205–210 网格距离场追踪的开关）；<code>Engine/Classes/Engine/RendererSettings.h</code>（264–270 Software Ray Tracing Mode：Detail Tracing = 1、Global Tracing = 0）。</li>
+    <li><b>自动渲染分辨率</b>：<code>Engine/Private/LegacyScreenPercentageDriver.cpp</code>（362–415）与引擎 <code>BaseEngine.ini</code> 的 <code>[Rendering.AutoScreenPercentage]</code>。</li>
+    <li><b>本项目</b>：<code>Config/Windows/WindowsGame.ini</code> 的 <code>[/Script/UE_game.GameGraphicsConfig]</code>（菜单四档）；<code>Source/UE_game/Private/View/GameGraphicsSettingsLibrary.cpp</code>（<code>SetConsoleVariable</code> 1768–1798 用 Scalability 优先级或保持当前优先级写入，<code>SetScalability</code> 1800 起）；<code>Config/Windows/WindowsEngine.ini</code> 与 <code>Config/PC/WindowsEngine.ini</code>（<code>r.GenerateMeshDistanceFields=False</code>）；<code>Config/DefaultScalability.ini</code>、<code>Config/Windows/WindowsScalability.ini</code>。</li>
+    <li><b>Epic 官方文档</b>（5.8）：《<a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/lumen-performance-guide-for-unreal-engine">Lumen Performance Guide</a>》（30 / 60 fps 分档、8 ms / 4 ms 预算、主要旋钮）、《<a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/virtual-shadow-maps-in-unreal-engine">Virtual Shadow Maps</a>》（开销构成、缓存、非 Nanite）、《<a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/megalights-in-unreal-engine">MegaLights</a>》（开销构成、内容规范）、《<a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/sky-atmosphere-component-in-unreal-engine">Sky Atmosphere Component</a>》（查找表与采样数）。</li>
+  </ul>
+  <details class="cvidx"><summary>查看第三章全部 148 个变量的源码默认值与定义位置（data/cvars.json）</summary><div class="scroll"><table class="t"><thead><tr><th>变量</th><th class="num">默认</th><th>定义位置（Engine/Source/）</th></tr></thead><tbody><tr><td><code>r.AOQuality</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/DistanceFieldAmbientOcclusion.cpp</code> 52</td></tr><tr><td><code>r.AmbientOcclusionLevels</code></td><td class="num">−1</td><td><code>Runtime/Renderer/Private/CompositionLighting/PostProcessAmbientOcclusion.cpp</code> 60</td></tr><tr><td><code>r.AntiAliasingMethod</code></td><td class="num">4</td><td><code>Runtime/Engine/Private/SceneView.cpp</code> 237</td></tr><tr><td><code>r.Bloom.ScreenPercentage</code></td><td class="num">100</td><td><code>Runtime/Renderer/Private/PostProcess/PostProcessFFTBloom.cpp</code> 18</td></tr><tr><td><code>r.BloomQuality</code></td><td class="num">5</td><td><code>Runtime/Core/Private/HAL/ConsoleManager.cpp</code> 4082</td></tr><tr><td><code>r.CapsuleShadows</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/CapsuleShadowRendering.cpp</code> 38</td></tr><tr><td><code>r.ContactShadows</code></td><td class="num">1</td><td><code>Runtime/Core/Private/HAL/ConsoleManager.cpp</code> 4223</td></tr><tr><td><code>r.DepthOfFieldQuality</code></td><td class="num">2</td><td><code>Runtime/Core/Private/HAL/ConsoleManager.cpp</code> 4173</td></tr><tr><td><code>r.DistanceFieldAO</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/DistanceFieldAmbientOcclusion.cpp</code> 28</td></tr><tr><td><code>r.DistanceFieldShadowing</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/DistanceFieldShadowing.cpp</code> 38</td></tr><tr><td><code>r.DynamicRes.FrameTimeBudget</code></td><td class="num">33.3</td><td><code>Runtime/Engine/Private/DynamicResolution.cpp</code> 36</td></tr><tr><td><code>r.DynamicRes.OperationMode</code></td><td class="num">0</td><td><code>Runtime/Engine/Private/UnrealEngine.cpp</code> 539</td></tr><tr><td><code>r.EyeAdaptation.CachedLightingPreExposure</code></td><td class="num">4</td><td><code>Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp</code> 202</td></tr><tr><td><code>r.EyeAdaptationQuality</code></td><td class="num">2</td><td><code>Runtime/Core/Private/HAL/ConsoleManager.cpp</code> 4510</td></tr><tr><td><code>r.Filter.SizeScale</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/PostProcess/PostProcessWeightedSampleSum.cpp</code> 35</td></tr><tr><td><code>r.GenerateMeshDistanceFields</code></td><td class="num">0</td><td><code>Runtime/Engine/Private/DistanceFieldAtlas.cpp</code> 55</td></tr><tr><td><code>r.LightFunctionQuality</code></td><td class="num">2</td><td><code>Runtime/Core/Private/HAL/ConsoleManager.cpp</code> 4500</td></tr><tr><td><code>r.LightShaftQuality</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/LightShaftRendering.cpp</code> 20</td></tr><tr><td><code>r.LocalFogVolume.ApplyOnTranslucent</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/LocalFogVolumeRendering.cpp</code> 41</td></tr><tr><td><code>r.LocalFogVolume.GlobalStartDistance</code></td><td class="num">1000</td><td><code>Runtime/Renderer/Private/LocalFogVolumeRendering.cpp</code> 66</td></tr><tr><td><code>r.LocalFogVolume.RenderIntoVolumetricFog</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/LocalFogVolumeRendering.cpp</code> 31</td></tr><tr><td><code>r.Lumen.AsyncCompute</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/Lumen.cpp</code> 25</td></tr><tr><td><code>r.Lumen.DiffuseIndirect.Allow</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenDiffuseIndirect.cpp</code> 31</td></tr><tr><td><code>r.Lumen.DiffuseIndirect.SSAO</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenDiffuseIndirect.cpp</code> 162</td></tr><tr><td><code>r.Lumen.FinalGatherMethod</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/Lumen.cpp</code> 56</td></tr><tr><td><code>r.Lumen.HardwareRayTracing</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenHardwareRayTracingCommon.cpp</code> 17</td></tr><tr><td><code>r.Lumen.HardwareRayTracing.HitLighting.Allowed</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenHardwareRayTracingCommon.cpp</code> 44</td></tr><tr><td><code>r.Lumen.HardwareRayTracing.LightingMode</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenHardwareRayTracingCommon.cpp</code> 33</td></tr><tr><td><code>r.Lumen.HardwareRayTracing.MaxIterations</code></td><td class="num">8192</td><td><code>Runtime/Renderer/Private/Lumen/LumenHardwareRayTracingCommon.cpp</code> 132</td></tr><tr><td><code>r.Lumen.Reflections.Allow</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 23</td></tr><tr><td><code>r.Lumen.Reflections.DownsampleCheckerboard</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 37</td></tr><tr><td><code>r.Lumen.Reflections.DownsampleFactor</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 30</td></tr><tr><td><code>r.Lumen.Reflections.MaxRoughnessToTrace</code></td><td class="num">−1</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 109</td></tr><tr><td><code>r.Lumen.Reflections.MaxRoughnessToTraceClamp</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 116</td></tr><tr><td><code>r.Lumen.Reflections.MaxRoughnessToTraceForFoliage</code></td><td class="num">0.2</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 123</td></tr><tr><td><code>r.Lumen.Reflections.RadianceCache</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 52</td></tr><tr><td><code>r.Lumen.Reflections.ScreenSpaceReconstruction.MinWeight</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 234</td></tr><tr><td><code>r.Lumen.Reflections.ScreenSpaceReconstruction.NumSamples</code></td><td class="num">5</td><td><code>Runtime/Renderer/Private/Lumen/LumenReflections.cpp</code> 204</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.DownsampleFactor</code></td><td class="num">16</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 88</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.FullResolutionJitterWidth</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 96</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.IntegrateDownsampleFactor</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 349</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.IrradianceFormat</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 332</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.MaxRayIntensity</code></td><td class="num">10</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeFiltering.cpp</code> 70</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.MaxRoughnessToEvaluateRoughSpecularForFoliage</code></td><td class="num">0.8</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 363</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.NumAdaptiveProbes</code></td><td class="num">8</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 48</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.RadianceCache.GridResolution</code></td><td class="num">48</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 635</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.RadianceCache.NumProbesToTraceBudget</code></td><td class="num">100</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 627</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.RadianceCache.ProbeResolution</code></td><td class="num">32</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 643</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.ShortRangeAO</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 301</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.ShortRangeAO.BentNormal</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenSpaceBentNormal.cpp</code> 28</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.ShortRangeAO.DownsampleFactor</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenSpaceBentNormal.cpp</code> 14</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.ShortRangeAO.HorizonSearch.SliceCount</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenSpaceBentNormal.cpp</code> 107</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.StochasticInterpolation</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 342</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.Temporal.MaxFramesAccumulated</code></td><td class="num">10</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 229</td></tr><tr><td><code>r.Lumen.ScreenProbeGather.TracingOctahedronResolution</code></td><td class="num">8</td><td><code>Runtime/Renderer/Private/Lumen/LumenScreenProbeGather.cpp</code> 72</td></tr><tr><td><code>r.Lumen.TraceMeshSDFs</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenDiffuseIndirect.cpp</code> 99</td></tr><tr><td><code>r.Lumen.TraceMeshSDFs.Allow</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenDiffuseIndirect.cpp</code> 108</td></tr><tr><td><code>r.Lumen.TranslucencyReflections.FrontLayer.Allow</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/FrontLayerTranslucency.cpp</code> 42</td></tr><tr><td><code>r.Lumen.TranslucencyReflections.FrontLayer.Enable</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/FrontLayerTranslucency.cpp</code> 25</td></tr><tr><td><code>r.Lumen.TranslucencyVolume.GridPixelSize</code></td><td class="num">32</td><td><code>Runtime/Renderer/Private/Lumen/LumenTranslucencyVolumeLighting.cpp</code> 46</td></tr><tr><td><code>r.Lumen.TranslucencyVolume.RadianceCache.NumProbesToTraceBudget</code></td><td class="num">100</td><td><code>Runtime/Renderer/Private/Lumen/LumenTranslucencyVolumeLighting.cpp</code> 185</td></tr><tr><td><code>r.Lumen.TranslucencyVolume.TraceFromVolume</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Lumen/LumenTranslucencyVolumeLighting.cpp</code> 39</td></tr><tr><td><code>r.Lumen.Visualize</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenVisualize.cpp</code> 29</td></tr><tr><td><code>r.LumenScene.DirectLighting.MaxLightsPerTile</code></td><td class="num">8</td><td><code>Runtime/Renderer/Private/Lumen/LumenSceneDirectLighting.cpp</code> 89</td></tr><tr><td><code>r.LumenScene.DirectLighting.UpdateFactor</code></td><td class="num">32</td><td><code>Runtime/Renderer/Private/Lumen/LumenSceneLighting.cpp</code> 42</td></tr><tr><td><code>r.LumenScene.FarField</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Lumen/LumenScene.cpp</code> 86</td></tr><tr><td><code>r.LumenScene.Radiosity.HemisphereProbeResolution</code></td><td class="num">4</td><td><code>Runtime/Renderer/Private/Lumen/LumenRadiosity.cpp</code> 38</td></tr><tr><td><code>r.LumenScene.Radiosity.ProbeSpacing</code></td><td class="num">4</td><td><code>Runtime/Renderer/Private/Lumen/LumenRadiosity.cpp</code> 30</td></tr><tr><td><code>r.LumenScene.Radiosity.UpdateFactor</code></td><td class="num">64</td><td><code>Runtime/Renderer/Private/Lumen/LumenSceneLighting.cpp</code> 50</td></tr><tr><td><code>r.LumenScene.SurfaceCache.AtlasSize</code></td><td class="num">4096</td><td><code>Runtime/Renderer/Private/Lumen/LumenScene.cpp</code> 127</td></tr><tr><td><code>r.LumenScene.SurfaceCache.CardMaxResolution</code></td><td class="num">512</td><td><code>Runtime/Renderer/Private/Lumen/LumenSceneRendering.cpp</code> 159</td></tr><tr><td><code>r.LumenScene.SurfaceCache.CardMinResolution</code></td><td class="num">4</td><td><code>Runtime/Renderer/Private/Lumen/LumenSceneGPUDrivenUpdate.cpp</code> 11</td></tr><tr><td><code>r.LumenScene.SurfaceCache.CardTexelDensityScale</code></td><td class="num">100</td><td><code>Runtime/Renderer/Private/Lumen/LumenSceneGPUDrivenUpdate.cpp</code> 18</td></tr><tr><td><code>r.MegaLights.Allowed</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 34</td></tr><tr><td><code>r.MegaLights.DirectionalLights</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 239</td></tr><tr><td><code>r.MegaLights.DownsampleMode</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 51</td></tr><tr><td><code>r.MegaLights.EnableForProject</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 27</td></tr><tr><td><code>r.MegaLights.FrontLayerTranslucency.Allow</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 384</td></tr><tr><td><code>r.MegaLights.HardwareRayTracing</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLightsRayTracing.cpp</code> 156</td></tr><tr><td><code>r.MegaLights.LightAttenuationFalloff</code></td><td class="num">0.18</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 77</td></tr><tr><td><code>r.MegaLights.NumSamplesPerPixel</code></td><td class="num">4</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 61</td></tr><tr><td><code>r.MegaLights.ScreenTraces.Quality</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLightsRayTracing.cpp</code> 66</td></tr><tr><td><code>r.MegaLights.Spatial.UseHistorySpatialVariance</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLightsDenoising.cpp</code> 102</td></tr><tr><td><code>r.MegaLights.Visualize</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLightsVisualize.cpp</code> 14</td></tr><tr><td><code>r.MegaLights.Volume</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 246</td></tr><tr><td><code>r.MegaLights.Volume.GridPixelSize</code></td><td class="num">8</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 266</td></tr><tr><td><code>r.MegaLights.Volume.GridSizeZ</code></td><td class="num">128</td><td><code>Runtime/Renderer/Private/MegaLights/MegaLights.cpp</code> 273</td></tr><tr><td><code>r.MeshCardRepresentation.SkeletalMesh</code></td><td class="num">1</td><td><code>Runtime/Engine/Private/SkeletalMeshSceneProxy.cpp</code> 74</td></tr><tr><td><code>r.MotionBlurQuality</code></td><td class="num">4</td><td><code>Runtime/Core/Private/HAL/ConsoleManager.cpp</code> 4126</td></tr><tr><td><code>r.RDG.AsyncCompute</code></td><td class="num"><span class="muted">表达式</span></td><td><code>Runtime/RenderCore/Private/RenderGraphPrivate.cpp</code> 213</td></tr><tr><td><code>r.RayTracing.Culling</code></td><td class="num">3</td><td><code>Runtime/Renderer/Private/RayTracing/RayTracingInstanceCulling.cpp</code> 23</td></tr><tr><td><code>r.RayTracing.Culling.Angle</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/RayTracing/RayTracingInstanceCulling.cpp</code> 45</td></tr><tr><td><code>r.RayTracing.Culling.Radius</code></td><td class="num">30000</td><td><code>Runtime/Renderer/Private/RayTracing/RayTracingInstanceCulling.cpp</code> 39</td></tr><tr><td><code>r.RayTracing.DynamicGeometry.MaxUpdatePrimitivesPerFrame</code></td><td class="num">−1</td><td><code>Runtime/Renderer/Private/RayTracing/RayTracingDynamicGeometryUpdateManager.cpp</code> 49</td></tr><tr><td><code>r.RayTracing.Geometry.SkeletalMeshes</code></td><td class="num">1</td><td><code>Runtime/Engine/Private/SkeletalMeshSceneProxy.cpp</code> 42</td></tr><tr><td><code>r.RayTracing.Scene.BuildMode</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/RayTracing/RayTracingScene.cpp</code> 21</td></tr><tr><td><code>r.SSR.HalfResSceneColor</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/ScreenSpaceRayTracing.cpp</code> 59</td></tr><tr><td><code>r.SSR.Quality</code></td><td class="num">3</td><td><code>Runtime/Renderer/Private/ScreenSpaceRayTracing.cpp</code> 45</td></tr><tr><td><code>r.ScreenPercentage</code></td><td class="num">0</td><td><code>Runtime/Engine/Private/LegacyScreenPercentageDriver.cpp</code> 38</td></tr><tr><td><code>r.Shadow.RadiusThreshold</code></td><td class="num">0.01</td><td><code>Runtime/Renderer/Private/ShadowSetup.cpp</code> 119</td></tr><tr><td><code>r.Shadow.Virtual.Cache</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapCacheManager.cpp</code> 98</td></tr><tr><td><code>r.Shadow.Virtual.Clipmap.FirstLevel</code></td><td class="num">6</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapClipmap.cpp</code> 58</td></tr><tr><td><code>r.Shadow.Virtual.Clipmap.LastLevel</code></td><td class="num">22</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapClipmap.cpp</code> 64</td></tr><tr><td><code>r.Shadow.Virtual.MarkCoarsePagesLocal</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 428</td></tr><tr><td><code>r.Shadow.Virtual.MarkPixelPagesMipModeLocal</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 418</td></tr><tr><td><code>r.Shadow.Virtual.MaxPhysicalPages</code></td><td class="num">2048</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 174</td></tr><tr><td><code>r.Shadow.Virtual.NormalBias</code></td><td class="num">0.5</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 667</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasDirectional</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapClipmap.cpp</code> 43</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasDirectionalMoving</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapClipmap.cpp</code> 50</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasLocal</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/Shadows/ShadowSceneRenderer.cpp</code> 62</td></tr><tr><td><code>r.Shadow.Virtual.ResolutionLodBiasLocalMoving</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/Shadows/ShadowSceneRenderer.cpp</code> 69</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.RayCountDirectional</code></td><td class="num">7</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 729</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.RayCountLocal</code></td><td class="num">7</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 682</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.SamplesPerRayDirectional</code></td><td class="num">8</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 736</td></tr><tr><td><code>r.Shadow.Virtual.SMRT.SamplesPerRayLocal</code></td><td class="num">8</td><td><code>Runtime/Renderer/Private/VirtualShadowMaps/VirtualShadowMapArray.cpp</code> 689</td></tr><tr><td><code>r.ShadowQuality</code></td><td class="num">5</td><td><code>Runtime/Core/Private/HAL/ConsoleManager.cpp</code> 4119</td></tr><tr><td><code>r.SkyAtmosphere.AerialPerspectiveLUT.Depth</code></td><td class="num">96</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 185</td></tr><tr><td><code>r.SkyAtmosphere.AerialPerspectiveLUT.DepthResolution</code></td><td class="num">16</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 180</td></tr><tr><td><code>r.SkyAtmosphere.AerialPerspectiveLUT.FastApplyOnOpaque</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 201</td></tr><tr><td><code>r.SkyAtmosphere.AerialPerspectiveLUT.SampleCountMaxPerSlice</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 190</td></tr><tr><td><code>r.SkyAtmosphere.FastSkyLUT</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 136</td></tr><tr><td><code>r.SkyAtmosphere.FastSkyLUT.Height</code></td><td class="num">104</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 166</td></tr><tr><td><code>r.SkyAtmosphere.FastSkyLUT.SampleCountMax</code></td><td class="num">32</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 149</td></tr><tr><td><code>r.SkyAtmosphere.FastSkyLUT.Width</code></td><td class="num">192</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 161</td></tr><tr><td><code>r.SkyAtmosphere.SampleCountMax</code></td><td class="num">32</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 118</td></tr><tr><td><code>r.SkyAtmosphere.TransmittanceLUT.UseSmallFormat</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code> 221</td></tr><tr><td><code>r.SkyLight.RealTimeReflectionCapture.ShadowFromOpaque</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/ReflectionEnvironmentRealTimeCapture.cpp</code> 51</td></tr><tr><td><code>r.SkyLight.RealTimeReflectionCapture.TimeSlice</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/ReflectionEnvironmentRealTimeCapture.cpp</code> 41</td></tr><tr><td><code>r.SkyLight.RealTimeReflectionCapture.TimeSlice.SkyCloudCubeFacePerFrame</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/ReflectionEnvironmentRealTimeCapture.cpp</code> 46</td></tr><tr><td><code>r.SkylightIntensityMultiplier</code></td><td class="num">1</td><td><code>Runtime/Engine/Private/Components/SkyLightComponent.cpp</code> 87</td></tr><tr><td><code>r.TSR.History.ScreenPercentage</code></td><td class="num">100</td><td><code>Runtime/Renderer/Private/PostProcess/TemporalSuperResolution.cpp</code> 54</td></tr><tr><td><code>r.TSR.History.UpdateQuality</code></td><td class="num">3</td><td><code>Runtime/Renderer/Private/PostProcess/TemporalSuperResolution.cpp</code> 74</td></tr><tr><td><code>r.TSR.RejectionAntiAliasingQuality</code></td><td class="num">3</td><td><code>Runtime/Renderer/Private/PostProcess/TemporalSuperResolution.cpp</code> 234</td></tr><tr><td><code>r.TSR.ReprojectionField</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/PostProcess/TemporalSuperResolution.cpp</code> 290</td></tr><tr><td><code>r.TSR.Resurrection</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/PostProcess/TemporalSuperResolution.cpp</code> 247</td></tr><tr><td><code>r.TSR.ShadingRejection.Flickering</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/PostProcess/TemporalSuperResolution.cpp</code> 138</td></tr><tr><td><code>r.Tonemapper.Quality</code></td><td class="num">5</td><td><code>Runtime/Engine/Private/SceneView.cpp</code> 296</td></tr><tr><td><code>r.Visibility.LocalLightPrimitiveInteraction</code></td><td class="num">2</td><td><code>Runtime/Renderer/Private/RendererScene.cpp</code> 183</td></tr><tr><td><code>r.VolumetricCloud.ReflectionRaySampleMaxCount</code></td><td class="num">80</td><td><code>Runtime/Renderer/Private/VolumetricCloudRendering.cpp</code> 73</td></tr><tr><td><code>r.VolumetricCloud.ShadowMap.MaxResolution</code></td><td class="num">2048</td><td><code>Runtime/Renderer/Private/VolumetricCloudRendering.cpp</code> 206</td></tr><tr><td><code>r.VolumetricCloud.ViewRaySampleMaxCount</code></td><td class="num">768</td><td><code>Runtime/Renderer/Private/VolumetricCloudRendering.cpp</code> 68</td></tr><tr><td><code>r.VolumetricFog</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/VolumetricFog.cpp</code> 96</td></tr><tr><td><code>r.VolumetricFog.GridPixelSize</code></td><td class="num">16</td><td><code>Runtime/Renderer/Private/VolumetricFog.cpp</code> 120</td></tr><tr><td><code>r.VolumetricFog.GridSizeZ</code></td><td class="num">64</td><td><code>Runtime/Renderer/Private/VolumetricFog.cpp</code> 128</td></tr><tr><td><code>r.VolumetricFog.HistoryMissSupersampleCount</code></td><td class="num">4</td><td><code>Runtime/Renderer/Private/VolumetricFog.cpp</code> 160</td></tr><tr><td><code>r.VolumetricFog.HistoryWeight</code></td><td class="num">0.9</td><td><code>Runtime/Renderer/Private/VolumetricFog.cpp</code> 152</td></tr><tr><td><code>r.VolumetricRenderTarget</code></td><td class="num">1</td><td><code>Runtime/Renderer/Private/VolumetricRenderTarget.cpp</code> 23</td></tr><tr><td><code>r.VolumetricRenderTarget.Mode</code></td><td class="num">0</td><td><code>Runtime/Renderer/Private/VolumetricRenderTarget.cpp</code> 33</td></tr></tbody></table></div></details>
   <h4>B. 计算方法与可信度</h4>
   <ul class="small">
     <li><b>Filmic</b>：把上面的 Filmic 处理按源码逐行移植到 Python（numpy），参数为 UE 默认值。中灰 0.18 → 显示 0.18，与源码设计一致。</li>
@@ -1538,7 +1958,7 @@ r.LUT.TonemappingSDRInvEOTF=0                   <span class="c">; ACES 用 sRGB 
     <li><b>第二章的数值与图解</b>（<code>make_exposure.py</code>）：屏幕值都按“曝光后的场景值”计算（正确曝光 = 灰卡曝光后 0.18），没有算局部曝光。物理量按 UE 的标定换算：灰卡亮度 = 0.18 × 照度 ÷ π，正确曝光的 EV100 = log₂(照度 ÷ π)，曝光 = 2<sup>补偿 − EV100</sup>；晴天 16 法则（f/16、1/125 秒、ISO 100、10 万 lux）用来交叉验证。PPV 过渡曲线按源码的线性插值，分别插值曝光补偿、快门（1/1024 → 1/8 秒）和 ISO（100 → 12800）。光比与曝光阶梯小图是 numpy 光线求交渲染的示意场景（Lambert 漫反射、一盏平行光加均匀天空半球），只用来说明光比和曝光，不代表引擎的实际光照。</li>
     <li><b>特效贴图反推</b>：火焰形状是程序生成的灰度图；旧贴图 = 灰度 × 单一橙色，强度 ×26，先算出它在 Filmic 下的显示颜色，再沿 log 亮度取 1024 个样本，用 Levenberg–Marquardt 在 OKLab 里找出 ACES 下显示成同一颜色的输入，经中值去异常、高斯平滑后作为新渐变；强度按新渐变的最大值归一。渐变本身的平均色差 0.4，整张图 0.7（只改模式是 8.7）。渲染只经过色调映射，没有 Bloom 和半透明叠加。</li>
   </ul>
-  <h4>C. 工程扫描（只读，2026-10-26；曝光与天空相关项 2026-10-27 补扫）</h4>
+  <h4>C. 工程扫描（只读，2026-10-26；曝光、天空、画质配置 2026-10-27 补扫）</h4>
   <p class="small">用 ripgrep 扫描 <code>Content</code> 下所有 .umap / .uasset 名字表里的 <code>bOverride_*</code>，只有开启了覆盖的属性才会出现在名字表里。再解析导入表，确认 LUT 实际引用的贴图。完整结果见 <code>data/project_scan.json</code>；测光方式、物理相机、局部曝光等曝光相关项，以及天空大气、高度雾、天光、PPV、体积云、Local Fog Volume 组件的使用情况见 <code>data/project_scan_exposure.json</code>（按完整属性名、组件类名计数，按包计；正式内容 = Content/Art）。</p>
   <h4>D. 复现</h4>
   <pre class="code"><button class="copy" type="button">复制</button><span class="c"># 依赖：Python 3.11 + numpy + Pillow + PyOpenColorIO 2.6（本机 Python311 已装）</span>
@@ -1547,6 +1967,7 @@ python -I validate.py           <span class="c"># 模型核对 + 灰阶关键数
 python -I fit_compensation.py   <span class="c"># 拟合过渡期补偿参数 → data/fit.json</span>
 python -I make_assets.py        <span class="c"># 第一章的图：img/ 与 data/report_data.json</span>
 python -I make_exposure.py      <span class="c"># 第二章的数值与图解：img/expo_*、img/fx_* 与 data/exposure_data.json</span>
+python -I make_cvars.py         <span class="c"># 第三章：从引擎源码和 ini 读控制台变量 → data/cvars.json（需要本机引擎源码与项目目录）</span>
 python -I build_html.py         <span class="c"># 生成本页 index.html</span></pre>
 </section>
 <footer>本报告只读取了工程与引擎源码，没有修改任何工程文件。图表数据可以在每张图下方的“数据表”里查看。</footer>
@@ -2190,7 +2611,7 @@ python -I build_html.py         <span class="c"># 生成本页 index.html</span>
     if (!defs.length) return;
     var re = new RegExp(defs.map(function (d) { return "(" + d.pat + ")"; }).join("|"), "g");
     var SKIP = "script, style, code, pre, svg, button, a, h1, h2, h3, h4, th, summary, .topbar, .chart, .tip, .term, #gloss, #appendix, .cmp, .legend, .seg, .views, " +
-      ".stat .v, .fig-title, .labx-h, .pipe .pi, .steps > li > b:first-child, .ppv-h, .layer-h, .fxset .rl, .evl-g, .chain";
+      ".stat .v, .fig-title, .labx-h, .pipe .pi, .steps > li > b:first-child, .ppv-h, .layer-h, .fxset .rl, .evl-g, .chain, .knob-h, .knob-v, .cvm, .cvidx, kbd";
     var main = document.querySelector("main"), scopes = new Map(), nodes = [];
     var walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
       acceptNode: function (nd) {
@@ -2202,7 +2623,7 @@ python -I build_html.py         <span class="c"># 生成本页 index.html</span>
     while (walker.nextNode()) nodes.push(walker.currentNode);
     // 每个名词在同一个范围（一个步骤、一个实验卡片或一节）里只标第一次出现，避免满屏下划线
     nodes.forEach(function (nd) {
-      var scope = nd.parentElement.closest(".steps > li, .labx, .layer, section.card");
+      var scope = nd.parentElement.closest(".steps > li, .labx, .layer, .knob, section.card");
       var used = scopes.get(scope);
       if (!used) { used = {}; scopes.set(scope, used); }
       var text = nd.nodeValue, last = 0, frag = null, mm;

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """把 data/*.json 注入 report_template.html，生成 ../index.html。
 模板里的 {{name}} 由下面的 V 字典替换（数字全部从数据算出来，避免手抄出错；h_ 开头的是由数据生成的 HTML 片段）；
-/*__REPORT_DATA__*/ 替换成图表用的 JSON。先跑 make_assets.py 和 make_exposure.py。运行：python -I build_html.py"""
+/*__REPORT_DATA__*/ 替换成图表用的 JSON。先跑 make_assets.py、make_exposure.py 和 make_cvars.py。运行：python -I build_html.py"""
 import html, json, os, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -329,6 +329,197 @@ V["h_fx_stops_head"] = "".join('<th class="num">%d</th>' % st["g"] for st in fx[
 V["h_fx_stops_old"] = "".join('<td class="num nw">%s%s</td>' % (chip(st["old"]), st["old"]) for st in fx["stops"])
 V["h_fx_stops_new"] = "".join('<td class="num nw">%s%s</td>' % (chip(st["new"]), st["new"]) for st in fx["stops"])
 
+# ---------------------------------------------------------------- 第三章：控制台变量（make_cvars.py）
+CV = json.load(open(os.path.join(ROOT, "data", "cvars.json"), encoding="utf-8"))
+CV_LEVELS = ("0", "1", "2", "3", "4")
+CV_LEVEL_NAMES = ("低", "中", "高", "极高", "电影")
+
+
+def cv_fmt(v):
+    """变量值的显示：数字去掉多余的 0，负号用 −，布尔写成 1 / 0"""
+    if v is None:
+        return ""
+    s = str(v).strip()
+    if s.lower() in ("true", "false"):
+        return "1" if s.lower() == "true" else "0"
+    try:
+        x = float(s.rstrip("fF"))
+        s = ("%d" % x) if x == int(x) and abs(x) < 1e7 else ("%g" % x)
+    except ValueError:
+        pass
+    return esc(s.replace("-", "−"))
+
+
+def cv_default(name):
+    if name not in CV["defs"]:
+        raise SystemExit("cvars.json 里没有 %s，先在 make_cvars.py 的 NAMES 里加上再运行" % name)
+    return cv_fmt(CV["defs"][name]["default"])
+
+
+def cv_level(group, level, name):
+    return CV["scalability"].get(group, {}).get(level, {}).get(name)
+
+
+def cv_project(group, level, name):
+    """本项目 Scalability ini 的覆盖值（Windows 平台文件优先）"""
+    for f in ("Windows/WindowsScalability.ini", "DefaultScalability.ini"):
+        v = CV["project_scalability"].get(f, {}).get(group, {}).get(level, {}).get(name)
+        if v is not None:
+            return v, f
+    return None, None
+
+
+def cv_matrix(group, rows):
+    """一组变量在 5 个档位上的值：引擎 BaseScalability.ini，项目改过的标 ●"""
+    body = []
+    for name, label in rows:
+        cells = []
+        for lv in CV_LEVELS:
+            eng = cv_level(group, lv, name)
+            pv, pf = cv_project(group, lv, name)
+            if pv is not None and (eng is None or cv_fmt(pv) != cv_fmt(eng)):
+                cells.append('<td class="num"><span class="pj" title="本项目 %s 改为 %s">%s</span>%s</td>'
+                             % (esc(pf), cv_fmt(pv), cv_fmt(pv), ('<span class="eng">（引擎 %s）</span>' % cv_fmt(eng)) if eng is not None else ""))
+            else:
+                cells.append('<td class="num">%s</td>' % (cv_fmt(eng) if eng is not None else '<span class="muted">—</span>'))
+        body.append('<tr><td><code>%s</code><span class="cvl">%s</span></td><td class="num">%s</td>%s</tr>' % (name, esc(label), cv_default(name), "".join(cells)))
+    head = '<tr><th>变量</th><th class="num">源码默认</th>%s</tr>' % "".join('<th class="num">%s</th>' % n for n in CV_LEVEL_NAMES)
+    return ('<div class="scroll"><table class="t cvm"><thead>%s</thead><tbody>%s</tbody></table></div>'
+            '<p class="small muted cvm-note">各档的值来自引擎 <code>BaseScalability.ini</code> 的 <code>[%s@N]</code>；“—”表示该档不设置（保持当前值）；<span class="pj"></span>是本项目 Scalability ini 改过的值（Windows 以 <code>Windows/WindowsScalability.ini</code> 为准）。</p>'
+            % (head, "".join(body), group))
+
+
+V["h_cvm_gi"] = cv_matrix("GlobalIlluminationQuality", [
+    ("r.Lumen.DiffuseIndirect.Allow", "Lumen GI 开关"),
+    ("r.Lumen.FinalGatherMethod", "最终采集：0 辐照度场 / 1 屏幕探针"),
+    ("r.Lumen.ScreenProbeGather.DownsampleFactor", "屏幕探针间距（像素）"),
+    ("r.Lumen.ScreenProbeGather.TracingOctahedronResolution", "每个探针的光线（边长）"),
+    ("r.Lumen.ScreenProbeGather.NumAdaptiveProbes", "自适应补充探针"),
+    ("r.Lumen.ScreenProbeGather.RadianceCache.ProbeResolution", "辐射缓存探针分辨率"),
+    ("r.Lumen.ScreenProbeGather.RadianceCache.NumProbesToTraceBudget", "辐射缓存每帧更新探针数"),
+    ("r.Lumen.ScreenProbeGather.StochasticInterpolation", "随机插值（1 更省）"),
+    ("r.Lumen.ScreenProbeGather.IrradianceFormat", "辐照度格式：0 球谐 / 1 八面体"),
+    ("r.Lumen.ScreenProbeGather.ShortRangeAO.DownsampleFactor", "近距离 AO 降采样"),
+    ("r.Lumen.ScreenProbeGather.ShortRangeAO.BentNormal", "弯曲法线（高光遮蔽更准）"),
+    ("r.LumenScene.SurfaceCache.AtlasSize", "Surface Cache 图集尺寸"),
+    ("r.LumenScene.SurfaceCache.CardMaxResolution", "单张卡片最大分辨率"),
+    ("r.LumenScene.DirectLighting.UpdateFactor", "直接光：每帧更新 1/N"),
+    ("r.LumenScene.DirectLighting.MaxLightsPerTile", "每块缓存最多几盏灯"),
+    ("r.LumenScene.Radiosity.UpdateFactor", "多次反弹：每帧更新 1/N"),
+    ("r.LumenScene.Radiosity.ProbeSpacing", "多次反弹探针间距"),
+    ("r.LumenScene.Radiosity.HemisphereProbeResolution", "多次反弹每探针光线（边长）"),
+    ("r.Lumen.TraceMeshSDFs.Allow", "软件追踪：允许网格距离场"),
+    ("r.Lumen.TranslucencyVolume.GridPixelSize", "半透明光照体积格子（像素）"),
+    ("r.Lumen.HardwareRayTracing.HitLighting.Allowed", "允许命中点光照"),
+    ("r.RayTracing.Scene.BuildMode", "光追场景：0 快速构建 / 1 快速追踪"),
+    ("r.RayTracing.Geometry.SkeletalMeshes", "骨骼网格进光追场景"),
+    ("r.SkylightIntensityMultiplier", "天光强度倍数"),
+])
+V["h_cvm_refl"] = cv_matrix("ReflectionQuality", [
+    ("r.Lumen.Reflections.Allow", "Lumen 反射开关"),
+    ("r.Lumen.Reflections.DownsampleFactor", "反射降采样"),
+    ("r.Lumen.Reflections.MaxRoughnessToTraceForFoliage", "植被追反射的粗糙度上限"),
+    ("r.Lumen.ScreenProbeGather.MaxRoughnessToEvaluateRoughSpecularForFoliage", "植被粗糙高光的上限"),
+    ("r.Lumen.Reflections.ScreenSpaceReconstruction.NumSamples", "屏幕空间重建采样数"),
+    ("r.Lumen.Reflections.ScreenSpaceReconstruction.MinWeight", "重建最小权重"),
+    ("r.Lumen.TranslucencyReflections.FrontLayer.Allow", "允许半透明前层反射"),
+    ("r.Lumen.TranslucencyReflections.FrontLayer.Enable", "开启半透明前层反射"),
+    ("r.SSR.Quality", "屏幕空间反射质量"),
+    ("r.SSR.HalfResSceneColor", "SSR 用半分辨率场景色"),
+])
+V["h_cvm_vsm"] = cv_matrix("ShadowQuality", [
+    ("r.ShadowQuality", "阴影过滤质量（0 关闭动态阴影）"),
+    ("r.Shadow.Virtual.MaxPhysicalPages", "物理页池（显存）"),
+    ("r.Shadow.Virtual.ResolutionLodBiasDirectional", "平行光分辨率偏移"),
+    ("r.Shadow.Virtual.ResolutionLodBiasDirectionalMoving", "平行光移动时"),
+    ("r.Shadow.Virtual.ResolutionLodBiasLocal", "本地光分辨率偏移"),
+    ("r.Shadow.Virtual.ResolutionLodBiasLocalMoving", "本地光移动时"),
+    ("r.Shadow.Virtual.SMRT.RayCountDirectional", "平行光软阴影光线数"),
+    ("r.Shadow.Virtual.SMRT.SamplesPerRayDirectional", "平行光每条光线采样"),
+    ("r.Shadow.Virtual.SMRT.RayCountLocal", "本地光软阴影光线数"),
+    ("r.Shadow.Virtual.SMRT.SamplesPerRayLocal", "本地光每条光线采样"),
+    ("r.Shadow.Virtual.MarkCoarsePagesLocal", "本地光粗页标记"),
+    ("r.Shadow.RadiusThreshold", "太小的投影物剔除（屏幕半径）"),
+    ("r.DistanceFieldShadowing", "距离场阴影"),
+    ("r.CapsuleShadows", "胶囊阴影"),
+    ("r.LightFunctionQuality", "灯光函数质量"),
+])
+V["h_cvm_ml"] = cv_matrix("ShadowQuality", [
+    ("r.MegaLights.NumSamplesPerPixel", "每个降采样像素的采样数"),
+    ("r.MegaLights.DownsampleMode", "降采样：0 全分辨率 / 1 棋盘格 / 2 半分辨率"),
+    ("r.MegaLights.ScreenTraces.Quality", "屏幕追踪：0 半分辨率 / 1 全分辨率"),
+    ("r.MegaLights.FrontLayerTranslucency.Allow", "半透明前层单独计算"),
+    ("r.MegaLights.Spatial.UseHistorySpatialVariance", "降噪用历史方差"),
+    ("r.MegaLights.Volume.GridPixelSize", "体积网格（像素）"),
+    ("r.MegaLights.Volume.GridSizeZ", "体积网格深度层数"),
+])
+V["h_cvm_fog"] = cv_matrix("ShadowQuality", [
+    ("r.VolumetricFog", "体积雾开关"),
+    ("r.VolumetricFog.GridPixelSize", "体素尺寸（像素）"),
+    ("r.VolumetricFog.GridSizeZ", "深度层数"),
+    ("r.VolumetricFog.HistoryMissSupersampleCount", "历史失效时的补采样"),
+])
+V["h_cvm_sky"] = cv_matrix("EffectsQuality", [
+    ("r.SkyAtmosphere.FastSkyLUT", "天空用查找表"),
+    ("r.SkyAtmosphere.FastSkyLUT.SampleCountMax", "查找表最大采样"),
+    ("r.SkyAtmosphere.SampleCountMax", "逐像素最大采样"),
+    ("r.SkyAtmosphere.AerialPerspectiveLUT.FastApplyOnOpaque", "不透明物体的空气透视用查找表"),
+    ("r.SkyAtmosphere.AerialPerspectiveLUT.SampleCountMaxPerSlice", "空气透视每层采样"),
+    ("r.SkyAtmosphere.AerialPerspectiveLUT.DepthResolution", "空气透视深度层数"),
+    ("r.SkyAtmosphere.TransmittanceLUT.UseSmallFormat", "透过率表用小格式"),
+])
+V["h_cvm_tsr"] = cv_matrix("AntiAliasingQuality", [
+    ("r.TSR.History.ScreenPercentage", "历史缓冲分辨率（%）"),
+    ("r.TSR.History.UpdateQuality", "历史更新质量"),
+    ("r.TSR.ShadingRejection.Flickering", "闪烁抑制"),
+    ("r.TSR.RejectionAntiAliasingQuality", "历史失效处的空间抗锯齿"),
+    ("r.TSR.ReprojectionField", "重投影场"),
+    ("r.TSR.Resurrection", "找回被遮挡过的历史"),
+])
+V["h_cvm_post"] = cv_matrix("PostProcessQuality", [
+    ("r.BloomQuality", "Bloom 质量"),
+    ("r.Bloom.ScreenPercentage", "卷积 Bloom 分辨率（%）"),
+    ("r.DepthOfFieldQuality", "景深质量"),
+    ("r.MotionBlurQuality", "动态模糊质量"),
+    ("r.Tonemapper.Quality", "Tonemapper 着色器组合"),
+    ("r.LightShaftQuality", "光束（Light Shaft）"),
+    ("r.Filter.SizeScale", "模糊滤波尺寸"),
+    ("r.AmbientOcclusionLevels", "SSAO 层级（Lumen 关闭时才用）"),
+    ("r.EyeAdaptationQuality", "曝光（自动 / 手动曝光的计算）"),
+])
+
+
+def auto_screen_percentage(display_h):
+    """r.ScreenPercentage <= 0 时引擎按显示分辨率插值（LegacyScreenPercentageDriver.cpp）"""
+    a = CV["auto_screen_percentage"]
+    px = lambda h: h * abs(h) * 1920.0 / 1080.0
+    disp = px(display_h)
+    lo_d, lo_r, hi_d, hi_r = a["MinDisplayResolution"], a["MinRenderingResolution"], a["MidDisplayResolution"], a["MidRenderingResolution"]
+    if disp > px(hi_d):
+        lo_d, lo_r, hi_d, hi_r = a["MidDisplayResolution"], a["MidRenderingResolution"], a["MaxDisplayResolution"], a["MaxRenderingResolution"]
+    t = min(max((disp - px(lo_d)) / (px(hi_d) - px(lo_d)), 0.0), 1.0)
+    return (((px(lo_r) + (px(hi_r) - px(lo_r)) * t) / disp) ** 0.5) * 100
+
+
+V["x_asp_1080"] = "%d" % round(auto_screen_percentage(1080))
+V["x_asp_1440"] = "%d" % round(auto_screen_percentage(1440))
+
+# 附录 A3：BaseScalability.ini 各分组所在行；全部变量的定义位置
+_sl = sorted(CV["scalability_line"].items(), key=lambda kv: kv[1])
+_ends = {k: (_sl[i + 1][1] - 1 if i + 1 < len(_sl) else None) for i, (k, _) in enumerate(_sl)}
+_grp = {}
+for k, ln in _sl:
+    g = k.split("@")[0]
+    _grp.setdefault(g, [ln, ln])
+    _grp[g][1] = _ends[k] or ln
+V["h_a3_scal"] = "、".join("<code>[%s@*]</code> %d–%d" % (g, _grp[g][0], _grp[g][1]) for g in (
+    "GlobalIlluminationQuality", "ReflectionQuality", "ShadowQuality", "EffectsQuality", "AntiAliasingQuality", "PostProcessQuality"))
+V["h_cv_index"] = ('<details class="cvidx"><summary>查看第三章全部 %d 个变量的源码默认值与定义位置（data/cvars.json）</summary><div class="scroll"><table class="t">'
+                   '<thead><tr><th>变量</th><th class="num">默认</th><th>定义位置（Engine/Source/）</th></tr></thead><tbody>%s</tbody></table></div></details>'
+                   % (len(CV["defs"]), "".join('<tr><td><code>%s</code></td><td class="num">%s</td><td><code>%s</code> %d</td></tr>'
+                                              % (n, cv_fmt(d["default"]) if len(str(d["default"])) < 24 else '<span class="muted">表达式</span>', esc(d["file"]), d["line"])
+                                              for n, d in sorted(CV["defs"].items()))))
+
 payload = {
     "tone": D["tone"], "sat": D["sat"], "hue": D["hue"], "sweep_ev": D["sweep_ev"],
     "ruler": EX["ruler"], "marks": EX["marks"],
@@ -342,6 +533,20 @@ payload = {
 }
 
 tpl = open(os.path.join(HERE, "report_template.html"), encoding="utf-8").read()
+
+
+def cv_token(m):
+    """{{cvd:变量}} = 源码默认值；{{cvl:分组:档位:变量}} = BaseScalability.ini 里该档的值"""
+    if m.group(1) == "cvd":
+        return cv_default(m.group(2))
+    g, lv, name = m.group(2).split(":")
+    v = cv_level(g, lv, name)
+    if v is None:
+        raise SystemExit("BaseScalability.ini 的 [%s@%s] 里没有 %s" % (g, lv, name))
+    return cv_fmt(v)
+
+
+tpl = re.sub(r"\{\{(cvd|cvl):([^{}]+)\}\}", cv_token, tpl)
 missing = sorted(set(re.findall(r"\{\{(\w+)\}\}", tpl)) - set(V))
 if missing:
     raise SystemExit("模板里有未定义的占位符: %s" % missing)
