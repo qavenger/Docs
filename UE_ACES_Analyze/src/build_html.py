@@ -80,7 +80,7 @@ for name in ("dungeon", "selectrole"):
         V["%s_%s_C" % (name, k)] = n(s["C_mean"], 2)
         V["%s_%s_dE" % (name, k)] = n(s["dE"])
 
-# ---------------------------------------------------------------- 长期方案「灯光 / 曝光 / Albedo」图解（make_exposure.py）
+# ---------------------------------------------------------------- 第二章：材质、灯光、曝光、特效的数值与图解（make_exposure.py）
 EX = json.load(open(os.path.join(ROOT, "data", "exposure_data.json"), encoding="utf-8"))
 SCAN2 = json.load(open(os.path.join(ROOT, "data", "project_scan_exposure.json"), encoding="utf-8"))
 pr, mk, lt = EX["props"], EX["marks"], EX["light"]
@@ -126,7 +126,7 @@ V.update({
     "x_ps118_naive": "%.3f" % EX["ps118_naive"], "x_ps118_naive_ev": sgn(EX["ps118_naive_ev"]),
     "x_ps128_lin": "%.3f" % EX["ps128_lin"], "x_lin05_s": str(EX["lin05_s"]),
     "x_dir_default_ev": sgn(lt["dir_default_ev"]), "x_point_lm": i0(lt["point_default_lm"]), "x_point_cd": i0(lt["point_default_cd"]),
-    "x_point_d": n(lt["point_default_d"]), "x_torch_cd": n(lt["torch_cd"]), "x_torch_lm": str(lt["torch_lm"]),
+    "x_point_d": n(lt["point_default_d"]), "x_gap_ev": n(lt["gap_ev"], 0),
     "x_dcc_ue": i0(EX["dcc"]["ue"]), "x_dcc_ocio": i0(EX["dcc"]["ocio"]), "x_dcc_ev": "%.2f" % EX["dcc"]["ev"],
     "x_le_sh_aces": i0(le[1]["aces"]), "x_le_sh_aces_le": i0(le[1]["aces_le"]), "x_le_dg_aces": i0(le[0]["aces"]),
     "x_le_dg_aces_le": i0(le[0]["aces_le"]), "x_le_w_aces": i0(le[2]["aces"]), "x_le_w_aces_le": i0(le[2]["aces_le"]),
@@ -167,16 +167,12 @@ V["h_scene_rows"] = "".join(
     % (esc(s["name"]), esc(s["key"]), ("0（= 正确曝光）" if s["offset"] == 0 else sgn(s["offset"]) + " 档"), sgn(s["shadow"]) + " 档",
        chip(grey_hex(s["lit"])), i0(s["lit"]), chip(grey_hex(s["dark"])), i0(s["dark"]), esc(s["note"])) for s in EX["scenes"])
 V["h_emissive_rows"] = "".join(
-    '<tr><td class="num">+%d 档</td><td class="num"><b>%s</b></td><td class="num">%s%s</td><td class="num">%s%s</td></tr>'
-    % (e["stop"], ("%.2f" % e["value"]).rstrip("0").rstrip("."), chip(grey_hex(e["filmic"])), i0(e["filmic"]), chip(grey_hex(e["aces"])), i0(e["aces"]))
+    '<tr><td class="num">%s 档</td><td class="num"><b>%s</b></td><td class="num">%s%s</td><td class="num">%s%s</td></tr>'
+    % ("+%d" % e["stop"] if e["stop"] else "0", ("%.2f" % e["value"]).rstrip("0").rstrip("."), chip(grey_hex(e["filmic"])), i0(e["filmic"]), chip(grey_hex(e["aces"])), i0(e["aces"]))
     for e in EX["emissive"])
 V["h_emit_target_rows"] = "".join(
     '<tr><td class="num">%s%d</td><td class="num">%s 档（Emissive %s）</td><td class="num">%s 档（Emissive %s）</td></tr>'
     % (chip(grey_hex(t["code"])), t["code"], sgn(t["filmic"]), "%.2f" % t["filmic_v"], sgn(t["aces"]), "%.2f" % t["aces_v"]) for t in EX["emissive_target"])
-V["h_torch"] = '<div class="dist">' + "".join(
-    '<div class="dc">%s<b>%s 米</b><span>%s lux</span><span>%s 档 · 屏幕 %s</span></div>'
-    % (chip(grey_hex(r["aces"]), "chip"), n(r["d"], 2 if r["d"] in (1.41, 2.83, 5.66) else 0), ("%.2f" % r["lux"]).rstrip("0").rstrip("."),
-       ("0" if r["ev"] == 0 else sgn(r["ev"], 0)), i0(r["aces"])) for r in lt["torch_rows"]) + "</div>"
 RATIO_NOTE = {1: "阴天、柔光、补光很足", 2: "晴天里阴影偏亮（有大面积反光）", 3: "晴天直射、室内窗光", 5: "地牢、夜晚火把"}
 V["h_ratio"] = '<div class="tiles">' + "".join(
     '<figure class="tile"><img src="img/expo_ratio_%d.png" alt="光比 %d 档：阴影里的灰卡比阳光下暗 %d 档" loading="lazy" width="480" height="320">'
@@ -188,11 +184,6 @@ V["h_bracket"] = '<div class="tiles five">' + "".join(
     '<figcaption><b>%s</b>亮处灰卡 %s · 白卡 %s</figcaption></figure>'
     % (" ref" if b["ev"] == 0 else "", b["file"], sgn(b["ev"], 0) if b["ev"] else "0",
        ("0 档 · 正确曝光" if b["ev"] == 0 else sgn(b["ev"], 0) + " 档"), i0(b["lit"]), i0(b["white"])) for b in EX["bracket_imgs"]) + "</div>"
-fx = EX["fx"]
-V["fx_stop0"], V["fx_stop1"] = sgn(fx["stops"][0], 0) or "0", sgn(fx["stops"][1], 0)
-V["h_fx_stops"] = " → ".join('<span class="nw">%s<code>%s</code></span>' % (chip(a["hex"]), lin3(a["rgb"])) for a in fx["authored"])
-V["fx_naive"] = lin3(fx["naive"]["rgb"])
-V["h_fx_naive_chip"] = chip(fx["naive"]["hex"])
 V["h_checker_mini"] = "".join('<i style="background:%s"></i>' % c["hex"] for c in EX["checker_ref"])
 V["x_grey_hex"] = pr["grey"]["hex"]
 V["x_grey_screen_pct"] = n(EX["grey_final_aces"] * 100)
@@ -201,6 +192,142 @@ V["x_dcc_ocio_chip"] = chip(grey_hex(EX["dcc"]["ocio"]))
 V["x_et230_d"] = sgn(et[230]["aces"] - et[230]["filmic"])
 V["x_et245_d"] = sgn(et[245]["aces"] - et[245]["filmic"])
 V["comp_gain"] = "%.2f" % (2 ** comp["ev"])
+
+# ---------------------------------------------------------------- 第二章：物理相机、灯光、过渡、特效
+PI_ = 3.141592653589793
+SKY = SCAN2["components"]
+s16, br, tm = EX["sunny16"], EX["brazier"], EX["trans_mid"]
+
+
+def evs(v):
+    """EV100 / 档数：整数不带小数，负号用 −"""
+    return n(v, 0) if abs(v - round(v)) < 1e-9 else n(v, 1)
+
+
+def fmt_q(v):
+    """照度、亮度：≥ 1 亿 / 1 万写成“x 亿 / x.x 万”，≥ 10 取整，再小保留两位有效数字"""
+    if v >= 1e8:
+        return ("%.1f" % (v / 1e8)).rstrip("0").rstrip(".") + " 亿"
+    if v >= 1e4:
+        return ("%.1f" % (v / 1e4)).rstrip("0").rstrip(".") + " 万"
+    if v >= 100:
+        k = 10 ** (len("%d" % int(v)) - 2)
+        return "%d" % (int(round(v / k)) * k)
+    if v >= 10:
+        return "%d" % int(round(v))
+    if v >= 1:
+        return ("%.1f" % v).rstrip("0").rstrip(".")
+    return "%.2g" % v
+
+
+def fmt_shutter(s):
+    """PPV 的 Shutter Speed 填的数（1/秒）"""
+    return "%d" % int(round(s)) if s >= 10 else ("%.1f" % s).rstrip("0").rstrip(".") if s >= 1 else "%.3g" % s
+
+
+def shutter_eq(s):
+    return ("1/%d 秒" % int(round(s))) if s > 1 else ("%g 秒" % (1 / s))
+
+
+V.update({
+    "x_s16_ev": "%.2f" % s16["ev"], "x_s16_nits": "%d" % s16["nits"], "x_s16_pre": n(s16["pre"] * 1e5, 1) + "×10⁻⁵",
+    "x_s16_post": "%.3f" % s16["post"], "x_s16_aces": i0(s16["aces"]), "x_s16_final": "%.3f" % s16["final"],
+    "x_s16_half": i0(s16["half"]), "x_s16_double": i0(s16["double"]),
+    "x_br_ev": evs(br["ev"]), "x_br_d": evs(br["d"]), "x_br_lux": i0(br["lux"]), "x_br_cd": i0(br["cd"]),
+    "x_br_lm": "%d" % int(round(br["lm"], -2)),
+    "x_tr_ec": n(tm["ec"]), "x_tr_sh": n(tm["shutter"]), "x_tr_sh90": n(tm["shutter_90"]), "x_tr_iso": n(tm["iso"]),
+    "n_skyatmo_ship": str(SKY["SkyAtmosphereComponent"]["shipping"]), "n_fog_ship": str(SKY["ExponentialHeightFogComponent"]["shipping"]),
+    "n_skylight_ship": str(SKY["SkyLightComponent"]["shipping"]), "n_ppv_ship": str(SKY["PostProcessVolume"]["shipping"]),
+    "x_wr": n(0.87 / 0.18), "x_brr": n(pr["black"]["lin"] / 0.18, 2), "x_brr_inv": n(0.18 / pr["black"]["lin"]),
+    "x_lava_grey": i0(0.18 * 2 ** 12), "x_lava_lo": "%d" % int(round(0.18 * 2 ** 15, -2)), "x_lava_hi": "%d" % int(round(0.18 * 2 ** 17, -2)),
+})
+
+# ACES 2.0 + sRGB 下，中灰要亮多少档才和 Filmic 的中灰一样（沿灰阶曲线插值）
+_tv, _ta = D["tone"]["ev"], D["tone"]["aces_srgb"]
+_mid = f["mid"]
+_j = next(j for j in range(1, len(_ta)) if _ta[j] >= _mid)
+V["x_grey_match_ev"] = sgn(_tv[_j - 1] + (_mid - _ta[_j - 1]) / (_ta[_j] - _ta[_j - 1]) * (_tv[_j] - _tv[_j - 1]))
+
+# 每类场景的基准 EV100
+V["h_scene_rows"] = "".join(
+    '<tr><td>%s</td><td class="num">%s ~ %s</td><td class="num">%s ~ %s lux</td><td class="num">%s ~ %s</td><td class="num">%s</td>'
+    '<td class="num">%s 档</td><td class="num">%s%s / %s%s</td><td>%s；%s</td></tr>'
+    % (esc(s["name"]), evs(s["ev_lo"]), evs(s["ev_hi"]), fmt_q(s["lux_lo"]), fmt_q(s["lux_hi"]),
+       fmt_shutter(2.0 ** s["ev_lo"] / 16), fmt_shutter(2.0 ** s["ev_hi"] / 16), "0" if s["offset"] == 0 else evs(s["offset"]),
+       sgn(s["shadow"]), chip(grey_hex(s["lit"])), i0(s["lit"]), chip(grey_hex(s["dark"])), i0(s["dark"]), esc(s["key"]), esc(s["note"]))
+    for s in EX["scenes"])
+
+
+# EV100 对照表：每一档对应的灰卡读数、照度、快门，以及落在这一档的场景
+def scene_names(e):
+    hit = [re.sub(r"[（(].*?[）)]", "", s["name"]) for s in EX["scenes"] if s["ev_lo"] <= e <= s["ev_hi"]]
+    if hit:
+        return "<b>%s</b>" % "、".join(esc(x) for x in hit)
+    ref = [r["name"] for r in EX["real_lux"] if round(r["ev_lo"]) <= e <= round(r["ev_hi"])]
+    return '<span class="muted">%s</span>' % "、".join(esc(x) for x in ref) if ref else ""
+
+
+V["h_ev_rows"] = "".join(
+    '<tr><td class="num"><b>%s</b></td><td class="num">%s</td><td class="num">%s</td><td class="num"><b>%s</b></td><td class="num">%s</td><td>%s</td></tr>'
+    % (evs(r["ev"]), fmt_q(0.18 * 2.0 ** r["ev"]), fmt_q(PI_ * 2.0 ** r["ev"]), fmt_shutter(r["s"]), shutter_eq(r["s"]), scene_names(r["ev"]))
+    for r in reversed(EX["shutter_f4"]))
+
+# EV 尺：现实世界的典型照度 + 本项目每类场景的基准
+EVL_LO, EVL_HI = -7.0, 16.0
+
+
+def evl_pos(v):
+    return (min(max(v, EVL_LO), EVL_HI) - EVL_LO) / (EVL_HI - EVL_LO) * 100
+
+
+def evl_bar(lo, hi, cls):
+    if hi - lo < 0.25:
+        return '<span class="evl-b dot%s" style="left:%.2f%%"></span>' % (cls, evl_pos(lo))
+    return '<span class="evl-b%s" style="left:%.2f%%;width:%.2f%%"></span>' % (cls, evl_pos(lo), evl_pos(hi) - evl_pos(lo))
+
+
+def evl_rng(lo, hi, f=evs):
+    return f(lo) if abs(hi - lo) < 1e-9 else "%s ~ %s" % (f(lo), f(hi))
+
+
+EVL_TICKS = "".join('<span style="left:%.2f%%">%s</span>' % (evl_pos(t), evs(t)) for t in (-6, -3, 0, 3, 6, 9, 12, 15))
+
+
+def evl_ax(cls):
+    return '<div class="evl-ax%s" aria-hidden="true">%s</div>' % (cls, EVL_TICKS)
+V["h_ev_ladder"] = ('<div class="evl" role="img" aria-label="EV100 尺：现实世界从满月夜约 −6 到晴天约 15；本项目夜晚 −2 到主城白天 15">'
+                    + evl_ax(" t") + '<p class="evl-g">现实世界（典型照度 → 正确曝光的 EV100）</p>'
+                    + "".join('<div class="evl-r"><div class="evl-n"><b>%s</b> <span class="u">%s lux · EV100 %s</span></div><div class="evl-t">%s</div></div>'
+                              % (esc(r["name"]), evl_rng(r["lo"], r["hi"], fmt_q), evl_rng(r["ev_lo"], r["ev_hi"]), evl_bar(r["ev_lo"], r["ev_hi"], ""))
+                              for r in sorted(EX["real_lux"], key=lambda r: -r["ev_hi"]))
+                    + '<p class="evl-g">本项目每类场景的基准 EV100（建议）</p>'
+                    + "".join('<div class="evl-r"><div class="evl-n"><b>%s</b> <span class="u">EV100 %s</span></div><div class="evl-t">%s</div></div>'
+                              % (esc(s["name"]), evl_rng(s["ev_lo"], s["ev_hi"]), evl_bar(s["ev_lo"], s["ev_hi"], " p")) for s in EX["scenes"])
+                    + evl_ax("") + "</div>")
+
+# 真实灯具：1 / 2 / 3 米处的照度与 EV100
+V["h_lamp_rows"] = "".join(
+    '<tr><td>%s</td><td class="num">%s</td>%s</tr>'
+    % (esc(l["name"]), fmt_q(l["lm"]), "".join('<td class="num">%s lux<br><span class="muted">EV100 %s</span></td>' % (fmt_q(r["lux"]), n(r["ev"]))
+                                                for r in l["rows"])) for l in EX["lamps"])
+# 火盆：离得越远越暗
+V["h_brazier"] = '<div class="dist five">' + "".join(
+    '<div class="dc">%s<b>%s 米</b><span>%s lux</span><span>%s 档 · 屏幕 %s</span></div>'
+    % (chip(grey_hex(r["aces"]), "chip"), n(r["d"], 1).rstrip("0").rstrip("."), fmt_q(r["lux"]), "0" if abs(r["ev"]) < 0.05 else sgn(r["ev"], 0),
+       i0(r["aces"])) for r in br["rows"]) + "</div>"
+# 发光体的尼特数；真实亮度参考
+EMIT_NAME = {15: "晴天", 7: "室内", 4: "地牢", -1.7: "月夜"}
+V["h_emit_nits_rows"] = "".join(
+    '<tr><td>%s（%s）</td>%s</tr>' % (EMIT_NAME.get(e["ev"], ""), evs(e["ev"]), "".join('<td class="num">%s</td>' % fmt_q(v) for v in e["rows"]))
+    for e in EX["emit_nits"])
+V["h_nits_rows"] = "".join('<tr><td>%s</td><td class="num">%s</td></tr>' % (esc(nm_), fmt_q(v)) for nm_, v in EX["nits_ref"])
+# 特效：旧贴图 / 新贴图
+fx = EX["fx"]
+V.update({"fx_i_old": n(fx["i_old"], 0), "fx_i_new": n(fx["i_new"]), "fx_de_new": n(fx["img_de"]), "fx_de_old": n(fx["img_de_old"]),
+          "fx_de95": n(fx["img_de95"]), "fx_lut_de": n(fx["lut_de"]), "fx_tint_hex": fx["tint_hex"], "h_fx_tint_chip": chip(fx["tint_hex"])})
+V["h_fx_stops_head"] = "".join('<th class="num">%d</th>' % st["g"] for st in fx["stops"])
+V["h_fx_stops_old"] = "".join('<td class="num nw">%s%s</td>' % (chip(st["old"]), st["old"]) for st in fx["stops"])
+V["h_fx_stops_new"] = "".join('<td class="num nw">%s%s</td>' % (chip(st["new"]), st["new"]) for st in fx["stops"])
 
 payload = {
     "tone": D["tone"], "sat": D["sat"], "hue": D["hue"], "sweep_ev": D["sweep_ev"],
@@ -211,6 +338,7 @@ payload = {
            "aces_srgb": [sc["dungeon"]["aces_srgb"]["dE"], sc["selectrole"]["aces_srgb"]["dE"], D["checker_dE"]["aces_srgb"]],
            "aces_comp": [sc["dungeon"]["aces_comp"]["dE"], sc["selectrole"]["aces_comp"]["dE"], D["checker_dE"]["aces_comp"]]},
     "checker": D["checker"],
+    "trans": EX["trans"],
 }
 
 tpl = open(os.path.join(HERE, "report_template.html"), encoding="utf-8").read()

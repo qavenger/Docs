@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>为什么切到 ACES 2.0 画面会变灰？— UE5 Filmic 与 Standard ACES 对比</title>
+<title>UE5 全流程 PBR 画面重构指南 — ACES 2.0 · 物理相机 · 灯光校准 · Lumen · 调色</title>
 <style>
 :root {
   color-scheme: light;
@@ -83,7 +83,7 @@ li { margin: 4px 0; }
 .note { border-left: 3px solid var(--axis); background: var(--wash); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 16px 0; }
 .note .lab { font-weight: 600; margin-right: 6px; }
 .note.warn .lab::before { content: "⚠"; color: var(--warning); margin-right: 6px; }
-.note.tip .lab::before { content: "✓"; color: var(--good); margin-right: 6px; font-weight: 700; }
+.note.good .lab::before { content: "✓"; color: var(--good); margin-right: 6px; font-weight: 700; }
 .ok::before { content: "✔ "; color: var(--good); font-weight: 700; }
 .bad::before { content: "✘ "; color: var(--critical); font-weight: 700; }
 code { font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: .9em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
@@ -190,7 +190,7 @@ details.tblw table.t { font-size: 12.5px; }
 .src { font-size: 13px; }
 .src li { margin: 5px 0; }
 footer { color: var(--muted); font-size: 12.5px; text-align: center; padding: 10px 20px 40px; }
-/* 长期方案图解 */
+/* 第二章图解 */
 .labs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0 8px; }
 .labx { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--page); font-size: 13.5px; line-height: 1.65; }
 .labx-h { font-weight: 600; margin: 0 0 6px; display: flex; gap: 8px; align-items: center; font-size: 14px; }
@@ -321,33 +321,158 @@ details.more summary { font-weight: 600; color: var(--ink); font-size: 14px; }
   .sw-names span { font-size: 11px; }
 }
 table.t td.nw { white-space: nowrap; }
+/* 章节与总览 */
+.chain { display: flex; flex-wrap: wrap; gap: 6px 4px; align-items: center; margin: 6px 0 10px; font-size: 13px; line-height: 1.4; }
+.chain > span { border: 1px solid var(--border); border-radius: 8px; padding: 3px 8px; background: var(--surface); color: var(--ink); }
+.chain i { font-style: normal; color: var(--muted); padding: 0 1px; }
+.chapter { margin: 50px 6px 4px; }
+.chapter .ch-k { font-size: 13px; color: var(--muted); letter-spacing: .12em; margin: 0; }
+.chapter .ch-t { font-size: 28px; line-height: 1.35; margin: 2px 0 6px; }
+.chapter .ch-s { color: var(--ink2); margin: 0; max-width: 860px; }
+.flowcards { list-style: none; padding: 0; margin: 8px 0 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.flowcards li { margin: 0; }
+.flowcards a { display: block; height: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--page);
+  text-decoration: none; font-size: 12.5px; line-height: 1.55; color: var(--ink2); }
+.flowcards a:hover { border-color: var(--axis); }
+.flowcards .n { display: block; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.flowcards b { display: block; color: var(--ink); font-size: 14px; margin: 1px 0 2px; }
+/* EV100 尺 */
+.evl { margin: 12px 0 6px; }
+.evl-g { font-size: 12.5px; font-weight: 600; color: var(--ink2); margin: 12px 0 4px; }
+.evl-r { display: grid; grid-template-columns: 250px 1fr; gap: 2px 12px; align-items: center; margin: 3px 0; }
+.evl-n { font-size: 12.5px; color: var(--ink2); line-height: 1.4; }
+.evl-n b { color: var(--ink); font-weight: 600; }
+.evl-n .u { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.evl-t { position: relative; height: 14px; border-radius: 4px; background: var(--wash); box-shadow: inset 0 0 0 1px var(--border); }
+.evl-b { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; background: var(--s4); min-width: 8px; }
+.evl-b.p { background: var(--s1); }
+.evl-b.dot { width: 8px; margin-left: -4px; }
+.evl-ax { position: relative; height: 18px; margin-left: 262px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.evl-ax span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+/* PPV 分层示意 */
+.ppvs { font-size: 13px; line-height: 1.55; color: var(--ink2); }
+.ppv { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--page); margin: 8px 0 0; }
+.ppv.g { margin: 0; }
+.ppv .ppv { background: var(--surface); }
+.ppv p { margin: 2px 0; }
+.ppv-h { font-weight: 600; color: var(--ink); }
+.ppv-h span { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 8px; }
+.side .vol { fill: var(--s1); fill-opacity: .10; stroke: var(--s1); stroke-width: 1.5; }
+.side .band { fill: var(--s1); fill-opacity: .04; stroke: var(--s1); stroke-width: 1; stroke-dasharray: 4 3; }
+.side .rock { fill: var(--muted); fill-opacity: .3; }
+.side .pl { fill: var(--ink2); }
+.side .pls { stroke: var(--ink2); stroke-width: 2.5; stroke-linecap: round; }
+.dist.five { grid-template-columns: repeat(5, 1fr); }
+/* 特效贴图对比 */
+.fxset { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 14px; margin: 12px 0; max-width: 720px; }
+.fxset .rl { grid-column: 1 / -1; margin: 8px 0 0; font-size: 13.5px; font-weight: 600; }
+.fxset figure { margin: 0; }
+.fxset img { width: 100%; height: auto; display: block; border-radius: 8px; background: #000; }
+.fxset figcaption { margin-top: 5px; font-size: 12.5px; line-height: 1.45; color: var(--ink2); }
+.fxset figcaption b { display: block; color: var(--ink); }
+.fxset .ref img { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--ink2); }
+.ramps { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; align-items: center; margin: 8px 0 2px; max-width: 720px; }
+.ramps .nm { font-size: 13px; color: var(--ink2); }
+.ramps img { width: 100%; height: 26px; display: block; border-radius: 4px; }
+/* 氛围过渡三层 */
+.layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
+.layer { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--page); font-size: 13.5px; line-height: 1.65; min-width: 0; }
+.layer-h { font-weight: 600; margin: 0 0 4px; display: flex; gap: 8px; align-items: center; }
+.layer ul { padding-left: 1.2em; margin: 4px 0; }
+.mix { margin: 6px 0 14px; max-width: 720px; }
+.mix-ax { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin: 0 0 4px 64px; }
+.mix-r { display: grid; grid-template-columns: 56px 1fr; gap: 8px; align-items: center; margin: 5px 0; }
+.mix-r .nm { font-size: 12.5px; color: var(--ink2); }
+.mix-r .bar { height: 14px; border-radius: 7px; display: block; box-shadow: inset 0 0 0 1px var(--border); }
+.mix-r .bar.phys { background: linear-gradient(90deg, var(--wash) 0%, var(--wash) 25%, var(--s2) 100%); }
+.mix-r .bar.ppv { background: linear-gradient(90deg, var(--wash) 0%, var(--wash) 35%, var(--s4) 65%, var(--s4) 100%); }
+@media (max-width: 860px) {
+  .layers { grid-template-columns: 1fr; }
+  .dist.five { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 720px) {
+  .evl-r { grid-template-columns: 1fr; gap: 1px; margin: 6px 0; }
+  .evl-ax { margin-left: 0; }
+  .chapter .ch-t { font-size: 23px; }
+}
+@media (max-width: 520px) {
+  .fxset { gap: 6px 8px; }
+  .fxset figcaption { font-size: 11.5px; }
+  .ramps { grid-template-columns: 1fr; gap: 2px; }
+}
 @media print { .topbar, .theme-btn, .copy, .views, .ctrl, .gtip { display: none !important; } section.card { break-inside: avoid-page; } .term { text-decoration: none; } }
 </style>
 </head>
 <body>
 <div class="topbar"><div class="in">
-  <span class="brand">ACES 2.0 vs Filmic</span>
+  <span class="brand">PBR 画面重构指南</span>
   <nav aria-label="目录">
-    <a href="#tldr">一分钟看懂</a><a href="#look">看效果</a><a href="#why">原因</a><a href="#short">短期方案</a>
-    <a href="#long">长期方案</a><a href="#versus">优劣对比</a><a href="#gloss">名词</a><a href="#appendix">附录</a>
+    <a href="#tldr">总览</a><a href="#ch1">一 · ACES 2.0</a><a href="#ch2">二 · PBR 重构</a><a href="#p-light">灯光</a><a href="#p-expo">曝光与过渡</a>
+    <a href="#p-lumen">Lumen</a><a href="#p-fx">特效</a><a href="#p-grade">调色与氛围</a><a href="#gloss">名词</a><a href="#appendix">附录</a>
   </nav>
   <button class="theme-btn" id="theme" type="button" aria-label="切换浅色 / 深色主题">主题：跟随系统</button>
 </div></div>
 
 <main>
 <header class="hero">
-  <p class="kicker">UE5 画质升级 · 色调映射（Tonemapper）</p>
-  <h1>为什么切到 ACES 2.0，画面会变灰？</h1>
-  <p class="lead">Filmic 与 Standard ACES（ACES 2.0）的差异、变灰的原因、短期与长期方案——写给美术的版本。</p>
-  <p class="meta">依据：工程引擎 UE 5.8 源码逐行复刻 + OpenColorIO 2.6 官方 ACES 2.0 实现，并用工程实际截图验证 · 2026-10-26</p>
-  <p class="meta">2026-10-27 补充：长期方案里灯光、曝光、Albedo 相关步骤的图解与逐步操作；更正“曝光由 PPV 的 Exposure Compensation 决定”（本工程曝光锁定 ×1）；正文名词可悬停查看解释。</p>
-  <p class="meta">注：工程引擎已于 2026-10-27 升级到 UE 5.8.4。本文涉及的色调映射、曝光源码在 5.8.2 与 5.8.4 之间没有改动（<code>git diff 5.8.2-release HEAD</code> 为空），附录里的行号两个版本都适用；<code>r.HDR.Aces.Version</code> 默认就是 2。</p>
+  <p class="kicker">火炬之光 UE5 · 画面标准 · PBR 全流程重构</p>
+  <h1>UE5 全流程 PBR 画面重构指南</h1>
+  <p class="lead">从 Filmic 换到 ACES 2.0，再到物理相机、天空大气、灯光校准、Lumen 和后期调色：为什么这样改、具体怎么操作、怎么验收。写给美术和 TA。</p>
+  <p class="meta">依据：工程引擎 UE 5.8.4 源码逐行核对 + OpenColorIO 2.6 官方 ACES 2.0 实现 + 工程截图与资源扫描 · 2026-10-27</p>
+  <p class="meta">版本：10-26 初版只对比 Filmic 与 ACES 2.0；10-27 改为完整的 PBR 重构流程（物理相机、PPV 曝光过渡与区域氛围过渡、天空大气、Lumen、调色、特效贴图示例），原内容收为第一章。正文里带虚线的名词可以悬停查看解释。</p>
+  <p class="meta">注：引擎已于 2026-10-27 升级到 5.8.4。本文涉及的色调映射、曝光源码与 5.8.2 相同（<code>git diff 5.8.2-release HEAD</code> 为空），附录里的行号两个版本都适用；<code>r.HDR.Aces.Version</code> 默认就是 2。</p>
 </header>
 <noscript><p class="note">图表与对比滑块需要启用 JavaScript；文字结论不受影响。</p></noscript>
 
-<!-- ============================================================ 一分钟看懂 -->
+<!-- ============================================================ 总览 -->
 <section class="card" id="tldr">
-  <h2>一分钟看懂</h2>
+  <h2>总览：要改成什么样、按什么顺序改</h2>
+  <p class="big">目标是在 UE5 里按 PBR 全流程重构画面：<b>输出</b>换成 ACES 2.0 + sRGB；<b>曝光</b>改成手动物理相机，不用自动曝光，场景之间靠后处理体积（PPV）混合曝光补偿过渡；<b>灯光</b>用物理单位（相对物理：自然光按真实值，人工光可以提亮，光比保持真实）；<b>天空</b>用天空大气 + 实时天光；<b>全局光照</b>交给 Lumen；最后在<b>后期</b>用 Color Grading 叠项目风格和区域氛围。</p>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>项目</th><th>现在（扫描 2026-10-27）</th><th>改造后</th><th>在哪一节</th></tr></thead>
+    <tbody>
+      <tr><td>色调映射</td><td>Filmic；2 张图存成了 ACES</td><td>Standard ACES（ACES 2.0）+ sRGB 编码</td><td><a href="#ch1">第一章</a>、<a href="#p-config">2.4</a></td></tr>
+      <tr><td>曝光</td><td>锁定 ×1（<code>r.EyeAdaptationQuality=0</code>），PPV 的曝光补偿不生效</td><td>手动 + 物理相机：ISO 100、f/4 固定，用快门对准每张图的 EV100；不用自动曝光</td><td><a href="#p-expo">2.8</a></td></tr>
+      <tr><td>场景过渡</td><td>—</td><td>区域 PPV 只混合曝光补偿（按档均匀）；开关型参数只放全局 PPV</td><td><a href="#p-expo">2.8</a></td></tr>
+      <tr><td>区域氛围</td><td>—</td><td>物理层 + 曝光层 + 调色层一起过渡（例：正常环境 → 熔岩环境）</td><td><a href="#p-grade">2.11</a></td></tr>
+      <tr><td>灯光量级</td><td>按曝光 ×1 调：主光照到灰卡上约 π lux 才是正确曝光</td><td>物理单位：晴天地面约 10 万 lux，室内几百 lux，地牢几十 lux</td><td><a href="#p-light">2.7</a></td></tr>
+      <tr><td>天空</td><td>天空大气只在 2 张正式地图里用到</td><td>天空大气 + 实时捕获天光（可选体积云）；区域性的雾用 Local Fog Volume</td><td><a href="#p-light">2.7</a></td></tr>
+      <tr><td>全局光照</td><td>Lumen + MegaLights，可用硬件光追</td><td>不变；缓存光照的曝光范围调大，用路径追踪做参考</td><td><a href="#p-lumen">2.9</a></td></tr>
+      <tr><td>自发光、特效</td><td>按曝光 ×1 定强度，依赖 Filmic 的偏色出黄芯</td><td>发光体按尼特，玩法类跟着曝光走；特效贴图按 ACES 重画渐变</td><td><a href="#p-fx">2.10</a></td></tr>
+      <tr><td>风格</td><td>Film 参数（3 张）、LUT 贴图（1 张）、零散调色</td><td>Color Grading 共享预设 + 区域 PPV；不再用 LUT 贴图</td><td><a href="#p-grade">2.11</a></td></tr>
+    </tbody>
+  </table></div>
+  <p class="fig-title">改造流程（第二章）</p>
+  <ol class="flowcards">
+    <li><a href="#p-goal"><span class="n">2.1 · 准备</span><b>目标与原则</b>谁管什么：材质、灯光、相机、调色</a></li>
+    <li><a href="#lab"><span class="n">2.2 · 准备</span><b>4 个小实验</b>10 分钟读懂物理相机</a></li>
+    <li><a href="#p-audit"><span class="n">2.3 · 准备</span><b>现状盘点与决策</b>写进画面标准文档</a></li>
+    <li><a href="#p-config"><span class="n">2.4 · 准备</span><b>工程设置切换</b>打开曝光系统，旧图画面不变</a></li>
+    <li><a href="#p-mat"><span class="n">2.5 · 标定</span><b>材质规范</b>BaseColor 按真实反射率</a></li>
+    <li><a href="#p-lookdev"><span class="n">2.6 · 标定</span><b>标定场景</b>灰卡、色卡、两个读数</a></li>
+    <li><a href="#p-light"><span class="n">2.7 · 标定</span><b>灯光校准</b>天空大气、人工光、光比</a></li>
+    <li><a href="#p-expo"><span class="n">2.8 · 标定</span><b>曝光与场景过渡</b>快门定基准，曝光补偿做过渡</a></li>
+    <li><a href="#p-lumen"><span class="n">2.9 · 渲染</span><b>Lumen 设置</b>先物理正确，再调性能</a></li>
+    <li><a href="#p-fx"><span class="n">2.10 · 渲染</span><b>自发光与特效</b>两类自发光，特效贴图重画</a></li>
+    <li><a href="#p-grade"><span class="n">2.11 · 风格</span><b>后期调色与氛围过渡</b>项目 Look、熔岩区示例</a></li>
+    <li><a href="#p-dcc"><span class="n">2.12 · 工具</span><b>DCC 对齐</b>OCIO 预览 +0.58 档</a></li>
+    <li><a href="#p-accept"><span class="n">2.13 · 落地</span><b>逐关卡迁移与验收</b>先等效换算，再物理重打光</a></li>
+  </ol>
+  <div class="two">
+    <div class="box"><h4>第一章：ACES 2.0</h4><p>色彩输出是整套流程的尺子。这一章对比 Filmic 和 ACES 2.0，解释切过去为什么会变灰，以及重构完成前就要切时的过渡做法。</p><p class="small"><a href="#ch1">→ 第一章</a></p></div>
+    <div class="box"><h4>第二章：全流程 PBR 重构</h4><p>从工程设置、材质规范、灯光校准、曝光与过渡、Lumen、自发光特效，到后期调色和逐关卡验收，每一节都写了为什么、怎么做、怎么验收。</p><p class="small"><a href="#ch2">→ 第二章</a></p></div>
+  </div>
+</section>
+
+<!-- ============================================================ 第一章 -->
+<div class="chapter" id="ch1">
+  <p class="ch-k">第一章</p>
+  <h2 class="ch-t">ACES 2.0：为什么切过去画面会变灰</h2>
+  <p class="ch-s">色彩输出是整套流程的“尺子”，先把它换对。这一章对比 Filmic 和 Standard ACES（ACES 2.0），拆解变灰的四个原因，并给出重构完成前的过渡做法。</p>
+</div>
+
+<section class="card" id="aces-tldr">
+  <h2>1.0 一分钟看懂</h2>
   <p class="big">切到 Standard ACES 之后，<b>整体亮度其实没变</b>：18% 中灰在两种模式下都显示为像素值 ≈ 118。变的是<b>两头和颜色</b>：暗部被抬亮、亮部被压低、颜色变淡。对比度一降，画面就“灰”了。</p>
   <div class="stats">
     <div class="stat"><div class="l">18% 中灰的像素值</div><div class="v">117.6 → 117.9</div><div class="d">Filmic → ACES 2.0 默认，几乎不变</div></div>
@@ -364,31 +489,30 @@ table.t td.nw { white-space: nowrap; }
   </ul>
   <div class="two">
     <div class="box">
-      <h4>短期：先把画面救回来</h4>
+      <h4>过渡期：重构完成前就要切</h4>
       <ul>
         <li><b>不急着切</b>：存量关卡继续用 Filmic，零成本。</li>
         <li><b>要切</b>：DefaultEngine.ini 加一行 <code>r.LUT.TonemappingSDRInvEOTF=0</code>，把编码改回 sRGB。再按需补偿：曝光 +0.1 档、全局对比度 ×1.15、饱和度 ×0.95。</li>
         <li>这样与原 Filmic 画面的平均色差能从 <b>4.8</b> 降到 <b>2.8</b>（只改编码），再降到 <b>1.8</b>（加补偿）。</li>
       </ul>
-      <p class="small"><a href="#short">→ 具体做法</a></p>
+      <p class="small"><a href="#short">→ 1.4 具体做法</a></p>
     </div>
     <div class="box">
-      <h4>长期：以 ACES 2.0 为基准重打光</h4>
+      <h4>重构后：ACES 2.0 是整套流程的基准</h4>
       <ul>
-        <li>正好配合 PBR 重打光：统一“ACES 2.0 + sRGB 编码”，建一张标定场景，用 18% 灰卡（BaseColor 0.18）把正确曝光定死。</li>
-        <li>本工程曝光锁定 ×1，PPV 的曝光补偿不生效：亮度靠灯光，主光照到灰卡上约 π lux 就是正确曝光。</li>
-        <li>自发光、特效、天空按档位重调：ACES 下亮部要多给约 1 档。</li>
-        <li>项目的 Look 用 Color Grading 预设来做；LUT 贴图在 ACES 下不生效。</li>
-        <li>DCC 预览要对齐 UE 额外乘的 ×1.5（+0.58 档）。</li>
+        <li>全项目统一“ACES 2.0 + sRGB 编码”；18% 灰卡（BaseColor 0.18）在正确曝光下显示 110。</li>
+        <li>灯光用物理单位，相机手动对准每张图的 EV100，曝光补偿只做过渡和氛围。</li>
+        <li>自发光、特效、天空按物理量级重做：ACES 下亮部要多给约 1 档，特效的黄芯要画进贴图。</li>
+        <li>项目 Look 用 Color Grading 预设；DCC 预览对齐 UE 额外的 ×1.5（+0.58 档）。</li>
       </ul>
-      <p class="small"><a href="#long">→ 完整路线</a></p>
+      <p class="small"><a href="#ch2">→ 第二章</a></p>
     </div>
   </div>
 </section>
 
 <!-- ============================================================ 先看效果 -->
 <section class="card" id="look">
-  <h2>先看效果：同一画面的四种输出</h2>
+  <h2>1.1 先看效果：同一画面的四种输出</h2>
   <p class="sub">左边是原截图（Filmic），右边可以切换三种 ACES 输出。拖动中线对比。</p>
   <div class="ctrl">
     <div><span class="lab">场景</span><span class="seg" id="cmp-scene"></span></div>
@@ -416,12 +540,12 @@ table.t td.nw { white-space: nowrap; }
 
 <!-- ============================================================ 原因 -->
 <section class="card" id="why">
-  <h2>为什么会变灰：拆成四个原因</h2>
+  <h2>1.2 为什么会变灰：拆成四个原因</h2>
   <p class="sub">一帧画面从渲染到屏幕要经过下面几步。圆圈数字标出了四个原因各自发生在哪一步。</p>
   <div class="pipe" role="img" aria-label="画面流程：场景颜色 → 曝光 → 白平衡与 Color Grading → 色调映射 → 显示编码 → 显示器">
     <div class="st"><div class="t">场景颜色</div><div class="s">光照 × 材质，HDR 线性值，可以远大于 1</div></div>
     <div class="ar" aria-hidden="true"></div>
-    <div class="st"><div class="t">曝光</div><div class="s">本工程锁定 ×1，曝光补偿不生效（见<a href="#long-3">长期方案 ③</a>）</div></div>
+    <div class="st"><div class="t">曝光</div><div class="s">改造前锁定 ×1；改造后由物理相机 + 曝光补偿决定（<a href="#p-expo">2.8</a>）</div></div>
     <div class="ar" aria-hidden="true"></div>
     <div class="st"><div class="t">白平衡 · Color Grading</div><div class="s">Global / Shadows / Midtones / Highlights，两种模式都生效</div></div>
     <div class="ar" aria-hidden="true"></div>
@@ -520,7 +644,7 @@ table.t td.nw { white-space: nowrap; }
       <tr><td>Blue Correction、Tone Curve Amount</td><td><span class="bad">不生效</span></td><td>只有插件蓝图 BP_FastStylizedProceduralSky 设置过</td></tr>
       <tr><td><code>r.Color.Min / Mid / Max</code>、显示 Gamma 微调</td><td><span class="bad">不生效</span></td><td>工程未设置</td></tr>
       <tr><td>白平衡、Color Grading（全局 / 暗部 / 中间调 / 高光）、Expand Gamut、Scene Color Tint、Bloom、暗角、颗粒、淡入淡出</td><td><span class="ok">仍生效</span></td><td>21 个改过饱和度，4 个改过对比度。参数仍然生效，但曲线变了，同样的数值视觉效果会不同</td></tr>
-      <tr><td>曝光补偿（Exposure Compensation）</td><td>与 Tonemapper 无关：本工程曝光锁定 ×1，<b>Filmic 和 ACES 下都不生效</b></td><td>27 个改过，在游戏和编辑器的主视口里都不起作用（原因和 SceneCapture 例外见<a href="#long-3">长期方案第 ③ 步</a>）</td></tr>
+      <tr><td>曝光补偿（Exposure Compensation）</td><td>与 Tonemapper 无关：改造前曝光锁定 ×1，<b>Filmic 和 ACES 下都不生效</b>；打开曝光系统后才生效</td><td>27 个改过，现在在游戏和编辑器的主视口里都不起作用（原因和 SceneCapture 例外见 <a href="#p-audit">2.3</a>）；打开曝光系统时由旧图兼容预设统一覆盖（<a href="#p-config">2.4</a>）</td></tr>
     </tbody>
   </table></div>
   <div class="note warn"><span class="lab">注意</span>
@@ -537,13 +661,40 @@ table.t td.nw { white-space: nowrap; }
   <p>在<b>暗场景</b>（地牢）里，编码一项就占了约 72% 的差异（5.0 → 1.4）。在<b>强光特效场景</b>（选角）里，编码只占约 37%（5.2 → 3.2），剩下的主要来自曲线和颜色。色卡几乎全是中间调和亮色，所以改编码帮助很小（4.4 → 4.1），要靠补偿（→ 2.3）。剩下的差异是 ACES 2.0 本来的样子：更多高光层次、颜色不跑偏。这部分不需要、也不应该完全“修”回去。</p>
 </section>
 
-<!-- ============================================================ 短期 -->
+<!-- ============================================================ 优劣 -->
+<section class="card" id="versus">
+  <h2>1.3 Filmic vs ACES 2.0：优劣对比（美术版）</h2>
+  <p class="sub">一句话：<b>Filmic 像“自带滤镜的相机”</b>，好看、省事，但亮部会偏色、层次少。<b>ACES 2.0 像“原片”</b>，干净、准确、高光层次多，但要自己调出风格。</p>
+  <div class="scroll"><table class="t vs stack">
+    <thead><tr><th>维度</th><th>Filmic（UE4 以来的默认）</th><th>ACES 2.0（Standard ACES）</th></tr></thead>
+    <tbody>
+      <tr><td>中间调对比</td><td><span class="ok">高</span>：中灰附近每档 51.5 个像素值，画面“实”，出片快</td><td>低约 27%（每档 37.5）：默认偏平，需要自己加对比</td></tr>
+      <tr><td>暗部</td><td><span class="ok">干净</span>，压得住</td><td><span class="bad">默认发灰</span>：UE 默认的 BT.1886 编码在普通屏幕上把暗部抬亮；改成 sRGB 编码后与 Filmic 接近</td></tr>
+      <tr><td>高光</td><td><span class="bad">容易糊白</span>：+5.2 档（中灰的 37 倍）就到 99% 白，强光、火焰、天空亮部层次少</td><td><span class="ok">层次多</span>：+7.0 档（中灰的 128 倍）才到 99% 白，过渡到白更自然</td></tr>
+      <tr><td>色相</td><td><span class="bad">越亮越偏</span>：火焰橙→黄 47°、魔法蓝→青 38°、血红→橙 17°</td><td><span class="ok">保色相</span>（≤ 5°）：亮了是“变白”，不是“变色”</td></tr>
+      <tr><td>饱和度</td><td>中等亮度更艳（色卡平均彩度 12.3）</td><td>正确曝光下淡一些（10.6，−14%）；很亮的颜色反而比 Filmic 更保色</td></tr>
+      <tr><td>可调性</td><td><span class="ok">曲线可调</span>：Film Slope / Toe / Shoulder / Clip、LUT 贴图、Blue Correction</td><td><span class="bad">曲线固定</span>：只能在曲线前用曝光和 Color Grading 调，LUT 贴图不生效</td></tr>
+      <tr><td>SDR / HDR 一致性</td><td>一般：HDR 是从 SDR 结果反推再扩展</td><td><span class="ok">一致</span>：同一曲线家族，按屏幕峰值自动适配</td></tr>
+      <tr><td>行业标准 / 工具链</td><td>UE 私有曲线，DCC 里没法用同一标准预览</td><td><span class="ok">行业标准</span>：ACES 2.0 / OpenColorIO，DCC、影视、外包流程可以对齐（注意 UE 额外的 ×1.5）</td></tr>
+      <tr><td>迁移成本</td><td><span class="ok">零</span>：现有美术都是在它下面调的</td><td>需要重新校准灯光、自发光、特效、调色，正好和第二章的 PBR 重构一起做</td></tr>
+      <tr><td>运行时性能</td><td colspan="2">相同：两者都烘焙成 3D LUT，每帧只查表；LUT 只在参数变化时重算（ACES 2.0 重算稍贵，但不是每帧）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="two">
+    <div class="box"><h4>适合继续用 Filmic 的情况</h4><ul>
+      <li>存量关卡，没有重打光计划</li><li>依赖 LUT 贴图或 Film 参数做出的强风格化画面</li><li>上线时间紧，没有精力回归</li></ul></div>
+    <div class="box"><h4>适合切到 ACES 2.0 的情况</h4><ul>
+      <li>按 PBR 重构的关卡（本文第二章）</li><li>强光、火焰、魔法特效多，Filmic 下经常糊白、跑色</li><li>以后要支持 HDR 屏幕，或者要和 DCC、预渲染 CG 对齐</li></ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ 过渡期 -->
 <section class="card" id="short">
-  <h2>短期方案：不重做美术，先把画面救回来</h2>
-  <p class="sub">目标：在 PBR 重打光完成之前，既可以继续用 Filmic，也可以先切 ACES 而不让画面变灰。</p>
+  <h2>1.4 过渡期：重构完成前就要切 ACES 怎么办</h2>
+  <p class="sub">目标：在第二章的 PBR 重构完成之前，既可以继续用 Filmic，也可以先切 ACES 而不让画面变灰。重构开始后，这一节的曝光补偿就不再需要，曝光改由物理相机决定。</p>
   <ol class="steps">
     <li><b>先决定要不要现在切</b>
-      存量关卡的灯光、材质、特效都是在 Filmic 下调的，<b>继续用 Filmic 是零成本、零风险的选择</b>。建议只在新做或重打光的关卡里用 ACES，旧关卡等重打光时再切。下面的 2–5 步是“必须现在切”时的做法。</li>
+      存量关卡的灯光、材质、特效都是在 Filmic 下调的，<b>继续用 Filmic 是零成本、零风险的选择</b>。建议只在新做或按第二章重构的关卡里用 ACES，旧关卡等重构时再切。下面的 2–5 步是“必须现在切”时的做法。</li>
     <li><b>必做：把输出编码改回 sRGB</b>
       解决“暗部发灰”这个最大的问题，只影响 Standard ACES，Filmic 不受影响：
 <pre class="code"><button class="copy" type="button">复制</button>; Config/DefaultEngine.ini
@@ -556,7 +707,7 @@ r.LUT.TonemappingSDRInvEOTF=0</pre>
       <div class="scroll"><table class="t stack">
         <thead><tr><th>参数</th><th>在哪里改</th><th class="num">值</th><th>作用</th></tr></thead>
         <tbody>
-          <tr><td class="nw">曝光</td><td><code>r.HDR.Aces.SceneColorMultiplier=1.6</code>（默认 1.5，只影响 ACES）；或者 PPV → Color Grading → Global → Gain 填 ×1.07。PPV 的 Exposure Compensation 在本工程不生效，别用它</td><td class="num">+0.1 档</td><td>中灰对齐 Filmic</td></tr>
+          <tr><td class="nw">曝光</td><td><code>r.HDR.Aces.SceneColorMultiplier=1.6</code>（默认 1.5，只影响 ACES）；或者 PPV → Color Grading → Global → Gain 填 ×1.07。曝光系统打开之前（<a href="#p-config">2.4</a>），PPV 的 Exposure Compensation 不生效，别用它</td><td class="num">+0.1 档</td><td>中灰对齐 Filmic</td></tr>
           <tr><td class="nw">对比度</td><td>PPV → Color Grading → Global → Contrast（亮度 Y 那一项）</td><td class="num">×1.15</td><td>补回中间调对比度和亮部</td></tr>
           <tr><td class="nw">饱和度</td><td>PPV → Color Grading → Global → Saturation（Y）</td><td class="num">×0.95</td><td>对比度加上去后饱和度会略高，轻微回收</td></tr>
         </tbody>
@@ -586,372 +737,720 @@ r.LUT.TonemappingSDRInvEOTF -1    <span class="c">// 恢复：跟随默认规则
   </ol>
 </section>
 
-<!-- ============================================================ 长期 -->
-<section class="card" id="long">
-  <h2>长期方案：以 ACES 2.0 为基准的 PBR 重打光</h2>
-  <p class="sub">既然美术效果本来就要按 PBR 重新打光，这是切到 ACES 2.0 最合适的时机。目标是让“美术在屏幕上看到的”和“物理上应该是的”一致，再在上面叠项目自己的风格。和灯光、曝光有关的步骤（②③④⑤⑦⑨）都配了图解和逐步操作。</p>
+<!-- ============================================================ 第二章 -->
+<div class="chapter" id="ch2">
+  <p class="ch-k">第二章</p>
+  <h2 class="ch-t">全流程 PBR 重构：从灯光校准到后期调色</h2>
+  <p class="ch-s">按下面的顺序做：先定标准、改工程设置，再用标定场景校准灯光和曝光，然后调 Lumen、自发光和特效，最后才是调色与氛围过渡，逐关卡迁移验收。每一节都写了“为什么、怎么做、怎么验收”。</p>
+</div>
 
+<!-- ---------------------------------------------------------- 2.1 目标与原则 -->
+<section class="card" id="p-goal">
+  <h2>2.1 目标与原则</h2>
+  <p class="sub">让“美术在屏幕上看到的”和“物理上应该是的”一致，再在上面叠项目自己的风格。</p>
   <div class="stats">
     <div class="stat"><div class="l">18% 灰卡的 BaseColor</div><div class="v">0.18</div><div class="d">= PS 里的 118 / #767676。UE 里填的是线性值</div></div>
-    <div class="stat"><div class="l">本工程的正确曝光</div><div class="v">π lux</div><div class="d">主光照到灰卡上约 3.14 lux。曝光锁定 ×1，亮度全靠灯光</div></div>
+    <div class="stat"><div class="l">正确曝光的 EV100</div><div class="v">log₂(E÷π)</div><div class="d">E = 主光照到灰卡上的照度（lux）。晴天 10 万 lux ≈ EV100 15</div></div>
     <div class="stat"><div class="l">正确曝光下灰卡的屏幕像素值</div><div class="v">110</div><div class="d">ACES 2.0 + sRGB 编码；Filmic 是 118</div></div>
     <div class="stat"><div class="l">被主光照亮的材质占几档</div><div class="v">−2.5 ~ +2.3</div><div class="d">BaseColor 0.032–0.87。再亮只能是光源、自发光、高光</div></div>
   </div>
-  <p class="small muted">一句话：<b>先标定，再创作。</b>用灰卡把“正确曝光”定死，让所有材质、灯光、特效在同一把尺子上比较；每张图想要的明暗气氛（“正常曝光”）写成“相对正确曝光 ±几档”。</p>
+  <div class="two">
+    <div class="box"><h4>四条原则</h4><ol>
+      <li><b>先标定，再创作。</b>用灰卡把“正确曝光”定死，所有材质、灯光、特效在同一把尺子上比较；每张图想要的明暗（“正常曝光”）写成“相对正确曝光 ±几档”。</li>
+      <li><b>各管各的。</b>BaseColor 按真实反射率定；灯光按物理量定；相机按测光定（正确曝光）；曝光补偿只做过渡和创作偏移（正常曝光）；调色只做风格。</li>
+      <li><b>相对物理。</b>太阳、天空、月亮用天空大气的真实值；火盆、法阵等人工光可以比真实的亮，但同类灯全项目统一，光比保持真实。</li>
+      <li><b>能物理就别伪造。</b>熔岩区要暖，先加熔岩自发光和暖光，让 Lumen 算出真实的反光，再用调色加强，而不是把整屏染橙。</li>
+    </ol></div>
+    <div class="box"><h4>画面从光到屏幕要经过的环节</h4>
+      <div class="chain">
+        <span>灯光（lux / 流明）</span><i>×</i><span>BaseColor</span><i>÷ π</i><span>场景亮度（尼特）</span><i>×</i><span>曝光（物理相机 + 曝光补偿）</span><i>→</i><span>白平衡 · 调色</span><i>→</i><span>ACES 2.0</span><i>→</i><span>sRGB 编码 → 屏幕</span>
+      </div>
+      <p class="small">每个环节只做自己的事：曝光之前的数都是物理量，可以用 Pixel Inspector 读出来核对；曝光之后才是“好不好看”的问题。</p>
+    </div>
+  </div>
+</section>
 
-  <!-- ---------------------------------------------------------- 动手实验 -->
-  <h3 id="lab"><span class="badge">▶</span>先动手：4 个小实验，从操作反推原理</h3>
-  <p>不需要摄影基础，在一张空关卡里 10 分钟就能做完；后面所有规范都能和这几个读数对上。实验统一用 ACES 2.0 + sRGB 编码（控制台 <code>r.LUT.TonemappingMethod 1</code>、<code>r.LUT.TonemappingSDRInvEOTF 0</code>），并临时关掉工程默认的局部曝光（<code>r.DefaultFeature.LocalExposure.HighlightContrastScale 1</code>、<code>r.DefaultFeature.LocalExposure.ShadowContrastScale 1</code>，原因见第 ③ 步），读到的数才和下面一致。</p>
+<!-- ---------------------------------------------------------- 2.2 动手实验 -->
+<section class="card" id="lab">
+  <h2>2.2 先动手：4 个小实验，从操作反推原理</h2>
+  <p class="sub">不需要摄影基础，在一张空关卡里 10 分钟就能做完；后面所有规范都能和这几个读数对上。</p>
+  <p class="small">实验 2–4 需要曝光系统已经打开（<a href="#p-config">2.4</a> 改完工程设置；临时验证可以在控制台输入 <code>r.EyeAdaptationQuality 2</code>）。统一用 ACES 2.0 + sRGB 编码（<code>r.LUT.TonemappingMethod 1</code>、<code>r.LUT.TonemappingSDRInvEOTF 0</code>），并临时关掉工程默认的局部曝光（<code>r.DefaultFeature.LocalExposure.HighlightContrastScale 1</code>、<code>r.DefaultFeature.LocalExposure.ShadowContrastScale 1</code>，原因见 <a href="#p-lookdev">2.6</a>），读到的数才和下面一致。</p>
   <div class="labs">
     <div class="labx">
       <p class="labx-h"><span class="badge sm">1</span>18% 灰卡在 UE 里是哪个数</p>
       <div class="labx-r"><span class="k">做</span><div>新建材质，BaseColor 接一个 Constant3Vector，双击打开取色器，在 <b>Hex sRGB</b> 框里输入 <code>767676</code> 回车。</div></div>
       <div class="labx-r"><span class="k">看</span><div>R、G、B 三个数值框都变成 <b>0.18</b>。再输入 <code>808080</code>（PS 里正中间的 128），数值变成 0.216。</div></div>
-      <div class="labx-r"><span class="k">为什么</span><div>取色器的 R、G、B 数值框是<b>线性值</b>：表面把多少比例的光反射回去，0.18 就是 18%。Hex sRGB 和 PS 的 0–255 是给眼睛看的编码，暗部分得细、亮部分得粗，所以 118 才对应 18%。常见坑：把 PS 的 118 直接 ÷255，填成 0.463，等于反射 46% 的光，亮了约 +1.4 档。</div></div>
+      <div class="labx-r"><span class="k">为什么</span><div>取色器的 R、G、B 数值框是<b>线性值</b>：表面把多少比例的光反射回去，0.18 就是 18%。Hex sRGB 和 PS 的 0–255 是给眼睛看的编码，暗部分得细、亮部分得粗，所以 118 才对应 18%。常见坑：把 PS 的 118 直接 ÷255 填成 0.463，等于反射 46% 的光，亮了约 +1.4 档。</div></div>
     </div>
     <div class="labx">
-      <p class="labx-h"><span class="badge sm">2</span>把灰卡放到灯下，读出“正确曝光”</p>
-      <div class="labx-r"><span class="k">做</span><div>空关卡里只放一盏平行光（不要天光、天空大气、雾），旋转成垂直向下，强度 <b>3.14 lux</b>；下面放一块水平的平面，用实验 1 的材质（Metallic 0、Specular 0、Roughness 1）。打开 Tools → Debug → Pixel Inspector，点 Start Pixel Inspector，鼠标移到平面上。</div></div>
-      <div class="labx-r"><span class="k">看</span><div>Scene Color Before Tonemap ≈ <b>0.18</b>，PreExposure = 1；Final Color ≈ <b>0.157</b>（这是线性值，换成屏幕像素值就是 110）。</div></div>
-      <div class="labx-r"><span class="k">为什么</span><div>漫反射表面的亮度 = BaseColor × 照度 ÷ π = 0.18 × 3.14 ÷ 3.14 = 0.18。本工程曝光锁定 ×1，这个值原封不动进入色调映射。所以在本工程，“主光照到灰卡上约 π lux”就是<b>正确曝光</b>：此时任何正对主光的表面，Scene Color 读数都约等于它自己的 BaseColor。</div></div>
+      <p class="labx-h"><span class="badge sm">2</span>晴天 16 法则：用物理相机读出“正确曝光”</p>
+      <div class="labx-r"><span class="k">做</span><div>空关卡里放一盏平行光（不要天空大气、天光、雾），旋转成垂直向下，强度 <b>100000 lux</b>；下面放一块水平平面，用实验 1 的材质（Metallic 0、Specular 0、Roughness 1）。放一个 Unbound 的 PPV：Metering Mode = <b>Manual</b>、勾 <b>Apply Physical Camera Exposure</b>、Shutter Speed <b>125</b>、ISO <b>100</b>、Aperture <b>16</b>、Exposure Compensation <b>0</b>。用 Tools → Debug → Pixel Inspector 指向平面。</div></div>
+      <div class="labx-r"><span class="k">看</span><div>Scene Color Before Tonemap ≈ <b>5730</b>（尼特，cd/m²）；PreExposure ≈ <b>3.1×10⁻⁵</b>；两者相乘 ≈ <b>0.179</b>。Final Color ≈ 0.156（线性值，换成屏幕像素值就是 110）。</div></div>
+      <div class="labx-r"><span class="k">为什么</span><div>灰卡亮度 = 0.18 × 100000 ÷ π ≈ 5730 尼特。相机 EV100 = log₂(16² × 125 × 100 ÷ 100) ≈ 14.97，曝光 = 1 ÷ 2<sup>EV100</sup>，正好把灰卡压回 0.18 附近。摄影里“晴天用 f/16、快门 1/ISO”的老规矩在 UE 里同样成立——这说明 UE 的物理相机和真实相机是同一套标定，真实世界的灯光数据可以直接拿来用。</div></div>
     </div>
     <div class="labx">
-      <p class="labx-h"><span class="badge sm">3</span>灯光翻倍，还是 BaseColor 翻倍</p>
-      <div class="labx-r"><span class="k">做</span><div>把平行光改成 6.28 lux，读一次；改回 3.14，再把 BaseColor 改成 0.36，读一次。</div></div>
-      <div class="labx-r"><span class="k">看</span><div>两次 Scene Color 都是 0.36（亮了 1 档），屏幕都是 148，画面完全一样。</div></div>
-      <div class="labx-r"><span class="k">为什么</span><div>画面只认“BaseColor × 光”的乘积，同一个画面可以有无数种组合。材质组随手调 BaseColor、灯光组随手调强度，换一个场景就对不上。所以规范是：<b>BaseColor 按真实反射率定死（第 ④ 步），亮暗只用灯光来调</b>。</div></div>
+      <p class="labx-h"><span class="badge sm">3</span>曝光的三个旋钮：灯光、相机、曝光补偿</p>
+      <div class="labx-r"><span class="k">做</span><div>在实验 2 的基础上分别试：快门改成 <b>250</b>；或者曝光补偿改成 <b>+1</b>；或者太阳改成 <b>200000 lux</b>。每次读完改回去。</div></div>
+      <div class="labx-r"><span class="k">看</span><div>快门 250：灰卡屏幕值 110 → 75（暗 1 档）。曝光补偿 +1 或太阳翻倍：→ 148（亮 1 档），两种做法画面完全一样。</div></div>
+      <div class="labx-r"><span class="k">为什么</span><div>画面只认“灯光 × BaseColor × 曝光”的乘积，同一个画面有无数种组合。所以要规定谁管什么：BaseColor 按真实反射率（<a href="#p-mat">2.5</a>），灯光按物理量（<a href="#p-light">2.7</a>），相机按测光（正确曝光），曝光补偿只做过渡和氛围（正常曝光，<a href="#p-expo">2.8</a>）。否则换一个场景，大家调出来的东西就对不上。</div></div>
     </div>
     <div class="labx">
       <p class="labx-h"><span class="badge sm">4</span>同一个场景值，换两种 Tonemapper</p>
       <div class="labx-r"><span class="k">做</span><div>在灰卡旁边放一块白卡（BaseColor 0.87，PS 240）。控制台切 <code>r.LUT.TonemappingMethod 0</code>（Filmic）和 <code>1</code>（ACES），分别读两块卡。</div></div>
-      <div class="labx-r"><span class="k">看</span><div>Scene Color 不变（0.18 / 0.87）。Final Color：灰卡 0.180 → 0.157，白卡 0.69 → 0.53；换成屏幕像素值是灰卡 118 → 110，白卡 216 → 192。</div></div>
-      <div class="labx-r"><span class="k">为什么</span><div>色调映射只改变“场景值 → 屏幕像素值”这一步翻译，不改变场景。ACES 给高光留的空间更多，所以同一块白卡显示得更暗。这不是材质错了，不要靠把 BaseColor 调到 255 来补（1.0 也只到 198）。</div></div>
+      <div class="labx-r"><span class="k">看</span><div>Scene Color 不变。屏幕像素值：灰卡 118 → 110，白卡 216 → 192（Final Color 线性值：灰卡 0.180 → 0.157，白卡 0.69 → 0.53）。</div></div>
+      <div class="labx-r"><span class="k">为什么</span><div>色调映射只改变“曝光后的场景值 → 屏幕像素值”这一步翻译。ACES 给高光留的空间更多，所以同一块白卡显示得更暗。这不是材质错了，不要靠把 BaseColor 调到 255 来补（1.0 也只到 198）。</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 2.3 现状盘点与决策 -->
+<section class="card" id="p-audit">
+  <h2>2.3 现状盘点与决策（开工前一次性）</h2>
+  <p class="sub">先弄清楚现在的工程和目标差在哪里，再把需要拍板的事情一次定下来，写进项目的画面标准文档。</p>
+  <h4>现状：工程的曝光现在是锁死的</h4>
+  <div class="note warn"><span class="lab">源码核实</span>
+    工程在所有画质档位都设了 <code>r.EyeAdaptationQuality=0</code>（DefaultScalability.ini，以及 PC / Android / IOS / Emulator 各自的 Scalability.ini）。它不只是关掉自动曝光：引擎会把 EyeAdaptation 显示标志一起关掉，曝光计算走“全部置 1”的分支，<b>曝光锁定 ×1，PPV 里的 Exposure Compensation 和物理相机都不参与计算</b>（源码见附录 A2）。全工程有 83 个包（正式内容 27 个）设置过 Exposure Compensation，这些值在游戏和编辑器的主视口里都不起作用，UE4.26 的老工程也一样。
+    <p class="small" style="margin:8px 0 0">换成物理相机的说法：现在相当于一台固定在 EV100 = 0 的相机，主光照到灰卡上约 π（3.14）lux 时才是正确曝光，比真实晴天暗了约 15 档。所以<b>现有关卡的灯光数值不能直接搬进新流程</b>，重打光时按 <a href="#p-light">2.7</a> 重新定。例外：SceneCapture（UI 里的 3D 角色展示、头像常用它）不走这个开关，它的曝光一直按捕获组件和 PPV 的设置计算。</p>
+  </div>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>项目</th><th>现在（扫描 2026-10-27）</th><th>改造后</th></tr></thead>
+    <tbody>
+      <tr><td>色调映射</td><td>Filmic；正式内容里 3 张图改过 Film 参数、1 张用 LUT 贴图，2 张图存成了 ACES</td><td>Standard ACES（ACES 2.0）+ sRGB 编码</td></tr>
+      <tr><td>曝光</td><td>锁定 ×1；正式内容里 11 个包改过测光方式、6 个改过 Apply Physical Camera Exposure（现在都不生效）</td><td>手动 + 物理相机；曝光补偿做过渡和创作偏移</td></tr>
+      <tr><td>天空</td><td>天空大气只在 2 张正式地图里用到；高度雾、天光分别出现在 274 个、338 个包里；体积云、Local Fog Volume 都没有用到</td><td>天空大气 + 实时捕获天光（可选体积云）；区域雾用 Local Fog Volume</td></tr>
+      <tr><td>局部曝光</td><td>项目默认高光、暗部对比都是 0.8，没有地图改过</td><td>保留，作为 Look 的一部分；标定时临时关掉</td></tr>
+      <tr><td>灯光单位</td><td>点光、聚光、矩形光默认流明（<code>r.DefaultFeature.LightUnits=2</code>）</td><td>不变；聚光灯建议改用坎德拉（强度不随锥角变）</td></tr>
+      <tr><td>GI / 阴影</td><td>Lumen GI + 反射、MegaLights、虚拟阴影贴图、距离场，可用硬件光追</td><td>不变；把缓存光照的曝光范围调大（<a href="#p-lumen">2.9</a>）</td></tr>
+    </tbody>
+  </table></div>
+  <h4>需要拍板的事（写进画面标准文档）</h4>
+  <ul>
+    <li><b>输出</b>：ACES 2.0 + sRGB；<code>r.HDR.Aces.SceneColorMultiplier</code> 保留默认 1.5（DCC 对齐方式见 <a href="#p-dcc">2.12</a>）。</li>
+    <li><b>相机</b>：ISO 固定 100，光圈固定一个值（建议 f/4，玩法镜头不用景深时随便定，但全项目统一），用快门定每张图的基准 EV100。</li>
+    <li><b>每类场景的基准 EV100 和光比</b>：见 <a href="#p-light">2.7</a> 的建议表，按美术方向修改后定稿。</li>
+    <li><b>“相对物理”的边界</b>：哪些光必须按真实值（太阳、天空、月亮），哪些可以提亮（火盆、法阵、补光），提亮的上限是多少档。</li>
+    <li><b>自发光分类</b>：发光体用绝对亮度，玩法提示类跟着曝光走（<a href="#p-fx">2.10</a>）。</li>
+    <li><b>平台</b>：本流程先覆盖 PC 画质；移动端没有 Lumen，GI 方案另定，但曝光、色调映射、天空大气用同一套。</li>
+  </ul>
+</section>
+
+<!-- ---------------------------------------------------------- 2.4 工程设置切换 -->
+<section class="card" id="p-config">
+  <h2>2.4 工程设置切换（一次性，在分支上做）</h2>
+  <p class="sub">把曝光系统打开、默认测光改成手动，再给还没迁移的旧图套一个兼容预设，保证切换当天所有旧图画面不变。</p>
+  <h4>① 改配置</h4>
+<pre class="code"><button class="copy" type="button">复制</button><span class="c">; Config/DefaultScalability.ini，以及 Config/PC、Android、IOS、Emulator 下各自的 *Scalability.ini：每个 [PostProcessQuality@N] 都改</span>
+r.EyeAdaptationQuality=2
+<span class="c">; UEChecker 会核对这个值，它的模板配置也要一起改</span>
+
+<span class="c">; Config/DefaultEngine.ini</span>
+[/Script/Engine.RendererSettings]
+r.DefaultFeature.AutoExposure.Method=2          <span class="c">; 默认测光方式 = Manual（不用自动曝光）</span>
+r.DefaultFeature.AutoExposure.Bias=0            <span class="c">; 默认曝光补偿 0（引擎默认是 1，会让所有图亮 1 档）</span>
+r.EyeAdaptation.CachedLightingPreExposure=8     <span class="c">; Lumen 等缓存光照覆盖曝光 −4 ~ +16 档（默认 4 只到 +12，晴天会超）</span>
+r.LUT.TonemappingSDRInvEOTF=0                   <span class="c">; ACES 用 sRGB 编码（第一章 1.4）</span>
+<span class="c">; 已有，保持：r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange=True（曝光参数用 EV100 单位）</span></pre>
+  <h4>② 旧图兼容预设：保证没迁移的图画面不变</h4>
+  <p>打开曝光系统后，引擎默认的物理相机是 f/4、1/60 秒、ISO 100（EV100 ≈ 9.9），旧图的灯光是按 ×1 调的，会一下子暗约 10 档。所以每张还没迁移的图，在全局 PPV 上套这个预设（没有全局 PPV 的图要补一个）；图里其它 PPV 如果存过 Exposure Compensation、测光方式或物理相机开关（正式内容里分别有 27 / 11 / 6 个包，见 <a href="#p-audit">2.3</a>），一并取消勾选，否则打开后会突然生效。这些都可以用编辑器 Python 脚本批量处理：</p>
+  <div class="scroll"><table class="t">
+    <thead><tr><th>参数（PPV → Lens → Exposure）</th><th>旧图兼容预设</th><th>迁移后的图（物理）</th></tr></thead>
+    <tbody>
+      <tr><td>Metering Mode</td><td>Manual</td><td>Manual</td></tr>
+      <tr><td>Apply Physical Camera Exposure</td><td>关</td><td>开</td></tr>
+      <tr><td>Exposure Compensation</td><td>0（覆盖旧图里存的值）</td><td>0；区域 PPV 用它做过渡</td></tr>
+      <tr><td>Camera：Shutter / ISO / Aperture</td><td>不用</td><td>按基准 EV100 定（<a href="#p-expo">2.8</a>）</td></tr>
+      <tr><td>结果</td><td>曝光 = 2<sup>0</sup> = ×1，和现在完全一样</td><td>曝光 = 2<sup>补偿 − EV100</sup></td></tr>
+    </tbody>
+  </table></div>
+  <h4>③ 切换当天的检查</h4>
+  <ul>
+    <li>随机抽 10 张旧图，固定机位截图和切换前对比，像素级一致；Pixel Inspector 的 PreExposure 显示 1。</li>
+    <li>SceneCapture（UI 角色展示、头像）切换前后各截一张：它们的曝光由捕获组件和场景里的 PPV 决定，默认测光方式改成 Manual 后也可能变化。</li>
+    <li>过场的 Cine Camera：只要开了对焦或曝光，就会把自己的光圈写进物理相机，光圈从 f/4 改到 f/2 会亮 2 档。过场要么统一光圈，要么在相机的后处理里用快门 / ISO 补回来。</li>
+  </ul>
+  <h4>④ 美术显示器</h4>
+  <p>编辑器视口、PIE、打包包体统一用 ACES 2.0 + sRGB 编码；美术的显示器统一校准到 sRGB（Gamma 2.2、D65 白点）。移动端走的是同一套 LUT 生成代码，结论通用。</p>
+  <div class="blacktest" role="img" aria-label="暗部分辨测试：像素值 0、8、16、24、32、48 的六个色块">
+    <span style="background:#000">0</span><span style="background:#080808">8</span><span style="background:#101010">16</span><span style="background:#181818">24</span><span style="background:#202020">32</span><span style="background:#303030">48</span>
+  </div>
+  <p class="small muted">显示器自检：正常亮度下应该能分清 8 和 16 两块；连 16 和 24 都分不清，说明屏幕偏暗或对比度太高，照着它打的暗部会偏亮。</p>
+</section>
+
+<!-- ---------------------------------------------------------- 2.5 材质规范 -->
+<section class="card" id="p-mat">
+  <h2>2.5 材质规范：BaseColor 按真实反射率定死</h2>
+  <p class="sub">一句话：<b>BaseColor 用 UE 的线性值思考，按真实材质定死。</b>标定场景里的灰卡、白卡、黑卡也按这里的规范做。</p>
+  <p class="small muted">BaseColor 的规范和曝光、灯光都无关：物理相机打开前后不用改，材质组现在就可以按这一节开工。</p>
+  <h4>同一个颜色的两种写法：UE 的线性值 vs PS 的 sRGB 值</h4>
+  <div class="chart" id="chart-ruler">
+    <p class="fig-title">BaseColor 对照尺</p>
+    <p class="fig-sub">上排是 PS / Substance 里的 sRGB 值（0–255），下排是同一个位置在 UE 里要填的线性值。斜线区是非金属不该用的范围；下方蓝色三角标的是 UE 官方文档给的真实材质实测值。</p>
+  </div>
+  <ul>
+    <li><b>UE 的 0.18 = PS 的 118</b>（18% 灰卡）；<b>UE 的 0.5 = PS 的 188</b>，不是 128；PS 的 128 在 UE 里是 0.216。</li>
+    <li>线性值和光的能量成正比，所以 UE 里“0.36 正好比 0.18 亮 1 档”；sRGB 值是按眼睛的感觉排的，PS 里 118 → 236 并不是亮 1 档。</li>
+  </ul>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>在哪里</th><th>看到 / 填的是</th><th>怎么做</th></tr></thead>
+    <tbody>
+      <tr><td>PS、Substance 的拾色器、贴图像素</td><td>sRGB 值（0–255 / Hex）</td><td>按下面的安全范围画，存成普通 8 bit 贴图。</td></tr>
+      <tr><td>UE 取色器的 R、G、B 数值框</td><td>线性值（BaseColor 实际用的数）</td><td>直接填线性值；或把 PS 的 Hex 粘贴到 <b>Hex sRGB</b> 框，UE 自动换算（源码用的就是 sRGB 公式）。</td></tr>
+      <tr><td>材质里的 Constant3Vector、VectorParameter</td><td>线性值</td><td><b>不要</b>把 PS 的 0–255 直接 ÷255 填进去：118 ÷ 255 = 0.463，亮了约 +1.4 档。</td></tr>
+      <tr><td>BaseColor 贴图</td><td>贴图里存 sRGB 值，采样时自动转成线性值</td><td>贴图设置里的 <b>sRGB 要勾上</b>（颜色贴图默认就是勾上的）。</td></tr>
+      <tr><td>粗糙度、金属度、AO、遮罩贴图</td><td>贴图里存的就是数据本身</td><td><b>sRGB 不勾</b>，压缩设置选 Masks (no sRGB)。勾错了，0.5 的粗糙度会被当成 0.21。</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>非金属 Albedo 的安全范围（图解）</h4>
+  <p>下面是 UE 官方文档《基于物理的材质》给的实测 BaseColor（只给了亮度），加上本文的 18% 灰卡做参照。每块写着 UE 里填的线性值和对应的 PS 值：</p>
+  <div class="sws"><div class="sw"><span class="chip" style="background:#272727"></span><b>木炭</b><span class="v">UE <b>0.02</b></span><span class="v">PS 39 · #272727</span></div><div class="sw"><span class="chip" style="background:#272727"></span><b>新沥青</b><span class="v">UE <b>0.02</b></span><span class="v">PS 39 · #272727</span></div><div class="sw"><span class="chip" style="background:#505050"></span><b>旧沥青</b><span class="v">UE <b>0.08</b></span><span class="v">PS 80 · #505050</span></div><div class="sw"><span class="chip" style="background:#656565"></span><b>裸土</b><span class="v">UE <b>0.13</b></span><span class="v">PS 101 · #656565</span></div><div class="sw ref"><span class="chip" style="background:#767676"></span><b>18% 灰卡</b><span class="v">UE <b>0.18</b></span><span class="v">PS 118 · #767676</span><span class="v tag">基准</span></div><div class="sw"><span class="chip" style="background:#7E7E7E"></span><b>绿草</b><span class="v">UE <b>0.21</b></span><span class="v">PS 126 · #7E7E7E</span></div><div class="sw"><span class="chip" style="background:#A2A2A2"></span><b>沙漠沙</b><span class="v">UE <b>0.36</b></span><span class="v">PS 162 · #A2A2A2</span></div><div class="sw"><span class="chip" style="background:#BDBDBD"></span><b>新混凝土</b><span class="v">UE <b>0.51</b></span><span class="v">PS 189 · #BDBDBD</span></div><div class="sw"><span class="chip" style="background:#C5C5C5"></span><b>海冰</b><span class="v">UE <b>0.56</b></span><span class="v">PS 197 · #C5C5C5</span></div><div class="sw"><span class="chip" style="background:#E8E8E8"></span><b>新雪</b><span class="v">UE <b>0.81</b></span><span class="v">PS 232 · #E8E8E8</span></div></div>
+  <ul class="dos">
+    <li><span class="bad"></span><b>不要纯黑</b>（0 / #000000）：现实里最黑的木炭、新沥青也有 0.02（PS 39）。一般不低于 <b>PS 50（UE 0.032）</b>，最多放宽到 PS 30（UE 0.013）。</li>
+    <li><span class="bad"></span><b>不要纯白</b>（255 / #FFFFFF）：新雪才 0.81（PS 232）。非金属上限 <b>PS 240（UE 0.87）</b>。</li>
+    <li><span class="bad"></span><b>不要纯饱和</b>（比如 255, 0, 0）：真实的红漆是 175, 54, 60（色卡“红”）。颜色可以艳，但别超过下面色卡里最艳的那几块。</li>
+    <li><span class="ok"></span>这条范围是 Substance《PBR Guide》给的：非金属 sRGB 30–50 到 240，金属反射值 180–255。</li>
+  </ul>
+
+  <h4>彩色材质参考：ColorChecker 24 色卡</h4>
+  <p>每块都是真实颜料的颜色，日常物体的饱和度很少超过它们；肤色、植物、天空都有对应的色块，可以直接拿来当参照：</p>
+  <div class="ccgrid"><div class="cc"><span class="chip" style="background:#735244"></span><span>深肤色</span></div><div class="cc"><span class="chip" style="background:#C29682"></span><span>浅肤色</span></div><div class="cc"><span class="chip" style="background:#627A9D"></span><span>天空蓝</span></div><div class="cc"><span class="chip" style="background:#576C43"></span><span>植物绿</span></div><div class="cc"><span class="chip" style="background:#8580B1"></span><span>蓝花</span></div><div class="cc"><span class="chip" style="background:#67BDAA"></span><span>蓝绿</span></div><div class="cc"><span class="chip" style="background:#D67E2C"></span><span>橙</span></div><div class="cc"><span class="chip" style="background:#505BA6"></span><span>紫蓝</span></div><div class="cc"><span class="chip" style="background:#C15A63"></span><span>中红</span></div><div class="cc"><span class="chip" style="background:#5E3C6C"></span><span>紫</span></div><div class="cc"><span class="chip" style="background:#9DBC40"></span><span>黄绿</span></div><div class="cc"><span class="chip" style="background:#E0A32E"></span><span>橙黄</span></div><div class="cc"><span class="chip" style="background:#383D96"></span><span>蓝</span></div><div class="cc"><span class="chip" style="background:#469449"></span><span>绿</span></div><div class="cc"><span class="chip" style="background:#AF363C"></span><span>红</span></div><div class="cc"><span class="chip" style="background:#E7C71F"></span><span>黄</span></div><div class="cc"><span class="chip" style="background:#BB5695"></span><span>品红</span></div><div class="cc"><span class="chip" style="background:#0885A1"></span><span>青</span></div><div class="cc"><span class="chip" style="background:#F3F3F2"></span><span>白</span></div><div class="cc"><span class="chip" style="background:#C8C8C8"></span><span>灰 8</span></div><div class="cc"><span class="chip" style="background:#A0A0A0"></span><span>灰 6.5</span></div><div class="cc"><span class="chip" style="background:#7A7A79"></span><span>灰 5</span></div><div class="cc"><span class="chip" style="background:#555555"></span><span>灰 3.5</span></div><div class="cc"><span class="chip" style="background:#343434"></span><span>黑</span></div></div>
+  <details class="tblw">
+    <summary>查看 24 色的 PS 值与 UE 线性值</summary>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>色块</th><th class="num">PS（sRGB）</th><th class="num">Hex</th><th class="num">UE BaseColor（线性）</th></tr></thead>
+      <tbody><tr><td><span class="c8" style="background:#735244"></span>深肤色</td><td class="num">115, 82, 68</td><td class="num">#735244</td><td class="num">0.171, 0.084, 0.058</td></tr><tr><td><span class="c8" style="background:#C29682"></span>浅肤色</td><td class="num">194, 150, 130</td><td class="num">#C29682</td><td class="num">0.539, 0.305, 0.223</td></tr><tr><td><span class="c8" style="background:#627A9D"></span>天空蓝</td><td class="num">98, 122, 157</td><td class="num">#627A9D</td><td class="num">0.122, 0.195, 0.337</td></tr><tr><td><span class="c8" style="background:#576C43"></span>植物绿</td><td class="num">87, 108, 67</td><td class="num">#576C43</td><td class="num">0.095, 0.15, 0.056</td></tr><tr><td><span class="c8" style="background:#8580B1"></span>蓝花</td><td class="num">133, 128, 177</td><td class="num">#8580B1</td><td class="num">0.235, 0.216, 0.44</td></tr><tr><td><span class="c8" style="background:#67BDAA"></span>蓝绿</td><td class="num">103, 189, 170</td><td class="num">#67BDAA</td><td class="num">0.136, 0.509, 0.402</td></tr><tr><td><span class="c8" style="background:#D67E2C"></span>橙</td><td class="num">214, 126, 44</td><td class="num">#D67E2C</td><td class="num">0.672, 0.209, 0.025</td></tr><tr><td><span class="c8" style="background:#505BA6"></span>紫蓝</td><td class="num">80, 91, 166</td><td class="num">#505BA6</td><td class="num">0.08, 0.105, 0.381</td></tr><tr><td><span class="c8" style="background:#C15A63"></span>中红</td><td class="num">193, 90, 99</td><td class="num">#C15A63</td><td class="num">0.533, 0.102, 0.125</td></tr><tr><td><span class="c8" style="background:#5E3C6C"></span>紫</td><td class="num">94, 60, 108</td><td class="num">#5E3C6C</td><td class="num">0.112, 0.045, 0.15</td></tr><tr><td><span class="c8" style="background:#9DBC40"></span>黄绿</td><td class="num">157, 188, 64</td><td class="num">#9DBC40</td><td class="num">0.337, 0.503, 0.051</td></tr><tr><td><span class="c8" style="background:#E0A32E"></span>橙黄</td><td class="num">224, 163, 46</td><td class="num">#E0A32E</td><td class="num">0.745, 0.366, 0.027</td></tr><tr><td><span class="c8" style="background:#383D96"></span>蓝</td><td class="num">56, 61, 150</td><td class="num">#383D96</td><td class="num">0.04, 0.047, 0.305</td></tr><tr><td><span class="c8" style="background:#469449"></span>绿</td><td class="num">70, 148, 73</td><td class="num">#469449</td><td class="num">0.061, 0.296, 0.067</td></tr><tr><td><span class="c8" style="background:#AF363C"></span>红</td><td class="num">175, 54, 60</td><td class="num">#AF363C</td><td class="num">0.429, 0.037, 0.045</td></tr><tr><td><span class="c8" style="background:#E7C71F"></span>黄</td><td class="num">231, 199, 31</td><td class="num">#E7C71F</td><td class="num">0.799, 0.571, 0.014</td></tr><tr><td><span class="c8" style="background:#BB5695"></span>品红</td><td class="num">187, 86, 149</td><td class="num">#BB5695</td><td class="num">0.497, 0.093, 0.301</td></tr><tr><td><span class="c8" style="background:#0885A1"></span>青</td><td class="num">8, 133, 161</td><td class="num">#0885A1</td><td class="num">0.002, 0.235, 0.356</td></tr><tr><td><span class="c8" style="background:#F3F3F2"></span>白</td><td class="num">243, 243, 242</td><td class="num">#F3F3F2</td><td class="num">0.896, 0.896, 0.888</td></tr><tr><td><span class="c8" style="background:#C8C8C8"></span>灰 8</td><td class="num">200, 200, 200</td><td class="num">#C8C8C8</td><td class="num">0.578, 0.578, 0.578</td></tr><tr><td><span class="c8" style="background:#A0A0A0"></span>灰 6.5</td><td class="num">160, 160, 160</td><td class="num">#A0A0A0</td><td class="num">0.352, 0.352, 0.352</td></tr><tr><td><span class="c8" style="background:#7A7A79"></span>灰 5</td><td class="num">122, 122, 121</td><td class="num">#7A7A79</td><td class="num">0.195, 0.195, 0.191</td></tr><tr><td><span class="c8" style="background:#555555"></span>灰 3.5</td><td class="num">85, 85, 85</td><td class="num">#555555</td><td class="num">0.091, 0.091, 0.091</td></tr><tr><td><span class="c8" style="background:#343434"></span>黑</td><td class="num">52, 52, 52</td><td class="num">#343434</td><td class="num">0.034, 0.034, 0.034</td></tr></tbody>
+    </table></div>
+  </details>
+
+  <h4>金属：BaseColor 就是它的反射颜色</h4>
+  <p>Metallic = 1 时，BaseColor 不再是“漫反射颜色”，而是镜面反射的颜色，所以都很亮（PS 180–255）。UE 官方实测值：</p>
+  <div class="wide-sw"><div class="sws"><div class="sw"><span class="chip" style="background:#C5C7C8"></span><b>铁</b><span class="v">UE <b>0.56, 0.57, 0.58</b></span><span class="v">PS 197,199,200 · #C5C7C8</span></div><div class="sw"><span class="chip" style="background:#C4C5C4"></span><b>铬</b><span class="v">UE <b>0.55, 0.556, 0.554</b></span><span class="v">PS 196,197,196 · #C4C5C4</span></div><div class="sw"><span class="chip" style="background:#C2BBB3"></span><b>钛</b><span class="v">UE <b>0.542, 0.497, 0.449</b></span><span class="v">PS 194,187,179 · #C2BBB3</span></div><div class="sw"><span class="chip" style="background:#D4CDC0"></span><b>镍</b><span class="v">UE <b>0.66, 0.609, 0.526</b></span><span class="v">PS 212,205,192 · #D4CDC0</span></div><div class="sw"><span class="chip" style="background:#D6D1C9"></span><b>铂</b><span class="v">UE <b>0.672, 0.637, 0.585</b></span><span class="v">PS 214,209,201 · #D6D1C9</span></div><div class="sw"><span class="chip" style="background:#D5D4D0"></span><b>钴</b><span class="v">UE <b>0.662, 0.655, 0.634</b></span><span class="v">PS 213,212,208 · #D5D4D0</span></div><div class="sw"><span class="chip" style="background:#F5F6F6"></span><b>铝</b><span class="v">UE <b>0.913, 0.921, 0.925</b></span><span class="v">PS 245,246,246 · #F5F6F6</span></div><div class="sw"><span class="chip" style="background:#FCFAF5"></span><b>银</b><span class="v">UE <b>0.972, 0.96, 0.915</b></span><span class="v">PS 252,250,245 · #FCFAF5</span></div><div class="sw"><span class="chip" style="background:#FFE39D"></span><b>金</b><span class="v">UE <b>1, 0.766, 0.336</b></span><span class="v">PS 255,227,157 · #FFE39D</span></div><div class="sw"><span class="chip" style="background:#FAD1C2"></span><b>铜</b><span class="v">UE <b>0.955, 0.637, 0.538</b></span><span class="v">PS 250,209,194 · #FAD1C2</span></div></div></div>
+
+  <h4>档位尺：材质、阴影、光源各占哪一段</h4>
+  <div class="chart" id="chart-stops">
+    <p class="fig-title">从暗到亮的“档位尺”（ACES 2.0 + sRGB 与 Filmic 对比）</p>
+    <p class="fig-sub">0 档 = 正确曝光下的 18% 灰卡。灰条是每个档位在屏幕上显示的样子，鼠标放上去可以看具体数值。</p>
+  </div>
+  <p>看懂这把尺子，就知道为什么“调 BaseColor 救不了亮度”：<b>被主光照亮的材质只占 −2.5 到 +2.3 档</b>（BaseColor 0.032–0.87）。比这更暗的只能是阴影，比这更亮的只能是光源、自发光和镜面高光。ACES 2.0 要到 +3.9 档才到 90% 白、+7.0 档才到 99% 白，所以 ACES 下“白色物体看起来是浅灰”是正常的，那段空间是留给火焰、法术、天空的。</p>
+
+  <h4>为什么 ACES 下白色看起来发灰（不要靠调 BaseColor 修）</h4>
+  <div class="two">
+    <div class="scroll"><table class="t">
+      <thead><tr><th>PS 里画的值</th><th class="num">正确曝光下，Filmic 显示</th><th class="num">ACES 2.0 + sRGB 显示</th></tr></thead>
+      <tbody><tr><td><span class="c8" style="background:#323232"></span><b>50</b>（UE 0.032）</td><td class="num"><span class="c8" style="background:#1C1C1C"></span>28</td><td class="num"><span class="c8" style="background:#212121"></span>33</td></tr><tr><td><span class="c8" style="background:#767676"></span><b>118</b>（UE 0.18）</td><td class="num"><span class="c8" style="background:#767676"></span>118</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr><tr><td><span class="c8" style="background:#BCBCBC"></span><b>188</b>（UE 0.5）</td><td class="num"><span class="c8" style="background:#BFBFBF"></span>191</td><td class="num"><span class="c8" style="background:#A6A6A6"></span>166</td></tr><tr><td><span class="c8" style="background:#F0F0F0"></span><b>240</b>（UE 0.87）</td><td class="num"><span class="c8" style="background:#D8D8D8"></span>216</td><td class="num"><span class="c8" style="background:#C0C0C0"></span>192</td></tr><tr><td><span class="c8" style="background:#FFFFFF"></span><b>255</b>（UE 1）</td><td class="num"><span class="c8" style="background:#DDDDDD"></span>221</td><td class="num"><span class="c8" style="background:#C6C6C6"></span>198</td></tr></tbody>
+    </table></div>
+    <div>
+      <p>正确曝光下，Filmic 让中间调“画什么显示什么”（118 → 118），亮部压得较少；ACES 2.0 把整段都放低一点，白卡（240）只显示 192。原因就是上面的档位尺：漫反射白只有 +2.3 档，ACES 把 +2.3 到 +7.0 档留给了光源。</p>
+      <p>想要更白的白：调项目 Look（Color Grading 的对比度，<a href="#p-grade">2.11</a>），或者给那片区域更多光。<b>不要把 BaseColor 推过 240</b>：推到 255（1.0）也只显示 198，却会让这个材质在所有光照下都过亮。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 2.6 标定场景 -->
+<section class="card" id="p-lookdev">
+  <h2>2.6 标定场景（Look-dev 地图，物理版）</h2>
+  <p class="sub">它的作用就像摄影棚里的灰卡和色卡：<b>用一组反射率已知的道具，把“灯光对不对、曝光对不对”变成可以读数的问题</b>。所有灯光、材质、特效先在这里过一遍，再进关卡。</p>
+  <h4>放什么（材质参数照抄）</h4>
+  <div class="props">
+    <div class="prop"><div class="vis"><span class="card-sq" style="background:#767676"></span></div><div><b>18% 灰卡 ×2</b>（一块平放，一块竖立）<span class="pp">BaseColor 0.18（Hex sRGB 767676）· Metallic 0 · Specular 0 · Roughness 1</span>测正确曝光，也是读灯光强度的“测光表”。</div></div>
+    <div class="prop"><div class="vis"><span class="card-sq" style="background:#F0F0F0"></span></div><div><b>白卡</b><span class="pp">BaseColor 0.87（F0F0F0，非金属允许的最亮）· 其余同灰卡</span>看亮部会不会糊、白色够不够白。读数应比灰卡亮 +2.3 档（4.8 倍）。</div></div>
+    <div class="prop"><div class="vis"><span class="card-sq" style="background:#323232"></span></div><div><b>黑卡</b><span class="pp">BaseColor 0.032（323232，非金属的常用下限）· 其余同灰卡</span>看暗部有没有层次。读数应比灰卡 −2.5 档（约 1/5.6）。</div></div>
+    <div class="prop"><div class="vis"><span class="ball matte"></span></div><div><b>哑光灰球</b><span class="pp">BaseColor 0.18 · Roughness 1 · Specular 保持 0.5</span>看光从哪来、明暗交界线、亮面和暗面差几档。</div></div>
+    <div class="prop"><div class="vis"><span class="ball chrome"></span></div><div><b>镜面球</b><span class="pp">Metallic 1 · BaseColor 0.9 · Roughness 0</span>看灯和天空在哪、高光有多亮。</div></div>
+    <div class="prop"><div class="vis"><span class="mini-cc"><i style="background:#735244"></i><i style="background:#C29682"></i><i style="background:#627A9D"></i><i style="background:#576C43"></i><i style="background:#8580B1"></i><i style="background:#67BDAA"></i><i style="background:#D67E2C"></i><i style="background:#505BA6"></i><i style="background:#C15A63"></i><i style="background:#5E3C6C"></i><i style="background:#9DBC40"></i><i style="background:#E0A32E"></i><i style="background:#383D96"></i><i style="background:#469449"></i><i style="background:#AF363C"></i><i style="background:#E7C71F"></i><i style="background:#BB5695"></i><i style="background:#0885A1"></i><i style="background:#F3F3F2"></i><i style="background:#C8C8C8"></i><i style="background:#A0A0A0"></i><i style="background:#7A7A79"></i><i style="background:#555555"></i><i style="background:#343434"></i></span></div><div><b>ColorChecker 24 色卡</b><span class="pp">一张贴图（sRGB ✓），每块用 <a href="#p-mat">2.5</a> 给的色卡值</span>看颜色、饱和度有没有跑，调色前后都要看。</div></div>
+  </div>
+  <p class="small">灰卡、白卡、黑卡把 Specular 设成 0，是为了让读数只剩漫反射、正好和公式对上。<b>这只适用于标定道具</b>，真实材质的 Specular 保持默认 0.5。工程默认用 Lambert 漫反射（<code>r.Substrate.RoughDiffuse=0</code>），读数和公式一致。</p>
+
+  <h4>怎么摆</h4>
+  <div class="two">
+    <figure class="side">
+      <svg viewBox="0 0 440 210" role="img" aria-label="标定场景侧视图：左上主光，右上游戏镜头俯视地面；地面平放黑、灰、白卡，右侧墙后的阴影里放第二张灰卡">
+        <line class="ln" x1="10" y1="178" x2="430" y2="178"/>
+        <g class="sun"><circle cx="52" cy="40" r="13"/><line x1="52" y1="15" x2="52" y2="20"/><line x1="52" y1="60" x2="52" y2="65"/><line x1="27" y1="40" x2="32" y2="40"/><line x1="72" y1="40" x2="77" y2="40"/><line x1="35" y1="23" x2="38" y2="26"/><line x1="66" y1="54" x2="69" y2="57"/><line x1="35" y1="57" x2="38" y2="54"/><line x1="66" y1="26" x2="69" y2="23"/></g>
+        <line class="ray" x1="66" y1="54" x2="150" y2="172"/><line class="ray" x1="70" y1="50" x2="205" y2="172"/>
+        <text class="lb" x="84" y="30">主光</text>
+        <rect x="120" y="172" width="34" height="6" fill="#323232"/><rect x="158" y="172" width="34" height="6" fill="#767676"/><rect x="196" y="172" width="34" height="6" fill="#F0F0F0" class="edge"/>
+        <rect x="240" y="138" width="5" height="40" fill="#767676"/>
+        <text class="lb" x="118" y="200">平放的黑 / 灰 / 白卡</text>
+        <rect class="wall" x="300" y="96" width="10" height="82"/>
+        <polygon class="shade" points="310,96 310,178 398,178"/>
+        <rect x="330" y="172" width="34" height="6" fill="#767676"/>
+        <text class="lb" x="300" y="200">阴影里的灰卡</text>
+        <g class="cam" transform="translate(372 40) rotate(38)"><rect x="-17" y="-10" width="26" height="20" rx="3"/><polygon points="9,-6 19,-11 19,11 9,6"/></g>
+        <line class="view" x1="357" y1="58" x2="186" y2="170"/>
+        <text class="lb" x="292" y="22">游戏镜头</text>
+      </svg>
+      <figcaption>侧视示意。灰卡平放，是因为俯视镜头里地面占了大半画面；竖立的那块检查墙面和角色正面。</figcaption>
+    </figure>
+    <ul>
+      <li><b>机位</b>：用游戏镜头的角度和距离（工程按 30°–45° 俯角算阴影距离，见 <code>r.CSM.CameraRotatorY</code>），存成相机书签（Ctrl + 数字键保存，数字键调用），每次都用同一个机位截图。</li>
+      <li><b>两组道具</b>：一组在主光下，一组在一堵墙的阴影里。两张灰卡的读数差，就是这套灯光的<b>光比</b>（<a href="#p-light">2.7</a>）。</li>
+      <li><b>每类场景一套灯光</b>：白天、阴天、黄昏、室内、地牢、夜晚各做成一个子关卡（或 Data Layer），每套带自己的全局 PPV，相机按 <a href="#p-light">2.7</a> 表里的基准 EV100 设。户外几套用天空大气 + 实时捕获天光，和正式关卡同一套设置。</li>
+      <li><b>读数时</b>：关掉高度雾、体积雾（雾会叠加进读数）和局部曝光（会改 Final Color）；Lumen 保持打开，它就是游戏里的实际光照。Bloom 在色调映射时才叠加，不影响 Scene Color 读数。</li>
+    </ul>
+  </div>
+
+  <h4>物理版的读数：一张灰卡从灯光走到屏幕</h4>
+  <div class="pipe flow" role="img" aria-label="灰卡从灯光到屏幕：太阳 10 万 lux，乘 BaseColor 0.18 除以 π 得 5730 尼特，相机 EV100 15 曝光后为 0.18，ACES 2.0 得显示线性值 0.157，sRGB 编码得像素值 110">
+    <div class="st"><div class="t">主光</div><div class="s">晴天太阳 + 天光，共约 10 万 lux 照到灰卡上</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">材质</div><div class="s">× BaseColor 0.18 ÷ π<br>= <b>5730</b> 尼特</div><div class="pi">Luminance Before Tonemap</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">曝光</div><div class="s">相机 EV100 ≈ 15：× 1 ÷ 2<sup>15</sup><br>= <b>0.18</b></div><div class="pi">PreExposure ≈ 3.1×10⁻⁵</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">色调映射</div><div class="s">ACES 2.0（内部先 ×1.5）→ <b>0.157</b><br>Filmic：0.18 → 0.180</div><div class="pi">Final Color（线性）</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">显示编码</div><div class="s">sRGB → 像素值 <b>110</b><br>Filmic：118</div></div>
+    <div class="ar" aria-hidden="true"></div>
+    <div class="st"><div class="t">屏幕</div><div class="s">亮度约为白色的 15.7%</div></div>
+  </div>
+  <p>所以有两个读数，分别验两件事：</p>
+  <ul>
+    <li><b>灯光对不对</b>：读主光下灰卡的 <b>Luminance Before Tonemap</b>（单位尼特）。它 = 0.18 × 照度 ÷ π，只和灯光有关、和相机无关。换算成 EV100 = log₂(读数 ÷ 0.18)，或者查 <a href="#p-expo">2.8</a> 的对照表。</li>
+    <li><b>曝光对不对</b>：读同一点的 <b>Final Color</b>，应约 0.157（像素值 110；104–116 都合格）。它和场景亮暗无关：白天、地牢、夜晚都应该是这个数（夜晚再加上曝光补偿的偏移）。</li>
+  </ul>
+
+  <h4>操作：用 Pixel Inspector 读数</h4>
+  <ol class="sub-steps">
+    <li>视口左上角的视图模式菜单（Lit）→ Exposure，确认勾着 <b>Game Settings</b>。拖过下面的 EV100 滑条会自动取消勾选，视口就改按滑条的固定 EV100 曝光，和游戏对不上。</li>
+    <li>Tools → Debug → Pixel Inspector，点 <b>Start Pixel Inspector</b>，鼠标指向主光下的平放灰卡（按 Esc 停止）。</li>
+    <li>读 Scene Color 分组：<b>Luminance Before Tonemap</b> 是灰卡亮度（尼特，已经除掉了曝光）；<b>PreExposure</b> 是当前曝光，手动曝光时应 = 2<sup>曝光补偿 − EV100</sup>。</li>
+    <li>按读数换算出这套灯光的 EV100，和场景表比（<a href="#p-light">2.7</a>）；人工光差 1 档就把灯 ×2 或 ×½，自然光不动灯、改相机。</li>
+    <li>全局 PPV 的快门按最终 EV100 填，再读 Final Color 核对画面。Final Color 显示的是<b>线性值</b>，按下表换算成像素值。</li>
+  </ol>
+  <div class="two">
+    <div class="scroll"><table class="t">
+      <thead><tr><th class="num">Final Color 读数（线性）</th><th class="num">屏幕像素值</th></tr></thead>
+      <tbody><tr><td class="num">0.032</td><td class="num"><span class="c8" style="background:#323232"></span>50</td></tr><tr><td class="num">0.05</td><td class="num"><span class="c8" style="background:#3F3F3F"></span>63</td></tr><tr><td class="num">0.1</td><td class="num"><span class="c8" style="background:#595959"></span>89</td></tr><tr><td class="num">0.156</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr><tr><td class="num">0.181</td><td class="num"><span class="c8" style="background:#767676"></span>118</td></tr><tr><td class="num">0.3</td><td class="num"><span class="c8" style="background:#959595"></span>149</td></tr><tr><td class="num">0.5</td><td class="num"><span class="c8" style="background:#BCBCBC"></span>188</td></tr><tr><td class="num">0.75</td><td class="num"><span class="c8" style="background:#E1E1E1"></span>225</td></tr><tr><td class="num">1</td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td></tr></tbody>
+    </table></div>
+    <div class="note"><span class="lab">两个容易踩的坑</span>
+      <p><b>Substrate 下别看 GBuffer 分组。</b>工程开了 Substrate（自适应 GBuffer），Pixel Inspector 里 BaseColor、Metallic 等 GBuffer 项可能不准；BaseColor 以材质里填的数为准。Scene Color 和 Final Color 不受影响。</p>
+      <p><b>局部曝光会“压扁”大块明暗。</b>工程默认开了 Local Exposure（高光、暗部对比都是 0.8）：大块区域相对中灰的档数会乘 0.8。主光下的灰卡正好在支点上，不受影响；大片阴影 −2.5 档在屏幕上像 −2 档（像素值 32 → 45），地牢 −5 档像 −4 档（2 → 7）。它只影响 Final Color，不影响 Scene Color；本文表格里的屏幕值都没算它。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- 2.7 灯光校准 -->
+<section class="card" id="p-light">
+  <h2>2.7 灯光校准：太阳、天空、人工光的物理量级</h2>
+  <p class="sub">先定这类场景的基准 EV100，再按“主光照到灰卡上 = π × 2<sup>EV100</sup> lux”把灯打对；用 Pixel Inspector 读数验收。</p>
+  <h4>① 先看量级：现实世界和本项目各在哪一档</h4>
+  <p>EV100 就是“这个环境下正确曝光需要的相机设置”，物理意义很直接：<b>EV100 = log₂(主光照到灰卡上的照度 ÷ π)</b>，照度每翻一倍 EV100 加 1。真实世界从满月夜到晴天正午差了约 20 档，人眼会自动适应，相机和游戏不会，所以每类场景要各自定一个基准：</p>
+  <div class="evl" role="img" aria-label="EV100 尺：现实世界从满月夜约 −6 到晴天约 15；本项目夜晚 −2 到主城白天 15"><div class="evl-ax t" aria-hidden="true"><span style="left:4.35%">−6</span><span style="left:17.39%">−3</span><span style="left:30.43%">0</span><span style="left:43.48%">3</span><span style="left:56.52%">6</span><span style="left:69.57%">9</span><span style="left:82.61%">12</span><span style="left:95.65%">15</span></div><p class="evl-g">现实世界（典型照度 → 正确曝光的 EV100）</p><div class="evl-r"><div class="evl-n"><b>晴天，阳光直射</b> <span class="u">3.2 万 ~ 10 万 lux · EV100 13.3 ~ 15</span></div><div class="evl-t"><span class="evl-b" style="left:88.26%;width:7.39%"></span></div></div><div class="evl-r"><div class="evl-n"><b>全天光、无直射（阴天、树荫）</b> <span class="u">1 万 ~ 2.5 万 lux · EV100 11.6 ~ 13</span></div><div class="evl-t"><span class="evl-b" style="left:80.87%;width:6.09%"></span></div></div><div class="evl-r"><div class="evl-n"><b>办公室照明</b> <span class="u">320 ~ 500 lux · EV100 6.7 ~ 7.3</span></div><div class="evl-t"><span class="evl-b" style="left:59.57%;width:2.61%"></span></div></div><div class="evl-r"><div class="evl-n"><b>日出 / 日落时的地面（晴天）</b> <span class="u">400 lux · EV100 7</span></div><div class="evl-t"><span class="evl-b dot" style="left:60.87%"></span></div></div><div class="evl-r"><div class="evl-n"><b>很暗的阴天</b> <span class="u">100 lux · EV100 5</span></div><div class="evl-t"><span class="evl-b dot" style="left:52.17%"></span></div></div><div class="evl-r"><div class="evl-n"><b>居家客厅（澳洲 1998 年调查）</b> <span class="u">50 lux · EV100 4</span></div><div class="evl-t"><span class="evl-b dot" style="left:47.83%"></span></div></div><div class="evl-r"><div class="evl-n"><b>光线较暗的公共区域</b> <span class="u">20 ~ 50 lux · EV100 2.7 ~ 4</span></div><div class="evl-t"><span class="evl-b" style="left:42.17%;width:5.65%"></span></div></div><div class="evl-r"><div class="evl-n"><b>满月夜</b> <span class="u">0.05 ~ 0.3 lux · EV100 −6 ~ −3.4</span></div><div class="evl-t"><span class="evl-b" style="left:4.35%;width:11.30%"></span></div></div><p class="evl-g">本项目每类场景的基准 EV100（建议）</p><div class="evl-r"><div class="evl-n"><b>主城白天（晴）</b> <span class="u">EV100 14 ~ 15</span></div><div class="evl-t"><span class="evl-b p" style="left:91.30%;width:4.35%"></span></div></div><div class="evl-r"><div class="evl-n"><b>阴天 / 雾天</b> <span class="u">EV100 12 ~ 13</span></div><div class="evl-t"><span class="evl-b p" style="left:82.61%;width:4.35%"></span></div></div><div class="evl-r"><div class="evl-n"><b>黄昏</b> <span class="u">EV100 10 ~ 12</span></div><div class="evl-t"><span class="evl-b p" style="left:73.91%;width:8.70%"></span></div></div><div class="evl-r"><div class="evl-n"><b>室内（窗光 / 吊灯）</b> <span class="u">EV100 7 ~ 8</span></div><div class="evl-t"><span class="evl-b p" style="left:60.87%;width:4.35%"></span></div></div><div class="evl-r"><div class="evl-n"><b>地牢（火盆 / 法阵）</b> <span class="u">EV100 3 ~ 5</span></div><div class="evl-t"><span class="evl-b p" style="left:43.48%;width:8.70%"></span></div></div><div class="evl-r"><div class="evl-n"><b>夜晚户外</b> <span class="u">EV100 −2 ~ −1</span></div><div class="evl-t"><span class="evl-b p" style="left:21.74%;width:4.35%"></span></div></div><div class="evl-ax" aria-hidden="true"><span style="left:4.35%">−6</span><span style="left:17.39%">−3</span><span style="left:30.43%">0</span><span style="left:43.48%">3</span><span style="left:56.52%">6</span><span style="left:69.57%">9</span><span style="left:82.61%">12</span><span style="left:95.65%">15</span></div></div>
+  <p class="small muted">现实世界的照度取自 Wikipedia《Lux》词条列的典型值（家庭照明是澳洲 1998 年的调查），只用来建立量级感。</p>
+
+  <h4>② 每类场景的基准 EV100（建议起点）</h4>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>场景类型</th><th class="num">基准 EV100</th><th class="num">照到灰卡上</th><th class="num">快门（f/4 · ISO 100）</th><th class="num">曝光补偿</th><th class="num">阴影相对亮处</th><th class="num">屏幕：亮处 / 暗处灰卡</th><th>灯光怎么打</th></tr></thead>
+    <tbody><tr><td>主城白天（晴）</td><td class="num">14 ~ 15</td><td class="num">5.1 万 ~ 10.3 万 lux</td><td class="num">1024 ~ 2048</td><td class="num">0</td><td class="num">−2.5 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#202020"></span>32</td><td>太阳（天空大气）+ 天光；太阳、天空都按真实值；阴影里只有天光</td></tr><tr><td>阴天 / 雾天</td><td class="num">12 ~ 13</td><td class="num">1.3 万 ~ 2.6 万 lux</td><td class="num">256 ~ 512</td><td class="num">0</td><td class="num">−1.0 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#4B4B4B"></span>75</td><td>整个天空；没有硬阴影，物体背光面暗约 1 档</td></tr><tr><td>黄昏</td><td class="num">10 ~ 12</td><td class="num">3200 ~ 1.3 万 lux</td><td class="num">64 ~ 256</td><td class="num">0</td><td class="num">−3.0 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#161616"></span>22</td><td>低角度太阳 + 天光；太阳强度不用改，大气会让它变暗变红</td></tr><tr><td>室内（窗光 / 吊灯）</td><td class="num">7 ~ 8</td><td class="num">400 ~ 800 lux</td><td class="num">8 ~ 16</td><td class="num">0</td><td class="num">−2.5 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#202020"></span>32</td><td>窗户或主灯；离光源越远越暗：距离翻倍暗 2 档</td></tr><tr><td>地牢（火盆 / 法阵）</td><td class="num">3 ~ 5</td><td class="num">25 ~ 100 lux</td><td class="num">0.5 ~ 2</td><td class="num">0</td><td class="num">−5.0 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#020202"></span>2</td><td>人工光；灯比真实火把亮（相对物理），光比保持真实</td></tr><tr><td>夜晚户外</td><td class="num">−2 ~ −1</td><td class="num">0.79 ~ 1.6 lux</td><td class="num">0.0156 ~ 0.0312</td><td class="num">−2</td><td class="num">−3.0 档</td><td class="num"><span class="c8" style="background:#2D2D2D"></span>45 / <span class="c8" style="background:#020202"></span>2</td><td>月光 + 灯笼；月光提亮到约 1 lux；正常曝光再压 2 档；灯笼按真实流明</td></tr></tbody>
+  </table></div>
+  <p class="small muted">这是建议起点，按美术方向调整；但每张图最后定下来的基准 EV100、曝光补偿和光比都要写进这张表，验收时按表核对。屏幕值按 ACES 2.0 + sRGB 计算，没有算局部曝光。快门一栏是 PPV 里 Shutter Speed 要填的数（单位 1/秒，填 1024 就是 1/1024 秒）。</p>
+
+  <h4>③ 太阳、天空、月亮：天空大气 + 实时天光，按真实值</h4>
+  <div class="two">
+    <div class="box"><h4>设置（照抄）</h4><ul>
+      <li><b>平行光（太阳）</b>：勾 <b>Atmosphere Sun Light</b>（索引 0）。Intensity 填<b>大气层外</b>的照度，起步 <b>120000 lux</b>（真实约 12.8 万）；地面实际收到的是它乘以大气透过率，太阳越低越暗、越红，天空大气会自动算。Light Color 保持白色。UE 新建平行光默认只有 10 lux，比晴天暗约 13 档，拖进来先改。</li>
+      <li><b>天空大气（Sky Atmosphere）</b>：默认参数就是地球大气，先保持默认。天空的亮度由太阳决定：不要单独提亮天空，也不要再用自发光的天空球。</li>
+      <li><b>天光（Sky Light）</b>：Source Type 选 SLS Captured Scene，勾 <b>Real Time Capture</b>，Intensity Scale 保持 1。阴影里的亮度主要靠它，它决定了光比。</li>
+      <li><b>月亮</b>：第二盏平行光，Atmosphere Sun Light 索引 1，Intensity 约 <b>1 lux</b>（真实满月 0.05–0.3 lux，相对物理地提亮 2–4 档）。颜色保持白色或微冷，“夜晚偏蓝”放到调色层做（<a href="#p-grade">2.11</a>），夜晚的暗用曝光补偿 −2 做。</li>
+      <li><b>高度雾</b>：Fog Inscattering Color 实际是<b>绝对亮度</b>（源码属性名 FogInscatteringLuminance），物理相机下旧数值约等于 0。改成黑色，让天空大气给雾上色（天空大气的 Height Fog Contribution 默认 1，<code>r.SupportSkyAtmosphereAffectsHeightFog</code> 默认开）。</li>
+      <li><b>体积云</b>（可选）：需要云影、阴天层次时再加，天光会实时捕获它。</li>
+    </ul></div>
+    <div class="box"><h4>为什么这样做</h4>
+      <p>天空大气按物理算出太阳的透过率和天空的亮度、颜色，所以<b>白天、黄昏、阴天只需要转太阳角度、加云</b>，不用为每种天气单独调灯光和雾的颜色；阴影里只有天光，晴天光比自然落在 2–3 档。</p>
+      <p>平放灰卡收到的照度 = 太阳直射 × sin（太阳高度角）+ 天光。太阳高度 50°–60°、晴天时直射约 7–9 万 lux，加上天光，基准 EV100 落在 14.5–15，和场景表一致。</p>
+      <p class="small">已经用了天空大气 + 实时天光的正式地图只有 2 张（<code>XZ_PC_YuJinZhiXiBiNanSuo200_Landscape</code>、<code>BZ_JiangShengMuChao200_Landscape</code>），可以先拿它们试流程。</p>
     </div>
   </div>
 
-  <ol class="steps">
-    <!-- ---------------------------------------------------------- ① -->
-    <li id="long-1"><b>定死输出标准</b>
-      全项目统一用 Standard ACES（<code>r.HDR.Aces.Version=2</code>）加 sRGB 编码（<code>r.LUT.TonemappingSDRInvEOTF=0</code>），编辑器视口、PIE、打包包体保持一致。移动端走的是同一套 LUT 生成代码，结论通用。美术的显示器统一校准到 sRGB（Gamma 2.2、D65 白点）。
-      <div class="blacktest" role="img" aria-label="暗部分辨测试：像素值 0、8、16、24、32、48 的六个色块">
-        <span style="background:#000">0</span><span style="background:#080808">8</span><span style="background:#101010">16</span><span style="background:#181818">24</span><span style="background:#202020">32</span><span style="background:#303030">48</span>
-      </div>
-      <p class="small muted">显示器自检：正常亮度下应该能分清 8 和 16 两块；连 16 和 24 都分不清，说明屏幕偏暗或对比度太高，照着它打的暗部会偏亮。</p>
-    </li>
-
-    <!-- ---------------------------------------------------------- ② -->
-    <li id="long-2"><b>做一张“标定场景”（Look-dev 地图）</b>
-      <p>它的作用就像摄影棚里的灰卡和色卡：<b>用一组反射率已知的道具，把“灯光对不对、曝光对不对”变成可以读数的问题</b>。所有灯光、材质、特效先在这里过一遍，再进关卡。</p>
-      <h4>放什么（材质参数照抄）</h4>
-      <div class="props">
-        <div class="prop"><div class="vis"><span class="card-sq" style="background:#767676"></span></div><div><b>18% 灰卡 ×2</b>（一块平放，一块竖立）<span class="pp">BaseColor 0.18（Hex sRGB 767676）· Metallic 0 · Specular 0 · Roughness 1</span>测正确曝光。主光下读数应为 0.18。</div></div>
-        <div class="prop"><div class="vis"><span class="card-sq" style="background:#F0F0F0"></span></div><div><b>白卡</b><span class="pp">BaseColor 0.87（F0F0F0，非金属允许的最亮）· 其余同灰卡</span>看亮部会不会糊、白色够不够白。读数应为 0.87。</div></div>
-        <div class="prop"><div class="vis"><span class="card-sq" style="background:#323232"></span></div><div><b>黑卡</b><span class="pp">BaseColor 0.032（323232，非金属的常用下限）· 其余同灰卡</span>看暗部有没有层次。读数应为 0.032。</div></div>
-        <div class="prop"><div class="vis"><span class="ball matte"></span></div><div><b>哑光灰球</b><span class="pp">BaseColor 0.18 · Roughness 1 · Specular 保持 0.5</span>看光从哪来、明暗交界线、亮面和暗面差几档。</div></div>
-        <div class="prop"><div class="vis"><span class="ball chrome"></span></div><div><b>镜面球</b><span class="pp">Metallic 1 · BaseColor 0.9 · Roughness 0</span>看灯和天空在哪、高光有多亮。</div></div>
-        <div class="prop"><div class="vis"><span class="mini-cc"><i style="background:#735244"></i><i style="background:#C29682"></i><i style="background:#627A9D"></i><i style="background:#576C43"></i><i style="background:#8580B1"></i><i style="background:#67BDAA"></i><i style="background:#D67E2C"></i><i style="background:#505BA6"></i><i style="background:#C15A63"></i><i style="background:#5E3C6C"></i><i style="background:#9DBC40"></i><i style="background:#E0A32E"></i><i style="background:#383D96"></i><i style="background:#469449"></i><i style="background:#AF363C"></i><i style="background:#E7C71F"></i><i style="background:#BB5695"></i><i style="background:#0885A1"></i><i style="background:#F3F3F2"></i><i style="background:#C8C8C8"></i><i style="background:#A0A0A0"></i><i style="background:#7A7A79"></i><i style="background:#555555"></i><i style="background:#343434"></i></span></div><div><b>ColorChecker 24 色卡</b><span class="pp">一张贴图（sRGB ✓），每块用第 ④ 步给的色卡值</span>看颜色、饱和度有没有跑。</div></div>
-      </div>
-      <p class="small">灰卡、白卡、黑卡把 Specular 设成 0，是为了让读数正好等于 BaseColor（只剩漫反射）。<b>这只适用于标定道具</b>，真实材质的 Specular 保持默认 0.5。工程默认用 Lambert 漫反射（<code>r.Substrate.RoughDiffuse=0</code>），读数和公式一致。</p>
-      <h4>怎么摆</h4>
-      <div class="two">
-        <figure class="side">
-          <svg viewBox="0 0 440 210" role="img" aria-label="标定场景侧视图：左上主光，右上游戏镜头俯视地面；地面平放黑、灰、白卡，右侧墙后的阴影里放第二张灰卡">
-            <line class="ln" x1="10" y1="178" x2="430" y2="178"/>
-            <g class="sun"><circle cx="52" cy="40" r="13"/><line x1="52" y1="15" x2="52" y2="20"/><line x1="52" y1="60" x2="52" y2="65"/><line x1="27" y1="40" x2="32" y2="40"/><line x1="72" y1="40" x2="77" y2="40"/><line x1="35" y1="23" x2="38" y2="26"/><line x1="66" y1="54" x2="69" y2="57"/><line x1="35" y1="57" x2="38" y2="54"/><line x1="66" y1="26" x2="69" y2="23"/></g>
-            <line class="ray" x1="66" y1="54" x2="150" y2="172"/><line class="ray" x1="70" y1="50" x2="205" y2="172"/>
-            <text class="lb" x="84" y="30">主光</text>
-            <rect x="120" y="172" width="34" height="6" fill="#323232"/><rect x="158" y="172" width="34" height="6" fill="#767676"/><rect x="196" y="172" width="34" height="6" fill="#F0F0F0" class="edge"/>
-            <rect x="240" y="138" width="5" height="40" fill="#767676"/>
-            <text class="lb" x="118" y="200">平放的黑 / 灰 / 白卡</text>
-            <rect class="wall" x="300" y="96" width="10" height="82"/>
-            <polygon class="shade" points="310,96 310,178 398,178"/>
-            <rect x="330" y="172" width="34" height="6" fill="#767676"/>
-            <text class="lb" x="300" y="200">阴影里的灰卡</text>
-            <g class="cam" transform="translate(372 40) rotate(38)"><rect x="-17" y="-10" width="26" height="20" rx="3"/><polygon points="9,-6 19,-11 19,11 9,6"/></g>
-            <line class="view" x1="357" y1="58" x2="186" y2="170"/>
-            <text class="lb" x="292" y="22">游戏镜头</text>
-          </svg>
-          <figcaption>侧视示意。灰卡平放，是因为俯视镜头里地面占了大半画面；竖立的那块检查墙面和角色正面。</figcaption>
-        </figure>
-        <ul>
-          <li><b>机位</b>：用游戏镜头的角度和距离（工程按 30°–45° 俯角算阴影距离，见 <code>r.CSM.CameraRotatorY</code>），存成相机书签（Ctrl + 数字键保存，数字键调用），每次都用同一个机位截图。</li>
-          <li><b>两组道具</b>：一组在主光下，一组在一堵墙的阴影里。两张灰卡的读数差，就是这套灯光的<b>光比</b>（第 ③ 步）。</li>
-          <li><b>四套灯光</b>：白天户外、室内、地牢、夜晚各做成一个子关卡（或 Data Layer），PPV 共用一个，切换时其他设置不变。</li>
-          <li><b>读数时</b>：关掉高度雾、体积雾（雾会叠加进 Scene Color）；Lumen 保持打开，它就是游戏里的实际光照。Bloom 在色调映射时才叠加，不影响 Scene Color 读数。</li>
-        </ul>
-      </div>
-    </li>
-
-    <!-- ---------------------------------------------------------- ③ -->
-    <li id="long-3"><b>建立曝光体系</b>
-      <div class="note warn"><span class="lab">先纠正一个误会：本工程的曝光是锁死的</span>
-        工程在所有画质档位都设了 <code>r.EyeAdaptationQuality=0</code>（DefaultScalability.ini，以及 PC / Android / IOS / Emulator 各自的 Scalability.ini）。它不只是关掉自动曝光：引擎会把 EyeAdaptation 显示标志一起关掉，曝光计算走“全部置 1”的分支，<b>曝光锁定 ×1，PPV 里的 Exposure Compensation 不参与计算</b>（源码见附录 A）。全工程有 83 个包（正式内容 27 个）设置过 Exposure Compensation，这些值在游戏和编辑器的主视口里都不起作用，UE4.26 的老工程也一样。所以在本工程：<b>画面整体有多亮，完全由灯光强度 × 材质反射率决定</b>。
-        <p class="small" style="margin:8px 0 0">例外：SceneCapture（UI 里的 3D 角色展示、头像常用它）不走这个开关。源码里只有游戏视口和编辑器视口会套用 <code>r.EyeAdaptationQuality</code>，捕获画面的曝光仍按捕获组件和 PPV 的曝光设置计算，默认测光方式是自动曝光。这类画面建议在捕获组件的后处理设置里把测光方式改成 Manual、关掉 Apply Physical Camera Exposure，此时曝光 = 2<sup>Exposure Compensation</sup>，填 0 就和主视口的 ×1 一致（不填时默认值是 1，会亮 1 档）。</p>
-      </div>
-
-      <h4>一张灰卡从灯光走到屏幕（每一步都能在编辑器里读到）</h4>
-      <div class="pipe flow" role="img" aria-label="灰卡从灯光到屏幕：平行光 3.14 lux，乘 BaseColor 0.18 除以 π 得场景值 0.18，曝光乘 1，ACES 2.0 得显示线性值 0.157，sRGB 编码得像素值 110">
-        <div class="st"><div class="t">主光</div><div class="s">平行光 3.14 lux 照到灰卡上</div></div>
-        <div class="ar" aria-hidden="true"></div>
-        <div class="st"><div class="t">材质</div><div class="s">× BaseColor 0.18 ÷ π<br>= 场景值 <b>0.18</b></div><div class="pi">Scene Color Before Tonemap</div></div>
-        <div class="ar" aria-hidden="true"></div>
-        <div class="st"><div class="t">曝光</div><div class="s">× 1（本工程锁定）</div><div class="pi">PreExposure = 1</div></div>
-        <div class="ar" aria-hidden="true"></div>
-        <div class="st"><div class="t">色调映射</div><div class="s">ACES 2.0（内部先 ×1.5）→ <b>0.157</b><br>Filmic：0.18 → 0.180</div><div class="pi">Final Color（线性）</div></div>
-        <div class="ar" aria-hidden="true"></div>
-        <div class="st"><div class="t">显示编码</div><div class="s">sRGB → 像素值 <b>110</b><br>Filmic：118</div></div>
-        <div class="ar" aria-hidden="true"></div>
-        <div class="st"><div class="t">屏幕</div><div class="s">亮度约为白色的 15.7%</div></div>
-      </div>
-
-      <h4>正确曝光的标准（三种说法，说的是同一件事）</h4>
-      <ul>
-        <li><b>读数</b>：主光下 18% 灰卡的 Scene Color Before Tonemap = <b>0.18</b>。0.16–0.20（−0.17 ~ +0.15 档）都算合格，对应屏幕像素值 104–116。</li>
-        <li><b>灯光</b>：主光加上天光等补光，照到灰卡上的总照度约 <b>π ≈ 3.14 lux</b>。</li>
-        <li><b>现场检查</b>：任何正对主光的漫反射表面，Scene Color 读数 ≈ 它自己的 BaseColor。草地 BaseColor 0.21 却读出 0.42，说明这里亮了 1 档。</li>
-      </ul>
-
-      <h4>操作：用 Pixel Inspector 标定一盏主光</h4>
+  <h4>④ 人工光：点光、聚光、矩形光</h4>
+  <ul>
+    <li><b>单位</b>：项目默认流明（<code>r.DefaultFeature.LightUnits=2</code>）。点光源坎德拉 = 流明 ÷ 4π（约 ÷12.6）；距离 d 米处的照度 = 坎德拉 ÷ d²，<b>距离翻倍暗 2 档</b>。聚光灯同样的流明锥角越小越亮，想让强度不随锥角变就改用坎德拉。</li>
+    <li><b>衰减</b>：保持勾选 Inverse Squared Falloff（物理衰减）。Attenuation Radius 只用来截断、省性能，不要拿它当衰减来调。</li>
+    <li><b>色温</b>：勾 Use Temperature。烛火、火把 1800–2000 K，白炽灯 2700 K，日光灯 4000–5000 K，6500 K 是白色。</li>
+    <li><b>相对物理</b>：同类灯（火盆、壁灯、法阵）全项目用同一个强度；需要提亮就整类一起提，并写进规范。衰减、光比仍然按物理走。</li>
+  </ul>
+  <div class="two">
+    <div class="scroll"><table class="t">
+      <thead><tr><th>真实灯具</th><th class="num">流明</th><th class="num">1 米处</th><th class="num">2 米处</th><th class="num">3 米处</th></tr></thead>
+      <tbody><tr><td>蜡烛</td><td class="num">13</td><td class="num">1 lux<br><span class="muted">EV100 −1.7</span></td><td class="num">0.25 lux<br><span class="muted">EV100 −3.7</span></td><td class="num">0.11 lux<br><span class="muted">EV100 −4.8</span></td></tr><tr><td>40 W 白炽灯</td><td class="num">450</td><td class="num">36 lux<br><span class="muted">EV100 3.5</span></td><td class="num">9 lux<br><span class="muted">EV100 1.5</span></td><td class="num">4 lux<br><span class="muted">EV100 0.3</span></td></tr><tr><td>60 W 白炽灯</td><td class="num">800</td><td class="num">64 lux<br><span class="muted">EV100 4.3</span></td><td class="num">16 lux<br><span class="muted">EV100 2.3</span></td><td class="num">7.1 lux<br><span class="muted">EV100 1.2</span></td></tr><tr><td>100 W 白炽灯</td><td class="num">1600</td><td class="num">130 lux<br><span class="muted">EV100 5.3</span></td><td class="num">32 lux<br><span class="muted">EV100 3.3</span></td><td class="num">14 lux<br><span class="muted">EV100 2.2</span></td></tr></tbody>
+    </table><p class="small muted">每格：照度 · 灰卡在这里正确曝光需要的 EV100。</p></div>
+    <div>
+      <p><b>例：地牢火盆要多亮？</b>地牢基准 EV100 4，玩家活动区离火盆约 3 米：</p>
       <ol class="sub-steps">
-        <li>视口左上角的视图模式菜单（Lit）→ Exposure，确认勾着 <b>Game Settings</b>。拖过下面的 EV100 滑条会自动取消勾选，视口就改按固定 EV100 曝光（EV100 = 1 时比游戏暗 1 档），和游戏对不上。</li>
-        <li>Tools → Debug → Pixel Inspector，点 <b>Start Pixel Inspector</b>，鼠标指向主光下的平放灰卡（按 Esc 停止）。</li>
-        <li>读 Scene Color 分组里的 <b>Scene Color Before Tonemap</b>（或 Luminance Before Tonemap）。PreExposure 应该显示 1，证明曝光确实是 ×1。</li>
-        <li>不是 0.18 就调主光强度：<b>新强度 = 旧强度 × 0.18 ÷ 读数</b>。读数是 0.36 就把灯减半（−1 档），是 0.09 就加倍（+1 档）。天光、反弹光也算在读数里，所以以读数为准，不必死算 lux。</li>
-        <li>再读 Final Color 核对画面：它显示的是<b>线性值</b>，按下表换算成像素值。主光下灰卡应约 0.157（像素值 110）。</li>
+        <li>灰卡要的照度 = π × 2<sup>4</sup> ≈ 50 lux；</li>
+        <li>坎德拉 = 照度 × 距离² ≈ 452 cd；</li>
+        <li>流明 = 坎德拉 × 4π ≈ <b>5700 lm</b>。</li>
       </ol>
-      <div class="two">
-        <div class="scroll"><table class="t">
-          <thead><tr><th class="num">Final Color 读数（线性）</th><th class="num">屏幕像素值</th></tr></thead>
-          <tbody><tr><td class="num">0.032</td><td class="num"><span class="c8" style="background:#323232"></span>50</td></tr><tr><td class="num">0.05</td><td class="num"><span class="c8" style="background:#3F3F3F"></span>63</td></tr><tr><td class="num">0.1</td><td class="num"><span class="c8" style="background:#595959"></span>89</td></tr><tr><td class="num">0.156</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr><tr><td class="num">0.181</td><td class="num"><span class="c8" style="background:#767676"></span>118</td></tr><tr><td class="num">0.3</td><td class="num"><span class="c8" style="background:#959595"></span>149</td></tr><tr><td class="num">0.5</td><td class="num"><span class="c8" style="background:#BCBCBC"></span>188</td></tr><tr><td class="num">0.75</td><td class="num"><span class="c8" style="background:#E1E1E1"></span>225</td></tr><tr><td class="num">1</td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td></tr></tbody>
-        </table></div>
-        <div class="note"><span class="lab">两个容易踩的坑</span>
-          <p><b>Substrate 下别看 GBuffer 分组。</b>工程开了 Substrate（自适应 GBuffer），Pixel Inspector 里 BaseColor、Metallic 等 GBuffer 项可能不准；BaseColor 以材质里填的数为准。Scene Color 和 Final Color 不受影响。</p>
-          <p><b>局部曝光会“压扁”大块明暗。</b>工程默认开了 Local Exposure（高光、暗部对比都是 0.8，全工程 0 张图改过它）：大块区域相对中灰的档数会乘 0.8。主光下的灰卡正好在支点上，不受影响；大片阴影 −2.5 档在屏幕上像 −2 档（像素值 32 → 45），地牢 −5 档像 −4 档（2 → 7）。它只影响 Final Color，不影响 Scene Color；本文表格里的屏幕值都没算它。</p>
-        </div>
-      </div>
+      <p>相当于 7 只 60 W 白炽灯，比真实火把亮得多，这就是“相对物理”的提亮；但离火盆越远越暗的规律仍然是真实的：</p>
+    </div>
+  </div>
+  <figure>
+    <div class="dist five"><div class="dc"><span class="chip" style="background:#B8B8B8"></span><b>1.5 米</b><span>200 lux</span><span>+2 档 · 屏幕 184</span></div><div class="dc"><span class="chip" style="background:#949494"></span><b>2.1 米</b><span>100 lux</span><span>+1 档 · 屏幕 148</span></div><div class="dc"><span class="chip" style="background:#6E6E6E"></span><b>3 米</b><span>50 lux</span><span>0 档 · 屏幕 110</span></div><div class="dc"><span class="chip" style="background:#4B4B4B"></span><b>4.2 米</b><span>25 lux</span><span>−1 档 · 屏幕 75</span></div><div class="dc"><span class="chip" style="background:#2D2D2D"></span><b>6 米</b><span>13 lux</span><span>−2 档 · 屏幕 45</span></div></div>
+    <figcaption>火盆 5700 lm：每格是离火盆的距离、灰卡照度、相对地牢基准（EV100 4）的档数和屏幕像素值（ACES 2.0 + sRGB）。距离 ×1.41 暗 1 档。</figcaption>
+  </figure>
 
-      <h4>档位尺：材质、阴影、光源各占哪一段</h4>
-      <div class="chart" id="chart-stops">
-        <p class="fig-title">从暗到亮的“档位尺”（ACES 2.0 + sRGB 与 Filmic 对比）</p>
-        <p class="fig-sub">0 档 = 正确曝光下的 18% 灰卡。灰条是每个档位在屏幕上显示的样子，鼠标放上去可以看具体数值。</p>
-      </div>
-      <p>看懂这把尺子，就知道为什么“调 BaseColor 救不了亮度”：<b>被主光照亮的材质只占 −2.5 到 +2.3 档</b>（BaseColor 0.032–0.87）。比这更暗的只能是阴影，比这更亮的只能是光源、自发光和镜面高光。ACES 2.0 要到 +3.9 档才到 90% 白、+7.0 档才到 99% 白，所以 ACES 下“白色物体看起来是浅灰”是正常的，那段空间是留给火焰、法术、天空的。</p>
+  <h4>⑤ 光比：亮处和暗处差几档</h4>
+  <p><b>光比</b>就是亮处和暗处差几档。在标定场景里读两张灰卡就能得到（同一套灯光、同一个相机，ACES 2.0 + sRGB 渲染）：</p>
+  <div class="tiles"><figure class="tile"><img src="img/expo_ratio_1.png" alt="光比 1 档：阴影里的灰卡比阳光下暗 1 档" loading="lazy" width="480" height="320"><figcaption><b>光比 1 档（2 : 1）</b>亮处灰卡 109 → 阴影灰卡 <span class="c8" style="background:#4A4A4A"></span>74<br><span class="muted">阴天、柔光、补光很足</span></figcaption></figure><figure class="tile"><img src="img/expo_ratio_2.png" alt="光比 2 档：阴影里的灰卡比阳光下暗 2 档" loading="lazy" width="480" height="320"><figcaption><b>光比 2 档（4 : 1）</b>亮处灰卡 110 → 阴影灰卡 <span class="c8" style="background:#2C2C2C"></span>44<br><span class="muted">晴天里阴影偏亮（有大面积反光）</span></figcaption></figure><figure class="tile"><img src="img/expo_ratio_3.png" alt="光比 3 档：阴影里的灰卡比阳光下暗 3 档" loading="lazy" width="480" height="320"><figcaption><b>光比 3 档（8 : 1）</b>亮处灰卡 110 → 阴影灰卡 <span class="c8" style="background:#161616"></span>22<br><span class="muted">晴天直射、室内窗光</span></figcaption></figure><figure class="tile"><img src="img/expo_ratio_5.png" alt="光比 5 档：阴影里的灰卡比阳光下暗 5 档" loading="lazy" width="480" height="320"><figcaption><b>光比 5 档（32 : 1）</b>亮处灰卡 110 → 阴影灰卡 <span class="c8" style="background:#020202"></span>2<br><span class="muted">地牢、夜晚火把</span></figcaption></figure></div>
+  <p><b>暗场景请靠光比变暗，而不是整体欠曝</b>：火盆照到的地方保持正确曝光（角色、道具、怪物在亮处依然看得清），其余地方只给很弱的环境光。整体欠曝会把亮处的材质一起压暗，读不清，暗部也会挤成一团。</p>
 
-      <h4>正确曝光 vs 正常曝光：每类场景怎么定</h4>
-      <p><b>正确曝光</b>只有一个，用灰卡测出来；<b>正常曝光</b>是每张图选出来的观感。下面 5 张是同一个小场景（光比 2.5 档）按不同曝光渲染的样子：</p>
-      <div class="tiles five"><figure class="tile"><img src="img/expo_bracket_m2.png" alt="曝光 −2 档" loading="lazy" width="480" height="320"><figcaption><b>−2 档</b>亮处灰卡 45 · 白卡 121</figcaption></figure><figure class="tile"><img src="img/expo_bracket_m1.png" alt="曝光 −1 档" loading="lazy" width="480" height="320"><figcaption><b>−1 档</b>亮处灰卡 74 · 白卡 159</figcaption></figure><figure class="tile ref"><img src="img/expo_bracket_p0.png" alt="曝光 0 档" loading="lazy" width="480" height="320"><figcaption><b>0 档 · 正确曝光</b>亮处灰卡 110 · 白卡 192</figcaption></figure><figure class="tile"><img src="img/expo_bracket_p1.png" alt="曝光 +1 档" loading="lazy" width="480" height="320"><figcaption><b>+1 档</b>亮处灰卡 148 · 白卡 218</figcaption></figure><figure class="tile"><img src="img/expo_bracket_p2.png" alt="曝光 +2 档" loading="lazy" width="480" height="320"><figcaption><b>+2 档</b>亮处灰卡 184 · 白卡 235</figcaption></figure></div>
-      <p>大多数场景的正常曝光就等于正确曝光。<b>暗场景请靠“光比”变暗，而不是整体欠曝</b>：火把照到的地方保持正确曝光（角色、道具、怪物在亮处依然看得清），其余地方只给很弱的环境光。整体欠曝会把亮处的材质一起压暗，读不清，还会让暗部挤成一团。</p>
-      <p><b>光比</b>就是亮处和暗处差几档。在标定场景里读两张灰卡就能得到（同一套灯光 ACES 2.0 + sRGB 渲染）：</p>
-      <div class="tiles"><figure class="tile"><img src="img/expo_ratio_1.png" alt="光比 1 档：阴影里的灰卡比阳光下暗 1 档" loading="lazy" width="480" height="320"><figcaption><b>光比 1 档（2 : 1）</b>亮处灰卡 109 → 阴影灰卡 <span class="c8" style="background:#4A4A4A"></span>74<br><span class="muted">阴天、柔光、补光很足</span></figcaption></figure><figure class="tile"><img src="img/expo_ratio_2.png" alt="光比 2 档：阴影里的灰卡比阳光下暗 2 档" loading="lazy" width="480" height="320"><figcaption><b>光比 2 档（4 : 1）</b>亮处灰卡 110 → 阴影灰卡 <span class="c8" style="background:#2C2C2C"></span>44<br><span class="muted">晴天里阴影偏亮（有大面积反光）</span></figcaption></figure><figure class="tile"><img src="img/expo_ratio_3.png" alt="光比 3 档：阴影里的灰卡比阳光下暗 3 档" loading="lazy" width="480" height="320"><figcaption><b>光比 3 档（8 : 1）</b>亮处灰卡 110 → 阴影灰卡 <span class="c8" style="background:#161616"></span>22<br><span class="muted">晴天直射、室内窗光</span></figcaption></figure><figure class="tile"><img src="img/expo_ratio_5.png" alt="光比 5 档：阴影里的灰卡比阳光下暗 5 档" loading="lazy" width="480" height="320"><figcaption><b>光比 5 档（32 : 1）</b>亮处灰卡 110 → 阴影灰卡 <span class="c8" style="background:#020202"></span>2<br><span class="muted">地牢、夜晚火把</span></figcaption></figure></div>
-      <div class="scroll"><table class="t stack">
-        <thead><tr><th>场景类型</th><th>主光</th><th class="num">正常曝光</th><th class="num">阴影 / 暗部相对亮处</th><th class="num">屏幕上：亮处灰卡 / 暗处灰卡</th><th>说明</th></tr></thead>
-        <tbody><tr><td>主城白天（晴）</td><td>太阳 + 天光</td><td class="num">0（= 正确曝光）</td><td class="num">−2.5 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#202020"></span>32</td><td>阴影里只有天光</td></tr><tr><td>阴天 / 雾天</td><td>整个天空</td><td class="num">0（= 正确曝光）</td><td class="num">−1.0 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#4B4B4B"></span>75</td><td>没有硬阴影，物体背光面暗约 1 档</td></tr><tr><td>室内（窗光 / 吊灯）</td><td>窗或主灯</td><td class="num">0（= 正确曝光）</td><td class="num">−2.5 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#202020"></span>32</td><td>离光源越远越暗：距离翻倍暗 2 档</td></tr><tr><td>地牢（火把）</td><td>火把 / 法阵</td><td class="num">0（= 正确曝光）</td><td class="num">−5.0 档</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110 / <span class="c8" style="background:#020202"></span>2</td><td>火把照到的地方保持正确曝光，其余靠很弱的环境光</td></tr><tr><td>夜晚户外</td><td>月光 + 灯笼</td><td class="num">−1.5 档</td><td class="num">−3.0 档</td><td class="num"><span class="c8" style="background:#3B3B3B"></span>59 / <span class="c8" style="background:#030303"></span>3</td><td>整体比正确曝光暗 1–2 档；灯笼周围按 0 档打</td></tr></tbody>
-      </table></div>
-      <p class="small muted">这是建议起点，按美术风格调整；但每张图最后定下来的“正常曝光”和光比要写进这张表，验收时按表核对。屏幕值按 ACES 2.0 + sRGB 计算，没有算局部曝光。</p>
-
-      <h4>灯光强度怎么换算（本工程曝光 ×1）</h4>
-      <ul>
-        <li><b>平行光（lux）</b>：正对表面时，强度就是照度。斜着照时，平放表面收到的是“强度 × 光线与地面夹角的正弦”。UE 新建平行光默认 10 lux，正对表面时在本工程比正确曝光亮约 +1.7 档，拖进场景后先改成 3.14 左右再细调。</li>
-        <li><b>点光源（工程默认单位是流明，<code>r.DefaultFeature.LightUnits=2</code>）</b>：坎德拉 = 流明 ÷ 4π（约 ÷12.6）；距离 d 米处的照度 = 坎德拉 ÷ d²。<b>距离翻倍，照度变成 ¼，暗 2 档</b>。新建点光源默认约 100 流明（8 坎德拉），在 1.6 米处正好正确曝光。</li>
-        <li><b>聚光灯</b>：同样的流明，锥角越小中心越亮（UE 按锥角把光通量重新分配）。想让强度不随锥角变，改用坎德拉。</li>
-        <li><b>天光、自发光</b>：都按“比灰卡亮或暗几档”来定，见第 ④ 步。</li>
-      </ul>
-      <figure>
-        <p class="fig-title">例：想让一支火把在 2 米外正好正确曝光</p>
-        <p class="fig-sub">坎德拉 = π × 2² ≈ 12.6，换成流明约 158。地面灰卡离火把越远越暗：</p>
-        <div class="dist"><div class="dc"><span class="chip" style="background:#B8B8B8"></span><b>1 米</b><span>12.57 lux</span><span>+2 档 · 屏幕 184</span></div><div class="dc"><span class="chip" style="background:#959595"></span><b>1.41 米</b><span>6.32 lux</span><span>+1 档 · 屏幕 149</span></div><div class="dc"><span class="chip" style="background:#6E6E6E"></span><b>2 米</b><span>3.14 lux</span><span>0 档 · 屏幕 110</span></div><div class="dc"><span class="chip" style="background:#4B4B4B"></span><b>2.83 米</b><span>1.57 lux</span><span>−1 档 · 屏幕 75</span></div><div class="dc"><span class="chip" style="background:#2D2D2D"></span><b>4 米</b><span>0.79 lux</span><span>−2 档 · 屏幕 45</span></div><div class="dc"><span class="chip" style="background:#161616"></span><b>5.66 米</b><span>0.39 lux</span><span>−3 档 · 屏幕 22</span></div></div>
-        <figcaption>每格：离火把的距离、灰卡收到的照度、相对正确曝光的档数和屏幕像素值（ACES 2.0 + sRGB）。</figcaption>
-      </figure>
-
-      <h4>想让整张图整体亮一点或暗一点</h4>
-      <p>因为曝光补偿不生效，可用的办法按推荐顺序是：</p>
-      <ol class="sub-steps">
-        <li><b>按比例调所有灯</b>（推荐）：选中主光、补光、天光，强度一起 ×2（+1 档）或 ×½（−1 档），灰卡读数跟着变，光比不变。自发光不会跟着变；想让它和环境的相对亮度不变，Emissive 也一起乘。</li>
-        <li><b>PPV → Color Grading → Global → Gain</b>：在色调映射之前给整个画面乘一个数，连自发光一起变，效果约等于曝光（Gain 2 = +1 档），Filmic 和 ACES 都生效。它本来是调色参数，团队要约定只在 Global 这一项用，并把档数记进表里。Gain 不影响 Scene Color 读数，所以标定照常以 0.18 为准，Gain 记作这张图“正常曝光”的偏移（Gain 0.5 = −1 档）。</li>
-        <li><b>全项目统一偏移</b>：<code>r.HDR.Aces.SceneColorMultiplier</code>（默认 1.5，只影响 ACES）。会改动所有地图，只在定项目基准时用一次。</li>
-        <li>视口的 EV100 滑条只用来临时预览，不进包，用完记得勾回 Game Settings。</li>
-      </ol>
-
-      <details class="tblw more">
-        <summary>可选路线：打开手动曝光，让 Exposure Compensation 生效（需要 TA 决定）</summary>
-        <p>如果团队想用真实世界的亮度（太阳约 10 万 lux、室内几百 lux），或希望每张图有一个独立的曝光旋钮，可以把曝光切成“手动”。每张图的 Exposure Compensation 就等于 −EV100：晴天约 −15，阴天约 −12，室内约 −7。要一次改齐这些地方：</p>
-        <ul>
-          <li>所有 Scalability.ini 的每个 PostProcessQuality 档位：<code>r.EyeAdaptationQuality=2</code>。UEChecker 会核对这个值，模板也要一起改。</li>
-          <li>DefaultEngine.ini：<code>r.DefaultFeature.AutoExposure.Method=2</code>（默认测光方式 = Manual），<code>r.DefaultFeature.AutoExposure.Bias=0</code>（UE 默认是 1，会让所有图突然亮 1 档）。</li>
-          <li>每张图的全局 PPV 关掉 <b>Apply Physical Camera Exposure</b>。引擎默认开着，默认相机 f/4、1/60 秒、ISO 100 相当于 EV100 9.9，不关的话画面会暗约 10 档。</li>
-          <li>打开前先检查已经存过曝光设置的图：正式内容里 27 个包存过 Exposure Compensation、11 个改过测光方式、6 个改过 Apply Physical Camera Exposure（全工程分别是 83 / 45 / 14 个）。这些值打开后会突然生效。</li>
-          <li>自发光、特效、UI 3D 元素的强度要跟着曝光一起放大，或在材质里乘 EyeAdaptationInverse 节点。</li>
-          <li>Lumen 的缓存光照默认只覆盖曝光 −8 到 +12 档（<code>r.EyeAdaptation.CachedLightingPreExposure=4</code>），用真实太阳亮度时要改成 8。</li>
-        </ul>
-        <p class="small muted">不打算用真实世界的绝对亮度，就保持现状，更省事。要切就在重打光开始前一次性切换并重新标定，不要中途切。</p>
-      </details>
-    </li>
-
-    <!-- ---------------------------------------------------------- ④ -->
-    <li id="long-4"><b>材质与自发光规范</b>
-      <p>一句话：<b>BaseColor 用 UE 的线性值思考，按真实材质定死；自发光按“比中灰亮几档”定强度。</b></p>
-
-      <h4>同一个颜色的两种写法：UE 的线性值 vs PS 的 sRGB 值</h4>
-      <div class="chart" id="chart-ruler">
-        <p class="fig-title">BaseColor 对照尺</p>
-        <p class="fig-sub">上排是 PS / Substance 里的 sRGB 值（0–255），下排是同一个位置在 UE 里要填的线性值。斜线区是非金属不该用的范围；下方蓝色三角标的是 UE 官方文档给的真实材质实测值。</p>
-      </div>
-      <ul>
-        <li><b>UE 的 0.18 = PS 的 118</b>（18% 灰卡）；<b>UE 的 0.5 = PS 的 188</b>，不是 128；PS 的 128 在 UE 里是 0.216。</li>
-        <li>线性值和光的能量成正比，所以 UE 里“0.36 正好比 0.18 亮 1 档”；sRGB 值是按眼睛的感觉排的，PS 里 118 → 236 并不是亮 1 档。</li>
-      </ul>
-      <div class="scroll"><table class="t stack">
-        <thead><tr><th>在哪里</th><th>看到 / 填的是</th><th>怎么做</th></tr></thead>
-        <tbody>
-          <tr><td>PS、Substance 的拾色器、贴图像素</td><td>sRGB 值（0–255 / Hex）</td><td>按下面的安全范围画，存成普通 8 bit 贴图。</td></tr>
-          <tr><td>UE 取色器的 R、G、B 数值框</td><td>线性值（BaseColor 实际用的数）</td><td>直接填线性值；或把 PS 的 Hex 粘贴到 <b>Hex sRGB</b> 框，UE 自动换算（源码用的就是 sRGB 公式）。</td></tr>
-          <tr><td>材质里的 Constant3Vector、VectorParameter</td><td>线性值</td><td><b>不要</b>把 PS 的 0–255 直接 ÷255 填进去：118 ÷ 255 = 0.463，亮了约 +1.4 档。</td></tr>
-          <tr><td>BaseColor 贴图</td><td>贴图里存 sRGB 值，采样时自动转成线性值</td><td>贴图设置里的 <b>sRGB 要勾上</b>（颜色贴图默认就是勾上的）。</td></tr>
-          <tr><td>粗糙度、金属度、AO、遮罩贴图</td><td>贴图里存的就是数据本身</td><td><b>sRGB 不勾</b>，压缩设置选 Masks (no sRGB)。勾错了，0.5 的粗糙度会被当成 0.21。</td></tr>
-        </tbody>
-      </table></div>
-
-      <h4>非金属 Albedo 的安全范围（图解）</h4>
-      <p>下面是 UE 官方文档《基于物理的材质》给的实测 BaseColor（只给了亮度），加上本文的 18% 灰卡做参照。每块写着 UE 里填的线性值和对应的 PS 值：</p>
-      <div class="sws"><div class="sw"><span class="chip" style="background:#272727"></span><b>木炭</b><span class="v">UE <b>0.02</b></span><span class="v">PS 39 · #272727</span></div><div class="sw"><span class="chip" style="background:#272727"></span><b>新沥青</b><span class="v">UE <b>0.02</b></span><span class="v">PS 39 · #272727</span></div><div class="sw"><span class="chip" style="background:#505050"></span><b>旧沥青</b><span class="v">UE <b>0.08</b></span><span class="v">PS 80 · #505050</span></div><div class="sw"><span class="chip" style="background:#656565"></span><b>裸土</b><span class="v">UE <b>0.13</b></span><span class="v">PS 101 · #656565</span></div><div class="sw ref"><span class="chip" style="background:#767676"></span><b>18% 灰卡</b><span class="v">UE <b>0.18</b></span><span class="v">PS 118 · #767676</span><span class="v tag">基准</span></div><div class="sw"><span class="chip" style="background:#7E7E7E"></span><b>绿草</b><span class="v">UE <b>0.21</b></span><span class="v">PS 126 · #7E7E7E</span></div><div class="sw"><span class="chip" style="background:#A2A2A2"></span><b>沙漠沙</b><span class="v">UE <b>0.36</b></span><span class="v">PS 162 · #A2A2A2</span></div><div class="sw"><span class="chip" style="background:#BDBDBD"></span><b>新混凝土</b><span class="v">UE <b>0.51</b></span><span class="v">PS 189 · #BDBDBD</span></div><div class="sw"><span class="chip" style="background:#C5C5C5"></span><b>海冰</b><span class="v">UE <b>0.56</b></span><span class="v">PS 197 · #C5C5C5</span></div><div class="sw"><span class="chip" style="background:#E8E8E8"></span><b>新雪</b><span class="v">UE <b>0.81</b></span><span class="v">PS 232 · #E8E8E8</span></div></div>
-      <ul class="dos">
-        <li><span class="bad"></span><b>不要纯黑</b>（0 / #000000）：现实里最黑的木炭、新沥青也有 0.02（PS 39）。一般不低于 <b>PS 50（UE 0.032）</b>，最多放宽到 PS 30（UE 0.013）。</li>
-        <li><span class="bad"></span><b>不要纯白</b>（255 / #FFFFFF）：新雪才 0.81（PS 232）。非金属上限 <b>PS 240（UE 0.87）</b>。</li>
-        <li><span class="bad"></span><b>不要纯饱和</b>（比如 255, 0, 0）：真实的红漆是 175, 54, 60（色卡“红”）。颜色可以艳，但别超过下面色卡里最艳的那几块。</li>
-        <li><span class="ok"></span>这条范围是 Substance《PBR Guide》给的：非金属 sRGB 30–50 到 240，金属反射值 180–255。</li>
-      </ul>
-
-      <h4>彩色材质参考：ColorChecker 24 色卡</h4>
-      <p>每块都是真实颜料的颜色，日常物体的饱和度很少超过它们；肤色、植物、天空都有对应的色块，可以直接拿来当参照：</p>
-      <div class="ccgrid"><div class="cc"><span class="chip" style="background:#735244"></span><span>深肤色</span></div><div class="cc"><span class="chip" style="background:#C29682"></span><span>浅肤色</span></div><div class="cc"><span class="chip" style="background:#627A9D"></span><span>天空蓝</span></div><div class="cc"><span class="chip" style="background:#576C43"></span><span>植物绿</span></div><div class="cc"><span class="chip" style="background:#8580B1"></span><span>蓝花</span></div><div class="cc"><span class="chip" style="background:#67BDAA"></span><span>蓝绿</span></div><div class="cc"><span class="chip" style="background:#D67E2C"></span><span>橙</span></div><div class="cc"><span class="chip" style="background:#505BA6"></span><span>紫蓝</span></div><div class="cc"><span class="chip" style="background:#C15A63"></span><span>中红</span></div><div class="cc"><span class="chip" style="background:#5E3C6C"></span><span>紫</span></div><div class="cc"><span class="chip" style="background:#9DBC40"></span><span>黄绿</span></div><div class="cc"><span class="chip" style="background:#E0A32E"></span><span>橙黄</span></div><div class="cc"><span class="chip" style="background:#383D96"></span><span>蓝</span></div><div class="cc"><span class="chip" style="background:#469449"></span><span>绿</span></div><div class="cc"><span class="chip" style="background:#AF363C"></span><span>红</span></div><div class="cc"><span class="chip" style="background:#E7C71F"></span><span>黄</span></div><div class="cc"><span class="chip" style="background:#BB5695"></span><span>品红</span></div><div class="cc"><span class="chip" style="background:#0885A1"></span><span>青</span></div><div class="cc"><span class="chip" style="background:#F3F3F2"></span><span>白</span></div><div class="cc"><span class="chip" style="background:#C8C8C8"></span><span>灰 8</span></div><div class="cc"><span class="chip" style="background:#A0A0A0"></span><span>灰 6.5</span></div><div class="cc"><span class="chip" style="background:#7A7A79"></span><span>灰 5</span></div><div class="cc"><span class="chip" style="background:#555555"></span><span>灰 3.5</span></div><div class="cc"><span class="chip" style="background:#343434"></span><span>黑</span></div></div>
-      <details class="tblw">
-        <summary>查看 24 色的 PS 值与 UE 线性值</summary>
-        <div class="scroll"><table class="t">
-          <thead><tr><th>色块</th><th class="num">PS（sRGB）</th><th class="num">Hex</th><th class="num">UE BaseColor（线性）</th></tr></thead>
-          <tbody><tr><td><span class="c8" style="background:#735244"></span>深肤色</td><td class="num">115, 82, 68</td><td class="num">#735244</td><td class="num">0.171, 0.084, 0.058</td></tr><tr><td><span class="c8" style="background:#C29682"></span>浅肤色</td><td class="num">194, 150, 130</td><td class="num">#C29682</td><td class="num">0.539, 0.305, 0.223</td></tr><tr><td><span class="c8" style="background:#627A9D"></span>天空蓝</td><td class="num">98, 122, 157</td><td class="num">#627A9D</td><td class="num">0.122, 0.195, 0.337</td></tr><tr><td><span class="c8" style="background:#576C43"></span>植物绿</td><td class="num">87, 108, 67</td><td class="num">#576C43</td><td class="num">0.095, 0.15, 0.056</td></tr><tr><td><span class="c8" style="background:#8580B1"></span>蓝花</td><td class="num">133, 128, 177</td><td class="num">#8580B1</td><td class="num">0.235, 0.216, 0.44</td></tr><tr><td><span class="c8" style="background:#67BDAA"></span>蓝绿</td><td class="num">103, 189, 170</td><td class="num">#67BDAA</td><td class="num">0.136, 0.509, 0.402</td></tr><tr><td><span class="c8" style="background:#D67E2C"></span>橙</td><td class="num">214, 126, 44</td><td class="num">#D67E2C</td><td class="num">0.672, 0.209, 0.025</td></tr><tr><td><span class="c8" style="background:#505BA6"></span>紫蓝</td><td class="num">80, 91, 166</td><td class="num">#505BA6</td><td class="num">0.08, 0.105, 0.381</td></tr><tr><td><span class="c8" style="background:#C15A63"></span>中红</td><td class="num">193, 90, 99</td><td class="num">#C15A63</td><td class="num">0.533, 0.102, 0.125</td></tr><tr><td><span class="c8" style="background:#5E3C6C"></span>紫</td><td class="num">94, 60, 108</td><td class="num">#5E3C6C</td><td class="num">0.112, 0.045, 0.15</td></tr><tr><td><span class="c8" style="background:#9DBC40"></span>黄绿</td><td class="num">157, 188, 64</td><td class="num">#9DBC40</td><td class="num">0.337, 0.503, 0.051</td></tr><tr><td><span class="c8" style="background:#E0A32E"></span>橙黄</td><td class="num">224, 163, 46</td><td class="num">#E0A32E</td><td class="num">0.745, 0.366, 0.027</td></tr><tr><td><span class="c8" style="background:#383D96"></span>蓝</td><td class="num">56, 61, 150</td><td class="num">#383D96</td><td class="num">0.04, 0.047, 0.305</td></tr><tr><td><span class="c8" style="background:#469449"></span>绿</td><td class="num">70, 148, 73</td><td class="num">#469449</td><td class="num">0.061, 0.296, 0.067</td></tr><tr><td><span class="c8" style="background:#AF363C"></span>红</td><td class="num">175, 54, 60</td><td class="num">#AF363C</td><td class="num">0.429, 0.037, 0.045</td></tr><tr><td><span class="c8" style="background:#E7C71F"></span>黄</td><td class="num">231, 199, 31</td><td class="num">#E7C71F</td><td class="num">0.799, 0.571, 0.014</td></tr><tr><td><span class="c8" style="background:#BB5695"></span>品红</td><td class="num">187, 86, 149</td><td class="num">#BB5695</td><td class="num">0.497, 0.093, 0.301</td></tr><tr><td><span class="c8" style="background:#0885A1"></span>青</td><td class="num">8, 133, 161</td><td class="num">#0885A1</td><td class="num">0.002, 0.235, 0.356</td></tr><tr><td><span class="c8" style="background:#F3F3F2"></span>白</td><td class="num">243, 243, 242</td><td class="num">#F3F3F2</td><td class="num">0.896, 0.896, 0.888</td></tr><tr><td><span class="c8" style="background:#C8C8C8"></span>灰 8</td><td class="num">200, 200, 200</td><td class="num">#C8C8C8</td><td class="num">0.578, 0.578, 0.578</td></tr><tr><td><span class="c8" style="background:#A0A0A0"></span>灰 6.5</td><td class="num">160, 160, 160</td><td class="num">#A0A0A0</td><td class="num">0.352, 0.352, 0.352</td></tr><tr><td><span class="c8" style="background:#7A7A79"></span>灰 5</td><td class="num">122, 122, 121</td><td class="num">#7A7A79</td><td class="num">0.195, 0.195, 0.191</td></tr><tr><td><span class="c8" style="background:#555555"></span>灰 3.5</td><td class="num">85, 85, 85</td><td class="num">#555555</td><td class="num">0.091, 0.091, 0.091</td></tr><tr><td><span class="c8" style="background:#343434"></span>黑</td><td class="num">52, 52, 52</td><td class="num">#343434</td><td class="num">0.034, 0.034, 0.034</td></tr></tbody>
-        </table></div>
-      </details>
-
-      <h4>金属：BaseColor 就是它的反射颜色</h4>
-      <p>Metallic = 1 时，BaseColor 不再是“漫反射颜色”，而是镜面反射的颜色，所以都很亮（PS 180–255）。UE 官方实测值：</p>
-      <div class="wide-sw"><div class="sws"><div class="sw"><span class="chip" style="background:#C5C7C8"></span><b>铁</b><span class="v">UE <b>0.56, 0.57, 0.58</b></span><span class="v">PS 197,199,200 · #C5C7C8</span></div><div class="sw"><span class="chip" style="background:#C4C5C4"></span><b>铬</b><span class="v">UE <b>0.55, 0.556, 0.554</b></span><span class="v">PS 196,197,196 · #C4C5C4</span></div><div class="sw"><span class="chip" style="background:#C2BBB3"></span><b>钛</b><span class="v">UE <b>0.542, 0.497, 0.449</b></span><span class="v">PS 194,187,179 · #C2BBB3</span></div><div class="sw"><span class="chip" style="background:#D4CDC0"></span><b>镍</b><span class="v">UE <b>0.66, 0.609, 0.526</b></span><span class="v">PS 212,205,192 · #D4CDC0</span></div><div class="sw"><span class="chip" style="background:#D6D1C9"></span><b>铂</b><span class="v">UE <b>0.672, 0.637, 0.585</b></span><span class="v">PS 214,209,201 · #D6D1C9</span></div><div class="sw"><span class="chip" style="background:#D5D4D0"></span><b>钴</b><span class="v">UE <b>0.662, 0.655, 0.634</b></span><span class="v">PS 213,212,208 · #D5D4D0</span></div><div class="sw"><span class="chip" style="background:#F5F6F6"></span><b>铝</b><span class="v">UE <b>0.913, 0.921, 0.925</b></span><span class="v">PS 245,246,246 · #F5F6F6</span></div><div class="sw"><span class="chip" style="background:#FCFAF5"></span><b>银</b><span class="v">UE <b>0.972, 0.96, 0.915</b></span><span class="v">PS 252,250,245 · #FCFAF5</span></div><div class="sw"><span class="chip" style="background:#FFE39D"></span><b>金</b><span class="v">UE <b>1, 0.766, 0.336</b></span><span class="v">PS 255,227,157 · #FFE39D</span></div><div class="sw"><span class="chip" style="background:#FAD1C2"></span><b>铜</b><span class="v">UE <b>0.955, 0.637, 0.538</b></span><span class="v">PS 250,209,194 · #FAD1C2</span></div></div></div>
-
-      <h4>为什么 ACES 下白色看起来发灰（不要靠调 BaseColor 修）</h4>
-      <div class="two">
-        <div class="scroll"><table class="t">
-          <thead><tr><th>PS 里画的值</th><th class="num">正确曝光下，Filmic 显示</th><th class="num">ACES 2.0 + sRGB 显示</th></tr></thead>
-          <tbody><tr><td><span class="c8" style="background:#323232"></span><b>50</b>（UE 0.032）</td><td class="num"><span class="c8" style="background:#1C1C1C"></span>28</td><td class="num"><span class="c8" style="background:#212121"></span>33</td></tr><tr><td><span class="c8" style="background:#767676"></span><b>118</b>（UE 0.18）</td><td class="num"><span class="c8" style="background:#767676"></span>118</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr><tr><td><span class="c8" style="background:#BCBCBC"></span><b>188</b>（UE 0.5）</td><td class="num"><span class="c8" style="background:#BFBFBF"></span>191</td><td class="num"><span class="c8" style="background:#A6A6A6"></span>166</td></tr><tr><td><span class="c8" style="background:#F0F0F0"></span><b>240</b>（UE 0.87）</td><td class="num"><span class="c8" style="background:#D8D8D8"></span>216</td><td class="num"><span class="c8" style="background:#C0C0C0"></span>192</td></tr><tr><td><span class="c8" style="background:#FFFFFF"></span><b>255</b>（UE 1）</td><td class="num"><span class="c8" style="background:#DDDDDD"></span>221</td><td class="num"><span class="c8" style="background:#C6C6C6"></span>198</td></tr></tbody>
-        </table></div>
-        <div>
-          <p>正确曝光下，Filmic 让中间调“画什么显示什么”（118 → 118），亮部压得较少；ACES 2.0 把整段都放低一点，白卡（240）只显示 192。原因是第 ③ 步的档位尺：漫反射白只有 +2.3 档，ACES 把 +2.3 到 +7.0 档留给了光源。</p>
-          <p>想要更白的白：调项目 Look（Color Grading 的对比度，第 ⑥ 步），或者给那片区域更多光。<b>不要把 BaseColor 推过 240</b>：推到 255（1.0）也只显示 198，却会让这个材质在所有光照下都过亮。</p>
-        </div>
-      </div>
-
-      <h4>自发光按档位定强度</h4>
-      <p>Emissive 的单位和场景值一样，不受灯光影响。本工程曝光 ×1，所以 <b>“比中灰亮 N 档” = Emissive 0.18 × 2<sup>N</sup></b>。建议把颜色（0–1，按 BaseColor 规则）和强度分成两个参数，强度直接用档数换算：</p>
-      <div class="two">
-        <div class="scroll"><table class="t">
-          <thead><tr><th class="num">比中灰亮</th><th class="num">Emissive 数值</th><th class="num">Filmic 显示</th><th class="num">ACES 2.0 显示</th></tr></thead>
-          <tbody><tr><td class="num">+0 档</td><td class="num"><b>0.18</b></td><td class="num"><span class="c8" style="background:#767676"></span>118</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr><tr><td class="num">+1 档</td><td class="num"><b>0.36</b></td><td class="num"><span class="c8" style="background:#AAAAAA"></span>170</td><td class="num"><span class="c8" style="background:#949494"></span>148</td></tr><tr><td class="num">+2 档</td><td class="num"><b>0.72</b></td><td class="num"><span class="c8" style="background:#D0D0D0"></span>208</td><td class="num"><span class="c8" style="background:#B8B8B8"></span>184</td></tr><tr><td class="num">+3 档</td><td class="num"><b>1.44</b></td><td class="num"><span class="c8" style="background:#E8E8E8"></span>232</td><td class="num"><span class="c8" style="background:#D4D4D4"></span>212</td></tr><tr><td class="num">+4 档</td><td class="num"><b>2.88</b></td><td class="num"><span class="c8" style="background:#F5F5F5"></span>245</td><td class="num"><span class="c8" style="background:#E7E7E7"></span>231</td></tr><tr><td class="num">+5 档</td><td class="num"><b>5.76</b></td><td class="num"><span class="c8" style="background:#FCFCFC"></span>252</td><td class="num"><span class="c8" style="background:#F3F3F3"></span>243</td></tr><tr><td class="num">+6 档</td><td class="num"><b>11.52</b></td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td><td class="num"><span class="c8" style="background:#F9F9F9"></span>249</td></tr><tr><td class="num">+7 档</td><td class="num"><b>23.04</b></td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td><td class="num"><span class="c8" style="background:#FCFCFC"></span>252</td></tr><tr><td class="num">+8 档</td><td class="num"><b>46.08</b></td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td><td class="num"><span class="c8" style="background:#FEFEFE"></span>254</td></tr></tbody>
-        </table></div>
-        <div>
-          <p>反过来，想让自发光在屏幕上到某个亮度，需要：</p>
-          <div class="scroll"><table class="t">
-            <thead><tr><th class="num">目标像素值</th><th class="num">Filmic 需要</th><th class="num">ACES 2.0 需要</th></tr></thead>
-            <tbody><tr><td class="num"><span class="c8" style="background:#C8C8C8"></span>200</td><td class="num">+1.7 档（Emissive 0.58）</td><td class="num">+2.5 档（Emissive 1.02）</td></tr><tr><td class="num"><span class="c8" style="background:#E6E6E6"></span>230</td><td class="num">+2.9 档（Emissive 1.34）</td><td class="num">+3.9 档（Emissive 2.69）</td></tr><tr><td class="num"><span class="c8" style="background:#F5F5F5"></span>245</td><td class="num">+4.0 档（Emissive 2.88）</td><td class="num">+5.3 档（Emissive 7.09）</td></tr></tbody>
-          </table></div>
-          <p class="small">起点建议：灯罩、屏幕、UI 3D 元素 +1 ~ +3 档；符文、法阵 +3 ~ +5 档；火焰核心、闪光 +5 ~ +7 档。ACES 下要达到 Filmic 时代的亮度，像素值 230 的亮部要多给 +1.0 档，245 接近白时多给 +1.3 档。</p>
-        </div>
-      </div>
-    </li>
-
-    <!-- ---------------------------------------------------------- ⑤ -->
-    <li id="long-5"><b>特效重调</b>
-      <p>火焰、魔法等高饱和特效的“白芯 / 黄芯”要在贴图或颜色曲线里明确做出来，不再依赖 Tonemapper 偏色。好处是颜色所见即所得：调成什么色，越亮也还是那个色。下面是同一条火焰渐变（外圈 → 核心，强度从 0 档升到 +6 档）：</p>
-      <figure>
-        <div class="fxrows">
-          <div class="nm">以前的做法：单一橙色<span class="c8" style="background:#FF9538"></span>只调强度 · <b>Filmic</b></div>
-          <img src="img/fx_ramp_naive_filmic.png" alt="单一橙色加强度，在 Filmic 下自动变黄变白" loading="lazy">
-          <div class="nm">同一张贴图直接换 <b>ACES 2.0</b></div>
-          <img src="img/fx_ramp_naive_aces.png" alt="单一橙色加强度，在 ACES 下保持橙色、只是变淡" loading="lazy">
-          <div class="nm">新做法：颜色渐变里画出黄芯和白芯 · <b>ACES 2.0</b></div>
-          <img src="img/fx_ramp_authored_aces.png" alt="颜色渐变从红橙到黄到近白，在 ACES 下得到黄白芯" loading="lazy">
-        </div>
-        <figcaption>Filmic 的黄芯是逐通道压缩“送”的；ACES 保色相，橙色越亮只会越淡（偏粉），不会变黄。新做法的颜色节点（线性值，强度另乘）：<span class="nw"><span class="c8" style="background:#FF6C27"></span><code>1, 0.15, 0.02</code></span> → <span class="nw"><span class="c8" style="background:#FFA630"></span><code>1, 0.38, 0.03</code></span> → <span class="nw"><span class="c8" style="background:#FFDF30"></span><code>1, 0.74, 0.03</code></span> → <span class="nw"><span class="c8" style="background:#FFF395"></span><code>1, 0.9, 0.3</code></span> → <span class="nw"><span class="c8" style="background:#FFFDF3"></span><code>1, 0.98, 0.9</code></span>。</figcaption>
-      </figure>
-      <ol class="sub-steps">
-        <li>颜色渐变按“外圈深红橙 → 橙 → 黄 → 淡黄 → 近白”做，越靠核心越降饱和。</li>
-        <li>强度按档位升：外圈 0 ~ +2 档，核心 +5 ~ +6 档。黄色放在 +3 档左右最鲜艳，再亮 ACES 会把它推向白色。</li>
-        <li>在标定场景里和灰卡一起看，确认核心不糊、外圈不发灰。</li>
-      </ol>
-    </li>
-
-    <!-- ---------------------------------------------------------- ⑥ -->
-    <li id="long-6"><b>项目 Look 用 Color Grading 做，不用 LUT 贴图</b>
-      ACES 2.0 默认是“中性原片”。项目风格（对比、饱和、暗部偏冷、高光偏暖等）用 Color Grading 的全局 / 暗部 / 中间调 / 高光分区来做，整理成几套 PPV 预设，按场景类型复用。LUT 贴图在 ACES 下不生效。实在需要 LUT 式调色，可以用 After Tonemapping 的后处理材质，但有额外开销，移动端要慎用。</li>
-
-    <!-- ---------------------------------------------------------- ⑦ -->
-    <li id="long-7"><b>DCC 和 UE 对齐</b>
-      <p>Substance Painter、Nuke、DaVinci Resolve、Maya / Houdini 等支持 OCIO 的软件，用 ACES 2.0 配置（sRGB 显示、SDR 100 nit）预览时，<b>要额外 +0.58 档曝光</b>，因为 UE 在 ACES 前乘了 1.5。用灰卡核对最直观：</p>
-      <div class="scroll"><table class="t">
-        <thead><tr><th>同一个 18% 灰（场景值 0.18）</th><th class="num">屏幕像素值</th></tr></thead>
-        <tbody>
-          <tr><td>UE：ACES 2.0 + sRGB 编码（内部 ×1.5）</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr>
-          <tr><td>DCC：OCIO ACES 2.0，sRGB 显示，视图曝光 0</td><td class="num"><span class="c8" style="background:#595959"></span>89</td></tr>
-          <tr><td>DCC：视图曝光（Exposure / EV）+0.58</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr>
-        </tbody>
-      </table></div>
-      <p>另一种做法是把 UE 的 <code>r.HDR.Aces.SceneColorMultiplier</code> 设回 1.0，与行业标准完全一致。但本工程曝光补偿不生效，补回这 0.58 档只能把所有灯光调亮 1.5 倍，灰卡读数也会变成 0.27，第 ③ 步的标定口径要跟着改。所以<b>推荐保留 1.5、在 DCC 里加 +0.58 档</b>。两种做法选一种，全项目统一。</p>
-    </li>
-
-    <!-- ---------------------------------------------------------- ⑧ -->
-    <li id="long-8"><b>为 HDR 输出留好路</b>
-      ACES 2.0 的 SDR 和 HDR 是同一曲线家族，开 HDR 后自动按屏幕峰值亮度展开，观感一致。Filmic 在 HDR 下是“先算出 SDR 结果，再反推扩展”，一致性较差。以后要支持 HDR 屏幕，ACES 是更省事的基础。</li>
-
-    <!-- ---------------------------------------------------------- ⑨ -->
-    <li id="long-9"><b>逐关卡迁移、逐关卡验收</b>
-      <p>按关卡整图切换（见<a href="#no-local">短期第 6 步</a>），优先切新做或重打光的关卡。每张图都按同一张清单验收：</p>
-      <div class="scroll"><table class="t stack">
-        <thead><tr><th>检查项</th><th>怎么查</th><th>合格标准</th></tr></thead>
-        <tbody>
-          <tr><td>主光下的灰卡</td><td>Pixel Inspector：Scene Color Before Tonemap</td><td>0.16–0.20；屏幕像素值 104–116（Final Color 约 0.157）</td></tr>
-          <tr><td>白卡、黑卡</td><td>同上，读 Scene Color</td><td>约等于各自的 BaseColor（0.87 / 0.032）；白卡不糊，黑卡还能看出纹理</td></tr>
-          <tr><td>光比</td><td>阴影里的灰卡读数 ÷ 主光下的读数，换算成档</td><td>与这张图在第 ③ 步表里登记的光比相差不超过 ±0.5 档</td></tr>
-          <tr><td>自发光、特效</td><td>读 Scene Color，换算成档（log₂(读数 ÷ 0.18)）</td><td>与第 ④ 步登记的档位一致；核心不糊白、颜色不跑</td></tr>
-          <tr><td>对比截图</td><td>固定相机书签，<code>HighResShot 1</code> 截切换前后两张</td><td>暗部不发灰；与 Filmic 版对比，亮部层次变多而不是变脏</td></tr>
-          <tr><td>切换方式</td><td>统一用<a href="#ab">短期第 5 步</a>的 A/B 命令</td><td>避免“控制台切与 PPV 切结果不同”的误会</td></tr>
-        </tbody>
-      </table></div>
-    </li>
+  <h4>⑥ 操作：校准一张图的灯光</h4>
+  <ol class="sub-steps">
+    <li>按场景表选类型，记下目标 EV100 和光比。</li>
+    <li>户外：太阳、天空、天光按 ③ 设好，强度不动。室内、地牢：按 ④ 算出主光的流明。</li>
+    <li>Pixel Inspector 读主光下灰卡的 Luminance Before Tonemap，换算成 EV100（<a href="#p-expo">2.8</a> 的对照表）。人工光差 1 档就 ×2 或 ×½；自然光以读数为准，改相机。</li>
+    <li>读阴影里的灰卡，算光比。偏亮（不够“硬”）就减补光；偏暗就加补光或反光板。</li>
+    <li>全局 PPV 的快门按最终 EV100 填，Final Color 约 0.157 就完成了；把 EV100、光比登记进场景表。</li>
   </ol>
 </section>
 
-<!-- ============================================================ 优劣 -->
-<section class="card" id="versus">
-  <h2>Filmic vs ACES 2.0：优劣对比（美术版）</h2>
-  <p class="sub">一句话：<b>Filmic 像“自带滤镜的相机”</b>，好看、省事，但亮部会偏色、层次少。<b>ACES 2.0 像“原片”</b>，干净、准确、高光层次多，但要自己调出风格。</p>
-  <div class="scroll"><table class="t vs stack">
-    <thead><tr><th>维度</th><th>Filmic（UE4 以来的默认）</th><th>ACES 2.0（Standard ACES）</th></tr></thead>
+<!-- ---------------------------------------------------------- 2.8 曝光体系与场景过渡 -->
+<section class="card" id="p-expo">
+  <h2>2.8 曝光体系：物理相机 + PPV 曝光过渡</h2>
+  <p class="sub">不用自动曝光。每张图一个全局 PPV 定相机（正确曝光），区域 PPV 只混合曝光补偿（正常曝光）来做场景过渡。</p>
+  <h4>① 全局 PPV：相机定“正确曝光”</h4>
+  <div class="two">
+    <div class="box"><h4>设置（每张图一个，勾 Unbound）</h4><ul>
+      <li>Lens → Exposure：Metering Mode = <b>Manual</b>，勾 <b>Apply Physical Camera Exposure</b>，Exposure Compensation = <b>0</b>（夜晚这类创作偏移写在这里，如 −2）。</li>
+      <li>Lens → Camera：ISO <b>100</b>，Aperture <b>4</b>（全项目固定），Shutter Speed 按下面的对照表填。</li>
+      <li>曝光 = 2<sup>曝光补偿 − EV100</sup>，EV100 = log₂(光圈² × 快门 × 100 ÷ ISO)；f/4、ISO 100 时就是 log₂(16 × 快门)。</li>
+    </ul></div>
+    <div class="box"><h4>为什么只用快门这一个旋钮</h4><ul>
+      <li>光圈还管景深（过场的 Cine Camera 开了对焦就会写入自己的光圈），ISO 在游戏里没有噪点可言。固定这两个，“快门 ↔ 场景亮度”就是一一对应的。</li>
+      <li>UE 的快门只参与曝光计算，<b>不影响运动模糊</b>（源码里 Shutter Speed 只用在 EV100 公式里）。可填范围 0.01–8000，f/4 时覆盖 EV100 −2.6 ~ 17。</li>
+      <li>正确曝光交给相机（测出来），正常曝光交给曝光补偿（选出来）：两件事分开记，出问题时一眼看出是哪一个。</li>
+    </ul></div>
+  </div>
+
+  <h4>② 对照表：EV100 ↔ 灰卡读数 ↔ 照度 ↔ 快门</h4>
+  <div class="scroll"><table class="t">
+    <thead><tr><th class="num">EV100</th><th class="num">灰卡读数（尼特）</th><th class="num">灰卡照度（lux）</th><th class="num">Shutter Speed 填</th><th class="num">相当于</th><th>典型场景</th></tr></thead>
+    <tbody><tr><td class="num"><b>15</b></td><td class="num">5900</td><td class="num">10.3 万</td><td class="num"><b>2048</b></td><td class="num">1/2048 秒</td><td><b>主城白天</b></td></tr><tr><td class="num"><b>14</b></td><td class="num">2900</td><td class="num">5.1 万</td><td class="num"><b>1024</b></td><td class="num">1/1024 秒</td><td><b>主城白天</b></td></tr><tr><td class="num"><b>13</b></td><td class="num">1500</td><td class="num">2.6 万</td><td class="num"><b>512</b></td><td class="num">1/512 秒</td><td><b>阴天 / 雾天</b></td></tr><tr><td class="num"><b>12</b></td><td class="num">740</td><td class="num">1.3 万</td><td class="num"><b>256</b></td><td class="num">1/256 秒</td><td><b>阴天 / 雾天、黄昏</b></td></tr><tr><td class="num"><b>11</b></td><td class="num">370</td><td class="num">6400</td><td class="num"><b>128</b></td><td class="num">1/128 秒</td><td><b>黄昏</b></td></tr><tr><td class="num"><b>10</b></td><td class="num">180</td><td class="num">3200</td><td class="num"><b>64</b></td><td class="num">1/64 秒</td><td><b>黄昏</b></td></tr><tr><td class="num"><b>9</b></td><td class="num">92</td><td class="num">1600</td><td class="num"><b>32</b></td><td class="num">1/32 秒</td><td></td></tr><tr><td class="num"><b>8</b></td><td class="num">46</td><td class="num">800</td><td class="num"><b>16</b></td><td class="num">1/16 秒</td><td><b>室内</b></td></tr><tr><td class="num"><b>7</b></td><td class="num">23</td><td class="num">400</td><td class="num"><b>8</b></td><td class="num">1/8 秒</td><td><b>室内</b></td></tr><tr><td class="num"><b>6</b></td><td class="num">12</td><td class="num">200</td><td class="num"><b>4</b></td><td class="num">1/4 秒</td><td></td></tr><tr><td class="num"><b>5</b></td><td class="num">5.8</td><td class="num">100</td><td class="num"><b>2</b></td><td class="num">1/2 秒</td><td><b>地牢</b></td></tr><tr><td class="num"><b>4</b></td><td class="num">2.9</td><td class="num">50</td><td class="num"><b>1</b></td><td class="num">1 秒</td><td><b>地牢</b></td></tr><tr><td class="num"><b>3</b></td><td class="num">1.4</td><td class="num">25</td><td class="num"><b>0.5</b></td><td class="num">2 秒</td><td><b>地牢</b></td></tr><tr><td class="num"><b>2</b></td><td class="num">0.72</td><td class="num">13</td><td class="num"><b>0.25</b></td><td class="num">4 秒</td><td></td></tr><tr><td class="num"><b>1</b></td><td class="num">0.36</td><td class="num">6.3</td><td class="num"><b>0.125</b></td><td class="num">8 秒</td><td></td></tr><tr><td class="num"><b>0</b></td><td class="num">0.18</td><td class="num">3.1</td><td class="num"><b>0.0625</b></td><td class="num">16 秒</td><td></td></tr><tr><td class="num"><b>−1</b></td><td class="num">0.09</td><td class="num">1.6</td><td class="num"><b>0.0312</b></td><td class="num">32 秒</td><td><b>夜晚户外</b></td></tr><tr><td class="num"><b>−2</b></td><td class="num">0.045</td><td class="num">0.79</td><td class="num"><b>0.0156</b></td><td class="num">64 秒</td><td><b>夜晚户外</b></td></tr></tbody>
+  </table></div>
+  <p class="small">灰卡读数 = Pixel Inspector 的 Luminance Before Tonemap（主光下的 18% 灰卡）。落在两行之间时直接算：EV100 = log₂(读数 ÷ 0.18)，快门 = 2<sup>EV100</sup> ÷ 16。</p>
+
+  <h4>③ 曝光补偿定“正常曝光”</h4>
+  <p><b>正确曝光</b>由相机按测光定，每张图只有一个；<b>正常曝光</b>是这张图想要的明暗，写成曝光补偿。下面 5 张是同一个小场景（光比 2.5 档）在不同曝光补偿下的样子：</p>
+  <div class="tiles five"><figure class="tile"><img src="img/expo_bracket_m2.png" alt="曝光 −2 档" loading="lazy" width="480" height="320"><figcaption><b>−2 档</b>亮处灰卡 45 · 白卡 121</figcaption></figure><figure class="tile"><img src="img/expo_bracket_m1.png" alt="曝光 −1 档" loading="lazy" width="480" height="320"><figcaption><b>−1 档</b>亮处灰卡 74 · 白卡 159</figcaption></figure><figure class="tile ref"><img src="img/expo_bracket_p0.png" alt="曝光 0 档" loading="lazy" width="480" height="320"><figcaption><b>0 档 · 正确曝光</b>亮处灰卡 110 · 白卡 192</figcaption></figure><figure class="tile"><img src="img/expo_bracket_p1.png" alt="曝光 +1 档" loading="lazy" width="480" height="320"><figcaption><b>+1 档</b>亮处灰卡 148 · 白卡 218</figcaption></figure><figure class="tile"><img src="img/expo_bracket_p2.png" alt="曝光 +2 档" loading="lazy" width="480" height="320"><figcaption><b>+2 档</b>亮处灰卡 184 · 白卡 235</figcaption></figure></div>
+  <p>大多数场景曝光补偿就是 0；夜晚可以 −1 ~ −2，雪地、沙漠可以 +0.5。暗场景靠光比变暗，不要整体欠曝（<a href="#p-light">2.7</a> ⑤）。</p>
+
+  <h4>④ 场景过渡：PPV 之间只混合曝光补偿</h4>
+  <p>不用自动曝光，所以从户外走进山洞时，明暗变化靠后处理体积的混合来做。规则只有一条：<b>相机参数只放全局 PPV；区域 PPV 只放曝光补偿和可以插值的调色参数</b>。</p>
+  <div class="two">
+    <div class="ppvs" role="img" aria-label="PPV 分层：全局 PPV 放相机、色调映射、Lumen 和基础 Look；区域 PPV 只放曝光补偿与调色">
+      <div class="ppv g"><p class="ppv-h">全局 PPV<span>Unbound · Priority 0</span></p>
+        <p>相机：Manual · 物理相机 ✓ · ISO 100 · f/4 · 快门 1024（户外 EV100 14）· 曝光补偿 0</p>
+        <p>Tonemapper（ACES）· Lumen 设置 · 基础 Look</p>
+        <div class="ppv"><p class="ppv-h">区域 PPV：山洞<span>Blend Radius 8 米</span></p><p>曝光补偿 <b>+7</b>（等效 EV100 7）· 白平衡、调色微调</p></div>
+        <div class="ppv"><p class="ppv-h">区域 PPV：熔岩区<span>按时间混合</span></p><p>曝光补偿 −1 · 暖色调色 · Bloom · 热浪材质</p></div>
+      </div>
+    </div>
+    <figure class="side">
+      <svg viewBox="0 0 440 210" role="img" aria-label="侧视：右侧是山洞的 PPV 体积，左边虚线带是 Blend Radius；角色站在洞口，镜头在角色左上方，权重按镜头所在位置计算">
+        <line class="ln" x1="10" y1="182" x2="430" y2="182"/>
+        <rect class="band" x="214" y="36" width="70" height="146"/>
+        <rect class="vol" x="284" y="36" width="146" height="146"/>
+        <path class="rock" d="M284 182 V96 Q330 70 430 78 V182 Z"/>
+        <text class="lb" x="300" y="58">山洞 PPV</text>
+        <text class="lb" x="300" y="78">曝光补偿 +7</text>
+        <text class="lb" x="210" y="28">Blend Radius</text>
+        <circle class="pl" cx="296" cy="160" r="7"/><line class="pls" x1="296" y1="167" x2="296" y2="182"/>
+        <text class="lb" x="306" y="150">角色</text>
+        <g class="cam" transform="translate(196 74) rotate(38)"><rect x="-17" y="-10" width="26" height="20" rx="3"/><polygon points="9,-6 19,-11 19,11 9,6"/></g>
+        <line class="view" x1="210" y1="88" x2="290" y2="156"/>
+        <text class="lb" x="24" y="64">镜头在这里</text>
+        <text class="lb" x="24" y="84">权重按它算</text>
+        <text class="lb" x="24" y="170">户外 EV100 14</text>
+      </svg>
+      <figcaption>权重按<b>镜头</b>位置计算，不是角色：镜头进入 Blend Radius 带开始过渡，进入体积内才到 100%。俯视角镜头在角色后上方十几米，体积要往上、往镜头一侧做大，否则角色进洞了画面还没变。</figcaption>
+    </figure>
+  </div>
+  <div class="chart" id="chart-trans">
+    <p class="fig-title">从户外（EV100 14）走进山洞（EV100 7）：混合哪个参数，过渡才均匀</p>
+    <p class="fig-sub">横轴是区域 PPV 的混合权重，纵轴是画面比户外亮了几档。UE 对所有数值参数都按“数值”线性插值；曝光补偿本身就是档数，所以均匀；快门和 ISO 是倍数，插值后按档看就很不均匀。</p>
+  </div>
+  <p>混合到一半时：用曝光补偿是 +3.5 档（正好一半）；用快门只有 +1.0 档，权重到 90% 才 +3.2 档，最后一下子跳完；用 ISO 则已经 +6.0 档，一进去就几乎全亮了。所以<b>场景过渡一律用曝光补偿</b>，快门只在全局 PPV 里定基准。</p>
+  <h4>做法：户外走进山洞</h4>
+  <ol class="sub-steps">
+    <li>全局 PPV 按户外定相机：EV100 14 → 快门 1024，曝光补偿 0。</li>
+    <li>山洞里按 <a href="#p-light">2.7</a> 打光、测光，得到山洞的 EV100（例如 7）。</li>
+    <li>山洞 PPV（不勾 Unbound）只勾 Exposure Compensation，填 <b>户外 EV100 − 山洞 EV100 = +7</b>；Blend Radius 5–10 米。</li>
+    <li>嵌套的区域（山洞里的更深处）也填<b>相对全局相机</b>的值，不是相对外层体积：曝光补偿是“覆盖”不是“叠加”。同一优先级时小体积排在大体积后面，进到内层自然由内层接管。</li>
+    <li>用 Show → Visualize → <b>Post Process Stack</b>（非 Shipping 包可用）看当前有哪些 PPV、各自权重多少；Pixel Inspector 的 PreExposure 应该从 2<sup>−14</sup> 平滑变到 2<sup>−7</sup>。</li>
+  </ol>
+  <div class="note good"><span class="lab">俯视角推荐：按时间混合</span>
+    镜头和角色有固定偏移，从不同方向进洞，过渡的触发点会早晚不一。更稳的做法是区域 PPV 勾 Unbound、Blend Weight 设 0；在洞口放触发框，角色进入时用 Timeline 在 1–2 秒内把 Blend Weight 推到 1，离开时推回 0。混合方式和上图完全一样（Blend Weight 就是权重），但时机由角色决定。同一个 Timeline 还可以同步推不在 PPV 里的东西（雾、环境音）。
+  </div>
+
+  <h4>哪些参数可以放进区域 PPV</h4>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>参数</th><th>混合方式（源码）</th><th>用法</th></tr></thead>
     <tbody>
-      <tr><td>中间调对比</td><td><span class="ok">高</span>：中灰附近每档 51.5 个像素值，画面“实”，出片快</td><td>低约 27%（每档 37.5）：默认偏平，需要自己加对比</td></tr>
-      <tr><td>暗部</td><td><span class="ok">干净</span>，压得住</td><td><span class="bad">默认发灰</span>：UE 默认的 BT.1886 编码在普通屏幕上把暗部抬亮；改成 sRGB 编码后与 Filmic 接近</td></tr>
-      <tr><td>高光</td><td><span class="bad">容易糊白</span>：+5.2 档（中灰的 37 倍）就到 99% 白，强光、火焰、天空亮部层次少</td><td><span class="ok">层次多</span>：+7.0 档（中灰的 128 倍）才到 99% 白，过渡到白更自然</td></tr>
-      <tr><td>色相</td><td><span class="bad">越亮越偏</span>：火焰橙→黄 47°、魔法蓝→青 38°、血红→橙 17°</td><td><span class="ok">保色相</span>（≤ 5°）：亮了是“变白”，不是“变色”</td></tr>
-      <tr><td>饱和度</td><td>中等亮度更艳（色卡平均彩度 12.3）</td><td>正确曝光下淡一些（10.6，−14%）；很亮的颜色反而比 Filmic 更保色</td></tr>
-      <tr><td>可调性</td><td><span class="ok">曲线可调</span>：Film Slope / Toe / Shoulder / Clip、LUT 贴图、Blue Correction</td><td><span class="bad">曲线固定</span>：只能在曲线前用曝光和 Color Grading 调，LUT 贴图不生效</td></tr>
-      <tr><td>SDR / HDR 一致性</td><td>一般：HDR 是从 SDR 结果反推再扩展</td><td><span class="ok">一致</span>：同一曲线家族，按屏幕峰值自动适配</td></tr>
-      <tr><td>行业标准 / 工具链</td><td>UE 私有曲线，DCC 里没法用同一标准预览</td><td><span class="ok">行业标准</span>：ACES 2.0 / OpenColorIO，DCC、影视、外包流程可以对齐（注意 UE 额外的 ×1.5）</td></tr>
-      <tr><td>迁移成本</td><td><span class="ok">零</span>：现有美术都是在它下面调的</td><td>需要重新校准灯光、自发光、特效、调色，正好配合 PBR 重打光</td></tr>
-      <tr><td>运行时性能</td><td colspan="2">相同：两者都烘焙成 3D LUT，每帧只查表；LUT 只在参数变化时重算（ACES 2.0 重算稍贵，但不是每帧）</td></tr>
+      <tr><td>Exposure Compensation</td><td>按数值插值 = 按档均匀</td><td><span class="ok">过渡就用它</span></td></tr>
+      <tr><td>Shutter Speed、ISO、Aperture</td><td>按数值插值，换算成档不均匀（上图）</td><td>只放全局 PPV</td></tr>
+      <tr><td>Metering Mode、Apply Physical Camera Exposure</td><td>开关：权重一大于 0 就整个切过去</td><td><span class="bad">只放全局 PPV</span></td></tr>
+      <tr><td>Tonemapping Method（Film → Method）、Local Exposure Method</td><td>开关</td><td><span class="bad">只放全局 PPV</span></td></tr>
+      <tr><td>白平衡 Temp、Tint</td><td>插值</td><td><span class="ok">可做氛围</span>；Temperature Type 是开关，全项目统一用 White Balance</td></tr>
+      <tr><td>Color Grading（Global / Shadows / Midtones / Highlights）、Scene Color Tint</td><td>插值</td><td><span class="ok">可做氛围</span></td></tr>
+      <tr><td>Bloom、暗角、颗粒、局部曝光的对比系数</td><td>插值</td><td><span class="ok">可以</span></td></tr>
+      <tr><td>Global Illumination Method、Reflection Method、Lumen 的 Quality / Detail / View Distance / Max Trace Distance / Ray Lighting Mode</td><td>开关</td><td><span class="bad">只放全局 PPV</span></td></tr>
+      <tr><td>Lumen Skylight Leaking、Diffuse Color Boost</td><td>插值</td><td>不物理，少用（<a href="#p-lumen">2.9</a>）</td></tr>
+      <tr><td>Blendables 里的后处理材质实例</td><td>材质参数按权重插值</td><td><span class="ok">热浪、扭曲等</span></td></tr>
     </tbody>
   </table></div>
+
+  <h4>视口、过场和 UI 捕获</h4>
+  <ul>
+    <li><b>编辑器视口</b>：视图模式菜单 → Exposure 勾 <b>Game Settings</b> 才和游戏一致。EV100 滑条只用来临时预览。</li>
+    <li><b>过场 Cine Camera</b>：开了对焦或曝光，相机自己的光圈、快门、ISO 会写进物理相机。过场统一用 f/4、ISO 100，在相机的后处理里只调快门和曝光补偿。</li>
+    <li><b>SceneCapture</b>（UI 角色展示、头像）：会先叠加捕获位置上的场景 PPV（Unbound 的全局 PPV 一定生效），再叠加捕获组件自己的后处理设置。所以展示台的捕获组件要在自己的后处理里勾上测光方式、物理相机、ISO、光圈、快门和曝光补偿，按展示台的灯光定 EV100，才不会跟着所在地图的相机变。另外 SceneCapture 默认关掉 Lumen，需要时在组件里重新打开。</li>
+    <li><b>局部曝光</b>：项目默认的 0.8 / 0.8 保留，作为 Look 的一部分；标定读数时临时关掉。</li>
+  </ul>
+</section>
+
+<!-- ---------------------------------------------------------- 2.9 Lumen -->
+<section class="card" id="p-lumen">
+  <h2>2.9 Lumen 设置：先物理正确，再调性能</h2>
+  <p class="sub">Lumen 只负责把直接光和自发光“弹”到别处去。只要灯光、材质、曝光都对，默认参数基本就是对的；要改的多半是覆盖范围和漏光。</p>
+  <h4>① 工程层面已经具备</h4>
+  <p>Lumen GI 与反射（<code>r.DynamicGlobalIlluminationMethod=1</code>、<code>r.ReflectionMethod=1</code>）、硬件光追（<code>r.RayTracing=True</code>）、距离场、虚拟阴影贴图、MegaLights 都已开启。Lumen 只做一件事：把直接光、天光和自发光“弹”到别处。它和灯光一样是线性的，<b>灯光、材质、曝光对了，Lumen 的结果就对</b>；不要用 Lumen 参数去补画面的亮度。</p>
+
+  <h4>② 必改：缓存光照的曝光范围</h4>
+  <p>Lumen 的缓存光照和天光的实时捕获用一个固定的预曝光来存储，<code>r.EyeAdaptation.CachedLightingPreExposure</code> 默认 4，只覆盖曝光 −8 ~ +12 档。晴天 EV100 14–15 超出这个范围，光照会被截断，屏幕上会出现 “Cached lighting in Lumen and real-time sky capture lighting is going to be clipped” 的警告。改成 <b>8</b>（覆盖 −4 ~ +16，源码注释的说法是 “fully covers physically based lighting range”）。它是固定值，不随画面曝光变化，也不改变画面亮度。</p>
+
+  <h4>③ 全局 PPV 的 Lumen 参数（都是开关型，只放全局 PPV）</h4>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>参数（PPV → Global Illumination / Reflections）</th><th class="num">默认</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr><td>Global Illumination Method / Reflection Method</td><td class="num">Lumen</td><td>保持 Lumen</td></tr>
+      <tr><td>Lumen Scene Lighting Quality / Final Gather Quality</td><td class="num">1 / 1</td><td>先保持 1；高画质档再给 2（噪点、漏光更少，开销更大）</td></tr>
+      <tr><td>Lumen Scene Detail</td><td class="num">1</td><td>保持 1；小物体进不了 Lumen 场景时再加</td></tr>
+      <tr><td>Lumen Scene View Distance / Max Trace Distance</td><td class="num">20000 cm</td><td>保持默认。源码注释：Max Trace Distance 太小，天光会漏进大山洞</td></tr>
+      <tr><td>Ray Lighting Mode</td><td class="num">Project Default</td><td>高画质反射可以试 Hit Lighting for Reflections（需要硬件光追）</td></tr>
+      <tr><td>Max Roughness To Trace Reflections</td><td class="num">0.4</td><td>保持</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>两个“作弊”参数</b>（可以混合，但不物理）：Skylight Leaking（默认 0）让天光漏进室内，源码说明就写着 “non-physically based”；室内太暗应该用曝光过渡解决（<a href="#p-expo">2.8</a>），只有玩法可读性确实需要时才给一点（滑条上限 0.02），并写进验收表。Diffuse Color Boost（默认 1）大于 1 时，间接光里的材质反射率会被放大（源码注释同样说它 “aren't physically correct”），保持 1。</p>
+
+  <h4>④ 自发光和 Lumen</h4>
+  <ul>
+    <li>Lumen 会让自发光照亮周围：大面积的熔岩、发光地面、窗户不用再配一圈点光源，反光自然正确。</li>
+    <li>又小又亮的自发光（火星、小灯珠）会让 Lumen 出噪点；重要的光源仍然用真实的灯，自发光只负责“看起来亮”。</li>
+    <li>自发光的强度要按物理量级定（<a href="#p-fx">2.10</a>），否则 Lumen 弹出来的光会和画面上看到的亮度对不上。</li>
+  </ul>
+
+  <h4>⑤ 用路径追踪做“标准答案”</h4>
+  <ol class="sub-steps">
+    <li>标定场景和每张图的关键机位，视口切到 <b>Path Tracing</b>（视图模式菜单；工程已开硬件光追），等它收敛。</li>
+    <li>用 Pixel Inspector 读阴影里、室内的灰卡；切回 Lit 再读一次。</li>
+    <li>Lumen 和路径追踪相差 0.5 档以内就合格；差得多，先查材质（BaseColor 是否过亮）、再查 Lumen 场景覆盖（视图模式 → Lumen → Surface Cache，粉色的地方是没进 Lumen 场景的物体）。</li>
+  </ol>
+</section>
+
+<!-- ---------------------------------------------------------- 2.10 自发光与特效 -->
+<section class="card" id="p-fx">
+  <h2>2.10 自发光与特效</h2>
+  <p class="sub">物理曝光下，同一个自发光在白天和地牢里看起来会差十几档。先把自发光分成两类，再重做特效的颜色渐变。</p>
+  <h4>① 自发光分两类</h4>
   <div class="two">
-    <div class="box"><h4>适合继续用 Filmic 的情况</h4><ul>
-      <li>存量关卡，没有重打光计划</li><li>依赖 LUT 贴图或 Film 参数做出的强风格化画面</li><li>上线时间紧，没有精力回归</li></ul></div>
-    <div class="box"><h4>适合切到 ACES 2.0 的情况</h4><ul>
-      <li>按 PBR 重打光的关卡（你们现在的计划）</li><li>强光、火焰、魔法特效多，Filmic 下经常糊白、跑色</li><li>以后要支持 HDR 屏幕，或者要和 DCC、预渲染 CG 对齐</li></ul></div>
+    <div class="box"><h4>发光体：按绝对亮度（尼特）</h4>
+      <p>灯罩、窗户、熔岩、火盆、会照亮环境的法阵。Emissive 填的就是亮度（尼特，和 Scene Color 读数同一单位），<b>白天看起来暗、地牢里看起来亮</b>，这是物理正确的，Lumen 也按这个亮度把光弹出去。</p>
+      <p class="small">定法：想比这类场景的灰卡亮 N 档，Emissive = 0.18 × 2<sup>EV100 + N</sup>（下表）。</p></div>
+    <div class="box"><h4>玩法提示、技能特效、UI 3D：跟着曝光走</h4>
+      <p>拾取物光圈、选中描边、伤害数字、技能特效，在任何场景下屏幕亮度都要一样。做法：母材质里把强度乘 <b>EyeAdaptationInverse</b> 节点（Alpha = 1 表示完全抵消曝光，0 表示不抵消，0.5 就是“一半跟着曝光走”）。</p>
+      <p class="small">这样 Emissive 按“正确曝光下比灰卡亮 N 档 = 0.18 × 2<sup>N</sup>”来填，与场景 EV100 无关，下面 ② 的表直接适用。迁移时旧特效的强度也能原样保留。</p></div>
   </div>
+  <div class="two">
+    <div class="scroll"><table class="t">
+      <thead><tr><th>场景（EV100）</th><th class="num">与灰卡一样亮</th><th class="num">+3 档</th><th class="num">+6 档</th></tr></thead>
+      <tbody><tr><td>晴天（15）</td><td class="num">5900</td><td class="num">4.7 万</td><td class="num">37.7 万</td></tr><tr><td>室内（7）</td><td class="num">23</td><td class="num">180</td><td class="num">1500</td></tr><tr><td>地牢（4）</td><td class="num">2.9</td><td class="num">23</td><td class="num">180</td></tr><tr><td>月夜（−1.7）</td><td class="num">0.06</td><td class="num">0.44</td><td class="num">3.5</td></tr></tbody>
+    </table><p class="small muted">发光体的 Emissive 数值（尼特）。白天要比灰卡亮 3 档，自发光就要几万尼特。</p></div>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>真实世界的亮度</th><th class="num">尼特（cd/m²）</th></tr></thead>
+      <tbody><tr><td>正午的太阳圆盘</td><td class="num">16 亿</td></tr><tr><td>磨砂白炽灯泡</td><td class="num">13 万</td></tr><tr><td>荧光灯管</td><td class="num">1.2 万</td></tr><tr><td>正午晴空</td><td class="num">1 万</td></tr><tr><td>月球表面</td><td class="num">2500</td></tr><tr><td>正午阴天的天空</td><td class="num">1000</td></tr><tr><td>普通 LCD 显示器峰值</td><td class="num">250</td></tr><tr><td>sRGB 标准观看环境里的显示器白</td><td class="num">80</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <h4>② 自发光强度和屏幕亮度（玩法类，或按“比灰卡亮几档”理解）</h4>
+  <div class="two">
+    <div class="scroll"><table class="t">
+      <thead><tr><th class="num">比灰卡亮</th><th class="num">Emissive 数值</th><th class="num">Filmic 显示</th><th class="num">ACES 2.0 显示</th></tr></thead>
+      <tbody><tr><td class="num">0 档</td><td class="num"><b>0.18</b></td><td class="num"><span class="c8" style="background:#767676"></span>118</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr><tr><td class="num">+1 档</td><td class="num"><b>0.36</b></td><td class="num"><span class="c8" style="background:#AAAAAA"></span>170</td><td class="num"><span class="c8" style="background:#949494"></span>148</td></tr><tr><td class="num">+2 档</td><td class="num"><b>0.72</b></td><td class="num"><span class="c8" style="background:#D0D0D0"></span>208</td><td class="num"><span class="c8" style="background:#B8B8B8"></span>184</td></tr><tr><td class="num">+3 档</td><td class="num"><b>1.44</b></td><td class="num"><span class="c8" style="background:#E8E8E8"></span>232</td><td class="num"><span class="c8" style="background:#D4D4D4"></span>212</td></tr><tr><td class="num">+4 档</td><td class="num"><b>2.88</b></td><td class="num"><span class="c8" style="background:#F5F5F5"></span>245</td><td class="num"><span class="c8" style="background:#E7E7E7"></span>231</td></tr><tr><td class="num">+5 档</td><td class="num"><b>5.76</b></td><td class="num"><span class="c8" style="background:#FCFCFC"></span>252</td><td class="num"><span class="c8" style="background:#F3F3F3"></span>243</td></tr><tr><td class="num">+6 档</td><td class="num"><b>11.52</b></td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td><td class="num"><span class="c8" style="background:#F9F9F9"></span>249</td></tr><tr><td class="num">+7 档</td><td class="num"><b>23.04</b></td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td><td class="num"><span class="c8" style="background:#FCFCFC"></span>252</td></tr><tr><td class="num">+8 档</td><td class="num"><b>46.08</b></td><td class="num"><span class="c8" style="background:#FFFFFF"></span>255</td><td class="num"><span class="c8" style="background:#FEFEFE"></span>254</td></tr></tbody>
+    </table></div>
+    <div>
+      <p>反过来，想让自发光在屏幕上到某个亮度，需要：</p>
+      <div class="scroll"><table class="t">
+        <thead><tr><th class="num">目标像素值</th><th class="num">Filmic 需要</th><th class="num">ACES 2.0 需要</th></tr></thead>
+        <tbody><tr><td class="num"><span class="c8" style="background:#C8C8C8"></span>200</td><td class="num">+1.7 档（Emissive 0.58）</td><td class="num">+2.5 档（Emissive 1.02）</td></tr><tr><td class="num"><span class="c8" style="background:#E6E6E6"></span>230</td><td class="num">+2.9 档（Emissive 1.34）</td><td class="num">+3.9 档（Emissive 2.69）</td></tr><tr><td class="num"><span class="c8" style="background:#F5F5F5"></span>245</td><td class="num">+4.0 档（Emissive 2.88）</td><td class="num">+5.3 档（Emissive 7.09）</td></tr></tbody>
+      </table></div>
+      <p class="small">起点建议：灯罩、屏幕、UI 3D 元素 +1 ~ +3 档；符文、法阵 +3 ~ +5 档；火焰核心、闪光 +5 ~ +7 档。ACES 下要达到 Filmic 时代的亮度，像素值 230 的亮部要多给 +1.0 档，245 接近白时多给 +1.3 档。</p>
+    </div>
+  </div>
+
+  <h4>③ 特效重调：用一张火焰贴图看懂要改什么</h4>
+  <p>下面这张火焰是按 Filmic 时代的常见做法生成的：灰度火焰 × 单一橙色 <span class="c8" style="background:#FF8018"></span><code>#FF8018</code>，材质里强度 ×26。它在 Filmic 下的样子（②）就是我们想保住的效果。目标是：<b>新贴图 + ACES ≈ 旧贴图 + Filmic</b>。</p>
+  <div class="fxset">
+    <p class="rl">原来：旧贴图</p>
+    <figure><img src="img/fx_old_tex.png" alt="旧贴图：灰度火焰乘单一橙色" loading="lazy" width="300" height="400"><figcaption><b>① 旧贴图</b>灰度 × 橙色</figcaption></figure>
+    <figure class="ref"><img src="img/fx_old_filmic.png" alt="旧贴图在 Filmic 下：外圈橙红、核心黄白" loading="lazy" width="300" height="400"><figcaption><b>② + Filmic</b>想要的效果</figcaption></figure>
+    <figure><img src="img/fx_old_aces.png" alt="旧贴图直接换 ACES：整团偏红、核心不黄" loading="lazy" width="300" height="400"><figcaption><b>③ + ACES</b>只改模式</figcaption></figure>
+    <p class="rl">改后：新贴图</p>
+    <figure><img src="img/fx_new_tex.png" alt="新贴图：同一张灰度火焰，用渐变映射上色，越亮越黄" loading="lazy" width="300" height="400"><figcaption><b>④ 新贴图</b>越亮越黄</figcaption></figure>
+    <figure><img src="img/fx_new_aces.png" alt="新贴图在 ACES 下：与 Filmic 的效果几乎一样" loading="lazy" width="300" height="400"><figcaption><b>⑤ + ACES</b>改后效果</figcaption></figure>
+    <figure><img src="img/fx_split.png" alt="左半边是旧贴图 + Filmic，右半边是新贴图 + ACES" loading="lazy" width="300" height="400"><figcaption><b>② | ⑤ 对半拼</b>左 Filmic · 右 ACES</figcaption></figure>
+  </div>
+  <ul>
+    <li><b>只改模式（③）</b>：ACES 保色相，橙色越亮只会越淡、偏向粉白，不会自己变黄：整团火变成粉橙色、发白发虚，黄芯没了。和 ② 的平均色差 <b>8.7</b>（4–5 就一眼能看出来）。</li>
+    <li><b>改贴图（④ → ⑤）</b>：灰度形状完全不动，只把“乘单一橙色”换成“按灰度上渐变色”，越亮越黄；强度系数从 ×26 降到 ×11.3。⑤ 和 ② 的平均色差 <b>0.7</b>（95% 的像素在 1.6 以内），并排也很难分出来。</li>
+    <li>④ 单独看会比 ② 更黄、中间调偏橄榄色，这是正常的：贴图里存的是“ACES 下要显示成这个颜色所需要的颜色”，乘上强度、经过 ACES 才是最终效果。不要按贴图本身的观感去“修”它。</li>
+  </ul>
+  <figure>
+    <p class="fig-title">贴图的上色渐变（横轴 = 灰度贴图的像素值 0–255）</p>
+    <div class="ramps">
+      <span class="nm">旧：× 单一橙色</span><img src="img/fx_ramp_old.png" alt="旧的上色：从黑到橙色的单一渐变" loading="lazy" width="256" height="28">
+      <span class="nm">新：渐变映射</span><img src="img/fx_ramp_new.png" alt="新的上色：暗部橙棕、中间黄橙、亮部亮黄" loading="lazy" width="256" height="28">
+      <span></span><div class="axis-row" aria-hidden="true"><span style="left:0%">0</span><span style="left:25.1%">64</span><span style="left:50.2%">128</span><span style="left:75.3%">192</span><span style="left:100%">255</span></div>
+    </div>
+    <div class="scroll"><table class="t">
+      <thead><tr><th class="num">灰度像素值</th><th class="num">40</th><th class="num">64</th><th class="num">96</th><th class="num">128</th><th class="num">160</th><th class="num">192</th><th class="num">224</th><th class="num">255</th></tr></thead>
+      <tbody><tr><td>旧（灰度 × 橙色）</td><td class="num nw"><span class="c8" style="background:#280E01"></span>#280E01</td><td class="num nw"><span class="c8" style="background:#401B02"></span>#401B02</td><td class="num nw"><span class="c8" style="background:#602C04"></span>#602C04</td><td class="num nw"><span class="c8" style="background:#803D06"></span>#803D06</td><td class="num nw"><span class="c8" style="background:#A04E0B"></span>#A04E0B</td><td class="num nw"><span class="c8" style="background:#C05F0F"></span>#C05F0F</td><td class="num nw"><span class="c8" style="background:#E07014"></span>#E07014</td><td class="num nw"><span class="c8" style="background:#FF8018"></span>#FF8018</td></tr><tr><td>新（渐变映射）</td><td class="num nw"><span class="c8" style="background:#431B00"></span>#431B00</td><td class="num nw"><span class="c8" style="background:#5E3B00"></span>#5E3B00</td><td class="num nw"><span class="c8" style="background:#776100"></span>#776100</td><td class="num nw"><span class="c8" style="background:#928300"></span>#928300</td><td class="num nw"><span class="c8" style="background:#B3A70A"></span>#B3A70A</td><td class="num nw"><span class="c8" style="background:#D7D018"></span>#D7D018</td><td class="num nw"><span class="c8" style="background:#F2ED1E"></span>#F2ED1E</td><td class="num nw"><span class="c8" style="background:#FFFA21"></span>#FFFA21</td></tr></tbody>
+    </table></div>
+    <figcaption>新渐变是逐个亮度反推出来的：先算出旧贴图每个亮度在 Filmic 下显示成什么颜色，再找出 ACES 下能显示成同一个颜色的输入（OKLab 色差最小），最后沿亮度平滑，让它像手绘渐变一样顺。</figcaption>
+  </figure>
+  <h4>怎么改一张特效贴图</h4>
+  <ol class="sub-steps">
+    <li>灰度形状不用重画：同一张灰度贴图，只换上色方式。</li>
+    <li>上色改成渐变映射：PS 里用“渐变映射”调整图层，按上表的节点取色；Niagara / 材质里用 1D 渐变贴图或 Curve Atlas，按灰度采样。</li>
+    <li>强度系数按新贴图重新定（这张火焰 ×26 → ×11.3）；技能特效的母材质乘 EyeAdaptationInverse，这些数值在任何场景曝光下都直接适用。</li>
+    <li>在标定场景里，和 Filmic 版截图并排看：色差 ≤ 2 就算还原了，核心不糊白、外圈不发灰。</li>
+  </ol>
+  <p class="small muted">图中的强度是“曝光后”的数值（相当于正确曝光、曝光补偿 0），渲染只经过色调映射，没有 Bloom、没有叠加混合，用来说明颜色关系。</p>
+</section>
+
+<!-- ---------------------------------------------------------- 2.11 后期调色与氛围过渡 -->
+<section class="card" id="p-grade">
+  <h2>2.11 后期调色与氛围过渡</h2>
+  <p class="sub">调色放在最后：灯光、曝光、Lumen、自发光都对了，再用 Color Grading 叠项目风格；同一张图里从正常环境走到熔岩环境，用“物理层 → 曝光层 → 调色层”三层一起过渡。</p>
+  <h4>① 项目 Look：在全局 PPV 上用 Color Grading 做</h4>
+  <ul>
+    <li>ACES 2.0 默认是“中性原片”。项目风格（对比、饱和、暗部偏冷、高光偏暖等）用 Color Grading 的 Global / Shadows / Midtones / Highlights 来做。UE 的调色在色调映射之前、直接作用于场景线性值，这正是 ACES 推荐的工作方式。</li>
+    <li>想先回到接近 Filmic 的观感，可以从第一章拟合的数开始：Global Contrast ×1.15、Saturation ×0.95（<a href="#short">1.4</a>）。如果还想让中灰和 Filmic 一样亮（118 而不是 110），全局曝光补偿再给 +0.2 档，作为全项目统一的偏移写进规范。</li>
+    <li><b>做成共享预设</b>：把 Look 存进一个带 Post Process 组件（勾 Unbound）的蓝图，参数写在类默认值里；每张图放一个实例，改一处全项目生效。它的 Priority 设得比每张图的全局 PPV 高，并且只勾调色相关的参数，相机仍然由全局 PPV 决定。</li>
+    <li>LUT 贴图在 ACES 下不生效。实在需要 LUT 式调色，可以用 After Tonemapping 的后处理材质，但有额外开销，移动端慎用。</li>
+  </ul>
+
+  <h4>② 例：从正常环境走到熔岩环境</h4>
+  <p>氛围过渡分三层，<b>先物理、再曝光、最后调色</b>。只做第三层（整屏染橙），角色、怪物、地面的颜色会一起变橙，读不清；熔岩自己也没有照亮地面和角色，看起来是“贴了一层滤镜”。</p>
+  <div class="layers">
+    <div class="layer"><p class="layer-h"><span class="badge sm">1</span>物理层：灯光与材质</p><ul>
+      <li>熔岩材质按<b>发光体</b>定自发光：比区域灰卡亮 3–5 档。例如熔岩区基准 EV100 12：灰卡 737 尼特，熔岩约 5900–23600 尼特。</li>
+      <li>沿熔岩河放几盏 1500–2000 K 的矩形光、点光做主照明（工程开了 MegaLights，数量不是问题），Lumen 再把熔岩的光弹到岩壁和角色底面。</li>
+      <li>热气、烟尘用 Local Fog Volume 放在熔岩区，它按自己的形状淡出，不需要额外混合。</li>
+    </ul><p class="small muted">靠近熔岩时自然变化，不用写过渡逻辑。</p></div>
+    <div class="layer"><p class="layer-h"><span class="badge sm">2</span>曝光层：区域 PPV 的曝光补偿</p><ul>
+      <li>熔岩区多了大量自发光和暖光，相机不变的话亮处会过曝：曝光补偿 −0.5 ~ −1，保住熔岩和火光的层次。</li>
+      <li>如果熔岩区是暗的洞穴，则按 <a href="#p-expo">2.8</a> 的山洞做法给正的曝光补偿。</li>
+    </ul><p class="small muted">和调色在同一个区域 PPV 里，一起混合。</p></div>
+    <div class="layer"><p class="layer-h"><span class="badge sm">3</span>调色层：区域 PPV 的 Color Grading</p><ul>
+      <li>白平衡 Temp 从 6500 调到 7000–7500：White Balance 模式下数值越大画面越暖。</li>
+      <li>Highlights 的 Gain 偏暖，Shadows 稍偏红褐，Global Saturation 略加；Bloom 稍加。</li>
+      <li>Blendables 里放热浪扭曲的后处理材质实例，参数随权重一起混合。</li>
+    </ul><p class="small muted">最后才加，幅度宁小勿大。</p></div>
+  </div>
+  <div class="mix" role="img" aria-label="从正常环境走到熔岩环境：物理层随距离自然变化；曝光层和调色层随区域 PPV 的权重从 0 到 1">
+    <div class="mix-ax"><span>正常环境</span><span>过渡带</span><span>熔岩区</span></div>
+    <div class="mix-r"><span class="nm">物理层</span><span class="bar phys"></span></div>
+    <div class="mix-r"><span class="nm">曝光层</span><span class="bar ppv"></span></div>
+    <div class="mix-r"><span class="nm">调色层</span><span class="bar ppv"></span></div>
+    <p class="small muted">物理层由灯光衰减、Local Fog Volume 的形状决定，越靠近熔岩越强；曝光层和调色层由同一个区域 PPV 的权重决定（Blend Radius 或 Timeline）。</p>
+  </div>
+
+  <h4>③ 过渡怎么做</h4>
+  <div class="two">
+    <div class="box"><h4>A. 区域 PPV + Blend Radius</h4><p>最简单，适合边界清楚的区域。注意权重按镜头位置算：体积要往上、往镜头一侧做大（<a href="#p-expo">2.8</a> 的示意图）。Blend Radius 5–10 米。</p></div>
+    <div class="box"><h4>B. 触发器 + Timeline 推 Blend Weight（推荐）</h4><p>区域 PPV 勾 Unbound、Blend Weight 0；角色进入触发框时 1.5–3 秒推到 1，离开时推回 0。时机由角色决定，从哪个方向进都一样；同一个 Timeline 可以同步推不在 PPV 里的东西。</p></div>
+  </div>
+  <h4>④ 不在 PPV 里、不会跟着混合的东西</h4>
+  <ul>
+    <li><b>高度雾、天空大气、太阳</b>：不是后处理参数。区域性的雾用 Local Fog Volume；非要改全局的雾或太阳，就用上面的 Timeline 同步推，并接受整张图一起变（俯视角能看到的天空很少，通常可以接受）。</li>
+    <li><b>开关型参数</b>（Tonemapping Method、测光方式、物理相机开关、GI 方法、Lumen 质量）：放进区域 PPV 会瞬间跳变，见 <a href="#p-expo">2.8</a> 的表。</li>
+  </ul>
+  <h4>⑤ 护栏（验收时逐条看）</h4>
+  <ul class="dos">
+    <li><span class="ok"></span>氛围用的曝光补偿最多 ±1 档；更大的明暗差（户外 → 山洞）属于场景过渡，按 <a href="#p-expo">2.8</a> 做。</li>
+    <li><span class="ok"></span>调色后在标定场景里重新看色卡：可以整体偏暖，但白卡要仍然看得出是白、肤色仍然是肤色。</li>
+    <li><span class="ok"></span>角色、怪物在两种氛围下都读得清：亮处灰卡的屏幕像素值都在 100–120 左右。</li>
+    <li><span class="bad"></span>不要用调色补灯光：缺光就加灯，颜色不对先查灯的色温。</li>
+    <li><span class="bad"></span>不要在区域 PPV 里改 Tonemapper、测光方式和物理相机开关。</li>
+  </ul>
+</section>
+
+<!-- ---------------------------------------------------------- 2.12 DCC -->
+<section class="card" id="p-dcc">
+  <h2>2.12 DCC 和 UE 对齐</h2>
+  <p class="sub">DCC 里看到的和 UE 里看到的要是同一个灰卡。</p>
+  <p>Substance Painter、Nuke、DaVinci Resolve、Maya / Houdini 等支持 OCIO 的软件，用 ACES 2.0 配置（sRGB 显示、SDR 100 nit）预览渲染结果时，<b>要额外 +0.58 档曝光</b>，因为 UE 在 ACES 前乘了 1.5。用灰卡核对最直观：</p>
+  <div class="scroll"><table class="t">
+    <thead><tr><th>同一个 18% 灰（曝光后的场景值 0.18）</th><th class="num">屏幕像素值</th></tr></thead>
+    <tbody>
+      <tr><td>UE：ACES 2.0 + sRGB 编码（内部 ×1.5）</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr>
+      <tr><td>DCC：OCIO ACES 2.0，sRGB 显示，视图曝光 0</td><td class="num"><span class="c8" style="background:#595959"></span>89</td></tr>
+      <tr><td>DCC：视图曝光（Exposure / EV）+0.58</td><td class="num"><span class="c8" style="background:#6E6E6E"></span>110</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>推荐保留 UE 默认的 1.5</b>（<code>r.HDR.Aces.SceneColorMultiplier</code>），全项目统一在 DCC 里加 +0.58 档。改成 1.0 也能和行业标准完全一致，但所有图会暗 0.58 档，又要用曝光补偿补回来，没有实际好处。两种做法选一种，全项目统一。</li>
+    <li>只画 BaseColor 时不需要这个偏移：按 <a href="#p-mat">2.5</a> 的 sRGB 值画即可。只有在 DCC 里预览带光照、自发光的渲染结果时才需要。</li>
+    <li>DCC 里同样放一张 18% 灰卡做参照：灰卡在 DCC 预览里也显示 110，两边的灯光、特效才有可比性。</li>
+  </ul>
+</section>
+
+<!-- ---------------------------------------------------------- 2.13 迁移验收 -->
+<section class="card" id="p-accept">
+  <h2>2.13 逐关卡迁移与验收</h2>
+  <p class="sub">先把单位换成物理量、保住画面，再按物理重打光；每张图按同一张清单验收。</p>
+  <h4>① 一张图的迁移顺序</h4>
+  <ol class="steps">
+    <li><b>先等效换算，把单位换成物理量、画面不变</b>
+      选定这张图的基准 EV100，把所有“绝对亮度”的数值乘以 2<sup>EV100</sup>（EV100 14 就是 ×16384），再把旧图兼容预设（<a href="#p-config">2.4</a>）换成物理相机、快门按这个 EV100 填。曝光正好除回去，画面应该和迁移前几乎一样，可以用截图对比确认。要乘的东西：
+      <ul>
+        <li>所有灯光的强度（平行光、点光、聚光、矩形光，以及 Niagara 粒子的光源）；</li>
+        <li>高度雾的 Fog Inscattering Color、Directional Inscattering Color，体积雾的 Emissive；</li>
+        <li>天光：用指定 Cubemap 时乘它的 Intensity；捕获场景时乘被捕获的天空球自发光（天光会跟着变，不要两边都乘）；</li>
+        <li>环境材质的自发光：可以批量乘，也可以先在母材质里乘 EyeAdaptationInverse（Alpha 1），旧数值原样保留；特效、UI 3D 元素同理。</li>
+      </ul>
+      灯光、雾可以用编辑器 Python 脚本批量处理；材质靠母材质统一改，不要一个个调。</li>
+    <li><b>再按物理重打光</b>
+      太阳、天空换成天空大气 + 实时天光（<a href="#p-light">2.7</a> ③），人工光按 2.7 ④ 重定；读灰卡、定光比，登记进场景表。</li>
+    <li><b>特效、自发光</b>
+      发光体改成尼特、去掉 EyeAdaptationInverse；技能特效保留它，按 <a href="#p-fx">2.10</a> 重画渐变。</li>
+    <li><b>场景过渡与氛围</b>
+      区域 PPV 只留曝光补偿和调色参数（<a href="#p-expo">2.8</a>、<a href="#p-grade">2.11</a>）。</li>
+    <li><b>Lumen 检查、调色，按下表验收</b>
+      截图归档，之后改灯光都和这一版对比。</li>
+  </ol>
+  <p class="small">按关卡整图切换（<a href="#no-local">1.4 第 6 步</a>），优先切新做或要重打光的关卡；同一张图不要一半物理一半旧值。</p>
+
+  <h4>② 验收清单</h4>
+  <div class="scroll"><table class="t stack">
+    <thead><tr><th>检查项</th><th>怎么查</th><th>合格标准</th></tr></thead>
+    <tbody>
+      <tr><td>相机</td><td>全局 PPV</td><td>Manual、物理相机开、ISO 100、f/4，快门对应登记的 EV100；区域 PPV 里没有开关型参数</td></tr>
+      <tr><td>主光下的灰卡</td><td>Pixel Inspector：Luminance Before Tonemap</td><td>换算的 EV100 与登记值相差不超过 ±0.3 档</td></tr>
+      <tr><td>曝光</td><td>同一点的 Final Color（关掉局部曝光读）</td><td>约 0.157；屏幕像素值 104–116（夜晚等有曝光补偿的图按补偿后的值）</td></tr>
+      <tr><td>白卡、黑卡</td><td>读 Luminance Before Tonemap</td><td>相对灰卡 +2.3 档 / −2.5 档（4.8 倍 / 约 1/5.6）；白卡不糊，黑卡还能看出纹理</td></tr>
+      <tr><td>光比</td><td>阴影里的灰卡读数 ÷ 主光下的读数，换算成档</td><td>与登记的光比相差不超过 ±0.5 档</td></tr>
+      <tr><td>自发光、特效</td><td>读数换算成档（log₂(读数 ÷ 灰卡读数)）</td><td>与登记的档位一致；核心不糊白、颜色不跑</td></tr>
+      <tr><td>场景过渡</td><td>走一遍所有区域；Show → Visualize → Post Process Stack</td><td>没有跳变；各区域的曝光补偿与登记一致</td></tr>
+      <tr><td>Lumen</td><td>关键机位与 Path Tracing 对比</td><td>阴影、室内灰卡相差不超过 0.5 档；屏幕上没有缓存光照被截断的警告</td></tr>
+      <tr><td>对比截图</td><td>固定相机书签，<code>HighResShot 1</code></td><td>暗部不发灰；与旧版对比，亮部层次变多而不是变脏</td></tr>
+      <tr><td>UI 捕获、过场</td><td>SceneCapture 展示台、过场镜头截图</td><td>与登记的效果一致</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>③ 为 HDR 输出留好路</h4>
+  <p>ACES 2.0 的 SDR 和 HDR 是同一曲线家族，开 HDR 后自动按屏幕峰值亮度展开，观感一致；Filmic 在 HDR 下是“先算出 SDR 结果，再反推扩展”，一致性较差。物理单位的灯光和自发光在 HDR 下也能直接用上更高的亮度范围。以后要支持 HDR 屏幕，这套流程不需要返工。</p>
 </section>
 
 <!-- ============================================================ 名词 -->
@@ -961,28 +1460,34 @@ r.LUT.TonemappingSDRInvEOTF -1    <span class="c">// 恢复：跟随默认规则
   <div class="gx" id="g-exposure-pair">
     <p class="gx-h">正确曝光 vs 正常曝光：一个测出来，一个选出来</p>
     <div class="two">
-      <div class="gl" id="g-correct" data-terms="正确曝光"><b>正确曝光</b>一个可以测量的<b class="em">技术基准</b>：主光下 18% 灰卡的场景值正好是 0.18。此时被主光照亮的表面，场景值约等于它自己的 BaseColor；灰卡在屏幕上约 110（ACES 2.0 + sRGB）或 118（Filmic）。每张图只有一个正确曝光，和个人喜好无关。本文的“0 档”都指它。</div>
-      <div class="gl" id="g-normal" data-terms="正常曝光"><b>正常曝光</b>一个<b class="em">创作判断</b>：这张图看起来“亮度合适”的曝光。多数场景就等于正确曝光；夜晚可以有意暗 1–2 档，雪地、沙漠可以亮一点。用“相对正确曝光 ±N 档”记录，写进验收表。</div>
+      <div class="gl" id="g-correct" data-terms="正确曝光"><b>正确曝光</b>一个可以测量的<b class="em">技术基准</b>：主光下 18% 灰卡曝光后的场景值正好是 0.18。用物理相机时，就是“相机的 EV100 = 测光得到的 EV100”（EV100 = log₂(灰卡照度 ÷ π)）。此时被主光照亮的表面，曝光后约等于它自己的 BaseColor；灰卡在屏幕上约 110（ACES 2.0 + sRGB）或 118（Filmic）。每张图只有一个正确曝光，由相机（快门）对准，和个人喜好无关。本文的“0 档”都指它。</div>
+      <div class="gl" id="g-normal" data-terms="正常曝光"><b>正常曝光</b>一个<b class="em">创作判断</b>：这张图看起来“亮度合适”的曝光。多数场景就等于正确曝光；夜晚可以有意暗 1–2 档，雪地、沙漠可以亮一点。在全局 PPV 里写成曝光补偿（−2 = 暗 2 档），并登记进验收表。</div>
     </div>
     <div class="gx-row">
       <figure class="gx-fig"><img src="img/expo_bracket_m1.png" alt="比正确曝光暗 1 档" loading="lazy" width="480" height="320"><figcaption>−1 档：夜晚的正常曝光可以选这里</figcaption></figure>
       <figure class="gx-fig ref"><img src="img/expo_bracket_p0.png" alt="正确曝光" loading="lazy" width="480" height="320"><figcaption><b>0 档：正确曝光</b>（灰卡 110）</figcaption></figure>
       <figure class="gx-fig"><img src="img/expo_bracket_p1.png" alt="比正确曝光亮 1 档" loading="lazy" width="480" height="320"><figcaption>+1 档：通常已经过亮</figcaption></figure>
     </div>
-    <p class="small">顺序是<b>先正确、再正常</b>：先用灰卡把正确曝光标定好，所有资源才有可比性；再决定这张图要偏离多少。有人说“这张图曝光不对”时，先分清是没标定（正确曝光错了），还是风格取舍（正常曝光的选择）。注意：摄影书里这两个词的用法并不统一，本文按上面的定义使用。</p>
+    <p class="small">顺序是<b>先正确、再正常</b>：先用灰卡和相机把正确曝光标定好，所有资源才有可比性；再用曝光补偿决定这张图要偏离多少。有人说“这张图曝光不对”时，先分清是没标定（快门不对），还是风格取舍（曝光补偿的选择）。注意：摄影书里这两个词的用法并不统一，本文按上面的定义使用。</p>
   </div>
   <div class="gloss">
     <div id="g-ev" data-terms="曝光档位|[+−-]?\d+(?:\.\d+)?\s?档"><b>档（EV / Stop）</b>亮度翻一倍 = 亮 1 档，减半 = 暗 1 档。+3 档 = ×8，−2 档 = ×¼。本文以“正确曝光下的 18% 灰卡”为 0 档。</div>
-    <div id="g-grey" data-terms="18% 中灰|18% 灰卡|18% 灰|灰卡|中灰"><b>18% 灰卡 / 中灰</b>反射 18% 光线的中性灰，是曝光的基准。在 UE 里就是 BaseColor 常量 0.18（取色器 Hex sRGB 767676，PS 里 118）。</div>
+    <div id="g-grey" data-terms="18% 中灰|18% 灰卡|18% 灰|灰卡|中灰"><b>18% 灰卡 / 中灰</b>反射 18% 光线的中性灰，是曝光的基准，也是读灯光强度的“测光表”。在 UE 里就是 BaseColor 常量 0.18（取色器 Hex sRGB 767676，PS 里 118）。</div>
     <div id="g-albedo" data-terms="反射率|Albedo|BaseColor|Base Color|Diffuse Albedo"><b>反射率 / Albedo / BaseColor</b>物体把照到它的光漫反射回去多少（0–1）。UE 的 BaseColor（Substrate 里叫 Diffuse Albedo）填的就是它，而且是线性值：0.18 = 反射 18%。</div>
     <div id="g-linear" data-terms="线性值|sRGB 值|Hex sRGB"><b>线性值 / sRGB 值</b>同一个颜色的两种写法。线性值和光的能量成正比，UE 材质常量和取色器的 R、G、B 框用它；sRGB 值按眼睛的感觉排，PS、Substance 的 0–255 和 Hex 用它。0.18 ↔ 118，0.5 ↔ 188，PS 的 128 ↔ 0.216。</div>
-    <div id="g-scene" data-terms="场景值|场景亮度|Scene Color(?! Tint)"><b>场景值（Scene Color）</b>进入色调映射之前的 HDR 线性值，可以远大于 1。本工程曝光 ×1，被照亮的漫反射表面场景值 = BaseColor × 照度 ÷ π。Pixel Inspector 里叫 Scene Color Before Tonemap。</div>
-    <div id="g-expo" data-terms="曝光补偿|Exposure Compensation|曝光锁定"><b>曝光 / 曝光补偿</b>曝光是进色调映射前给整个画面乘的系数（+1 档 = ×2）。PPV 的 Exposure Compensation 本来用来调它，但本工程 <code>r.EyeAdaptationQuality=0</code>，曝光锁定 ×1，这个参数不生效。</div>
-    <div id="g-ev100" data-terms="EV100"><b>EV100</b>相机的曝光值（按 ISO 100 算）：数字越大，表示场景越亮、相机给的曝光越少。真实世界晴天约 15、室内约 7。本工程的曝光相当于一台固定在 EV100 = 0 的相机。</div>
+    <div id="g-scene" data-terms="场景值|场景亮度|Scene Color(?! Tint)"><b>场景值（Scene Color）</b>进入色调映射之前的 HDR 线性值，可以远大于 1。用物理单位时，被照亮的漫反射表面亮度 = BaseColor × 照度 ÷ π（尼特），再乘曝光进入色调映射。Pixel Inspector 的 Scene Color Before Tonemap 显示的是乘曝光之前的值（已除以 PreExposure）。</div>
+    <div id="g-expo" data-terms="曝光补偿|Exposure Compensation|曝光锁定"><b>曝光 / 曝光补偿</b>曝光是进色调映射前给整个画面乘的系数（+1 档 = ×2）。手动曝光 + 物理相机时，曝光 = 2<sup>曝光补偿 − EV100</sup>。曝光补偿（Exposure Compensation）是在相机之上再加减几档，本文只用它做正常曝光的偏移和场景过渡。改造前工程设了 <code>r.EyeAdaptationQuality=0</code>，曝光锁定 ×1，这个参数不生效。</div>
+    <div id="g-ev100" data-terms="EV100"><b>EV100</b>相机的曝光值（按 ISO 100 算）：EV100 = log₂(光圈² × 快门 × 100 ÷ ISO)。数字越大，表示场景越亮、相机给的曝光越少。正确曝光时 EV100 = log₂(灰卡照度 ÷ π)：晴天约 15、室内约 7、月夜约 −2。</div>
+    <div id="g-phys" data-terms="物理相机|Apply Physical Camera Exposure"><b>物理相机</b>PPV 里勾 Apply Physical Camera Exposure，用快门、ISO、光圈算曝光，和真实相机同一套标定（晴天 16 法则在 UE 里同样成立）。本项目固定 ISO 100、f/4，只用快门对准每张图的 EV100：快门 = 2<sup>EV100</sup> ÷ 16。</div>
     <div id="g-lux" data-terms="照度|lux|坎德拉|流明"><b>照度 lux / 坎德拉 / 流明</b>lux：落到表面上的光有多少（平行光的单位）。坎德拉 cd：灯朝某个方向有多亮。流明 lm：灯一共发出多少光（点光源 cd = lm ÷ 4π）。离点光源 d 米处的照度 = cd ÷ d²。</div>
+    <div id="g-nit" data-terms="尼特|cd/m²"><b>尼特（cd/m²）</b>亮度的单位：表面或光源看起来有多亮。Scene Color 读数、Emissive 用的都是它。sRGB 显示器的白约 80 尼特，正午晴空约 1 万尼特，晴天下的灰卡约 5700 尼特。</div>
     <div id="g-ratio" data-terms="光比"><b>光比</b>亮处和暗处差多少，常说“主光 + 补光 : 补光”。用档数说更直观：2:1 = 1 档，4:1 = 2 档，8:1 = 3 档。光比越大，画面越硬、暗部越沉。</div>
-    <div id="g-emissive" data-terms="自发光|Emissive"><b>自发光（Emissive）</b>材质自己发出的亮度，单位和场景值相同，不受灯光影响。本工程曝光 ×1，Emissive = 0.18 × 2<sup>N</sup> 就是“比中灰亮 N 档”。</div>
-    <div id="g-pi" data-terms="Pixel Inspector|像素检查器"><b>Pixel Inspector</b>编辑器自带的取值工具（Tools → Debug → Pixel Inspector）：鼠标指到哪里，就显示那个像素的场景值、最终颜色等。注意 Final Color 显示的是线性值（0.157 = 屏幕 110）。</div>
+    <div id="g-emissive" data-terms="自发光|Emissive"><b>自发光（Emissive）</b>材质自己发出的亮度，单位和场景值相同（尼特），不受灯光影响。发光体直接按尼特填；玩法类在材质里乘 EyeAdaptationInverse 后，Emissive = 0.18 × 2<sup>N</sup> 就是“比灰卡亮 N 档”。</div>
+    <div id="g-eai" data-terms="EyeAdaptationInverse"><b>EyeAdaptationInverse</b>材质节点：把输入的数值除以当前曝光（Alpha 1 = 完全抵消，0 = 不变）。乘上它的自发光在任何场景曝光下屏幕亮度都一样，适合玩法提示、技能特效和 UI 3D 元素。</div>
+    <div id="g-sky" data-terms="天空大气|Sky Atmosphere"><b>天空大气（Sky Atmosphere）</b>UE 的物理天空：按太阳方向和大气参数实时算出天空的颜色亮度、太阳的透过率（越低越红越暗）和空气透视。勾了 Atmosphere Sun Light 的平行光，强度是大气层外的照度。</div>
+    <div id="g-skylight" data-terms="天光|Sky Light"><b>天光（Sky Light）</b>把整个天空的光当成环境光照亮场景，阴影里的亮度主要靠它。勾 Real Time Capture 时会实时捕获天空大气和云，太阳一动它就跟着变。</div>
+    <div id="g-blend" data-terms="Blend Radius|Blend Weight"><b>PPV 混合（Blend Radius / Blend Weight）</b>区域 PPV 的权重 0–1：镜头进入体积外 Blend Radius 的过渡带开始线性增加，进入体积内为 1；Blend Weight 再整体乘上去，可以用蓝图按时间推。数值参数按权重插值，开关型参数权重一大于 0 就整个切过去。</div>
+    <div id="g-pi" data-terms="Pixel Inspector|像素检查器"><b>Pixel Inspector</b>编辑器自带的取值工具（Tools → Debug → Pixel Inspector）：鼠标指到哪里，就显示那个像素的场景值、当前曝光（PreExposure）、最终颜色等。注意 Final Color 显示的是线性值（0.157 = 屏幕 110）。</div>
     <div id="g-lookdev" data-terms="标定场景|Look-dev"><b>标定场景（Look-dev）</b>专门用来校准灯光、材质、曝光的测试地图：放灰卡、色卡、标准球和几套典型灯光。所有资源先在这里过一遍再进关卡。</div>
     <div id="g-checker" data-terms="ColorChecker|色卡"><b>ColorChecker 色卡</b>24 块标准颜色的实物色卡（X-Rite），每块都是真实颜料的反射率。常用来检查颜色还原、饱和度合不合理。</div>
     <div id="g-tm" data-terms="色调映射|Tonemapper"><b>色调映射（Tonemapper）</b>把可以无限亮的场景亮度压进屏幕能显示的 0–1 范围的那条曲线。Filmic 和 ACES 就是两种曲线。</div>
@@ -990,14 +1495,14 @@ r.LUT.TonemappingSDRInvEOTF -1    <span class="c">// 恢复：跟随默认规则
     <div id="g-perch" data-terms="逐通道|保色相"><b>逐通道 / 保色相</b>逐通道：R、G、B 各压各的，简单但会偏色。保色相：只压亮度、单独控制彩度，色相不变。</div>
     <div id="g-chroma" data-terms="彩度|色相"><b>彩度 / 色相</b>彩度是“有多鲜艳”，色相是“是什么颜色”（红、橙、黄…）。本文都在 OKLab 感知色彩空间里度量。</div>
     <div id="g-aces" data-terms="ACES 2\.0|Standard ACES"><b>ACES 2.0</b>美国电影艺术与科学学院（AMPAS）维护的色彩管理标准，2.0 版重写了显示端的输出变换（也就是 Tonemapping）。UE 5.8 的 Standard ACES 默认用它。</div>
-    <div id="g-ppv" data-terms="PPV|后处理体积"><b>PPV</b>Post Process Volume，后处理体积。Tonemapping Method 在 PPV → Film 分类里（显示名 Method）。</div>
+    <div id="g-ppv" data-terms="PPV|后处理体积"><b>PPV</b>Post Process Volume，后处理体积。勾 Unbound 的是全局 PPV，作用于整张图；不勾的只在体积内（加上 Blend Radius 的过渡带）生效，权重按镜头位置计算。Tonemapping Method 在 PPV → Film 分类里（显示名 Method）。</div>
   </div>
 </section>
 
 <!-- ============================================================ 附录 -->
 <section class="card" id="appendix">
   <h2>附录</h2>
-  <h4>A. 源码依据（工程引擎 E:\TorchLight_UE5\Engine\Engine，官方 5.8.4，只读；以下文件与 5.8.2 相同）</h4>
+  <h4>A. 第一章的源码依据：色调映射（工程引擎 E:\TorchLight_UE5\Engine\Engine，官方 5.8.4，只读；以下文件与 5.8.2 相同）</h4>
   <ul class="src">
     <li><code>Shaders/Private/PostProcessCombineLUTs.usf</code>：<code>ApplyToneCurve</code>（294–342）。ACES 分支只调用 <code>ComputeGradedColor</code>（236–245），Filmic 分支调用 <code>ComputeFilmColorNoGamma</code>（160–234），其中依次是 Blue Correction（181）、<code>FilmToneMap</code>（184）、LUT 贴图（193–226）、<code>ColorCorrection</code>（229），之后还有 Gamma 微调（305）。<code>CombineLUTsCommon</code>（344–481）：两种模式共用的白平衡、Expand Gamut（377–401）、<code>ColorCorrectAll</code>（403），以及 SDR 编码选择：sRGB 或 <code>pow(x, 1/2.4)</code>（410–422）。</li>
     <li><code>Shaders/Private/PostProcessCombineLUTsInner.usf</code>：<code>ComputeOutputACES</code>（59–84），ACES 2.0 输入先乘 <code>TotalSceneColorMultiplier</code>（67）。</li>
@@ -1007,17 +1512,21 @@ r.LUT.TonemappingSDRInvEOTF -1    <span class="c">// 恢复：跟随默认规则
     <li><code>Shaders/Private/ACES/ACESTonescale.ush</code>：ACES 2.0 tonescale 常数（18% 灰 → 10.013 nit，SDR 在场景值 128 时到顶）。<code>Source/Runtime/Engine/Classes/Engine/Scene.h</code>（74–77）：<code>ETonemappingMethod</code>，StandardACES 的提示是 “Film settings do not apply to this method.”</li>
     <li><code>Source/Runtime/Engine/Private/SceneView.cpp</code>（1682）：<code>SET_PP(TonemappingMethod)</code>，开关型，不插值。<code>Source/Runtime/Renderer/Private/MobileShadingRenderer.cpp</code>（2221）：移动端调用同一个 <code>AddCombineLUTPass</code>。</li>
   </ul>
-  <h4>A2. 曝光、取值工具、灯光单位（长期方案 ②–④ 的依据，5.8.4）</h4>
+  <h4>A2. 第二章的源码依据：曝光、PPV 混合、灯光、Lumen（5.8.4）</h4>
   <ul class="src">
-    <li><b>曝光为什么锁定 ×1</b>：<code>Source/Runtime/Engine/Private/ShowFlags.cpp</code>（483–487）<code>r.EyeAdaptationQuality &lt;= 0</code> 时关掉 EyeAdaptation 显示标志；<code>EngineShowFlagOverride</code> 只在游戏视口（<code>GameViewportClient.cpp</code> 1620）和编辑器视口（<code>EditorViewportClient.cpp</code> 4866）调用；SceneCapture 用的是组件自己的显示标志（<code>SceneCaptureComponent.cpp</code> 169），不受这个开关影响。<code>Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp</code>：显示标志关掉时测光方式强制为 Manual（437–441）；<code>GetEyeAdaptationScalarParameters</code> 走 “if eye adaptation is off, then set everything to 1.0” 分支，Exposure Compensation 被置 1、白点亮度锁定 1（671–682）；<code>GetEyeAdaptationFixedExposure</code> = 0.18 ÷ (白点 × 0.18) × 补偿 = 1（810–821）。<code>ApplyEyeAdaptationQuality</code>（359–374）只处理值为 1 的情况。<code>PostProcessing.cpp</code>（784–790）：显示标志关掉时自动曝光 pass 仍会运行，只做钳制；<code>PostProcessTonemap.cpp</code>（622–631）：没有曝光 buffer 时用同一个固定曝光。UE 4.26.2（D:\Torchlight 主线工程）的同名函数是同样的分支。</li>
-    <li><b>手动曝光的公式（可选路线）</b>：<code>GetAutoExposureCompensationFromSettings</code> = 2<sup>Exposure Compensation</sup>（446–460）；<code>CalculateManualAutoExposure</code>（520–531）：物理相机 EV100 = log₂(光圈² × 快门 × 100 ÷ ISO)，关掉 Apply Physical Camera Exposure 时为 0；<code>LuminanceMaxFromLensAttenuation</code>（376–389）与 <code>r.EyeAdaptation.LensAttenuation</code>（默认 0.78，104–108）：工程开了 <code>ExtendDefaultLuminanceRange</code>，白点系数为 1，所以曝光 = 2<sup>补偿 − EV100</sup>。<code>Source/Runtime/Engine/Private/Scene.cpp</code>（516–523）：PPV 默认 Exposure Compensation = <code>r.DefaultFeature.AutoExposure.Bias</code>（默认 1.0，<code>SceneView.cpp</code> 196–199），Apply Physical Camera Exposure 默认开启；<code>SceneView.cpp</code>（2060–2078）：<code>r.DefaultFeature.AutoExposure.Method</code> 可设为 2（Manual）。Lumen 缓存光照的曝光范围：<code>r.EyeAdaptation.CachedLightingPreExposure</code>（201–208）与超范围警告（236–262）。</li>
+    <li><b>现状为什么是曝光锁定 ×1</b>：<code>Source/Runtime/Engine/Private/ShowFlags.cpp</code>（483–487）<code>r.EyeAdaptationQuality &lt;= 0</code> 时关掉 EyeAdaptation 显示标志；<code>EngineShowFlagOverride</code> 只在游戏视口（<code>GameViewportClient.cpp</code> 1620）和编辑器视口（<code>EditorViewportClient.cpp</code> 4866）调用；SceneCapture 用的是组件自己的显示标志（<code>SceneCaptureComponent.cpp</code> 169），不受这个开关影响。<code>Source/Runtime/Renderer/Private/PostProcess/PostProcessEyeAdaptation.cpp</code>：显示标志关掉时测光方式强制为 Manual（437–441）；<code>GetEyeAdaptationScalarParameters</code> 走 “if eye adaptation is off, then set everything to 1.0” 分支，Exposure Compensation 被置 1、白点亮度锁定 1（671–682）；<code>GetEyeAdaptationFixedExposure</code> = 0.18 ÷ (白点 × 0.18) × 补偿 = 1（810–821）。<code>ApplyEyeAdaptationQuality</code>（359–374）只处理值为 1 的情况。<code>PostProcessing.cpp</code>（784–790）：显示标志关掉时自动曝光 pass 仍会运行，只做钳制；<code>PostProcessTonemap.cpp</code>（622–631）：没有曝光 buffer 时用同一个固定曝光。UE 4.26.2（D:\Torchlight 主线工程）的同名函数是同样的分支。</li>
+    <li><b>手动曝光与物理相机</b>：<code>GetAutoExposureCompensationFromSettings</code> = 2<sup>Exposure Compensation</sup>（446–460）；<code>CalculateManualAutoExposure</code>（520–531）：物理相机 EV100 = log₂(光圈² × 快门 × 100 ÷ ISO)（526，快门只在这里用到，不参与运动模糊），关掉 Apply Physical Camera Exposure 时为 0；<code>LuminanceMaxFromLensAttenuation</code>（376–389）与 <code>r.EyeAdaptation.LensAttenuation</code>（默认 0.78，104–108）：工程开了 <code>ExtendDefaultLuminanceRange</code>，白点系数为 1，所以曝光 = 2<sup>补偿 − EV100</sup>。<code>Source/Runtime/Engine/Classes/Engine/Scene.h</code>：Shutter Speed 可填 0.01–8000（1909），ISO ≥ 1（1913），光圈 1–32（1917）。<code>Source/Runtime/Engine/Private/Scene.cpp</code>（490–523、607）：PPV 默认快门 60、ISO 100、光圈 4，Exposure Compensation = <code>r.DefaultFeature.AutoExposure.Bias</code>（默认 1.0，<code>SceneView.cpp</code> 196–199），Apply Physical Camera Exposure 默认开启；<code>SceneView.cpp</code>（2060–2078）：<code>r.DefaultFeature.AutoExposure.Method</code> 可设为 2（Manual）。</li>
+    <li><b>PPV 混合</b>：<code>SceneView.cpp</code> <code>FSceneView::OverridePostProcessSettings</code>：<code>LERP_PP</code> 按权重线性插值、<code>SET_PP</code> 直接覆盖（1622–1623）。插值：白平衡 Temp / Tint（1647–1648）、Color Grading（如 1653、1656、1671）、Scene Color Tint（1689）、Bloom（1692）、快门 / ISO（1721–1722）、Exposure Compensation（1729）、局部曝光对比（1734–1735）、暗角（1748）、颗粒（1756）、光圈（1791）、Lumen Diffuse Color Boost / Skylight Leaking（1854、1856）。开关：Temperature Type（1646）、Tonemapping Method（1682）、Local Exposure Method（1732）、GI 方法与 Lumen 的质量 / 细节 / 距离（1843–1852）、Ray Lighting Mode（1860）、Reflection Method / Quality（1866–1867）、测光方式（1982）、Apply Physical Camera Exposure（1988）。后处理材质（Blendables）的权重 = 材质权重 × 体积权重（约 1993–2020）。<code>World.cpp</code>：<code>DoPostProcessVolume</code>（10697–10750）按 <code>ViewLocation</code> 计算权重，体积外 Blend Radius 内线性衰减（10713–10727）；视图位置由 <code>SceneView.cpp</code>（2155）传入，即镜头位置。排序 <code>PostProcessVolumeLess</code>（10422–）：优先级从低到高，同优先级时 Unbound 在前、大体积在前，依次覆盖。调试：Show → Visualize → Post Process Stack（<code>ShowFlagsValues.inl</code> 435，非 Shipping）。</li>
+    <li><b>Lumen 缓存光照的曝光范围</b>：<code>PostProcessEyeAdaptation.cpp</code>（201–208）<code>r.EyeAdaptation.CachedLightingPreExposure</code> 默认 4 ≈ [−8, 12]、8 ≈ [−4, 16]；超出范围时的截断警告（245–274）。Lumen PPV 默认值：<code>Scene.cpp</code>（586–602、653–659）；Skylight Leaking、Diffuse Color Boost、Max Trace Distance 的说明原文：<code>Scene.h</code>（1789–1822）。</li>
+    <li><b>EyeAdaptationInverse 节点</b>：<code>Source/Runtime/Engine/Private/Materials/MaterialExpressions.cpp</code>（20235–20241）、<code>HLSLMaterialTranslator.cpp</code>（14731–14763），<code>Shaders/Private/EyeAdaptationCommon.ush</code>（72–80）：输出 = 输入 × 曝光的倒数按 Alpha 插值。</li>
+    <li><b>高度雾与天空大气</b>：<code>Source/Runtime/Engine/Classes/Components/ExponentialHeightFogComponent.h</code>（39–47）：Fog Inscattering Color 的属性名是 <code>FogInscatteringLuminance</code>（绝对亮度），<code>SkyAtmosphereAmbientContributionColorScale</code> 让天空大气给雾上色；<code>Source/Runtime/Renderer/Private/SkyAtmosphereRendering.cpp</code>（98–102）<code>r.SupportSkyAtmosphereAffectsHeightFog</code> 默认 1。</li>
     <li><b>视口曝光</b>：<code>Source/Editor/UnrealEd/Private/EditorViewportCommands.cpp</code>（223）“Game Settings”；<code>SEditorViewport.cpp</code>（1147–1153）拖动 EV100 滑条会自动改成固定曝光；<code>Source/Runtime/Engine/Classes/Engine/EngineBaseTypes.h</code>（1143）默认 EV100 = 1、不固定；固定时曝光 = 1 ÷ 2<sup>EV100</sup>（<code>CalculateFixedAutoExposure</code>，513–517）。</li>
     <li><b>局部曝光</b>：工程 <code>Config/DefaultEngine.ini</code>（33、35）把 Highlight / Shadow Contrast 默认设为 0.8；<code>PostProcessing.cpp</code>（799–805）只要不等于 1 就开启；<code>Shaders/Private/PostProcessHistogramCommon.ush</code>（279–310）<code>CalculateLogLocalExposure</code>：大块区域相对中灰（0.18 × 曝光补偿）的档数乘以对比系数。</li>
-    <li><b>Pixel Inspector</b>：<code>Source/Editor/PixelInspector/Private/PixelInspectorView.h</code>（29–46）各字段的说明；<code>PixelInspectorResult.cpp</code>（48–89）Scene Color 读数已除以 PreExposure；<code>PixelInspector.cpp</code>（705、715）8 bit 后备缓冲不再做 Gamma，而 <code>Source/Runtime/RHI/Public/RHISurfaceDataConversion.h</code>（518–532）读回时 “FLinearColor(FColor) does SRGB -&gt; Linear”，所以 Final Color 显示的是线性值。菜单位置：<code>LevelEditor.cpp</code>（582）注册在 Tools → Debug。</li>
+    <li><b>Pixel Inspector</b>：<code>Source/Editor/PixelInspector/Private/PixelInspectorView.h</code>（26–46）各字段的说明，其中 PreExposure 是 “Amount of exposure applied to Scene Color”；<code>PixelInspectorResult.cpp</code>（48–89）Scene Color 读数已除以 PreExposure；<code>PixelInspector.cpp</code>（705、715）8 bit 后备缓冲不再做 Gamma，而 <code>Source/Runtime/RHI/Public/RHISurfaceDataConversion.h</code>（518–532）读回时 “FLinearColor(FColor) does SRGB -&gt; Linear”，所以 Final Color 显示的是线性值。菜单位置：<code>LevelEditor.cpp</code>（582）注册在 Tools → Debug。</li>
     <li><b>取色器</b>：<code>Source/Runtime/AppFramework/Private/Widgets/Colors/SColorPicker.cpp</code>：R、G、B 数值框是线性值；Hex 默认按 sRGB 显示（97–105），在 Hex sRGB 框输入时按 sRGB 公式换成线性值（1164–1182）。</li>
     <li><b>灯光单位</b>：<code>Source/Runtime/Engine/Private/Components/LocalLightComponent.cpp</code>（146–224）<code>GetUnitsConversionFactor</code>：坎德拉 × 100²（厘米 → 米），流明 ÷ 2π(1 − cos 半锥角)，所以点光源 cd = lm ÷ 4π；默认强度 5000 unitless（10–16），新建时按 <code>r.DefaultFeature.LightUnits</code> 换算（<code>Source/Editor/UnrealEd/Private/Factories/ActorFactoryPointLight.cpp</code> 15–30），工程设为 2 = 流明（<code>Config/DefaultEngine.ini</code> 43）。<code>SpotLightComponent.cpp</code>（97）流明按锥角换算。<code>DirectionalLightComponent.cpp</code>（1030）平行光默认 10 lux。</li>
     <li><b>漫反射模型</b>：<code>Source/Runtime/RenderCore/Private/RenderUtils.cpp</code>（2154–2157）<code>r.Substrate.RoughDiffuse</code> 默认 0，工程未开启，漫反射为 Lambert（BaseColor ÷ π）。</li>
-    <li><b>外部参考</b>：UE 官方文档《<a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/physically-based-materials-in-unreal-engine">Physically Based Materials</a>》的实测 BaseColor（非金属只给亮度、金属给 RGB）；Adobe Substance《<a href="https://www.adobe.com/learn/substance-3d-designer/web/the-pbr-guide-part-2">The PBR Guide, Part 2</a>》的非金属 sRGB 30–50 ~ 240、金属 180–255。</li>
+    <li><b>外部参考</b>：UE 官方文档《<a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/physically-based-materials-in-unreal-engine">Physically Based Materials</a>》的实测 BaseColor（非金属只给亮度、金属给 RGB）；Adobe Substance《<a href="https://www.adobe.com/learn/substance-3d-designer/web/the-pbr-guide-part-2">The PBR Guide, Part 2</a>》的非金属 sRGB 30–50 ~ 240、金属 180–255；Wikipedia《<a href="https://en.wikipedia.org/wiki/Lux">Lux</a>》的典型照度、《<a href="https://en.wikipedia.org/wiki/Orders_of_magnitude_(luminance)">Orders of magnitude (luminance)</a>》的典型亮度、《<a href="https://en.wikipedia.org/wiki/Sunny_16_rule">Sunny 16 rule</a>》。</li>
   </ul>
   <h4>B. 计算方法与可信度</h4>
   <ul class="small">
@@ -1026,23 +1535,24 @@ r.LUT.TonemappingSDRInvEOTF -1    <span class="c">// 恢复：跟随默认规则
     <li><b>没有模拟的部分</b>：3D LUT 的插值误差（UE 用 32³ LUT 加 PQ 编码，误差很小）、Bloom 等在 Tonemapper 之前的效果（截图反推时已包含在场景值里）、显示器个体差异。屏幕亮度按标准 sRGB 显示器计算。</li>
     <li><b>截图反推</b>：用完整的 Filmic 正向模型做逐像素迭代求逆，地牢场景平均残差 0.002 个像素值，0.03% 的像素超过 2。选角场景的火焰区比 Filmic 能输出的颜色还要纯，约 8% 的像素有 2–6 个像素值的误差。</li>
     <li><b>补偿参数</b>：以“与 Filmic 的平均 OKLab 色差”为目标，在两张截图（约 9 万个采样像素）和色卡（−1 / 0 / +1 档）上做坐标下降拟合，再取到 0.05 的整数档复算。</li>
-    <li><b>长期方案的图解</b>（<code>make_exposure.py</code>）：屏幕值都用同一套模型按“曝光 ×1、正确曝光 = 灰卡场景值 0.18”计算，没有算局部曝光。光比与曝光阶梯小图是 numpy 光线求交渲染的示意场景：Lambert 漫反射、一盏平行光加均匀天空半球，平放灰卡的主光 + 天光照度定为 π lux，再走 ACES 2.0 + sRGB；只用来说明光比和曝光，不代表引擎的实际光照。</li>
+    <li><b>第二章的数值与图解</b>（<code>make_exposure.py</code>）：屏幕值都按“曝光后的场景值”计算（正确曝光 = 灰卡曝光后 0.18），没有算局部曝光。物理量按 UE 的标定换算：灰卡亮度 = 0.18 × 照度 ÷ π，正确曝光的 EV100 = log₂(照度 ÷ π)，曝光 = 2<sup>补偿 − EV100</sup>；晴天 16 法则（f/16、1/125 秒、ISO 100、10 万 lux）用来交叉验证。PPV 过渡曲线按源码的线性插值，分别插值曝光补偿、快门（1/1024 → 1/8 秒）和 ISO（100 → 12800）。光比与曝光阶梯小图是 numpy 光线求交渲染的示意场景（Lambert 漫反射、一盏平行光加均匀天空半球），只用来说明光比和曝光，不代表引擎的实际光照。</li>
+    <li><b>特效贴图反推</b>：火焰形状是程序生成的灰度图；旧贴图 = 灰度 × 单一橙色，强度 ×26，先算出它在 Filmic 下的显示颜色，再沿 log 亮度取 1024 个样本，用 Levenberg–Marquardt 在 OKLab 里找出 ACES 下显示成同一颜色的输入，经中值去异常、高斯平滑后作为新渐变；强度按新渐变的最大值归一。渐变本身的平均色差 0.4，整张图 0.7（只改模式是 8.7）。渲染只经过色调映射，没有 Bloom 和半透明叠加。</li>
   </ul>
-  <h4>C. 工程扫描（只读，2026-10-26；曝光相关项 2026-10-27 补扫）</h4>
-  <p class="small">用 ripgrep 扫描 <code>Content</code> 下所有 .umap / .uasset 名字表里的 <code>bOverride_*</code>，只有开启了覆盖的属性才会出现在名字表里。再解析导入表，确认 LUT 实际引用的贴图。完整结果见 <code>data/project_scan.json</code>；测光方式、物理相机、局部曝光等曝光相关项见 <code>data/project_scan_exposure.json</code>（按完整属性名计数，Exposure Compensation 两次扫描结果一致）。</p>
+  <h4>C. 工程扫描（只读，2026-10-26；曝光与天空相关项 2026-10-27 补扫）</h4>
+  <p class="small">用 ripgrep 扫描 <code>Content</code> 下所有 .umap / .uasset 名字表里的 <code>bOverride_*</code>，只有开启了覆盖的属性才会出现在名字表里。再解析导入表，确认 LUT 实际引用的贴图。完整结果见 <code>data/project_scan.json</code>；测光方式、物理相机、局部曝光等曝光相关项，以及天空大气、高度雾、天光、PPV、体积云、Local Fog Volume 组件的使用情况见 <code>data/project_scan_exposure.json</code>（按完整属性名、组件类名计数，按包计；正式内容 = Content/Art）。</p>
   <h4>D. 复现</h4>
   <pre class="code"><button class="copy" type="button">复制</button><span class="c"># 依赖：Python 3.11 + numpy + Pillow + PyOpenColorIO 2.6（本机 Python311 已装）</span>
 cd F:\Docs\UE_ACES_Analyze\src
 python -I validate.py           <span class="c"># 模型核对 + 灰阶关键数字</span>
-python -I fit_compensation.py   <span class="c"># 拟合短期补偿参数 → data/fit.json</span>
-python -I make_assets.py        <span class="c"># 生成 img/ 与 data/report_data.json</span>
-python -I make_exposure.py      <span class="c"># 长期方案图解：img/expo_*、img/fx_* 与 data/exposure_data.json</span>
+python -I fit_compensation.py   <span class="c"># 拟合过渡期补偿参数 → data/fit.json</span>
+python -I make_assets.py        <span class="c"># 第一章的图：img/ 与 data/report_data.json</span>
+python -I make_exposure.py      <span class="c"># 第二章的数值与图解：img/expo_*、img/fx_* 与 data/exposure_data.json</span>
 python -I build_html.py         <span class="c"># 生成本页 index.html</span></pre>
 </section>
 <footer>本报告只读取了工程与引擎源码，没有修改任何工程文件。图表数据可以在每张图下方的“数据表”里查看。</footer>
 </main>
 
-<script type="application/json" id="report-data">{"tone":{"ev":[-8.0,-7.9,-7.8,-7.7,-7.6,-7.5,-7.4,-7.3,-7.2,-7.1,-7.0,-6.9,-6.8,-6.7,-6.6,-6.5,-6.4,-6.3,-6.2,-6.1,-6.0,-5.9,-5.8,-5.7,-5.6,-5.5,-5.4,-5.3,-5.2,-5.1,-5.0,-4.9,-4.8,-4.7,-4.6,-4.5,-4.4,-4.3,-4.2,-4.1,-4.0,-3.9,-3.8,-3.7,-3.6,-3.5,-3.4,-3.3,-3.2,-3.1,-3.0,-2.9,-2.8,-2.7,-2.6,-2.5,-2.4,-2.3,-2.2,-2.1,-2.0,-1.9,-1.8,-1.7,-1.6,-1.5,-1.4,-1.3,-1.2,-1.1,-1.0,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,-0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3.0,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,4.3,4.4,4.5,4.6,4.7,4.8,4.9,5.0,5.1,5.2,5.3,5.4,5.5,5.6,5.7,5.8,5.9,6.0,6.1,6.2,6.3,6.4,6.5,6.6,6.7,6.8,6.9,7.0,7.1,7.2,7.3,7.4,7.5,7.6,7.7,7.8,7.9,8.0,8.1,8.2,8.3,8.4,8.5,8.6,8.7,8.8,8.9,9.0,9.1,9.2,9.3,9.4,9.5,9.6,9.7,9.8,9.9,10.0],"filmic":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2,0.2,0.2,0.2,0.3,0.3,0.4,0.4,0.4,0.5,0.6,0.6,0.7,0.8,0.9,1.0,1.1,1.3,1.4,1.6,1.8,2.1,2.3,2.6,2.9,3.3,3.7,4.2,4.7,5.3,5.9,6.7,7.5,8.4,9.5,10.6,11.9,13.2,14.5,16.0,17.5,19.0,20.7,22.4,24.2,26.1,28.1,30.2,32.4,34.7,37.1,39.6,42.2,45.0,47.9,50.9,54.0,57.3,60.7,64.2,67.9,71.8,75.7,79.9,84.1,88.5,93.1,97.8,102.6,107.5,112.5,117.6,122.9,128.1,133.4,138.8,144.1,149.4,154.6,159.8,165.0,169.9,174.7,179.2,183.5,187.7,191.6,195.3,198.9,202.3,205.5,208.5,211.4,214.2,216.8,219.3,221.6,223.9,226.0,228.0,229.9,231.6,233.3,234.9,236.4,237.8,239.2,240.4,241.6,242.7,243.7,244.7,245.6,246.5,247.3,248.1,248.8,249.5,250.1,250.7,251.3,251.8,252.3,252.7,253.2,253.6,254.0,254.3,254.6,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0],"aces_default":[1.5,1.6,1.7,1.9,2.0,2.1,2.3,2.4,2.6,2.8,3.0,3.2,3.4,3.6,3.8,4.1,4.4,4.7,5.0,5.3,5.7,6.0,6.4,6.9,7.3,7.8,8.3,8.9,9.4,10.0,10.7,11.4,12.1,12.9,13.7,14.5,15.5,16.4,17.4,18.5,19.6,20.8,22.0,23.3,24.7,26.1,27.6,29.1,30.8,32.5,34.2,36.1,38.0,39.9,42.0,44.1,46.3,48.6,50.9,53.3,55.8,58.3,61.0,63.6,66.4,69.2,72.1,75.0,78.0,81.1,84.2,87.4,90.6,93.9,97.2,100.6,104.0,107.4,110.9,114.4,117.9,121.5,125.1,128.7,132.3,135.9,139.6,143.2,146.8,150.4,154.0,157.5,161.0,164.5,168.0,171.4,174.7,178.0,181.3,184.5,187.6,190.6,193.6,196.4,199.2,202.0,204.6,207.1,209.6,212.0,214.3,216.5,218.6,220.6,222.5,224.4,226.1,227.8,229.4,231.0,232.4,233.8,235.1,236.3,237.5,238.6,239.7,240.7,241.6,242.5,243.3,244.1,244.9,245.6,246.2,246.8,247.4,248.0,248.5,248.9,249.4,249.8,250.2,250.6,250.9,251.3,251.6,251.8,252.1,252.4,252.6,252.8,253.0,253.2,253.4,253.5,253.7,253.9,254.0,254.1,254.2,254.3,254.4,254.5,254.6,254.7,254.8,254.9,254.9,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0],"aces_srgb":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2,0.2,0.3,0.3,0.4,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.4,1.6,1.9,2.2,2.5,2.9,3.4,3.9,4.6,5.3,6.1,7.0,8.0,9.2,10.6,12.0,13.5,15.1,16.7,18.4,20.2,22.1,24.0,26.0,28.1,30.3,32.5,34.8,37.2,39.7,42.2,44.8,47.5,50.3,53.1,56.0,59.0,62.0,65.1,68.3,71.5,74.8,78.2,81.6,85.0,88.5,92.1,95.7,99.3,103.0,106.7,110.4,114.2,118.0,121.8,125.6,129.4,133.2,137.0,140.8,144.6,148.4,152.2,155.9,159.6,163.2,166.8,170.3,173.8,177.2,180.6,183.8,187.1,190.2,193.2,196.2,199.0,201.8,204.5,207.1,209.6,212.0,214.3,216.6,218.7,220.7,222.7,224.6,226.3,228.0,229.6,231.2,232.6,234.0,235.3,236.6,237.7,238.8,239.9,240.9,241.8,242.7,243.5,244.3,245.0,245.7,246.4,247.0,247.6,248.1,248.6,249.1,249.5,249.9,250.3,250.7,251.0,251.4,251.7,251.9,252.2,252.5,252.7,252.9,253.1,253.3,253.5,253.6,253.8,253.9,254.1,254.2,254.3,254.4,254.5,254.6,254.7,254.8,254.9,254.9,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0],"aces_comp":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2,0.3,0.3,0.4,0.4,0.5,0.6,0.7,0.9,1.0,1.2,1.5,1.7,2.1,2.4,2.9,3.4,4.0,4.8,5.6,6.6,7.8,9.1,10.6,12.3,14.1,15.9,17.8,19.9,22.0,24.2,26.5,29.0,31.5,34.1,36.9,39.7,42.6,45.6,48.8,52.0,55.3,58.7,62.2,65.8,69.4,73.2,77.0,80.9,84.8,88.9,93.0,97.1,101.3,105.6,109.8,114.2,118.5,122.9,127.3,131.7,136.1,140.5,144.8,149.2,153.5,157.7,161.9,166.1,170.1,174.1,178.1,181.9,185.6,189.2,192.8,196.2,199.5,202.6,205.7,208.6,211.4,214.1,216.7,219.1,221.4,223.6,225.7,227.7,229.6,231.3,233.0,234.5,236.0,237.4,238.7,239.9,241.0,242.1,243.1,244.0,244.9,245.7,246.4,247.1,247.8,248.4,248.9,249.4,249.9,250.4,250.8,251.2,251.5,251.9,252.2,252.5,252.7,253.0,253.2,253.4,253.6,253.8,253.9,254.1,254.2,254.4,254.5,254.6,254.7,254.8,254.9,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0]},"sat":{"ev":[-3.0,-2.75,-2.5,-2.25,-2.0,-1.75,-1.5,-1.25,-1.0,-0.75,-0.5,-0.25,0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0,5.25,5.5,5.75,6.0],"filmic":[5.56,6.06,6.61,7.18,7.79,8.42,9.08,9.74,10.39,10.99,11.54,11.98,12.28,12.44,12.43,12.26,11.95,11.49,10.88,10.17,9.33,8.43,7.5,6.61,5.79,5.04,4.36,3.76,3.22,2.74,2.32,1.93,1.6,1.29,1.04,0.82,0.64],"aces_default":[5.05,5.53,6.02,6.52,7.01,7.48,7.94,8.38,8.79,9.16,9.5,9.81,10.07,10.3,10.5,10.66,10.72,10.69,10.5,10.17,9.66,9.05,8.4,7.68,6.93,6.21,5.51,4.85,4.23,3.64,3.11,2.63,2.2,1.84,1.52,1.25,1.02],"aces_srgb":[5.28,5.78,6.3,6.81,7.33,7.83,8.31,8.78,9.21,9.61,9.97,10.29,10.57,10.82,11.03,11.2,11.26,11.23,11.05,10.71,10.17,9.53,8.85,8.09,7.31,6.55,5.82,5.13,4.47,3.85,3.28,2.77,2.33,1.94,1.6,1.32,1.07],"aces_comp":[4.9,5.49,6.09,6.71,7.34,7.96,8.56,9.14,9.68,10.17,10.62,11.0,11.32,11.58,11.75,11.75,11.59,11.27,10.7,9.99,9.22,8.35,7.47,6.61,5.78,5.0,4.25,3.57,2.96,2.42,1.96,1.57,1.25,0.98,0.77,0.59,0.44]},"hue":{"names":["火焰橙","魔法蓝","血红","奥术紫","毒液绿","冰青","金黄"],"filmic":[47.0,38.4,17.4,14.6,10.1,10.5,9.4],"aces_srgb":[3.1,4.5,3.3,4.8,3.8,2.0,1.2]},"sweep_ev":[-2.0,-1.5,-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0],"ruler":[{"s":0,"lin":0.0,"major":true},{"s":30,"lin":0.013,"major":false},{"s":50,"lin":0.032,"major":true},{"s":89,"lin":0.1,"major":false},{"s":118,"lin":0.181,"major":true},{"s":137,"lin":0.25,"major":false},{"s":188,"lin":0.503,"major":true},{"s":225,"lin":0.753,"major":false},{"s":240,"lin":0.871,"major":true},{"s":255,"lin":1.0,"major":true}],"marks":{"black":-2.49,"floor_tol":-3.79,"white":2.27,"one":2.47,"aces90":3.9,"aces99":7.0,"filmic90":2.9,"filmic99":5.2},"nonmetal":[{"name":"木炭","lin":0.02,"s":39},{"name":"新沥青","lin":0.02,"s":39},{"name":"旧沥青","lin":0.08,"s":80},{"name":"裸土","lin":0.13,"s":101},{"name":"绿草","lin":0.21,"s":126},{"name":"沙漠沙","lin":0.36,"s":162},{"name":"新混凝土","lin":0.51,"s":189},{"name":"海冰","lin":0.56,"s":197},{"name":"新雪","lin":0.81,"s":232}],"dE":{"cats":["地牢场景","选角场景","色卡"],"aces_default":[5.0,5.18,4.36],"aces_srgb":[1.41,3.24,4.08],"aces_comp":[1.18,2.12,2.31]},"checker":{"filmic":{"C_mean":12.28,"L_white":0.886,"L_black":0.237},"aces_default":{"C_mean":10.07,"L_white":0.823,"L_black":0.303},"aces_srgb":{"C_mean":10.57,"L_white":0.813,"L_black":0.256},"aces_comp":{"C_mean":11.32,"L_white":0.852,"L_black":0.232}}}</script>
+<script type="application/json" id="report-data">{"tone":{"ev":[-8.0,-7.9,-7.8,-7.7,-7.6,-7.5,-7.4,-7.3,-7.2,-7.1,-7.0,-6.9,-6.8,-6.7,-6.6,-6.5,-6.4,-6.3,-6.2,-6.1,-6.0,-5.9,-5.8,-5.7,-5.6,-5.5,-5.4,-5.3,-5.2,-5.1,-5.0,-4.9,-4.8,-4.7,-4.6,-4.5,-4.4,-4.3,-4.2,-4.1,-4.0,-3.9,-3.8,-3.7,-3.6,-3.5,-3.4,-3.3,-3.2,-3.1,-3.0,-2.9,-2.8,-2.7,-2.6,-2.5,-2.4,-2.3,-2.2,-2.1,-2.0,-1.9,-1.8,-1.7,-1.6,-1.5,-1.4,-1.3,-1.2,-1.1,-1.0,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,-0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3.0,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,4.3,4.4,4.5,4.6,4.7,4.8,4.9,5.0,5.1,5.2,5.3,5.4,5.5,5.6,5.7,5.8,5.9,6.0,6.1,6.2,6.3,6.4,6.5,6.6,6.7,6.8,6.9,7.0,7.1,7.2,7.3,7.4,7.5,7.6,7.7,7.8,7.9,8.0,8.1,8.2,8.3,8.4,8.5,8.6,8.7,8.8,8.9,9.0,9.1,9.2,9.3,9.4,9.5,9.6,9.7,9.8,9.9,10.0],"filmic":[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2,0.2,0.2,0.2,0.3,0.3,0.4,0.4,0.4,0.5,0.6,0.6,0.7,0.8,0.9,1.0,1.1,1.3,1.4,1.6,1.8,2.1,2.3,2.6,2.9,3.3,3.7,4.2,4.7,5.3,5.9,6.7,7.5,8.4,9.5,10.6,11.9,13.2,14.5,16.0,17.5,19.0,20.7,22.4,24.2,26.1,28.1,30.2,32.4,34.7,37.1,39.6,42.2,45.0,47.9,50.9,54.0,57.3,60.7,64.2,67.9,71.8,75.7,79.9,84.1,88.5,93.1,97.8,102.6,107.5,112.5,117.6,122.9,128.1,133.4,138.8,144.1,149.4,154.6,159.8,165.0,169.9,174.7,179.2,183.5,187.7,191.6,195.3,198.9,202.3,205.5,208.5,211.4,214.2,216.8,219.3,221.6,223.9,226.0,228.0,229.9,231.6,233.3,234.9,236.4,237.8,239.2,240.4,241.6,242.7,243.7,244.7,245.6,246.5,247.3,248.1,248.8,249.5,250.1,250.7,251.3,251.8,252.3,252.7,253.2,253.6,254.0,254.3,254.6,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0],"aces_default":[1.5,1.6,1.7,1.9,2.0,2.1,2.3,2.4,2.6,2.8,3.0,3.2,3.4,3.6,3.8,4.1,4.4,4.7,5.0,5.3,5.7,6.0,6.4,6.9,7.3,7.8,8.3,8.9,9.4,10.0,10.7,11.4,12.1,12.9,13.7,14.5,15.5,16.4,17.4,18.5,19.6,20.8,22.0,23.3,24.7,26.1,27.6,29.1,30.8,32.5,34.2,36.1,38.0,39.9,42.0,44.1,46.3,48.6,50.9,53.3,55.8,58.3,61.0,63.6,66.4,69.2,72.1,75.0,78.0,81.1,84.2,87.4,90.6,93.9,97.2,100.6,104.0,107.4,110.9,114.4,117.9,121.5,125.1,128.7,132.3,135.9,139.6,143.2,146.8,150.4,154.0,157.5,161.0,164.5,168.0,171.4,174.7,178.0,181.3,184.5,187.6,190.6,193.6,196.4,199.2,202.0,204.6,207.1,209.6,212.0,214.3,216.5,218.6,220.6,222.5,224.4,226.1,227.8,229.4,231.0,232.4,233.8,235.1,236.3,237.5,238.6,239.7,240.7,241.6,242.5,243.3,244.1,244.9,245.6,246.2,246.8,247.4,248.0,248.5,248.9,249.4,249.8,250.2,250.6,250.9,251.3,251.6,251.8,252.1,252.4,252.6,252.8,253.0,253.2,253.4,253.5,253.7,253.9,254.0,254.1,254.2,254.3,254.4,254.5,254.6,254.7,254.8,254.9,254.9,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0],"aces_srgb":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2,0.2,0.3,0.3,0.4,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.4,1.6,1.9,2.2,2.5,2.9,3.4,3.9,4.6,5.3,6.1,7.0,8.0,9.2,10.6,12.0,13.5,15.1,16.7,18.4,20.2,22.1,24.0,26.0,28.1,30.3,32.5,34.8,37.2,39.7,42.2,44.8,47.5,50.3,53.1,56.0,59.0,62.0,65.1,68.3,71.5,74.8,78.2,81.6,85.0,88.5,92.1,95.7,99.3,103.0,106.7,110.4,114.2,118.0,121.8,125.6,129.4,133.2,137.0,140.8,144.6,148.4,152.2,155.9,159.6,163.2,166.8,170.3,173.8,177.2,180.6,183.8,187.1,190.2,193.2,196.2,199.0,201.8,204.5,207.1,209.6,212.0,214.3,216.6,218.7,220.7,222.7,224.6,226.3,228.0,229.6,231.2,232.6,234.0,235.3,236.6,237.7,238.8,239.9,240.9,241.8,242.7,243.5,244.3,245.0,245.7,246.4,247.0,247.6,248.1,248.6,249.1,249.5,249.9,250.3,250.7,251.0,251.4,251.7,251.9,252.2,252.5,252.7,252.9,253.1,253.3,253.5,253.6,253.8,253.9,254.1,254.2,254.3,254.4,254.5,254.6,254.7,254.8,254.9,254.9,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0],"aces_comp":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.2,0.3,0.3,0.4,0.4,0.5,0.6,0.7,0.9,1.0,1.2,1.5,1.7,2.1,2.4,2.9,3.4,4.0,4.8,5.6,6.6,7.8,9.1,10.6,12.3,14.1,15.9,17.8,19.9,22.0,24.2,26.5,29.0,31.5,34.1,36.9,39.7,42.6,45.6,48.8,52.0,55.3,58.7,62.2,65.8,69.4,73.2,77.0,80.9,84.8,88.9,93.0,97.1,101.3,105.6,109.8,114.2,118.5,122.9,127.3,131.7,136.1,140.5,144.8,149.2,153.5,157.7,161.9,166.1,170.1,174.1,178.1,181.9,185.6,189.2,192.8,196.2,199.5,202.6,205.7,208.6,211.4,214.1,216.7,219.1,221.4,223.6,225.7,227.7,229.6,231.3,233.0,234.5,236.0,237.4,238.7,239.9,241.0,242.1,243.1,244.0,244.9,245.7,246.4,247.1,247.8,248.4,248.9,249.4,249.9,250.4,250.8,251.2,251.5,251.9,252.2,252.5,252.7,253.0,253.2,253.4,253.6,253.8,253.9,254.1,254.2,254.4,254.5,254.6,254.7,254.8,254.9,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0,255.0]},"sat":{"ev":[-3.0,-2.75,-2.5,-2.25,-2.0,-1.75,-1.5,-1.25,-1.0,-0.75,-0.5,-0.25,0.0,0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0,5.25,5.5,5.75,6.0],"filmic":[5.56,6.06,6.61,7.18,7.79,8.42,9.08,9.74,10.39,10.99,11.54,11.98,12.28,12.44,12.43,12.26,11.95,11.49,10.88,10.17,9.33,8.43,7.5,6.61,5.79,5.04,4.36,3.76,3.22,2.74,2.32,1.93,1.6,1.29,1.04,0.82,0.64],"aces_default":[5.05,5.53,6.02,6.52,7.01,7.48,7.94,8.38,8.79,9.16,9.5,9.81,10.07,10.3,10.5,10.66,10.72,10.69,10.5,10.17,9.66,9.05,8.4,7.68,6.93,6.21,5.51,4.85,4.23,3.64,3.11,2.63,2.2,1.84,1.52,1.25,1.02],"aces_srgb":[5.28,5.78,6.3,6.81,7.33,7.83,8.31,8.78,9.21,9.61,9.97,10.29,10.57,10.82,11.03,11.2,11.26,11.23,11.05,10.71,10.17,9.53,8.85,8.09,7.31,6.55,5.82,5.13,4.47,3.85,3.28,2.77,2.33,1.94,1.6,1.32,1.07],"aces_comp":[4.9,5.49,6.09,6.71,7.34,7.96,8.56,9.14,9.68,10.17,10.62,11.0,11.32,11.58,11.75,11.75,11.59,11.27,10.7,9.99,9.22,8.35,7.47,6.61,5.78,5.0,4.25,3.57,2.96,2.42,1.96,1.57,1.25,0.98,0.77,0.59,0.44]},"hue":{"names":["火焰橙","魔法蓝","血红","奥术紫","毒液绿","冰青","金黄"],"filmic":[47.0,38.4,17.4,14.6,10.1,10.5,9.4],"aces_srgb":[3.1,4.5,3.3,4.8,3.8,2.0,1.2]},"sweep_ev":[-2.0,-1.5,-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0],"ruler":[{"s":0,"lin":0.0,"major":true},{"s":30,"lin":0.013,"major":false},{"s":50,"lin":0.032,"major":true},{"s":89,"lin":0.1,"major":false},{"s":118,"lin":0.181,"major":true},{"s":137,"lin":0.25,"major":false},{"s":188,"lin":0.503,"major":true},{"s":225,"lin":0.753,"major":false},{"s":240,"lin":0.871,"major":true},{"s":255,"lin":1.0,"major":true}],"marks":{"black":-2.49,"floor_tol":-3.79,"white":2.27,"one":2.47,"aces90":3.9,"aces99":7.0,"filmic90":2.9,"filmic99":5.2},"nonmetal":[{"name":"木炭","lin":0.02,"s":39},{"name":"新沥青","lin":0.02,"s":39},{"name":"旧沥青","lin":0.08,"s":80},{"name":"裸土","lin":0.13,"s":101},{"name":"绿草","lin":0.21,"s":126},{"name":"沙漠沙","lin":0.36,"s":162},{"name":"新混凝土","lin":0.51,"s":189},{"name":"海冰","lin":0.56,"s":197},{"name":"新雪","lin":0.81,"s":232}],"dE":{"cats":["地牢场景","选角场景","色卡"],"aces_default":[5.0,5.18,4.36],"aces_srgb":[1.41,3.24,4.08],"aces_comp":[1.18,2.12,2.31]},"checker":{"filmic":{"C_mean":12.28,"L_white":0.886,"L_black":0.237},"aces_default":{"C_mean":10.07,"L_white":0.823,"L_black":0.303},"aces_srgb":{"C_mean":10.57,"L_white":0.813,"L_black":0.256},"aces_comp":{"C_mean":11.32,"L_white":0.852,"L_black":0.232}},"trans":{"t":[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0,88.0,89.0,90.0,91.0,92.0,93.0,94.0,95.0,96.0,97.0,98.0,99.0,100.0],"ec":[0.0,0.07,0.14,0.21,0.28,0.35,0.42,0.49,0.56,0.63,0.7,0.77,0.84,0.91,0.98,1.05,1.12,1.19,1.26,1.33,1.4,1.47,1.54,1.61,1.68,1.75,1.82,1.89,1.96,2.03,2.1,2.17,2.24,2.31,2.38,2.45,2.52,2.59,2.66,2.73,2.8,2.87,2.94,3.01,3.08,3.15,3.22,3.29,3.36,3.43,3.5,3.57,3.64,3.71,3.78,3.85,3.92,3.99,4.06,4.13,4.2,4.27,4.34,4.41,4.48,4.55,4.62,4.69,4.76,4.83,4.9,4.97,5.04,5.11,5.18,5.25,5.32,5.39,5.46,5.53,5.6,5.67,5.74,5.81,5.88,5.95,6.02,6.09,6.16,6.23,6.3,6.37,6.44,6.51,6.58,6.65,6.72,6.79,6.86,6.93,7.0],"shutter":[0.0,0.014,0.029,0.044,0.058,0.073,0.089,0.104,0.119,0.135,0.151,0.167,0.183,0.199,0.216,0.232,0.249,0.267,0.284,0.301,0.319,0.337,0.355,0.374,0.392,0.411,0.43,0.45,0.47,0.49,0.51,0.53,0.551,0.572,0.594,0.615,0.638,0.66,0.683,0.706,0.729,0.753,0.778,0.802,0.828,0.853,0.879,0.906,0.933,0.961,0.989,1.017,1.047,1.077,1.107,1.138,1.17,1.203,1.236,1.27,1.305,1.341,1.378,1.415,1.454,1.494,1.535,1.577,1.62,1.665,1.711,1.759,1.808,1.859,1.912,1.967,2.024,2.083,2.145,2.21,2.278,2.349,2.423,2.502,2.586,2.674,2.769,2.87,2.979,3.096,3.224,3.364,3.52,3.694,3.892,4.122,4.396,4.734,5.176,5.817,7.0],"iso":[0.0,1.183,1.824,2.266,2.604,2.878,3.108,3.306,3.48,3.636,3.776,3.904,4.021,4.13,4.231,4.326,4.414,4.498,4.577,4.651,4.722,4.79,4.855,4.917,4.976,5.033,5.088,5.141,5.192,5.241,5.289,5.335,5.38,5.423,5.465,5.506,5.546,5.585,5.622,5.659,5.695,5.73,5.764,5.797,5.83,5.862,5.893,5.923,5.953,5.983,6.011,6.039,6.067,6.094,6.121,6.147,6.172,6.198,6.222,6.247,6.271,6.294,6.317,6.34,6.362,6.385,6.406,6.428,6.449,6.47,6.49,6.51,6.53,6.55,6.57,6.589,6.608,6.626,6.645,6.663,6.681,6.699,6.716,6.733,6.751,6.768,6.784,6.801,6.817,6.833,6.849,6.865,6.881,6.896,6.911,6.927,6.942,6.956,6.971,6.986,7.0]}}</script>
 <script>
 (function () {
   "use strict";
@@ -1479,7 +1989,7 @@ python -I build_html.py         <span class="c"># 生成本页 index.html</span>
   }
   function fmtLin(v) { return v === 0 ? "0" : v === 1 ? "1" : v < 0.1 ? v.toFixed(3) : v.toFixed(2); }
 
-  // ---------------------------------------------------------------- BaseColor 对照尺（长期方案 ④）
+  // ---------------------------------------------------------------- BaseColor 对照尺（2.5）
   function valueRuler(root) {
     var TK = D.ruler, pins = [];
     D.nonmetal.forEach(function (x) {
@@ -1549,7 +2059,7 @@ python -I build_html.py         <span class="c"># 生成本页 index.html</span>
     onWidth(plot, draw);
   }
 
-  // ---------------------------------------------------------------- 档位尺（长期方案 ③）
+  // ---------------------------------------------------------------- 档位尺（2.5）
   function stopRuler(root) {
     var TN = D.tone, MK = D.marks, E0 = -8, E1 = 10, KEYS = [["aces_srgb", "ACES 2.0"], ["filmic", "Filmic"]];
     var plot = h("div", "plot", root);
@@ -1654,6 +2164,24 @@ python -I build_html.py         <span class="c"># 生成本页 index.html</span>
   if (document.getElementById("chart-ruler")) valueRuler(document.getElementById("chart-ruler"));
   if (document.getElementById("chart-stops")) stopRuler(document.getElementById("chart-stops"));
 
+  if (document.getElementById("chart-trans") && D.trans) {
+    var TR = D.trans;
+    S.t_ec = { label: "混合曝光补偿（推荐）", color: "--s3" };
+    S.t_sh = { label: "混合快门", color: "--s2" };
+    S.t_iso = { label: "混合 ISO", color: "--s1" };
+    lineChart(document.getElementById("chart-trans"), {
+      x: TR.t, data: { t_ec: TR.ec, t_sh: TR.shutter, t_iso: TR.iso }, keys: ["t_ec", "t_sh", "t_iso"],
+      xDomain: [0, 100], yDomain: [0, 7], xTicks: [0, 25, 50, 75, 100], yTicks: [0, 1, 2, 3, 4, 5, 6, 7],
+      xFmt: function (v) { return v + "%"; }, yFmt: function (v) { return v ? "+" + v : "0"; },
+      valFmt: function (v) { return "+" + v.toFixed(1) + " 档"; },
+      xTitle: "区域 PPV 的混合权重", yTitle: "比户外亮了几档", height: 280, focusX: 50, kbStep: 5,
+      marks: [{ x: 50, label: "一半" }],
+      aria: "户外走进山洞时三种混合方式的曝光变化：曝光补偿按权重均匀变化；快门在权重 50% 时只变了约 1 档；ISO 在 50% 时已经变了约 6 档",
+      tipTitle: function (x) { return "混合权重 " + x + "%"; },
+      tableXName: "权重", tableX: function (x) { return x + "%"; }, tableFilter: function (x) { return Math.abs(x / 10 - Math.round(x / 10)) < 1e-6; }
+    });
+  }
+
   // ---------------------------------------------------------------- 名词小抄：正文里的名词悬停 / 点按看解释
   (function () {
     var defs = Array.prototype.map.call(document.querySelectorAll("#gloss [data-terms]"), function (el) {
@@ -1662,7 +2190,7 @@ python -I build_html.py         <span class="c"># 生成本页 index.html</span>
     if (!defs.length) return;
     var re = new RegExp(defs.map(function (d) { return "(" + d.pat + ")"; }).join("|"), "g");
     var SKIP = "script, style, code, pre, svg, button, a, h1, h2, h3, h4, th, summary, .topbar, .chart, .tip, .term, #gloss, #appendix, .cmp, .legend, .seg, .views, " +
-      ".stat .v, .fig-title, .labx-h, .pipe .pi, .steps > li > b:first-child";
+      ".stat .v, .fig-title, .labx-h, .pipe .pi, .steps > li > b:first-child, .ppv-h, .layer-h, .fxset .rl, .evl-g, .chain";
     var main = document.querySelector("main"), scopes = new Map(), nodes = [];
     var walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
       acceptNode: function (nd) {
@@ -1674,7 +2202,7 @@ python -I build_html.py         <span class="c"># 生成本页 index.html</span>
     while (walker.nextNode()) nodes.push(walker.currentNode);
     // 每个名词在同一个范围（一个步骤、一个实验卡片或一节）里只标第一次出现，避免满屏下划线
     nodes.forEach(function (nd) {
-      var scope = nd.parentElement.closest(".steps > li, .labx, section.card");
+      var scope = nd.parentElement.closest(".steps > li, .labx, .layer, section.card");
       var used = scopes.get(scope);
       if (!used) { used = {}; scopes.set(scope, used); }
       var text = nd.nodeValue, last = 0, frag = null, mm;
