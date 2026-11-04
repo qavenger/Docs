@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>火炬之光 · UE5 升级：哪些工作能自动化，哪些必须靠人或 AI</title>
+<style>
+  body{max-width:1000px;margin:0 auto;padding:32px 28px 80px;font:15px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:#1f2328;background:#fff}
+  h1{font-size:26px;border-bottom:3px solid #1a7f37;padding-bottom:12px;margin-bottom:6px}
+  h2{font-size:20px;margin-top:38px;border-left:5px solid #1a7f37;padding-left:12px;background:#f0fff4;padding-top:6px;padding-bottom:6px}
+  h3{font-size:16px;margin-top:24px}
+  .sub{color:#57606a;font-size:14px;margin-bottom:26px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid #d0d7de;padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#f6f8fa;font-weight:600}
+  .ok{color:#1a7f37;font-weight:600}
+  .warn{color:#9a6700;font-weight:600}
+  .bad{color:#cf222e;font-weight:600}
+  .kpi{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0}
+  .kpi div{flex:1 1 150px;border:1px solid #d0d7de;border-radius:8px;padding:12px 14px;background:#f6f8fa}
+  .kpi b{display:block;font-size:22px;color:#1a7f37;line-height:1.3}
+  .kpi span{font-size:13px;color:#57606a}
+  .box{border-left:4px solid #1a7f37;background:#f0fff4;padding:12px 16px;margin:16px 0;border-radius:0 6px 6px 0}
+  .box.warn{border-left-color:#9a6700;background:#fff8c5}
+  .box.bad{border-left-color:#cf222e;background:#ffebe9}
+  .box.blue{border-left-color:#0969da;background:#f6f8fa}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .bar{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:12px 0;font-size:12px;color:#fff;font-weight:600}
+  .bar div{display:flex;align-items:center;justify-content:center}
+  code{background:#f6f8fa;padding:1px 5px;border-radius:4px;font-size:13px}
+  hr{border:none;border-top:1px solid #d0d7de;margin:34px 0}
+</style>
+</head>
+<body>
+
+<h1>火炬之光 · UE5 升级：哪些工作能自动化，哪些必须靠人或 AI</h1>
+<div class="sub">面向制作人 / 策划 / 美术 · 引擎 UE&nbsp;5.8.4 · 更新日期 2026-10-30</div>
+
+<div class="box">
+  <strong>一句话结论：</strong>这次升级约 <strong>八成的重复劳动已经被脚本自动化</strong>（拉取、分类、合并、资产体检、重存、门禁、出包）；
+  但<strong>「判断」类的工作仍然必须靠人 + 大模型推理</strong>——尤其是根因定位、冲突语义裁决、资产策略选择、以及美术/手感验收。
+  目前这两类是<strong>分工协作</strong>的关系，而不是谁替代谁。
+</div>
+
+<h2>一、三档分工总览</h2>
+<div class="box blue" style="margin:8px 0 4px">
+  下面的比例是<strong>按本次升级实际工作量粗略估算</strong>（用于说明结构，不是精确统计）：<br>
+  全自动 ≈55% ｜ 半自动 + AI 推理 ≈30% ｜ 必须人工 ≈15%
+</div>
+<div class="bar">
+  <div style="background:#1a7f37;flex:55">全自动（脚本一键，可重复跑）55%</div>
+  <div style="background:#9a6700;flex:30">半自动 + AI 推理 ≈30%</div>
+  <div style="background:#cf222e;flex:15">必须人工 ≈15%</div>
+</div>
+<table>
+  <tr><th style="width:120px">档位</th><th style="width:180px">判定标准</th><th>典型工作</th><th style="width:120px">可重复吗</th></tr>
+  <tr>
+    <td class="ok">全自动</td>
+    <td>规则明确、结果可机器校验</td>
+    <td>P4 拉新、差异分类、文本三方合并、资产批量重存、贴图/材质体检、Lua 门禁、编译、出包</td>
+    <td class="ok">可，一条命令</td>
+  </tr>
+  <tr>
+    <td class="warn">半自动 + AI</td>
+    <td>工具给候选与证据，AI 做归纳与判断，人做确认</td>
+    <td>根因定位、冲突语义裁决、资产保留策略、日志分诊、修复方案设计</td>
+    <td class="warn">不可完全复现，需留档</td>
+  </tr>
+  <tr>
+    <td class="bad">必须人工</td>
+    <td>涉及审美、手感、业务取舍</td>
+    <td>美术观感验收、操作手感判断、玩法/表现取舍决策、最终上线判定</td>
+    <td class="bad">不可</td>
+  </tr>
+</table>
+
+<h2>二、已经工具化的部分（按迁移阶段）</h2>
+<div class="kpi">
+  <div><b>45</b><span>迁移流水线模块（mlsync）</span></div>
+  <div><b>228</b><span>自动化工具脚本</span></div>
+  <div><b>140</b><span>编辑器内 Python 脚本（含子目录）</span></div>
+  <div><b>162</b><span>知识库条目（可检索）</span></div>
+</div>
+
+<h3>2.1 拉新与合并（S1–S5）</h3>
+<table>
+  <tr><th style="width:210px">工具</th><th>做什么</th><th style="width:90px">自动化度</th></tr>
+  <tr><td><code>ml_pipeline.py sync</code></td><td><strong>UGS/P4 拉新</strong>：记录当前基线 → 按固定 CL 拉取工程（自动跳过 <code>art_reference</code> 3.7TB、<code>design</code> 0.5TB 这类非工程输入）</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_pipeline.py offline</code></td><td>增量计算 → 差异分类 → 三方合并（ours/theirs/base），停在人工裁决前</td><td class="ok">全自动到裁决点</td></tr>
+  <tr><td><code>ml_merge.py</code> / <code>ml_merge_dupcheck.py</code></td><td>base 版本重选（宁旧勿新）、重复块检查，防止"干净合并却静默丢改动"</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_show_conflicts.py</code></td><td>把冲突聚合成可读清单（按文件/按冲突块）</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_gap*.py</code>（3 个）</td><td><strong>UGS 存量差距</strong>：本批之外还有多少文件落后于上游，按目录归类</td><td class="ok">全自动</td></tr>
+  <tr><td><code>rvalign/</code>（10 个工具）</td><td><strong>与国服测试服（ReviewUGS）逻辑对齐</strong>：API 扫描、Lua 绑定审计、帧哈希比对、参考重放</td><td class="ok">全自动</td></tr>
+</table>
+
+<h3>2.2 资产处理（S6–S7）</h3>
+<table>
+  <tr><th style="width:210px">工具</th><th>做什么</th><th style="width:90px">自动化度</th></tr>
+  <tr><td><code>asset_pipeline.py</code></td><td>资产批量"计划 → 体检 → 修复 → 重存"，分批带校验</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_tex_srcgap.py</code></td><td><strong>贴图源图核对</strong>：找出"停在旧版"的贴图（含只改了像素的）</td><td class="ok">全自动（只读）</td></tr>
+  <tr><td><code>ml_mesh_*.py</code>（6 个）</td><td>骨骼网格版本审计、差异统计、迁移、复核、旧数据补丁</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_shading_migrate.py</code></td><td>着色模型批量迁移（自定义 → 标准光照）</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_navbuild*.py</code></td><td>导航网格批量重建（独立无渲染编辑器跑，不打扰同事）</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_pkgprops.py</code> / <code>ml_asset_scan.py</code></td><td>资产属性扫描、包信息核对</td><td class="ok">全自动</td></tr>
+</table>
+
+<h3>2.3 质量门禁（S6/S9）</h3>
+<table>
+  <tr><th style="width:210px">工具</th><th>挡住什么</th><th style="width:90px">自动化度</th></tr>
+  <tr><td><code>lua_guard.py</code></td><td>Lua 语法（8000+ 文件）、模块解析、入口全局、注册表指向、行数基线</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_build.py</code></td><td>编译验证（关编辑器跑，结果可判定）</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ml_load_audit.py</code> / <code>ml_pie_check.py</code></td><td>资产逐个加载体检（可续跑、崩溃可定位）、PIE 冒烟</td><td class="ok">全自动</td></tr>
+  <tr><td><code>ui_sweep.py</code> / <code>ui_tree.py</code></td><td><strong>界面自动走查</strong>：逐个页面/页签/按钮打开、悬停、抓异常与截图</td><td class="ok">半自动（异常需人判读）</td></tr>
+  <tr><td><code>error_triage.py</code> / <code>scan_warn_err.py</code></td><td>日志分诊：把海量 Warning/Error 归族、去噪、定位Top问题</td><td class="ok">全自动归族 + AI 判读</td></tr>
+  <tr><td><code>ml_macro_audit.py</code></td><td>引擎改动按宏归组（哪些本地改动、能否关掉）</td><td class="ok">全自动</td></tr>
+</table>
+
+<h3>2.4 出包与运行（S10）</h3>
+<table>
+  <tr><th style="width:210px">工具</th><th>做什么</th><th style="width:90px">自动化度</th></tr>
+  <tr><td><code>Engine_Bin/一键出PC包.bat</code> + <code>PackKit</code></td><td><strong>用 bin 版引擎一键出 PC 包</strong>（Development / Shipping），UAT 最小工具集按需挂载</td><td class="ok">全自动（含图形界面）</td></tr>
+  <tr><td><code>analyze_cook_errors.py</code></td><td>烘焙报错归类（哪类资产、哪个函数）</td><td class="ok">全自动</td></tr>
+  <tr><td><code>run_packpc.py</code></td><td>无头出包编排（命令行可嵌入 CI）</td><td class="ok">全自动</td></tr>
+  <tr><td>包体分析（<code>paksize/</code>）</td><td>包体构成、分块重复、压缩率对比</td><td class="ok">全自动</td></tr>
+</table>
+
+<h2>三、必须靠大模型推理的部分（AI 不可替代的"判断"）</h2>
+<div class="box warn">
+  这些工作的共同点：<strong>输入是海量非结构化证据（日志、二进制、上游 diff），输出是一个"结论或方案"，而且规则事先写不出来。</strong>
+  脚本能做的是"把证据摆齐"，结论必须由推理得出。
+</div>
+<table>
+  <tr><th style="width:190px">工作类型</th><th>为什么脚本做不了</th><th style="width:170px">典型例子</th></tr>
+  <tr>
+    <td><strong>根因定位</strong></td>
+    <td>症状离原因很远，需要在几十万行日志/几千个文件里串起一条因果链</td>
+    <td>「怪物没有攻击动画」最终定位到"异步加载完成后动画实例为空"（横跨 6 个文件）</td>
+  </tr>
+  <tr>
+    <td><strong>冲突语义裁决</strong></td>
+    <td>上游删了一段、我们在同一位置加了保护，谁对？需要理解两边意图</td>
+    <td>WidgetInteractiveMgr 冲突：上游删调试打印 vs 我们加"只接受视口内交互"</td>
+  </tr>
+  <tr>
+    <td><strong>资产策略选择</strong></td>
+    <td>"这份资产该保留哪一版、要不要重存、会不会破坏引用"没有固定规则</td>
+    <td>二进制差异三分类（可直接覆盖 / 需重做 / 需人工判断）</td>
+  </tr>
+  <tr>
+    <td><strong>迁移方案设计</strong></td>
+    <td>同一个需求有多种改法（改引擎/改工程/改资产/改配置），要权衡成本与风险</td>
+    <td>定制着色模型：还原枚举 vs 资产改造 vs 放弃（最终选资产改造 + 临时容错）</td>
+  </tr>
+  <tr>
+    <td><strong>日志分诊</strong></td>
+    <td>几千条 Warning 里哪几条是真问题？哪些是良性噪声？</td>
+    <td>把 47,000 条特效重复告警收敛成"一个调用方每帧重复处理消息"</td>
+  </tr>
+  <tr>
+    <td><strong>引擎差异判定</strong></td>
+    <td>UE4 和 UE5 同名函数行为不同，需要读引擎源码确认</td>
+    <td><code>AddShadingModel</code> 的 check、<code>UpdateLevelStreaming</code> 重入、<code>SetAnimInstanceClass(nullptr)</code></td>
+  </tr>
+</table>
+
+<h2>四、必须靠人的部分（AI 也不该替代）</h2>
+<table>
+  <tr><th style="width:170px">工作</th><th>原因</th><th style="width:190px">验收方式</th></tr>
+  <tr><td><strong>美术观感验收</strong></td><td>「像不像原版」是审美判断，无法量化</td><td>美术走查 + 截图对比</td></tr>
+  <tr><td><strong>操作手感判断</strong></td><td>「点得爽不爽」必须真人上手</td><td>策划/程序实机试玩</td></tr>
+  <tr><td><strong>玩法与表现取舍</strong></td><td>「这个功能要不要还原」是成本/收益决策</td><td>制作人决策会</td></tr>
+  <tr><td><strong>上线判定</strong></td><td>风险承受度是业务判断</td><td>发布评审</td></tr>
+  <tr><td><strong>服务端/账号类验证</strong></td><td>依赖真实服务器与账号权限</td><td>联调环境实测</td></tr>
+</table>
+
+<h2>五、现状：这套分工实际跑得怎么样</h2>
+<table>
+  <tr><th style="width:200px">指标</th><th style="width:110px">数值</th><th>说明</th></tr>
+  <tr><td>流水线已实跑批次</td><td class="ok">13 次</td><td>含正式拉新、存量追平、出包、贴图核对等不同 run</td></tr>
+  <tr><td>单批最大合并量</td><td>4,190 个改动块</td><td>3 天内完成分类 + 合并 + 门禁</td></tr>
+  <tr><td>知识库条目</td><td>162 条</td><td>117 条已修复/已验证，45 条待处理或已规避</td></tr>
+  <tr><td>自动化挡下的问题</td><td>门禁全绿才允许进游戏/提交</td><td>语法/模块/入口/注册表/行数五道检查</td></tr>
+  <tr><td>人工裁决占比</td><td class="warn">约 15%</td><td>集中在冲突裁决、资产策略、方案设计</td></tr>
+</table>
+<div class="box blue">
+  <strong>一个具体例子（说明分工怎么配合）：</strong><br>
+  ① <strong>脚本</strong>跑出「同一 CfgId 每秒被请求 77 次」的统计；<br>
+  ② <strong>AI</strong> 抓调用栈 → 定位到"每帧重复处理消息列表"的根因；<br>
+  ③ <strong>人</strong>确认修法（按逻辑帧去重）不会破坏其它消息；<br>
+  ④ <strong>脚本</strong>编译 + 门禁 + 进图验证；<br>
+  ⑤ <strong>人</strong>实机确认特效不再连爆。
+</div>
+
+<h2>六、衍生条目（后续可以继续工具化的候选）</h2>
+<table>
+  <tr><th style="width:40px">#</th><th style="width:250px">候选</th><th>价值</th><th style="width:90px">难度</th></tr>
+  <tr><td>1</td><td><strong>冲突自动预裁决</strong></td><td>对"上游纯删调试/纯加日志"这类低风险冲突自动判 ours/theirs，只把真冲突留给人</td><td class="warn">中</td></tr>
+  <tr><td>2</td><td><strong>资产三分类自动判定</strong></td><td>用规则+指纹库把二进制资产自动分到"覆盖/重做/待判"，减少人工分流</td><td class="warn">中</td></tr>
+  <tr><td>3</td><td><strong>UI 走查自动判读</strong></td><td>现在能自动点遍界面并截图，下一步可用图像比对自动标记"异常页面"</td><td class="warn">中</td></tr>
+  <tr><td>4</td><td><strong>日志异常自动归因</strong></td><td>把"新增错误簇"自动关联到最近改动（CL/文件），缩短根因定位时间</td><td class="warn">中</td></tr>
+  <tr><td>5</td><td><strong>包体对比自动化</strong></td><td>每次出包自动比对包体构成，超标即告警（当前是人工看）</td><td class="ok">低</td></tr>
+  <tr><td>6</td><td><strong>门禁纳入 CI</strong></td><td>把 lua_guard/编译/资产体检做成提交前自动跑，而不是手动触发</td><td class="ok">低</td></tr>
+  <tr><td>7</td><td><strong>知识库反向提示</strong></td><td>改某类文件时自动弹出相关 KB 条目（避免重复踩坑）</td><td class="warn">中</td></tr>
+</table>
+
+<h2>七、结论</h2>
+<div class="box">
+  <ol>
+    <li><strong>能自动化的已经自动化了：</strong>拉新、分类、合并、体检、重存、门禁、出包——这些现在是"一条命令 + 可重复"。</li>
+    <li><strong>AI 的价值在"判断"：</strong>根因、方案、取舍。它把原来"要资深程序看两天"的问题压缩到几小时。</li>
+    <li><strong>人的价值在"决定"：</strong>审美、手感、成本收益。这部分不该也不能交给机器。</li>
+    <li><strong>这套分工是可复用的：</strong>下一个大版本升级、甚至换引擎，同一套流水线 + 知识库还能继续用。</li>
+  </ol>
+</div>
+
+<hr>
+<p class="sub">
+  配套文档：《UE5 升级能力说明》《UE5 升级技术方案》<br>
+  技术细节：<code>Docs/Methodology/P4_to_UE5.html</code>；问题库：<code>Docs/MigrationKB/kb.html</code>（162 条）
+</p>
+
+</body>
+</html>

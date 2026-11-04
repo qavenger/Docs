@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>火炬之光 · UE5 升级技术方案（通俗版）</title>
+<style>
+  body{max-width:980px;margin:0 auto;padding:32px 28px 80px;font:15px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:#1f2328;background:#fff}
+  h1{font-size:26px;border-bottom:3px solid #8250df;padding-bottom:12px;margin-bottom:6px}
+  h2{font-size:20px;margin-top:38px;border-left:5px solid #8250df;padding-left:12px;background:#faf5ff;padding-top:6px;padding-bottom:6px}
+  h3{font-size:16px;margin-top:24px;color:#24292f}
+  .sub{color:#57606a;font-size:14px;margin-bottom:26px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid #d0d7de;padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#f6f8fa;font-weight:600}
+  .ok{color:#1a7f37;font-weight:600}
+  .warn{color:#9a6700;font-weight:600}
+  .bad{color:#cf222e;font-weight:600}
+  .kpi{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0}
+  .kpi div{flex:1 1 150px;border:1px solid #d0d7de;border-radius:8px;padding:12px 14px;background:#f6f8fa}
+  .kpi b{display:block;font-size:22px;color:#8250df;line-height:1.3}
+  .kpi span{font-size:13px;color:#57606a}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0}
+  .flow div{flex:1 1 118px;border:1px solid #d0d7de;border-radius:6px;padding:10px;text-align:center;font-size:13px;background:#fff}
+  .flow .arrow{flex:0 0 auto;border:none;background:none;padding:0 2px;font-size:18px;color:#8b949e}
+  .flow .hi{background:#faf5ff;border-color:#8250df}
+  .box{border-left:4px solid #8250df;background:#faf5ff;padding:12px 16px;margin:16px 0;border-radius:0 6px 6px 0}
+  .box.warn{border-left-color:#9a6700;background:#fff8c5}
+  .box.ok{border-left-color:#1a7f37;background:#dafbe1}
+  .box.bad{border-left-color:#cf222e;background:#ffebe9}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .layers{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+  .layers div{flex:1 1 170px;border:1px solid #d0d7de;border-radius:8px;padding:12px;font-size:13px}
+  .layers div b{display:block;font-size:14px;margin-bottom:4px;color:#8250df}
+  hr{border:none;border-top:1px solid #d0d7de;margin:34px 0}
+  code{background:#f6f8fa;padding:1px 5px;border-radius:4px;font-size:13px}
+</style>
+</head>
+<body>
+
+<h1>火炬之光 · UE5 升级技术方案</h1>
+<div class="sub">面向制作人 / 策划 / 美术（通俗版）· 引擎 UE&nbsp;5.8.4 · 更新日期 2026-10-30</div>
+
+<div class="box ok">
+  <strong>一句话结论：</strong>把游戏从「原版 UE4.26 + 大量引擎定制」搬到「官方 UE5.8」，本质上不是"换个引擎版本"，
+  而是把<strong>引擎定制能力、工程代码、Lua 逻辑、26 万份美术资产、几十份配置</strong>一起搬过去，并且要保证
+  <strong>以后还能持续跟上游开发线同步</strong>。我们为此建了一条可重复执行的“迁移流水线”。
+</div>
+
+<h2>一、一张图看懂</h2>
+<div class="flow">
+  <div>① 上游开发线<br>（UE4.26 + 定制引擎）</div><div class="arrow">→</div>
+  <div>② 拉新 / 取快照<br>逐字节对照</div><div class="arrow">→</div>
+  <div>③ 自动分类<br>+ 三方合并</div><div class="arrow">→</div>
+  <div class="hi">④ 迁移改造<br>（引擎/代码/Lua/资产）</div><div class="arrow">→</div>
+  <div>⑤ 体检与验证<br>（自动门禁）</div><div class="arrow">→</div>
+  <div>⑤ 产物<br>可玩版本 / PC 包</div>
+</div>
+<p class="sub">关键在于：<strong>③④⑤ 全部是自动化 + 可重复执行的</strong>，所以每次上游出新版本，都能重跑一遍而不是手工搬。</p>
+
+<h2>二、为什么这件事比“升级引擎”复杂</h2>
+<table>
+  <tr><th style="width:170px">难点</th><th>具体是什么</th><th style="width:120px">规模</th></tr>
+  <tr>
+    <td>原版引擎是“改过的”</td>
+    <td>原版在 UE4.26 上做了大量定制（额外着色模型、Slate 交互修正、打包/热更能力等），
+        官方 UE5 没有这些改动 ⇒ 直接换引擎会大量功能失效</td>
+    <td class="warn">9 项定制能力</td>
+  </tr>
+  <tr>
+    <td>Lua 与资产是“两套独立内容”</td>
+    <td>Lua 逻辑有 8000+ 文件，美术资产 26 万+，两者必须同时对齐才能跑起来</td>
+    <td>8,272 / 268,800</td>
+  </tr>
+  <tr>
+    <td>上游还在继续开发</td>
+    <td>迁移不是一次性交付：上游每天都在改，必须能“反向同步”回来</td>
+    <td class="warn">持续</td>
+  </tr>
+  <tr>
+    <td>UE5 行为与 UE4 不同</td>
+    <td>同样的代码/资产，在 UE5 里行为可能不同（控件失效、动画不播、材质报错），
+        这类问题不会自己暴露，需要专门手段发现</td>
+    <td>162 条记录</td>
+  </tr>
+</table>
+
+<h2>三、方案总览：分成五层处理</h2>
+<div class="layers">
+  <div><b>① 引擎层</b>官方 UE5.8.4 为基座；原版定制能力逐项判定：能还原就还原，不能还原就看影响决定是否投入</div>
+  <div><b>② 工程代码层</b>C++ 只做“UE5 API/行为差异”适配，不改业务逻辑；共 8,267 个源文件</div>
+  <div><b>③ Lua 逻辑层</b>与上游做“三方合并”，保留双方改动；配套强制门禁防破坏</div>
+  <div><b>④ 资产层</b>26.8 万资产做批量体检 + 定点修复 + 规则化重存</div>
+  <div><b>⑤ 配置层</b>ini/表配置做键值级合并，避免“整份覆盖”丢设置</div>
+</div>
+<div class="box">
+  <strong>原则：</strong>优先级从高到低永远是 <strong>改配置 &gt; 改资产 &gt; 改工程代码 &gt; 改引擎</strong>。
+  只有“引擎版本导致的 API 差异”才允许动引擎代码，且必须逐条登记、可随时回退。
+</div>
+
+<h2>四、迁移流水线（可重复执行）</h2>
+<table>
+  <tr><th style="width:80px">阶段</th><th style="width:170px">做什么</th><th>为什么需要</th></tr>
+  <tr><td>S0–S1</td><td>取上游快照、建立逐字节对照基线</td><td>后面所有判断都要靠“和基线比对”，没有基线就只能猜</td></tr>
+  <tr><td>S2</td><td>盘点差异，自动分类</td><td>把成千上万个差异分成“可直接复制 / 需要合并 / 需要重做”三类</td></tr>
+  <tr><td>S3–S4</td><td>文本做三方合并（ours / theirs / base）</td><td>上游和我们各改过同一份文件时，必须合并而不是互相覆盖</td></tr>
+  <tr><td>S5</td><td>二进制资产按分类处理（覆盖 / 重存 / 重新迁移）</td><td>二进制没法合并，只能选“保留哪一版 + 怎么改造”</td></tr>
+  <tr><td>S6</td><td>重存与格式升级（资产升到 UE5 格式）</td><td>老格式资产 UE5 读不了或读出错，必须按新规则重存</td></tr>
+  <tr><td>S7–S8</td><td>定点修复（脚本/工具批量）</td><td>处理“能读但不对”的问题：贴图发暗、材质报错、控件丢失等</td></tr>
+  <tr><td>S9</td><td>自动门禁 + 体检</td><td>用机器把“不该犯的错”提前挡掉，而不是靠人肉试玩</td></tr>
+  <tr><td>S10</td><td>产物归档、登记、知识库记录</td><td>每条问题都留档，避免同一个坑踩第二次</td></tr>
+</table>
+
+<h2>五、四类关键技术（通俗解释）</h2>
+
+<h3>1. Lua：三方合并 + 强制门禁</h3>
+<div class="box">
+  <strong>问题：</strong>上游和我们改过同一份 Lua，直接覆盖会丢别人的改动；直接回滚会丢自己的修复。<br>
+  <strong>做法：</strong>像 Git 一样做三方合并（上游版 / 我们版 / 共同祖先），冲突处人工裁决；<br>
+  合并后必须通过一套<strong>自动门禁</strong>才允许进游戏或提交：语法检查、模块解析、入口全局函数、注册表指向、行数基线。
+</div>
+<table>
+  <tr><th style="width:170px">门禁检查</th><th>挡住什么事故</th></tr>
+  <tr><td>语法检查（全量 8000+ 文件）</td><td>合并残留冲突标记、写坏的 Lua</td></tr>
+  <tr><td>模块解析 / 注册表指向</td><td>类/页面注册丢失 ⇒ 界面点了没反应</td></tr>
+  <tr><td>入口全局函数</td><td>关键入口被误删 ⇒ 登录/选角/加载直接不进</td></tr>
+  <tr><td>行数基线</td><td>文件被“整段吞掉”（合并时误删大段逻辑）</td></tr>
+</table>
+
+<h3>2. 资产：批量体检 + 定点修复</h3>
+<div class="box">
+  <strong>问题：</strong>26 万份资产里，有大量“能加载但表现不对”的（贴图发暗、材质报错、控件丢失、动画丢失）。<br>
+  <strong>做法：</strong>先做<strong>规则化体检</strong>把问题分类，再用<strong>定点工具</strong>批量修（每一批都带备份、回读校验、分批验证）。
+</div>
+<table>
+  <tr><th style="width:190px">典型问题</th><th>处理方式</th></tr>
+  <tr><td>贴图发暗 / 色彩不对</td><td>修正编码与尺寸规则，批量重存（约 7.6 万张被规范，1,164 张修复、5,419 张冗余删除）</td></tr>
+  <tr><td>界面发灰 / 图片不显示</td><td>修正图片类型标记（Brush 不绘制问题），运行时自动生效</td></tr>
+  <tr><td>控件丢失 / 白块</td><td>按 C++ 声明重建控件 + 审计工具校验</td></tr>
+  <tr><td>材质报错 / 崩溃</td><td>定制着色模型统一改为标准光照；材质实例的遗留覆盖批量清理</td></tr>
+  <tr><td>动画不播（怪物攻击）</td><td>修复“异步加载完成后动画实例为空”的链路（本次重点修复）</td></tr>
+</table>
+
+<h3>3. 引擎定制能力：逐项判定，能还原就还原</h3>
+<table>
+  <tr><th style="width:60px">判定</th><th style="width:230px">结果</th><th>例子</th></tr>
+  <tr><td class="ok">可还原</td><td>在工程侧补齐，不改引擎</td><td>界面缩放规则、输入分帧、打包配置</td></tr>
+  <tr><td class="warn">需引擎修改</td><td>公版 UE5 没有，需排期</td><td>镜头动画、点击命中时机、SButton 悬停丢点击</td></tr>
+  <tr><td class="bad">放弃</td><td>影响可控，直接不做</td><td>纯诊断功能、上游已由 UE5 原生替代的能力</td></tr>
+</table>
+<div class="box warn">
+  当前引擎侧<strong>已尽可能回到官方原版</strong>：源码改动从最初的 8 处收敛到「2 处临时容错 + 1 个配置项」，
+  其余问题全部在工程/资产侧解决。这保证了将来升级 UE5 小版本时不会卡在“本地魔改”。
+</div>
+
+<h3>4. 与上游持续同步：每次拉新都能重跑</h3>
+<div class="flow">
+  <div>上游出新版本</div><div class="arrow">→</div>
+  <div>取快照 + 分类</div><div class="arrow">→</div>
+  <div>自动合并</div><div class="arrow">→</div>
+  <div>人工裁决冲突</div><div class="arrow">→</div>
+  <div>资产重存/修复</div><div class="arrow">→</div>
+  <div>门禁全绿 ⇒ 提交</div>
+</div>
+<p class="sub">这条链路已经跑过多轮真实拉新（含一次 3 天内的 4,190 个改动块合并），不是纸面方案。</p>
+
+<h2>六、质量保障体系</h2>
+<table>
+  <tr><th style="width:190px">手段</th><th>作用</th></tr>
+  <tr><td>逐字节对照</td><td>判断“这份文件到底该保留哪一版”，避免凭感觉覆盖</td></tr>
+  <tr><td>Lua 强制门禁</td><td>语法/模块/入口/注册表/行数，全绿才允许进游戏或提交</td></tr>
+  <tr><td>资产体检工具</td><td>批量扫描贴图、材质、控件、动画的“不合规”项</td></tr>
+  <tr><td>自动化 UI 走查</td><td>用脚本逐个打开界面、点按钮、抓异常，替代人肉点界面</td></tr>
+  <tr><td>知识库（162 条）</td><td>每个坑都记录“现象 / 根因 / 修法 / 验证方式”，下次直接查</td></tr>
+  <tr><td>独立无渲染编辑器</td><td>不打扰正在用编辑器的同事，后台批量重存/构建导航</td></tr>
+</table>
+
+<h2>七、当前状态（数据）</h2>
+<div class="kpi">
+  <div><b>UE 5.8.4</b><span>引擎版本（官方原版）</span></div>
+  <div><b>162</b><span>知识库问题条目</span></div>
+  <div><b>117</b><span>已修复 / 已验证</span></div>
+  <div><b>45</b><span>待处理 / 规避 / 需引擎支持</span></div>
+</div>
+<table>
+  <tr><th style="width:200px">验证项</th><th style="width:100px">结果</th><th>说明</th></tr>
+  <tr><td>编辑器内跑全流程</td><td class="ok">通过</td><td>登录 → 选角 → 进图 → 打怪 → 掉落拾取</td></tr>
+  <tr><td>多次进出关卡</td><td class="ok">通过</td><td>无崩溃、无断言，世界能正常卸载</td></tr>
+  <tr><td>PC Development 包</td><td class="ok">已产出</td><td>可直接启动试玩</td></tr>
+  <tr><td>美术观感统一</td><td class="warn">未达成</td><td>NPR 已放弃（走标准 PBR）；还需材质观感收敛 + 光照重烘</td></tr>
+  <tr><td>引擎定制能力</td><td class="warn">部分缺失</td><td>9 项，见能力说明文档</td></tr>
+</table>
+
+<h2>八、风险与后续投入</h2>
+<table>
+  <tr><th style="width:170px">风险</th><th>说明</th><th style="width:170px">应对</th></tr>
+  <tr>
+    <td>美术表现差距</td>
+    <td class="ok">已定案：<strong>放弃定制卡通渲染</strong>，走标准 PBR —— 该风险从"要做重建"降为"只做观感收敛"</td>
+    <td class="ok">材质观感收敛（12 人日）+ 光照重烘（16 人日）</td>
+  </tr>
+  <tr>
+    <td>引擎定制能力缺口</td>
+    <td>镜头动画、点击手感、UI 缩放等影响体验但非阻塞</td>
+    <td>按玩家感知排序，分批投入</td>
+  </tr>
+  <tr>
+    <td>上游持续演进</td>
+    <td>每次拉新都可能带出新问题</td>
+    <td>依赖自动化流水线 + 门禁 + 知识库，把成本压到“可重复”</td>
+  </tr>
+  <tr>
+    <td>UE5 版本升级</td>
+    <td>将来升 UE5.x 小版本时，本地魔改越少越省事</td>
+    <td>引擎侧已收敛到官方原版 + 2 处临时容错</td>
+  </tr>
+</table>
+
+<h2>九、给不同角色的阅读建议</h2>
+<table>
+  <tr><th style="width:130px">角色</th><th>建议关注</th></tr>
+  <tr><td><strong>制作人</strong></td><td>第一节（一张图）、第七节（当前状态）、第八节（风险与投入）</td></tr>
+  <tr><td><strong>策划</strong></td><td>第五节第 1 条（Lua 合并与门禁）、第七节（能玩到哪里）、能力说明文档第七节</td></tr>
+  <tr><td><strong>美术</strong></td><td>第五节第 2 条（资产体检与修复）、能力说明文档第四/六节（材质/光照/描边）</td></tr>
+  <tr><td><strong>程序</strong></td><td>全文；细节可查 <code>Docs/Methodology/P4_to_UE5.html</code> 与知识库 162 条</td></tr>
+</table>
+
+
+<h2>十、工程效能：这次升级里被忽略的"另一半"</h2>
+<div class="box warn">
+  前九节讲的是"让游戏跑起来"。但一个升级计划要能长期运转，还需要<strong>打包提速、包体控制、与上游持续同步、自动检查</strong>。
+  这部分工作在本次升级中实际一直在做，只是之前没有写进文档——这里补齐。
+</div>
+
+<h3>10.1 打包链路与加速</h3>
+<div class="flow">
+  <div>编译<br>（UBA 本机加速）</div><div class="arrow">→</div>
+  <div>烘焙 Cook<br>（可无头跑）</div><div class="arrow">→</div>
+  <div>打包 Pak<br>（Oodle/Kraken）</div><div class="arrow">→</div>
+  <div>包体分析<br>（构成/重复）</div><div class="arrow">→</div>
+  <div>运行验证<br>（启动/进图）</div>
+</div>
+<table>
+  <tr><th style="width:180px">环节</th><th style="width:110px">现状</th><th>说明</th></tr>
+  <tr><td>构建加速</td><td class="ok">UBA 可用</td><td>UE5 自带的 Unreal Build Accelerator，本机可并行</td></tr>
+  <tr><td>着色器编译加速</td><td class="bad">XGE 已禁用</td><td>本机 XGE 分发着色器每批失败、会卡队列 ⇒ 回落本地多进程。<strong>待 IT 修复网络后恢复</strong></td></tr>
+  <tr><td>共享缓存（DDC）</td><td class="bad">不可用</td><td>UE4 的共享 DDC 路径在 UE5.8 废弃且不可达 ⇒ 仅本地缓存</td></tr>
+  <tr><td>烘焙方式</td><td class="ok">可无头</td><td>命令行无人值守，适合 CI；报错自动归类</td></tr>
+  <tr><td>压缩方案</td><td class="ok">已配</td><td>Oodle / Kraken，按 Debug/Shipping 分级压缩</td></tr>
+  <tr><td>包体去重</td><td class="warn">待处理</td><td>存在分块重复（包体偏大主因），方案已定未实施</td></tr>
+  <tr><td>打包格式</td><td class="warn">传统 pak</td><td>未切 IoStore（UE5 默认推荐），切换需评估热更链路</td></tr>
+</table>
+
+
+<h3>10.2 实测数据（这些数字比描述更有说服力）</h3>
+<table>
+  <tr><th style="width:190px">指标</th><th style="width:150px">实测值</th><th>说明 / 结论</th></tr>
+  <tr>
+    <td>Development 包大小</td>
+    <td class="ok">37 GB</td>
+    <td>含 <code>Torchlight_Migrate.pdb</code> 调试符号 <strong>2.8 GB</strong>（发布包不需要）、exe 437 MB、两个 pak 共 2.6 GB</td>
+  </tr>
+  <tr>
+    <td>Shipping 包大小</td>
+    <td class="bad">75.72 GB</td>
+    <td>21 个 pakchunk；最大的是 pakchunk999 <strong>28.76 GB</strong>、pakchunk101 15.57 GB、pakchunk2 7.54 GB</td>
+  </tr>
+  <tr>
+    <td>打包清单条目</td>
+    <td>1,174,108 条 / 未压缩 161.86 GB</td>
+    <td><strong>去重后只有 554,434 个文件 / 68.77 GB</strong></td>
+  </tr>
+  <tr>
+    <td>重复拷贝浪费</td>
+    <td class="bad">93.09 GB</td>
+    <td><strong>超过一半的体积是同一文件在不同分块里的重复拷贝</strong>——这是包体偏大的头号原因</td>
+  </tr>
+  <tr>
+    <td>pak 压缩</td>
+    <td class="warn">配置未生效</td>
+    <td>UE5 把配置键名从 <code>PakFileCompression*</code> 改成 <code>PackageCompression*</code>，旧键被静默忽略 ⇒ Shipping 实际跑的是 4 级，不是配置里的 5 级</td>
+  </tr>
+  <tr>
+    <td>打包格式</td>
+    <td class="warn">传统 pak</td>
+    <td>工程关着 IoStore（沿自 UE4 配置）。UE5 已默认推荐 IoStore + Zen 加载，切换收益明确但需评估热更链路</td>
+  </tr>
+  <tr>
+    <td>着色器编译速度</td>
+    <td class="bad">约 280 个/分钟（仅 1 个核）</td>
+    <td>本机 XGE 分布式分发每批失败 ⇒ 回落单进程。几千个着色器要编十几分钟</td>
+  </tr>
+  <tr>
+    <td>出包结果</td>
+    <td class="ok">BUILD SUCCESSFUL</td>
+    <td>Development / Shipping 均可成功产出并启动</td>
+  </tr>
+</table>
+
+<div class="box bad">
+  <strong>两个"一分钱不花就能拿回来"的收益：</strong>
+  <ol>
+    <li><strong>包体去重（可省约 93 GB）</strong>：方案已明确——加一个打包开关让"每个文件只进第一个分块"，<strong>不用改代码</strong>，重出包即可验证效果。</li>
+    <li><strong>压缩等级修复</strong>：把压缩配置改成 UE5 的新键名，Shipping 压缩从 4 级提到 5 级，包体还能再降一截。<strong>只改 ini</strong>。</li>
+  </ol>
+  这两项加起来，Shipping 包有机会从 75.7 GB 降到 <strong>60 GB 以内</strong>——对下载/安装成本影响很大。
+</div>
+
+<div class="box warn">
+  <strong>一个需要 IT 配合的收益：</strong>恢复着色器分布式编译（XGE 或 UBA 分布式）。当前单核 280 个/分钟，恢复到多机并行后
+  <strong>首次进图/改材质后的等待时间能缩短一个数量级</strong>，直接改善全员迭代体感。
+</div>
+
+<h3>10.3 与上游（UGS / P4）的持续同步</h3>
+<table>
+  <tr><th style="width:180px">能力</th><th style="width:110px">实现方式</th><th>关键设计</th></tr>
+  <tr><td>固定 CL 拉取</td><td class="ok">脚本</td><td>先记录"我们有的是哪个版本"，再按固定 CL 拉；自动排除 3.7TB 素材库与 0.5TB 设计目录（否则磁盘直接爆）</td></tr>
+  <tr><td>差异分类</td><td class="ok">脚本</td><td>文本 / 二进制 / 新增 / 删除四类分开走不同策略</td></tr>
+  <tr><td>三方合并</td><td class="ok">脚本 + 人工裁决</td><td>base 必须选"UE5 内容真正派生自的版本"（宁旧勿新），否则会静默回退上游改动</td></tr>
+  <tr><td>存量差距盘点</td><td class="ok">脚本</td><td>回答"本批之外还差多少"，避免"以为追平了其实没有"</td></tr>
+  <tr><td>与国服测试服对齐</td><td class="ok">脚本</td><td>API 扫描 + Lua 绑定审计 + <strong>帧哈希逐帧比对</strong> + 参考重放</td></tr>
+</table>
+<div class="box">
+  <strong>为什么这块值得单独说：</strong>升级不是"一次性交付"。上游每天都在改，<strong>能不能低成本地把上游改动接回来，决定了这个 UE5 分支能活多久</strong>。
+  目前这条链路已实跑 13 个批次，含一次 3 天内上千个改动块的批量合并。
+</div>
+
+<h3>10.4 自动检查体系（门禁）</h3>
+<table>
+  <tr><th style="width:180px">检查</th><th style="width:110px">现状</th><th>挡住的事故类型</th></tr>
+  <tr><td>Lua 五道门禁</td><td class="ok">已启用</td><td>语法/模块/入口/注册表/行数 ⇒ 合并误删、界面注册丢失</td></tr>
+  <tr><td>编译验证</td><td class="ok">已启用</td><td>API 不兼容、宏缺失</td></tr>
+  <tr><td>资产加载体检</td><td class="ok">已启用</td><td>损坏资产、版本不支持（可定位到具体文件）</td></tr>
+  <tr><td>界面自动走查</td><td class="ok">已启用</td><td>页面打不开、按钮无响应、控件丢失</td></tr>
+  <tr><td>日志分诊</td><td class="ok">已启用</td><td>把噪声压掉，真问题浮出来</td></tr>
+  <tr><td>提交前自动执行（CI）</td><td class="warn">未接入</td><td>目前靠人记得跑；接 CI 后可强制拦截</td></tr>
+</table>
+
+<h3>10.5 效能缺口与建议投入</h3>
+<table>
+  <tr><th style="width:40px">#</th><th style="width:220px">缺口</th><th>建议动作</th><th style="width:100px">优先级</th></tr>
+  <tr><td>1</td><td>着色器编译无分布式加速</td><td>修网络后恢复 XGE，或改用 Horde/UBA 分布式</td><td class="warn">高</td></tr>
+  <tr><td>2</td><td>无共享 DDC</td><td>团队共用一份 DDC（文件共享或云存储）</td><td class="warn">高</td></tr>
+  <tr><td>3</td><td>包体分块重复</td><td>按已定方案实施去重</td><td class="warn">中</td></tr>
+  <tr><td>4</td><td>未切 IoStore</td><td>评估后切换（影响加载/热更）</td><td>中</td></tr>
+  <tr><td>5</td><td>门禁未接 CI</td><td>提交前自动跑，失败即阻断</td><td>中</td></tr>
+  <tr><td>6</td><td>冲突裁决/根因定位靠人</td><td>沉淀模板 + AI 辅助，降低人的门槛</td><td class="warn">中</td></tr>
+</table>
+
+<hr>
+<p class="sub">
+  配套文档：《UE5 升级能力说明》（哪些支持 / 哪些不支持）<br>
+  技术细节：<code>Docs/Methodology/P4_to_UE5.html</code>（含每阶段命令、决策表、产物清单）<br>
+  问题库：<code>Docs/MigrationKB/kb.html</code>（162 条，可按分类/状态筛选）
+</p>
+
+</body>
+</html>

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>火炬之光 · UE5 升级能力说明（面向制作人/策划/美术）</title>
+<style>
+  body{max-width:960px;margin:0 auto;padding:32px 28px 80px;font:15px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:#1f2328;background:#fff}
+  h1{font-size:26px;border-bottom:3px solid #0969da;padding-bottom:12px;margin-bottom:6px}
+  h2{font-size:20px;margin-top:38px;border-left:5px solid #0969da;padding-left:12px;background:#f6f8fa;padding-top:6px;padding-bottom:6px}
+  h3{font-size:16px;margin-top:24px;color:#24292f}
+  .sub{color:#57606a;font-size:14px;margin-bottom:26px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid #d0d7de;padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#f6f8fa;font-weight:600}
+  .ok{color:#1a7f37;font-weight:600}
+  .warn{color:#9a6700;font-weight:600}
+  .bad{color:#cf222e;font-weight:600}
+  .kpi{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0}
+  .kpi div{flex:1 1 150px;border:1px solid #d0d7de;border-radius:8px;padding:12px 14px;background:#f6f8fa}
+  .kpi b{display:block;font-size:22px;color:#0969da;line-height:1.3}
+  .kpi span{font-size:13px;color:#57606a}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0}
+  .flow div{flex:1 1 120px;border:1px solid #d0d7de;border-radius:6px;padding:10px;text-align:center;font-size:13px;background:#fff}
+  .flow .arrow{flex:0 0 auto;border:none;background:none;padding:0 2px;font-size:18px;color:#8b949e}
+  .box{border-left:4px solid #0969da;background:#f6f8fa;padding:12px 16px;margin:16px 0;border-radius:0 6px 6px 0}
+  .box.warn{border-left-color:#9a6700;background:#fff8c5}
+  .box.bad{border-left-color:#cf222e;background:#ffebe9}
+  .box.ok{border-left-color:#1a7f37;background:#dafbe1}
+  ul{margin:8px 0 8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .tag{display:inline-block;font-size:12px;padding:1px 7px;border-radius:10px;background:#eaeef2;color:#57606a;margin-left:6px}
+  hr{border:none;border-top:1px solid #d0d7de;margin:34px 0}
+</style>
+</head>
+<body>
+
+<h1>火炬之光 · UE5 升级能力说明</h1>
+<div class="sub">面向制作人 / 策划 / 美术 · 引擎版本 UE&nbsp;5.8.4 · 更新日期 2026-10-30</div>
+
+<div class="box ok">
+  <strong>一句话结论：</strong>UE5 版本已经做到「能登录、能选角、能进图、能打怪、能出 PC 包」，主流程可以正常体验；
+  <strong>原版靠定制引擎实现的一部分“表现力/工具链”能力还没有补齐</strong>，这部分需要排后续投入，不影响主线开发继续跑。
+</div>
+
+<h2>一、这次升级的规模</h2>
+<div class="kpi">
+  <div><b>8,272</b><span>Lua 脚本文件</span></div>
+  <div><b>268,800</b><span>美术资产（uasset）</span></div>
+  <div><b>8,267</b><span>C++ 源文件</span></div>
+  <div><b>108</b><span>工程插件</span></div>
+</div>
+<div class="kpi">
+  <div><b>162</b><span>问题记录（知识库条目）</span></div>
+  <div><b>117</b><span>已修复 / 已验证</span></div>
+  <div><b>45</b><span>待处理 / 已规避 / 需引擎支持</span></div>
+  <div><b>1</b><span>PC Development 包已产出</span></div>
+</div>
+
+<h2>二、总览：三档能力</h2>
+<table>
+  <tr><th style="width:80px">档位</th><th style="width:150px">含义</th><th>覆盖范围</th></tr>
+  <tr>
+    <td class="ok">✅ 已支持</td>
+    <td>和原版一样可以正常用</td>
+    <td>登录、选角创角、进图打怪、界面操作、技能与特效、音效播放、场景渲染、PC 出包与运行</td>
+  </tr>
+  <tr>
+    <td class="warn">⚠️ 有差异</td>
+    <td>能用，但观感/细节和原版不同</td>
+    <td>部分 NPR/卡通渲染材质、个别特效表现、部分 UI 细节、点击手感</td>
+  </tr>
+  <tr>
+    <td class="bad">⛔ 暂不支持</td>
+    <td>原版引擎定制的功能，公版 UE5 没有</td>
+    <td>描边平滑法线、部分 Slate 交互细节、屏幕空间 UI 缩放、镜头动画（CameraAnim）等</td>
+  </tr>
+</table>
+
+<h2>三、✅ 已支持的能力（按制作链）</h2>
+<table>
+  <tr><th style="width:110px">环节</th><th>能力</th><th style="width:90px">状态</th></tr>
+  <tr><td rowspan="2"><strong>登录 / 账号</strong></td>
+      <td>SDK 登录、账号登录、自动登录、内部账号登录入口</td><td class="ok">已支持</td></tr>
+  <tr><td>服务器连接、进区、断线提示</td><td class="ok">已支持</td></tr>
+
+  <tr><td rowspan="2"><strong>选角 / 创角</strong></td>
+      <td>角色列表、选角、创建角色、删除角色（含二次确认）</td><td class="ok">已支持</td></tr>
+  <tr><td>选角界面 3D 展示、出场序列镜头（含跳过时镜头归位）</td><td class="ok">已支持</td></tr>
+
+  <tr><td rowspan="2"><strong>战斗 / 局内</strong></td>
+      <td>进图加载、战斗帧同步、怪物生成与 AI、掉落拾取</td><td class="ok">已支持</td></tr>
+  <tr><td>角色移动、技能释放、技能特效、飘字、血条、Buff 图标</td><td class="ok">已支持</td></tr>
+
+  <tr><td rowspan="3"><strong>界面（UI）</strong></td>
+      <td>主 HUD、背包、技能面板、天赋、商城、任务对话、NPC 交互</td><td class="ok">已支持</td></tr>
+  <tr><td>列表/滚动、页签切换、弹窗确认、<strong>X 关闭按钮显示</strong></td><td class="ok">已支持</td></tr>
+  <tr><td>界面适配缩放（DPI）、输入与点击</td><td class="ok">已支持</td></tr>
+
+  <tr><td rowspan="2"><strong>动画</strong></td>
+      <td>角色/NPC/怪物的待机、移动、攻击、受击、死亡动画</td><td class="ok">已支持</td></tr>
+  <tr><td>序列动画（Sequencer）播放、镜头切换</td><td class="ok">已支持</td></tr>
+
+  <tr><td rowspan="2"><strong>音频</strong></td>
+      <td>BGM、UI 音效、技能音效、脚步、语音</td><td class="ok">已支持</td></tr>
+  <tr><td>Wwise 声音数据（工程内嵌，无需另装 Wwise）</td><td class="ok">已支持</td></tr>
+
+  <tr><td rowspan="2"><strong>渲染 / 场景</strong></td>
+      <td>关卡加载、地形与植被、静态/骨骼网格、材质球、粒子特效</td><td class="ok">已支持</td></tr>
+  <tr><td>导航网格（寻路）、怪物巡逻与追击</td><td class="ok">已支持</td></tr>
+
+  <tr><td rowspan="2"><strong>出包 / 发布</strong></td>
+      <td>一键出 PC Development / Shipping 包（含出包界面）</td><td class="ok">已支持</td></tr>
+  <tr><td>包体运行、启动器、日志落盘</td><td class="ok">已支持</td></tr>
+</table>
+
+<h2>四、⚠️ 有差异（能用，但和原版观感不同）</h2>
+<div class="box warn">
+  <strong>给美术同学：</strong><strong>定制卡通渲染（NPR）整块已决定放弃</strong>，项目改走<strong>标准 PBR + 风格化写实</strong>路线。
+  老资产已经"改造到能正常加载、不出错"，现在要做的是<strong>把已统一到标准光照的材质做观感收敛</strong>（参数/贴图/色差），而不是重建卡通着色。
+</div>
+<table>
+  <tr><th style="width:150px">项目</th><th>差异表现</th><th style="width:150px">建议</th></tr>
+  <tr>
+    <td>卡通 / NPR 角色材质</td>
+    <td>已统一为标准光照（DefaultLit）；<strong>NPR 整体放弃</strong>，不再做卡通着色</td>
+    <td class="ok">已定案：走标准 PBR，只做<strong>观感收敛</strong>（12 人日）</td>
+  </tr>
+  <tr>
+    <td>描边用“平滑法线”</td>
+    <td>原版靠引擎定制生成平滑法线做描边；<strong>描边方案已随 NPR 一并放弃</strong></td>
+    <td class="ok">不再需要（已从计划中移除）</td>
+  </tr>
+  <tr>
+    <td>个别特效 / 粒子</td>
+    <td>粒子发射器与材质适配后有轻微差异，个别特效曾出现重复播放（已修）</td>
+    <td>美术验收时按“能看、不出错”标准过一遍</td>
+  </tr>
+  <tr>
+    <td>部分 UI 细节</td>
+    <td>个别按钮/图片的描边、半透明效果与原版不完全一致（灰底、白块类问题已集中修过一轮）</td>
+    <td>UI 走查时记录清单，逐条修</td>
+  </tr>
+  <tr>
+    <td>光照 / 后处理</td>
+    <td>UE5 光照模型不同，需重新打光；老工程的 LightMap 数据不再使用</td>
+    <td><strong>按计划重新烘焙</strong>（已确认要重做）</td>
+  </tr>
+</table>
+
+<h2>五、⛔ 暂不支持（原版引擎定制能力，需排期）</h2>
+<p>这些能力在原版是“改了引擎”才有的，公版 UE5 里不存在。目前做法是<strong>先让功能不崩、不影响主流程</strong>，要完整还原需要额外投入。</p>
+<table>
+  <tr><th style="width:40px">#</th><th style="width:230px">能力</th><th>不支持的后果</th><th style="width:110px">影响面</th></tr>
+  <tr><td>1</td><td>镜头动画（CameraAnim）</td><td>依赖镜头动画的表现（部分演出/打击感）不生效</td><td class="warn">表现</td></tr>
+  <tr><td>2</td><td>快速点击的命中测试（用上一帧布局）</td><td>点得太快时会点到别的按钮或点空</td><td class="warn">操作手感</td></tr>
+  <tr><td>3</td><td>SButton 悬停状态失效时丢失点击</td><td>鼠标停在按钮上时偶发点不动</td><td class="warn">操作手感</td></tr>
+  <tr><td>4</td><td>屏幕空间 UI 跟随玩家缩放</td><td>3D 场景里的浮动 UI（血条等）缩放不跟随</td><td class="warn">表现</td></tr>
+  <tr><td>5</td><td>描边用平滑法线（SmoothTangent）</td><td>描边效果缺失 —— <strong>随 NPR 放弃，不再是缺口</strong></td><td class="ok">已关闭</td></tr>
+  <tr><td>6</td><td>列表两种平铺对齐（EvenlyFixWide / EvenlyFixSize）</td><td>个别列表排版与原版不同</td><td>界面</td></tr>
+  <tr><td>7</td><td>SceneCapture 共享深度 RT（角色光照蓝图用）</td><td>角色光照蓝图新版效果不可用</td><td class="warn">美术</td></tr>
+  <tr><td>8</td><td>若干 XD 引擎专有版本/宏</td><td>相关旧资产需按 UE5 规则重存</td><td>资产</td></tr>
+  <tr><td>9</td><td>自定义着色模型（MSM_CustomUnlit）</td><td>已改为标准光照，效果不同（见上节）</td><td class="warn">美术</td></tr>
+</table>
+<div class="box">
+  <strong>另外还有 15 条“待处理”</strong>（多为资产/配置层面的收尾，例如 1625 个网格包的凸包碰撞朝向、部分 ini 工程设置丢失、pak 压缩配置改名等），
+  已完成定位，按优先级排期处理即可，<strong>不影响当前可玩性</strong>。
+</div>
+
+
+<h3>5.1 逐项深挖：这 9 项到底是什么、玩家会感觉到什么</h3>
+<table>
+  <tr><th style="width:34px">#</th><th style="width:150px">能力</th><th style="width:210px">玩家/美术能感知到的现象</th><th>根因（一句话）</th><th style="width:150px">能不能绕过</th><th style="width:90px">投入量</th></tr>
+  <tr>
+    <td>1</td>
+    <td><strong>镜头动画</strong><br>CameraAnim</td>
+    <td>所有通过触发消息播放的镜头动画都不播（首领战镜头升降、部分演出运镜）；<strong>不报错</strong>，只是"没反应"</td>
+    <td>UE5 从引擎里<strong>删除了 Matinee 系的 CameraAnim</strong>，老资产连类都不存在，烘焙时直接被跳过</td>
+    <td class="warn">能：改用 UE5 的 CameraAnimationSequence（官方插件）。但<strong>没有自动转换工具</strong>，需按关键帧重做</td>
+    <td class="bad">大<br>（代码+美术）</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>快速点击命中</strong></td>
+    <td>点得很快时会<strong>点到别的按钮、或点空</strong>；刚弹出的按钮第一下点不到</td>
+    <td>引擎的"命中网格"是<strong>绘制时生成的</strong>，同一批鼠标消息里前一个回调刚改了布局，后面的消息仍按上一帧的网格判定</td>
+    <td class="bad">不能：Slate 消息路由在引擎私有实现里，客户端无替换点</td>
+    <td class="warn">中</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>按钮悬停丢点击</strong></td>
+    <td>鼠标停在按钮上却<strong>点不动</strong>（要先把鼠标移开再移回来）</td>
+    <td>按钮只在"自认为处于悬停"时才响应点击；一次错误的"移出"事件（控件被重建/命中滞后）就把它锁死</td>
+    <td class="bad">不能：所有 UMG 按钮都走同一个引擎控件</td>
+    <td class="warn">小<br>（引擎几行）</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>UI 跟随缩放</strong></td>
+    <td>玩家在设置里调 UI 缩放后，<strong>头顶血条、场景里的交互提示不跟着缩放</strong></td>
+    <td>原版引擎给这类"贴在场景上的 UI"包了一层缩放器，公版 UE5 没有这层</td>
+    <td class="bad">不能：用渲染变换只能近似，<strong>点击区域会错位</strong></td>
+    <td class="warn">中</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><strong>描边平滑法线</strong><br><span class="est">（已随 NPR 放弃）</span></td>
+    <td>无——描边方案已不再采用，玩家不会看到"缺失"</td>
+    <td>原版引擎顶点格式多存一份"平滑法线"供描边外扩；随 NPR 放弃后<strong>不再需要该顶点流</strong></td>
+    <td class="ok">已关闭：资产已能正常加载，无需再做</td>
+    <td class="ok">已关闭</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td><strong>列表平铺对齐</strong><br>（EvenlyFixWide / EvenlyFixSize）</td>
+    <td>4 个商城界面（燃料商店/时装商城/时装礼包/礼包）<strong>首尾格子不贴边</strong>，并刷 2 条枚举警告</td>
+    <td>原版给列表加了两种"平分空隙/等比填满"的对齐方式，公版 UE5 的枚举里没有这两个值</td>
+    <td class="ok">能：<strong>方案 A</strong>（引擎补约 60 行，效果完全一致）/ <strong>方案 B</strong>（改配置近似，不贴边仍有细微差）</td>
+    <td class="ok">小</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td><strong>角色光照蓝图新版</strong><br>（共享深度 RT）</td>
+    <td>角色"投影/边缘光"两个蓝图的上游新版<strong>用不了</strong>（25 条蓝图编译错误）</td>
+    <td>上游新版权赖原版引擎给 SceneCapture 加的"共享深度纹理"能力</td>
+    <td class="ok">能：这两个蓝图<strong>暂时回退到 UE5 能编译的旧版</strong>（已处理）</td>
+    <td class="ok">已规避</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td><strong>粒子 PSO 预缓存 ensure</strong></td>
+    <td>包里每次运行<strong>多一条 ensure + 一个崩溃报告目录</strong>；游戏不崩、粒子正常</td>
+    <td>UE5.8 引擎里两个 PSO 预缓存标志不同步</td>
+    <td class="ok">能忍受：<strong>不影响游戏</strong>，只是日志噪音</td>
+    <td class="ok">小<br>（可选）</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td><strong>渲染版本号冲突</strong></td>
+    <td>（已规避）老光照数据不迁，用占位代替</td>
+    <td>原版把自定义版本号塞进官方枚举，和 UE5 官方编号撞车</td>
+    <td class="ok">能：流程上<strong>不复制老 BuiltData</strong>，规避</td>
+    <td class="ok">已规避</td>
+  </tr>
+</table>
+
+<div class="box warn">
+  <strong>优先级建议（按玩家感知强弱排序）：</strong><br>
+  <strong>第一优先</strong>：③ 按钮悬停丢点击（几乎零成本、直接改善手感）→ ② 快速点击命中 → ① 镜头动画（表现缺失最明显，但投入最大）<br>
+  <strong>第二优先</strong>：④ UI 跟随缩放<br>
+  <strong>可以做也可以不做</strong>：⑥ 列表对齐、⑧ 粒子 ensure、⑨ 版本号（已规避）
+</div>
+
+<div class="box bad">
+  <strong>一个必须说清的事实：</strong>这 9 项里有 <strong>4 项（①②③④）属于"输入/交互正确性"</strong>，不是"效果好不好看"。
+  其中 ③ 修起来只要引擎几行代码，但会让"按钮点不动"这类玩家投诉消失，<strong>性价比最高</strong>，建议优先排。
+</div>
+
+<h2>六、对美术同学的具体影响</h2>
+<table>
+  <tr><th style="width:190px">事项</th><th>说明</th></tr>
+  <tr><td>材质</td><td>老工程的定制着色模型已统一改成 <strong>DefaultLit（标准光照）</strong>，材质能正常加载、不再崩溃；观感偏 PBR。</td></tr>
+  <tr><td>贴图</td><td>已完成一轮贴图“编码/尺寸”归一化（约 1,164 张修复、5,419 张冗余删除），色彩与压缩设置已对齐 UE5 规则。</td></tr>
+  <tr><td>网格</td><td>骨骼网格版本已兼容到 v21；少量网格因原始数据问题做了剥离处理（描边法线）。</td></tr>
+  <tr><td>光照</td><td><strong>需要重新烘焙</strong>：老 LightMap 数据在 UE5 不再使用，按新流程重新出光照。</td></tr>
+  <tr><td>UI 资源</td><td>WBP（界面蓝图）已批量校验/修复过动画丢失、图片不显示（灰底/白块）等问题。</td></tr>
+  <tr><td>粒子特效</td><td>已修复“技能击中/复活特效重复播放多次”的问题；特效数量与时长按原版配置走。</td></tr>
+</table>
+
+<h2>七、对策划同学的具体影响</h2>
+<table>
+  <tr><th style="width:190px">事项</th><th>说明</th></tr>
+  <tr><td>玩法逻辑</td><td>Lua 逻辑与配置表已与上游开发线对齐，赛季/天赋/背包/商城等系统可用。</td></tr>
+  <tr><td>数值与掉落</td><td>掉落完全由服务端决定，客户端表现正常（“蓝怪掉率低”是设计如此，不是 bug）。</td></tr>
+  <tr><td>新手引导</td><td>引导配置完整（302 个引导点、7 个引导脚本），已验证可正常触发。</td></tr>
+  <tr><td>战斗</td><td>技能释放、命中、怪物 AI 正常；镜头动画类表现暂缺（见上表第 1 项）。</td></tr>
+  <tr><td>体验方式</td><td>已可出 PC Development 包直接试玩；编辑器内也可直接 PIE 跑全流程。</td></tr>
+</table>
+
+<h2>八、当前进度一览</h2>
+<div class="flow">
+  <div>UE4.26<br>原版工程</div><div class="arrow">→</div>
+  <div>引擎升级<br>UE&nbsp;5.8.4</div><div class="arrow">→</div>
+  <div>代码/Lua<br>对齐适配</div><div class="arrow">→</div>
+  <div>资产迁移<br>体检修复</div><div class="arrow">→</div>
+  <div>✅ 可登录<br>可进图可玩</div><div class="arrow">→</div>
+  <div>✅ PC 包<br>已产出</div>
+</div>
+<table>
+  <tr><th style="width:150px">里程碑</th><th style="width:110px">状态</th><th>验收口径</th></tr>
+  <tr><td>编辑器可跑通全流程</td><td class="ok">已达成</td><td>登录 → 选角 → 进图 → 打怪 → 掉落拾取</td></tr>
+  <tr><td>无崩溃、无致命报错</td><td class="ok">已达成</td><td>连续多次进出关卡，断言/崩溃 0 次</td></tr>
+  <tr><td>可出 PC 包并运行</td><td class="ok">已达成</td><td>Development 包已产出，可启动到登录界面</td></tr>
+  <tr><td>美术观感统一</td><td class="warn">未达成</td><td>NPR 已放弃（走标准 PBR）；还差<strong>材质观感收敛 + 光照重烘</strong></td></tr>
+  <tr><td>原版定制工具/交互细节</td><td class="warn">未达成</td><td>见第五节 9 项，需排期</td></tr>
+</table>
+
+<h2>九、结论与建议</h2>
+<div class="box ok">
+  <strong>可以继续推进开发：</strong>主流程、系统功能、战斗与出包都已打通，策划/程序可以在这个版本上继续做内容。
+</div>
+<div class="box warn">
+  <strong>需要排期的两件事：</strong>
+  <ol>
+    <li><strong>美术观感专项</strong>：材质观感收敛（PBR 路线下的参数/贴图/色差统一）+ 光照重新烘焙 —— 这是"看起来对"的关键（NPR 已放弃，不再重建卡通着色）。</li>
+    <li><strong>引擎定制能力补齐</strong>：镜头动画、点击手感、UI 缩放等 9 项，按玩家感知强弱排序投入。</li>
+  </ol>
+</div>
+
+
+<h2>十、工程效能与配套能力（不只看游戏本身）</h2>
+<div class="box warn">
+  前九节讲的是"游戏能不能跑"。但升级要真正落地，还取决于<strong>打包快不快、包体大不大、和上游怎么同步、有没有自动检查</strong>。
+  这一节把这些"非玩法能力"也摆到台面上——它们是本次升级计划里<strong>之前没写进文档、但实际一直在做</strong>的部分。
+</div>
+
+<h3>10.1 打包与烘焙</h3>
+<table>
+  <tr><th style="width:170px">能力</th><th style="width:100px">状态</th><th>说明</th></tr>
+  <tr><td>一键出 PC 包</td><td class="ok">已支持</td><td><code>Engine_Bin\一键出PC包.bat</code>，可选 Development / Shipping，带图形界面</td></tr>
+  <tr><td>无头出包（可接 CI）</td><td class="ok">已支持</td><td>命令行脚本可无人值守跑完整烘焙 + 打包</td></tr>
+  <tr><td>烘焙报错定位</td><td class="ok">已支持</td><td>自动把 cook 报错归类（哪类资产、哪个引擎函数）</td></tr>
+  <tr><td>包体压缩</td><td class="ok">已支持</td><td>Oodle / Kraken，按配置等级压缩（Debug 3 级 / Shipping 5 级）</td></tr>
+  <tr><td>构建加速（引擎编译）</td><td class="ok">已支持</td><td>UE5 的 UBA（Unreal Build Accelerator）本机可用</td></tr>
+  <tr><td>着色器编译分布式加速（XGE）</td><td class="bad">已禁用</td><td>本机 XGE 分发着色器编译每批都失败、会卡死队列 ⇒ 已改为本地多进程编译。<strong>这是性能损失项</strong>，需要 IT/网络配合才能恢复</td></tr>
+  <tr><td>共享 DDC（资产/着色器缓存）</td><td class="bad">不可用</td><td>UE4 时代的共享 DDC 路径在 UE5.8 会报废弃且网络路径不可达 ⇒ 目前<strong>只有本地缓存</strong>，换机器/清缓存后要重新编译</td></tr>
+  <tr><td>包体分块去重</td><td class="warn">待处理</td><td>当前包体存在"分块重复"，是包体偏大的主因之一；方案已定、待排期</td></tr>
+  <tr><td>IoStore 打包格式</td><td class="warn">未启用</td><td>工程仍用传统 pak（沿自 UE4 配置）。UE5 已默认推荐 IoStore，切换需评估加载与热更链路</td></tr>
+</table>
+
+
+<h3>10.2 实测数据（这些数字比描述更有说服力）</h3>
+<table>
+  <tr><th style="width:190px">指标</th><th style="width:150px">实测值</th><th>说明 / 结论</th></tr>
+  <tr>
+    <td>Development 包大小</td>
+    <td class="ok">37 GB</td>
+    <td>含 <code>Torchlight_Migrate.pdb</code> 调试符号 <strong>2.8 GB</strong>（发布包不需要）、exe 437 MB、两个 pak 共 2.6 GB</td>
+  </tr>
+  <tr>
+    <td>Shipping 包大小</td>
+    <td class="bad">75.72 GB</td>
+    <td>21 个 pakchunk；最大的是 pakchunk999 <strong>28.76 GB</strong>、pakchunk101 15.57 GB、pakchunk2 7.54 GB</td>
+  </tr>
+  <tr>
+    <td>打包清单条目</td>
+    <td>1,174,108 条 / 未压缩 161.86 GB</td>
+    <td><strong>去重后只有 554,434 个文件 / 68.77 GB</strong></td>
+  </tr>
+  <tr>
+    <td>重复拷贝浪费</td>
+    <td class="bad">93.09 GB</td>
+    <td><strong>超过一半的体积是同一文件在不同分块里的重复拷贝</strong>——这是包体偏大的头号原因</td>
+  </tr>
+  <tr>
+    <td>pak 压缩</td>
+    <td class="warn">配置未生效</td>
+    <td>UE5 把配置键名从 <code>PakFileCompression*</code> 改成 <code>PackageCompression*</code>，旧键被静默忽略 ⇒ Shipping 实际跑的是 4 级，不是配置里的 5 级</td>
+  </tr>
+  <tr>
+    <td>打包格式</td>
+    <td class="warn">传统 pak</td>
+    <td>工程关着 IoStore（沿自 UE4 配置）。UE5 已默认推荐 IoStore + Zen 加载，切换收益明确但需评估热更链路</td>
+  </tr>
+  <tr>
+    <td>着色器编译速度</td>
+    <td class="bad">约 280 个/分钟（仅 1 个核）</td>
+    <td>本机 XGE 分布式分发每批失败 ⇒ 回落单进程。几千个着色器要编十几分钟</td>
+  </tr>
+  <tr>
+    <td>出包结果</td>
+    <td class="ok">BUILD SUCCESSFUL</td>
+    <td>Development / Shipping 均可成功产出并启动</td>
+  </tr>
+</table>
+
+<div class="box bad">
+  <strong>两个"一分钱不花就能拿回来"的收益：</strong>
+  <ol>
+    <li><strong>包体去重（可省约 93 GB）</strong>：方案已明确——加一个打包开关让"每个文件只进第一个分块"，<strong>不用改代码</strong>，重出包即可验证效果。</li>
+    <li><strong>压缩等级修复</strong>：把压缩配置改成 UE5 的新键名，Shipping 压缩从 4 级提到 5 级，包体还能再降一截。<strong>只改 ini</strong>。</li>
+  </ol>
+  这两项加起来，Shipping 包有机会从 75.7 GB 降到 <strong>60 GB 以内</strong>——对下载/安装成本影响很大。
+</div>
+
+<div class="box warn">
+  <strong>一个需要 IT 配合的收益：</strong>恢复着色器分布式编译（XGE 或 UBA 分布式）。当前单核 280 个/分钟，恢复到多机并行后
+  <strong>首次进图/改材质后的等待时间能缩短一个数量级</strong>，直接改善全员迭代体感。
+</div>
+
+<h3>10.3 与上游（UGS / P4）同步</h3>
+<table>
+  <tr><th style="width:170px">能力</th><th style="width:100px">状态</th><th>说明</th></tr>
+  <tr><td>按固定 CL 拉取上游</td><td class="ok">已工具化</td><td>一条命令记录基线并拉取工程（自动跳过 3.7TB 素材库、0.5TB 设计目录）</td></tr>
+  <tr><td>差异自动分类</td><td class="ok">已工具化</td><td>分成"可直接复制 / 需合并 / 需重做"三类</td></tr>
+  <tr><td>文本三方合并</td><td class="ok">已工具化</td><td>Lua/C++/ini 自动合并，冲突聚合成可读清单</td></tr>
+  <tr><td>存量差距盘点</td><td class="ok">已工具化</td><td>回答"本批之外还差多少"，按目录量化</td></tr>
+  <tr><td>与国服测试服逻辑对齐</td><td class="ok">已工具化</td><td>API 扫描、Lua 绑定审计、帧哈希比对、参考重放</td></tr>
+  <tr><td>冲突语义裁决</td><td class="warn">需人工/AI</td><td>"上游删了我们加的保护，保留谁"必须靠理解意图</td></tr>
+</table>
+
+<h3>10.4 自动检查与质量门禁</h3>
+<table>
+  <tr><th style="width:170px">能力</th><th style="width:100px">状态</th><th>说明</th></tr>
+  <tr><td>Lua 五道门禁</td><td class="ok">已有</td><td>语法 / 模块解析 / 入口全局 / 注册表指向 / 行数基线，全绿才允许提交</td></tr>
+  <tr><td>编译验证</td><td class="ok">已有</td><td>关编辑器跑全量/增量构建，结果可机器判定</td></tr>
+  <tr><td>资产逐个加载体检</td><td class="ok">已有</td><td>可续跑、崩溃能定位到具体资产</td></tr>
+  <tr><td>界面自动走查</td><td class="ok">已有</td><td>逐个页面/页签/按钮自动打开、悬停、抓异常与截图</td></tr>
+  <tr><td>日志自动分诊</td><td class="ok">已有</td><td>把海量 Warning/Error 归族去噪，挑出真问题</td></tr>
+  <tr><td>接入提交前自动执行（CI）</td><td class="warn">未接入</td><td>目前是手动触发；接 CI 后可以在提交前自动拦截</td></tr>
+</table>
+
+<h3>10.5 这些能力的"缺口摘要"</h3>
+<table>
+  <tr><th style="width:40px">#</th><th style="width:230px">缺口</th><th>影响</th><th style="width:100px">需要谁</th></tr>
+  <tr><td>1</td><td>着色器编译无分布式加速（XGE 禁用）</td><td>首次进图/改材质后要等编译，迭代变慢</td><td>IT / 网络</td></tr>
+  <tr><td>2</td><td>无共享 DDC</td><td>换机器、清缓存后需重新编译，团队重复劳动</td><td>IT / 存储</td></tr>
+  <tr><td>3</td><td>包体分块重复未去重</td><td>包体偏大（下载/安装成本高）</td><td>程序</td></tr>
+  <tr><td>4</td><td>未切 IoStore 打包格式</td><td>加载与热更链路仍是老方案</td><td>程序 + 运维</td></tr>
+  <tr><td>5</td><td>门禁未接 CI</td><td>依赖人记得跑，可能漏</td><td>程序</td></tr>
+  <tr><td>6</td><td>冲突裁决、根因定位仍需人/AI</td><td>拉新成本随改动量线性增长</td><td>程序 + AI 辅助</td></tr>
+</table>
+
+<hr>
+<p class="sub">
+  数据来源：迁移知识库 162 条问题记录（已修复 69 / 已验证 48）、迁移流水线与资产体检报告。<br>
+  如需细节，可查阅《UE5 升级技术方案》（同目录另一份文档）。
+</p>
+
+</body>
+</html>
