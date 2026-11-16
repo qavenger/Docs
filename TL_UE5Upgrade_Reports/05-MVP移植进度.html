@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>火炬项目UE5迁移规划</title>
+<style>
+  :root {
+    --bg0: #060a13; --bg1: #0c1424; --panel: rgba(18, 28, 48, .72); --line: rgba(120, 150, 200, .16);
+    --ink: #e7eefb; --ink2: #a9b7cf; --ink3: #7a89a3;
+    --done: #34d399; --doing: #4cc3ff; --start: #fbbf24; --track: rgba(140, 165, 210, .14);
+    --accent1: #36d1ff; --accent2: #7c6cff; --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh; color: var(--ink);
+    font: 15px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: radial-gradient(1200px 600px at 50% -10%, #1b2a4a 0%, rgba(27, 42, 74, 0) 60%),
+                radial-gradient(900px 500px at 100% 100%, #1a1240 0%, rgba(26, 18, 64, 0) 55%),
+                linear-gradient(180deg, var(--bg1), var(--bg0));
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 1480px; margin: 0 auto; padding: 28px 28px 0; }
+
+  /* ---------- 顶部：标题 + 总进度（横向） ---------- */
+  .top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 460px); align-items: center; gap: 14px 44px; padding: 22px 28px;
+         border: 1px solid var(--line); border-radius: 16px; background: var(--panel);
+         box-shadow: 0 20px 60px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .04); }
+  .eyebrow { font-size: 12.5px; letter-spacing: .32em; color: var(--ink3); text-transform: uppercase; }
+  .top h1 { margin: 6px 0 4px; font-size: 30px; font-weight: 700; letter-spacing: .04em; }
+  .hsub { color: var(--ink2); font-size: 13.5px; }
+  .big { display: flex; align-items: baseline; gap: 10px; }
+  .big .pct { font-size: 60px; font-weight: 800; line-height: 1; letter-spacing: -.02em;
+              background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .big .lbl { font-size: 13px; letter-spacing: .3em; color: var(--ink3); }
+  .dots::after { content: "…"; display: inline-block; width: 1.2em; text-align: left; animation: dots 1.6s steps(4, end) infinite; overflow: hidden; vertical-align: bottom; }
+  @keyframes dots { 0% { width: 0; } 100% { width: 1.2em; } }
+  .bar { position: relative; height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; transition: width 1.1s cubic-bezier(.2, .8, .2, 1); }
+  .bar.big-bar { height: 16px; margin: 10px 0 10px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05); }
+  .bar.big-bar > i { background: linear-gradient(90deg, var(--accent1), var(--accent2)); box-shadow: 0 0 18px rgba(54, 209, 255, .45); }
+  .bar.big-bar > i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, .35) 45%, transparent 70%);
+                            transform: translateX(-100%); animation: shine 2.6s ease-in-out infinite; }
+  @keyframes shine { 0% { transform: translateX(-100%); } 60%, 100% { transform: translateX(160%); } }
+  .tip { color: var(--ink2); font-size: 13.5px; min-height: 1.6em; transition: opacity .35s; }
+  .tip b { color: var(--start); font-weight: 600; }
+
+  /* 流程大纲：先「可以运行」，再并行推进各条线；汇报时一眼看全，点卡片跳到对应环节。宽屏横排，窄屏竖排 */
+  .flow { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 6px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .flow .cap { font-size: 11px; letter-spacing: .24em; color: var(--ink3); }
+  .flow .c1 { display: none; }
+  .flow > .lane { order: 1; }
+  .flow .arrow { order: 2; color: var(--ink3); text-align: center; font-size: 20px; line-height: 26px; transform: rotate(90deg); }
+  .flow .c3 { order: 3; }
+  .flow .par { order: 4; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .lane { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto auto; align-items: baseline; column-gap: 10px; padding: 10px 13px 11px;
+          border: 1px solid var(--line); border-radius: 10px; background: rgba(10, 16, 30, .55); color: inherit; text-decoration: none; }
+  .lane:hover { border-color: rgba(76, 195, 255, .45); }
+  .lane .k { grid-column: 1 / -1; font-size: 11.5px; color: var(--ink3); letter-spacing: .06em; }
+  .lane .t { grid-column: 1 / -1; align-self: start; font-size: 14.5px; font-weight: 600; line-height: 1.45; }
+  .lane .v { font-size: 22px; font-weight: 700; line-height: 1.3; }
+  .lane .w { font-size: 11.5px; color: var(--ink3); text-align: right; }
+  .lane .bar { grid-column: 1 / -1; height: 5px; margin-top: 4px; }
+
+  /* ---------- 左侧目录（固定）+ 右侧正文 ---------- */
+  .layout { display: grid; grid-template-columns: 296px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .main { min-width: 0; padding-bottom: 70px; }   /* 页尾留白放在正文里：滚到底时左侧目录也不会被顶上去 */
+  .nav { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; padding: 12px 10px 14px; border: 1px solid var(--line);
+         border-radius: 14px; background: rgba(10, 16, 30, .6); scrollbar-width: thin; scrollbar-color: rgba(120, 150, 200, .3) transparent; }
+  .nav-total { display: flex; align-items: baseline; justify-content: space-between; padding: 0 8px 8px; margin-bottom: 2px; border-bottom: 1px solid var(--line);
+               font-size: 12.5px; color: var(--ink3); }
+  .nav-total b { font-size: 20px; font-weight: 800; background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .nav-sep { margin: 10px 8px 0; font-size: 11px; letter-spacing: .24em; color: var(--ink3); }
+  .nav a { display: block; color: inherit; text-decoration: none; }
+  .nav-t { margin-top: 4px; padding: 6px 10px; border: 1px solid transparent; border-radius: 9px; }
+  .nav-t:hover { background: rgba(255, 255, 255, .04); }
+  .nav-t.on { border-color: rgba(76, 195, 255, .45); background: rgba(54, 209, 255, .07); }
+  .nav-t .nk { display: block; font-size: 11px; line-height: 1.4; color: var(--ink3); letter-spacing: .06em; }
+  .nav-t .nr { display: flex; align-items: baseline; gap: 8px; line-height: 1.4; }
+  .nav-t .nn { flex: 1 1 auto; font-size: 14.5px; font-weight: 600; }
+  .nav-t .np { flex: 0 0 auto; font-size: 15px; font-weight: 700; }
+  .nav-t .bar { height: 4px; margin-top: 5px; }
+  .nav-n { display: flex !important; align-items: baseline; gap: 8px; margin: 1px 0 0 6px; padding: 3px 10px 3px 12px; font-size: 12.5px; line-height: 1.45; color: var(--ink2);
+           border-left: 2px solid var(--line); border-radius: 0 6px 6px 0; }
+  .nav-n:hover { color: var(--ink); background: rgba(255, 255, 255, .04); }
+  .nav-n.on { color: var(--ink); border-left-color: var(--accent1); background: rgba(54, 209, 255, .07); }
+  .nav-n .ni { flex: 0 0 auto; font: 600 11px/1 Consolas, "Cascadia Mono", monospace; color: var(--ink3); }
+  .nav-n .nt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-n .np { flex: 0 0 auto; font-size: 12px; font-weight: 600; }
+
+  /* ---------- 图例与工具条 ---------- */
+  .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; margin: 22px 2px 10px; color: var(--ink2); font-size: 13px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: currentColor; }
+  .lg-done { color: var(--done); } .lg-doing { color: var(--doing); } .lg-start { color: var(--start); }
+  .toolbar .sp { flex: 1; }
+  .btn { font: inherit; font-size: 13px; color: var(--ink); background: rgba(255, 255, 255, .05); border: 1px solid var(--line); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+  .btn:hover { background: rgba(255, 255, 255, .09); }
+
+  /* ---------- 环节与节点 ---------- */
+  section.track { margin-top: 26px; scroll-margin-top: 16px; }
+  .thead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 0 4px 8px; border-bottom: 1px solid var(--line); }
+  .thead h2 { margin: 0; font-size: 18px; font-weight: 700; }
+  .thead .kind { font-size: 12px; color: var(--ink3); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+  .thead .tw { color: var(--ink3); font-size: 12.5px; }
+  .thead .tp { margin-left: auto; font-size: 18px; font-weight: 700; }
+  .tdesc { color: var(--ink2); font-size: 13px; margin: 8px 4px 0; }
+  .node { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); overflow: hidden; scroll-margin-top: 16px; }
+  .nbtn { width: 100%; display: block; text-align: left; font: inherit; color: inherit; background: none; border: 0; padding: 13px 16px 14px; cursor: pointer; }
+  .nbtn:hover { background: rgba(255, 255, 255, .025); }
+  .nbtn:focus-visible { outline: 2px solid var(--accent1); outline-offset: -2px; border-radius: 12px; }
+  .nrow { display: flex; align-items: center; gap: 12px; }
+  .idx { flex: 0 0 auto; font: 600 12px/1 Consolas, "Cascadia Mono", monospace; color: var(--ink3); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+  .ntitle { flex: 1 1 auto; font-size: 15.5px; font-weight: 600; }
+  .ntitle small { display: block; font-size: 12.5px; font-weight: 400; color: var(--ink3); margin-top: 1px; }
+  .npct { flex: 0 0 auto; font-size: 18px; font-weight: 700; min-width: 3.2em; text-align: right; }
+  .chev { flex: 0 0 auto; width: 18px; height: 18px; color: var(--ink3); transition: transform .25s; }
+  .node.open .chev { transform: rotate(90deg); }
+  .nbtn .bar { margin-top: 10px; height: 8px; }
+  .subs { display: none; padding: 2px 16px 12px; border-top: 1px dashed var(--line); background: rgba(6, 10, 19, .35); }
+  .node.open .subs { display: block; }
+
+  /* 子项：标题 + 进度 + 当前值 / 阶段条 + 100% 目标 + 进度依据 */
+  .sub { padding: 12px 2px 11px; border-bottom: 1px solid rgba(120, 150, 200, .08); }
+  .sub:last-child { border-bottom: 0; }
+  .sh { display: flex; align-items: baseline; gap: 10px; }
+  .sh .st { flex: 1 1 auto; font-size: 14.5px; font-weight: 600; }
+  .sh .sp2 { flex: 0 0 auto; font-size: 14.5px; font-weight: 700; }
+  .sub .bar { height: 5px; margin-top: 7px; }
+  .now { margin-top: 5px; font-size: 12.5px; color: var(--ink2); }
+  .now b { color: var(--ink); font-weight: 600; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
+  .step { font-size: 11.5px; color: var(--ink3); text-align: center; }
+  .step i { display: block; height: 6px; border-radius: 3px; margin-bottom: 4px;
+            background: linear-gradient(90deg, var(--c, var(--doing)) calc(var(--f) * 100%), var(--track) calc(var(--f) * 100%)); }
+  .step.on { color: var(--ink); }
+  .kv { margin-top: 6px; font-size: 13px; color: var(--ink2); display: grid; grid-template-columns: 5.6em 1fr; gap: 2px 8px; }
+  .kv .k { color: var(--ink3); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 400; color: var(--ink3); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; margin-left: 6px; vertical-align: 1px; }
+  .sub.info .st { color: var(--ink2); font-weight: 500; }
+  .done { color: var(--done); } .doing { color: var(--doing); } .start { color: var(--start); }
+  .f-done { background: var(--done); } .f-doing { background: var(--doing); } .f-start { background: var(--start); }
+  .nweight { margin-top: 8px; font-size: 12px; color: var(--ink3); }
+
+  /* ---------- 底部口径 ---------- */
+  .foot { margin-top: 30px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: rgba(10, 16, 30, .5); color: var(--ink2); font-size: 13px; }
+  .foot h3 { margin: 12px 0 6px; font-size: 14px; color: var(--ink); }
+  .foot h3:first-child { margin-top: 0; }
+  .foot p, .foot li { margin: 5px 0; }
+  .foot ul { margin: 4px 0; padding-left: 20px; }
+  .foot b { color: var(--ink); }
+  .foot a { color: var(--accent1); }
+  .foot .date { color: var(--ink3); }
+
+  /* ---------- 编辑模式 ---------- */
+  [hidden] { display: none !important; }
+  .btn.primary { background: linear-gradient(90deg, rgba(54, 209, 255, .26), rgba(124, 108, 255, .26)); border-color: rgba(76, 195, 255, .55); }
+  .btn.primary:hover { background: linear-gradient(90deg, rgba(54, 209, 255, .4), rgba(124, 108, 255, .4)); }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn .pen { width: 13px; height: 13px; margin-right: 5px; vertical-align: -1px; color: var(--ink2); }
+  .editing .ed, .editing .num { scroll-margin: 90px 0 40px; }
+  .estat { font-size: 12.5px; color: var(--ink3); }
+  .estat.warn, .estat .wwarn { color: var(--start); }
+  .estat.ok { color: var(--done); }
+  .estat.err { color: var(--bad); }
+  .linkbtn { font: inherit; color: var(--accent1); background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .editing .legend { display: none; }
+  .editing .toolbar { position: sticky; top: 0; z-index: 30; margin-left: -12px; margin-right: -12px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px;
+                      background: rgba(9, 14, 27, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); }
+  .ehint { display: none; margin: 0 2px 4px; font-size: 12.5px; color: var(--ink3); }
+  .ehint b { color: var(--ink2); font-weight: 600; }
+  .editing .ehint { display: block; }
+  .edmark { outline: 1px dashed rgba(76, 195, 255, .6); outline-offset: 1px; border-radius: 3px; padding: 0 2px; color: var(--ink2); }
+  .ed { outline: 1px dashed rgba(76, 195, 255, .3); outline-offset: 2px; border-radius: 3px; cursor: text; }
+  .ed:hover { outline-color: rgba(76, 195, 255, .7); }
+  .ed:focus { outline: 2px solid var(--accent1); outline-offset: 2px; background: rgba(54, 209, 255, .08); }
+  .ed:empty::before { content: attr(data-ph); color: var(--ink3); opacity: .75; font-weight: 400; font-style: italic; }
+  span.ed:empty, b.ed:empty { display: inline-block; min-width: 4em; }
+  .editing .kv { row-gap: 7px; margin-top: 8px; }
+  .editing section.track, .editing .node { scroll-margin-top: 84px; }   /* 跳转时不被吸顶的工具条挡住 */
+  .editing .now { margin-top: 7px; }
+  .foot.ed-area { outline: 1px dashed rgba(76, 195, 255, .3); outline-offset: 3px; cursor: text; }
+  .foot.ed-area:hover { outline-color: rgba(76, 195, 255, .7); }
+  .foot.ed-area:focus { outline: 2px solid var(--accent1); }
+  .num { width: 3.6em; font: inherit; color: var(--ink); text-align: right; background: rgba(255, 255, 255, .05); border: 1px solid rgba(76, 195, 255, .4);
+         border-radius: 5px; padding: 0 4px; margin: 0 2px; line-height: 1.45; }
+  .num:hover { border-color: rgba(76, 195, 255, .75); }
+  .num:focus { outline: 2px solid var(--accent1); outline-offset: 0; background: rgba(54, 209, 255, .1); }
+  .sp2 .num { color: inherit; font-weight: 700; }
+  .num.sm { width: 3.1em; font-size: 11px; padding: 0 3px; }
+  .ectl { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-top: 9px; font-size: 12px; color: var(--ink3); }
+  .ectl .sp { flex: 1; }
+  .ectl label { white-space: nowrap; }
+  .ectl .num { font-weight: 600; }
+  .ebtn { font: inherit; font-size: 12px; color: var(--ink2); background: rgba(255, 255, 255, .04); border: 1px solid var(--line); border-radius: 6px; padding: 1px 9px; cursor: pointer; }
+  .ebtn:hover:not(:disabled) { color: var(--ink); background: rgba(255, 255, 255, .1); }
+  .ebtn:disabled { opacity: .35; cursor: default; }
+  .ebtn.add { color: var(--accent1); border-style: dashed; border-color: rgba(76, 195, 255, .45); }
+  .ebtn.del:hover:not(:disabled) { color: var(--bad); border-color: rgba(248, 113, 113, .5); }
+  .esel { font: inherit; font-size: 12px; color: var(--ink); background: #101a31; border: 1px solid var(--line); border-radius: 6px; padding: 1px 4px; color-scheme: dark; }
+  .nctl { margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--line); }
+  .tctl { margin-top: 10px; }
+  .tog { display: inline-flex; flex: 0 0 auto; background: none; border: 0; padding: 3px; margin: -3px; color: inherit; cursor: pointer; border-radius: 6px; }
+  .tog:hover { background: rgba(255, 255, 255, .07); }
+  .tog:focus-visible { outline: 2px solid var(--accent1); }
+  .draft { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 18px; padding: 10px 14px; border: 1px solid rgba(251, 191, 36, .4);
+           border-radius: 10px; background: rgba(251, 191, 36, .08); font-size: 13px; color: var(--ink2); }
+  .draft > span { flex: 1 1 260px; }
+  .draft b { color: var(--start); }
+  /* 超链接：字段里的链接、链接编辑框、光标在链接上时的小气泡 */
+  .kv a, .now a, .tdesc a { color: var(--accent1); text-decoration: none; border-bottom: 1px solid rgba(54, 209, 255, .4); }
+  .kv a:hover, .now a:hover, .tdesc a:hover { border-bottom-color: var(--accent1); }
+  .editing .ed a, .foot.ed-area a { cursor: text; }
+  .lpop { position: absolute; z-index: 60; width: 360px; max-width: calc(100vw - 16px); padding: 12px 12px 10px; border: 1px solid rgba(76, 195, 255, .45); border-radius: 10px;
+          background: #0d1628; box-shadow: 0 14px 40px rgba(0, 0, 0, .55); font-size: 12.5px; color: var(--ink2); }
+  .lpop label { display: block; margin-bottom: 8px; }
+  .lpop input { display: block; width: 100%; margin-top: 3px; font: inherit; font-size: 13px; color: var(--ink); background: rgba(255, 255, 255, .05);
+                border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+  .lpop input:focus { outline: 2px solid var(--accent1); outline-offset: 0; }
+  .lperr { color: var(--bad); margin: -2px 0 8px; }
+  .lperr:empty { display: none; }
+  .lpbtns { display: flex; align-items: center; gap: 8px; }
+  .lpbtns .sp { flex: 1; }
+  .lpbtns .btn { font-size: 12.5px; padding: 3px 12px; }
+  .lbub { position: absolute; z-index: 55; display: flex; align-items: center; gap: 10px; max-width: min(480px, calc(100vw - 16px)); padding: 5px 10px;
+          border: 1px solid var(--line); border-radius: 8px; background: #0d1628; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); font-size: 12px; color: var(--ink3); }
+  .lbub .lburl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink2); }
+
+  @media (min-width: 1360px) {
+    /* 横向阅读：「100% 目标」和「进度依据」左右并排 */
+    .kv { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto; grid-auto-flow: column; gap: 1px 28px; }
+    /* 流程大纲横排：可以运行 → 各并行线排成一行 */
+    .flow { grid-template-columns: minmax(150px, 200px) 34px minmax(0, 1fr); grid-template-rows: auto auto; }
+    .flow .c1 { display: block; grid-area: 1 / 1; }
+    .flow .c3 { grid-area: 1 / 3; }
+    .flow > .lane { grid-area: 2 / 1; }
+    .flow .arrow { grid-area: 2 / 2; align-self: center; transform: none; }
+    .flow .par { grid-area: 2 / 3; }
+  }
+  @media (max-width: 1100px) {
+    .top { grid-template-columns: 1fr; }
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .nav { display: none !important; }   /* 窄窗口不放侧边目录：用顶部流程大纲的卡片跳转 */
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 16px 12px 50px; }
+    .top { padding: 18px 16px; }
+    .top h1 { font-size: 24px; }
+    .big .pct { font-size: 52px; }
+    .ntitle { font-size: 14.5px; }
+    .kv { grid-template-columns: 1fr; }
+    .kv .k { margin-top: 4px; }
+    .editing .toolbar { margin-left: -6px; margin-right: -6px; }
+  }
+  .noanim .bar > i { transition: none; }
+  .noanim .bar.big-bar > i::after { animation: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .bar > i { transition: none; }
+    .bar.big-bar > i::after, .dots::after { animation: none; }
+  }
+  @media print {
+    body { background: #fff; color: #111; }
+    .node .subs { display: block; }
+    .toolbar .btn, .chev { display: none; }
+    .bar > i { transition: none; }
+    .ectl, .ehint, .draft, .estat, .tog, .lpop, .lbub { display: none !important; }
+    .kv a, .now a, .tdesc a { color: inherit; border: 0; }
+    .ed, .foot.ed-area { outline: none !important; }
+    .editing .toolbar { position: static; box-shadow: none; }
+    .nav { display: none !important; }
+    .layout { display: block; }
+    .top { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="layout">
+  <nav class="nav" id="nav" aria-label="目录"></nav>
+  <main class="main">
+
+  <header class="top">
+    <div class="top-l">
+      <div class="eyebrow"><span id="hEyebrow"></span></div>
+      <h1><span id="hTitle"></span></h1>
+      <div class="hsub"><span id="hSub"></span></div>
+    </div>
+    <div class="top-r">
+      <div class="big"><span class="pct" id="total">0%</span><span class="lbl">LOADING<span class="dots"></span></span></div>
+      <div class="bar big-bar" role="progressbar" aria-label="总进度" aria-valuemin="0" aria-valuemax="100" id="totalBar"><i></i></div>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="flow" id="flow"></div>
+  </header>
+
+  <div class="draft" id="draft" hidden></div>
+
+  <div class="toolbar">
+    <div class="legend"><span class="lg-done">基本完成（≥ 85%）</span><span class="lg-doing">进行中（30–84%）</span><span class="lg-start">刚起步（&lt; 30%）</span></div>
+    <span class="estat" id="estat" role="status" aria-live="polite"></span>
+    <span class="sp"></span>
+    <button class="btn" id="linkBtn" type="button" title="给选中的文字加超链接（Ctrl+K）" hidden>链接</button>
+    <button class="btn" id="expandAll" type="button">全部展开</button>
+    <button class="btn" id="collapseAll" type="button">全部收起</button>
+    <button class="btn" id="discardBtn" type="button" hidden>放弃修改</button>
+    <button class="btn" id="saveAsBtn" type="button" title="另存一份到别的位置（Ctrl+Shift+S），不影响「保存」写回的文件" hidden>另存为…</button>
+    <button class="btn primary" id="saveBtn" type="button" title="保存（Ctrl+S）" hidden>保存</button>
+    <button class="btn" id="editBtn" type="button" aria-pressed="false">编辑</button>
+  </div>
+  <div class="ehint" id="ehint"></div>
+
+  <div id="tracks"></div>
+
+  <div class="foot" id="foot"></div>
+
+  </main>
+</div>
+</div>
+
+<div class="lpop" id="lpop" role="dialog" aria-label="超链接" hidden>
+  <label>显示文字<input id="lpText" type="text" autocomplete="off" spellcheck="false" placeholder="页面上显示的文字"></label>
+  <label>链接地址<input id="lpUrl" type="text" autocomplete="off" spellcheck="false" placeholder="网址、飞书文档链接，或本机文件路径"></label>
+  <div class="lperr" id="lpErr" role="alert"></div>
+  <div class="lpbtns"><button class="btn primary" id="lpOk" type="button">确定</button><button class="btn" id="lpDel" type="button" hidden>移除链接</button><span class="sp"></span><button class="btn" id="lpCancel" type="button">取消</button></div>
+</div>
+<div class="lbub" id="lbub" hidden><span class="lburl" id="lbUrl"></span><button class="linkbtn" id="lbOpen" type="button">打开</button><button class="linkbtn" id="lbEdit" type="button">编辑</button><button class="linkbtn" id="lbDel" type="button">移除</button></div>
+
+<!-- 页面数据。在网页上点「编辑」改完再「保存」，会自动改写这一段，一般不需要手改。 -->
+<script type="application/json" id="mvp-data">
+{
+  "hero": {"eyebrow":"Torchlight · UE4.26 → UE5.8","title":"火炬项目UE5迁移规划","sub":"先「可以运行」，再并行推进 画面提升 · 引擎能力移植 · 研效开发（流程与交付） · Gameplay 验证"},
+  "tracks": [
+    {"id":"t1","name":"可以运行","kind":"环节一 · 前置","weight":30,"desc":"已完成：工程迁到 UE5、能编译、各类资产能加载并在主循环里正常工作、界面功能正确，能进游戏打怪，并能持续从 MainLine 拉新。验收标准是游戏能正常运行、主循环跑通；界面与资产的效果还原放到画面提升线。", "nodes": [
+      {"title":"可玩基线（V0.9）","hint":"工程迁移、编译、核心流程、持续同步——按「游戏能正常运行、主循环跑通」验收","weight":60, "subs": [
+        {"t":"引擎升级到官方 UE5.8.4","p":100,"now":"当前 5.8.4（官方最新补丁版）","goal":"引擎为官方版本、零改动，源码与依赖可复现","basis":"官方原版引擎可以正常启动工程以及出包"},
+        {"t":"工程代码适配与编译","p":100,"now":"PC 编辑器 / PC 游戏 / 安卓 均 0 错误","goal":"各编译目标 0 错误，每批拉新后照样通过","basis":"11-06 批编译通过；仍停用的 AnimatedTexture、XDAudioTools、多线程日志 3 个插件不影响运行：前两个的去留见交付质量「非主循环的功能遗留」，多线程日志见 DevOps「日志与崩溃采集」"},
+        {"t":"核心玩法流程","p":100,"now":"V0.9 定义的 6 项全部通过","goal":"登录 → 选角 / 创角 → 进图 → 打怪 → 掉落拾取，多次进出关卡无崩溃","basis":["文档 4 记 V0.9 可玩基线已完成；每批 PIE 冒烟都能进游戏，断言 / Lua 报错 0；PC 包测试 15 个账号跑 5 张主要地图、男枪 3 跑遍 6 个区域 71 张关卡，3 张进图崩溃已修（KB-0183，见 ",{"t":"火炬PC包UE5升级测试","u":"https://my.feishu.cn/wiki/YX17wZyI2i2djgkzYqycUMmBnIh"},"）"]},
+        {"t":"MainLine 持续同步","s":[1,1,1,1],"goal":"拉新流程跑通：每批 1–2 天内落地，门禁全绿、知识库记账","basis":"已落地 3 个常规批次 + 1 个追平批次（最近 11-06，MainLine@6322279）；追平工具漏判修正、函数级回填审计移到工程效能「MainLine 拉新流程加固」（KB-0072 / 0085）"},
+        {"t":"服务器联调","s":[1,1,1,1],"goal":"连对应分支的测试服，能登录、进图、战斗","basis":"MainLine 客户端用周版本测试服可登录、进图、打怪（PC 包测试覆盖 15 个账号）；战斗校验的系统测试归 Gameplay 验证线；国服测试服协议不兼容属预期（KB-0196）"},
+        {"t":"遗留问题收敛","p":100,"now":"已解决 104 条；待处理 7 条均不影响运行，已移到下一阶段","goal":"知识库里影响运行的问题全部解决或有明确结论","basis":"统计 Lua / C++ / 资产 / 插件 / 编辑器 / P4 / 配置类（不含安卓专项与其它环节的条目）；剩下 7 条不影响主循环：0074 / 0192 → 画面提升「界面与资产效果还原」，0087 / 0100 → Gameplay 验证，0162 → 交付质量「非主循环的功能遗留」，0019 / 0033 → 工程效能（拉新流程加固、上游已删资产清理）"},
+        {"t":"编辑器与开发包稳定","p":100,"now":"PIE 多次进出关卡 0 崩溃；开发包运行 0 崩溃","goal":"编辑器与开发包长时间游玩无崩溃","basis":"开发包每次运行仍有 1 条 ensure（引擎粒子 PSO 预缓存），不影响运行，归引擎能力移植线 A12"}
+      ]},
+      {"title":"资产迁移与界面功能（按类型）","hint":"每类资产都能加载、在主循环里正常工作；界面只要求功能正确，效果还原见画面提升线「界面与资产效果还原」","weight":40, "subs": [
+        {"t":"加载体检（每批 · 全类型）","p":100,"now":"11-06 批 5,420 个：通过 5,381，失败 39 个均已解释","goal":"每批拉新的资产在独立无渲染编辑器里逐个加载，0 个未解释的失败 / 崩溃","basis":["失败的 36 个是当时停用插件 AnimationNotifyCacher 的资源（插件当晚已移植启用），3 个是 MainLine 上游本身的空包贴图（KB-0031 / 0208）；",{"t":"测试报告","u":"https://my.feishu.cn/wiki/YX17wZyI2i2djgkzYqycUMmBnIh"}]},
+        {"t":"骨骼网格（XD 格式 v19–21 → UE5）","p":100,"now":"11-06 批体检 2,093 个：差异 78 个全部合法，加载 0 崩溃","goal":"所有骨骼网格转成 UE5 格式，加载与烘焙 0 崩溃，每批自动处理","basis":"分段精确转换 + 还原源 LOD 负载已固化进每批 S7（KB-0209）；10-29 全量烘焙 219,972 个包无网格断言"},
+        {"t":"资产版本流（私有 GUID / 版本号）","p":100,"now":"11-06 批复扫：GUID 0、版本超限 0","goal":"XD 私有版本流 GUID 与超限版本号全部处理，每批复扫为 0","basis":"只替换 UE5 无人注册的 GUID，上限按 UE5.8 源码夹紧（KB-0210）"},
+        {"t":"贴图（压缩 / 编码 / 旧版本）","p":100,"now":"全工程 91,498 张：透明丢失 887 张、编码覆盖 69,777 张、落后版本 1,164 张已处理","goal":"贴图能加载、能烘焙，透明与颜色按 UE4 规则处理，每批新贴图预筛为 0","basis":"KB-0212；安卓包发暗实测、异界关卡图标黑底复测放到画面提升线「界面与资产效果还原」"},
+        {"t":"材质与材质函数","p":100,"now":"着色模型迁移：追平批 544 个、10-27 批 19 个、11-06 批 353 个","goal":"材质能编译、能渲染：着色模型统一 DefaultLit，XD 光照垫片节点值正确，界面视频与展示材质正常","basis":"KB-0214；导入期按 Unlit 迁的 182 个是否改 DefaultLit 放到效果还原；人物 / 怪物明暗等观感归画面提升 B1"},
+        {"t":"地图（BuiltData / World Settings）","p":100,"now":"BuiltData 占位每批新建（11-06 批 12 个）；GameMode 覆盖已补回","goal":"所有地图能加载、不死锁、能进图：缺失的光照数据有占位，GameMode 覆盖与 UE4 一致","basis":"KB-0215；PC 包测试 71 张关卡全部能进（3 张曾崩溃已修，KB-0183）；World Settings 余下 3 张、选角场景确认放到效果还原（KB-0073 / 0192）"},
+        {"t":"导航数据（重建）","p":100,"now":"需寻路的 189 张图重建保留 167 张，166 张整路径可达","goal":"需要寻路的地图有 UE5 导航网格，角色和怪物能正常走动","basis":"UE4 旧导航数据一律作废并在 UE5 重建（KB-0211）；凸包做的地面建不出导航（KB-0100）不影响主循环，放到 Gameplay 验证「怪物 AI 与寻路」"},
+        {"t":"动画 / 序列 / 动画通知","p":100,"now":"659 个动画缺失的通知已恢复；492 个序列已扫描","goal":"动画、蒙太奇、序列能播放、能烘焙，通知（音效 / 特效）不丢","basis":"AnimationNotifyCacher 移植启用（KB-0225 / 0200）；老式 Spawnable 统一处理（KB-0220）；烘焙守卫（KB-0127 / 0149）；镜头动画 CameraAnim 归引擎能力移植线 A3"},
+        {"t":"音频（Wwise）","p":100,"goal":"包内音乐、音效、对白、界面音效都能播放","basis":"包内无声（KB-0158）、技能音效被守卫吞掉（KB-0082）、安卓插件与初始化参数（KB-0171 / 0173）均已修；安卓实机复测见安卓移植「功能补齐」"},
+        {"t":"特效（Cascade 粒子）","p":100,"goal":"技能、时装与场景特效能正常播放","basis":"安卓表现对象上限配置已补回（KB-0172）；「幻影特效有问题」放到效果还原；粒子 PSO 预缓存 ensure 归引擎能力移植线 A12"},
+        {"t":"蓝图（非界面）与插件依赖","p":100,"now":"烘焙时编译失败的 86 个蓝图：0 错误（11 个只有警告）","goal":"引用停用插件或 XD 引擎函数的蓝图全部编译通过，烘焙无蓝图错误","basis":"XDAudioStudio、WebBrowserWidget、AnimationNotifyCacher 等插件已按 UE4 恢复（KB-0225）；角色光照蓝图（SceneCapture 共享深度）归引擎能力移植线 A8"},
+        {"t":"界面功能（主循环）","p":100,"now":"PC 包逐页检查 22 个页面，功能问题已修","goal":"主循环用到的界面（登录、选角 / 创角、主界面与战斗 HUD、背包、技能、天赋、商城、交易行等）都能打开、能操作、信息显示正确","basis":["已修的功能问题：选角 / 创角整页丢失（KB-0065）、UI 缩放（KB-0071）、天赋滚动（KB-0156 / 0187）、交易行条件看不见（KB-0182）、伤害数字（KB-0181）、小地图迷雾（KB-0154）、红点（KB-0078）、状态组切换（KB-0086）、快捷键失效（KB-0102）；页面检查见 ",{"t":"火炬PC包UE5升级测试","u":"https://my.feishu.cn/wiki/YX17wZyI2i2djgkzYqycUMmBnIh"},"；效果还原见画面提升线，非主循环的玩法问题见 Gameplay 验证"]}
+      ]}
+    ]},
+    {"id":"t2","name":"画面提升","kind":"并行线 1","weight":20,"desc":"走 PBR 路线把整体画面提升一档（定制卡通渲染已放弃）。美术与 TA 为主，是文档 4 里的关键路径。可以运行阶段只要求界面功能正确，界面与资产的效果还原也在这条线推进。", "nodes": [
+      {"title":"画面效果提升（工作线 B）","hint":"子项按文档 4 规划人日加权","weight":75, "subs": [
+        {"t":"B1 材质观感收敛（PBR 路线）","w":12,"s":[1,1,0.1,0],"goal":"主要角色 / 怪物 / 场景材质观感一致（同类色差 ΔE 达标），无发灰 / 过曝 / 死黑，美术签字","basis":"着色模型已统一到 DefaultLit，每批自动迁移（11-06 批 353 个）；美术 10-26 起重置效果，观感收敛刚开始"},
+        {"t":"B2 场景光照（重烘或全量 Lumen）","w":16,"s":[1,0.3,0,0],"goal":"需寻路的 167 张地图都有有效光照，无漏光 / 黑块，有单图烘焙或效果基线","basis":"UE4 光照贴图不迁、只建空占位；PC 已关静态光照、开 Lumen，统一走 PC 动态光照（KB-0177）；重烘还是全量 Lumen，要等 B6 的结论"},
+        {"t":"B3 ACES 色彩管理","w":3,"s":[1,0.5,0,0],"goal":"编辑器与包内色彩一致（ΔE 达标），宣传物料可直接用包内截图","basis":"10-26 已查明 Standard ACES 发灰的原因与修法；全工程统一切换未定"},
+        {"t":"B4 Niagara 试点","w":12,"s":[0,0,0,0],"goal":"5 个高频技能特效用 Niagara 重做，表现不劣于原版，同屏 200 实例帧耗不高于原方案，产出可复用模板","basis":"未开始"},
+        {"t":"B5 运行时 PCG 试点","w":10,"s":[0,0,0,0],"goal":"1 张野外图用 PCG 摆放植被 / 碎物，改参数即可重排，人工摆放工时 −50%，帧耗增加 ≤ 2 ms","basis":"未开始"},
+        {"t":"B6 Lumen 试点","w":6,"s":[1,0.5,0.4,0],"goal":"选 1 张地牢图评估：动态光源有可信的全局光照、目标机型帧耗达标，产出是否全量切 Lumen 的结论","basis":"PC 已全局开启 Lumen 全局光照与反射（DefaultEngine.ini）；安卓 SM5 可开（KB-0175）；画质与性能结论还没出"},
+        {"t":"移动端画质方案（规划外补充）","w":4,"s":[1,0.5,0.3,0],"goal":"安卓按机型档位确定渲染路线与画质，真机光照不暗、帧率达标","basis":"调研 3 份待决定（KB-0176 / 0178 / 0180）；已统一走 PC 光照链路，距离场、天光、雾等安全项已开（KB-0177 / 0179）"}
+      ]},
+      {"title":"界面与资产效果还原","hint":"可以运行之后的下一阶段：界面蓝图对齐 MainLine 原件、还原 UE4 效果，以及资产的效果遗留；整体画面提升见工作线 B","weight":25, "subs": [
+        {"t":"对齐 MainLine 原件（分支不配套 / 旧版本）","w":3,"p":8,"now":"与 MainLine 不一致的 51 个：已对齐 4 个","goal":"51 个逐个给结论并处理：能用原件的换回 MainLine 原件（连同配套 Lua 一起对齐）；原件缺依赖或必须保留的写明原因；处理后离线控件树与原件一致，无渲染编辑器编译通过","basis":"11-06 对照扫描：2,290 个界面蓝图里 2,239 个与 MainLine 一致；不一致的 51 个按界面分：交易行 24（基本是美术测试分支的设计，Lua 也来自该分支，需要整套对齐）、通用组件 7、战斗界面 4、调试 / GM 3、其它 13；其中 3 个在 MainLine 缺依赖、不能直接换（KB-0188 / 0213）"},
+        {"t":"默认空控件重建（KB-0074）","w":2,"s":[1,1,0.4,0],"now":"命中 5 个：3 个已换回 MainLine 原件（待重扫确认），2 个待在编辑器里重建","goal":"默认控件扫描命中 0：底部血条 HpBarPlayerBot 的血 / 蓝 / 护盾缓冲层、通用标题栏 ComTitleV3 的货币栏按 UE4 原件属性在编辑器里重建；PIE 里 DoT 缓冲层是暗色残影，商城等页面的货币图标正确","basis":"这几个 WBP 在 UE5 加载时控件被换成默认空控件，换回原件再加载同样会丢，只能在编辑器里（PIE 停止时）重建；离线布局对比确认血条其余 44 个控件与 UE4 一致；美术反馈「商城右上角图标换样式」就是 ComTitleV3 的货币栏"},
+        {"t":"画刷与资源引用（白块 / 白底 / 错图）","w":2,"s":[1,1,0.4,0],"now":"UE5 版本落后的界面资产 42 个（28 个与对齐原件那一项重叠）","goal":"全部界面蓝图的画刷、贴图、材质引用都指向正确的资源：空画刷 0、引用缺失 0、不停在旧版本；页面上没有白色方块、整块白底和错图标","basis":"已修：4 个 WBP 删掉工具补的 41 个默认控件、追忆打造 6 个画刷、契灵页面背景（KB-0042 / 0185）；全量引用扫描（wbp_refs、ui_stale_scan）要在对齐原件后重跑；S16 棋盘等 14 个旧版本资产不在对齐清单里，单独处理"},
+        {"t":"按钮与透明（灰块 / 白框）","w":2,"s":[0.6,0.5,0.4,0],"now":"零 Alpha 按钮分布在 23 个界面（交易行、侵蚀、词缀、聊天、记忆解密等）","goal":"全透明和半透明按钮与 UE4 一致，不再画成灰块或白框；画面设置下拉框、交易行、打造词缀、侵蚀等页面实机复核通过","basis":["UE5 缺 XD 引擎的按钮「背景乘透明度」修复，UIButton 与原生 Button 已做工程侧补偿（KB-0217）；",{"t":"UE5反馈","u":"https://xd.feishu.cn/wiki/BnMkwwuomiCUnWkKrxVcvsL2n8J"}," 里仍有「很多按钮出现了白框」（打造词缀页的添加词缀、保存方案），先确认测试包是否已含补偿，仍出现的另查（疑似 UE5 默认按钮样式与 UE4 不同）"]},
+        {"t":"布局还原（缩放 / 滚动 / 平铺 / 黑边）","w":2,"s":[1,0.6,0.5,0.1],"now":"离线布局对比已核 4 个界面（HpBarPlayerBot、CtrlPad、FastEntranceView、Fight）","goal":"主要界面与 UE4 布局一致：离线布局对比（插槽、锚点、对齐、内边距、尺寸、字号）全量跑完，差异逐条有结论；侵蚀页右侧黑边、切场景时的遮罩闪白修好","basis":"已修：UI DPI 规则（KB-0071）、滚动框拖动与对齐（KB-0156 / 0187）、分段进度条（KB-0075）；切场景闪白目前关掉遮罩规避（会有少量穿帮）；平铺对齐、屏幕空间控件缩放需要改引擎，归引擎能力移植线 A6 / A7"},
+        {"t":"界面里的 3D 场景与视频（亮度 / 曝光）","w":2,"s":[1,0.5,0.5,0.2],"now":"已修 4 项，待修 1 项","goal":"带 3D 展示场景的界面（时装、商城、选角 / 创角、契灵等）亮度与 UE4 一致，不过曝、不发白、不发黑；界面视频与界面特效正常","basis":["已修：时装技能特效视频白屏（KB-0186）、时装武器全黑（KB-0091）、伤害数字（KB-0181）、契灵页面背景；待修：「时装商店背景变白」（优先级 5，见 ",{"t":"UE5反馈","u":"https://xd.feishu.cn/wiki/BnMkwwuomiCUnWkKrxVcvsL2n8J"},"）"]},
+        {"t":"逐页效果走查（PC / 安卓）","w":2,"s":[1,1,0.5,0.2],"now":"PC 已走查 22 个页面；界面问题 12 条：已修 5、临时规避 1、待修 6","goal":"主要界面（不少于 22 页）在 PC 与安卓逐页对照 UE4 截图，无白块、错位、错图、灰块；测试反馈里的界面效果问题全部关闭","basis":["问题来自 ",{"t":"火炬PC包UE5升级测试","u":"https://my.feishu.cn/wiki/YX17wZyI2i2djgkzYqycUMmBnIh"},"（11-02 起）和 ",{"t":"UE5反馈","u":"https://xd.feishu.cn/wiki/BnMkwwuomiCUnWkKrxVcvsL2n8J"},"（11-09）；待修：异界关卡图标黑底、侵蚀页黑边、时装商店背景变白、商城货币图标、交易行搜索列表多出的白色竖条、按钮白框；安卓还没逐页走查"]},
+        {"t":"贴图效果（安卓发暗 / 图标黑底）","w":1,"s":[1,1,0.8,0],"goal":"安卓包实测贴图不发暗；异界关卡图标等带透明的贴图不出现黑底","basis":"规则层面已全部处理（KB-0212：透明 887 张、编码 69,777 张）；安卓包还没实测；「异界关卡图标黑色方块」出自 11-02 的 PC 包测试，要在新包复测"},
+        {"t":"特效（幻影特效）","w":1,"s":[0.5,0,0,0],"goal":"「幻影特效有问题」查明原因并修好，表现与 UE4 一致","basis":["11-09 美术反馈（优先级 5，见 ",{"t":"UE5反馈","u":"https://xd.feishu.cn/wiki/BnMkwwuomiCUnWkKrxVcvsL2n8J"},"），原因待查"]},
+        {"t":"材质（182 个 Unlit 去留）","w":1,"s":[1,0.5,0,0],"goal":"导入期按 Unlit 迁的 182 个材质定下改不改 DefaultLit 并执行，观感与 UE4 一致","basis":"KB-0057；人物过亮 / 过黑、怪物偏黑等整体观感由工作线 B1 处理"},
+        {"t":"地图（World Settings 余项 / 选角场景）","w":1,"s":[1,1,0.5,0],"goal":"World Settings 余下 3 张写回并回读一致；选角场景显示与 MainLine 新版一致","basis":"KB-0073：91 张里 88 张已写回；选角场景 11-02 被本地保存过，已按 MainLine 新版处理，待 PIE 确认（KB-0192）"},
+        {"t":"需要改引擎的界面问题","info":true,"goal":"—","basis":"按钮悬停丢点击（A4）、快速点击命中时机（A5）、屏幕空间控件跟随缩放（A6）、平铺列表对齐（A7）都要改引擎，在引擎能力移植线跟进，这里只做索引"}
+      ]}
+    ]},
+    {"id":"t3","name":"引擎能力移植","kind":"并行线 2","weight":15,"desc":"把 XD 定制引擎里项目还需要的能力补到 UE5。UE5 引擎目前是官方版、零改动，改引擎要先授权。", "nodes": [
+      {"title":"引擎能力移植（工作线 A）","hint":"子项按文档 4 规划人日加权；目前都停在「已定位、写好改法」","weight":1, "subs": [
+        {"t":"A3 镜头动画（CameraAnim → UE5）","w":12,"s":[1,0,0,0],"now":"6 个 CA_* 资产可播 0 / 6","goal":"6 个 CA_* 资产全部可播，与 UE4 录屏机位偏差 ≤ 1°，包内无 SkipPackage 报错","basis":"UE5 已删除旧镜头动画，已定位（KB-0161）；改用 CameraAnimationSequence 的方案在规划里，未实施"},
+        {"t":"A4 按钮悬停丢点击","w":1.5,"s":[1,0,0,0],"goal":"自动化点击回归 1,000 次 0 丢失，不影响触摸端","basis":"已定位并写好改法（KB-0023），等授权改引擎"},
+        {"t":"A5 快速点击命中时机","w":4,"s":[1,0,0,0],"goal":"弹出后立刻点击 100 次全部命中，不再点穿到游戏视口，帧耗增加 ≤ 0.3 ms","basis":"已定位并写好改法（KB-0022），等授权改引擎"},
+        {"t":"A6 屏幕空间 UI 跟随缩放","w":4,"s":[1,0,0,0],"goal":"调 UI 缩放后头顶血条 / 交互提示同步缩放，点击偏差 ≤ 2 px，4 档全部通过","basis":"已定位并写好改法（KB-0021），等授权改引擎"},
+        {"t":"A7 列表平铺对齐","w":2.5,"s":[1,0,0,0],"goal":"4 个商城界面首尾格子贴边、与 UE4 截图一致，2 条枚举警告消除","basis":"已定位并写好改法（KB-0094），等授权改引擎"},
+        {"t":"A8 SceneCapture 共享深度 RT","w":5,"s":[1,0,0,0],"goal":"上游新版角色光照蓝图不再回退，蓝图 0 编译错误，角色投影 / 边缘光观感一致","basis":"已定位（KB-0064）；相关蓝图暂时保留 UE5 旧版"},
+        {"t":"A10 其它 XD 专有扩展","w":6,"s":[1,0,0,0],"goal":"网格 LOD 流送、动画 Ubulk、cook 黑白名单等相关 ini 项有实际读取方，Ubulk 动画包可加载，无新增警告","basis":"已记录宏与改法建议（KB-0054）"},
+        {"t":"A11 版本号 / 枚举冲突收敛","w":2,"s":[1,0,0,0],"goal":"原版资产版本号不再误判，夹紧工具 0 误伤，老资产加载 0 报错","basis":"已定位（KB-0062）；目前靠不迁 XD 光照数据规避，不触发"},
+        {"t":"A12 粒子 PSO 预缓存 ensure","w":1,"s":[1,0,0,0],"goal":"包内运行不再产生 ensure，Saved/Crashes 不再生成 UECC 目录","basis":"已定位（KB-0159）；开发包每次运行仍有 1 条"},
+        {"t":"XD 定制开关逐项评估（规划外补充）","w":4,"p":5.4,"now":"已评估 26 / 480 个","goal":"UE4 XD 引擎里在用的 480 个定制开关，逐个给出结论：移植 / 工程侧替代 / 不移植","basis":"11-10 盘点：工程侧已替代 10 个、需改引擎 11 个、不移植 5 个，其余 454 个还没评估"},
+        {"t":"A9 打包分块优先级","info":true,"goal":"Shipping 包体积下降 ≥ 15%，分包资源不重复，游戏内下载不受影响","basis":"已由研效开发线的 C1 工程侧开关替代，包体从 75.7 GB 降到约 33 GB，不再需要改引擎；下载链路复核后移出"},
+        {"t":"A1 定制着色模型、A2 描边平滑法线","info":true,"goal":"—","basis":"项目已放弃定制卡通渲染（NPR），两项移出范围（文档 4）"}
+      ]}
+    ]},
+    {"id":"t4","name":"研效开发（流程与交付）","kind":"并行线 3","weight":20,"desc":"让它能稳定地出包、发布、更新，并把研发效率提上来：打包、安卓 / iOS、交付质量、工程效能、关卡组织、DevOps、热更新、工具链。", "nodes": [
+      {"title":"自动化打包与发布","weight":20, "subs": [
+        {"t":"PC 一键出包","w":3,"s":[1,1,1,0.5],"goal":"出包界面一键出 Development / Shipping，失败能定位原因，出包用时有基线","basis":"出包界面 + Bin 版引擎已多次实际出包（最近 11-06 开发包）；Shipping 包 10-29 之后没有再出"},
+        {"t":"安卓一键出包","w":3,"s":[1,1,0.9,0.25],"goal":"一键出 APK（工程签名），装机可运行","basis":"11-02 起多次出包（最近 11-06，约 19 GB）；签名已改用工程 KeyStore（KB-0170）"},
+        {"t":"iOS 一键出包","w":1,"s":[0,0,0,0],"goal":"出包工具支持 iOS，出可安装的签名包","basis":"出包工具里 iOS 只预留了平台位"},
+        {"t":"出包报错清理与烘焙报告","w":2,"s":[1,1,1,0.25],"goal":"烘焙 Error 按影响分类，会影响游戏的为 0","basis":"10-29 出包报错全修（KB-0141 等）；烘焙报告按影响分类（KB-0142）；之后的批次没有再全量复核"},
+        {"t":"C1 包体去重","w":2,"p":85,"now":"约 33 GB / 目标 ≤ 60 GB（PC 开发包实测）","goal":"Shipping 包 ≤ 60 GB，重复率 ≤ 5%，游戏内下载不报错","basis":"单分块开关已生效：PC 包从 75.7 GB 降到约 33 GB（11-06 开发包）；Shipping 包与下载链路还没复核"},
+        {"t":"C2 压缩配置修复","w":1,"s":[1,1,0,0],"goal":"Shipping 实际压缩等级 = 配置值，包体再降 ≥ 3%","basis":"抽样实测：等级 5 + 256 KB 块可再降 4.9%（KB-0144）；新键名待决定后写入"},
+        {"t":"无人值守 / 定时出包","w":1,"s":[1,0.5,0.1,0],"goal":"定时或提交触发自动出包，并通知结果","basis":"出包脚本可命令行运行、出包计划能串多平台（KB-0167）；未接调度"}
+      ]},
+      {"title":"安卓移植","hint":"移动端画质见画面提升线","weight":15, "subs": [
+        {"t":"真机启动与登录","s":[1,1,0.9,0.25],"goal":"主流机型安装后能启动、登录、进游戏","basis":"11-03 真机首测的闪退、TapSDK 签名报错已修（KB-0168~0170），可登录进游戏"},
+        {"t":"功能补齐（音效 / 特效 / 配置）","s":[1,1,1,0],"goal":"与 PC 同等功能，真机复测通过","basis":"11-03 补回表现对象上限、Wwise 插件与安卓初始化参数（KB-0171~0173），待真机复测"},
+        {"t":"真机全流程验证","s":[1,0.5,0.2,0],"goal":"战斗、主要界面、主要系统在真机上全部走通","basis":"只做过首测与复查（如天赋滑动待真机复现）"},
+        {"t":"性能与发热","s":[0.5,0,0,0],"goal":"目标机型的帧率、内存、发热达标","basis":"还没系统测试"},
+        {"t":"资产包 / 分包下载","s":[1,0.5,0,0],"goal":"Google Play 资产包 / 分包能下载、挂载、生效","basis":"挂载接口是 XD 引擎扩展，需要改引擎（KB-0164）；当前出整包"}
+      ]},
+      {"title":"iOS 移植","weight":8, "subs": [
+        {"t":"构建环境与签名","s":[0,0,0,0],"goal":"Mac 构建机、证书与描述文件就绪，能编出 iOS 包","basis":"未开始"},
+        {"t":"平台适配","s":[0.5,0,0,0],"goal":"iOS 平台代码、SDK、XD 引擎 iOS 扩展都有结论并完成适配","basis":"早期评估里 iOS 专用的引擎宏定为不迁（KB-0026），其余未评估"},
+        {"t":"真机验证","s":[0,0,0,0],"goal":"真机安装、登录、进游戏","basis":"未开始"}
+      ]},
+      {"title":"交付质量","hint":"发布版本身能不能用","weight":12, "subs": [
+        {"t":"Shipping 包启动与退出","s":[1,0.5,0,0],"goal":"Shipping 包启动、游玩、正常退出全程无异常","basis":"约 30 秒自动退出（Steam 登录门禁，KB-0138）、正常退出会崩（KB-0139），都已定位、未修"},
+        {"t":"性能基线（PC）","s":[0.3,0,0,0],"goal":"目标配置下帧率、内存、加载时间有基线并达标","basis":"还没做系统性能测试；只有编辑器首次进图冷加载 76–150 秒的统计（KB-0219）"},
+        {"t":"全流程回归","s":[1,1,0.3,0],"goal":"文档 4 V1.0 验收：进图 / 战斗 / UI 全流程断言 0 次","basis":"每批 PIE 冒烟断言 / Lua 报错 0；界面走查工具能覆盖主界面 23 个功能；正式回归还没做"},
+        {"t":"包内日志报错清零","s":[1,0.5,0.3,0],"goal":"包内运行日志没有 Error / ensure，已知噪声逐条确认","basis":"开发包日志分诊后只剩 1 条 ensure（引擎线 A12）与已知噪声（KB-0160）"},
+        {"t":"非主循环的功能遗留","s":[1,0.5,0,0],"goal":"不影响主循环的功能问题逐条修好或给出结论","basis":"Dev 包「没有内部账号登录」待同事确认（KB-0162）、停用的 AnimatedTexture / XDAudioTools 插件是否启用；记忆解密（KB-0087）与凸包地面导航（KB-0100）已移到 Gameplay 验证"}
+      ]},
+      {"title":"工程效能（工作线 C）","weight":12, "subs": [
+        {"t":"P4 流与工作区","w":1,"s":[1,1,1,0.5],"goal":"引擎、工程、Bin 版引擎都在 P4 流里，按流程定期入库","basis":"//Torchlight/MainLineEngineUE5 已入库；10-29 之后的改动尚未提交"},
+        {"t":"Bin 版引擎分发","w":1,"s":[1,1,1,0.5],"goal":"美术 / 策划用 Bin 版引擎打开工程、出包，不用自己编译","basis":"生成工具带进度与编译警告报告（KB-0204~0206）；11-06 已重新生成"},
+        {"t":"C3 共享 DDC","w":2,"s":[0,0,0,0],"goal":"新人 / 换机首次进编辑器加载时间 −50%，缓存命中率 ≥ 80%","basis":"未开始；目前每台机器各自用本地缓存"},
+        {"t":"C4 着色器分布式编译","w":3,"s":[1,0,0,0],"goal":"着色器编译提速 ≥ 5 倍，失败率归零","basis":"本机 XGE 分发每批失败，已关掉、回退单机编译（KB-0104）"},
+        {"t":"C5 IoStore 切换评估","w":3,"s":[1,0,0,0],"goal":"产出切 / 不切的结论与代价清单；若切，加载与热更链路验证通过","basis":"现状已查明：工程仍关着 IoStore（KB-0145）"},
+        {"t":"C6 门禁接入 CI","w":3,"s":[1,0.5,0,0],"goal":"提交前自动跑 Lua 门禁、编译、资产体检，坏提交进不来，单次 ≤ 15 分钟","basis":"门禁脚本都已有，未接入 CI"},
+        {"t":"UGS 同步 / Horde 构建","w":2,"s":[0,0,0,0],"goal":"团队用 UGS 同步工程与预编译二进制，Horde 承担构建与分布式任务","basis":"未开始（文档 2 列为工程效能缺口）"},
+        {"t":"编译警告清理","w":1,"s":[1,0,0,0],"now":"已处理 0 / 271 条","goal":"271 条 API 过期 / 高风险警告全部修掉，或逐条确认可以忽略","basis":"生成 Bin 版引擎时会自动出警告报告（KB-0205）；修复还没开始。不影响运行，从「可以运行」移到这里"},
+        {"t":"MainLine 拉新流程加固","w":1,"s":[1,0.5,0,0],"goal":"追平工具不漏判；函数级回填审计做完；工作区里已打开、未覆盖上游的文件处理完","basis":"追平工具漏判修正（KB-0072）、函数级回填审计（KB-0085：58 个文件，可直接替换 43、需人工合并 14）、两个已打开的材质未覆盖上游新版（KB-0019）"},
+        {"t":"上游已删资产清理","w":1,"s":[1,0.5,0,0],"now":"只记账未删：10-15 批 162 个、10-27 批 1,644 个、11-06 批 591 个","goal":"上游已删、UE5 仍留着的资产逐个查引用：无引用的删除，有引用的随引用方一起处理","basis":"流水线对资产类删除只记账（KB-0033 / 0227）；代码文件与第三方库已按引用审计删除"}
+      ]},
+      {"title":"UE5 工程管理：关卡组织与加载卸载","hint":"Level Instance / Data Layer / World Partition；分类待定，暂放研效开发","weight":10, "subs": [
+        {"t":"现状盘点","w":1,"s":[0.6,0,0,0],"goal":"摸清关卡结构、子关卡用途、加载卸载链路，以及迁到新机制的影响面","basis":"11-10 盘点：游戏地图 2,386 张（主关卡及其它 1,033；子关卡按后缀：地形 427、逻辑 364、光照数据 218、特效 180、音效 156）；加载靠动态流送 + 可见性切换 + MultiWorld 子世界；游戏地图 0 张使用 World Partition / Data Layer"},
+        {"t":"Data Layer 评估与试点","w":2,"s":[0,0,0,0],"goal":"选 1 张图，把按平台 / 用途拆的子关卡（光照数据 PC / 移动、音效、特效、逻辑）改用 Data Layer：加载结果与现在一致、进图不变慢，给出是否推广的结论","basis":"未开始"},
+        {"t":"Level Instance 评估与试点","w":2,"s":[0,0,0,0],"goal":"把重复摆放的场景件 / 机关做成 Level Instance 试点：编辑效率提升，运行结果与现状一致","basis":"未开始"},
+        {"t":"World Partition / 一文件一 Actor 评估","w":2,"s":[0,0,0,0],"goal":"评估大地图流送与多人同时编辑（减少 P4 冲突）的收益，给出切换范围与代价","basis":"未开始（文档 4 只把 World Partition 列为 UE5 能力展望）"},
+        {"t":"加载卸载逻辑适配","w":2,"s":[0,0,0,0],"goal":"加载管理、关卡管理、MultiWorld 子世界按新机制加载卸载；导航、光照场景、小地图等依赖子关卡的逻辑都可用，进图耗时不劣化","basis":"未开始"},
+        {"t":"转换与校验工具","w":1,"s":[0,0,0,0],"goal":"批量转换 + 加载体检扩展，转换前后 Actor / 引用逐一一致","basis":"未开始；现有加载体检工具可复用"}
+      ]},
+      {"title":"原有 DevOps 流程接入","weight":10, "subs": [
+        {"t":"配置导出与 Lua 编译加密","s":[1,1,1,0.25],"goal":"出包时自动导出配置二进制、编译加密 Lua，与 UE4 一致","basis":"出包前自动导出配置二进制（KB-0132）、Shipping 只加载编译加密的 Lua（KB-0133），已接进出包工具"},
+        {"t":"版本号与构建信息","s":[1,0.5,0,0],"goal":"二进制版本号、资源版本号与 UE4 规则一致，可用于热更比对","basis":"二进制版本号在 UE5 编出来恒为 0（KB-0134）"},
+        {"t":"P4 入库流程","s":[1,1,0.8,0.25],"goal":"改动按流程定期入库，描述规范、可回溯","basis":"10-27 / 10-29 按流程入过库；之后的改动尚未提交"},
+        {"t":"测试服与账号联调","s":[1,1,0.8,0],"goal":"各分支有对应的测试服，内部账号可用","basis":"MainLine 客户端用周版本测试服，内部账号可登录"},
+        {"t":"自动化测试","s":[1,1,0.5,0],"goal":"加载体检、PIE 冒烟、界面走查、Gauntlet 用例定期自动跑并出报告","basis":"工具都有（加载体检、autopilot 冒烟、界面走查）；Gauntlet 用例出包时编译（KB-0151），未定期跑"},
+        {"t":"日志与崩溃采集","s":[1,0.3,0,0],"goal":"包内日志与崩溃能上报、可检索","basis":"多线程日志插件保持停用（KB-0116）、Windows 阿里云日志停用（KB-0049）；崩溃上报未接"}
+      ]},
+      {"title":"热更新","weight":8, "subs": [
+        {"t":"XDLivePatch 迁移与编译","s":[1,1,0.8,0],"goal":"热更新插件在 UE5 编译通过，功能与 UE4 一致","basis":"随工程编译通过；后台下载部分改回前台 HTTP（KB-0049）"},
+        {"t":"热更新开关与配置","s":[1,0,0,0],"goal":"按环境开启热更新，配置项都能被正确读取","basis":"当前关闭（Enabled=False）；配置文件有 3 处单独回车（MainLine 原件相同），开启前要核对"},
+        {"t":"后台下载","s":[1,0.5,0,0],"goal":"切到后台时继续下载（UE4 用 UEBackgroundDownload）","basis":"UE5 里退回前台 HTTP 下载"},
+        {"t":"补丁产出","s":[0.5,0,0,0],"goal":"能按版本出差异补丁（分块 / 差异包），客户端能识别版本","basis":"依赖版本号修复（KB-0134）与分块 / IoStore 方案（C1 / C5）"},
+        {"t":"端到端验证","s":[0,0,0,0],"goal":"出补丁 → 客户端下载 → 重启生效，全链路跑通","basis":"未开始"}
+      ]},
+      {"title":"工具链与 AI（工作线 D）","weight":5, "subs": [
+        {"t":"D1 MCP 能力补齐","w":6,"s":[1,0.5,0.3,0],"goal":"常用编辑器操作沉淀为标准工具，AI 能完成「定位 → 修复 → 验证」闭环，覆盖 ≥ 20 个高频操作","basis":"已有远程执行、PIE 自动化、界面跳转 / 走查等脚本，还没沉淀成标准工具"},
+        {"t":"D2 工具化衍生项","w":8,"s":[1,0.5,0.4,0],"goal":"冲突预裁决、资产三分类、UI 走查判读、日志归因、包体对比做成可复用工具，拉新人工裁决量 −40%","basis":"部分已有（出包报错分类、210 诊断、界面走查与控件扫描）；冲突预裁决等未做"},
+        {"t":"D3 知识库与规范沉淀","w":4,"s":[1,1,1,0.5],"goal":"迁移经验固化为可检索的知识库 + 检查清单，同类问题不重复发生","basis":"228 条，其中 21 条汇总；同类问题按批次记录历次（11-09 整理）"}
+      ]}
+    ]},
+    {"id":"t5","name":"Gameplay 验证","kind":"并行线 4","weight":15,"desc":"可以运行之后，确认玩法逻辑与战斗服一致、与 UE4 / 线上一致：服务器联调与战斗校验、伤害与掉落、技能 / AI / 关卡逻辑，以及各玩法系统逐项回归。测试与 QA 为主，策划给用例。", "nodes": [
+      {"title":"服务器联调与战斗校验","hint":"战斗逻辑在客户端与战斗服各跑一份，靠帧哈希校验；客户端逻辑层必须和测试服同分支（KB-0226）","weight":30, "subs": [
+        {"t":"战斗校验（帧哈希一致）","w":3,"s":[1,1,1,0.2],"now":"11-06 起逻辑层改跟 MainLine，还没在周版本测试服上系统验证","goal":"所有英雄在主要地图实打（含长时间、多技能、首领战），服务器校验失败 0 次；PC 与安卓都验证","basis":"帧哈希要求客户端与战斗服的共享逻辑和逻辑数据完全一致（KB-0226）：10-19 实机约 1 万帧 0 失败，10-28 对齐 ReviewUGS 时 8 段 53,838 帧逐帧 0 差异；11-06 起改跟 MainLine，要连跑 MainLine 的周版本测试服重新验证（国服测试服 S16 协议不兼容属预期，KB-0196）；安卓实机还没验证过；排查用 FightCommand 离线重放逐帧比哈希"},
+        {"t":"断线重连 / 跨图 / 长时间在线","w":1,"s":[1,0.5,0.2,0],"goal":"断线重连、跨图传送、长时间挂机后再操作都正常：不掉线、不卡死、不崩溃","basis":"重新登录崩溃已修（KB-0183）；编辑器里 PIE 停滞导致的断线属编辑器环境（KB-0077 / 0119）；包内长时间在线、断线重连还没专项测"},
+        {"t":"多人与社交交互","w":1,"s":[0.5,0,0,0],"goal":"组队、交易行买卖、聊天、好友等多人交互在测试服上走通，状态同步正确","basis":"还没专项测；界面层面交易行条件显示已修（KB-0182）"}
+      ]},
+      {"title":"伤害、数值与掉落","hint":"伤害在共享战斗逻辑里算、受服务器校验约束；掉落由服务端决定，客户端负责显示与拾取","weight":25, "subs": [
+        {"t":"伤害计算与显示","w":2,"s":[1,1,0.8,0.2],"goal":"伤害由战斗逻辑算出、与服务器一致（校验 0 失败）；伤害数字、暴击、护盾、持续伤害等显示正确","basis":"伤害数字不显示已修（KB-0181）；伤害计算受帧哈希校验约束，正确性随「战斗校验」一起验收；日志里的 GetSkillDmg(1)==null 已核实是技能配置越界，与战斗服数据相同（KB-0080）"},
+        {"t":"属性、词缀与 Buff","w":1,"s":[0.5,0.5,0.2,0],"goal":"角色属性面板、装备词缀、Buff 与天赋效果和 UE4 一致","basis":"S16 佣兵初始技能词缀逻辑已补（KB-0005）；结构体序列化重构删掉的旧源文件已按引用审计处理（KB-0113）；还没有逐项对照"},
+        {"t":"掉落与拾取","w":2,"s":[1,1,1,0.5],"now":"10-29 实测：服务端推送 32 件，客户端全部显示","goal":"服务端推送的掉落客户端全部显示、能拾取，掉落过滤与拾取范围和 UE4 一致","basis":"掉落由服务端决定，客户端只负责显示（KB-0155）：推送 48 条 / 32 件，客户端添加 32 次、校验失败 0；掉落 GM 模拟函数上游已删（KB-0052）"},
+        {"t":"经济系统（商城 / 交易行 / 打造 / 仓库）","w":1,"s":[0.5,0.3,0.2,0],"goal":"商城购买、交易行上架与购买、打造、仓库存取在测试服走通，数据与服务器一致","basis":"界面已逐页检查（22 页）；交易行条件看不见已修（KB-0182）；实际买卖流程还没专项测"}
+      ]},
+      {"title":"技能、AI 与关卡逻辑","hint":"用实打和日志验证：技能、怪物 AI、关卡流程与过场","weight":25, "subs": [
+        {"t":"技能释放与表现","w":1,"s":[1,1,0.8,0.3],"goal":"各英雄的技能能释放、命中、出伤害，特效与音效跟随","basis":"技能音效被吞已修（KB-0082）、安卓表现对象上限已补（KB-0172）；PC 包测试 15 个账号覆盖主要英雄与流派"},
+        {"t":"怪物 AI 与寻路","w":1,"s":[1,0.7,0.5,0.2],"goal":"怪物与 NPC 的寻路、追击、技能 AI 与 UE4 一致，凸包做的地面也能走","basis":"需寻路的 167 张图已在 UE5 重建导航（KB-0211）；凸包地面建不出导航（KB-0100，1,625 个网格包，推荐二进制原位补丁，修法待定）；主城 AStar 报错离线重放与战斗服一致（KB-0080）"},
+        {"t":"关卡流程、机关与过场","w":1,"s":[1,1,0.7,0.3],"goal":"关卡进出、机关、采集、传送门、剧情序列和首领战流程都正常","basis":["PC 包测试 71 张关卡都能进、能打（见 ",{"t":"火炬PC包UE5升级测试","u":"https://my.feishu.cn/wiki/YX17wZyI2i2djgkzYqycUMmBnIh"},"）；采集打断报错（KB-0207）、传送后快捷键失效（KB-0102）、剧情序列不隐藏战斗 UI（KB-0069）已修；回城传送门约 1 分钟才出现已规避（KB-0184）；镜头动画 CameraAnim 归引擎能力移植线 A3（KB-0161）"]}
+      ]},
+      {"title":"玩法系统回归","hint":"逐个系统按策划用例回归；PC 包已做过一轮页面检查","weight":20, "subs": [
+        {"t":"主要玩法系统逐项回归","w":2,"s":[1,0.5,0.2,0],"now":"22 个页面已做界面检查，逻辑逐项回归还没开始","goal":"主要玩法系统（天赋、英雄特性、契约 / 契灵、侵蚀、异界、打造、装备赋能、神格石板、塔罗斯监狱、成就、好友等）逐项按用例回归，结果与线上一致","basis":["PC 包已逐页检查 22 个页面（见 ",{"t":"火炬PC包UE5升级测试","u":"https://my.feishu.cn/wiki/YX17wZyI2i2djgkzYqycUMmBnIh"},"）；已知问题：记忆解密页按钮点不动（KB-0087）；需要策划 / QA 给出各系统用例"]},
+        {"t":"赛季与新内容（S16 / S17）","w":1,"s":[0.5,0,0,0],"goal":"当前赛季与 MainLine 开发中的新内容在 UE5 上可玩，每批拉新后跟着验证","basis":"S16 佣兵词缀逻辑已补（KB-0005）、赛季宏 15 → 16（KB-0027）；S17 新英雄男刺客上游数据还没配完（KB-0198）"}
+      ]}
+    ]}
+  ],
+  "foot": [
+    "<h3>怎么读<\/h3>",
+    "<ul>",
+    "  <li>每个子项写明 <b>100% 目标<\/b>（做到什么算完成）和 <b>进度依据<\/b>（现在的数字从哪来）。目标优先采用 <a href=\"04-UE5升级规划.html\">文档 4<\/a> 的验收指标，文档 4 没覆盖的项目按同样写法补上。<\/li>",
+    "  <li>能量化的子项给「当前值 / 目标值」；不好量化的用 <b>阶段条<\/b>：调研定位 → 方案确定 → 实施 → 验收，四段分别折算 10% / 15% / 55% / 20%，某段做了一部分就按比例算。<\/li>",
+    "  <li>标「不计入」的子项只做说明（已被别的方案替代或已移出范围），不参与计算。<\/li>",
+    "<\/ul>",
+    "<h3>怎么算<\/h3>",
+    "<p>节点 = 子项加权平均（画面提升、引擎能力移植两条线按文档 4 规划的人日加权，其余按重要度加权）；环节 = 节点加权平均；",
+    "  <b>总进度 = 可以运行 30% + 画面提升 20% + 引擎能力移植 15% + 研效开发 20% + Gameplay 验证 15%<\/b>。权重写在页面数据里，可以按需要调整。<\/p>",
+    "<h3>依据来源<\/h3>",
+    "<p>迁移知识库各条目的状态（2026-11-10，共 228 条）；文档 4 的工作线 A–D 与验收指标；UE4 XD 引擎定制开关盘点（1,030 个引擎文件里在用的 480 个 XD 宏）；",
+    "  关卡与加载方式盘点（2,386 张游戏地图）；最近的 PC / 安卓出包结果（11-06）。资产按类型与界面相关的内容另据 11-11 的知识库（229 条）、界面蓝图对照与默认控件扫描（2,290 个界面蓝图）、11-06 批次报告，以及测试反馈<a href=\"https://my.feishu.cn/wiki/YX17wZyI2i2djgkzYqycUMmBnIh\" target=\"_blank\" rel=\"noopener\">火炬PC包UE5升级测试<\/a>、<a href=\"https://xd.feishu.cn/wiki/BnMkwwuomiCUnWkKrxVcvsL2n8J\" target=\"_blank\" rel=\"noopener\">UE5反馈<\/a>。数字是估算，用来看整体位置，不是精确统计。<\/p>",
+    "<h3>本版调整<\/h3>",
+    "<p>改为「可以运行」+ 三条并行线；安卓、iOS 并入研效开发；新增「UE5 工程管理：关卡组织与加载卸载」节点（Level Instance / Data Layer / World Partition，分类待定，暂放研效开发）；",
+    "  每个子项补上目标与依据。<\/p>",
+    "<p>11-11：按「可以运行 = 游戏能正常运行、主循环跑通」重新核定，环节一记为 100%，资产按类型的核对与主循环界面功能并入环节一的「资产迁移与界面功能（按类型）」。界面这一阶段只要求功能正确；效果还原（对齐原件、默认控件、画刷引用、按钮透明、布局、界面 3D 场景、逐页走查）和资产的效果遗留放到画面提升线新节点「界面与资产效果还原」。不影响主循环的其余工作移到研效开发：编译警告清理、拉新流程加固、上游已删资产清理进工程效能，非主循环的功能问题进交付质量，战斗校验的系统测试并入全流程回归。随后新增并行线 4「Gameplay 验证」（服务器联调与战斗校验、伤害与掉落、技能 / AI / 关卡逻辑、玩法系统回归），记忆解密与凸包地面导航从交付质量移入；各条线占总进度调为 可以运行 30 / 画面提升 20 / 引擎能力移植 15 / 研效开发 20 / Gameplay 验证 15。<\/p>",
+    "<p class=\"date\">编制日期 2026-11-10，2026-11-11 更新<\/p>"
+  ]
+}
+</script>
+<script>
+(function () {
+  "use strict";
+  // 渲染前的页面源码：浏览器不支持直接写回、需要「下载新版」时，用它拼出完整 HTML
+  var PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  var DATA_ID = "mvp-data", OPEN = "<" + 'script type="application/json" id="' + DATA_ID + '">', CLOSE = "</" + "script>";
+
+  // 阶段条：调研定位 / 方案确定 / 实施 / 验收 的折算权重
+  var STAGES = [["调研定位", 10], ["方案确定", 15], ["实施", 55], ["验收", 20]];
+  // 数据字段（上方 mvp-data）——环节：id；name 名称；kind 类别；weight 占总进度 %；desc 说明；nodes 节点。
+  // 节点：title 标题；hint 补充说明；weight 在环节内的权重；subs 子项。
+  // 子项：t 标题；w 权重（默认 1）；p 量化进度；s 阶段完成度 [调研, 方案, 实施, 验收]；info 不计入；now 当前值；goal 100% 目标；basis 进度依据
+  var KEYS = { hero: ["eyebrow", "title", "sub"], track: ["id", "name", "kind", "weight", "desc"], node: ["title", "hint", "weight"],
+               sub: ["t", "w", "p", "s", "info", "now", "goal", "basis"] };
+
+  function $(id) { return document.getElementById(id); }
+  function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+  var root = document.documentElement, wrapEl = document.querySelector(".wrap"), tracksEl = $("tracks"), navEl = $("nav"), flowEl = $("flow"),
+      footEl = $("foot"), tipEl = $("tip"), draftEl = $("draft"), estat = $("estat"), ehint = $("ehint"),
+      editBtn = $("editBtn"), saveBtn = $("saveBtn"), saveAsBtn = $("saveAsBtn"), discardBtn = $("discardBtn");
+  var HERO = [["eyebrow", $("hEyebrow"), "顶部小字"], ["title", $("hTitle"), "页面标题"], ["sub", $("hSub"), "副标题"]];
+
+  var FILE_NAME = (function () { try { return decodeURIComponent(location.pathname.split("/").pop()); } catch (e) { return ""; } })() || "05-MVP移植进度.html";
+  var DIR_PATH = (function () {
+    if (location.protocol !== "file:") return "";
+    var p;
+    try { p = decodeURIComponent(location.pathname).replace(/\/[^\/]*$/, ""); } catch (e) { return ""; }
+    if (location.host) return ("//" + location.host + p).replace(/\//g, "\\");
+    return /^\/[A-Za-z]:/.test(p) ? p.slice(1).replace(/\//g, "\\") : p;
+  })();
+  var PAGE_KEY = location.protocol + "//" + location.host + location.pathname, DRAFT_KEY = "mvp-progress-draft:" + PAGE_KEY;
+  var FS = typeof window.showDirectoryPicker === "function", FS_SAVE = typeof window.showSaveFilePicker === "function", RW = { mode: "readwrite" };
+  var CE = (function () {
+    try { var d = document.createElement("div"); d.contentEditable = "plaintext-only"; return d.contentEditable === "plaintext-only" ? "plaintext-only" : "true"; }
+    catch (e) { return "true"; }
+  })();
+
+  // ---------- 数据：整理与序列化 ----------
+  // 超链接：「目标 / 依据 / 当前 / 环节说明」可以是纯文字，也可以是 ["文字", {"t": 显示文字, "u": 链接地址}, "文字"] 这样的片段
+  function safeUrl(u) {
+    u = String(u == null ? "" : u).trim();
+    return !u || /^(javascript|vbscript|data):/i.test(u.replace(/[\u0000-\u0020\u007f]+/g, "")) ? "" : u;
+  }
+  function normUrl(u) {
+    u = String(u == null ? "" : u).trim();
+    if (/^[a-z]:[\\/]/i.test(u)) return "file:///" + u.replace(/\\/g, "/");   // F:\Docs\x.html → file:///F:/Docs/x.html
+    if (/^\\\\[^\\]/.test(u)) return "file:" + u.replace(/\\/g, "/");         // \\server\share → file://server/share
+    if (/^www\./i.test(u)) return "https://" + u;
+    return u;
+  }
+  function tidyRich(v, trim) {
+    if (!Array.isArray(v)) { v = v == null ? "" : String(v); return trim ? v.trim() : v; }
+    var out = [], l;
+    v.forEach(function (x) {
+      if (x == null) return;
+      if (typeof x === "object") {
+        var u = String(x.u == null ? "" : x.u).trim(), t = String(x.t == null ? "" : x.t);
+        if (u && t.trim()) { out.push({ t: t, u: u }); return; }
+        x = t;
+      }
+      x = String(x);
+      if (!x) return;
+      if (typeof out[out.length - 1] === "string") out[out.length - 1] += x; else out.push(x);
+    });
+    if (trim && out.length) {
+      if (typeof out[0] === "string") { out[0] = out[0].replace(/^\s+/, ""); if (!out[0]) out.shift(); }
+      l = out.length - 1;
+      if (l >= 0 && typeof out[l] === "string") { out[l] = out[l].replace(/\s+$/, ""); if (!out[l]) out.pop(); }
+    }
+    if (!out.length) return "";
+    return out.length === 1 && typeof out[0] === "string" ? out[0] : out;
+  }
+  function cleanHtml(html) {
+    var t = document.createElement("template"), c;
+    t.innerHTML = html; c = t.content;
+    each(c.querySelectorAll("[style],[contenteditable],[spellcheck]"), function (e) { e.removeAttribute("style"); e.removeAttribute("contenteditable"); e.removeAttribute("spellcheck"); });
+    each(c.querySelectorAll("font,span:not([class])"), function (e) { var p = e.parentNode; while (e.firstChild) p.insertBefore(e.firstChild, e); p.removeChild(e); });
+    each(c.querySelectorAll("a[href]"), function (a) { if (!safeUrl(a.getAttribute("href"))) a.removeAttribute("href"); });
+    return t.innerHTML;
+  }
+  function normalize(d) {
+    if (!d || typeof d !== "object" || Array.isArray(d)) d = { tracks: Array.isArray(d) ? d : [] };
+    if (!d.hero || typeof d.hero !== "object") d.hero = {};
+    if (!Array.isArray(d.tracks)) d.tracks = [];
+    d.tracks.forEach(function (tr) {
+      if (Array.isArray(tr.desc)) tr.desc = tidyRich(tr.desc, false);
+      if (!Array.isArray(tr.nodes)) tr.nodes = [];
+      tr.nodes.forEach(function (n) {
+        if (n.hint === "") delete n.hint;
+        if (!Array.isArray(n.subs)) n.subs = [];
+        n.subs.forEach(function (s) {
+          ["goal", "basis", "now"].forEach(function (k) { if (Array.isArray(s[k])) s[k] = tidyRich(s[k], false); });
+          if (s.now === "") delete s.now;
+        });
+      });
+    });
+    d.foot = cleanHtml(Array.isArray(d.foot) ? d.foot.join("\n") : String(d.foot == null ? "" : d.foot));
+    return d;
+  }
+  function ordered(o, keys, skip) {
+    var r = {};
+    keys.forEach(function (k) { if (o[k] !== undefined) r[k] = o[k]; });
+    Object.keys(o).forEach(function (k) { if (k.charAt(0) !== "_" && k !== skip && !(k in r) && o[k] !== undefined) r[k] = o[k]; });
+    return r;
+  }
+  function head(o) { var j = JSON.stringify(o); return j === "{}" ? "{" : j.slice(0, -1) + ", "; }
+  // 一个子项一行，方便看差异；结束标签与注释开头的尖括号会被转义，免得数据段被浏览器提前截断
+  function serialize(d) {
+    var L = ["{", '  "hero": ' + JSON.stringify(ordered(d.hero, KEYS.hero)) + ",", '  "tracks": ['];
+    d.tracks.forEach(function (tr, ti) {
+      L.push("    " + head(ordered(tr, KEYS.track, "nodes")) + '"nodes": [');
+      tr.nodes.forEach(function (n, ni) {
+        L.push("      " + head(ordered(n, KEYS.node, "subs")) + '"subs": [');
+        n.subs.forEach(function (s, si) { L.push("        " + JSON.stringify(ordered(s, KEYS.sub)) + (si < n.subs.length - 1 ? "," : "")); });
+        L.push("      ]}" + (ni < tr.nodes.length - 1 ? "," : ""));
+      });
+      L.push("    ]}" + (ti < d.tracks.length - 1 ? "," : ""));
+    });
+    L.push("  ],");
+    Object.keys(d).forEach(function (k) {
+      if (k.charAt(0) !== "_" && k !== "hero" && k !== "tracks" && k !== "foot" && d[k] !== undefined) L.push("  " + JSON.stringify(k) + ": " + JSON.stringify(d[k]) + ",");
+    });
+    var lines = String(d.foot || "").split("\n");
+    L.push('  "foot": [');
+    lines.forEach(function (ln, i) { L.push("    " + JSON.stringify(ln) + (i < lines.length - 1 ? "," : "")); });
+    L.push("  ]", "}");
+    return L.join("\n").replace(/<\//g, "<\\/").replace(/<(?=!--)/g, "\\u003c");
+  }
+  function extract(src) {
+    var a = src.indexOf(OPEN), b;
+    if (a < 0) return null;
+    a += OPEN.length; b = src.indexOf(CLOSE, a);
+    return b < 0 ? null : src.slice(a, b);
+  }
+  function splice(src, json) {
+    var a = src.indexOf(OPEN), b, nl;
+    if (a < 0) return null;
+    a += OPEN.length; b = src.indexOf(CLOSE, a);
+    if (b < 0) return null;
+    nl = src.indexOf("\r\n") >= 0 ? "\r\n" : "\n";
+    return src.slice(0, a) + nl + json.replace(/\n/g, nl) + nl + src.slice(b);
+  }
+  function canon(block) { try { return serialize(normalize(JSON.parse(block))); } catch (e) { return null; } }
+  function fullPage(json) {
+    var out = splice(PRISTINE, json);
+    if (out == null) throw new Error("页面里找不到数据段");
+    return out.replace(/<\/body>\s*<\/html>\s*$/i, "\n</body>\n</html>\n");
+  }
+  function hash(s) { var h = 0x811c9dc5; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16); }
+
+  var D = normalize(JSON.parse($(DATA_ID).textContent)), BASE = serialize(D);
+  var EDIT = false, DIRTY = false, TOTAL = 0, grown = false, dirHandle = null, syncT = 0, PENDING = null;
+  var ST = { busy: false, msg: "", cls: "", dl: false, saved: "", pick: "" };
+
+  // ---------- 计算 ----------
+  function lvl(p) { return p >= 85 ? "done" : p >= 30 ? "doing" : "start"; }
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function stagePct(st) { var a = 0; for (var i = 0; i < STAGES.length; i++) a += (+st[i] || 0) * STAGES[i][1]; return a; }
+  function subPct(s) { return s.s ? stagePct(s.s) : clamp(+s.p || 0, 0, 100); }
+  function subW(s) { return s.info ? 0 : s.w == null ? 1 : Math.max(0, +s.w || 0); }
+  function avg(items, wf, pf) {
+    var sw = 0, sp = 0;
+    items.forEach(function (x) { var w = wf(x); if (!w) return; sw += w; sp += w * pf(x); });
+    return sw ? sp / sw : 0;
+  }
+  function compute() {
+    var sw = 0, sp = 0;
+    D.tracks.forEach(function (tr) {
+      tr.nodes.forEach(function (n) {
+        n.subs.forEach(function (s) { s._pct = s.info ? 0 : subPct(s); });
+        n._pct = avg(n.subs, subW, function (s) { return s._pct; });
+      });
+      tr._pct = avg(tr.nodes, function (n) { return Math.max(0, +n.weight || 0); }, function (n) { return n._pct; });
+      var w = Math.max(0, +tr.weight || 0);
+      sw += w; sp += w * tr._pct;
+    });
+    TOTAL = sw ? sp / sw : 0;
+  }
+  function curStage(st) { var c = -1; for (var i = 0; i < STAGES.length; i++) if (+st[i] > 0) c = i; return c; }
+  function at(k) {
+    var p = String(k).split("."), o = D.tracks[+p[0]];
+    if (p.length > 1 && o) o = o.nodes[+p[1]];
+    if (p.length > 2 && o) o = o.subs[+p[2]];
+    return o;
+  }
+
+  // ---------- 渲染 ----------
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function pct(p) { return Math.round(p) + "%"; }
+  function fmtNum(v) { v = +v; return isFinite(v) ? String(Math.round(v * 100) / 100) : "0"; }
+  function pad(i) { return (i < 10 ? "0" : "") + i; }
+  function setLvl(el, p) { el.classList.remove("done", "doing", "start"); el.classList.add(lvl(p)); }
+  function bar(p, key) {
+    var w = p.toFixed(1);
+    return '<div class="bar"><i class="f-' + lvl(p) + '"' + (key != null ? ' data-bar="' + key + '"' : "") + ' data-w="' + w + '"' + (grown ? ' style="width:' + w + '%"' : "") + "></i></div>";
+  }
+  // 可编辑文字：浏览模式输出普通标签，编辑模式加上 contenteditable 与数据路径；rich = 可以含超链接
+  function ed(tag, cls, path, text, ph, rich) {
+    var c = cls ? ' class="' + cls + (EDIT ? " ed" : "") + '"' : EDIT ? ' class="ed"' : "";
+    var a = EDIT ? ' data-path="' + path + '"' + (rich ? ' data-rich="1"' : "") + ' contenteditable="' + (rich ? "true" : CE) + '" spellcheck="false" role="textbox" aria-label="' + esc(ph) + '" data-ph="' + esc(ph) + '"' : "";
+    return "<" + tag + c + a + ">" + (rich ? richHtml(text) : esc(text)) + "</" + tag + ">";
+  }
+  function richHtml(v) {
+    if (!Array.isArray(v)) return esc(v);
+    return v.map(function (x) {
+      if (typeof x === "string") return esc(x);
+      var u = safeUrl(x && x.u);
+      return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(x.t) + "</a>" : esc(x && x.t);
+    }).join("");
+  }
+  // 从编辑框读回：文字 + 链接（只认 <a href>，其它标签一律当文字）
+  function richVal(el) {
+    var out = [], buf = "";
+    (function walk(n) {
+      for (var c = n.firstChild; c; c = c.nextSibling) {
+        if (c.nodeType === 3) buf += c.data;
+        else if (c.nodeType === 1) {
+          if (c.tagName === "A" && c.getAttribute("href")) { if (buf) { out.push(oneLine(buf)); buf = ""; } out.push({ t: oneLine(c.textContent), u: c.getAttribute("href") }); }
+          else if (c.tagName === "BR") buf += " ";
+          else walk(c);
+        }
+      }
+    })(el);
+    if (buf) out.push(oneLine(buf));
+    return tidyRich(out, false);
+  }
+  function numIn(kind, k, v, label, cls, i) {
+    return '<input class="num' + (cls ? " " + cls : "") + '" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-num="' + kind + '" data-k="' + k + '"' +
+      (i != null ? ' data-i="' + i + '"' : "") + ' value="' + fmtNum(v) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '（↑↓ 微调）">';
+  }
+  function moveBtns(what, k, first, last) {
+    return '<button type="button" class="ebtn" data-act="up' + what + '" data-k="' + k + '" title="上移" aria-label="上移"' + (first ? " disabled" : "") + ">↑</button>" +
+      '<button type="button" class="ebtn" data-act="down' + what + '" data-k="' + k + '" title="下移" aria-label="下移"' + (last ? " disabled" : "") + ">↓</button>";
+  }
+  var chev = '<svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var PENCIL = '<svg class="pen" viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 3.4l3 3L7.2 15.8 3.5 16.5l.7-3.7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+
+  function renderHero() {
+    document.title = D.hero.title || "火炬项目UE5迁移规划";
+    HERO.forEach(function (h) {
+      var el = h[1];
+      el.textContent = D.hero[h[0]] || "";
+      if (EDIT) {
+        el.className = "ed"; el.setAttribute("data-path", "hero." + h[0]); el.setAttribute("contenteditable", CE); el.setAttribute("spellcheck", "false");
+        el.setAttribute("role", "textbox"); el.setAttribute("aria-label", h[2]); el.setAttribute("data-ph", h[2]);
+      } else {
+        ["class", "data-path", "contenteditable", "spellcheck", "role", "aria-label", "data-ph"].forEach(function (a) { el.removeAttribute(a); });
+      }
+    });
+  }
+  // 正文顶部的流程大纲：先「可以运行」，再并行推进各条线；点卡片跳到对应环节
+  function plainRich(v) { return Array.isArray(v) ? v.map(function (x) { return typeof x === "string" ? x : (x && x.t) || ""; }).join("") : String(v == null ? "" : v); }
+  function lane(tr, ti) {
+    var d = plainRich(tr.desc);
+    return '<a class="lane" href="#' + esc(tr.id || "t" + (ti + 1)) + '" data-nav="' + ti + '"' + (d ? ' title="' + esc(d) + '"' : "") + '><div class="k">' + esc(tr.kind) + "</div>" +
+      '<div class="t">' + esc(tr.name) + '</div><div class="v ' + lvl(tr._pct) + '">' + pct(tr._pct) + '</div><div class="w">占总进度 ' + fmtNum(tr.weight) + "%</div>" + bar(tr._pct) + "</a>";
+  }
+  function renderFlow() {
+    var T = D.tracks;
+    flowEl.hidden = !T.length;
+    flowEl.innerHTML = !T.length ? "" : '<div class="cap c1">先完成</div>' + (T.length > 1 ? '<div class="cap c3">再并行推进 · ' + (T.length - 1) + " 条线</div>" : "") + lane(T[0], 0) +
+      (T.length > 1 ? '<div class="arrow" aria-hidden="true">→</div><div class="par">' + T.slice(1).map(function (t, i) { return lane(t, i + 1); }).join("") + "</div>" : "");
+  }
+  // 左侧目录：总进度 → 各环节（含节点），始终可见；滚动时高亮当前读到的位置
+  function renderNav() {
+    var num = 0, H = ['<div class="nav-total"><span>总进度</span><b>' + pct(TOTAL) + "</b></div>"];
+    D.tracks.forEach(function (tr, ti) {
+      if (ti === 1) H.push('<div class="nav-sep">并行推进</div>');
+      H.push('<a class="nav-t" href="#' + esc(tr.id || "t" + (ti + 1)) + '" data-nav="' + ti + '"><span class="nk">' + esc(tr.kind) + " · 占总进度 " + fmtNum(tr.weight) + "%</span>" +
+        '<span class="nr"><span class="nn">' + esc(tr.name) + '</span><span class="np ' + lvl(tr._pct) + '">' + pct(tr._pct) + "</span></span>" + bar(tr._pct) + "</a>");
+      tr.nodes.forEach(function (n, ni) {
+        num++;
+        H.push('<a class="nav-n" href="#n' + num + '" data-nav="' + ti + "." + ni + '" title="' + esc(n.title) + '"><span class="ni">' + pad(num) + "</span>" +
+          '<span class="nt">' + esc(n.title) + '</span><span class="np ' + lvl(n._pct) + '">' + pct(n._pct) + "</span></a>");
+      });
+    });
+    navEl.innerHTML = H.join("");
+    var k = spyKey.split("|")[1]; spyKey = "";
+    if (k && Date.now() < spyHold) markNav(k); else spy();
+  }
+  var spyKey = "", spyRaf = 0, spyHold = 0, RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function spy() {
+    spyRaf = 0;
+    var y = EDIT ? 96 : 28, cur = null, curN = null, de = document.documentElement;
+    each(tracksEl.children, function (s) { if (s.getBoundingClientRect().top <= y) cur = s; });
+    if (cur && window.innerHeight + window.pageYOffset >= de.scrollHeight - 4) cur = tracksEl.lastElementChild;   // 已经到底：选最后一个环节
+    if (!cur) cur = tracksEl.firstElementChild;
+    if (!cur) return;
+    each(cur.querySelectorAll(".node"), function (n) { if (n.getBoundingClientRect().top <= y) curN = n; });
+    markNav((curN || cur).getAttribute("data-k"));
+  }
+  // 高亮目录里的环节（和节点）；k = "环节" 或 "环节.节点"
+  function markNav(k) {
+    var tk = String(k).split(".")[0], key = tk + "|" + k;
+    if (key === spyKey) return;
+    spyKey = key;
+    each(navEl.querySelectorAll(".on"), function (e) { e.classList.remove("on"); });
+    var t = navEl.querySelector('.nav-t[data-nav="' + tk + '"]'), n = k !== tk ? navEl.querySelector('.nav-n[data-nav="' + k + '"]') : null;
+    if (t) t.classList.add("on");
+    if (n) n.classList.add("on");
+    if (n || t) keepVisible(n || t);
+  }
+  // 目录比屏幕长时，让高亮项留在目录的可见范围内
+  function keepVisible(el) {
+    if (navEl.scrollHeight <= navEl.clientHeight) return;
+    var top = el.offsetTop, bot = top + el.offsetHeight, st = navEl.scrollTop, h = navEl.clientHeight;
+    if (top < st + 40) navEl.scrollTop = Math.max(0, top - 40);
+    else if (bot > st + h - 40) navEl.scrollTop = bot - h + 40;
+  }
+  function spySoon() { if (!spyRaf && Date.now() >= spyHold) spyRaf = requestAnimationFrame(spy); }
+  function renderTotal() {
+    var tb = $("totalBar"), i = tb.querySelector("i"), w = TOTAL.toFixed(1);
+    $("total").textContent = pct(TOTAL);
+    tb.setAttribute("aria-valuenow", Math.round(TOTAL));
+    i.setAttribute("data-w", w);
+    if (grown) i.style.width = w + "%";
+  }
+  // 「正在加载」提示：进度最低的三个节点
+  var low = [], tipI = 0;
+  function pickLow() {
+    var all = [];
+    D.tracks.forEach(function (tr) { all = all.concat(tr.nodes); });
+    low = all.sort(function (a, b) { return a._pct - b._pct; }).slice(0, 3);
+  }
+  function showTip() {
+    if (!low.length) { tipEl.textContent = ""; return; }
+    var n = low[tipI++ % low.length];
+    tipEl.style.opacity = 0;
+    setTimeout(function () { tipEl.innerHTML = "正在加载：<b>" + esc(n.title) + "</b> · " + pct(n._pct); tipEl.style.opacity = 1; }, 180);
+  }
+
+  // 子项
+  function subHtml(s, k, path, first, last) {
+    var info = !!s.info;
+    var h = ['<div class="sub' + (info ? " info" : "") + '" data-k="' + k + '"><div class="sh"><span class="st">' + ed("span", "", path + ".t", s.t, "子项标题") +
+      (info ? '<span class="tag">不计入</span>' : "") + "</span>"];
+    if (!info) {
+      if (EDIT && !s.s) h.push('<span class="sp2 ' + lvl(s._pct) + '" data-lvl="' + k + '">' + numIn("p", k, s.p, "完成百分比") + "%</span>");
+      else h.push('<span class="sp2 ' + lvl(s._pct) + '" data-pct="' + k + '">' + pct(s._pct) + "</span>");
+    }
+    h.push("</div>");
+    if (!info) {
+      if (s.s) {
+        var cur = curStage(s.s), c = lvl(s._pct);
+        h.push('<div class="steps" data-steps="' + k + '">' + STAGES.map(function (stg, i) {
+          var f = +s.s[i] || 0;
+          return '<div class="step' + (i === cur ? " on" : "") + '"><i style="--f:' + f + ";--c:var(--" + c + ')"></i>' + stg[0] +
+            (EDIT ? " " + numIn("s", k, f * 100, stg[0] + "完成度（%）", "sm", i) + "%" : f > 0 && f < 1 ? " · " + Math.round(f * 100) + "%" : "") + "</div>";
+        }).join("") + "</div>");
+      } else {
+        h.push(bar(s._pct, k));
+      }
+      if (EDIT) h.push('<div class="now">当前：' + ed("b", "", path + ".now", s.now || "", "可选，如「已评估 26 / 480 个」", true) + "</div>");
+      else if (s.now) h.push('<div class="now">当前：<b>' + richHtml(s.now) + "</b></div>");
+    }
+    h.push('<div class="kv"><span class="k">100% 目标</span>' + ed("span", "", path + ".goal", s.goal, "做到什么算完成", true) +
+      '<span class="k">进度依据</span>' + ed("span", "", path + ".basis", s.basis, "现在的数字从哪来", true) + "</div>");
+    if (EDIT) {
+      var type = info ? "info" : s.s ? "s" : "p";
+      h.push('<div class="ectl"><label title="按阶段：调研定位 10% → 方案确定 15% → 实施 55% → 验收 20%；按百分比：直接填完成度；不计入：只做说明，不参与计算">进度方式 <select class="esel" data-sel="type" data-k="' + k + '">' +
+        [["s", "按阶段"], ["p", "按百分比"], ["info", "不计入"]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === type ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") +
+        "</select></label>" + (info ? "" : '<label title="在本节点里的权重，默认 1">权重 ' + numIn("w", k, s.w == null ? 1 : s.w, "子项权重") + "</label>") +
+        '<span class="sp"></span>' + moveBtns("Sub", k, first, last) + '<button type="button" class="ebtn del" data-act="delSub" data-k="' + k + '">删除</button></div>');
+    }
+    return h.join("") + "</div>";
+  }
+
+  // 节点
+  function nodeHtml(tr, n, ti, ni, num) {
+    var k = ti + "." + ni, id = "n" + num, path = "tracks." + ti + ".nodes." + ni, open = !!n._open, h, tail;
+    if (EDIT) {
+      h = '<div class="nbtn" data-tog="' + k + '"><div class="nrow"><span class="idx">' + pad(num) + '</span><span class="ntitle">' +
+        ed("span", "", path + ".title", n.title, "节点名称") + ed("small", "", path + ".hint", n.hint || "", "补充说明（可选）") + "</span>" +
+        '<span class="npct ' + lvl(n._pct) + '" data-pct="' + k + '">' + pct(n._pct) + "</span>" +
+        '<button type="button" class="tog" aria-expanded="' + open + '" aria-controls="' + id + 's" aria-label="展开或收起">' + chev + "</button></div>" + bar(n._pct, k) + "</div>";
+      tail = '<div class="ectl nctl"><button type="button" class="ebtn add" data-act="addSub" data-k="' + k + '">＋ 添加子项</button>' +
+        "<label>在本环节内的权重 " + numIn("nw", k, n.weight, "节点在本环节内的权重") + "%</label>" +
+        '<span class="sp"></span>' + moveBtns("Node", k, ni === 0, ni === tr.nodes.length - 1) +
+        '<button type="button" class="ebtn del" data-act="delNode" data-k="' + k + '">删除节点</button></div>';
+    } else {
+      h = '<button class="nbtn" type="button" aria-expanded="' + open + '" aria-controls="' + id + 's" data-tog="' + k + '"><div class="nrow"><span class="idx">' + pad(num) + "</span>" +
+        '<span class="ntitle">' + esc(n.title) + (n.hint ? "<small>" + esc(n.hint) + "</small>" : "") + "</span>" +
+        '<span class="npct ' + lvl(n._pct) + '" data-pct="' + k + '">' + pct(n._pct) + "</span>" + chev + "</div>" + bar(n._pct, k) + "</button>";
+      tail = tr.nodes.length > 1 ? '<div class="nweight">在本环节内的权重 ' + fmtNum(n.weight) + "%</div>" : "";
+    }
+    return '<div class="node' + (open ? " open" : "") + '" id="' + id + '" data-k="' + k + '">' + h + '<div class="subs" id="' + id + 's">' +
+      n.subs.map(function (s, si) { return subHtml(s, k + "." + si, path + ".subs." + si, si === 0, si === n.subs.length - 1); }).join("") + tail + "</div></div>";
+  }
+
+  // 环节
+  function renderTracks() {
+    var num = 0, H = [];
+    D.tracks.forEach(function (tr, ti) {
+      var path = "tracks." + ti, k = String(ti);
+      H.push('<section class="track" id="' + esc(tr.id || "t" + (ti + 1)) + '" data-k="' + k + '"><div class="thead">' + ed("h2", "", path + ".name", tr.name, "环节名称") +
+        ed("span", "kind", path + ".kind", tr.kind, "类别") +
+        '<span class="tw">占总进度 ' + (EDIT ? numIn("tw", k, tr.weight, "环节占总进度的权重") : fmtNum(tr.weight)) + "%</span>" +
+        '<span class="tp ' + lvl(tr._pct) + '" data-pct="' + k + '">' + pct(tr._pct) + "</span></div>" + ed("div", "tdesc", path + ".desc", tr.desc, "这一环节做什么", true));
+      tr.nodes.forEach(function (n, ni) { H.push(nodeHtml(tr, n, ti, ni, ++num)); });
+      if (EDIT) H.push('<div class="ectl tctl"><button type="button" class="ebtn add" data-act="addNode" data-k="' + k + '">＋ 添加节点</button></div>');
+      H.push("</section>");
+    });
+    tracksEl.innerHTML = H.join("");
+  }
+  function renderFoot() {
+    footEl.innerHTML = D.foot;
+    if (EDIT) { footEl.setAttribute("contenteditable", "true"); footEl.setAttribute("spellcheck", "false"); footEl.classList.add("ed-area"); }
+    else { footEl.removeAttribute("contenteditable"); footEl.removeAttribute("spellcheck"); footEl.classList.remove("ed-area"); }
+  }
+  function render() { if (LP) closeLinkPop(false); hideBubble(); compute(); renderHero(); renderFlow(); renderTotal(); pickLow(); renderTracks(); renderNav(); renderFoot(); updateBar(); }
+
+  // 只刷新计算结果（编辑数字或文字时用），不重建可编辑区域，光标不丢
+  function refresh() {
+    compute(); renderFlow(); renderNav(); renderTotal(); pickLow();
+    document.title = D.hero.title || "火炬项目UE5迁移规划";
+    each(tracksEl.querySelectorAll("[data-pct]"), function (el) { var o = at(el.getAttribute("data-pct")); if (o) { setLvl(el, o._pct); el.textContent = pct(o._pct); } });
+    each(tracksEl.querySelectorAll("[data-lvl]"), function (el) { var o = at(el.getAttribute("data-lvl")); if (o) setLvl(el, o._pct); });
+    each(tracksEl.querySelectorAll("[data-bar]"), function (el) {
+      var o = at(el.getAttribute("data-bar")); if (!o) return;
+      var w = o._pct.toFixed(1); el.className = "f-" + lvl(o._pct); el.setAttribute("data-w", w); el.style.width = w + "%";
+    });
+    each(tracksEl.querySelectorAll("[data-steps]"), function (el) {
+      var s = at(el.getAttribute("data-steps")); if (!s || !s.s) return;
+      var cur = curStage(s.s), c = "var(--" + lvl(s._pct) + ")";
+      each(el.children, function (st, i) { st.classList.toggle("on", i === cur); var bi = st.firstElementChild; bi.style.setProperty("--f", +s.s[i] || 0); bi.style.setProperty("--c", c); });
+    });
+    updateBar();
+  }
+
+  // ---------- 工具条与提示 ----------
+  var lastStat = null, lastHint = null;
+  function setMsg(m, c, dl) { ST.msg = m; ST.cls = c || ""; ST.dl = !!dl; }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function hhmm(d) { return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+  function hintHtml() {
+    var s = '点<span class="edmark">虚线框</span>里的文字直接改（Enter 确认，Esc 还原）；百分比、阶段完成度和权重在小框里改（↑ ↓ 微调），节点、环节和总进度会自动重算。' +
+      "在目标、依据、当前和说明里选中文字按 Ctrl+K（或点「链接」）可以加超链接，显示文字和链接地址分开填。";
+    if (!FS) return s + "当前浏览器不能直接写回文件：「下载新版」会下载改好的文件，需要用它替换原文件。用 Edge 或 Chrome 打开可以直接保存。";
+    var as = FS_SAVE ? "「另存为」可以另存一份到别处。" : "";
+    if (dirHandle) return s + "按 Ctrl+S 或点「保存」写回本文件（位置：<b>" + esc(dirHandle.name) + '</b> 文件夹，<button type="button" class="linkbtn" data-act="forgetDir">更换</button>）。' + as;
+    return s + "按 Ctrl+S 或点「保存」写回本文件。只有第一次需要在弹窗里选一下本文件所在的文件夹" +
+      (DIR_PATH ? " <b>" + esc(DIR_PATH) + "</b>（点保存时会自动复制这个路径，粘贴进弹窗即可）" : "") + "，再点允许；之后保存不用再选。" + as;
+  }
+  function updateBar() {
+    root.classList.toggle("editing", EDIT);
+    editBtn.innerHTML = EDIT ? "完成编辑" : PENCIL + "编辑";
+    editBtn.setAttribute("aria-pressed", EDIT ? "true" : "false");
+    saveBtn.hidden = !(EDIT || DIRTY);
+    saveBtn.disabled = ST.busy;
+    saveBtn.textContent = ST.busy && !ST.pick ? "保存中…" : FS ? "保存" : "下载新版";
+    saveAsBtn.hidden = !(EDIT || DIRTY) || !FS_SAVE;
+    saveAsBtn.disabled = ST.busy;
+    linkBtn.hidden = !EDIT;
+    discardBtn.hidden = !DIRTY || ST.busy;
+    var cls = "", h = "";
+    if (ST.busy) { cls = ST.pick ? "warn" : ""; h = ST.pick ? esc(ST.pick) : "正在保存…"; }
+    else if (ST.msg) { cls = ST.cls; h = esc(ST.msg) + (ST.dl ? ' <button type="button" class="linkbtn" data-act="download">下载新版</button>，先把修改留下来' : ""); }
+    else if (DIRTY) { cls = "warn"; h = "● 有未保存的修改"; }
+    else if (ST.saved) { cls = "ok"; h = "✓ 已保存（" + ST.saved + "）"; }
+    if (EDIT && D.tracks.length) {
+      var ws = 0;
+      D.tracks.forEach(function (t) { ws += Math.max(0, +t.weight || 0); });
+      if (Math.abs(ws - 100) > 1e-6) h += (h ? " · " : "") + '<span class="wwarn">环节权重合计 ' + fmtNum(ws) + "%，应为 100%</span>";
+    }
+    var sc = "estat" + (cls ? " " + cls : "");
+    if (estat.className !== sc) estat.className = sc;
+    if (h !== lastStat) { estat.innerHTML = h; lastStat = h; }
+    var hh = EDIT ? hintHtml() : "";
+    if (hh !== lastHint) { ehint.innerHTML = hh; lastHint = hh; }
+  }
+
+  // ---------- 修改记录：是否有未保存修改 + 浏览器里的草稿 ----------
+  function changed() { if (!ST.busy) setMsg(""); clearTimeout(syncT); syncT = setTimeout(sync, 300); }
+  function sync() {
+    clearTimeout(syncT);
+    var cur = serialize(D);
+    DIRTY = cur !== BASE;
+    if (!PENDING) {
+      try { if (DIRTY) localStorage.setItem(DRAFT_KEY, JSON.stringify({ t: Date.now(), base: hash(BASE), data: cur })); else localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    }
+    updateBar();
+  }
+  function fmtTime(d) { return pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " " + hhmm(d); }
+  function checkDraft() {
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
+    if (!d || typeof d.data !== "string") return;
+    if (d.data === BASE) { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} return; }
+    PENDING = d;
+    draftEl.innerHTML = "<span>这个浏览器里还留着 <b>" + esc(fmtTime(new Date(d.t))) + "</b> 没保存的修改" +
+      (d.base !== hash(BASE) ? "（之后文件又被保存过，恢复会以当时的修改为准）" : "") + "。</span>" +
+      '<button type="button" class="btn primary" data-act="restoreDraft">恢复这些修改</button><button type="button" class="btn" data-act="dropDraft">丢弃</button>';
+    draftEl.hidden = false;
+  }
+  function openKeys() { var r = {}; D.tracks.forEach(function (tr, ti) { tr.nodes.forEach(function (n, ni) { if (n._open) r[ti + "." + ni] = 1; }); }); return r; }
+  function applyOpen(r) { D.tracks.forEach(function (tr, ti) { tr.nodes.forEach(function (n, ni) { n._open = !!r[ti + "." + ni]; }); }); }
+  function replaceData(json) { var open = openKeys(); D = normalize(JSON.parse(json)); applyOpen(open); }
+  function resolveDraft(restore) {
+    var d = PENDING;
+    PENDING = null; draftEl.hidden = true; draftEl.innerHTML = "";
+    if (restore && d) {
+      try { replaceData(d.data); } catch (e) { setMsg("草稿已损坏，无法恢复", "err"); }
+      render();
+    }
+    sync();
+  }
+
+  // ---------- 编辑交互 ----------
+  function blurActive() { var a = document.activeElement; if (a && a !== document.body && wrapEl.contains(a)) a.blur(); }
+  function oneLine(s) { return String(s).replace(/\u00a0/g, " ").replace(/[ \t]*[\r\n]+[ \t]*/g, " "); }
+  function getPath(path) { var ks = path.split("."), o = D; for (var i = 0; i < ks.length; i++) { if (o == null) return ""; o = o[ks[i]]; } return o == null ? "" : o; }
+  function setPath(path, v) {
+    var ks = path.split("."), last = ks.pop(), o = D;
+    for (var i = 0; i < ks.length; i++) { o = o[ks[i]]; if (o == null) return; }
+    if (v === "" && (last === "now" || last === "hint")) delete o[last]; else o[last] = v;
+  }
+  function commitField(t) {
+    if (!t.isConnected || (LP && LP.host === t)) return;   // 正在编辑链接时先不整理
+    var path = t.getAttribute("data-path"), v, h;
+    if (t.hasAttribute("data-rich")) { v = tidyRich(richVal(t), true); h = richHtml(v); if (t.innerHTML !== h) t.innerHTML = h; }
+    else { v = oneLine(t.textContent).trim(); if (!v || t.textContent !== v) t.textContent = v; }
+    if (JSON.stringify(getPath(path)) !== JSON.stringify(v)) { setPath(path, v); refresh(); changed(); }
+  }
+  function parseNum(s) {
+    s = String(s).replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[．。]/g, ".").replace(/[%％\s]/g, "");
+    if (!s) return null;
+    var v = parseFloat(s);
+    return isFinite(v) ? v : null;
+  }
+  function numSet(t, v) {
+    var kind = t.getAttribute("data-num"), o = at(t.getAttribute("data-k"));
+    if (!o) return v;
+    if (kind === "p") { v = clamp(v, 0, 100); o.p = v; }
+    else if (kind === "s") { v = clamp(v, 0, 100); o.s[+t.getAttribute("data-i")] = Math.round(v * 100) / 10000; }
+    else if (kind === "w") { v = Math.max(0, v); o.w = v; }
+    else { v = Math.max(0, v); o.weight = v; }
+    return v;
+  }
+  function numVal(t) {
+    var kind = t.getAttribute("data-num"), o = at(t.getAttribute("data-k"));
+    if (!o) return 0;
+    if (kind === "p") return +o.p || 0;
+    if (kind === "s") return (+o.s[+t.getAttribute("data-i")] || 0) * 100;
+    if (kind === "w") return o.w == null ? 1 : +o.w || 0;
+    return +o.weight || 0;
+  }
+  // 切换进度方式时尽量保持百分比不变：阶段按顺序填满
+  function fill(p) { var r = p; return STAGES.map(function (st) { var f = clamp(r / st[1], 0, 1); r -= f * st[1]; return Math.round(f * 100) / 100; }); }
+  function setType(s, type) {
+    var cur = s.s ? stagePct(s.s) : clamp(+s.p || 0, 0, 100);
+    if (type === "info") { s.info = true; return; }
+    delete s.info;
+    if (type === "p") { if (s.s) { s.p = Math.round(cur * 10) / 10; delete s.s; } else if (s.p == null) s.p = 0; }
+    else if (!s.s) { s.s = fill(cur); delete s.p; }
+  }
+  function newSub() { return { t: "新子项", s: [0, 0, 0, 0], goal: "", basis: "" }; }
+  function newNode(tr) {
+    var ws = tr.nodes.map(function (n) { return +n.weight || 0; });
+    var w = ws.length ? Math.round(ws.reduce(function (a, b) { return a + b; }, 0) / ws.length) : 1;
+    return { title: "新节点", weight: w || 1, subs: [newSub()] };
+  }
+  function swap(a, i, j) { var t = a[i]; a[i] = a[j]; a[j] = t; }
+  function focusEd(path, selectAll) {
+    var el = wrapEl.querySelector('[data-path="' + path + '"]');
+    if (!el) return;
+    el.focus();
+    if (selectAll) { var r = document.createRange(), s = window.getSelection(); r.selectNodeContents(el); s.removeAllRanges(); s.addRange(r); }
+  }
+  function syncOpen() {
+    each(tracksEl.querySelectorAll(".node"), function (el) {
+      var n = at(el.getAttribute("data-k")), open = !!(n && n._open), b = el.querySelector(".tog") || el.querySelector("button.nbtn");
+      el.classList.toggle("open", open);
+      if (b) b.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    spySoon();
+  }
+  function setAll(open) { D.tracks.forEach(function (tr) { tr.nodes.forEach(function (n) { n._open = open; }); }); syncOpen(); }
+  function setEdit(on) {
+    blurActive();
+    EDIT = !!on;
+    if (EDIT) { try { document.execCommand("defaultParagraphSeparator", false, "p"); } catch (e) {} }
+    render();
+  }
+
+  function act(a, k) {
+    blurActive();
+    var p = k == null ? [] : String(k).split(".").map(Number), tr, n, i, j, fk = null, fs = null;
+    if (a === "download") { download(serialize(D)); return; }
+    if (a === "restoreDraft") { if (!DIRTY || confirm("恢复会替换掉你现在页面上的修改，继续吗？")) resolveDraft(true); return; }
+    if (a === "dropDraft") { resolveDraft(false); return; }
+    if (a === "forgetDir") { forgetDir(); setMsg("下次保存时会重新选择文件夹"); updateBar(); return; }
+    if (!EDIT) return;
+    if (a === "addSub") {
+      n = at(k); n.subs.push(newSub()); n._open = true;
+      fk = "tracks." + p[0] + ".nodes." + p[1] + ".subs." + (n.subs.length - 1) + ".t";
+    } else if (a === "delSub") {
+      n = at(p[0] + "." + p[1]);
+      if (!confirm("删除子项「" + (n.subs[p[2]].t || "未命名") + "」？")) return;
+      n.subs.splice(p[2], 1);
+    } else if (a === "upSub" || a === "downSub") {
+      n = at(p[0] + "." + p[1]); i = p[2]; j = i + (a === "upSub" ? -1 : 1);
+      if (j < 0 || j >= n.subs.length) return;
+      swap(n.subs, i, j); fs = '[data-act="' + a + '"][data-k="' + p[0] + "." + p[1] + "." + j + '"]';
+    } else if (a === "addNode") {
+      tr = at(k); tr.nodes.push(newNode(tr)); i = tr.nodes.length - 1; tr.nodes[i]._open = true;
+      fk = "tracks." + p[0] + ".nodes." + i + ".title";
+    } else if (a === "delNode") {
+      tr = at(p[0]); n = tr.nodes[p[1]];
+      if (!confirm("删除节点「" + (n.title || "未命名") + "」" + (n.subs.length ? "和它下面的 " + n.subs.length + " 个子项" : "") + "？")) return;
+      tr.nodes.splice(p[1], 1);
+    } else if (a === "upNode" || a === "downNode") {
+      tr = at(p[0]); i = p[1]; j = i + (a === "upNode" ? -1 : 1);
+      if (j < 0 || j >= tr.nodes.length) return;
+      swap(tr.nodes, i, j); fs = '[data-act="' + a + '"][data-k="' + p[0] + "." + j + '"]';
+    } else return;
+    render(); changed();
+    if (fk) focusEd(fk, true);
+    else if (fs) { var b = tracksEl.querySelector(fs); if (b && !b.disabled) b.focus(); }
+  }
+
+  wrapEl.addEventListener("click", function (e) {
+    var t = e.target, b = t.closest ? t.closest("[data-act]") : null;
+    if (b) { e.preventDefault(); act(b.getAttribute("data-act"), b.getAttribute("data-k")); return; }
+    var tg = t.closest ? t.closest("[data-tog]") : null;
+    if (!tg || t.closest(".ed, input, select")) return;
+    var sel = window.getSelection();
+    if (sel && !sel.isCollapsed && tg.contains(sel.anchorNode)) return;   // 拖选文字时不折叠
+    var n = at(tg.getAttribute("data-tog"));
+    if (n) { n._open = !n._open; syncOpen(); }
+  });
+  // 跳到某个环节 / 节点（节点顺便展开），左侧目录同步高亮；k = "环节" 或 "环节.节点"
+  function jumpTo(k) {
+    var n = k.indexOf(".") > 0 ? at(k) : null;
+    var el = tracksEl.querySelector((n ? ".node" : "section.track") + '[data-k="' + k + '"]');
+    if (!el) return;
+    spyHold = Date.now() + 1500;   // 滚动途中不让高亮来回跳，停下后以点的这一项为准
+    markNav(k);
+    if (n && !n._open) { n._open = true; syncOpen(); }
+    el.scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
+    try { history.replaceState(null, "", "#" + el.id); } catch (err) {}
+  }
+  // 点左侧目录或顶部流程大纲的卡片
+  function onJump(e) {
+    var a = e.target.closest ? e.target.closest("a[data-nav]") : null;
+    if (!a || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    jumpTo(a.getAttribute("data-nav"));
+  }
+  navEl.addEventListener("click", onJump);
+  flowEl.addEventListener("click", onJump);
+  window.addEventListener("scroll", spySoon, { passive: true });
+  window.addEventListener("scrollend", function () { spyHold = 0; });
+  window.addEventListener("wheel", function () { spyHold = 0; }, { passive: true });
+  window.addEventListener("resize", spySoon);
+  wrapEl.addEventListener("input", function (e) {
+    if (!EDIT) return;
+    var t = e.target;
+    if (t.classList.contains("num")) { var v = parseNum(t.value); if (v != null) { numSet(t, v); refresh(); changed(); } return; }
+    if (t.hasAttribute("data-path")) { setPath(t.getAttribute("data-path"), t.hasAttribute("data-rich") ? richVal(t) : oneLine(t.textContent)); refresh(); changed(); return; }
+    if (t === footEl) { D.foot = cleanHtml(footEl.innerHTML); changed(); }
+  });
+  wrapEl.addEventListener("change", function (e) {
+    var t = e.target;
+    if (!EDIT || !t.matches("select[data-sel=type]")) return;
+    var k = t.getAttribute("data-k"), s = at(k);
+    if (!s) return;
+    setType(s, t.value); render(); changed();
+    var sel = tracksEl.querySelector('select[data-k="' + k + '"]');
+    if (sel) sel.focus();
+  });
+  wrapEl.addEventListener("focusin", function (e) {
+    var t = e.target;
+    if (!t.hasAttribute || !t.hasAttribute("data-path")) return;
+    if (t._keep) t._keep = false; else t._orig = t.innerHTML;   // 从链接框回来时保留最初的内容，Esc 仍能整体还原
+  });
+  wrapEl.addEventListener("focusout", function (e) {
+    var t = e.target;
+    if (!EDIT || !t.hasAttribute) return;
+    if (t.classList.contains("num")) t.value = fmtNum(numVal(t));
+    else if (t.hasAttribute("data-path")) commitField(t);
+  });
+  wrapEl.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (!EDIT || e.isComposing || e.keyCode === 229 || !t.hasAttribute) return;   // 输入法选词时不拦截
+    if (t.classList.contains("num")) {
+      if (e.key === "Enter") { e.preventDefault(); t.blur(); }
+      else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        var v = numSet(t, (parseNum(t.value) || 0) + (e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 10 : 1));
+        t.value = fmtNum(v); refresh(); changed();
+      }
+    } else if (t.hasAttribute("data-path") || t === footEl) {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        if (t === footEl || t.hasAttribute("data-rich")) openLinkPop(t);
+        else { setMsg("这一栏不能加链接；「100% 目标」「进度依据」「当前」、环节说明和底部说明可以"); updateBar(); }
+        return;
+      }
+      if (t === footEl) return;
+      if (e.key === "Enter") { e.preventDefault(); t.blur(); }
+      else if (e.key === "Escape") { e.preventDefault(); if (t._orig != null) t.innerHTML = t._orig; t.blur(); }
+    }
+  });
+  // 可含链接的字段仍是一行文字：不接受加粗、斜体、换行
+  wrapEl.addEventListener("beforeinput", function (e) {
+    var t = e.target;
+    if (EDIT && t.hasAttribute && t.hasAttribute("data-rich") && /^format|^insertParagraph$|^insertLineBreak$/.test(e.inputType || "")) e.preventDefault();
+  });
+  // 粘贴只取纯文本，避免把别处的字体颜色带进来；选中文字后粘贴网址 = 给这段文字加链接
+  wrapEl.addEventListener("paste", function (e) {
+    if (!EDIT) return;
+    var host = e.target.closest ? e.target.closest("[data-path], #foot") : null, cd = e.clipboardData, sel = window.getSelection();
+    if (!host || !cd) return;
+    var text = cd.getData("text/plain"), url = text.trim();
+    e.preventDefault();
+    if ((host === footEl || host.hasAttribute("data-rich")) && sel.rangeCount && !sel.isCollapsed && /^(https?:\/\/|www\.|file:\/\/)\S+$/i.test(url) && safeUrl(url)) {
+      insertLink(host, normUrl(url), null);
+      return;
+    }
+    document.execCommand("insertText", false, host.hasAttribute("data-path") ? oneLine(text) : text);
+  });
+
+  // ---------- 超链接：Ctrl+K / 「链接」按钮打开链接框；光标在链接上时显示地址小气泡 ----------
+  var lpop = $("lpop"), lpText = $("lpText"), lpUrl = $("lpUrl"), lpErr = $("lpErr"), lpDel = $("lpDel"), lbub = $("lbub"), lbUrl = $("lbUrl"), linkBtn = $("linkBtn");
+  var LP = null, BUB = null;
+  function richHost(node) {
+    var el = node && (node.nodeType === 1 ? node : node.parentNode), h = el && el.closest ? el.closest("[data-rich], #foot") : null;
+    return h && (h !== footEl || EDIT) ? h : null;
+  }
+  function linkAt(node, host) {
+    var el = node && (node.nodeType === 1 ? node : node.parentNode), a = el && el.closest ? el.closest("a[href]") : null;
+    return a && host && a !== host && host.contains(a) ? a : null;
+  }
+  function linkTag(host, url, text) {
+    return '<a href="' + esc(url) + '"' + (host === footEl ? ' target="_blank" rel="noopener"' : "") + ">" + esc(text || url) + "</a>";
+  }
+  // 用当前选区插入链接；选区碰到已有链接时整段替换，避免链接套链接
+  function insertLink(host, url, text) {
+    var sel = window.getSelection(), r = sel.rangeCount ? sel.getRangeAt(0) : null;
+    if (r) {
+      var a1 = linkAt(r.startContainer, host), a2 = linkAt(r.endContainer, host);
+      if (a1 || a2) { if (a1) r.setStartBefore(a1); if (a2) r.setEndAfter(a2); sel.removeAllRanges(); sel.addRange(r); }
+      if (text == null) text = oneLine(r.toString()).trim();
+    }
+    document.execCommand("insertHTML", false, linkTag(host, url, text));
+  }
+  function placeAt(el, rect) {
+    el.hidden = false;
+    var vw = document.documentElement.clientWidth, x = Math.max(8, Math.min(rect.left, vw - el.offsetWidth - 8));
+    el.style.left = Math.round(x + window.scrollX) + "px";
+    el.style.top = Math.round(rect.bottom + 6 + window.scrollY) + "px";
+  }
+  function hideBubble() { BUB = null; lbub.hidden = true; }
+  function openLinkPop(host, a) {
+    var sel = window.getSelection(), r = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    if (!r || !host.contains(r.commonAncestorContainer)) { r = document.createRange(); r.selectNodeContents(host); r.collapse(false); }
+    if (!a) { var a1 = linkAt(r.startContainer, host), a2 = linkAt(r.endContainer, host); if (a1 && a1 === a2) a = a1; }
+    if (a) { r = document.createRange(); r.selectNode(a); }
+    LP = { host: host, range: r, a: a || null };
+    lpText.value = a ? oneLine(a.textContent) : oneLine(r.toString()).trim();
+    lpUrl.value = a ? a.getAttribute("href") : "";
+    lpDel.hidden = !a; lpErr.textContent = "";
+    hideBubble();
+    var rc = r.getBoundingClientRect();
+    if (!rc.width && !rc.height) rc = host.getBoundingClientRect();
+    placeAt(lpop, rc);
+    (lpText.value ? lpUrl : lpText).focus();
+  }
+  function closeLinkPop(restore) {
+    var p = LP;
+    LP = null; lpop.hidden = true;
+    if (p && restore && p.host.isConnected) {
+      p.host._keep = true; p.host.focus();
+      var sel = window.getSelection(); sel.removeAllRanges();
+      try { sel.addRange(p.range); } catch (e) {}
+    }
+    return p;
+  }
+  function applyLink(remove) {
+    if (!LP) return;
+    var text = oneLine(lpText.value).trim(), url = normUrl(lpUrl.value);
+    if (!remove && !url) { lpErr.textContent = "请填写链接地址"; lpUrl.focus(); return; }
+    if (!remove && !safeUrl(url)) { lpErr.textContent = "这种地址不能用作链接，请换成网址或文件路径"; lpUrl.focus(); return; }
+    var p = closeLinkPop(true);
+    if (!p.host.isConnected) return;
+    if (remove) document.execCommand("unlink");
+    else insertLink(p.host, url, text || url);
+  }
+  lpop.addEventListener("keydown", function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === "Enter") { e.preventDefault(); applyLink(false); }
+    else if (e.key === "Escape") { e.preventDefault(); closeLinkPop(true); }
+  });
+  $("lpOk").onclick = function () { applyLink(false); };
+  lpDel.onclick = function () { applyLink(true); };
+  $("lpCancel").onclick = function () { closeLinkPop(true); };
+  document.addEventListener("mousedown", function (e) { if (LP && !lpop.contains(e.target)) closeLinkPop(false); }, true);
+  document.addEventListener("selectionchange", function () {
+    var sel = window.getSelection(), host = EDIT && !LP && sel.rangeCount ? richHost(sel.anchorNode) : null;
+    var a = host && document.activeElement === host ? linkAt(sel.anchorNode, host) : null;
+    if (!a) { if (!lbub.hidden) hideBubble(); return; }
+    if (a === BUB && !lbub.hidden) return;
+    BUB = a; lbUrl.textContent = a.getAttribute("href"); lbUrl.title = a.getAttribute("href");
+    placeAt(lbub, a.getBoundingClientRect());
+  });
+  lbub.addEventListener("mousedown", function (e) { e.preventDefault(); });   // 点气泡里的按钮时，光标留在原处
+  $("lbOpen").onclick = function () { if (BUB) window.open(BUB.href, "_blank", "noopener"); };
+  $("lbEdit").onclick = function () { var a = BUB, host = a && richHost(a); if (host) openLinkPop(host, a); };
+  $("lbDel").onclick = function () {
+    var a = BUB, host = a && richHost(a), r, sel = window.getSelection();
+    if (!host) return;
+    r = document.createRange(); r.selectNode(a); sel.removeAllRanges(); sel.addRange(r);
+    document.execCommand("unlink"); hideBubble();
+  };
+  window.addEventListener("resize", hideBubble);
+  linkBtn.addEventListener("mousedown", function (e) { e.preventDefault(); });   // 不抢走编辑框的焦点和选区
+  linkBtn.onclick = function () {
+    var sel = window.getSelection(), host = sel.rangeCount ? richHost(sel.anchorNode) : null;
+    if (host && document.activeElement === host) openLinkPop(host);
+    else { setMsg("先在「100% 目标」「进度依据」「当前」、环节说明或底部说明里选中要加链接的文字"); updateBar(); }
+  };
+
+  // ---------- 保存 ----------
+  // Edge / Chrome：在本文件所在的文件夹里改写本文件的数据段，页面其余部分一字不动；其它浏览器：下载新版
+  function idb(mode, fn) {
+    return new Promise(function (res, rej) {
+      if (!window.indexedDB) { rej(new Error("no indexedDB")); return; }
+      var rq = indexedDB.open("mvp-progress-page", 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore("kv"); };
+      rq.onerror = function () { rej(rq.error); };
+      rq.onsuccess = function () {
+        var db = rq.result, tx, r;
+        try { tx = db.transaction("kv", mode); r = fn(tx.objectStore("kv")); } catch (e) { db.close(); rej(e); return; }
+        tx.oncomplete = function () { db.close(); res(r ? r.result : undefined); };
+        tx.onerror = tx.onabort = function () { db.close(); rej(tx.error); };
+      };
+    });
+  }
+  function rememberDir(h) { idb("readwrite", function (st) { return st.put(h, PAGE_KEY); }).catch(function () {}); }
+  function forgetDir() { dirHandle = null; idb("readwrite", function (st) { return st.delete(PAGE_KEY); }).catch(function () {}); }
+  function named(name, msg) { var e = new Error(msg || name); e.name = name; return e; }
+  async function ensurePerm(h) {
+    if ((await h.queryPermission(RW)) === "granted") return;
+    if ((await h.requestPermission(RW)) !== "granted") throw named("NotAllowedError");
+  }
+  function copyPath() {
+    if (!DIR_PATH || !navigator.clipboard || !navigator.clipboard.writeText) return;
+    try {
+      navigator.clipboard.writeText(DIR_PATH).then(function () {
+        if (ST.pick) { ST.pick += "（路径已复制，在弹窗里粘贴、回车即可定位）"; updateBar(); }
+      }, function () {});
+    } catch (e) {}
+  }
+  function download(json) {
+    var out, a, url;
+    try { out = fullPage(json); } catch (e) { setMsg("生成文件失败：" + e.message, "err"); updateBar(); return; }
+    url = URL.createObjectURL(new Blob([out], { type: "text/html;charset=utf-8" }));
+    a = document.createElement("a"); a.href = url; a.download = FILE_NAME; a.style.display = "none";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    setMsg("已下载新版「" + FILE_NAME + "」，用它替换原文件后修改才算保存", "warn"); updateBar();
+  }
+  async function save() {
+    if (ST.busy) return;
+    var a = document.activeElement;
+    if (a && a.hasAttribute && a.hasAttribute("data-path")) commitField(a);
+    sync();
+    var json = serialize(D);
+    if (!FS) { download(json); return; }
+    ST.busy = true; setMsg(""); updateBar();
+    var dir = dirHandle, fresh = !dir;
+    try {
+      if (!dir) {
+        // 网页只能让弹窗从「上次选过的位置」或系统文件夹开始，无法直接指定本文件夹；
+        // 所以第一次先把本文件夹路径复制好，粘贴进弹窗就能定位。选过一次之后浏览器会记住，不再弹出
+        ST.pick = "请在弹出的窗口里选中本文件所在的文件夹" + (DIR_PATH ? "：" + DIR_PATH : "") + "，再点允许";
+        copyPath(); updateBar();
+        try { dir = await window.showDirectoryPicker({ id: "mvp-progress", mode: "readwrite" }); } finally { ST.pick = ""; }
+        dirHandle = dir;
+      }
+      await ensurePerm(dir);
+      var fh;
+      try { fh = await dir.getFileHandle(FILE_NAME); }
+      catch (e) { if (e && (e.name === "NotFoundError" || e.name === "TypeMismatchError")) { forgetDir(); throw named("NotHere"); } throw e; }
+      var src = await (await fh.getFile()).text(), block = extract(src), out = null;
+      if (block == null) {
+        if (src.trim() && !confirm("「" + FILE_NAME + "」里没找到进度数据（可能是旧版本或别的文件）。\n仍要用当前页面覆盖它吗？")) throw named("Cancel");
+        out = fullPage(json);
+      } else {
+        var disk = canon(block);
+        if (disk !== json) {
+          if (disk !== BASE && !confirm("「" + FILE_NAME + "」在你打开这个页面之后被改过（可能在别的窗口或由别人保存）。\n继续保存会用当前页面的内容覆盖那些修改，确定吗？")) throw named("Cancel");
+          out = splice(src, json);
+        }
+      }
+      if (out != null) {
+        var w = await fh.createWritable();
+        try { await w.write(out); await w.close(); } catch (e) { try { await w.abort(); } catch (e2) {} throw e; }
+      }
+      if (fresh) rememberDir(dir);
+      BASE = json; ST.saved = hhmm(new Date()); setMsg("");
+      sync();
+    } catch (e) {
+      var n = e && e.name;
+      if (n === "AbortError" || n === "Cancel") setMsg("已取消保存");
+      else if (n === "NotHere") setMsg(fresh ? "所选文件夹里没有「" + FILE_NAME + "」，请选本文件所在的文件夹" + (DIR_PATH ? "：" + DIR_PATH : "")
+                                            : "原来的保存位置里找不到「" + FILE_NAME + "」，请再点一次「保存」重新选择文件夹", "err");
+      else if (n === "NotAllowedError") setMsg("没有获得写入权限，没有保存。再点一次「保存」可以重新授权", "err");
+      else if (n === "SecurityError") setMsg("浏览器需要你再点一次「保存」来确认授权", "err");
+      else setMsg("保存失败：" + ((e && e.message) || e) + "。可以先", "err", true);
+    } finally {
+      ST.busy = false; updateBar();
+    }
+  }
+  // 另存为：标准的「另存为」窗口，文件名预先填好；另存一份到任意位置，不改变「保存」写回的文件
+  async function saveAs() {
+    if (ST.busy) return;
+    var a = document.activeElement;
+    if (a && a.hasAttribute && a.hasAttribute("data-path")) commitField(a);
+    sync();
+    var json = serialize(D), out = null, cur = null;
+    if (!FS_SAVE) { download(json); return; }
+    ST.busy = true; setMsg(""); updateBar();
+    try {
+      // 已有本文件夹的写入权限时，以磁盘上的原文件为底（格式原样保留），否则由页面重新拼出完整 HTML
+      if (dirHandle && (await dirHandle.queryPermission(RW)) === "granted") {
+        try { cur = await dirHandle.getFileHandle(FILE_NAME); var src = await (await cur.getFile()).text(); if (extract(src) != null) out = splice(src, json); } catch (e) { cur = null; }
+      }
+      if (out == null) out = fullPage(json);
+      var opts = { id: "mvp-progress-saveas", suggestedName: FILE_NAME, types: [{ description: "网页文件", accept: { "text/html": [".html", ".htm"] } }] };
+      if (dirHandle) opts.startIn = dirHandle;
+      var fh = await window.showSaveFilePicker(opts);
+      var w = await fh.createWritable();
+      try { await w.write(out); await w.close(); } catch (e) { try { await w.abort(); } catch (e2) {} throw e; }
+      var same = false;
+      try { same = !!(cur && (await fh.isSameEntry(cur))); } catch (e) {}
+      if (same) { BASE = json; ST.saved = hhmm(new Date()); sync(); setMsg("已保存到当前文件「" + fh.name + "」", "ok"); }
+      else setMsg("已另存为「" + fh.name + "」" + (DIRTY ? "；当前文件的修改还没保存" : ""), DIRTY ? "warn" : "ok");
+    } catch (e) {
+      if (e && e.name === "AbortError") setMsg("已取消另存为");
+      else setMsg("另存为失败：" + ((e && e.message) || e), "err");
+    } finally {
+      ST.busy = false; updateBar();
+    }
+  }
+
+  // ---------- 启动 ----------
+  $("expandAll").onclick = function () { setAll(true); };
+  $("collapseAll").onclick = function () { setAll(false); };
+  editBtn.onclick = function () { setEdit(!EDIT); };
+  saveBtn.onclick = function () { save(); };
+  saveAsBtn.onclick = function () { saveAs(); };
+  discardBtn.onclick = function () {
+    if (!confirm("放弃所有未保存的修改，恢复到上次保存时的内容？")) return;
+    blurActive(); replaceData(BASE); setMsg(""); render(); sync();
+  };
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === "s" || e.key === "S") && (EDIT || DIRTY)) {
+      e.preventDefault();
+      if (!e.shiftKey) save(); else if (FS_SAVE) saveAs();
+    }
+  });
+  window.addEventListener("beforeunload", function (e) { sync(); if (DIRTY) { e.preventDefault(); e.returnValue = ""; } });
+  if (FS) idb("readonly", function (st) { return st.get(PAGE_KEY); }).then(function (h) { if (h && h.kind === "directory" && !dirHandle) { dirHandle = h; updateBar(); } }).catch(function () {});
+
+  checkDraft();
+  if (location.hash === "#all") D.tracks.forEach(function (tr) { tr.nodes.forEach(function (n) { n._open = true; }); });
+  if (location.hash === "#edit" && !PENDING) EDIT = true;
+  render();
+  showTip();
+  if (!window.matchMedia || !window.matchMedia("(prefers-reduced-motion: reduce)").matches) setInterval(showTip, 3200);
+
+  // 进度条动画：载入后从 0 长到目标值；用 #all 打开（全部展开 / 截图）或打印时直接显示最终宽度
+  var noAnim = location.hash === "#all";
+  if (noAnim) root.classList.add("noanim");
+  function grow() { each(document.querySelectorAll(".bar > i"), function (i) { i.style.width = i.getAttribute("data-w") + "%"; }); grown = true; }
+  if (noAnim) grow(); else requestAnimationFrame(function () { setTimeout(grow, 60); });
+  window.addEventListener("beforeprint", function () { root.classList.add("noanim"); grow(); });
+})();
+</script>
+</body>
+</html>
