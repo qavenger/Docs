@@ -1,0 +1,3033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="pipeline-explainer / Pipeline Lab">
+<title>BxDF 系列 · 常用 BxDF 算法索引</title>
+<!-- Source: bxdf_common.js + index.lab.js — edit and rebuild with pipeline-explainer/scripts/build_doc.mjs (same file order) -->
+<style>
+/* Pipeline Lab — visual language of ocean_pipeline.html (dark, dense, technical). */
+:root {
+    --pl-bg: #0a0a0a;
+    --pl-panel: #131313;
+    --pl-panel2: #0e0e0e;
+    --pl-border: #1f1f1f;
+    --pl-border2: #2a2a2a;
+    --pl-text: #aaa;
+    --pl-dim: #777;
+    --pl-dimmer: #555;
+    --pl-hi: #d8d8d8;
+    --pl-accent: #6ab0e0;
+    --pl-mono: 'Consolas', 'Cascadia Code', 'JetBrains Mono', 'Menlo', monospace;
+    --pl-sans: 'Segoe UI', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: var(--pl-bg);
+    color: var(--pl-text);
+    font-family: var(--pl-sans);
+    line-height: 1.5;
+}
+a { color: var(--pl-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #c8c8c8; }
+
+/* ── Sticky header (global parameters) ── */
+.pl-header {
+    position: sticky;
+    top: 0;
+    z-index: 10001;               /* above modal so parameters stay adjustable */
+    background: rgba(10, 10, 10, 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #1f1f1f;
+    padding: 12px 24px;
+}
+.pl-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+}
+.pl-header h1 {
+    font-size: 0.72rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #888;
+    font-weight: 500;
+    margin-right: auto;
+}
+.pl-ctrl { display: flex; align-items: center; gap: 6px; }
+.pl-ctrl label { font-size: 0.7rem; color: #666; letter-spacing: 1px; white-space: nowrap; }
+.pl-ctrl .pl-val { font-size: 0.7rem; color: #aaa; min-width: 3.5em; text-align: right; font-family: var(--pl-mono); white-space: nowrap; }
+.pl-ctrl input[type="color"] { width: 28px; height: 18px; border: 1px solid #2a2a2e; border-radius: 3px; background: transparent; cursor: pointer; padding: 0; }
+.pl-ctrl input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.pl-ctrl input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+.pl-ctrl input[type="checkbox"] { accent-color: var(--pl-accent); }
+button, select {
+    background: #161616;
+    color: #ccc;
+    border: 1px solid #2a2a2a;
+    padding: 5px 12px;
+    font-size: 0.74rem;
+    border-radius: 3px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+select { padding: 3px 8px; }
+button:hover, select:hover { background: #1f1f1f; border-color: #3a3a3a; color: #fff; }
+button.pl-play { background: #1a2a3a; border-color: #2a3a4a; color: #6ab0e0; min-width: 36px; }
+button.pl-play:hover { background: #1f3045; }
+input[type=number] {
+    background: #161616; color: #ccc; border: 1px solid #2a2a2a; border-radius: 3px;
+    padding: 2px 6px; font-family: var(--pl-mono); font-size: 0.7rem; width: 80px;
+}
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px; height: 3px;
+    background: #2a2a2a;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 11px; height: 11px;
+    background: #6ab0e0;
+    border-radius: 50%;
+    border: none;
+}
+input[type=range]::-moz-range-thumb {
+    width: 11px; height: 11px;
+    background: #6ab0e0;
+    border-radius: 50%;
+    border: none;
+}
+.pl-time {
+    font-family: var(--pl-mono);
+    font-size: 0.72rem;
+    color: #6ab0e0;
+    padding: 4px 10px;
+    background: #0c1420;
+    border-radius: 3px;
+    min-width: 130px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ── Generic section shell ── */
+.pl-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px 12px;
+}
+.pl-section.wide { max-width: 1400px; }
+.pl-h2, .pl-section > h2 {
+    font-size: 0.78rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #6ab0e0;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+.pl-sub {
+    font-size: 0.72rem;
+    color: #777;
+    margin-bottom: 14px;
+    line-height: 1.7;
+}
+.pl-sub code, .pl-step-desc code, .pl-note code, .pl-intro code, .pl-nd-desc code, .pl-sec-body code, .pl-refs code, .pl-legend code {
+    background: #161616;
+    color: #b0c4d4;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-family: var(--pl-mono);
+    font-size: 0.92em;
+}
+.pl-step-desc ul, .pl-step-desc ol, .pl-note ul, .pl-note ol, .pl-intro ul, .pl-intro ol, .pl-sec-body ul, .pl-sec-body ol, .pl-nd-desc ul, .pl-nd-desc ol { padding-left: 1.5em; margin: 4px 0; }
+.pl-step-desc p + p, .pl-intro p + p, .pl-sec-body p + p { margin-top: 6px; }
+.pl-sec-body { font-size: 0.78rem; color: #888; line-height: 1.7; }
+.pl-sec-body canvas { display: block; background: #050505; border: 1px solid #2a2a2a; border-radius: 4px; }
+
+/* ── Pipeline (step cards) ── */
+.pl-pipeline {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+.pl-intro {
+    background: #0e1418;
+    border: 1px solid #1a2530;
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-size: 0.82rem;
+    color: #88a;
+    line-height: 1.8;
+}
+.pl-intro h2 {
+    color: #6ab0e0;
+    font-size: 0.92rem;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+}
+.pl-intro code { background: #1a2530; color: #b0d0e0; }
+.pl-flow { margin-bottom: 4px; }
+.pl-flow .pl-arrow { color: #456; margin: 0 4px; }
+
+.pl-step {
+    background: #131313;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+    padding: 22px 24px;
+    position: relative;
+    scroll-margin-top: 90px;
+    transition: border-color 0.4s, box-shadow 0.4s;
+}
+.pl-step.flash { border-color: #5aa0e0; box-shadow: 0 0 24px rgba(90, 160, 224, 0.25); }
+.pl-step + .pl-step::before {
+    content: '↓';
+    position: absolute;
+    top: -23px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #333;
+    font-size: 18px;
+    background: #0a0a0a;
+    width: 24px;
+    text-align: center;
+}
+.pl-step-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #1a1a1a;
+}
+.pl-step-num {
+    background: #1a3050;
+    color: #6a9fd8;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--pl-mono);
+}
+.pl-step-title { font-size: 0.95rem; color: #d8d8d8; }
+.pl-step-tag {
+    margin-left: auto;
+    font-size: 0.6rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+}
+.pl-step-desc {
+    font-size: 0.8rem;
+    color: #808080;
+    margin-bottom: 12px;
+    line-height: 1.75;
+}
+.pl-step-desc strong { color: #b8b8b8; }
+
+/* ── Formula ── */
+.pl-formula {
+    background: #0e0e0e;
+    border-left: 2px solid #2a2a2a;
+    padding: 8px 14px;
+    margin: 10px 0;
+    font-family: var(--pl-mono);
+    font-size: 0.82rem;
+    color: #999;
+    border-radius: 0 3px 3px 0;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+.pl-formula .pl-flabel, .pl-code-label {
+    display: block;
+    font-family: var(--pl-sans);
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: #4a7aa8;
+    margin-bottom: 2px;
+}
+.pl-code-label { margin: 14px 0 6px; }
+.pl-formula .sym, .pl-conv .sym { color: #6a9fd8; }
+.pl-formula .op,  .pl-conv .op  { color: #c678dd; }
+.pl-formula .fn,  .pl-conv .fn  { color: #61afef; }
+.pl-formula .num, .pl-conv .num { color: #d19a66; }
+.pl-formula .cmt, .pl-conv .cmt { color: #4f5866; font-style: italic; }
+.pl-formula sup, .pl-formula sub, .pl-conv sup, .pl-conv sub { font-size: 0.72em; line-height: 0; }
+
+/* ── Code block ── */
+.pl-code-sec { margin-top: 14px; }
+.pl-code-toggle {
+    display: inline-block;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: #4a7aa8;
+    background: #0c1420;
+    padding: 5px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid #1a2f4a;
+    transition: background 0.12s;
+}
+.pl-code-toggle:hover { background: #11253d; }
+.pl-code-toggle::before { content: '▶ '; font-size: 0.55rem; display: inline-block; transition: transform 0.15s; }
+.pl-code-sec.open .pl-code-toggle::before { transform: rotate(90deg); }
+.pl-code-body { display: none; margin-top: 6px; }
+.pl-code-sec.open .pl-code-body { display: block; }
+pre.pl-code {
+    background: #0a0a0a;
+    border-left: 2px solid #2c4a6a;
+    padding: 12px 16px;
+    font-family: var(--pl-mono);
+    font-size: 0.74rem;
+    line-height: 1.6;
+    color: #9ba3ad;
+    overflow-x: auto;
+    border-radius: 0 4px 4px 0;
+    margin: 0;
+    white-space: pre;
+    tab-size: 4;
+}
+pre.pl-code .kw  { color: #c678dd; }
+pre.pl-code .ty  { color: #56b6c2; }
+pre.pl-code .fn  { color: #61afef; }
+pre.pl-code .num { color: #d19a66; }
+pre.pl-code .cmt { color: #4f5866; font-style: italic; }
+pre.pl-code .at  { color: #e5c07b; }
+pre.pl-code .pp  { color: #e06c75; }
+pre.pl-code .str { color: #98c379; }
+
+/* ── Previews ── */
+.pl-previews {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+.pl-pv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+}
+.pl-pv-box { position: relative; max-width: 100%; }
+.pl-pv canvas {
+    width: 180px;
+    height: 180px;
+    max-width: 100%;
+    border: 1px solid #2a2a2a;
+    image-rendering: pixelated;
+    background: #050505;
+    display: block;
+}
+.pl-pv canvas.smooth, canvas.pl-smooth { image-rendering: auto; }
+.pl-pv.large canvas { width: 360px; height: 360px; }
+.pl-pv.interactive canvas { cursor: grab; }
+.pl-pv .pl-live {
+    position: absolute;
+    top: 4px; left: 4px;
+    background: rgba(164, 95, 165, 0.8);
+    color: #fff;
+    font-size: 0.5rem;
+    padding: 2px 5px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+.pl-pv-label { font-size: 0.66rem; color: #888; letter-spacing: 1px; font-family: var(--pl-mono); text-align: center; }
+.pl-pv-sub { font-size: 0.58rem; color: #5a5a5a; text-align: center; max-width: 360px; }
+.pl-probe {
+    position: fixed; z-index: 10002; pointer-events: none;
+    background: rgba(12, 20, 32, 0.95); color: #cfe3f5; border: 1px solid #2a4a6a;
+    font-family: var(--pl-mono); font-size: 0.66rem; padding: 3px 7px; border-radius: 3px;
+    white-space: pre; display: none;
+}
+
+.pl-note {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #0e1a0e;
+    border-radius: 3px;
+    font-size: 0.74rem;
+    color: #5f945f;
+    border-left: 2px solid #2a4a2a;
+    line-height: 1.7;
+}
+.pl-note.warn {
+    background: #1a1108;
+    color: #b88860;
+    border-left-color: #6a4022;
+}
+.pl-note strong { color: inherit; filter: brightness(1.3); }
+
+/* ── Graph (RDG-style node view) ── */
+.pl-graph {
+    position: relative;
+    width: 100%;
+    height: 560px;
+    background: linear-gradient(135deg, #0a0a0a 0%, #0e0e10 100%);
+    border: 1px solid #1f1f1f;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+}
+.pl-graph.panning { cursor: grabbing; }
+.pl-graph-vp {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    transform-origin: 0 0;
+    will-change: transform;
+}
+.pl-graph-edges {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1px; height: 1px;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 1;
+}
+.pl-edge { stroke-width: 1.5; fill: none; opacity: 0.6; }
+.pl-edge.back { stroke-dasharray: 5 4; opacity: 0.75; }
+.pl-edge.hl { opacity: 1; stroke-width: 2.6; }
+.pl-graph-ctrl {
+    position: absolute;
+    top: 10px; right: 10px;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: rgba(20, 20, 24, 0.85);
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #2a2a2e;
+}
+.pl-graph-ctrl .pl-zoom { font-size: 0.68rem; color: #8aa8c8; font-family: var(--pl-mono); min-width: 38px; }
+.pl-graph-ctrl button {
+    background: #1a2530; color: #aac8e0; border: 1px solid #2a3a4a;
+    padding: 2px 9px; font-size: 0.65rem; border-radius: 3px;
+}
+.pl-graph-ctrl button:hover { background: #243545; }
+.pl-graph-hint {
+    position: absolute;
+    bottom: 8px; left: 10px;
+    z-index: 10;
+    font-size: 0.62rem;
+    color: #555;
+    background: rgba(20, 20, 24, 0.75);
+    padding: 3px 8px;
+    border-radius: 3px;
+    pointer-events: none;
+}
+.pl-node {
+    position: absolute;
+    background: #131316;
+    border: 1px solid #2a2a2e;
+    border-radius: 5px;
+    z-index: 2;
+    font-family: var(--pl-sans);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    user-select: none;
+    cursor: pointer;
+    max-width: 480px;
+}
+.pl-node:hover { border-color: #5aa0e0; box-shadow: 0 0 16px rgba(106, 176, 224, 0.15); }
+.pl-node.dragging { box-shadow: 0 4px 24px rgba(106, 176, 224, 0.3); border-color: #5aa0e0; z-index: 3; }
+.pl-node-head {
+    padding: 5px 9px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 4px 4px 0 0;
+    cursor: grab;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+.pl-node.dragging .pl-node-head { cursor: grabbing; }
+.pl-node-title { flex: 1; white-space: nowrap; color: #fff; font-weight: 600; font-size: 0.72rem; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45); }
+.pl-node-tag {
+    font-size: 0.52rem; padding: 1px 5px; border-radius: 2px; letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.95); font-weight: 600;
+    background: rgba(0, 0, 0, 0.32); border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.pl-lt {
+    margin: 5px 9px 0;
+    padding: 2px 6px;
+    font-size: 0.55rem;
+    font-family: var(--pl-mono);
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid;
+    cursor: help;
+    white-space: nowrap;
+}
+.pl-lt.resident { color: #e0b060; border-color: #7a5a2a; background: rgba(160, 106, 42, 0.18); }
+.pl-lt.param    { color: #e09060; border-color: #7a4a2a; background: rgba(160, 80, 42, 0.18); }
+.pl-lt.frame    { color: #7adcff; border-color: #2a6a8a; background: rgba(48, 128, 170, 0.20); }
+.pl-lt.history  { color: #c9a8ff; border-color: #5a3a8a; background: rgba(110, 70, 170, 0.20); }
+.pl-node-dp {
+    margin: 4px 9px 0;
+    padding: 4px 7px;
+    font-size: 0.56rem;
+    font-family: var(--pl-mono);
+    line-height: 1.45;
+    border-radius: 3px;
+    border-left: 2px solid var(--dp, #5aa0e0);
+    background: rgba(0, 0, 0, 0.32);
+    color: #c8c8d0;
+}
+.pl-dp-kind {
+    font-weight: 700; letter-spacing: 1px; padding: 0 3px; margin-right: 4px; border-radius: 2px;
+    color: var(--dp, #5aa0e0); background: color-mix(in srgb, var(--dp, #5aa0e0) 18%, transparent);
+}
+.pl-dp-id { color: #8aa8b8; font-size: 0.54rem; }
+.pl-dp-note { color: #8a8a90; font-style: italic; }
+.pl-node-desc { padding: 5px 9px 0; font-size: 0.58rem; color: #6a6a72; font-family: var(--pl-mono); font-style: italic; }
+.pl-node-pins { display: flex; justify-content: space-between; padding: 6px 0 7px; gap: 8px; }
+.pl-pins { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pl-pins.out { align-items: flex-end; text-align: right; }
+.pl-pin { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: #999; padding: 1px 0; white-space: nowrap; }
+.pl-pin-dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #131316; flex-shrink: 0; }
+.pl-pins.in .pl-pin-dot { margin-left: -5px; }
+.pl-pins.out .pl-pin-dot { margin-right: -5px; }
+.pl-pin.ext span { font-style: italic; color: #777; }
+
+.pl-legend { display: flex; gap: 8px 18px; margin-top: 10px; font-size: 0.65rem; color: #888; flex-wrap: wrap; align-items: center; }
+.pl-legend > strong { color: #bbb; letter-spacing: 1px; font-size: 0.62rem; width: 100%; display: block; }
+.pl-legend-item { display: flex; align-items: center; gap: 6px; }
+.pl-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pl-legend .pl-lt { margin: 0; }
+.pl-legend .pl-dp-kind { font-family: var(--pl-mono); font-size: 0.58rem; }
+
+.pl-common {
+    background: linear-gradient(to bottom, #0a1015, #0e1418);
+    border: 1px solid #1a2a30;
+    border-radius: 5px;
+    margin-bottom: 12px;
+}
+.pl-common > summary {
+    cursor: pointer;
+    padding: 8px 14px;
+    color: #6ab0e0;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    user-select: none;
+    list-style: none;
+}
+.pl-common > summary::-webkit-details-marker { display: none; }
+.pl-common > summary::before { content: '▶ '; display: inline-block; transition: transform 0.15s; font-size: 0.55rem; margin-right: 4px; }
+.pl-common[open] > summary::before { transform: rotate(90deg); }
+.pl-common > summary:hover { background: #131e25; }
+.pl-common-body { padding: 4px 14px 12px; border-top: 1px solid #1a2a30; }
+.pl-common-body pre.pl-code { margin: 6px 0; }
+.pl-common-note { color: #779; font-size: 0.7rem; margin: 8px 0 4px; }
+
+/* ── Node detail modal ── */
+.pl-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.65); z-index: 9998; backdrop-filter: blur(2px);
+}
+.pl-backdrop.open { display: block; }
+.pl-modal {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 680px;
+    max-width: 92vw;
+    max-height: 85vh;
+    background: #161618;
+    border: 1px solid #2a2a30;
+    border-radius: 8px;
+    z-index: 9999;
+    flex-direction: column;
+    box-shadow: 0 12px 64px rgba(0, 0, 0, 0.8);
+}
+.pl-modal.open { display: flex; }
+.pl-modal.wide { width: min(94vw, 980px); max-height: 92vh; }
+.pl-modal-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px; border-bottom: 1px solid #232328;
+}
+.pl-modal-title { color: #eee; font-weight: 600; font-size: 0.9rem; flex: 1; font-family: var(--pl-mono); }
+.pl-modal-tag { font-size: 0.6rem; padding: 2px 8px; border-radius: 3px; color: #fff; letter-spacing: 1px; font-weight: 600; }
+.pl-modal-close {
+    background: transparent; border: 1px solid #2a2a30; color: #888;
+    width: 28px; height: 28px; padding: 0; font-size: 1rem; border-radius: 4px;
+}
+.pl-modal-close:hover { color: #fff; border-color: #4a4a50; background: #2a2a30; }
+.pl-modal-body { padding: 16px 20px 18px; overflow-y: auto; color: #aaa; font-size: 0.78rem; line-height: 1.75; }
+.pl-nd-label {
+    color: #6ab0e0; font-size: 0.6rem; letter-spacing: 2px; margin: 14px 0 6px;
+    text-transform: uppercase; display: block; font-weight: 600;
+}
+.pl-nd-label:first-child { margin-top: 0; }
+.pl-nd-desc { color: #999; font-size: 0.78rem; line-height: 1.7; margin-bottom: 4px; }
+.pl-nd-lt { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid; border-radius: 4px; margin-bottom: 4px; }
+.pl-nd-lt .pl-lt { margin: 0; }
+.pl-nd-lt .pl-lt-tip { font-size: 0.7rem; color: #999; }
+.pl-nd-lt.resident { border-color: #7a5a2a; background: rgba(160, 106, 42, 0.10); }
+.pl-nd-lt.param    { border-color: #7a4a2a; background: rgba(160, 80, 42, 0.10); }
+.pl-nd-lt.frame    { border-color: #2a6a8a; background: rgba(48, 128, 170, 0.10); }
+.pl-nd-lt.history  { border-color: #5a3a8a; background: rgba(110, 70, 170, 0.10); }
+.pl-nd-dp { border-left: 2px solid var(--dp, #5aa0e0); background: #0e1114; padding: 6px 10px; border-radius: 0 4px 4px 0; font-family: var(--pl-mono); font-size: 0.68rem; }
+.pl-nd-dp + .pl-nd-dp { margin-top: 6px; }
+.pl-nd-dp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.pl-nd-dp-name { color: #e0e0e8; font-weight: 600; }
+.pl-nd-dp table { width: 100%; border-collapse: collapse; }
+.pl-nd-dp td { padding: 2px 6px 2px 0; vertical-align: top; }
+.pl-nd-dp td:first-child { color: #7a8090; width: 130px; font-size: 0.64rem; }
+.pl-nd-dp td code { color: #c8d6e6; background: #161a20; padding: 0 5px; border-radius: 2px; }
+.pl-nd-dp .pl-dp-note { margin-top: 4px; font-size: 0.64rem; }
+.pl-conv, .pl-nd-common {
+    background: #0e0e0e; border-left: 2px solid #3a3a2a; padding: 8px 12px;
+    font-family: var(--pl-mono); font-size: 0.72rem; color: #9a9a9a; white-space: pre-wrap; line-height: 1.7;
+    border-radius: 0 3px 3px 0; overflow-x: auto;
+}
+.pl-nd-common { border-left-color: #2a4a5a; }
+.pl-nd-pins { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-family: var(--pl-mono); font-size: 0.68rem; }
+.pl-nd-pins div { display: flex; align-items: center; gap: 6px; color: #aaa; }
+.pl-nd-preview { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 8px 0; }
+.pl-nd-preview canvas { width: 256px; height: 256px; max-width: 100%; border: 1px solid #2a2a2a; image-rendering: pixelated; background: #050505; }
+.pl-nd-preview canvas.smooth { image-rendering: auto; }
+.pl-nd-preview.large canvas { width: min(72vh, 760px); height: min(72vh, 760px); }
+.pl-nd-preview .pl-pv-label { font-size: 0.66rem; }
+.pl-nd-none { color: #555; font-style: italic; font-size: 0.72rem; text-align: center; padding: 10px; }
+.pl-nd-jump { display: inline-block; margin-top: 12px; font-size: 0.7rem; }
+
+/* ── References ── */
+.pl-refs { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; }
+.pl-refs-card { background: #111; border: 1px solid #1f1f1f; border-radius: 8px; padding: 18px 24px; }
+.pl-refs ol { padding-left: 1.4em; font-size: 0.76rem; color: #888; line-height: 1.9; }
+.pl-refs .pl-ref-note { color: #666; }
+
+/* ── Runtime problem overlay (only visible when something is broken) ── */
+.pl-overlay {
+    position: fixed; right: 12px; bottom: 12px; z-index: 10003;
+    max-width: min(520px, 90vw); max-height: 40vh; overflow: auto;
+    background: rgba(40, 10, 10, 0.95); border: 1px solid #7a2a2a; border-radius: 6px;
+    color: #f0b0b0; font-family: var(--pl-mono); font-size: 0.68rem; padding: 10px 12px;
+    white-space: pre-wrap; display: none;
+}
+.pl-overlay b { color: #ffd0d0; }
+
+/* screenshot mode (validator) */
+.pl-shot .pl-header { position: static; }
+
+</style>
+</head>
+<body>
+<div id="pl-root"></div>
+<script>
+/* Pipeline Lab runtime — builds an interactive step-by-step pipeline explainer from a spec.
+ * Usage (content file):  PipelineLab.mount({ title, params, stages, steps, graph, ... })
+ * Full API: references/framework-api.md of the pipeline-explainer skill.
+ * Exposes window.PipelineLab (alias window.PL). No external dependencies. */
+(function () {
+'use strict';
+
+const PL = {};
+window.PipelineLab = PL;
+window.PL = PL;
+
+// ════════════════════════════════════════════════════════════
+// Small utilities
+// ════════════════════════════════════════════════════════════
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ESC[c]);
+const isFn = (f) => typeof f === 'function';
+const arr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
+const el = (tag, cls, html) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+};
+const SVGNS = 'http://www.w3.org/2000/svg';
+const raf = () => new Promise((r) => requestAnimationFrame(() => r()));
+
+PL.esc = esc;
+PL.clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
+PL.lerp = (a, b, t) => a + (b - a) * t;
+PL.smoothstep = (e0, e1, x) => { const t = PL.clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+PL.fract = (x) => x - Math.floor(x);
+PL.rng = function (seed) {                       // mulberry32 → () ∈ [0,1)
+    let a = (seed >>> 0) || 1;
+    return function () {
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+};
+PL.gauss2 = function (rand) {                    // Box-Muller → [n0, n1] ~ N(0,1)
+    const u1 = Math.max(rand(), 1e-12), u2 = rand();
+    const r = Math.sqrt(-2 * Math.log(u1)), a = 2 * Math.PI * u2;
+    return [r * Math.cos(a), r * Math.sin(a)];
+};
+PL.gauss = (rand) => PL.gauss2(rand)[0];
+PL.buf = function (owner, name, length, Type) {  // reuse or (re)allocate a typed array
+    Type = Type || Float32Array;
+    const cur = owner[name];
+    if (cur && cur.length === length && cur instanceof Type) return cur;
+    return (owner[name] = new Type(length));
+};
+PL.hexToRgb = (hex) => [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
+PL.v3 = {
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    mul: (a, s) => [a[0] * s, a[1] * s, a[2] * s],
+    dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+    cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    len: (a) => Math.hypot(a[0], a[1], a[2]),
+    norm: (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+    lerp: (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t],
+    reflect: (d, n) => { const k = 2 * (d[0] * n[0] + d[1] * n[1] + d[2] * n[2]); return [d[0] - k * n[0], d[1] - k * n[1], d[2] - k * n[2]]; },
+};
+
+// ════════════════════════════════════════════════════════════
+// FFT (radix-2, in place). Forward uses e^{-i}, inverse e^{+i} with 1/n per 1D pass.
+// ════════════════════════════════════════════════════════════
+function fft1d(re, im, inverse) {
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++) {
+        let bit = n >> 1;
+        for (; j & bit; bit >>= 1) j ^= bit;
+        j ^= bit;
+        if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+        const ang = (inverse ? 2 : -2) * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang), half = len >> 1;
+        for (let i = 0; i < n; i += len) {
+            let cr = 1, ci = 0;
+            for (let j = 0; j < half; j++) {
+                const a = i + j, b = a + half;
+                const xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+                re[b] = re[a] - xr; im[b] = im[a] - xi;
+                re[a] += xr; im[a] += xi;
+                const ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
+            }
+        }
+    }
+    if (inverse) { const s = 1 / n; for (let i = 0; i < n; i++) { re[i] *= s; im[i] *= s; } }
+}
+const fftScratch = new Map();
+function scratch(n) {
+    let s = fftScratch.get(n);
+    if (!s) { s = [new Float64Array(n), new Float64Array(n)]; fftScratch.set(n, s); }
+    return s;
+}
+function fftRows(re, im, W, H, inverse) {
+    const [tr, ti] = scratch(W);
+    for (let y = 0; y < H; y++) {
+        const o = y * W;
+        for (let x = 0; x < W; x++) { tr[x] = re[o + x]; ti[x] = im[o + x]; }
+        fft1d(tr, ti, inverse);
+        for (let x = 0; x < W; x++) { re[o + x] = tr[x]; im[o + x] = ti[x]; }
+    }
+}
+function fftCols(re, im, W, H, inverse) {
+    const [tr, ti] = scratch(H);
+    for (let x = 0; x < W; x++) {
+        for (let y = 0; y < H; y++) { tr[y] = re[y * W + x]; ti[y] = im[y * W + x]; }
+        fft1d(tr, ti, inverse);
+        for (let y = 0; y < H; y++) { re[y * W + x] = tr[y]; im[y * W + x] = ti[y]; }
+    }
+}
+PL.fft = {
+    fft1d,
+    rows: fftRows,
+    cols: fftCols,
+    fft2d(re, im, W, H, inverse) { H = H || W; fftRows(re, im, W, H, inverse); fftCols(re, im, W, H, inverse); },
+    freq: (i, n) => (i < n / 2 ? i : i - n),                      // bin index → signed frequency
+    shift: (x, y, W, H) => ((y + (H >> 1)) % H) * W + ((x + (W >> 1)) % W),  // display (x,y) → source index (DC centered)
+};
+
+// ════════════════════════════════════════════════════════════
+// Colormaps — f(t ∈ [0,1], out) → out = [r,g,b] in 0..255
+// ════════════════════════════════════════════════════════════
+function stops(list) {
+    const c = list.map((hx) => [parseInt(hx.slice(1, 3), 16), parseInt(hx.slice(3, 5), 16), parseInt(hx.slice(5, 7), 16)]);
+    const n = c.length - 1;
+    return function (t, out) {
+        t = t <= 0 ? 0 : t >= 1 ? 1 : t;
+        const f = t * n, i = Math.min(n - 1, f | 0), u = f - i, a = c[i], b = c[i + 1];
+        out[0] = a[0] + (b[0] - a[0]) * u; out[1] = a[1] + (b[1] - a[1]) * u; out[2] = a[2] + (b[2] - a[2]) * u;
+        return out;
+    };
+}
+function hue(t, out) {   // cyclic hue wheel, t ∈ [0,1)
+    const h6 = PL.fract(t) * 6;
+    const r = PL.clamp(Math.abs(h6 - 3) - 1, 0, 1), g = PL.clamp(2 - Math.abs(h6 - 2), 0, 1), b = PL.clamp(2 - Math.abs(h6 - 4), 0, 1);
+    out[0] = r * 255; out[1] = g * 255; out[2] = b * 255; return out;
+}
+PL.cmap = {
+    gray: (t, out) => { const v = (t <= 0 ? 0 : t >= 1 ? 1 : t) * 255; out[0] = out[1] = out[2] = v; return out; },
+    diverge: stops(['#5ab0ff', '#2a64a8', '#0e1116', '#a8642a', '#ffb05a']),
+    viridis: stops(['#440154', '#482878', '#3e4989', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725']),
+    inferno: stops(['#000004', '#1b0c41', '#4a0c6b', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4']),
+    ocean: stops(['#02060c', '#0a2a4a', '#1d5f8a', '#4aa0c8', '#bfe6f5']),
+    phase: hue,
+};
+const cmapOf = (m) => (isFn(m) ? m : PL.cmap[m] || PL.cmap.gray);
+
+// ════════════════════════════════════════════════════════════
+// Drawing helpers for previews
+// ════════════════════════════════════════════════════════════
+let rangeGen = 0;   // bumped on resident/param invalidation → `hold` ranges re-snapshot
+function imageFor(canvas, W, H) {
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; canvas._plImg = null; }
+    const ctx = canvas.getContext('2d');
+    if (!canvas._plImg) canvas._plImg = ctx.createImageData(W, H);
+    return { ctx, img: canvas._plImg };
+}
+function stretchFn(s) {
+    if (!s) return null;
+    if (s === 'sqrt') return (v) => (v < 0 ? -Math.sqrt(-v) : Math.sqrt(v));
+    if (s === 'log') return (v) => (v < 0 ? -Math.log1p(-v) : Math.log1p(v));
+    if (typeof s === 'number') return (v) => (v < 0 ? -Math.pow(-v, s) : Math.pow(v, s));
+    return isFn(s) ? s : null;
+}
+function resolveRange(canvas, vals, o) {
+    if (Array.isArray(o.range)) return o.range;
+    if (o.hold && canvas._plHold && canvas._plHold.gen === rangeGen) return canvas._plHold.r;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < vals.length; i++) { const v = vals[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    if (o.symmetric) { const m = Math.max(Math.abs(lo), Math.abs(hi)) || 1; lo = -m; hi = m; }
+    if (hi - lo < 1e-30) hi = lo + 1e-30;
+    const r = [lo, hi];
+    if (o.hold) canvas._plHold = { gen: rangeGen, r };
+    return r;
+}
+const tmpVals = new Map();
+function tmp(n) { let t = tmpVals.get(n); if (!t) { t = new Float32Array(n); tmpVals.set(n, t); } return t; }
+
+PL.draw = {};
+/** Scalar field → image. o: { map, range:[lo,hi], symmetric, hold, stretch:'sqrt'|'log'|gamma, abs, shift, flipY, stride, offset } */
+PL.draw.field = function (canvas, data, W, H, o) {
+    o = o || {}; H = H || W;
+    const n = W * H, stride = o.stride || 1, off = o.offset || 0, vals = tmp(n);
+    for (let i = 0; i < n; i++) { const v = data[i * stride + off]; vals[i] = o.abs ? Math.abs(v) : v; }
+    if (o.stretch === 'db') {          // 10·log10(|v| / max), clamped to −dbRange (power spectra; pass dbScale: 20 for amplitudes)
+        let m = 0;
+        for (let i = 0; i < n; i++) { const a = Math.abs(vals[i]); if (a < Infinity && a > m) m = a; }   // NaN / ∞ ignored
+        const range = o.dbRange || 60, k = o.dbScale || 10, inv = m > 0 ? 1 / m : 0;
+        for (let i = 0; i < n; i++) vals[i] = Math.max(-range, k * Math.log10(Math.abs(vals[i]) * inv + 1e-300));
+        if (!o.range) o = Object.assign({}, o, { range: [-range, 0] });
+    } else {
+        const st = stretchFn(o.stretch);
+        if (st) for (let i = 0; i < n; i++) vals[i] = st(vals[i]);
+    }
+    const map = cmapOf(o.map || (o.symmetric ? 'diverge' : 'gray'));
+    const [lo, hi] = resolveRange(canvas, vals, o);
+    const inv = 1 / (hi - lo);
+    const { ctx, img } = imageFor(canvas, W, H);
+    const d = img.data, rgb = [0, 0, 0];
+    for (let y = 0; y < H; y++) {
+        const sy = o.flipY ? H - 1 - y : y;
+        for (let x = 0; x < W; x++) {
+            const si = o.shift ? PL.fft.shift(x, sy, W, H) : sy * W + x;
+            map((vals[si] - lo) * inv, rgb);
+            const p = (y * W + x) * 4;
+            d[p] = rgb[0]; d[p + 1] = rgb[1]; d[p + 2] = rgb[2]; d[p + 3] = 255;
+        }
+    }
+    ctx.putImageData(img, 0, 0);
+    return [lo, hi];
+};
+/** Complex field. o.mode: 'mag' | 're' | 'im' | 'phase' | 'rg'  (+ field options) */
+PL.draw.complex = function (canvas, re, im, W, H, o) {
+    o = Object.assign({ mode: 'mag' }, o || {}); H = H || W;
+    const n = W * H, mode = o.mode;
+    if (mode === 're') return PL.draw.field(canvas, re, W, H, Object.assign({ symmetric: true }, o));
+    if (mode === 'im') return PL.draw.field(canvas, im, W, H, Object.assign({ symmetric: true }, o));
+    if (mode === 'mag') {
+        const m = canvas._plMag && canvas._plMag.length === n ? canvas._plMag : (canvas._plMag = new Float32Array(n));
+        for (let i = 0; i < n; i++) m[i] = Math.hypot(re[i], im[i]);
+        return PL.draw.field(canvas, m, W, H, Object.assign({ stretch: 'sqrt' }, o));
+    }
+    const { ctx, img } = imageFor(canvas, W, H);
+    const d = img.data, rgb = [0, 0, 0];
+    let maxR = 1e-30, maxI = 1e-30, maxM = 1e-30;
+    for (let i = 0; i < n; i++) { maxR = Math.max(maxR, Math.abs(re[i])); maxI = Math.max(maxI, Math.abs(im[i])); maxM = Math.max(maxM, Math.hypot(re[i], im[i])); }
+    const st = stretchFn(o.stretch === undefined ? 'sqrt' : o.stretch) || ((v) => v);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const si = o.shift ? PL.fft.shift(x, y, W, H) : y * W + x, p = (y * W + x) * 4;
+        if (mode === 'phase') {
+            hue(Math.atan2(im[si], re[si]) / (2 * Math.PI) + 0.5, rgb);
+            const k = o.weight === false ? 1 : PL.clamp(st(Math.hypot(re[si], im[si]) / maxM), 0, 1);
+            d[p] = rgb[0] * k; d[p + 1] = rgb[1] * k; d[p + 2] = rgb[2] * k;
+        } else {   // 'rg': R = Re, G = Im, centered at 128
+            d[p] = 128 + 127 * st(re[si] / maxR); d[p + 1] = 128 + 127 * st(im[si] / maxI); d[p + 2] = 128;
+        }
+        d[p + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+};
+function tonemap(v, o) {
+    if (o.exposure) v *= o.exposure;
+    if (o.tonemap === 'aces') v = PL.clamp((v * (2.51 * v + 0.03)) / (v * (2.43 * v + 0.59) + 0.14), 0, 1);
+    else if (o.tonemap === 'reinhard') v = v / (1 + v);
+    if (o.encode === 'srgb') v = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(Math.max(v, 0), 1 / 2.4) - 0.055;
+    return v;
+}
+/** Per-pixel "pixel shader": fn(x, y, out) writes out[0..2] (0..1) or returns [r,g,b]. o: { exposure, tonemap:'aces'|'reinhard', encode:'srgb' } */
+PL.draw.pixels = function (canvas, W, H, fn, o) {
+    o = o || {};
+    const { ctx, img } = imageFor(canvas, W, H);
+    const d = img.data, out = [0, 0, 0, 1], post = o.exposure || o.tonemap || o.encode;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        out[0] = out[1] = out[2] = 0; out[3] = 1;
+        const c = fn(x, y, out) || out, p = (y * W + x) * 4;
+        let r = c[0], g = c[1], b = c[2];
+        if (post) { r = tonemap(r, o); g = tonemap(g, o); b = tonemap(b, o); }
+        d[p] = r * 255; d[p + 1] = g * 255; d[p + 2] = b * 255; d[p + 3] = (c[3] === undefined ? 1 : c[3]) * 255;
+    }
+    ctx.putImageData(img, 0, 0);
+};
+/** Interleaved RGB(A) float data (0..1) → image. o: { stride: 3|4, scale, bias, + pixels options } */
+PL.draw.rgb = function (canvas, data, W, H, o) {
+    o = o || {}; H = H || W;
+    const s = o.stride || 3, k = o.scale == null ? 1 : o.scale, b = o.bias || 0;
+    PL.draw.pixels(canvas, W, H, (x, y, out) => {
+        const i = (y * W + x) * s;
+        out[0] = data[i] * k + b; out[1] = data[i + 1] * k + b; out[2] = data[i + 2] * k + b;
+        return out;
+    }, o);
+};
+/** Unit normals (interleaved xyz) → RGB = n·0.5+0.5 */
+PL.draw.normal = function (canvas, nrm, W, H) { PL.draw.rgb(canvas, nrm, W, H, { stride: 3, scale: 0.5, bias: 0.5 }); };
+/** Height-field slopes → tangent-space normal map. N = normalize(−sx·k, 1, −sz·k); R = Nx, G = Nz, B = Ny */
+PL.draw.normalFromSlopes = function (canvas, sx, sz, W, H, o) {
+    o = o || {}; H = H || W;
+    let k = o.scale;
+    if (k == null) {
+        let m = 1e-9;
+        for (let i = 0; i < W * H; i++) m = Math.max(m, Math.abs(sx[i]), Math.abs(sz[i]));
+        k = 1.5 / m;
+    }
+    PL.draw.pixels(canvas, W, H, (x, y, out) => {
+        const i = y * W + x, nx = -sx[i] * k, nz = -sz[i] * k, l = 1 / Math.hypot(nx, 1, nz);
+        out[0] = nx * l * 0.5 + 0.5; out[1] = nz * l * 0.5 + 0.5; out[2] = l * 0.5 + 0.5;
+        return out;
+    });
+};
+/** Hi-DPI 2D context sized to the canvas' CSS box. Returns { ctx, w, h } in CSS pixels. */
+PL.draw.ctx = function (canvas, o) {
+    o = o || {};
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(1, canvas.clientWidth || parseFloat(canvas.style.width) || 180);
+    const h = Math.max(1, canvas.clientHeight || parseFloat(canvas.style.height) || 180);
+    const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+    let snap = null;
+    if (o.keep && canvas.width && canvas.height) {   // overlay on top of what is already drawn (e.g. a field / pixels image)
+        snap = document.createElement('canvas'); snap.width = canvas.width; snap.height = canvas.height;
+        snap.getContext('2d').drawImage(canvas, 0, 0);
+    }
+    if (canvas.width !== pw || canvas.height !== ph) { canvas.width = pw; canvas.height = ph; canvas._plImg = null; }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (snap) { ctx.imageSmoothingEnabled = !!o.smooth; ctx.drawImage(snap, 0, 0, w, h); ctx.imageSmoothingEnabled = true; }
+    else if (o.clear !== false) { ctx.fillStyle = o.bg || '#050505'; ctx.fillRect(0, 0, w, h); }
+    return { ctx, w, h, dpr };
+};
+function niceTicks(lo, hi, count) {
+    const span = hi - lo || 1, raw = span / Math.max(1, count), mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || raw;
+    const out = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-6; v += step) out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+    return out;
+}
+const fmtTick = (v) => { const a = Math.abs(v); return a !== 0 && (a >= 1e4 || a < 1e-3) ? v.toExponential(0) : String(+v.toPrecision(4)); };
+const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+const pow10Label = (e) => '10' + String(e).split('').map((c) => SUP[c] || c).join('');
+/** Line / bar plot. o: { series:[{ data | fn, x?, color, label, width, dash, fill, bar, samples }], x:[a,b], y:[a,b], logX, logY,
+ *  xLabel, yLabel, marks:[{x,label,color}], hmarks:[{y,label,color}], samples, bg } — x/y ranges and marks are in data units. */
+PL.draw.plot = function (canvas, o) {
+    o = o || {};
+    const { ctx, w, h } = PL.draw.ctx(canvas, { bg: o.bg });
+    const lx = !!o.logX, ly = !!o.logY;
+    const tx = (v) => (lx ? (v > 0 ? Math.log10(v) : NaN) : v), ty = (v) => (ly ? (v > 0 ? Math.log10(v) : NaN) : v);
+    const padL = 46, padR = 10, padT = 10, padB = o.xLabel ? 32 : 20;
+    const series = arr(o.series).map((sr, k) => {
+        const color = sr.color || ['#6ab0e0', '#e0a060', '#5ad07a', '#c678dd', '#e06c75', '#56b6c2'][k % 6];
+        let xs = [], ys = [];
+        if (isFn(sr.fn)) {
+            const [a0, b0] = o.x || (lx ? [1e-3, 1] : [0, 1]), m = sr.samples || o.samples || 256;
+            for (let i = 0; i < m; i++) {
+                const u = i / (m - 1), x = lx ? Math.pow(10, Math.log10(a0) + (Math.log10(b0) - Math.log10(a0)) * u) : a0 + (b0 - a0) * u;
+                xs.push(x); ys.push(sr.fn(x));
+            }
+        } else {
+            ys = Array.from(sr.data || []);
+            xs = sr.x ? Array.from(sr.x) : ys.map((_, i) => (o.x ? o.x[0] + (o.x[1] - o.x[0]) * i / Math.max(1, ys.length - 1) : i));
+        }
+        return Object.assign({}, sr, { color, X: xs.map(tx), Y: ys.map(ty) });
+    });
+    const ext = (key) => { let a0 = Infinity, b0 = -Infinity; series.forEach((sr) => sr[key].forEach((v) => { if (isFinite(v)) { a0 = Math.min(a0, v); b0 = Math.max(b0, v); } })); return isFinite(a0) ? [a0, b0] : [0, 1]; };
+    const xr = o.x ? o.x.map(tx) : ext('X');
+    let yr;
+    if (o.y) yr = o.y.map(ty);
+    else {
+        let [a0, b0] = ext('Y');
+        if (series.some((sr) => sr.bar) && !ly) a0 = Math.min(a0, 0);
+        const m = (b0 - a0) * 0.06 || 1;
+        yr = [a0 === 0 && !ly ? 0 : a0 - m, b0 + m];
+    }
+    const X = (v) => padL + (v - xr[0]) / (xr[1] - xr[0] || 1) * (w - padL - padR);
+    const Y = (v) => h - padB - (v - yr[0]) / (yr[1] - yr[0] || 1) * (h - padT - padB);
+    const ticks = (r, log, px) => (log ? (() => { const out = []; for (let e = Math.ceil(r[0] - 1e-9); e <= r[1] + 1e-9; e++) out.push(e); const step = Math.max(1, Math.ceil(out.length / Math.max(2, px))); return out.filter((_, i) => i % step === 0); })() : niceTicks(r[0], r[1], px));
+    ctx.font = '10px Consolas, monospace'; ctx.lineWidth = 1; ctx.strokeStyle = '#1c1c1c'; ctx.fillStyle = '#5a5a5a';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ticks(xr, lx, Math.max(2, Math.floor((w - padL) / 70))).forEach((v) => {
+        ctx.beginPath(); ctx.moveTo(X(v), padT); ctx.lineTo(X(v), h - padB); ctx.stroke();
+        ctx.fillText(lx ? pow10Label(v) : fmtTick(v), X(v), h - padB + 3);
+    });
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ticks(yr, ly, Math.max(2, Math.floor((h - padT - padB) / 34))).forEach((v) => {
+        ctx.beginPath(); ctx.moveTo(padL, Y(v)); ctx.lineTo(w - padR, Y(v)); ctx.stroke();
+        ctx.fillText(ly ? pow10Label(v) : fmtTick(v), padL - 4, Y(v));
+    });
+    ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, h - padB); ctx.lineTo(w - padR, h - padB); ctx.stroke();
+    ctx.fillStyle = '#777';
+    if (o.xLabel) { ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(o.xLabel, padL + (w - padL - padR) / 2, h - 1); }
+    if (o.yLabel) { ctx.save(); ctx.translate(10, padT + (h - padT - padB) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(o.yLabel, 0, 0); ctx.restore(); }
+    ctx.save(); ctx.beginPath(); ctx.rect(padL, padT, w - padL - padR, h - padT - padB); ctx.clip();
+    series.forEach((sr) => {
+        ctx.strokeStyle = sr.color; ctx.fillStyle = sr.color; ctx.lineWidth = sr.width || 1.5; ctx.setLineDash(sr.dash || []);
+        if (sr.bar) {
+            const bw = Math.max(1, (w - padL - padR) / Math.max(1, sr.Y.length) * 0.8), y0 = Y(ly ? yr[0] : Math.max(yr[0], 0));
+            sr.X.forEach((x, i) => { if (isFinite(sr.Y[i]) && isFinite(x)) ctx.fillRect(X(x) - bw / 2, Math.min(y0, Y(sr.Y[i])), bw, Math.abs(Y(sr.Y[i]) - y0)); });
+            return;
+        }
+        ctx.beginPath();
+        let pen = false, first = null, last = null;
+        sr.X.forEach((x, i) => {
+            const v = sr.Y[i];
+            if (!isFinite(v) || !isFinite(x)) { pen = false; return; }
+            if (pen) ctx.lineTo(X(x), Y(v)); else { ctx.moveTo(X(x), Y(v)); pen = true; }
+            if (first === null) first = x; last = x;
+        });
+        ctx.stroke();
+        if (sr.fill && first !== null) { const yb = Y(ly ? yr[0] : Math.max(yr[0], 0)); ctx.lineTo(X(last), yb); ctx.lineTo(X(first), yb); ctx.globalAlpha = 0.15; ctx.fill(); ctx.globalAlpha = 1; }
+    });
+    ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+    arr(o.marks).forEach((m) => { const v = tx(m.x); if (!isFinite(v)) return; ctx.strokeStyle = m.color || '#e8c25a'; ctx.beginPath(); ctx.moveTo(X(v), padT); ctx.lineTo(X(v), h - padB); ctx.stroke(); });
+    arr(o.hmarks).forEach((m) => { const v = ty(m.y); if (!isFinite(v)) return; ctx.strokeStyle = m.color || '#e8c25a'; ctx.beginPath(); ctx.moveTo(padL, Y(v)); ctx.lineTo(w - padR, Y(v)); ctx.stroke(); });
+    ctx.restore(); ctx.setLineDash([]);
+    // mark labels: bottom of the plot area, staggered upward when they would overlap
+    ctx.textBaseline = 'bottom'; ctx.textAlign = 'left';
+    const rowsEnd = [];
+    arr(o.marks).map((m) => Object.assign({ px: X(tx(m.x)) }, m)).filter((m) => m.label && isFinite(m.px)).sort((p, q) => p.px - q.px).forEach((m) => {
+        const tw = ctx.measureText(m.label).width + 6;
+        let x0 = m.px + 3;
+        if (x0 + tw > w - padR) x0 = m.px - tw;
+        let row = 0;
+        while (rowsEnd[row] != null && rowsEnd[row] > x0) row++;
+        rowsEnd[row] = x0 + tw;
+        ctx.fillStyle = m.color || '#e8c25a';
+        ctx.fillText(m.label, x0, h - padB - 3 - row * 12);
+    });
+    ctx.textBaseline = 'top';
+    arr(o.hmarks).forEach((m) => { const v = ty(m.y); if (m.label && isFinite(v)) { ctx.fillStyle = m.color || '#e8c25a'; ctx.fillText(m.label, padL + 4, Y(v) + 2); } });
+    const labeled = series.filter((sr) => sr.label);
+    if (labeled.length) {
+        const lw = Math.max(...labeled.map((sr) => ctx.measureText(sr.label).width)) + 22, lh = labeled.length * 13 + 6;
+        ctx.fillStyle = 'rgba(8,8,10,0.85)'; ctx.fillRect(w - padR - lw - 2, padT + 2, lw, lh);
+        labeled.forEach((sr, k) => {
+            const y0 = padT + 5 + k * 13;
+            ctx.strokeStyle = sr.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - padR - lw + 3, y0 + 6); ctx.lineTo(w - padR - lw + 15, y0 + 6); ctx.stroke();
+            ctx.fillStyle = sr.color; ctx.textAlign = 'left'; ctx.fillText(sr.label, w - padR - lw + 18, y0);
+        });
+    }
+};
+/** Arrow field over an optional background field. o: { step, scale, color, bg: { data, map, symmetric } } */
+PL.draw.vectors = function (canvas, vx, vy, W, H, o) {
+    o = o || {}; H = H || W;
+    const { ctx, w, h } = PL.draw.ctx(canvas);
+    if (o.bg && o.bg.data) {
+        const off = canvas._plOff || (canvas._plOff = document.createElement('canvas'));
+        PL.draw.field(off, o.bg.data, W, H, o.bg);
+        ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, w, h);
+    }
+    const step = o.step || Math.max(1, Math.round(W / 16));
+    let m = 1e-12;
+    for (let i = 0; i < W * H; i++) m = Math.max(m, Math.hypot(vx[i], vy[i]));
+    const cell = w / W * step, k = (o.scale || 1) * cell * 0.9 / m;
+    ctx.strokeStyle = o.color || '#6ab0e0'; ctx.lineWidth = 1;
+    for (let y = step >> 1; y < H; y += step) for (let x = step >> 1; x < W; x += step) {
+        const i = y * W + x, px = (x + 0.5) * w / W, py = (y + 0.5) * h / H, dx = vx[i] * k, dy = vy[i] * k;
+        if (Math.abs(dx) + Math.abs(dy) < 0.3) continue;
+        const a = Math.atan2(dy, dx), L = Math.hypot(dx, dy), hd = Math.min(4, L * 0.35);
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + dx, py + dy);
+        ctx.lineTo(px + dx - hd * Math.cos(a - 0.5), py + dy - hd * Math.sin(a - 0.5));
+        ctx.moveTo(px + dx, py + dy); ctx.lineTo(px + dx - hd * Math.cos(a + 0.5), py + dy - hd * Math.sin(a + 0.5));
+        ctx.stroke();
+    }
+};
+
+// ── 3D height-field viewer: small z-buffered software rasterizer with orbit drag ──
+function orbitOf(canvas, init) {
+    if (canvas._plOrbit) return canvas._plOrbit;
+    const ob = canvas._plOrbit = Object.assign({ yaw: 0.75, pitch: 0.55, dist: 2.7 }, init || {});
+    let drag = null;
+    canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing'; });
+    canvas.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        ob.yaw -= (e.clientX - drag.x) * 0.01;
+        ob.pitch = PL.clamp(ob.pitch + (e.clientY - drag.y) * 0.01, 0.05, 1.5);
+        drag = { x: e.clientX, y: e.clientY };
+        if (canvas._plRedraw) canvas._plRedraw();
+    });
+    const up = () => { drag = null; canvas.style.cursor = ''; };
+    canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+    canvas.addEventListener('wheel', (e) => { e.preventDefault(); ob.dist = PL.clamp(ob.dist * Math.exp(e.deltaY * 0.001), 1.2, 8); if (canvas._plRedraw) canvas._plRedraw(); }, { passive: false });
+    return ob;
+}
+/** o: { height, W, H, dispX, dispZ, heightScale, dispScale, autoScale, color(i, n)→[r,g,b], colors(Float32Array rgb), res, light, bg, wire } */
+PL.draw.surface = function (canvas, o) {
+    canvas._plRedraw = () => drawSurface(canvas, o);
+    if (canvas.parentElement && canvas.parentElement.parentElement) canvas.parentElement.parentElement.classList.add('interactive');
+    drawSurface(canvas, o);
+};
+function drawSurface(canvas, o) {
+    const W = o.W, H = o.H || o.W, hgt = o.height;
+    const ob = orbitOf(canvas, o.orbit);
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    const cw = Math.max(16, Math.round((canvas.clientWidth || 360) * dpr)), ch = Math.max(16, Math.round((canvas.clientHeight || 360) * dpr));
+    const { ctx, img } = imageFor(canvas, cw, ch);
+    const d = img.data;
+    const zb = (canvas._plZ && canvas._plZ.length === cw * ch) ? canvas._plZ : (canvas._plZ = new Float32Array(cw * ch));
+    zb.fill(Infinity);
+    const bg = PL.hexToRgb(o.bg || '#07090c');
+    for (let i = 0; i < cw * ch; i++) { const p = i * 4, t = (i / cw | 0) / ch; d[p] = bg[0] * 255 * (1 - t * 0.5); d[p + 1] = bg[1] * 255 * (1 - t * 0.5); d[p + 2] = bg[2] * 255 * (1 - t * 0.5); d[p + 3] = 255; }
+    const R = Math.max(2, Math.min(o.res || 96, W)), RZ = Math.max(2, Math.min(o.res || 96, H));
+    let hs = o.heightScale == null ? 1 : o.heightScale;
+    if (o.autoScale !== false && o.heightScale == null) {
+        let m = 1e-9; for (let i = 0; i < W * H; i++) m = Math.max(m, Math.abs(hgt[i]));
+        if (!(canvas._plHS && canvas._plHS.gen === rangeGen)) canvas._plHS = { gen: rangeGen, k: 0.22 / m };
+        hs = canvas._plHS.k;
+    }
+    const ds = o.dispScale == null ? 1 : o.dispScale;
+    const nv = R * RZ, px = new Float32Array(nv), py = new Float32Array(nv), pz = new Float32Array(nv);
+    const sx = new Float32Array(nv), sy = new Float32Array(nv), sz = new Float32Array(nv), col = new Float32Array(nv * 3);
+    const cy = Math.cos(ob.yaw), sy0 = Math.sin(ob.yaw), cp = Math.cos(ob.pitch), sp = Math.sin(ob.pitch);
+    const eye = [ob.dist * cp * sy0, ob.dist * sp, ob.dist * cp * cy];
+    const f = PL.v3.norm(PL.v3.mul(eye, -1)), r = PL.v3.norm(PL.v3.cross(f, [0, 1, 0])), u = PL.v3.cross(r, f);
+    const foc = 1 / Math.tan(0.5 * 45 * Math.PI / 180), asp = cw / ch;
+    const L = PL.v3.norm(o.light || [0.4, 0.8, 0.3]);
+    for (let j = 0; j < RZ; j++) for (let i = 0; i < R; i++) {
+        const gx = Math.round(i * (W - 1) / (R - 1)), gz = Math.round(j * (H - 1) / (RZ - 1)), si = gz * W + gx, v = j * R + i;
+        let x = -1 + 2 * i / (R - 1), z = -1 + 2 * j / (RZ - 1);
+        if (o.dispX) x += o.dispX[si] * ds;
+        if (o.dispZ) z += o.dispZ[si] * ds;
+        px[v] = x; py[v] = hgt[si] * hs; pz[v] = z;
+    }
+    for (let j = 0; j < RZ; j++) for (let i = 0; i < R; i++) {
+        const v = j * R + i, a = j * R + Math.max(0, i - 1), b = j * R + Math.min(R - 1, i + 1), c = Math.max(0, j - 1) * R + i, e = Math.min(RZ - 1, j + 1) * R + i;
+        const tx = [px[b] - px[a], py[b] - py[a], pz[b] - pz[a]], tz = [px[e] - px[c], py[e] - py[c], pz[e] - pz[c]];
+        const n = PL.v3.norm(PL.v3.cross(tz, tx));
+        let rgb;
+        if (o.colors) { const gx = Math.round(i * (W - 1) / (R - 1)), gz = Math.round(j * (H - 1) / (RZ - 1)), si = (gz * W + gx) * 3; rgb = [o.colors[si], o.colors[si + 1], o.colors[si + 2]]; }
+        else if (o.color) { const gx = Math.round(i * (W - 1) / (R - 1)), gz = Math.round(j * (H - 1) / (RZ - 1)); rgb = o.color(gz * W + gx, n); }
+        else {
+            const t = PL.clamp(py[v] / 0.44 + 0.5, 0, 1), base = [0.05 + 0.25 * t, 0.18 + 0.35 * t, 0.3 + 0.35 * t];
+            const diff = Math.max(0, PL.v3.dot(n, L));
+            rgb = base.map((cc) => cc * (0.35 + 0.75 * diff));
+        }
+        col[v * 3] = rgb[0]; col[v * 3 + 1] = rgb[1]; col[v * 3 + 2] = rgb[2];
+        const rel = [px[v] - eye[0], py[v] - eye[1], pz[v] - eye[2]];
+        const vz = PL.v3.dot(rel, f), vx = PL.v3.dot(rel, r), vy = PL.v3.dot(rel, u);
+        sz[v] = vz;
+        sx[v] = (vx * foc / asp / vz * 0.5 + 0.5) * cw;
+        sy[v] = (0.5 - vy * foc / vz * 0.5) * ch;
+    }
+    const tri = (a, b, c) => {
+        if (sz[a] < 0.05 || sz[b] < 0.05 || sz[c] < 0.05) return;
+        const x0 = sx[a], y0 = sy[a], x1 = sx[b], y1 = sy[b], x2 = sx[c], y2 = sy[c];
+        const area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+        if (Math.abs(area) < 1e-6) return;
+        const inv = 1 / area;
+        const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2))), maxX = Math.min(cw - 1, Math.ceil(Math.max(x0, x1, x2)));
+        const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2))), maxY = Math.min(ch - 1, Math.ceil(Math.max(y0, y1, y2)));
+        for (let y = minY; y <= maxY; y++) {
+            const qy = y + 0.5;
+            for (let x = minX; x <= maxX; x++) {
+                const qx = x + 0.5;
+                const w0 = ((x1 - qx) * (y2 - qy) - (x2 - qx) * (y1 - qy)) * inv;
+                const w1 = ((x2 - qx) * (y0 - qy) - (x0 - qx) * (y2 - qy)) * inv;
+                const w2 = 1 - w0 - w1;
+                if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+                const z = w0 * sz[a] + w1 * sz[b] + w2 * sz[c], k = y * cw + x;
+                if (z >= zb[k]) continue;
+                zb[k] = z;
+                const p = k * 4;
+                d[p] = PL.clamp(w0 * col[a * 3] + w1 * col[b * 3] + w2 * col[c * 3], 0, 1) * 255;
+                d[p + 1] = PL.clamp(w0 * col[a * 3 + 1] + w1 * col[b * 3 + 1] + w2 * col[c * 3 + 1], 0, 1) * 255;
+                d[p + 2] = PL.clamp(w0 * col[a * 3 + 2] + w1 * col[b * 3 + 2] + w2 * col[c * 3 + 2], 0, 1) * 255;
+            }
+        }
+    };
+    for (let j = 0; j < RZ - 1; j++) for (let i = 0; i < R - 1; i++) {
+        const a = j * R + i, b = a + 1, c = a + R, e = c + 1;
+        tri(a, b, e); tri(a, e, c);
+    }
+    ctx.putImageData(img, 0, 0);
+    if (o.wire) {
+        ctx.strokeStyle = 'rgba(160,200,230,0.18)'; ctx.lineWidth = 1; ctx.beginPath();
+        for (let j = 0; j < RZ; j += 4) for (let i = 0; i < R - 1; i++) { const a = j * R + i; ctx.moveTo(sx[a], sy[a]); ctx.lineTo(sx[a + 1], sy[a + 1]); }
+        ctx.stroke();
+    }
+}
+
+// ════════════════════════════════════════════════════════════
+// Tiny analytic scene ray caster (G-buffers for screen-space topics)
+// ════════════════════════════════════════════════════════════
+const V = PL.v3;
+function basisCached(sc, aspect) {   // camera basis, recomputed only when camera values change (stages may mutate them in place)
+    const c = sc.camera, u = c.up || [0, 1, 0];
+    const key = [c.pos[0], c.pos[1], c.pos[2], c.target[0], c.target[1], c.target[2], u[0], u[1], u[2], c.fov || 50, aspect];
+    const old = sc._bkey;
+    if (!old || key.some((v, i) => v !== old[i])) { sc._bkey = key; sc._basis = camBasis(c, aspect); }
+    return sc._basis;
+}
+function camBasis(cam, aspect) {
+    const pos = cam.pos, fwd = V.norm(V.sub(cam.target, pos)), right = V.norm(V.cross(fwd, cam.up || [0, 1, 0])), up = V.cross(right, fwd);
+    return { pos, fwd, right, up, tanHalf: Math.tan((cam.fov || 50) * Math.PI / 360), aspect: aspect || 1 };
+}
+function hitSphere(o, ro, rd, tMax) {
+    const oc = V.sub(ro, o.c), b = V.dot(oc, rd), c = V.dot(oc, oc) - o.r * o.r, disc = b * b - c;
+    if (disc < 0) return Infinity;
+    const s = Math.sqrt(disc);
+    let t = -b - s;
+    if (t < 1e-4) t = -b + s;
+    return t > 1e-4 && t < tMax ? t : Infinity;
+}
+function hitPlane(o, ro, rd, tMax) {
+    const n = o.n || [0, 1, 0], den = V.dot(n, rd);
+    if (Math.abs(den) < 1e-9) return Infinity;
+    const t = ((o.d || 0) - V.dot(n, ro)) / den;
+    return t > 1e-4 && t < tMax ? t : Infinity;
+}
+function boxLocal(o, p) {   // world → box local (rotY)
+    const q = V.sub(p, o.c), a = -(o.rotY || 0), c = Math.cos(a), s = Math.sin(a);
+    return [c * q[0] + s * q[2], q[1], -s * q[0] + c * q[2]];
+}
+function boxWorldDir(o, v) { const a = o.rotY || 0, c = Math.cos(a), s = Math.sin(a); return [c * v[0] + s * v[2], v[1], -s * v[0] + c * v[2]]; }
+function hitBox(o, ro, rd, tMax) {
+    const lo = boxLocal(o, ro), a = -(o.rotY || 0), c = Math.cos(a), s = Math.sin(a);
+    const ld = [c * rd[0] + s * rd[2], rd[1], -s * rd[0] + c * rd[2]];
+    let t0 = -Infinity, t1 = Infinity;
+    for (let k = 0; k < 3; k++) {
+        const inv = 1 / (ld[k] || 1e-12);
+        let ta = (-o.h[k] - lo[k]) * inv, tb = (o.h[k] - lo[k]) * inv;
+        if (ta > tb) { const t = ta; ta = tb; tb = t; }
+        t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
+    }
+    if (t1 < t0) return Infinity;
+    const t = t0 > 1e-4 ? t0 : t1;
+    return t > 1e-4 && t < tMax ? t : Infinity;
+}
+function objNormal(o, p) {
+    if (o.type === 'sphere') return V.norm(V.sub(p, o.c));
+    if (o.type === 'plane') return V.norm(o.n || [0, 1, 0]);
+    const q = boxLocal(o, p);
+    let k = 0, best = -1;
+    for (let i = 0; i < 3; i++) { const v = Math.abs(q[i]) / o.h[i]; if (v > best) { best = v; k = i; } }
+    const n = [0, 0, 0]; n[k] = Math.sign(q[k]) || 1;
+    return boxWorldDir(o, n);
+}
+function objAlbedo(o, p) {
+    const a = o.albedo || [0.75, 0.75, 0.75];
+    if (!o.checker) return a;
+    const s = o.checker, k = (Math.floor(p[0] / s) + Math.floor(p[1] / s + 1e-3) + Math.floor(p[2] / s)) & 1;
+    return k ? a : (o.albedo2 || V.mul(a, 0.55));
+}
+PL.scene = {
+    /** desc: { camera:{pos,target,up,fov,jitter}, objects:[{type:'plane'|'sphere'|'box', ...}], sky:[r,g,b] } — shading is up to you */
+    create(desc) {
+        const sc = Object.assign({ objects: [], sky: [0.02, 0.03, 0.05] }, desc);
+        sc.objects.forEach((o) => { if (o.type === 'box' && !o.h) o.h = o.size ? V.mul(o.size, 0.5) : [0.5, 0.5, 0.5]; });
+        return sc;
+    },
+    basis: (sc, aspect) => basisCached(sc, aspect || 1),
+    /** Primary ray through pixel center (px,py) of a W×H image; jitter in pixels via sc.camera.jitter */
+    ray(sc, px, py, W, H) {
+        const b = basisCached(sc, W / H), j = sc.camera.jitter || [0, 0];
+        const x = (2 * (px + 0.5 + j[0]) / W - 1) * b.tanHalf * b.aspect, y = (1 - 2 * (py + 0.5 + j[1]) / H) * b.tanHalf;
+        return { ro: b.pos, rd: V.norm([b.fwd[0] + x * b.right[0] + y * b.up[0], b.fwd[1] + x * b.right[1] + y * b.up[1], b.fwd[2] + x * b.right[2] + y * b.up[2]]) };
+    },
+    /** Closest hit → { t, id, p, n, albedo } or null */
+    intersect(sc, ro, rd, tMax) {
+        let best = tMax == null ? Infinity : tMax, id = -1;
+        for (let i = 0; i < sc.objects.length; i++) {
+            const o = sc.objects[i];
+            const t = o.type === 'sphere' ? hitSphere(o, ro, rd, best) : o.type === 'plane' ? hitPlane(o, ro, rd, best) : hitBox(o, ro, rd, best);
+            if (t < best) { best = t; id = i; }
+        }
+        if (id < 0) return null;
+        const p = V.add(ro, V.mul(rd, best)), o = sc.objects[id];
+        return { t: best, id, p, n: objNormal(o, p), albedo: objAlbedo(o, p) };
+    },
+    occluded(sc, ro, rd, tMax) {
+        for (const o of sc.objects) {
+            const t = o.type === 'sphere' ? hitSphere(o, ro, rd, tMax) : o.type === 'plane' ? hitPlane(o, ro, rd, tMax) : hitBox(o, ro, rd, tMax);
+            if (t < tMax) return true;
+        }
+        return false;
+    },
+    /** Ray-cast G-buffer: { W, H, depth (view-space z along camera forward; Infinity = sky), pos, nrm, alb (xyz interleaved), id (−1 = sky) } */
+    gbuffer(sc, W, H, out) {
+        const n = W * H;
+        out = out || {};
+        out.W = W; out.H = H;
+        const depth = PL.buf(out, 'depth', n), pos = PL.buf(out, 'pos', n * 3), nrm = PL.buf(out, 'nrm', n * 3), alb = PL.buf(out, 'alb', n * 3), id = PL.buf(out, 'id', n, Int32Array);
+        const b = basisCached(sc, W / H), j = sc.camera.jitter || [0, 0], ro = b.pos;
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+            const u = (2 * (x + 0.5 + j[0]) / W - 1) * b.tanHalf * b.aspect, v = (1 - 2 * (y + 0.5 + j[1]) / H) * b.tanHalf;
+            const rd = V.norm([b.fwd[0] + u * b.right[0] + v * b.up[0], b.fwd[1] + u * b.right[1] + v * b.up[1], b.fwd[2] + u * b.right[2] + v * b.up[2]]);
+            const i = y * W + x, hit = PL.scene.intersect(sc, ro, rd);
+            if (!hit) {
+                depth[i] = Infinity; id[i] = -1;
+                pos[i * 3] = pos[i * 3 + 1] = pos[i * 3 + 2] = 0; nrm[i * 3] = nrm[i * 3 + 1] = nrm[i * 3 + 2] = 0;
+                alb[i * 3] = sc.sky[0]; alb[i * 3 + 1] = sc.sky[1]; alb[i * 3 + 2] = sc.sky[2];
+                continue;
+            }
+            depth[i] = V.dot(V.sub(hit.p, b.pos), b.fwd); id[i] = hit.id;
+            for (let k = 0; k < 3; k++) { pos[i * 3 + k] = hit.p[k]; nrm[i * 3 + k] = hit.n[k]; alb[i * 3 + k] = hit.albedo[k]; }
+        }
+        return out;
+    },
+    /** World point → [pixelX, pixelY, viewZ] for a W×H image (inverse of ray()). Pass useJitter=false for un-jittered
+     *  coordinates (motion vectors / reprojection); by default the current camera.jitter is applied like ray() does. */
+    project(sc, p, W, H, useJitter) {
+        const b = basisCached(sc, W / H), q = V.sub(p, b.pos), z = V.dot(q, b.fwd), j = useJitter === false ? [0, 0] : sc.camera.jitter || [0, 0];
+        const x = V.dot(q, b.right) / (z * b.tanHalf * b.aspect), y = V.dot(q, b.up) / (z * b.tanHalf);
+        return [(x + 1) * 0.5 * W - 0.5 - j[0], (1 - y) * 0.5 * H - 0.5 - j[1], z];
+    },
+};
+
+// ════════════════════════════════════════════════════════════
+// Syntax highlighting (code) and formula mini-markup
+// ════════════════════════════════════════════════════════════
+const words = (s) => new Set(s.split(/\s+/).filter(Boolean));
+const C_KW = 'if else for while do switch case default break continue return discard struct const static inline in out inout uniform true false sizeof typedef';
+const LANG = {
+    hlsl: {
+        kw: words(C_KW + ' cbuffer tbuffer register packoffset groupshared shared volatile precise nointerpolation linear centroid noperspective sample row_major column_major extern namespace template typename using class interface'),
+        ty: words('void bool int uint dword half float double min16float min10float min16int min12int min16uint matrix vector string SamplerState SamplerComparisonState Texture1D Texture1DArray Texture2D Texture2DArray Texture2DMS Texture3D TextureCube TextureCubeArray RWTexture1D RWTexture2D RWTexture2DArray RWTexture3D Buffer RWBuffer StructuredBuffer RWStructuredBuffer ByteAddressBuffer RWByteAddressBuffer AppendStructuredBuffer ConsumeStructuredBuffer RaytracingAccelerationStructure RayDesc ConstantBuffer'),
+        tyRe: /^(bool|int|uint|half|float|double|min16float|min16int|min16uint)[1-4](x[1-4])?$/,
+        at: words('numthreads unroll loop branch flatten fastopt allow_uav_condition earlydepthstencil domain partitioning outputtopology outputcontrolpoints patchconstantfunc maxvertexcount shader RootSignature WaveSize'),
+        semRe: /^(SV_\w+|(TEXCOORD|POSITION|NORMAL|COLOR|TANGENT|BINORMAL|BLENDINDICES|BLENDWEIGHT|PSIZE|DEPTH|FOG)\d*)$/,
+    },
+    glsl: {
+        kw: words(C_KW + ' layout attribute varying buffer shared coherent volatile restrict readonly writeonly precision highp mediump lowp flat smooth noperspective centroid invariant subroutine'),
+        ty: words('void bool int uint float double sampler1D sampler2D sampler3D samplerCube sampler2DArray sampler2DShadow image1D image2D image3D imageCube uimage2D iimage2D atomic_uint'),
+        tyRe: /^([iubd]?vec[234]|d?mat[234](x[234])?)$/,
+        at: words(''), semRe: /^gl_\w+$/,
+    },
+    wgsl: {
+        kw: words('fn let var const struct return if else for loop while break continue switch case default discard true false alias override enable'),
+        ty: words('bool i32 u32 f32 f16 sampler sampler_comparison texture_2d texture_3d texture_cube texture_storage_2d texture_depth_2d array atomic ptr'),
+        tyRe: /^(vec[234][fhiu]?|mat[234]x[234][fh]?)$/,
+        at: words('compute vertex fragment workgroup_size group binding builtin location stage align size interpolate invariant'),
+        semRe: /^$/,
+    },
+    cpp: {
+        kw: words(C_KW + ' class public private protected virtual override final new delete this nullptr template typename namespace using constexpr auto enum union operator friend explicit mutable noexcept static_assert co_await'),
+        ty: words('void bool char short int long unsigned signed float double size_t uint8_t uint16_t uint32_t uint64_t int8_t int16_t int32_t int64_t std vector array string'),
+        tyRe: /^(float|int|uint)[234](x[234])?$|^[A-Z]\w*_t$/, at: words(''), semRe: /^$/,
+    },
+    js: {
+        kw: words('const let var function return if else for while do switch case default break continue new delete typeof instanceof in of class extends super this null undefined true false try catch finally throw async await yield import export from static get set'),
+        ty: words('Math Float32Array Float64Array Int32Array Uint8Array Uint32Array Array Object Number String Map Set Promise'),
+        tyRe: /^$/, at: words(''), semRe: /^$/,
+    },
+    py: {
+        kw: words('def return if elif else for while in not and or is None True False class import from as with lambda yield try except finally raise pass break continue global nonlocal assert del async await'),
+        ty: words('int float bool str list dict tuple set np torch'),
+        tyRe: /^$/, at: words(''), semRe: /^$/,
+    },
+};
+LANG.c = LANG.cpp; LANG['c++'] = LANG.cpp; LANG.cuda = LANG.cpp; LANG.metal = LANG.cpp; LANG.msl = LANG.cpp;
+LANG.javascript = LANG.js; LANG.ts = LANG.js; LANG.python = LANG.py; LANG.usf = LANG.hlsl; LANG.ush = LANG.hlsl; LANG.slang = LANG.hlsl;
+
+function dedent(src) {
+    const lines = String(src == null ? '' : src).replace(/\t/g, '    ').replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n');
+    const ind = Math.min(...lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length));
+    return isFinite(ind) && ind > 0 ? lines.map((l) => l.slice(ind)).join('\n') : lines.join('\n');
+}
+PL.dedent = dedent;
+PL.highlight = function (src, lang) {
+    lang = String(lang || 'hlsl').toLowerCase();
+    const L = LANG[lang] || LANG.hlsl, py = L === LANG.py;
+    const s = dedent(src);
+    let out = '', i = 0, prevSig = '', lineStart = true;
+    const re = py
+        ? /(#.*)|("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*(?:[eE][-+]?\d+)?j?\b|\.\d+(?:[eE][-+]?\d+)?\b)|(@\w+)|([A-Za-z_]\w*)|(\s+)|([\s\S])/y
+        : /(\/\*[\s\S]*?\*\/|\/\/.*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|(\b0x[0-9a-fA-F]+[uUlL]*\b|\b\d+\.?\d*(?:[eE][-+]?\d+)?[fFhHuUlL]?\b|\.\d+(?:[eE][-+]?\d+)?[fFhH]?\b)|(#\s*[A-Za-z_]\w*|@\w+)|([A-Za-z_]\w*)|(\s+)|([\s\S])/y;
+    let m;
+    while (i < s.length && (re.lastIndex = i, m = re.exec(s))) {
+        const tok = m[0];
+        i = re.lastIndex;
+        if (m[1]) out += `<span class="cmt">${esc(tok)}</span>`;
+        else if (m[2]) out += `<span class="str">${esc(tok)}</span>`;
+        else if (m[3]) out += `<span class="num">${esc(tok)}</span>`;
+        else if (m[4]) {
+            if (tok[0] === '#' && lineStart) out += `<span class="pp">${esc(tok)}</span>`;
+            else if (tok[0] === '@') out += `<span class="at">${esc(tok)}</span>`;
+            else out += esc(tok);
+        } else if (m[5]) {
+            let rest = i; while (rest < s.length && (s[rest] === ' ' || s[rest] === '\t')) rest++;
+            const call = s[rest] === '(';
+            let cls = '';
+            if (L.kw.has(tok)) cls = 'kw';
+            else if (L.ty.has(tok) || L.tyRe.test(tok)) cls = 'ty';
+            else if (prevSig === '[' && L.at.has(tok)) cls = 'at';
+            else if (L.semRe.test(tok) && (prevSig === ':' || /^gl_/.test(tok))) cls = 'at';
+            else if (call) cls = 'fn';
+            out += cls ? `<span class="${cls}">${tok}</span>` : tok;
+        } else out += esc(tok);
+        if (m[6]) { if (tok.includes('\n')) lineStart = true; }
+        else { lineStart = false; prevSig = tok.trim() ? tok : prevSig; }
+    }
+    return out;
+};
+
+const FORMULA_FN = words('exp log ln lg sin cos tan asin acos atan atan2 sinh cosh tanh sqrt rsqrt max min abs sign floor ceil frac fract mod clamp saturate lerp mix smoothstep step normalize dot cross length distance reflect refract pow det tr Re Im arg conj FFT IFFT DFT IDFT FFT2D IFFT2D mean var Var E Pr erf sinc rect mod Sample SampleLevel Load texture textureLod tex2D tex3D round trunc rcp');
+const IDENT_START = /[A-Za-zÀ-ÖØ-öø-ɏͰ-Ͽἀ-῿∂ℓℏ]/;
+const IDENT_CHAR = /[A-Za-z0-9_À-ÖØ-öø-ɏͰ-Ͽἀ-῿∂ℓℏ̀-ͯ᷀-᷿ᴀ-ᶿ₀-ₜ⁰-ⁿ²³¹'′″]/;
+function fmtFormula(src) {
+    let i = 0;
+    const s = src;
+    function token(stopAt) {   // parse until stopAt char (for {...}) or end
+        let out = '';
+        while (i < s.length) {
+            const ch = s[i];
+            if (stopAt && ch === stopAt) { i++; return out; }
+            if (ch === '/' && s[i + 1] === '/') {   // comment to end of line
+                let j = s.indexOf('\n', i); if (j < 0) j = s.length;
+                out += `<span class="cmt">${esc(s.slice(i, j))}</span>`; i = j; continue;
+            }
+            if ((ch === '^' || ch === '_') && i + 1 < s.length && s[i + 1] !== ' ') {
+                const tag = ch === '^' ? 'sup' : 'sub';
+                i++;
+                if (s[i] === '{') { i++; out += `<${tag}>${token('}')}</${tag}>`; }
+                else out += `<${tag}>${single()}</${tag}>`;
+                continue;
+            }
+            out += single();
+        }
+        return out;
+    }
+    function single() {   // one atom
+        const ch = s[i];
+        if (/[0-9]/.test(ch) || (ch === '.' && /[0-9]/.test(s[i + 1] || ''))) {
+            let j = i; while (j < s.length && /[0-9.]/.test(s[j])) j++;
+            if (/[eE]/.test(s[j] || '') && /[-+0-9]/.test(s[j + 1] || '')) { j += 2; while (j < s.length && /[0-9]/.test(s[j])) j++; }
+            while (j < s.length && /[π∞]/.test(s[j])) j++;
+            const t = s.slice(i, j); i = j; return `<span class="num">${esc(t)}</span>`;
+        }
+        if (ch === 'π' || ch === '∞') { i++; return `<span class="num">${ch}</span>`; }
+        if (IDENT_START.test(ch)) {
+            let j = i + 1;
+            while (j < s.length && IDENT_CHAR.test(s[j])) {
+                if (s[j] === '_' && !/[A-Za-z0-9]/.test(s[j + 1] || '')) break;   // `_{` / trailing `_` → subscript markup
+                j++;
+            }
+            let id = s.slice(i, j);
+            i = j;
+            // single-letter base with _suffix → subscript (k_x → kₓ); multi-letter identifiers keep underscores (L_phys)
+            const m = /^([A-Za-zÀ-ÖØ-öø-ɏͰ-Ͽ∂ℓ][̀-ͯ]*)_([A-Za-z0-9]+)$/.exec(id);
+            if (m && !FORMULA_FN.has(id)) return `<span class="sym">${esc(m[1])}<sub>${esc(m[2])}</sub></span>`;
+            let k = i; while (s[k] === ' ') k++;
+            const cls = FORMULA_FN.has(id) || (s[k] === '(' && id.length > 1 && !/^[A-Z][a-z]?$/.test(id) && /^[a-z]/.test(id) && id.length > 2) ? 'fn' : 'sym';
+            return `<span class="${cls}">${esc(id)}</span>`;
+        }
+        if ('√∑Σ∫∮∏∇'.includes(ch)) { i++; return `<span class="fn">${ch}</span>`; }
+        if ('=+−-·×÷/*<>≤≥≈≠≡→←↔⇒⇔∈∉∝±∓~∼⊗⊕∘⋅∧∨¬∀∃⊂⊆∩∪|:'.includes(ch)) {
+            if (ch === ':' && s[i + 1] === '=') { i += 2; return '<span class="op">:=</span>'; }
+            if (ch === ':') { i++; return ':'; }
+            i++; return `<span class="op">${esc(ch)}</span>`;
+        }
+        i++;
+        return esc(ch);
+    }
+    return token(null);
+}
+PL.formula = (src) => fmtFormula(dedent(src));
+
+// ════════════════════════════════════════════════════════════
+// UI vocabulary
+// ════════════════════════════════════════════════════════════
+const TEXT = {
+    zh: {
+        regen: 'Regen seed', regenTip: '换一个随机种子，重新烘焙 RESIDENT 资源', speed: '速度',
+        graph: 'Pipeline Graph · 节点视图', graphHint: '滚轮 = 缩放（光标处） · 拖动空白 = 平移 · 拖动节点标题 = 移动 · 点击节点 = 详情',
+        fit: '⤢ Fit', reset: '⟲ Reset', common: 'Common · 全局共享定义（每个节点都可以引用）',
+        legCat: '节点标题色 = 类别（UE Material 风格）', legLife: '节点 lifetime 标签 = 资源生命周期', legDp: 'Dispatch 徽标 = Shader 阶段 + Thread ID 范围', legType: '连线颜色 = 数据类型', legBack: '虚线 = 跨帧反馈（读上一帧）',
+        ndDispatch: 'Dispatch · Thread ID 取值范围', ndCommon: 'Common 引用', ndConv: '中间换算 · pin 名 → 代码变量', ndFormula: '公式', ndCode: '核心代码', ndPreview: '实时预览',
+        ndNone: '此节点为静态输入，无中间结果可视化', ndJump: '↓ 跳到对应步骤', ndIO: '输入 / 输出',
+        dpThreads: 'numthreads', dpGroups: 'Dispatch groups', dpTotal: '总线程数', dpTarget: 'Render target', dpRange: 'ID 取值范围', dpCount: '调用次数',
+        refs: '参考资料 · 继续阅读', live: 'LIVE', problems: 'Pipeline Lab 运行问题',
+    },
+    en: {
+        regen: 'Regen seed', regenTip: 'New random seed — re-bake RESIDENT resources', speed: 'Speed',
+        graph: 'Pipeline Graph · Pass View', graphHint: 'Wheel = zoom at cursor · drag background = pan · drag node title = move · click node = details',
+        fit: '⤢ Fit', reset: '⟲ Reset', common: 'Common · shared definitions (referenced by every node)',
+        legCat: 'Node header color = category', legLife: 'Lifetime badge = resource lifetime', legDp: 'Dispatch badge = shader stage + thread ID range', legType: 'Wire color = data type', legBack: 'Dashed = cross-frame feedback (reads last frame)',
+        ndDispatch: 'Dispatch · thread ID range', ndCommon: 'Common references', ndConv: 'Derived values · pin name → code variable', ndFormula: 'Formula', ndCode: 'Core code', ndPreview: 'Live preview',
+        ndNone: 'Static input — no intermediate result to visualize', ndJump: '↓ Jump to step', ndIO: 'Inputs / Outputs',
+        dpThreads: 'numthreads', dpGroups: 'Dispatch groups', dpTotal: 'Total threads', dpTarget: 'Render target', dpRange: 'ID range', dpCount: 'Invocations',
+        refs: 'References · further reading', live: 'LIVE', problems: 'Pipeline Lab problems',
+    },
+};
+const LIFETIMES = {
+    resident: { rank: 0, icon: '🔒', label: 'RESIDENT', zh: '一次性烘焙后常驻，永远复用同一份资源', en: 'Baked once, stays resident and is reused forever' },
+    param: { rank: 1, icon: '🔧', label: 'PARAM-BAKE', zh: '只在相关用户参数改变时重烘焙；运行时常驻', en: 'Re-baked only when its user parameters change' },
+    frame: { rank: 2, icon: '⚡', label: 'PER-FRAME', zh: '每帧从常驻输入 + Time 重算（无帧间状态）', en: 'Recomputed every frame from resident inputs + Time (stateless)' },
+    history: { rank: 2, icon: '⟲', label: 'HISTORY', zh: '跨帧持久：读上一帧结果、写本帧结果（ping-pong）', en: 'Persists across frames: reads last frame, writes this frame' },
+};
+const LT_ALIAS = { 'param-bake': 'param', parambake: 'param', 'per-frame': 'frame', perframe: 'frame', once: 'resident', static: 'resident', bake: 'resident', temporal: 'history' };
+const ltName = (x) => { const k = String(x || 'frame').toLowerCase(); return LIFETIMES[k] ? k : LT_ALIAS[k] || 'frame'; };
+const CATEGORIES = {
+    system: { color: '#9a3030', zh: '系统 · 引擎注入（Time / 屏幕坐标 / SceneDepth …）', en: 'System · engine-provided (Time, pixel pos, scene depth…)' },
+    user: { color: '#3a8a3a', zh: '用户 · 自定义参数', en: 'User · parameters' },
+    function: { color: '#306aa0', zh: '函数 · 实际计算 pass', en: 'Function · compute pass' },
+    bake: { color: '#a06a2a', zh: '烘焙 · 一次性烘焙资产', en: 'Bake · one-time baked asset' },
+    output: { color: '#2f7a5a', zh: '输出 · 最终合成 / 呈现', en: 'Output · final composite / present' },
+};
+const DISPATCH = {
+    CS: { color: '#5aa0e0', zh: 'Compute Shader · numthreads × Dispatch groups', en: 'Compute shader · numthreads × dispatch groups' },
+    VS: { color: '#b070d0', zh: 'Vertex Shader · 每个 mesh 顶点一次，输出 clip-space 位置', en: 'Vertex shader · once per vertex, outputs clip-space position' },
+    PS: { color: '#d07a5a', zh: 'Pixel Shader · rasterizer 派发，每 fragment 一次', en: 'Pixel shader · rasterizer-dispatched, once per fragment' },
+    MS: { color: '#c0a040', zh: 'Mesh / Amplification Shader', en: 'Mesh / amplification shader' },
+    RT: { color: '#8ac04a', zh: 'DispatchRays · 每像素 / 每样本一条光线', en: 'DispatchRays · one ray per pixel / sample' },
+    CPU: { color: '#4ac0b0', zh: 'CPU · 主机端计算 / 上传', en: 'CPU · host-side compute / upload' },
+    COPY: { color: '#8090a0', zh: 'Copy / Blit · 资源拷贝或格式转换', en: 'Copy / blit' },
+    INLINE: { color: '#7a7a8a', zh: '仅是函数，被别的 pass 内联调用（不单独 dispatch）', en: 'Function only — inlined by other passes' },
+};
+const TYPE_PALETTE = ['#a45fa5', '#4a8aff', '#5ae87a', '#e8c25a', '#e06c75', '#56b6c2', '#d19a66', '#c678dd'];
+const TAG_PALETTE = [['#1a2a1a', '#4a8a4a'], ['#1a1a2a', '#6a6abf'], ['#2a1a2a', '#a45fa5'], ['#2a2a1a', '#a5a45f'], ['#142626', '#4aa5a0'], ['#2a1a14', '#c07850'], ['#14202e', '#5a8fc8'], ['#202024', '#8a8a95']];
+const TAG_NAMED = { green: 0, indigo: 1, magenta: 2, olive: 3, teal: 4, rust: 5, blue: 6, gray: 7 };
+const lighten = (hex, k) => { const c = PL.hexToRgb(hex).map((v) => Math.round((v + (1 - v) * k) * 255)); return `rgb(${c[0]},${c[1]},${c[2]})`; };
+
+// ════════════════════════════════════════════════════════════
+// Runtime state
+// ════════════════════════════════════════════════════════════
+let SPEC = null, T = TEXT.zh, LK = 'zh', S = null;
+const stages = [], previews = new Map(), sections = [], stepById = new Map();
+const errors = [], problems = [], errKeys = new Set();
+let pendingRank = Infinity, booted = false, overlayEl = null, timeEl = null, playBtn = null;
+let G = null, activeNode = null, modalPv = null, io = null, probeEl = null;
+const cats = Object.assign({}, CATEGORIES), types = {};
+
+function report(where, err) {
+    const message = err && err.message ? err.message : String(err);
+    const key = where + '|' + message;
+    if (errKeys.has(key)) return;
+    errKeys.add(key);
+    errors.push({ where, message, stack: err && err.stack ? String(err.stack).split('\n').slice(0, 4).join('\n') : '' });
+    console.error('[PipelineLab]', where, err);
+    updateOverlay();
+}
+function problem(level, where, message) {
+    problems.push({ level, where, message });
+    (level === 'error' ? console.error : console.warn)('[PipelineLab]', where + ':', message);
+    updateOverlay();
+}
+function updateOverlay() {
+    if (!overlayEl) return;
+    const errs = problems.filter((p) => p.level === 'error');
+    if (!errors.length && !errs.length) { overlayEl.style.display = 'none'; return; }
+    overlayEl.style.display = 'block';
+    overlayEl.innerHTML = `<b>⚠ ${esc(T.problems)}</b>\n` +
+        errors.slice(0, 8).map((e) => `• [${esc(e.where)}] ${esc(e.message)}`).join('\n') + (errors.length ? '\n' : '') +
+        errs.slice(0, 8).map((p) => `• [${esc(p.where)}] ${esc(p.message)}`).join('\n');
+}
+window.addEventListener('error', (e) => report('window', e.error || e.message));
+window.addEventListener('unhandledrejection', (e) => report('promise', e.reason));
+
+// ════════════════════════════════════════════════════════════
+// Scheduler: lifetimes resident(0) → param(1) → frame/history(2)
+// ════════════════════════════════════════════════════════════
+function rankOf(x) { return typeof x === 'number' ? x : LIFETIMES[ltName(x)].rank; }
+function invalidate(level) { pendingRank = Math.min(pendingRank, rankOf(level)); }
+function runStage(st) {
+    try { st.run(S, PL); } catch (e) { report('stage:' + st.id, e); }
+    st.valid = true;
+}
+function runEager() { for (const st of stages) if (!st.valid && !st.lazy) runStage(st); }
+function ensureNeeds(needs) {
+    if (!needs || !needs.size) return;
+    const want = new Set();
+    const add = (id) => { if (want.has(id)) return; want.add(id); const st = stages.find((x) => x.id === id); if (st) arr(st.needs).forEach(add); else problem('warn', 'needs', `unknown stage "${id}"`); };
+    needs.forEach(add);
+    for (const st of stages) if (!st.valid && want.has(st.id)) runStage(st);
+}
+function runPending() {
+    if (pendingRank === Infinity) return false;
+    const r = pendingRank;
+    pendingRank = Infinity;
+    if (r < 2) { rangeGen++; S.epoch++; }
+    if (r === 0) S.rand = PL.rng(S.seed);
+    for (const st of stages) if (st.rank >= r && !(r === 2 && st.lifetime === 'history')) st.valid = false;   // history: once per simulated frame
+    runEager();
+    previews.forEach((pv) => { pv.stale = true; });
+    sections.forEach((sc) => { sc.stale = true; });
+    if (modalPv) modalPv.stale = true;
+    if (r < 2) refreshNodeBadges();
+    return true;
+}
+function advanceFrame(dt) {
+    S.dt = dt; S.t += dt; S.frame++;
+    for (const st of stages) if (st.rank === 2) st.valid = false;
+    runEager();
+    previews.forEach((pv) => { if (pv.live) pv.stale = true; });
+    sections.forEach((sc) => { sc.stale = true; });
+    if (modalPv && modalPv.live) modalPv.stale = true;
+}
+function renderPv(pv, force) {
+    if (!force && !(pv.visible && pv.stale)) return;
+    if (!force && pv.live && pv.every > 1 && S.frame % pv.every !== 0 && pv.drawn) return;
+    ensureNeeds(pv.needs);
+    try { pv.render(pv.canvas, S, PL); fitAspect(pv); } catch (e) { report('preview:' + pv.id, e); drawErr(pv.canvas, e); }
+    pv.stale = false; pv.drawn = true;
+}
+function fitAspect(pv) {   // keep the data's aspect ratio unless an explicit size was given (ctx-sized canvases already match)
+    const cv = pv.canvas;
+    if (pv.item.size || !cv.width || !cv.height) return;
+    const cw = cv.clientWidth;
+    if (!cw) return;
+    const want = Math.round(cw * cv.height / cv.width);
+    if (Math.abs(cv.clientHeight - want) > 1) cv.style.height = want + 'px';
+}
+function drawErr(canvas, e) {
+    try {
+        const { ctx, w, h } = PL.draw.ctx(canvas, { bg: '#200808' });
+        ctx.fillStyle = '#f08080'; ctx.font = '10px Consolas, monospace'; ctx.textBaseline = 'top';
+        String(e && e.message || e).match(/.{1,26}/g).slice(0, 6).forEach((ln, k) => ctx.fillText(ln, 6, 6 + k * 12));
+        void w; void h;
+    } catch (_) { /* ignore */ }
+}
+function renderSection(sc, force) {
+    if (!isFn(sc.frame) || (!force && !(sc.visible && sc.stale))) return;
+    ensureNeeds(sc.needs);
+    try { sc.frame(sc.body, S, PL); } catch (e) { report('section:' + sc.id, e); }
+    sc.stale = false;
+}
+let lastNow = 0, fpsAcc = 0, fpsN = 0, fpsShown = 0, timeAcc = 0;
+function loop(now) {
+    const dt = lastNow ? Math.min(0.1, (now - lastNow) / 1000) : 0;
+    lastNow = now;
+    runPending();
+    if (S.playing && hasAnim()) advanceFrame(dt * S.timeScale);
+    previews.forEach((pv) => renderPv(pv, false));
+    sections.forEach((sc) => renderSection(sc, false));
+    if (modalPv && modalPv.stale) renderPv(modalPv, true);
+    if (dt > 0) { fpsAcc += dt; fpsN++; }
+    if ((timeAcc += dt) > 0.25 && timeEl) {
+        timeAcc = 0;
+        if (fpsAcc > 0) { fpsShown = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
+        timeEl.textContent = `t = ${S.t.toFixed(2)}s · ${fpsShown ? fpsShown.toFixed(0) : '—'} fps`;
+    }
+    requestAnimationFrame(loop);
+}
+const hasAnim = () => SPEC.animated !== false && (SPEC.animated === true || stages.some((s) => s.rank === 2) || arr(SPEC.sections).some((s) => isFn(s.frame)));
+
+// ════════════════════════════════════════════════════════════
+// DOM builders
+// ════════════════════════════════════════════════════════════
+const RESERVED = new Set(['t', 'dt', 'frame', 'epoch', 'seed', 'rand', 'playing', 'timeScale']);
+function decimals(step) { const s = String(step == null ? 1 : step); return s.includes('.') ? s.split('.')[1].length : 0; }
+function paramValue(p, raw) {
+    let v = raw;
+    if (p.type === 'range' || p.type === 'number') v = Number(raw);
+    else if (p.type === 'select') { const o0 = p.options[0], num = typeof (o0 && typeof o0 === 'object' ? o0.value : o0) === 'number'; v = num ? Number(raw) : raw; }
+    else if (p.type === 'color' && !p.map) v = PL.hexToRgb(raw);
+    else if (p.type === 'check') v = !!raw;
+    return p.map ? p.map(v, S) : v;
+}
+function fmtParam(p, raw) {
+    if (isFn(p.format)) return p.format(raw, S);
+    if (p.type === 'range' || p.type === 'number') return Number(raw).toFixed(p.digits != null ? p.digits : decimals(p.step)) + (p.unit || '');
+    return String(raw) + (p.unit || '');
+}
+function buildHeader(root) {
+    const hd = el('header', 'pl-header'), inner = el('div', 'pl-header-inner');
+    hd.appendChild(inner);
+    inner.appendChild(el('h1', '', esc(SPEC.title || 'Pipeline')));
+    if (hasAnim()) {
+        playBtn = el('button', 'pl-play', S.playing ? '⏸' : '▶');
+        playBtn.title = 'Play / Pause';
+        playBtn.onclick = () => { S.playing = !S.playing; playBtn.textContent = S.playing ? '⏸' : '▶'; };
+        inner.appendChild(playBtn);
+    }
+    if (SPEC.regen !== false && stages.some((s) => s.rank === 0)) {
+        const b = el('button', '', esc((SPEC.regen && SPEC.regen.label) || T.regen));
+        b.title = (SPEC.regen && SPEC.regen.title) || T.regenTip;
+        b.onclick = () => { S.seed = (Math.random() * 4294967295) >>> 0 || 1; invalidate(0); };
+        inner.appendChild(b);
+    }
+    for (const p of arr(SPEC.params)) {
+        const g = el('div', 'pl-ctrl');
+        if (p.title) g.title = p.title;
+        g.appendChild(el('label', '', esc(p.label || p.id)));
+        let input, val = null;
+        if (p.type === 'select') {
+            input = document.createElement('select');
+            p.options.forEach((o) => {
+                const op = document.createElement('option'), v = typeof o === 'object' ? o.value : o;
+                op.value = v; op.textContent = typeof o === 'object' ? (o.label != null ? o.label : o.value) : o;
+                if (String(v) === String(p.value)) op.selected = true;
+                input.appendChild(op);
+            });
+        } else if (p.type === 'button') {
+            input = el('button', '', esc(p.text || p.label || p.id));
+            g.innerHTML = '';
+        } else {
+            input = document.createElement('input');
+            input.type = p.type === 'check' ? 'checkbox' : p.type;
+            if (p.type === 'check') input.checked = !!p.value;
+            else {
+                if (p.min != null) input.min = p.min;
+                if (p.max != null) input.max = p.max;
+                if (p.step != null) input.step = p.step;
+                input.value = p.value;
+            }
+        }
+        g.appendChild(input);
+        if (p.type === 'range' || p.type === 'number') { val = el('span', 'pl-val', esc(fmtParam(p, p.value))); g.appendChild(val); }
+        const onIn = () => {
+            if (p.type === 'button') { try { p.action && p.action(S, PL); } catch (e) { report('param:' + p.id, e); } invalidate(p.affects); return; }
+            const raw = p.type === 'check' ? input.checked : input.value;
+            p.raw = raw; S[p.id] = paramValue(p, raw);
+            if (val) val.textContent = fmtParam(p, raw);
+            if (isFn(p.onChange)) { try { p.onChange(S[p.id], S, PL); } catch (e) { report('param:' + p.id, e); } }
+            invalidate(p.affects);
+        };
+        p._input = input; p._apply = onIn;
+        input.addEventListener(p.type === 'button' ? 'click' : p.type === 'select' || p.type === 'check' || p.type === 'color' ? 'change' : 'input', onIn);
+        if (p.type === 'color') input.addEventListener('input', onIn);
+        inner.appendChild(g);
+    }
+    if (hasAnim()) {
+        const g = el('div', 'pl-ctrl'), r = document.createElement('input'), v = el('span', 'pl-val', '1.0×');
+        r.type = 'range'; r.min = 0; r.max = 4; r.step = 0.1; r.value = 1;
+        r.oninput = () => { S.timeScale = Number(r.value); v.textContent = S.timeScale.toFixed(1) + '×'; };
+        g.append(el('label', '', esc(T.speed)), r, v);
+        inner.appendChild(g);
+        timeEl = el('span', 'pl-time', 't = 0.00s · — fps');
+        inner.appendChild(timeEl);
+    }
+    root.appendChild(hd);
+}
+function buildFormula(b) {
+    const f = el('div', 'pl-formula');
+    f.innerHTML = (b.label ? `<span class="pl-flabel">${esc(b.label)}</span>` : '') + (b.html != null ? b.html : PL.formula(b.text != null ? b.text : b.formula));
+    return f;
+}
+function buildCode(b) {
+    const lang = b.lang || SPEC.codeLang || 'hlsl';
+    const pre = `<pre class="pl-code">${PL.highlight(b.src != null ? b.src : b.code, lang)}</pre>`;
+    if (b.collapsible === false) {
+        const w = el('div', '');
+        w.innerHTML = (b.title ? `<span class="pl-code-label">${esc(b.title)}</span>` : '') + pre;
+        return w;
+    }
+    const sec = el('div', 'pl-code-sec' + (b.open ? ' open' : ''));
+    const tg = el('span', 'pl-code-toggle', esc(b.title || (lang.toUpperCase() + ' · core')));
+    tg.onclick = () => sec.classList.toggle('open');
+    sec.appendChild(tg);
+    sec.appendChild(el('div', 'pl-code-body', pre));
+    return sec;
+}
+function tagStyle(tag) {
+    const map = SPEC.tagColors || {};
+    let pair = map[tag];
+    if (typeof pair === 'string') pair = TAG_PALETTE[TAG_NAMED[pair] != null ? TAG_NAMED[pair] : 0];
+    if (!pair) {
+        tagStyle.seen = tagStyle.seen || new Map();
+        if (!tagStyle.seen.has(tag)) tagStyle.seen.set(tag, TAG_PALETTE[tagStyle.seen.size % TAG_PALETTE.length]);
+        pair = tagStyle.seen.get(tag);
+    }
+    return `background:${pair[0]};color:${pair[1]}`;
+}
+function previewItem(item, ownerId, k, intoModal) {
+    const id = intoModal ? '__modal' : item.id || `${ownerId}_${k}`;
+    const wrap = el('div', 'pl-pv' + (item.large ? ' large' : '') + (item.live ? ' live' : ''));
+    const box = el('div', 'pl-pv-box'), cv = document.createElement('canvas');
+    const size = item.size || (item.large ? [360, 360] : [180, 180]);
+    if (!intoModal) { cv.style.width = size[0] + 'px'; cv.style.height = size[1] + 'px'; }
+    if (item.smooth != null ? item.smooth : (item.large || item.kind === 'plot')) cv.classList.add('smooth');
+    box.appendChild(cv);
+    if (item.live && !intoModal) box.appendChild(el('span', 'pl-live', esc(T.live)));
+    wrap.appendChild(box);
+    if (item.label && !intoModal) wrap.appendChild(el('span', 'pl-pv-label', item.label));
+    if (item.sub && !intoModal) wrap.appendChild(el('span', 'pl-pv-sub', item.sub));
+    const pv = { id, item, canvas: cv, el: wrap, live: !!item.live, every: item.every || 1, needs: item.needs ? new Set(arr(item.needs)) : null, render: item.render, visible: !!intoModal, stale: true, drawn: false };
+    if (!isFn(pv.render)) { problem('error', 'preview:' + id, 'missing render(canvas, S, PL)'); pv.render = () => { throw new Error('no render()'); }; }
+    if (isFn(item.probe)) attachProbe(cv, item.probe);
+    if (!intoModal) {
+        if (previews.has(id)) problem('error', 'preview:' + id, 'duplicate preview id');
+        previews.set(id, pv);
+        if (io) io.observe(wrap);
+        wrap._pv = pv;
+    }
+    return pv;
+}
+function attachProbe(cv, fn) {
+    cv.addEventListener('pointermove', (e) => {
+        if (!probeEl) { probeEl = el('div', 'pl-probe'); document.body.appendChild(probeEl); }
+        const r = cv.getBoundingClientRect();
+        const x = Math.floor((e.clientX - r.left) / r.width * cv.width), y = Math.floor((e.clientY - r.top) / r.height * cv.height);
+        let txt = '';
+        try { txt = fn(PL.clamp(x, 0, cv.width - 1), PL.clamp(y, 0, cv.height - 1), S, PL); } catch (err) { txt = String(err.message); }
+        if (!txt) { probeEl.style.display = 'none'; return; }
+        probeEl.textContent = txt; probeEl.style.display = 'block';
+        probeEl.style.left = (e.clientX + 14) + 'px'; probeEl.style.top = (e.clientY + 12) + 'px';
+    });
+    cv.addEventListener('pointerleave', () => { if (probeEl) probeEl.style.display = 'none'; });
+}
+function buildBlock(b, st) {
+    switch (b.type) {
+        case 'formula': return buildFormula(b);
+        case 'code': return buildCode(b);
+        case 'note': return el('div', 'pl-note', b.html != null ? b.html : esc(b.text));
+        case 'warn': return el('div', 'pl-note warn', b.html != null ? b.html : esc(b.text));
+        case 'html': return el('div', 'pl-step-desc', b.html);
+        case 'previews': {
+            const row = el('div', 'pl-previews');
+            arr(b.items).forEach((it, k) => { st._pvk = (st._pvk || 0) + 1; row.appendChild(previewItem(it, st.id, st._pvk - 1).el); });
+            return row;
+        }
+        default: problem('warn', 'step:' + st.id, `unknown block type "${b.type}"`); return el('div');
+    }
+}
+function stepBlocks(st) {
+    if (st.blocks) return st.blocks;
+    const b = [];
+    arr(st.formula).forEach((f) => b.push(typeof f === 'object' ? Object.assign({ type: 'formula' }, f) : { type: 'formula', text: f }));
+    arr(st.formulaHtml).forEach((f) => b.push({ type: 'formula', html: f }));
+    arr(st.code).forEach((c) => b.push(Object.assign({ type: 'code' }, c)));
+    if (st.previews) b.push({ type: 'previews', items: st.previews });
+    arr(st.notes || st.note).forEach((n) => b.push({ type: 'note', html: n }));
+    arr(st.warn || st.warns).forEach((n) => b.push({ type: 'warn', html: n }));
+    return b;
+}
+function buildSteps(root) {
+    const pipe = el('main', 'pl-pipeline');
+    const intro = SPEC.intro;
+    if (intro) {
+        const d = el('div', 'pl-intro');
+        let html = intro.title ? `<h2>${esc(intro.title)}</h2>` : '';
+        if (intro.flow) html += `<p class="pl-flow">${arr(intro.flow).map((x) => `<code>${x}</code>`).join('<span class="pl-arrow">→</span>')}</p>`;
+        html += intro.html || '';
+        d.innerHTML = html;
+        pipe.appendChild(d);
+    }
+    arr(SPEC.steps).forEach((st, i) => {
+        st.id = st.id || 'step' + (i + 1);
+        st._num = String(i + 1).padStart(2, '0');
+        if (stepById.has(st.id)) problem('error', 'step:' + st.id, 'duplicate step id');
+        stepById.set(st.id, st);
+        const card = el('section', 'pl-step');
+        card.id = 'step-' + st.id;
+        card.innerHTML = `<div class="pl-step-head"><span class="pl-step-num">${st._num}</span><span class="pl-step-title">${st.title || ''}</span>${st.tag ? `<span class="pl-step-tag" style="${tagStyle(st.tag)}">${esc(st.tag)}</span>` : ''}</div>` +
+            (st.desc ? `<div class="pl-step-desc">${st.desc}</div>` : '');
+        stepBlocks(st).forEach((b) => card.appendChild(buildBlock(b, st)));
+        pipe.appendChild(card);
+    });
+    root.appendChild(pipe);
+}
+function buildSection(sc, root) {
+    const s = el('section', 'pl-section' + (sc.wide ? ' wide' : ''));
+    s.id = 'sec-' + sc.id;
+    if (sc.title) s.appendChild(el('h2', 'pl-h2', esc(sc.title)));
+    if (sc.sub) s.appendChild(el('div', 'pl-sub', sc.sub));
+    const body = el('div', 'pl-sec-body', sc.html || '');
+    s.appendChild(body);
+    root.appendChild(s);
+    const rec = { id: sc.id, spec: sc, el: s, body, frame: sc.frame, needs: sc.needs ? new Set(arr(sc.needs)) : null, visible: false, stale: true };
+    sections.push(rec);
+    s._sec = rec;
+    if (io) io.observe(s);
+    return rec;
+}
+function buildRefs(root) {
+    const refs = arr(SPEC.references);
+    if (!refs.length) return;
+    const s = el('section', 'pl-refs'), card = el('div', 'pl-refs-card');
+    card.innerHTML = `<h2 class="pl-h2">${esc(T.refs)}</h2><ol>` + refs.map((r) => {
+        const t = r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>` : esc(r.title);
+        const meta = [r.author, r.venue, r.year].filter(Boolean).map(esc).join(' · ');
+        return `<li>${t}${meta ? ' — ' + meta : ''}${r.note ? ` <span class="pl-ref-note">· ${r.note}</span>` : ''}</li>`;
+    }).join('') + '</ol>';
+    s.appendChild(card);
+    root.appendChild(s);
+}
+
+// ════════════════════════════════════════════════════════════
+// Graph (RDG-style): nodes = passes, pins = named resources, wires typed
+// ════════════════════════════════════════════════════════════
+const typeColor = (t) => {
+    if (!t) return '#888';
+    if (!types[t]) types[t] = { color: TYPE_PALETTE[Object.keys(types).length % TYPE_PALETTE.length], label: t };
+    return types[t].color;
+};
+const dpKind = (k) => DISPATCH[String(k || 'CS').toUpperCase()] || { color: '#7a8a9a', zh: String(k), en: String(k) };
+const evalV = (v) => { if (!isFn(v)) return v; try { return v(S); } catch (e) { return '?'; } };
+const fmtList = (v) => { v = evalV(v); return Array.isArray(v) ? `[${v.join(',')}]` : v == null ? '' : String(v); };
+function dpTotal(p) {
+    const t = evalV(p.threads), g = evalV(p.groups);
+    if (p.total != null) return fmtList(p.total);
+    if (Array.isArray(t) && Array.isArray(g)) return (t.reduce((a, b) => a * b, 1) * g.reduce((a, b) => a * b, 1)).toLocaleString('en-US');
+    return '';
+}
+function badgeHTML(dps) {
+    const p = dps[0], k = String(p.kind || 'CS').toUpperCase();
+    if (k === 'INLINE') return `<span class="pl-dp-kind">⊘ INLINE</span> <span class="pl-dp-note">${esc(p.note || '')}</span>`;
+    let line = `<span class="pl-dp-kind">${esc(k)}</span>`;
+    if (p.threads || p.groups) line += `${fmtList(p.threads) ? '<span>' + esc(fmtList(p.threads)) + '</span>' : ''}${fmtList(p.groups) ? ' × ' + esc(fmtList(p.groups)) : ''}`;
+    else if (p.target) line += esc(fmtList(p.target));
+    else if (p.count) line += esc(fmtList(p.count));
+    let html = `<div>${line}</div>`;
+    if (p.idRange) html += `<div class="pl-dp-id">${esc(fmtList(p.idRange))}</div>`;
+    if (dps.length > 1) html += `<div class="pl-dp-note">+${dps.length - 1} pass</div>`;
+    return html;
+}
+function nodeDps(n) { return arr(n.dispatch).map((p) => Object.assign({ kind: n.tag && DISPATCH[String(n.tag).toUpperCase()] ? n.tag : 'CS' }, p)); }
+function refreshNodeBadges() {
+    if (!G) return;
+    G.nodes.forEach((n) => { if (n.dispatch && n._dpEl) n._dpEl.innerHTML = badgeHTML(nodeDps(n)); });
+}
+function pinLabel(p) { return p.label || (p.format ? `${p.name} · ${p.format}` : p.name); }
+function buildGraph(root) {
+    const gs = SPEC.graph;
+    Object.assign(types, gs.types || {});
+    Object.entries(gs.categories || {}).forEach(([k, v]) => { cats[k] = Object.assign({}, cats[k] || {}, typeof v === 'string' ? { color: v } : v); });
+    const sec = el('section', 'pl-section wide pl-graph-sec');
+    sec.id = 'graph';
+    sec.appendChild(el('h2', 'pl-h2', esc(gs.title || T.graph)));
+    if (gs.intro) sec.appendChild(el('div', 'pl-sub', gs.intro));
+    if (gs.common) {
+        const c = gs.common, d = el('details', 'pl-common');
+        if (c.open !== false) d.open = true;
+        d.innerHTML = `<summary>${c.title ? c.title : esc(T.common)}</summary>`;
+        const body = el('div', 'pl-common-body');
+        arr(c.blocks).forEach((b) => {
+            if (b.label) body.appendChild(el('div', 'pl-common-note', b.label));
+            if (b.code != null || b.src != null) body.appendChild(el('div', '', `<pre class="pl-code">${PL.highlight(b.code != null ? b.code : b.src, b.lang || c.lang || SPEC.codeLang)}</pre>`));
+            if (b.html) body.appendChild(el('div', 'pl-common-note', b.html));
+        });
+        d.appendChild(body);
+        sec.appendChild(d);
+    }
+    const cont = el('div', 'pl-graph'), vp = el('div', 'pl-graph-vp'), svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('class', 'pl-graph-edges');
+    vp.appendChild(svg); cont.appendChild(vp);
+    const ctrl = el('div', 'pl-graph-ctrl', `<span class="pl-zoom">100%</span><button data-a="fit">${esc(T.fit)}</button><button data-a="reset">${esc(T.reset)}</button>`);
+    cont.appendChild(ctrl);
+    cont.appendChild(el('div', 'pl-graph-hint', esc(T.graphHint)));
+    sec.appendChild(cont);
+    const legends = el('div', '');
+    sec.appendChild(legends);
+    root.appendChild(sec);
+
+    G = { nodes: [], byId: new Map(), edges: [], cont, vp, svg, legends, zoomEl: ctrl.querySelector('.pl-zoom'), pan: { x: 0, y: 0, s: 1 } };
+    arr(gs.nodes).forEach((n, i) => {
+        n.id = n.id || 'node' + i;
+        if (G.byId.has(n.id)) { problem('error', 'graph', `duplicate node id "${n.id}"`); return; }
+        n.lifetime = n.lifetime ? ltName(n.lifetime) : null;
+        n.inputs = arr(n.inputs); n.outputs = arr(n.outputs);
+        n._spec = { x: n.x, y: n.y };
+        const cat = cats[n.category || 'function'] || cats.function;
+        const e = el('div', 'pl-node');
+        e.style.minWidth = (n.w || 196) + 'px';
+        e.dataset.node = n.id;
+        let html = `<div class="pl-node-head" style="background:${cat.color}"><span class="pl-node-title">${esc(n.title || n.id)}</span>${n.tag ? `<span class="pl-node-tag">${esc(n.tag)}</span>` : ''}</div>`;
+        if (n.lifetime) { const lt = LIFETIMES[n.lifetime]; html += `<div class="pl-lt ${n.lifetime}" title="${esc(lt[LK])}"><span>${lt.icon}</span><span>${lt.label}</span></div>`; }
+        if (n.dispatch) html += `<div class="pl-node-dp" style="--dp:${dpKind(nodeDps(n)[0].kind).color}"></div>`;
+        if (n.desc) html += `<div class="pl-node-desc">${n.desc}</div>`;
+        html += '<div class="pl-node-pins"><div class="pl-pins in">' +
+            n.inputs.map((p) => `<div class="pl-pin${p.external ? ' ext' : ''}" data-pin="${esc(p.name)}"><div class="pl-pin-dot" style="background:${typeColor(p.type)}"></div><span>${esc(pinLabel(p))}</span></div>`).join('') +
+            '</div><div class="pl-pins out">' +
+            n.outputs.map((p) => `<div class="pl-pin" data-pin="${esc(p.name)}"><span>${esc(pinLabel(p))}</span><div class="pl-pin-dot" style="background:${typeColor(p.type)}"></div></div>`).join('') +
+            '</div></div>';
+        e.innerHTML = html;
+        n._el = e;
+        n._dpEl = e.querySelector('.pl-node-dp');
+        vp.appendChild(e);
+        G.nodes.push(n); G.byId.set(n.id, n);
+    });
+    refreshNodeBadges();
+    resolveEdges(gs);
+    buildLegends();
+    G.ctrl = ctrl;
+}
+function findPin(n, name, out) { return (out ? n.outputs : n.inputs).find((p) => p.name === name); }
+function resolveEdges(gs) {
+    const producers = new Map();
+    G.nodes.forEach((n) => n.outputs.forEach((p) => { if (!producers.has(p.name)) producers.set(p.name, []); producers.get(p.name).push({ n, p }); }));
+    const connected = new Set();
+    const addEdge = (fn, fp, tn, tp, opts) => {
+        if (fp.type && tp.type && fp.type !== tp.type) problem('error', 'graph', `type mismatch ${fn.id}:${fp.name} (${fp.type}) → ${tn.id}:${tp.name} (${tp.type})`);
+        G.edges.push(Object.assign({ from: fn, fp, to: tn, tp }, opts || {}));
+        connected.add(tn.id + ':' + tp.name);
+    };
+    arr(gs.edges).forEach((e) => {
+        const [a, b] = Array.isArray(e) ? e : [e.from, e.to];
+        const [an, ap] = String(a).split(':'), [bn, bp] = String(b).split(':');
+        const fn = G.byId.get(an), tn = G.byId.get(bn);
+        const fp = fn && findPin(fn, ap, true), tp = tn && findPin(tn, bp || ap, false);
+        if (!fn || !tn || !fp || !tp) { problem('error', 'graph', `edge ${a} → ${b}: ${!fn ? 'no node ' + an : !fp ? 'no output pin ' + ap : !tn ? 'no node ' + bn : 'no input pin ' + (bp || ap)}`); return; }
+        addEdge(fn, fp, tn, tp, { back: !!(e && e.back) });
+    });
+    G.nodes.forEach((n) => n.inputs.forEach((p) => {
+        if (connected.has(n.id + ':' + p.name)) return;
+        let cands = (producers.get(p.name) || []).filter((c) => c.n !== n || p.history);
+        if (p.from) cands = cands.filter((c) => c.n.id === p.from);
+        if (cands.length === 1) addEdge(cands[0].n, cands[0].p, n, p, { back: !!p.history });
+        else if (cands.length > 1) problem('error', 'graph', `${n.id}:${p.name} has ${cands.length} producers (${cands.map((c) => c.n.id).join(', ')}) — set pin.from or list the edge explicitly`);
+        else if (!p.external && (producers.get(p.name) || []).length === 0) problem('warn', 'graph', `${n.id}:${p.name} has no producer (mark external:true if it comes from outside the graph)`);
+    }));
+}
+function buildLegends() {
+    const L = G.legends;
+    const usedCats = [...new Set(G.nodes.map((n) => n.category || 'function'))];
+    const usedLt = [...new Set(G.nodes.map((n) => n.lifetime).filter(Boolean))];
+    const usedDp = [...new Set(G.nodes.flatMap((n) => nodeDps(n).map((p) => String(p.kind).toUpperCase())))];
+    const usedTypes = [...new Set(G.nodes.flatMap((n) => n.inputs.concat(n.outputs).map((p) => p.type).filter(Boolean)))];
+    const row = (title, items) => { if (!items.length) return; const d = el('div', 'pl-legend'); d.innerHTML = `<strong>${esc(title)}</strong>` + items.join(''); L.appendChild(d); };
+    row(T.legCat, usedCats.map((c) => { const cc = cats[c] || cats.function; const txt = cc[LK] || cc.label || c; return `<span class="pl-legend-item"><span class="pl-legend-dot" style="background:${cc.color}"></span><span style="color:${lighten(cc.color, 0.45)}">${esc(txt)}</span></span>`; }));
+    row(T.legLife, usedLt.map((k) => { const lt = LIFETIMES[k]; return `<span class="pl-legend-item"><span class="pl-lt ${k}">${lt.icon} ${lt.label}</span><span>${esc(lt[LK])}</span></span>`; }));
+    row(T.legDp, usedDp.map((k) => { const d = dpKind(k); return `<span class="pl-legend-item" style="--dp:${d.color}"><span class="pl-dp-kind">${k === 'INLINE' ? '⊘ INLINE' : esc(k)}</span><span>${esc(d[LK] || d.en)}</span></span>`; }));
+    const tItems = usedTypes.map((t) => `<span class="pl-legend-item"><span class="pl-legend-dot" style="background:${typeColor(t)}"></span><span>${esc((types[t] && types[t].label) || t)}</span></span>`);
+    if (G.edges.some((e) => e.back)) tItems.push(`<span class="pl-legend-item"><svg width="26" height="8"><path d="M1 4 H25" stroke="#888" stroke-dasharray="5 4" stroke-width="1.5"/></svg><span>${esc(T.legBack)}</span></span>`);
+    row(T.legType, tItems);
+}
+function layoutGraph() {
+    if (!G) return;
+    const nodes = G.nodes, idx = new Map(nodes.map((n, i) => [n.id, i]));
+    const preds = nodes.map(() => []);
+    G.edges.forEach((e) => { if (!e.back && e.from !== e.to) preds[idx.get(e.to.id)].push(idx.get(e.from.id)); });
+    const col = new Array(nodes.length).fill(-1), visiting = new Array(nodes.length).fill(false);
+    const depth = (i) => {
+        if (nodes[i].col != null) return (col[i] = nodes[i].col);
+        if (col[i] >= 0) return col[i];
+        if (visiting[i]) return 0;
+        visiting[i] = true;
+        let d = 0;
+        preds[i].forEach((p) => { d = Math.max(d, depth(p) + 1); });
+        visiting[i] = false;
+        return (col[i] = d);
+    };
+    nodes.forEach((_, i) => depth(i));
+    const ncol = Math.max(0, ...col) + 1, cols = Array.from({ length: ncol }, () => []);
+    nodes.forEach((n, i) => cols[col[i]].push(i));
+    const pos = new Array(nodes.length).fill(0);
+    cols.forEach((c) => c.forEach((i, k) => { pos[i] = k; }));
+    for (let sweep = 0; sweep < 3; sweep++) {
+        cols.forEach((c, ci) => {
+            if (ci === 0) return;
+            c.sort((a, b) => {
+                const bary = (i) => (preds[i].length ? preds[i].reduce((s, p) => s + pos[p], 0) / preds[i].length : pos[i]);
+                return bary(a) - bary(b) || a - b;
+            });
+            c.forEach((i, k) => { pos[i] = k; });
+        });
+    }
+    const PAD = 30, GX = 54, GY = 22;
+    nodes.forEach((n) => { n._el.style.width = ''; n._el.style.left = '0px'; n._el.style.top = '0px'; });
+    const wid = nodes.map((n) => Math.ceil(n._el.offsetWidth));
+    nodes.forEach((n, i) => { n._el.style.width = wid[i] + 'px'; });
+    const hgt = nodes.map((n) => n._el.offsetHeight);
+    const colW = cols.map((c) => Math.max(120, ...c.map((i) => wid[i])));
+    const colH = cols.map((c) => c.reduce((s, i) => s + hgt[i], 0) + GY * Math.max(0, c.length - 1));
+    const maxH = Math.max(...colH, 100);
+    let x = PAD;
+    cols.forEach((c, ci) => {
+        let y = PAD + (maxH - colH[ci]) / 2;
+        c.forEach((i) => {
+            const n = nodes[i];
+            if (!n._dragged) {
+                n.x = n._spec.x != null ? n._spec.x : x + (colW[ci] - wid[i]) / 2;
+                n.y = n._spec.y != null ? n._spec.y : y;
+            }
+            y += hgt[i] + GY;
+        });
+        x += colW[ci] + GX;
+    });
+    nodes.forEach((n) => { n._el.style.left = n.x + 'px'; n._el.style.top = n.y + 'px'; });
+    let bw = x - GX + PAD, bh = maxH + 2 * PAD;
+    nodes.forEach((n, i) => { bw = Math.max(bw, n.x + wid[i] + PAD); bh = Math.max(bh, n.y + hgt[i] + PAD); });
+    G.bounds = { w: bw, h: bh };
+    const sW = PL.clamp((G.cont.clientWidth - 10) / bw, 0.2, 1);
+    G.cont.style.height = (SPEC.graph.height || PL.clamp(bh * sW + 20, 320, 1500)) + 'px';
+    measurePins();
+    drawEdges();
+    fitGraph();
+}
+function measurePins() {
+    G.nodes.forEach((n) => {
+        n._pins = {};
+        n._el.querySelectorAll('.pl-pin').forEach((pe) => {
+            const dot = pe.querySelector('.pl-pin-dot');
+            let x = dot.offsetWidth / 2, y = dot.offsetHeight / 2, e = dot;
+            while (e && e !== n._el) { x += e.offsetLeft; y += e.offsetTop; e = e.offsetParent; if (e && e !== n._el) { x += e.clientLeft; y += e.clientTop; } }
+            x += n._el.clientLeft; y += n._el.clientTop;
+            n._pins[(pe.parentElement.classList.contains('out') ? 'o:' : 'i:') + pe.dataset.pin] = { x, y };
+        });
+    });
+}
+function drawEdges() {
+    const svg = G.svg;
+    svg.innerHTML = '';
+    G.edges.forEach((e) => {
+        const a = e.from._pins['o:' + e.fp.name], b = e.to._pins['i:' + e.tp.name];
+        if (!a || !b) return;
+        const x1 = e.from.x + a.x, y1 = e.from.y + a.y, x2 = e.to.x + b.x, y2 = e.to.y + b.y;
+        let d;
+        if (e.back || x2 < x1 + 10) {
+            const dy = Math.max(60, Math.abs(y2 - y1) * 0.3) + 40, dx = 80;
+            d = `M${x1},${y1} C${x1 + dx},${y1 + dy} ${x2 - dx},${y2 + dy} ${x2},${y2}`;
+        } else {
+            const dx = Math.max(40, Math.abs(x2 - x1) * 0.45);
+            d = `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+        }
+        const p = document.createElementNS(SVGNS, 'path');
+        p.setAttribute('d', d);
+        p.setAttribute('stroke', typeColor(e.fp.type));
+        p.setAttribute('class', 'pl-edge' + (e.back || x2 < x1 + 10 ? ' back' : ''));
+        e._path = p;
+        svg.appendChild(p);
+    });
+}
+function applyPan() {
+    const p = G.pan;
+    G.vp.style.transform = `translate(${p.x}px, ${p.y}px) scale(${p.s})`;
+    G.zoomEl.textContent = Math.round(p.s * 100) + '%';
+}
+function fitGraph() {
+    const cw = G.cont.clientWidth, ch = G.cont.clientHeight, b = G.bounds;
+    const s = PL.clamp(Math.min((cw - 10) / b.w, (ch - 10) / b.h, 1), 0.2, 1);
+    G.pan = { s, x: (cw - b.w * s) / 2, y: (ch - b.h * s) / 2 };
+    applyPan();
+}
+function initGraphInteraction() {
+    const cont = G.cont;
+    G.ctrl.addEventListener('click', (e) => {
+        const a = e.target.dataset && e.target.dataset.a;
+        if (a === 'fit') fitGraph();
+        if (a === 'reset') { G.nodes.forEach((n) => { n._dragged = false; }); layoutGraph(); }
+    });
+    cont.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const r = cont.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, p = G.pan;
+        const s2 = PL.clamp(p.s * Math.exp(-e.deltaY * 0.0015), 0.2, 2.5);
+        p.x = mx - (mx - p.x) * (s2 / p.s); p.y = my - (my - p.y) * (s2 / p.s); p.s = s2;
+        applyPan();
+    }, { passive: false });
+    let mode = null, last = null, node = null, moved = 0;
+    cont.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.pl-graph-ctrl')) return;
+        const ne = e.target.closest('.pl-node');
+        node = ne ? G.byId.get(ne.dataset.node) : null;
+        mode = node ? 'node' : 'pan';
+        last = { x: e.clientX, y: e.clientY }; moved = 0;
+        cont.setPointerCapture(e.pointerId);
+        if (mode === 'pan') cont.classList.add('panning');
+    });
+    cont.addEventListener('pointermove', (e) => {
+        if (!mode) return;
+        const dx = e.clientX - last.x, dy = e.clientY - last.y;
+        last = { x: e.clientX, y: e.clientY }; moved += Math.abs(dx) + Math.abs(dy);
+        if (mode === 'pan') { G.pan.x += dx; G.pan.y += dy; applyPan(); }
+        else if (moved > 3) {
+            node._el.classList.add('dragging');
+            node.x += dx / G.pan.s; node.y += dy / G.pan.s; node._dragged = true;
+            node._el.style.left = node.x + 'px'; node._el.style.top = node.y + 'px';
+            drawEdges();
+        }
+    });
+    const end = () => {
+        if (mode === 'node' && node) { node._el.classList.remove('dragging'); if (moved <= 3) openNode(node.id); }
+        mode = null; node = null; cont.classList.remove('panning');
+    };
+    cont.addEventListener('pointerup', end);
+    cont.addEventListener('pointercancel', end);
+    cont.addEventListener('pointerover', (e) => {
+        const ne = e.target.closest && e.target.closest('.pl-node');
+        G.edges.forEach((ed) => ed._path && ed._path.classList.toggle('hl', !!ne && (ed.from.id === ne.dataset.node || ed.to.id === ne.dataset.node)));
+    });
+}
+
+// ── Node detail modal ──
+let modalEl, backdropEl;
+function buildModal() {
+    backdropEl = el('div', 'pl-backdrop');
+    modalEl = el('div', 'pl-modal', '<div class="pl-modal-head"><span class="pl-modal-title"></span><span class="pl-modal-tag"></span><button class="pl-modal-close">×</button></div><div class="pl-modal-body"></div>');
+    document.body.append(backdropEl, modalEl);
+    backdropEl.onclick = closeNode;
+    modalEl.querySelector('.pl-modal-close').onclick = closeNode;
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNode(); });
+}
+function dpTable(p) {
+    const k = String(p.kind || 'CS').toUpperCase(), d = dpKind(k), rows = [];
+    if (k === 'INLINE') return `<div class="pl-nd-dp" style="--dp:${d.color}"><div class="pl-nd-dp-head"><span class="pl-dp-kind">⊘ INLINE</span><span class="pl-nd-dp-name">${esc(p.name || '')}</span></div><div class="pl-dp-note">${esc(p.note || d[LK])}</div></div>`;
+    if (p.threads != null) rows.push([T.dpThreads, fmtList(p.threads)]);
+    if (p.groups != null) rows.push([T.dpGroups, fmtList(p.groups)]);
+    const tot = dpTotal(p); if (tot) rows.push([T.dpTotal, tot]);
+    if (p.target != null) rows.push([T.dpTarget, fmtList(p.target)]);
+    if (p.count != null) rows.push([T.dpCount, fmtList(p.count)]);
+    if (p.idRange != null) rows.push([T.dpRange, fmtList(p.idRange)]);
+    return `<div class="pl-nd-dp" style="--dp:${d.color}"><div class="pl-nd-dp-head"><span class="pl-dp-kind">${esc(k)}</span><span class="pl-nd-dp-name">${esc(p.name || '')}</span></div>` +
+        `<table>${rows.map(([a, b]) => `<tr><td>${esc(a)}</td><td><code>${esc(b)}</code></td></tr>`).join('')}</table>` +
+        (p.note ? `<div class="pl-dp-note">${esc(p.note)}</div>` : '') + '</div>';
+}
+function openNode(id) {
+    const n = G && G.byId.get(id);
+    if (!n) return;
+    activeNode = n;
+    const det = n.detail || {}, st = n.step ? stepById.get(n.step) : null;
+    const cat = cats[n.category || 'function'] || cats.function;
+    modalEl.querySelector('.pl-modal-title').textContent = n.title || n.id;
+    const tg = modalEl.querySelector('.pl-modal-tag');
+    tg.textContent = n.tag || (n.category || 'function').toUpperCase(); tg.style.background = cat.color;
+    const body = modalEl.querySelector('.pl-modal-body');
+    let html = '';
+    if (n.lifetime) { const lt = LIFETIMES[n.lifetime]; html += `<div class="pl-nd-lt ${n.lifetime}"><span class="pl-lt ${n.lifetime}">${lt.icon} ${lt.label}</span><span class="pl-lt-tip">${esc(lt[LK])}</span></div>`; }
+    if (n.dispatch) html += `<span class="pl-nd-label">${esc(T.ndDispatch)}</span>` + nodeDps(n).map(dpTable).join('');
+    const desc = det.desc != null ? det.desc : n.desc;
+    if (desc) html += `<div class="pl-nd-desc" style="margin-top:10px">${desc}</div>`;
+    if (n.inputs.length || n.outputs.length) {
+        const pin = (p) => `<div><span class="pl-legend-dot" style="background:${typeColor(p.type)}"></span>${esc(pinLabel(p))}</div>`;
+        html += `<span class="pl-nd-label">${esc(T.ndIO)}</span><div class="pl-nd-pins"><div>${n.inputs.map(pin).join('') || '<div>—</div>'}</div><div>${n.outputs.map(pin).join('') || '<div>—</div>'}</div></div>`;
+    }
+    if (det.commonUsed) html += `<span class="pl-nd-label">${esc(T.ndCommon)}</span><div class="pl-nd-common">${PL.highlight(det.commonUsed, det.lang || SPEC.codeLang)}</div>`;
+    if (det.conversion) html += `<span class="pl-nd-label">${esc(T.ndConv)}</span><div class="pl-conv">${PL.formula(det.conversion)}</div>`;
+    const stF = st ? (st.blocks ? st.blocks.filter((b) => b.type === 'formula') : arr(st.formula)) : [];
+    const stC = st ? (st.blocks ? st.blocks.filter((b) => b.type === 'code') : arr(st.code)) : [];
+    const pick = (v, list) => (typeof v === 'number' ? list[v] || null : v);
+    const formula = det.formula !== undefined ? pick(det.formula, stF) : stF[0] || null;
+    if (formula) html += `<span class="pl-nd-label">${esc(T.ndFormula)}</span><div class="pl-formula">${typeof formula === 'object' && formula.html != null ? formula.html : PL.formula(typeof formula === 'object' ? formula.text : formula)}</div>`;
+    const code = det.code !== undefined ? pick(det.code, stC) : stC[0] || null;
+    if (code) html += `<span class="pl-nd-label">${esc(T.ndCode)}${code.title ? ' · ' + esc(code.title) : ''}</span><pre class="pl-code">${PL.highlight(typeof code === 'string' ? code : code.src, (code && code.lang) || det.lang || SPEC.codeLang)}</pre>`;
+    let pvItem = det.preview !== undefined ? det.preview : null;
+    if (typeof pvItem === 'string') { const ref = previews.get(pvItem); pvItem = ref ? ref.item : (problem('warn', 'node:' + n.id, `preview "${det.preview}" not found`), null); }
+    if (pvItem === null && det.preview === undefined && st && st.previews) pvItem = arr(st.previews)[0] || null;
+    body.innerHTML = html;
+    modalPv = null;
+    if (pvItem) {
+        const wrap = el('div', 'pl-nd-preview' + (pvItem.large || det.large ? ' large' : ''));
+        const pv = previewItem(pvItem, n.id, 0, true);
+        if (pvItem.smooth || pvItem.large || pvItem.kind === 'plot') pv.canvas.classList.add('smooth');
+        if (pvItem.size && !(pvItem.large || det.large)) { pv.canvas.style.width = pvItem.size[0] * 1.4 + 'px'; pv.canvas.style.height = pvItem.size[1] * 1.4 + 'px'; }
+        wrap.appendChild(pv.canvas);
+        wrap.appendChild(el('span', 'pl-pv-label', (det.previewLabel || pvItem.label || '') + (pvItem.sub ? ' · ' + pvItem.sub : '')));
+        body.insertAdjacentHTML('beforeend', `<span class="pl-nd-label">${esc(T.ndPreview)}</span>`);
+        body.appendChild(wrap);
+        modalPv = pv;
+    } else body.insertAdjacentHTML('beforeend', `<div class="pl-nd-none">${esc(T.ndNone)}</div>`);
+    if (st) {
+        const a = el('a', 'pl-nd-jump', `${esc(T.ndJump)} ${st._num} · ${st.title || ''}`);
+        a.href = '#step-' + st.id;
+        a.onclick = (e) => { e.preventDefault(); closeNode(); const c = document.getElementById('step-' + st.id); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 1200); };
+        body.appendChild(a);
+    }
+    modalEl.classList.toggle('wide', !!(pvItem && (pvItem.large || det.large)));
+    modalEl.classList.add('open'); backdropEl.classList.add('open');
+    if (modalPv) requestAnimationFrame(() => { if (modalPv) renderPv(modalPv, true); });
+}
+function closeNode() {
+    activeNode = null; modalPv = null;
+    if (modalEl) { modalEl.classList.remove('open'); backdropEl.classList.remove('open'); }
+}
+
+// ════════════════════════════════════════════════════════════
+// Mount
+// ════════════════════════════════════════════════════════════
+PL.mount = function (spec) {
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', () => PL.mount(spec), { once: true }); return; }
+    try { mountImpl(spec); } catch (e) { report('mount', e); } finally { PL._readyResolve(); }
+};
+function mountImpl(spec) {
+    if (booted) { problem('error', 'mount', 'PipelineLab.mount called twice'); return; }
+    booted = true;
+    SPEC = spec || {};
+    const lang = SPEC.lang || 'zh-CN';
+    LK = /^zh/i.test(lang) ? 'zh' : 'en';
+    T = Object.assign({}, TEXT[LK], SPEC.ui || {});
+    document.documentElement.lang = lang;
+    if (SPEC.title) document.title = SPEC.title;
+    if (SPEC.css) document.head.appendChild(el('style', '', SPEC.css));
+    overlayEl = el('div', 'pl-overlay');
+    document.body.appendChild(overlayEl);
+    updateOverlay();
+
+    S = PL.S = { t: 0, dt: 0, frame: 0, epoch: 0, seed: (SPEC.seed >>> 0) || 1337, playing: SPEC.autoplay !== false, timeScale: 1 };
+    S.rand = PL.rng(S.seed);
+    if (SPEC.state) Object.assign(S, isFn(SPEC.state) ? SPEC.state(S, PL) : SPEC.state);
+    arr(SPEC.params).forEach((p) => {
+        if (!p.id) { problem('error', 'params', 'param without id'); return; }
+        if (RESERVED.has(p.id)) problem('error', 'param:' + p.id, 'reserved id (t, dt, frame, epoch, seed, rand, playing, timeScale)');
+        p.type = p.type || (p.options ? 'select' : typeof p.value === 'boolean' ? 'check' : /^#[0-9a-f]{6}$/i.test(String(p.value)) ? 'color' : p.action ? 'button' : 'range');
+        p.affects = p.affects || 'param';
+        if (p.type !== 'button') { p.raw = p.value; S[p.id] = paramValue(p, p.value); }
+    });
+    arr(SPEC.stages).forEach((st, i) => {
+        const lt = ltName(st.lifetime);
+        if (!isFn(st.run)) { problem('error', 'stage:' + (st.id || i), 'missing run(S, PL)'); return; }
+        stages.push({ id: st.id || 'stage' + i, lifetime: lt, rank: LIFETIMES[lt].rank, lazy: !!st.lazy, needs: st.needs, run: st.run, valid: false, order: i });
+    });
+    stages.sort((a, b) => a.rank - b.rank || a.order - b.order);
+
+    if ('IntersectionObserver' in window) {
+        io = new IntersectionObserver((ents) => ents.forEach((en) => {
+            const t = en.target;
+            if (t._pv) t._pv.visible = en.isIntersecting;
+            if (t._sec) t._sec.visible = en.isIntersecting;
+        }), { rootMargin: '200px 0px' });
+    }
+    const root = document.getElementById('pl-root') || document.body.appendChild(el('div', ''));
+    buildHeader(root);
+    const secs = arr(SPEC.sections);
+    secs.filter((s) => (s.position || 'top') === 'top').forEach((s) => buildSection(s, root));
+    if (SPEC.graph) buildGraph(root);
+    secs.filter((s) => s.position === 'afterGraph').forEach((s) => buildSection(s, root));
+    buildSteps(root);
+    secs.filter((s) => s.position === 'afterSteps').forEach((s) => buildSection(s, root));
+    buildRefs(root);
+    buildModal();
+    if (!io) { previews.forEach((pv) => { pv.visible = true; }); sections.forEach((s) => { s.visible = true; }); }
+    if (G) G.nodes.forEach((n) => { if (n.step && !stepById.has(n.step)) problem('warn', 'node:' + n.id, `step "${n.step}" not found`); });
+
+    invalidate(0);
+    runPending();
+    sections.forEach((sc) => { if (isFn(sc.spec.mount)) { try { sc.spec.mount(sc.body, S, PL); } catch (e) { report('section:' + sc.id, e); } } });
+    previews.forEach((pv) => renderPv(pv, true));
+    sections.forEach((sc) => renderSection(sc, true));
+    if (G) { layoutGraph(); initGraphInteraction(); window.addEventListener('resize', () => { if (G) fitGraph(); }); }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (G && !G.nodes.some((n) => n._dragged)) layoutGraph(); });
+    requestAnimationFrame(loop);
+}
+PL.ready = new Promise((r) => { PL._readyResolve = r; });
+
+// Public helpers for content code
+PL.invalidate = (level) => invalidate(level == null ? 'param' : level);
+PL.setParam = function (id, value) {   // drive a header control programmatically (same effect as the user changing it)
+    const p = arr(SPEC && SPEC.params).find((q) => q.id === id);
+    if (!p || !p._apply) throw new Error(`unknown param "${id}"`);
+    if (p.type === 'check') p._input.checked = value === true || value === 'true' || value === 1;
+    else if (p.type !== 'button') p._input.value = value;
+    p._apply();
+};
+PL.openNode = (id) => openNode(id);
+PL.closeNode = closeNode;
+PL.problems = problems;
+PL.errors = errors;
+
+// ════════════════════════════════════════════════════════════
+// Self test (used by scripts/validate_doc.mjs)
+// ════════════════════════════════════════════════════════════
+function canvasStats(cv) {
+    const out = { w: cv.width, h: cv.height, blank: true, sig: 0 };
+    try {
+        const k = 48, off = document.createElement('canvas');
+        off.width = k; off.height = k;
+        const c = off.getContext('2d');
+        c.drawImage(cv, 0, 0, k, k);
+        const d = c.getImageData(0, 0, k, k).data;
+        let lo = 255, hi = 0, sig = 0, alpha = 0;
+        for (let i = 0; i < d.length; i += 4) {
+            const v = d[i] * 0.3 + d[i + 1] * 0.5 + d[i + 2] * 0.2;
+            lo = Math.min(lo, v); hi = Math.max(hi, v); alpha = Math.max(alpha, d[i + 3]);
+            sig = (sig * 31 + d[i] * 7 + d[i + 1] * 13 + d[i + 2]) % 1000000007;
+        }
+        out.blank = alpha === 0 || hi - lo < 3;
+        out.contrast = Math.round(hi - lo);
+        out.sig = sig;
+    } catch (e) { out.error = String(e.message || e); }
+    return out;
+}
+PL.selfTest = async function (opts) {
+    opts = opts || {};
+    await PL.ready;
+    await raf(); await raf();
+    const rep = { title: SPEC.title, steps: arr(SPEC.steps).length, stages: stages.length, params: arr(SPEC.params).length, previews: [], nodes: G ? G.nodes.length : 0, edges: G ? G.edges.length : 0, sections: sections.length, issues: [] };
+    stages.forEach((st) => { if (!st.valid) runStage(st); });
+    previews.forEach((pv) => renderPv(pv, true));
+    sections.forEach((sc) => renderSection(sc, true));
+    const before = new Map();
+    previews.forEach((pv) => {
+        const s = canvasStats(pv.canvas);
+        before.set(pv.id, s.sig);
+        rep.previews.push({ id: pv.id, live: pv.live, w: s.w, h: s.h, contrast: s.contrast, blank: s.blank, error: s.error });
+        if (s.blank) rep.issues.push({ level: 'error', where: 'preview:' + pv.id, message: 'canvas is blank (uniform color) after render' });
+    });
+    if (hasAnim()) {
+        let t0 = performance.now();
+        const nf = opts.frames || 20;
+        for (let k = 0; k < nf; k++) advanceFrame(opts.dt || 0.05);
+        rep.stageMs = +((performance.now() - t0) / nf).toFixed(2);
+        stages.forEach((st) => { if (!st.valid) runStage(st); });
+        t0 = performance.now();
+        previews.forEach((pv) => { if (pv.live) renderPv(pv, true); });
+        rep.liveRenderMs = +(performance.now() - t0).toFixed(2);
+        previews.forEach((pv) => {
+            if (!pv.live) return;
+            const s = canvasStats(pv.canvas);
+            const r = rep.previews.find((x) => x.id === pv.id);
+            r.changed = s.sig !== before.get(pv.id);
+            if (!r.changed) rep.issues.push({ level: 'warn', where: 'preview:' + pv.id, message: 'marked live but did not change after advancing time' });
+        });
+    }
+    sections.forEach((sc) => {
+        sc.body.querySelectorAll('canvas').forEach((cv, k) => {
+            const s = canvasStats(cv);
+            if (s.blank) rep.issues.push({ level: 'warn', where: `section:${sc.id}:canvas${k}`, message: 'section canvas looks blank' });
+        });
+    });
+    if (G) {
+        rep.nodePreviews = [];
+        for (const n of G.nodes) {
+            openNode(n.id);
+            await raf();
+            if (modalPv) {
+                rep.nodePreviews.push(n.id);
+                renderPv(modalPv, true);
+                const s = canvasStats(modalPv.canvas);
+                if (s.blank) rep.issues.push({ level: 'error', where: 'node:' + n.id, message: 'node detail preview is blank' });
+            }
+            closeNode();
+        }
+        G.nodes.forEach((n) => { if (!n.inputs.length && !n.outputs.length) rep.issues.push({ level: 'warn', where: 'node:' + n.id, message: 'node has no pins' }); });
+    }
+    problems.forEach((p) => rep.issues.push(p));
+    errors.forEach((e) => rep.issues.push({ level: 'error', where: e.where, message: e.message }));
+    rep.ok = !rep.issues.some((i) => i.level === 'error');
+    return rep;
+};
+})();
+
+</script>
+<script>
+// ── bxdf_common.js ──
+// ════════════════════════════════════════════════════════════════════════════
+// BxDF series · shared helpers — prepended to every module at build time:
+//   node <skill>/scripts/build_doc.mjs bxdf_common.js bxdf_0N_xxx.lab.js -o bxdf_0N_xxx.html
+//
+// Conventions shared by every module (formulas, HLSL and JS must all follow these):
+//   • Local shading frame: n = +Z, tangent t = +X, bitangent b = +Y; θ from +Z, φ from +X toward +Y.
+//   • wi points toward the light, wo toward the viewer — both point AWAY from the surface.
+//   • A BxDF is f(wi, wo) in 1/sr returning a number or linear RGB [r,g,b]. A directional light of
+//     irradiance E (measured at normal incidence) reflects L = f · E · cosθi.
+//   • Perceptual roughness r ∈ [0,1]; GGX α = r² (Burley 2012). Anisotropy uses αx (along t), αy (along b).
+//   • Relative IOR η = η_t / η_i (transmitted side over incident side); F0 = ((η−1)/(η+1))².
+//   • Linear RGB everywhere; BX.display() (exposure → ACES fit → sRGB) is applied only for display.
+//   • View-space for sphere renders: x right, y up, z toward the viewer.
+// ════════════════════════════════════════════════════════════════════════════
+const BX = (() => {
+    const PI = Math.PI, INV_PI = 1 / Math.PI;
+    const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const norm = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+    const isRGB = Array.isArray;
+
+    // ── directions & local-frame trigonometry ──
+    const dir = (theta, phi = 0) => [Math.sin(theta) * Math.cos(phi), Math.sin(theta) * Math.sin(phi), Math.cos(theta)];
+    const cosTheta = (w) => w[2];
+    const sin2Theta = (w) => Math.max(0, 1 - w[2] * w[2]);
+    const tan2Theta = (w) => sin2Theta(w) / Math.max(1e-12, w[2] * w[2]);
+    const cosPhi = (w) => { const s = Math.sqrt(sin2Theta(w)); return s < 1e-9 ? 1 : clamp(w[0] / s, -1, 1); };
+    const sinPhi = (w) => { const s = Math.sqrt(sin2Theta(w)); return s < 1e-9 ? 0 : clamp(w[1] / s, -1, 1); };
+    const half = (wi, wo) => norm([wi[0] + wo[0], wi[1] + wo[1], wi[2] + wo[2]]);
+    const reflect = (w, n = [0, 0, 1]) => { const k = 2 * dot(w, n); return [k * n[0] - w[0], k * n[1] - w[1], k * n[2] - w[2]]; };
+    /** Refraction. wi away from the surface on the incident side, n on the same side as wi, eta = η_t/η_i.
+     *  Returns wt (away from the surface, on the other side) or null on total internal reflection. */
+    const refract = (wi, n, eta) => {
+        const cosI = dot(n, wi), sin2T = Math.max(0, 1 - cosI * cosI) / (eta * eta);
+        if (sin2T >= 1) return null;
+        const cosT = Math.sqrt(1 - sin2T), k = cosI / eta - cosT;
+        return [-wi[0] / eta + k * n[0], -wi[1] / eta + k * n[1], -wi[2] / eta + k * n[2]];
+    };
+
+    // ── Fresnel ──
+    const f0FromIor = (eta) => ((eta - 1) / (eta + 1)) ** 2;
+    const pow5 = (x) => { const x2 = x * x; return x2 * x2 * x; };
+    /** Schlick: F0 number or RGB; c = cos of the angle to the (micro)normal */
+    const schlick = (F0, c) => { const m = pow5(clamp(1 - c, 0, 1)); return isRGB(F0) ? F0.map((f) => f + (1 - f) * m) : F0 + (1 - F0) * m; };
+    /** Exact unpolarized dielectric Fresnel. cosI < 0 means arriving from the other side (η is inverted). TIR → 1. */
+    const fresnelDielectric = (cosI, eta) => {
+        cosI = clamp(cosI, -1, 1);
+        if (cosI < 0) { eta = 1 / eta; cosI = -cosI; }
+        const sin2T = (1 - cosI * cosI) / (eta * eta);
+        if (sin2T >= 1) return 1;
+        const cosT = Math.sqrt(1 - sin2T);
+        const rPar = (eta * cosI - cosT) / (eta * cosI + cosT), rPerp = (cosI - eta * cosT) / (cosI + eta * cosT);
+        return (rPar * rPar + rPerp * rPerp) / 2;
+    };
+    // complex helpers for conductors
+    const cAdd = (a, b) => [a[0] + b[0], a[1] + b[1]], cSub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+    const cMul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+    const cDiv = (a, b) => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+    const cSqrt = (a) => { const r = Math.hypot(a[0], a[1]); const re = Math.sqrt(Math.max(0, (r + a[0]) / 2)), im = Math.sqrt(Math.max(0, (r - a[0]) / 2)); return [re, a[1] < 0 ? -im : im]; };
+    const cNorm = (a) => a[0] * a[0] + a[1] * a[1];
+    /** Exact conductor Fresnel per channel; eta, k are RGB arrays (complex IOR η + ik). Returns RGB. */
+    const fresnelConductor = (cosI, eta, k) => [0, 1, 2].map((c) => {
+        const ci = clamp(cosI, 0, 1), e = [eta[c], k[c]];
+        const sin2T = cDiv([1 - ci * ci, 0], cMul(e, e)), cosT = cSqrt(cSub([1, 0], sin2T));
+        const ec = [e[0] * ci, e[1] * ci];
+        const rPar = cDiv(cSub(ec, cosT), cAdd(ec, cosT));
+        const ecT = cMul(e, cosT), rPerp = cDiv(cSub([ci, 0], ecT), cAdd([ci, 0], ecT));
+        return (cNorm(rPar) + cNorm(rPerp)) / 2;
+    });
+    /** Complex IOR presets at ≈ (650, 550, 450) nm — RGB fits commonly used with pbrt/Mitsuba scenes */
+    const METALS = {
+        gold: { eta: [0.143, 0.375, 1.442], k: [3.983, 2.386, 1.603] },
+        copper: { eta: [0.200, 0.924, 1.102], k: [3.913, 2.453, 2.142] },
+        aluminum: { eta: [1.657, 0.880, 0.521], k: [9.224, 6.270, 4.837] },
+        silver: { eta: [0.155, 0.117, 0.138], k: [4.828, 3.122, 2.147] },
+    };
+
+    // ── GGX / Trowbridge-Reitz microfacets (local frame, h·n = h[2]) ──
+    const alpha = (r) => Math.max(1e-4, r * r);
+    const ggxD = (h, ax, ay = ax) => {
+        if (h[2] <= 0) return 0;
+        const t = (h[0] / ax) ** 2 + (h[1] / ay) ** 2 + h[2] * h[2];
+        return 1 / (PI * ax * ay * t * t);
+    };
+    /** Smith Λ(w) for (anisotropic) GGX; uses |cosθ| so it also works below the surface */
+    const ggxLambda = (w, ax, ay = ax) => {
+        const c2 = w[2] * w[2];
+        if (c2 <= 0) return Infinity;   // exact horizon: G → 0. Near it Λ ~ α·tanθ/2, so D·G2/(4 cos cos) stays finite
+        return (Math.sqrt(1 + ((w[0] * ax) ** 2 + (w[1] * ay) ** 2) / c2) - 1) / 2;
+    };
+    const smithG1 = (w, ax, ay = ax) => 1 / (1 + ggxLambda(w, ax, ay));
+    /** Height-correlated masking-shadowing G2 (Heitz 2014) */
+    const smithG2 = (wo, wi, ax, ay = ax) => 1 / (1 + ggxLambda(wo, ax, ay) + ggxLambda(wi, ax, ay));
+    /** Visible-normal sampling (Heitz 2018, JCGT 7(4)). wo in the upper hemisphere; returns microfacet normal h. */
+    const sampleVNDF = (wo, ax, ay, u1, u2) => {
+        const vh = norm([ax * wo[0], ay * wo[1], wo[2]]);
+        const lensq = vh[0] * vh[0] + vh[1] * vh[1];
+        const t1 = lensq > 0 ? [-vh[1] / Math.sqrt(lensq), vh[0] / Math.sqrt(lensq), 0] : [1, 0, 0];
+        const t2 = cross(vh, t1);
+        const r = Math.sqrt(u1), ph = 2 * PI * u2;
+        const p1 = r * Math.cos(ph);
+        let p2 = r * Math.sin(ph);
+        const s = 0.5 * (1 + vh[2]);
+        p2 = (1 - s) * Math.sqrt(Math.max(0, 1 - p1 * p1)) + s * p2;
+        const pz = Math.sqrt(Math.max(0, 1 - p1 * p1 - p2 * p2));
+        const nh = [p1 * t1[0] + p2 * t2[0] + pz * vh[0], p1 * t1[1] + p2 * t2[1] + pz * vh[1], p1 * t1[2] + p2 * t2[2] + pz * vh[2]];
+        return norm([ax * nh[0], ay * nh[1], Math.max(1e-6, nh[2])]);
+    };
+    /** Density of h under VNDF sampling: G1(wo) · max(0, wo·h) · D(h) / cosθo */
+    const pdfVNDF = (wo, h, ax, ay = ax) => smithG1(wo, ax, ay) * Math.max(0, dot(wo, h)) * ggxD(h, ax, ay) / Math.max(1e-9, wo[2]);
+    /** Classic NDF sampling (isotropic): pdf(h) = D(h)·cosθh */
+    const sampleNDF = (a, u1, u2) => { const t = Math.atan(a * Math.sqrt(u1 / Math.max(1e-12, 1 - u1))); return dir(t, 2 * PI * u2); };
+
+    // ── hemisphere sampling & low-discrepancy points ──
+    const sampleCosine = (u1, u2) => { const r = Math.sqrt(u1), p = 2 * PI * u2; return [r * Math.cos(p), r * Math.sin(p), Math.sqrt(Math.max(0, 1 - u1))]; };   // pdf = cosθ/π
+    const sampleUniform = (u1, u2) => { const z = u1, r = Math.sqrt(Math.max(0, 1 - z * z)), p = 2 * PI * u2; return [r * Math.cos(p), r * Math.sin(p), z]; };   // pdf = 1/(2π)
+    const radicalInverse2 = (i) => { let b = i >>> 0; b = ((b << 16) | (b >>> 16)) >>> 0; b = (((b & 0x55555555) << 1) | ((b & 0xAAAAAAAA) >>> 1)) >>> 0; b = (((b & 0x33333333) << 2) | ((b & 0xCCCCCCCC) >>> 2)) >>> 0; b = (((b & 0x0F0F0F0F) << 4) | ((b & 0xF0F0F0F0) >>> 4)) >>> 0; b = (((b & 0x00FF00FF) << 8) | ((b & 0xFF00FF00) >>> 8)) >>> 0; return b / 4294967296; };
+    const hammersley = (i, n) => [(i + 0.5) / n, radicalInverse2(i)];
+
+    // ── integration ──
+    const acc = (s, v, w) => { if (isRGB(v)) { if (!isRGB(s)) s = [s, s, s]; return [s[0] + v[0] * w, s[1] + v[1] * w, s[2] + v[2] * w]; } return isRGB(s) ? [s[0] + v * w, s[1] + v * w, s[2] + v * w] : s + v * w; };
+    /** Directional albedo E(wo) = ∫ f(wi, wo) cosθi dωi by midpoint quadrature in (cosθ, φ). Smooth lobes only. */
+    const albedoQuad = (f, wo, n = 48) => {
+        let s = 0;
+        const dw = (1 / n) * (2 * PI / (2 * n));
+        for (let i = 0; i < n; i++) {
+            const c = (i + 0.5) / n, st = Math.sqrt(1 - c * c);
+            for (let j = 0; j < 2 * n; j++) { const p = (j + 0.5) / (2 * n) * 2 * PI; s = acc(s, f([st * Math.cos(p), st * Math.sin(p), c], wo), c * dw); }
+        }
+        return s;
+    };
+    const radicalInverse3 = (i) => { let f = 1, r = 0; while (i > 0) { f /= 3; r += f * (i % 3); i = Math.floor(i / 3); } return r; };
+    /** Monte Carlo albedo with your sampler: sample(wo, u1, u2, u3) → { wi, weight } where weight = f·cosθi/pdf (0 if invalid).
+     *  (u1, u2) are Hammersley points; u3 is a base-3 radical inverse, e.g. for choosing reflection vs transmission. */
+    const albedoMC = (sample, wo, n = 256) => {
+        let s = 0;
+        for (let i = 0; i < n; i++) { const [u1, u2] = hammersley(i, n), r = sample(wo, u1, u2, radicalInverse3(i)); if (r && r.weight) s = acc(s, r.weight, 1 / n); }
+        return s;
+    };
+
+    // ── hemisphere images (equal-area projection: disk radius² = 1 − cosθ) ──
+    const hemiDir = (x, y, res) => {
+        const u = 2 * (x + 0.5) / res - 1, v = -(2 * (y + 0.5) / res - 1), r2 = u * u + v * v;
+        if (r2 > 1) return null;
+        const c = 1 - r2, s = Math.sqrt(Math.max(0, 1 - c * c)), r = Math.sqrt(r2);
+        return r < 1e-9 ? [0, 0, 1] : [u / r * s, v / r * s, c];
+    };
+    const hemiPixel = (w, res) => {   // direction → [x, y] pixel (inverse of hemiDir)
+        const r = Math.sqrt(Math.max(0, 1 - Math.abs(w[2]))), s = Math.hypot(w[0], w[1]) || 1;
+        return [((w[0] / s) * r + 1) / 2 * res - 0.5, (1 - (w[1] / s) * r) / 2 * res - 0.5];
+    };
+    /** res×res Float32Array of fn(w) over the upper hemisphere; NaN outside the disk (draws black) */
+    const hemiImage = (fn, res, out) => {
+        out = out && out.length === res * res ? out : new Float32Array(res * res);
+        for (let y = 0; y < res; y++) for (let x = 0; x < res; x++) { const w = hemiDir(x, y, res); out[y * res + x] = w ? fn(w) : NaN; }
+        return out;
+    };
+
+    // ── display ──
+    const aces = (x) => clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0, 1);   // Narkowicz 2015 fit
+    const toSrgb = (x) => (x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055);
+    const display = (rgb, exposure = 1) => [toSrgb(aces(rgb[0] * exposure)), toSrgb(aces(rgb[1] * exposure)), toSrgb(aces(rgb[2] * exposure))];
+    const hex2lin = (hex) => [1, 3, 5].map((i) => { const c = parseInt(hex.slice(i, i + 2), 16) / 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+    const lum = (c) => (isRGB(c) ? 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] : c);
+
+    // ── lit sphere render (orthographic, view along −z) ──
+    const LIGHTS = {
+        studio: [
+            { dir: norm([-0.55, 0.6, 0.58]), color: [2.8, 2.7, 2.55] },     // key, upper left front
+            { dir: norm([0.85, 0.15, -0.5]), color: [1.2, 1.25, 1.4] },     // rim, right behind
+            { dir: norm([0.6, -0.35, 0.72]), color: [0.25, 0.27, 0.32] },   // fill, lower right
+        ],
+        key: [{ dir: norm([-0.55, 0.6, 0.58]), color: [3, 3, 3] }],
+    };
+    /** f(wi, wo, info) with LOCAL directions; info = { n, t, b (view space), x, y }. o: { res, lights, axis (tangent
+     *  direction for anisotropy, default up), exposure, ambient(wo, info) → rgb radiance, bg (linear RGB radiance or
+     *  (x, y) → rgb, shown through the same display transform — e.g. [1,1,1] for a white-furnace backdrop) }. Returns max radiance. */
+    const renderSphere = (canvas, f, o = {}) => {
+        const res = o.res || 112, lights = o.lights || LIGHTS.studio, axis = o.axis || [0, 1, 0], ex = o.exposure || 1;
+        let maxL = 0;
+        const info = { n: null, t: null, b: null, x: 0, y: 0 };
+        PL.draw.pixels(canvas, res, res, (x, y, out) => {
+            const u = 2 * (x + 0.5) / res - 1, v = -(2 * (y + 0.5) / res - 1), r2 = u * u + v * v;
+            if (r2 > 1) {
+                if (o.bg) { const b = typeof o.bg === 'function' ? o.bg(x, y) : o.bg, d = display(b, ex); out[0] = d[0]; out[1] = d[1]; out[2] = d[2]; return out; }
+                const g = 0.035 + 0.03 * (1 - (y / res)); out[0] = g * 0.8; out[1] = g * 0.9; out[2] = g * 1.15; return out;
+            }
+            const n = [u, v, Math.sqrt(1 - r2)];
+            let t = cross(axis, n);
+            if (Math.hypot(t[0], t[1], t[2]) < 1e-4) t = [1, 0, 0];
+            t = norm(t);
+            const b = cross(n, t), toL = (w) => [dot(w, t), dot(w, b), dot(w, n)];
+            const wo = toL([0, 0, 1]);
+            info.n = n; info.t = t; info.b = b; info.x = x; info.y = y;
+            let L = [0, 0, 0];
+            for (const l of lights) {
+                const wi = toL(l.dir);
+                if (wi[2] <= 0 && !o.twoSided) continue;
+                const fv = f(wi, wo, info), c = Math.abs(wi[2]);
+                L = isRGB(fv) ? [L[0] + fv[0] * l.color[0] * c, L[1] + fv[1] * l.color[1] * c, L[2] + fv[2] * l.color[2] * c]
+                    : [L[0] + fv * l.color[0] * c, L[1] + fv * l.color[1] * c, L[2] + fv * l.color[2] * c];
+            }
+            if (o.ambient) { const a = o.ambient(wo, info); L = [L[0] + a[0], L[1] + a[1], L[2] + a[2]]; }
+            maxL = Math.max(maxL, lum(L));
+            const d = display(L, ex);
+            out[0] = d[0]; out[1] = d[1]; out[2] = d[2];
+            return out;
+        });
+        return maxL;
+    };
+
+    // ── polar lobe plot in the plane of incidence (local x–z plane) ──
+    /** o: { wi (in x–z plane), series:[{ fn(wo) → number, color, label, dash }], cos (multiply by cosθo), log (decades,
+     *  e.g. 3), scale (fixed max), full (also plot below the surface, for BTDFs), title,
+     *  marks: [{ dir: [x, 0, z], color, label, dash }] extra direction rays (e.g. the smooth refraction direction) } */
+    const lobe = (canvas, o) => {
+        const { ctx, w, h } = PL.draw.ctx(canvas);
+        const full = !!o.full, cx = w / 2, cy = full ? h / 2 : h - 18, R = full ? Math.min(w, h) / 2 - 14 : Math.min(w / 2 - 12, h - 30);
+        const N = full ? 361 : 181, t0 = full ? -PI : -PI / 2, t1 = full ? PI : PI / 2;
+        const curves = (o.series || []).map((s) => {
+            const pts = [];
+            for (let k = 0; k < N; k++) {
+                const t = t0 + (t1 - t0) * k / (N - 1), wo = [Math.sin(t), 0, Math.cos(t)];
+                let v = s.fn(wo);
+                v = isRGB(v) ? lum(v) : v;
+                if (o.cos) v *= Math.abs(wo[2]);
+                pts.push([t, isFinite(v) ? Math.max(0, v) : 0]);
+            }
+            return { s, pts };
+        });
+        let vmax = o.scale || 0;
+        if (!vmax) curves.forEach((c) => c.pts.forEach((p) => { vmax = Math.max(vmax, p[1]); }));
+        vmax = vmax || 1;
+        const dec = o.log ? (o.log === true ? 3 : o.log) : 0;
+        const rad = (v) => (dec ? Math.max(0, (Math.log10(Math.max(v, 1e-30) / vmax) + dec) / dec) : v / vmax);
+        ctx.strokeStyle = '#1d2329'; ctx.lineWidth = 1;
+        for (const q of [0.25, 0.5, 0.75, 1]) { ctx.beginPath(); ctx.arc(cx, cy, R * q, full ? 0 : PI, 2 * PI); ctx.stroke(); }
+        for (const a of [30, 60, 120, 150, 210, 240, 300, 330]) {
+            if (!full && (a < 180 || a > 360)) continue;
+            const r = a * PI / 180; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(r), cy + R * Math.sin(r)); ctx.stroke();
+        }
+        ctx.strokeStyle = '#3a4148'; ctx.beginPath(); ctx.moveTo(cx - R - 6, cy); ctx.lineTo(cx + R + 6, cy); ctx.stroke();
+        ctx.strokeStyle = '#4a5560'; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - R - 4); ctx.stroke(); ctx.setLineDash([]);
+        if (o.wi) {
+            const wi = o.wi, L = R * 1.0;
+            ctx.strokeStyle = '#e8c25a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(cx + wi[0] * L, cy - wi[2] * L); ctx.lineTo(cx, cy); ctx.stroke();
+            ctx.fillStyle = '#e8c25a'; ctx.beginPath(); ctx.arc(cx + wi[0] * L, cy - wi[2] * L, 3, 0, 2 * PI); ctx.fill();
+            ctx.strokeStyle = 'rgba(232,194,90,0.45)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - wi[0] * L, cy - wi[2] * L); ctx.stroke(); ctx.setLineDash([]);
+        }
+        (o.marks || []).forEach((m) => {
+            const d = m.dir, L = R * 1.02;
+            ctx.strokeStyle = m.color || '#9aa5b1'; ctx.lineWidth = 1; ctx.setLineDash(m.dash || [3, 3]);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + d[0] * L, cy - d[2] * L); ctx.stroke(); ctx.setLineDash([]);
+            if (m.label) { ctx.fillStyle = m.color || '#9aa5b1'; ctx.font = '10px Consolas, monospace'; ctx.textAlign = d[0] >= 0 ? 'left' : 'right'; ctx.textBaseline = 'middle'; ctx.fillText(m.label, cx + d[0] * L + (d[0] >= 0 ? 4 : -4), cy - d[2] * L); }
+        });
+        curves.forEach(({ s, pts }, k) => {
+            ctx.strokeStyle = s.color || ['#6ab0e0', '#e0a060', '#5ad07a', '#c678dd', '#e06c75'][k % 5]; ctx.lineWidth = s.width || 1.6; ctx.setLineDash(s.dash || []);
+            ctx.beginPath();
+            pts.forEach(([t, v], i) => { const r = R * rad(v), X = cx + r * Math.sin(t), Y = cy - r * Math.cos(t); if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); });
+            ctx.stroke(); ctx.setLineDash([]);
+        });
+        ctx.font = '10px Consolas, monospace'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+        let ly = 4;
+        if (o.title) { ctx.fillStyle = '#888'; ctx.fillText(o.title, 6, ly); ly += 13; }
+        curves.forEach(({ s }, k) => { if (!s.label) return; ctx.fillStyle = s.color || ['#6ab0e0', '#e0a060', '#5ad07a', '#c678dd', '#e06c75'][k % 5]; ctx.fillText('— ' + s.label, 6, ly); ly += 13; });
+        ctx.fillStyle = '#555'; ctx.textAlign = 'right';
+        ctx.fillText(dec ? `log, ${dec} decades` : `max ${vmax.toPrecision(3)}`, w - 6, 4);
+        return vmax;
+    };
+
+    // ── series navigation ──
+    const MODULES = [
+        { id: 'diffuse', no: '01', file: 'bxdf_01_diffuse.html', title: '漫反射：Lambert → Oren-Nayar → Burley', short: '漫反射' },
+        { id: 'microfacet', no: '02', file: 'bxdf_02_microfacet.html', title: '微表面镜面：Cook-Torrance · GGX', short: '微表面镜面' },
+        { id: 'transmission', no: '03', file: 'bxdf_03_transmission.html', title: '粗糙透射 BTDF（Walter 2007）', short: '透射 BTDF' },
+        { id: 'sheen', no: '04', file: 'bxdf_04_sheen.html', title: '织物 Sheen：Charlie / Ashikhmin', short: '织物 Sheen' },
+        { id: 'subsurface', no: '05', file: 'bxdf_05_subsurface.html', title: '次表面散射 BSSRDF：Dipole → Normalized Diffusion', short: '次表面散射' },
+        { id: 'layering', no: '06', file: 'bxdf_06_layering.html', title: '多层混合与叠加：Clearcoat → 分层 BSDF → 材质总装', short: '多层混合' },
+    ];
+    const nav = (id) => {
+        const i = MODULES.findIndex((m) => m.id === id), p = MODULES[i - 1], q = MODULES[i + 1];
+        return `<p style="margin-top:8px;font-size:0.74rem;color:#789">BxDF 系列 · <a href="index.html">索引</a>` +
+            (p ? ` · ← <a href="${p.file}">${p.no} ${p.short}</a>` : '') + (q ? ` · <a href="${q.file}">${q.no} ${q.short}</a> →` : '') + '</p>';
+    };
+
+    // ── HLSL shared by every module's Common panel ──
+    const HLSL_COMMON = `
+        // BxDF 系列 · Common.hlsl —— 局部着色坐标系 n = +Z；世界空间代码只用与 N 的点积
+        static const float PI     = 3.14159265;
+        static const float INV_PI = 0.31830989;
+
+        float  Pow5(float x)          { float x2 = x * x; return x2 * x2 * x; }
+        float  F0FromIor(float eta)   { float r = (eta - 1.0) / (eta + 1.0); return r * r; }
+        float3 F_Schlick(float3 F0, float VoH) { return F0 + (1.0 - F0) * Pow5(1.0 - saturate(VoH)); }
+
+        // Trowbridge-Reitz / GGX，a = roughness²
+        float D_GGX(float NoH, float a) {
+            float a2 = a * a;
+            float d  = (NoH * a2 - NoH) * NoH + 1.0;
+            return a2 / (PI * d * d);
+        }
+        float Lambda_GGX(float NoX, float a) {
+            float a2 = a * a, c2 = max(NoX * NoX, 1e-7);
+            return 0.5 * (sqrt(1.0 + a2 * (1.0 - c2) / c2) - 1.0);
+        }
+        // 高度相关 Smith：V = G2 / (4·NoV·NoL)
+        float V_SmithGGXCorrelated(float NoV, float NoL, float a) {
+            float a2 = a * a;
+            float gv = NoL * sqrt(NoV * NoV * (1.0 - a2) + a2);
+            float gl = NoV * sqrt(NoL * NoL * (1.0 - a2) + a2);
+            return 0.5 / (gv + gl);
+        }`;
+
+    return {
+        PI, INV_PI, clamp, dot, cross, norm, dir, cosTheta, sin2Theta, tan2Theta, cosPhi, sinPhi, half, reflect, refract,
+        f0FromIor, pow5, schlick, fresnelDielectric, fresnelConductor, METALS,
+        alpha, ggxD, ggxLambda, smithG1, smithG2, sampleVNDF, pdfVNDF, sampleNDF,
+        sampleCosine, sampleUniform, hammersley, albedoQuad, albedoMC,
+        hemiDir, hemiPixel, hemiImage, aces, toSrgb, display, hex2lin, lum,
+        LIGHTS, renderSphere, lobe, MODULES, nav, HLSL_COMMON,
+    };
+})();
+
+;
+// ── index.lab.js ──
+// BxDF series · index page. Build:
+//   node <skill>/scripts/build_doc.mjs bxdf_common.js index.lab.js -o index.html
+// Small local versions of each family's headline BxDF drive the comparison previews; the full
+// step-by-step derivations live in the six modules.
+
+const IDX = (() => {
+    const INV_PI = BX.INV_PI, z3 = [0, 0, 0];
+    const lambert = (alb) => () => alb.map((c) => c * INV_PI);
+    // Oren-Nayar 1994 qualitative model, σ in radians
+    const orenNayar = (alb, sigma) => {
+        const s2 = sigma * sigma, A = 1 - 0.5 * s2 / (s2 + 0.33), B = 0.45 * s2 / (s2 + 0.09);
+        return (wi, wo) => {
+            const ci = BX.clamp(wi[2], 0, 1), co = BX.clamp(wo[2], 0, 1), si = Math.sqrt(1 - ci * ci), so = Math.sqrt(1 - co * co);
+            const cphi = si > 1e-4 && so > 1e-4 ? (wi[0] * wo[0] + wi[1] * wo[1]) / (si * so) : 0;
+            const sinA = ci < co ? si : so, tanB = ci < co ? so / Math.max(co, 1e-4) : si / Math.max(ci, 1e-4);
+            const k = A + B * Math.max(0, cphi) * sinA * tanB;
+            return alb.map((c) => c * INV_PI * k);
+        };
+    };
+    // Burley 2012 diffuse (perceptual roughness r)
+    const burley = (alb, r) => (wi, wo) => {
+        const cd = BX.dot(wi, BX.half(wi, wo)), fd90 = 0.5 + 2 * r * cd * cd;
+        const k = (1 + (fd90 - 1) * BX.pow5(1 - Math.max(0, wi[2]))) * (1 + (fd90 - 1) * BX.pow5(1 - Math.max(0, wo[2])));
+        return alb.map((c) => c * INV_PI * k);
+    };
+    const specular = (r, fresnel) => {
+        const a = BX.alpha(r);
+        return (wi, wo) => {
+            if (wi[2] <= 0 || wo[2] <= 0) return z3;
+            const h = BX.half(wi, wo), s = BX.ggxD(h, a) * BX.smithG2(wo, wi, a) / (4 * wi[2] * wo[2]), F = fresnel(BX.dot(wo, h));
+            return Array.isArray(F) ? F.map((f) => f * s) : [F * s, F * s, F * s];
+        };
+    };
+    const conductor = (metal, r) => specular(r, (c) => BX.fresnelConductor(c, metal.eta, metal.k));
+    // GGX dielectric reflection + Fresnel-weighted Lambert ("plastic")
+    const plastic = (alb, r, ior = 1.5) => {
+        const sp = specular(r, (c) => BX.fresnelDielectric(c, ior));
+        return (wi, wo) => {
+            if (wi[2] <= 0 || wo[2] <= 0) return z3;
+            const s = sp(wi, wo), kd = (1 - BX.fresnelDielectric(wi[2], ior)) * (1 - BX.fresnelDielectric(wo[2], ior));
+            return [alb[0] * INV_PI * kd + s[0], alb[1] * INV_PI * kd + s[1], alb[2] * INV_PI * kd + s[2]];
+        };
+    };
+    // Charlie sheen (Estevez & Kulla 2017) with the Neubelt & Pettineo visibility, over a dark Lambert base
+    const velvet = (sheen, base, r) => {
+        const a = Math.max(0.07, r * r);
+        return (wi, wo) => {
+            if (wi[2] <= 0 || wo[2] <= 0) return z3;
+            const h = BX.half(wi, wo), sinH = Math.sqrt(Math.max(0, 1 - h[2] * h[2]));
+            const D = (2 + 1 / a) * Math.pow(sinH, 1 / a) / (2 * Math.PI), V = 1 / (4 * (wi[2] + wo[2] - wi[2] * wo[2]));
+            return [0, 1, 2].map((c) => base[c] * INV_PI + sheen[c] * D * V);
+        };
+    };
+    // clear coat (GGX, η = 1.5) over a base: naive sum vs. (1 − F)(1 − F) energy weighting
+    const coated = (base, rCoat, conserve) => {
+        const sp = specular(rCoat, (c) => BX.fresnelDielectric(c, 1.5));
+        return (wi, wo) => {
+            if (wi[2] <= 0 || wo[2] <= 0) return z3;
+            const c = sp(wi, wo), b = base(wi, wo), w = conserve ? (1 - BX.fresnelDielectric(wi[2], 1.5)) * (1 - BX.fresnelDielectric(wo[2], 1.5)) : 1;
+            return [b[0] * w + c[0], b[1] * w + c[1], b[2] * w + c[2]];
+        };
+    };
+    // Burley normalized diffusion profile, shape d (mm): integrates to 1 over the plane
+    const normalizedDiffusion = (r, d) => (Math.exp(-r / d) + Math.exp(-r / (3 * d))) / (8 * Math.PI * d * Math.max(r, 1e-4));
+    return { lambert, orenNayar, burley, conductor, plastic, velvet, coated, normalizedDiffusion };
+})();
+
+const lightsFor = (S) => {
+    const az = S.lightAz * Math.PI / 180, key = BX.norm([Math.sin(az) * 0.8, 0.55, Math.cos(az) * 0.8]);
+    return [{ dir: key, color: [2.8, 2.7, 2.55] }, { dir: BX.norm([-key[0], 0.15, -key[2] - 0.2]), color: [1.0, 1.05, 1.2] }, { dir: BX.norm([0.4, -0.4, 0.8]), color: [0.2, 0.22, 0.26] }];
+};
+const wiOf = (S) => BX.dir(S.thetaI * Math.PI / 180, Math.PI);   // light from the left in the plane of incidence
+const GALLERY = [
+    ['Lambert', (S) => IDX.lambert(S.base)],
+    ['Oren-Nayar', (S) => IDX.orenNayar(S.base, S.rough)],
+    ['Burley', (S) => IDX.burley(S.base, S.rough)],
+    ['GGX · 金', (S) => IDX.conductor(BX.METALS.gold, S.rough)],
+    ['GGX · 塑料', (S) => IDX.plastic(S.base, S.rough)],
+    ['Charlie Sheen', (S) => IDX.velvet([0.9, 0.55, 0.7], [0.05, 0.01, 0.03], S.rough)],
+    ['Clearcoat', (S) => IDX.coated(IDX.plastic(S.base, 0.6), 0.12, true)],
+    ['GGX · 铝 (r/2)', (S) => IDX.conductor(BX.METALS.aluminum, S.rough * 0.5)],
+];
+const link = (i) => { const m = BX.MODULES[i]; return `<a href="${m.file}">打开模块 ${m.no} · ${m.short} →</a>`; };
+const sphere = (make, extra) => (c, S) => BX.renderSphere(c, make(S), Object.assign({ res: 128, lights: lightsFor(S) }, extra || {}));
+
+PipelineLab.mount({
+    title: 'BxDF 系列 · 常用 BxDF 算法索引',
+    lang: 'zh-CN',
+    codeLang: 'hlsl',
+    animated: false,
+    tagColors: { DIFFUSE: 'green', SPECULAR: 'blue', BTDF: 'teal', SHEEN: 'magenta', BSSRDF: 'rust', LAYER: 'olive' },
+    params: [
+        { id: 'rough', label: 'roughness', min: 0.02, max: 1, step: 0.01, value: 0.45, title: '感知粗糙度 r（GGX α = r²；Oren-Nayar 这里用 σ = r 弧度）' },
+        { id: 'thetaI', label: 'θi', min: 0, max: 85, step: 1, value: 45, unit: '°', title: '入射角（波瓣图与曲线用）' },
+        { id: 'lightAz', label: '光源方位', min: -90, max: 90, step: 1, value: -40, unit: '°', title: '球体渲染的主光方位（正 = 右侧）' },
+        { id: 'base', label: 'base', value: '#b5553a', map: BX.hex2lin, title: '漫反射 / 底层颜色（sRGB 输入，内部转线性）' },
+    ],
+    stages: [
+        {
+            id: 'albedo', lifetime: 'param', run(S) {
+                const mus = PL.buf(S, 'mus', 32);
+                for (let i = 0; i < 32; i++) mus[i] = 0.03 + 0.97 * i / 31;
+                // GGX white furnace (F = 1): E(μ) via VNDF sampling, weight = G2 / G1
+                S.ggxE = [0.25, 0.5, 0.75, 1.0].map((r) => {
+                    const a = BX.alpha(r), out = new Float32Array(32);
+                    for (let i = 0; i < 32; i++) {
+                        const wo = [Math.sqrt(1 - mus[i] * mus[i]), 0, mus[i]];
+                        out[i] = BX.albedoMC((w, u1, u2) => { const h = BX.sampleVNDF(w, a, a, u1, u2), l = BX.reflect(w, h); return l[2] > 0 ? { wi: l, weight: BX.smithG2(w, l, a) / BX.smithG1(w, a) } : null; }, wo, 512);
+                    }
+                    return out;
+                });
+                // coat (η = 1.5, r = 0.2) over a white Lambert base: naive sum vs (1−F)(1−F) weighting
+                const a = BX.alpha(0.2), add = PL.buf(S, 'coatAdd', 32), con = PL.buf(S, 'coatCon', 32);
+                for (let i = 0; i < 32; i++) {
+                    const wo = [Math.sqrt(1 - mus[i] * mus[i]), 0, mus[i]];
+                    const eCoat = BX.albedoMC((w, u1, u2) => { const h = BX.sampleVNDF(w, a, a, u1, u2), l = BX.reflect(w, h); return l[2] > 0 ? { wi: l, weight: BX.fresnelDielectric(BX.dot(w, h), 1.5) * BX.smithG2(w, l, a) / BX.smithG1(w, a) } : null; }, wo, 512);
+                    const eBase = BX.albedoQuad((wi) => BX.INV_PI * (1 - BX.fresnelDielectric(wi[2], 1.5)) * (1 - BX.fresnelDielectric(wo[2], 1.5)), wo, 48);
+                    add[i] = eCoat + 1; con[i] = eCoat + eBase;
+                }
+            },
+        },
+    ],
+    intro: {
+        title: '常用 BxDF 算法 · 系列索引',
+        flow: ['漫反射', '微表面镜面', '透射 BTDF', '织物 Sheen', '次表面 BSSRDF', '多层混合'],
+        html: `<p>六个模块各自把一类 BxDF 拆成 step-by-step：公式 → HLSL → 页面内 JS 参考实现实时算出的中间结果（球体渲染、波瓣、半球热力图、白炉能量曲线、采样分布）。本页用每类的"代表 BxDF"并排对比，并给出它们在一个 uber 材质里如何组合（下方节点图）。</p>
+<p><strong>全系列统一约定</strong>：局部着色坐标系 n = +Z；<code>wi</code> 指向光源、<code>wo</code> 指向观察者（都背离表面）；f 的单位是 1/sr；感知粗糙度 r，GGX α = r²；相对折射率 η = η<sub>t</sub>/η<sub>i</sub>；全程线性 RGB，只有显示时做 ACES + sRGB。</p>
+<p>阅读顺序：${BX.MODULES.map((m) => `<a href="${m.file}">${m.no} ${m.short}</a>`).join(' → ')}</p>`,
+    },
+    sections: [{
+        id: 'gallery', title: '代表 BxDF 对比 · 同一光照 / 同一粗糙度', position: 'top',
+        sub: '拖顶部的 roughness / 光源方位 / base 颜色，八个球同时重算。全部是真实 BxDF 求值（三盏方向光），不是贴图。',
+        html: `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:820px">${GALLERY.map(([name], i) => `<div style="text-align:center"><canvas class="g${i}" style="width:100%;aspect-ratio:1"></canvas><div style="font:0.68rem Consolas,monospace;color:#888;margin-top:4px">${name}</div></div>`).join('')}</div>`,
+        frame(el, S) { GALLERY.forEach(([, make], i) => BX.renderSphere(el.querySelector('.g' + i), make(S), { res: 144, lights: lightsFor(S) })); },
+    }],
+    steps: [
+        {
+            id: 'm01', title: '01 · 漫反射：Lambert → Oren-Nayar → Burley', tag: 'DIFFUSE',
+            desc: '从"各方向等亮"的 Lambert 出发：为什么是 ρ/π、怎样做余弦重要性采样；Oren-Nayar 用 V 形微槽解释粗糙表面的<strong>逆反射</strong>（月球"满月不暗边"）；Burley/Disney 漫反射用 F<sub>D90</sub> 在掠射角加亮或压暗，以及 Frostbite 的能量重归一化。',
+            formula: ['f_Lambert = ρ / π', 'f_ON = (ρ/π) · (A + B · max(0, cos(φ_i − φ_o)) · sin α · tan β)', 'f_Burley = (ρ/π) · (1 + (F_D90 − 1)(1 − cos θ_l)^5) · (1 + (F_D90 − 1)(1 − cos θ_v)^5)    F_D90 = 0.5 + 2 r cos^2 θ_d'],
+            previews: [
+                { id: 'p01a', label: 'Lambert', smooth: true, render: sphere((S) => IDX.lambert(S.base)) },
+                { id: 'p01b', label: 'Oren-Nayar', sub: 'σ = r', smooth: true, render: sphere((S) => IDX.orenNayar(S.base, S.rough)) },
+                { id: 'p01c', label: 'Burley', smooth: true, render: sphere((S) => IDX.burley(S.base, S.rough)) },
+                { id: 'p01d', label: '入射面内 f·cosθo', sub: '黄 = 入射方向，虚线 = 镜面方向', size: [240, 150], render: (c, S) => BX.lobe(c, { wi: wiOf(S), cos: true, series: [{ fn: (wo) => IDX.lambert([1, 1, 1])(wiOf(S), wo)[0], color: '#888', label: 'Lambert' }, { fn: (wo) => IDX.orenNayar([1, 1, 1], S.rough)(wiOf(S), wo)[0], color: '#5ad07a', label: 'Oren-Nayar' }, { fn: (wo) => IDX.burley([1, 1, 1], S.rough)(wiOf(S), wo)[0], color: '#e0a060', label: 'Burley' }] }) },
+            ],
+            notes: `拖 roughness：Oren-Nayar 与 Burley 的波瓣都向光源一侧鼓起（逆反射），Lambert 不变。${link(0)}`,
+        },
+        {
+            id: 'm02', title: '02 · 微表面镜面：Cook-Torrance · GGX', tag: 'SPECULAR',
+            desc: '从经验模型 Phong / Blinn-Phong 讲到微表面理论：法线分布 D（GGX 的长尾）、Smith 遮蔽 G、Fresnel F 三项各自的物理意义与归一化；各向异性；NDF 与 VNDF 重要性采样的方差差异；高粗糙度时单次散射丢能量（下图白炉曲线 &lt; 1），用 Kulla-Conty 多次散射补偿找回。',
+            formula: 'f_spec = D(h) · G_2(ω_i, ω_o) · F(ω_o·h) / (4 cos θ_i cos θ_o)\nD_GGX = α^2 / (π ((n·h)^2 (α^2 − 1) + 1)^2)      G_2 = 1 / (1 + Λ(ω_o) + Λ(ω_i))',
+            previews: [
+                { id: 'p02a', label: 'GGX · 金（精确导体 Fresnel）', smooth: true, render: sphere((S) => IDX.conductor(BX.METALS.gold, S.rough)) },
+                { id: 'p02b', label: 'GGX · 塑料（η = 1.5）', smooth: true, render: sphere((S) => IDX.plastic(S.base, S.rough)) },
+                { id: 'p02c', label: 'GGX 波瓣（对数）', size: [240, 150], render: (c, S) => BX.lobe(c, { wi: wiOf(S), cos: true, log: 3, series: [{ fn: (wo) => IDX.conductor(BX.METALS.silver, S.rough)(wiOf(S), wo)[1], color: '#6ab0e0', label: `GGX r = ${S.rough.toFixed(2)}` }] }) },
+                { id: 'p02d', label: '白炉 E(μ)（F = 1）', sub: '单次散射丢失的能量 = 1 − E', size: [300, 150], render: (c, S) => PL.draw.plot(c, { x: [0, 1], y: [0, 1.05], xLabel: 'μ = cosθo', series: [0.25, 0.5, 0.75, 1].map((r, k) => ({ data: S.ggxE[k], x: S.mus, label: `r = ${r}`, color: ['#5ad07a', '#6ab0e0', '#e0a060', '#e06c75'][k] })), hmarks: [{ y: 1, color: '#555' }] }) },
+            ],
+            notes: link(1),
+        },
+        {
+            id: 'm03', title: '03 · 粗糙透射 BTDF（Walter 2007）', tag: 'BTDF',
+            desc: '光滑电介质的 Snell + Fresnel（含全内反射）是起点；粗糙界面用广义折射半向量 h<sub>t</sub> ∝ −(η<sub>i</sub>ω<sub>i</sub> + η<sub>o</sub>ω<sub>o</sub>)、半向量 Jacobian 和 (1 − F)·D·G 组成 BTDF；再讲按 Fresnel 在反射 / 折射间选择的重要性采样、η² 辐亮度缩放，以及 R + T 的白炉能量。下图是精确 Fresnel 的 R / T 随入射角变化。',
+            formula: 'f_t = (|ω_i·h| |ω_o·h|) / (|cos θ_i| |cos θ_o|) · η_o^2 (1 − F) D G_2 / (η_i (ω_i·h) + η_o (ω_o·h))^2',
+            previews: [{
+                id: 'p03a', label: '精确 Fresnel：R 与 T = 1 − R', sub: '实线 = 从空气射入 η=1.5；虚线 = 从玻璃内部射出（≈41.8° 后全内反射）', size: [420, 170],
+                render: (c) => PL.draw.plot(c, {
+                    x: [0, 90], y: [0, 1.02], xLabel: 'θi (°)', marks: [{ x: Math.asin(1 / 1.5) * 180 / Math.PI, label: 'TIR', color: '#e06c75' }],
+                    series: [
+                        { fn: (t) => BX.fresnelDielectric(Math.cos(t * Math.PI / 180), 1.5), color: '#6ab0e0', label: 'R 外→内' },
+                        { fn: (t) => 1 - BX.fresnelDielectric(Math.cos(t * Math.PI / 180), 1.5), color: '#5ad07a', label: 'T 外→内' },
+                        { fn: (t) => BX.fresnelDielectric(Math.cos(t * Math.PI / 180), 1 / 1.5), color: '#6ab0e0', dash: [4, 3], label: 'R 内→外' },
+                        { fn: (t) => 1 - BX.fresnelDielectric(Math.cos(t * Math.PI / 180), 1 / 1.5), color: '#5ad07a', dash: [4, 3], label: 'T 内→外' },
+                    ],
+                }),
+            }],
+            notes: link(2),
+        },
+        {
+            id: 'm04', title: '04 · 织物 Sheen：Charlie / Ashikhmin', tag: 'SHEEN',
+            desc: '绒布、天鹅绒的高光来自竖立纤维：掠射角最亮、正对时暗——GGX 这类"法线集中在 n 附近"的分布描述不了。模块对比 Disney sheen、Ashikhmin velvet（倒高斯分布）与 Charlie sheen（sin<sup>1/α</sup> 分布）及其可见性项，并讲 sheen 叠在底层上时的能量缩放。',
+            formula: 'D_Charlie(h) = (2 + 1/α) · sin(θ_h)^{1/α} / (2π)      V_Neubelt = 1 / (4 (n·l + n·v − (n·l)(n·v)))',
+            previews: [
+                { id: 'p04a', label: 'Charlie sheen + 深色底', smooth: true, render: sphere((S) => IDX.velvet([0.9, 0.55, 0.7], [0.05, 0.01, 0.03], S.rough)) },
+                { id: 'p04b', label: 'Charlie vs GGX 波瓣', sub: 'θi = 参数；sheen 在掠射方向更强', size: [240, 150], render: (c, S) => BX.lobe(c, { wi: wiOf(S), cos: true, series: [{ fn: (wo) => IDX.velvet([1, 1, 1], [0, 0, 0], S.rough)(wiOf(S), wo)[0], color: '#c678dd', label: 'Charlie' }, { fn: (wo) => IDX.conductor(BX.METALS.silver, S.rough)(wiOf(S), wo)[1], color: '#6ab0e0', label: 'GGX', dash: [4, 3] }] }) },
+            ],
+            notes: link(3),
+        },
+        {
+            id: 'm05', title: '05 · 次表面散射 BSSRDF：Dipole → Normalized Diffusion', tag: 'BSSRDF',
+            desc: '光从 x<sub>i</sub> 进入、在介质里多次散射后从 x<sub>o</sub> 射出，BRDF 的"同点进出"假设失效。模块从 BSSRDF 定义和体参数讲起，经典 dipole 扩散（Jensen 2001）、高斯和拟合（d\'Eon 2007）、Burley 归一化扩散（下图，红光散射最远），再到实时的屏幕空间可分离 SSS 与预积分皮肤 LUT。',
+            formula: 'R(r) = A · (e^{−r/d} + e^{−r/(3d)}) / (8π d r)      ∫_0^∞ R(r) · 2πr dr = A',
+            previews: [{
+                id: 'p05a', label: 'Burley 归一化扩散剖面 R(r)', sub: '每通道 d = (1.0, 0.45, 0.25) mm，类皮肤', size: [420, 170],
+                render: (c) => PL.draw.plot(c, {
+                    x: [0.01, 4], logY: true, y: [1e-4, 30], xLabel: 'r (mm)',
+                    series: [[1.0, '#e06c75', 'R'], [0.45, '#5ad07a', 'G'], [0.25, '#6ab0e0', 'B']].map(([d, color, label]) => ({ fn: (r) => IDX.normalizedDiffusion(r, d), color, label: `${label}: d = ${d}` })),
+                }),
+            }],
+            notes: link(4),
+        },
+        {
+            id: 'm06', title: '06 · 多层混合与叠加：Clearcoat → 分层 BSDF → 材质总装', tag: 'LAYER',
+            desc: '把前面各类 lobe 组合成真实材质：线性混合与物理叠加的区别；clearcoat 直接相加会<strong>凭空产生能量</strong>（下图虚线在掠射角超过 1），按 (1 − F)·(1 − F) 或 1 − E<sub>coat</sub>(μ) 衰减底层才守恒；吸收涂层、Weidlich-Wilkie 分层、OpenPBR 式 albedo scaling，最后用随机游走做 ground truth 并总装 uber 材质。',
+            formula: 'f = f_coat + (1 − F_coat(ω_i)) (1 − F_coat(ω_o)) · f_base      // 近似：底层只接收没被涂层反射的能量',
+            previews: [
+                { id: 'p06a', label: '直接相加', smooth: true, render: sphere(() => IDX.coated(IDX.plastic([0.55, 0.06, 0.05], 0.6), 0.12, false)) },
+                { id: 'p06b', label: '(1−F)(1−F) 加权', smooth: true, render: sphere(() => IDX.coated(IDX.plastic([0.55, 0.06, 0.05], 0.6), 0.12, true)) },
+                { id: 'p06c', label: '白炉：涂层 + 白色 Lambert 底', sub: '虚线 = 直接相加 > 1（不守恒）', size: [300, 150], render: (c, S) => PL.draw.plot(c, { x: [0, 1], y: [0, 1.25], xLabel: 'μ = cosθo', series: [{ data: S.coatAdd, x: S.mus, color: '#e06c75', dash: [4, 3], label: '直接相加' }, { data: S.coatCon, x: S.mus, color: '#5ad07a', label: '(1−F)(1−F)' }], hmarks: [{ y: 1, label: '1', color: '#555' }] }) },
+            ],
+            notes: link(5),
+        },
+    ],
+    graph: {
+        title: '材质总装 · 各模块在 uber 材质里的位置',
+        intro: 'BxDF 本身是函数，所以各 lobe 画成 <strong>INLINE</strong> 节点，被真正的 pass 调用；次表面散射才有独立的屏幕空间 pass。点节点可跳到对应模块的介绍卡片。',
+        types: {
+            cb: { color: '#e8c25a', label: 'cbuffer · 材质参数' },
+            geom: { color: '#9aa5b1', label: 'G-buffer · 几何 / 视线' },
+            lobe: { color: '#c678dd', label: 'lobe · 被内联的 BxDF 项' },
+            lut: { color: '#d19a66', label: 'LUT · 预积分方向反照率' },
+            radiance: { color: '#4a8aff', label: 'radiance · 线性 RGBA16F' },
+        },
+        common: { title: 'Common.hlsl · 系列共享定义（每个模块的 Common 面板都以此开头）', blocks: [{ label: '━ 系列共享 ━', code: BX.HLSL_COMMON }] },
+        nodes: [
+            { id: 'mat', title: 'MaterialParams', tag: 'CB', category: 'user', desc: 'baseColor · roughness · metal · coat · sheen …', outputs: [{ name: 'MaterialCB', format: 'cbuffer', type: 'cb' }], detail: { preview: null } },
+            { id: 'gbuf', title: 'GBuffer', tag: 'RT', category: 'system', desc: 'N · V · 深度 · 曲率', outputs: [{ name: 'GBuffer', format: 'RGBA16F ×3', type: 'geom' }], detail: { preview: null } },
+            { id: 'lut', title: 'CS_BakeAlbedoLUTs', tag: 'CS', category: 'bake', lifetime: 'resident', step: 'm06', desc: 'E(μ, r) for GGX / sheen / coat', dispatch: { name: 'CS_BakeAlbedoLUTs', threads: [8, 8, 1], groups: [4, 4, 3], idRange: 'ID.xy = (μ, r) 32²', note: '多次散射补偿与 albedo scaling 共用' }, outputs: [{ name: 'AlbedoLUTs', format: 'R16F 32×32×3', type: 'lut' }], detail: { preview: 'p02d' } },
+            ...[['diffuse', 'Diffuse_Burley', 'm01', 'DiffuseLobe'], ['spec', 'Specular_GGX', 'm02', 'SpecularLobe'], ['btdf', 'Transmission_BTDF', 'm03', 'TransmissionLobe'], ['sheen', 'Sheen_Charlie', 'm04', 'SheenLobe'], ['coat', 'Coat_GGX', 'm06', 'CoatLobe']].map(([id, title, step, out]) => ({
+                id, title, tag: 'FN', step, dispatch: { kind: 'INLINE', note: '被 PS_DeferredLighting 内联调用' },
+                inputs: [{ name: 'MaterialCB', type: 'cb' }, { name: 'GBuffer', type: 'geom' }], outputs: [{ name: out, format: 'f(ωi, ωo)', type: 'lobe' }],
+            })),
+            {
+                id: 'light', title: 'PS_DeferredLighting', tag: 'PS', lifetime: 'frame', step: 'm06', desc: 'Σ lights · 分层叠加 · 能量缩放',
+                dispatch: { kind: 'PS', name: 'PS_DeferredLighting', target: 'full-screen · 两个 RT', idRange: 'SV_Position.xy ∈ viewport' },
+                inputs: ['DiffuseLobe', 'SpecularLobe', 'TransmissionLobe', 'SheenLobe', 'CoatLobe'].map((name) => ({ name, type: 'lobe' })).concat([{ name: 'AlbedoLUTs', type: 'lut' }, { name: 'GBuffer', type: 'geom' }]),
+                outputs: [{ name: 'DiffuseLighting', format: 'RGBA16F', type: 'radiance' }, { name: 'SpecularLighting', format: 'RGBA16F', type: 'radiance' }],
+            },
+            {
+                id: 'sss', title: 'CS_SeparableSSS', tag: 'CS', lifetime: 'frame', step: 'm05', desc: '按扩散剖面做 H + V 两次模糊',
+                dispatch: [{ name: 'CS_SSS_BlurH', threads: [64, 1, 1], idRange: '每 thread 1 像素' }, { name: 'CS_SSS_BlurV', threads: [1, 64, 1], idRange: '每 thread 1 像素' }],
+                inputs: [{ name: 'DiffuseLighting', type: 'radiance' }, { name: 'GBuffer', type: 'geom' }], outputs: [{ name: 'SSSDiffuse', format: 'RGBA16F', type: 'radiance' }],
+                detail: { preview: 'p05a' },
+            },
+            {
+                id: 'comp', title: 'CS_Composite', tag: 'CS', category: 'output', lifetime: 'frame', desc: 'diffuse(SSS) + specular',
+                dispatch: { name: 'CS_Composite', threads: [8, 8, 1], idRange: 'ID.xy ∈ viewport' },
+                inputs: [{ name: 'SSSDiffuse', type: 'radiance' }, { name: 'SpecularLighting', type: 'radiance' }], outputs: [{ name: 'SceneColor', format: 'RGBA16F', type: 'radiance' }],
+                detail: { preview: 'p06b' },
+            },
+        ],
+    },
+    references: [
+        { title: 'A Reflectance Model for Computer Graphics', author: 'R. Cook, K. Torrance', venue: 'ACM TOG', year: 1982 },
+        { title: 'Generalization of Lambert\'s Reflectance Model', author: 'M. Oren, S. Nayar', venue: 'SIGGRAPH', year: 1994 },
+        { title: 'A Practical Model for Subsurface Light Transport', author: 'H. W. Jensen, S. Marschner, M. Levoy, P. Hanrahan', venue: 'SIGGRAPH', year: 2001 },
+        { title: 'Microfacet Models for Refraction through Rough Surfaces', author: 'B. Walter, S. Marschner, H. Li, K. Torrance', venue: 'EGSR', year: 2007 },
+        { title: 'Arbitrarily Layered Micro-Facet Surfaces', author: 'A. Weidlich, A. Wilkie', venue: 'GRAPHITE', year: 2007 },
+        { title: 'Physically-Based Shading at Disney', author: 'B. Burley', venue: 'SIGGRAPH Course', year: 2012 },
+        { title: 'Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs', author: 'E. Heitz', venue: 'JCGT', year: 2014 },
+        { title: 'Approximate Reflectance Profiles for Efficient Subsurface Scattering', author: 'P. Christensen, B. Burley', venue: 'Pixar Technical Memo', year: 2015 },
+        { title: 'Revisiting Physically Based Shading at Imageworks', author: 'C. Kulla, A. Conty', venue: 'SIGGRAPH Course', year: 2017 },
+        { title: 'Production Friendly Microfacet Sheen BRDF', author: 'A. C. Estevez, C. Kulla', venue: 'Sony Pictures Imageworks', year: 2017 },
+        { title: 'Sampling the GGX Distribution of Visible Normals', author: 'E. Heitz', venue: 'JCGT', year: 2018 },
+        { title: 'OpenPBR Surface Specification', author: 'Academy Software Foundation', year: 2024 },
+    ],
+});
+
+</script>
+</body>
+</html>
