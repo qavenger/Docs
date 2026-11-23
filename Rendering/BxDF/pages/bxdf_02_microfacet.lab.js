@@ -424,6 +424,124 @@ const MF_HLSL_LIGHTING = `
         return float4(Lo, 1.0);
     }`;
 
+// ── 附录：正文代码调用、但没有展开的辅助函数（环境查询、立方体贴图 texel 方向、正交基、GBuffer 读取） ──
+const MF_HLSL_ENV = `
+    SamplerState samLinear;               // EnvCube 的声明见 CS_PrefilterEnv
+
+    // IntegrateSpecular 在切线空间工作：调用前把当前像素的 (T, B, N) 按行写进 TangentFrame（线程私有的 static 全局）
+    static float3x3 TangentFrame = float3x3(1, 0, 0,  0, 1, 0,  0, 0, 1);
+
+    // 环境辐亮度：切线空间方向 → 世界空间（L.x·T + L.y·B + L.z·N）→ 源立方体贴图 mip 0（不做预滤波）
+    float3 SampleEnv(float3 L) {
+        return EnvCube.SampleLevel(samLinear, mul(L, TangentFrame), 0).rgb;
+    }`;
+
+const MF_HLSL_CUBE = `
+    #define MIP_COUNT 6                    // 预滤波 mip 数：r = mip / (MIP_COUNT − 1)
+    cbuffer PrefilterConstants {
+        uint MipLevel;                     // 当前 dispatch 写的 mip
+        uint MipSize;                      // 该 mip 每个面的边长（texel）
+    };
+
+    // 立方体贴图 texel 中心 → 世界方向（D3D 面顺序 +X −X +Y −Y +Z −Z；id.xy = texel，id.z = 面）
+    float3 CubeTexelDirection(uint3 id, uint size) {
+        float2 uv = (id.xy + 0.5) / size * 2.0 - 1.0;      // [−1, 1]²，v 向下
+        float3 d;
+        switch (id.z) {
+            case 0:  d = float3( 1.0, -uv.y, -uv.x); break;
+            case 1:  d = float3(-1.0, -uv.y,  uv.x); break;
+            case 2:  d = float3( uv.x,  1.0,  uv.y); break;
+            case 3:  d = float3( uv.x, -1.0, -uv.y); break;
+            case 4:  d = float3( uv.x, -uv.y,  1.0); break;
+            default: d = float3(-uv.x, -uv.y, -1.0); break;
+        }
+        return normalize(d);
+    }
+
+    // 以 n 为 z 轴的正交基 (t, b, n)（Duff et al. 2017, JCGT 6(1)）：不用 normalize、只有一次 select，n.z → −1 时也稳定
+    void BuildBasis(float3 n, out float3 t, out float3 b) {
+        float s = n.z >= 0.0 ? 1.0 : -1.0;
+        float a = -1.0 / (s + n.z);
+        float c = n.x * n.y * a;
+        t = float3(1.0 + s * n.x * n.x * a, s * c, -s * n.x);
+        b = float3(c, s + n.y * n.y * a, -n.y);
+    }`;
+
+const MF_HLSL_GBUFFER = `
+    #define LUT_N             32           // E(μ, r) LUT 边长（Step 09；页面里可切 8 / 16 / 32）
+    #define SPEC_AA_VARIANCE  0.25         // σ²_screen（Tokuyoshi & Kaplanyan 2019）
+    #define SPEC_AA_THRESHOLD 0.18         // κ：核宽度上限
+    SamplerState samLinearClamp;
+
+    // 方向光：dir 指向光源（世界空间），E = 法向辐照度
+    struct Light { float3 dir; float3 E; };
+    StructuredBuffer<Light> Lights;
+    cbuffer ViewConstants {
+        float4x4 ClipToWorld;              // (View · Proj)⁻¹
+        float3   ViewPos;                  // 相机世界坐标
+        uint     LightCount;
+        float2   InvViewSize;
+    };
+    Texture2D<float4> GBufferA;            // rgb = baseColor（SRGB 格式），a = metallic
+    Texture2D<float4> GBufferB;            // rg = 八面体法线，b = 感知粗糙度 r
+    Texture2D<float4> GBufferC;            // rg = 八面体切线（各向异性用）
+    Texture2D<float>  SceneDepth;          // D32
+
+    // 一个像素的镜面相关表面属性
+    struct Surface {
+        float3 P;                          // 世界坐标（由深度反投影）
+        float3 N;
+        float3 T;
+        float  rough;                      // 感知粗糙度 r
+        float3 F0;
+    };
+
+    // 八面体解码（Cigolle et al. 2014）：e ∈ [−1, 1]² → 单位向量
+    float3 OctDecode(float2 e) {
+        float3 n = float3(e, 1.0 - abs(e.x) - abs(e.y));
+        float  t = saturate(-n.z);
+        n.x += n.x >= 0.0 ? -t : t;
+        n.y += n.y >= 0.0 ? -t : t;
+        return normalize(n);
+    }
+
+    // 读 GBuffer（metallic 工作流：F0 = lerp(0.04, baseColor, metallic)）；pix = SV_Position.xy（像素中心 x.5）
+    Surface LoadGBuffer(float2 pix) {
+        int3   p = int3(pix, 0);
+        float4 a = GBufferA.Load(p), b = GBufferB.Load(p), c = GBufferC.Load(p);
+        Surface s;
+        s.N     = OctDecode(b.xy * 2.0 - 1.0);
+        s.T     = OctDecode(c.xy * 2.0 - 1.0);
+        s.rough = b.z;
+        s.F0    = lerp(0.04, a.rgb, a.a);
+        float2 uv   = pix * InvViewSize;
+        float4 clip = float4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, SceneDepth.Load(p), 1.0);
+        float4 wp   = mul(ClipToWorld, clip);
+        s.P = wp.xyz / wp.w;
+        return s;
+    }`;
+
+// ── 3D 波瓣网格：以镜面方向 r 为极点，极角 ψ = π·t²（向极点加密，r → 0 的窄波瓣也有足够顶点） ──
+const MF_L3D = { nu: 72, nv: 48, scale: 1.3 };
+/** f·cosθo（亮度）在 ωo 球面上；顶点写进 P（局部 z-up，半径 = scale·v/vmax），返回峰值与峰值顶点的下标 */
+function mfLobeGrid(S, ax, ay, P) {
+    const { nu, nv, scale } = MF_L3D, NU = nu + 1, NV = nv + 1, wi = BX.dir(S.theta, 0), r = [-wi[0], -wi[1], wi[2]], [e1, e2] = MF.basis(r);
+    const V = new Float32Array(NU * NV), D = new Float32Array(NU * NV * 3);
+    let vmax = 0, at = 0;
+    for (let j = 0; j < NV; j++) {
+        const ps = Math.PI * (j / nv) ** 2, cp = Math.cos(ps), sp = Math.sin(ps);
+        for (let i = 0; i < NU; i++) {
+            const ph = 2 * Math.PI * i / nu, c = Math.cos(ph) * sp, s = Math.sin(ph) * sp, k = j * NU + i;
+            const d = [cp * r[0] + c * e1[0] + s * e2[0], cp * r[1] + c * e1[1] + s * e2[1], cp * r[2] + c * e1[2] + s * e2[2]];
+            const v = d[2] > 0 ? BX.lum(MF.ct(wi, d, ax, ay, S.Ftab)) * d[2] : 0;
+            V[k] = v; D[3 * k] = d[0]; D[3 * k + 1] = d[1]; D[3 * k + 2] = d[2];
+            if (v > vmax) { vmax = v; at = k; }
+        }
+    }
+    for (let k = 0; k < NU * NV; k++) { const R = scale * V[k] / (vmax || 1); P[3 * k] = D[3 * k] * R; P[3 * k + 1] = D[3 * k + 1] * R; P[3 * k + 2] = D[3 * k + 2] * R; }
+    return { vmax, at };
+}
+
 // ── small drawing helpers for this module ──
 function mfScatter(canvas, S, key) {
     const { ctx, w, h } = PL.draw.ctx(canvas);
@@ -451,8 +569,34 @@ function mfScatter(canvas, S, key) {
     ctx.fillText(`浪费 ${(st.bad * 100).toFixed(1)}%（背面 h ${(st.back * 100).toFixed(1)}%）`, 4, 2);
     ctx.fillText(`E ≈ ${st.mean.toFixed(3)}   σ/μ = ${st.rel.toFixed(2)}`, 4, 14);
 }
+// ── 3D 波瓣：mesh3d 是 y 朝上，W() 把局部 (x, y, z = n) 转成世界 (x, z, −y)；入射平面 = 世界 x–y 平面 ──
+function mfDrawLobe3d(c, S, mode) {
+    const { nu, nv } = MF_L3D, NU = nu + 1, W = (v) => [v[0], v[2], -v[1]], at = (d, r) => W([d[0] * r, d[1] * r, d[2] * r]);
+    const grid = (P) => (u, v) => { const k = 3 * (Math.round(v * nv) * NU + Math.round(u * nu)); return W([P[k], P[k + 1], P[k + 2]]); };
+    const f0 = S.F0, m = Math.max(f0[0], f0[1], f0[2], 1e-6), tint = f0.map((x) => 0.3 + 0.7 * Math.pow(x / m, 1 / 2.2));   // 波瓣颜色 ∝ F0 的色调
+    const wi = BX.dir(S.theta, 0), mir = [-wi[0], -wi[1], wi[2]], P = mode === 'iso' ? S.l3dIso : S.l3dAni, pk = (mode === 'iso' ? S.l3dIsoPk : S.l3dAniPk).at * 3;
+    const meshes = [PL.mesh.param(grid(P), [nu, nv], { closedU: true, rgb: tint, gloss: 30 })];
+    const lines = [
+        { pts: [[0, 0, 0], at([0, 0, 1], mode === 'iso' ? 1.6 : 1.15)], color: '#9aa4ae', width: 1.4, arrow: true, label: 'n' },
+        { pts: [[0, 0, 0], at(wi, mode === 'iso' ? 1.7 : 1.3)], color: '#e8c25a', width: 2.4, arrow: true, label: 'ωi' },
+    ];
+    if (mode === 'iso') lines.push({ pts: [[0, 0, 0], at(mir, 1.75)], color: '#56d0e0', width: 1.2, dash: [4, 3], label: '镜面方向' });
+    else {
+        meshes.push(PL.mesh.param(grid(S.l3dIso), [24, 12], { closedU: true, surface: false, wire: true, wireColor: 'rgba(200,210,220,0.6)' }));
+        lines.push({ pts: [[0, 0, 0], at([0, -1, 0], 0.7)], color: '#e06c75', width: 2, arrow: true, label: `t（αx = ${S.ax.toFixed(2)}）` });
+        lines.push({ pts: [[0, 0, 0], at([1, 0, 0], 0.6)], color: '#5ad07a', width: 2, arrow: true, label: `b（αy = ${S.ay.toFixed(2)}）` });
+    }
+    PL.draw.mesh3d(c, {
+        meshes, lines,
+        points: [{ p: W([P[pk], P[pk + 1], P[pk + 2]]), color: '#ffffff', r: 3 }],
+        grid: { y: 0, size: 2.4 },
+        // 各向异性：相机在默认 θ = 55° 的镜面方向附近（偏向 t 约 25°）顺着波瓣轴往回看：截面 = 线框的圆 vs 实体沿 t 的扁椭圆
+        orbit: mode === 'iso' ? { yaw: 0.5, pitch: 0.42, dist: 5, target: [0, 0.45, 0] } : { yaw: -1.05, pitch: 0.55, dist: 3.3, target: [-0.45, 0.42, 0] },
+    });
+}
 
 PipelineLab.mount({
+    paramSteps: { rough: ['phong', 'ndf', 'smith', 'brdf', 'energy', 'aniso', 'sample', 'ms', 'prod'], theta: ['phong', 'smith', 'brdf', 'aniso', 'sample'], lightAz: ['phong', 'brdf', 'aniso'], mat: ['phong', 'fresnel', 'brdf', 'aniso', 'sample', 'ms', 'prod'], fres: ['brdf', 'aniso', 'sample', 'ms', 'prod'], ior: ['phong', 'fresnel', 'brdf', 'aniso', 'sample', 'ms', 'prod'], f0: ['phong', 'fresnel', 'brdf', 'aniso', 'sample', 'ms', 'prod'], aniso: ['aniso'], lutN: ['ms'] },   // generated by validate_doc --deps (param → steps whose previews change)
     title: 'BxDF 02 · 微表面镜面：Cook-Torrance · GGX',
     lang: 'zh-CN',
     codeLang: 'hlsl',
@@ -460,17 +604,45 @@ PipelineLab.mount({
     regen: false,
 
     params: [
-        { id: 'rough', label: 'r', min: 0.02, max: 1, step: 0.01, value: 0.5, digits: 2, title: '感知粗糙度 r；GGX α = r²（Burley 2012）' },
-        { id: 'theta', label: 'θ', min: 0, max: 89, step: 1, value: 55, unit: '°', map: (d) => d * Math.PI / 180, title: '入射角：波瓣 / 热力图里是光源 θi；Step 08 采样里当作视线 θo（BRDF 互易）' },
+        {
+            id: 'rough', label: 'r', min: 0.02, max: 1, step: 0.01, value: 0.5, digits: 2, title: '感知粗糙度 r；GGX α = r²（Burley 2012）',
+            desc: '感知粗糙度 r，D、Λ 与所有积分里用 α = r²（Burley 2012）。越小高光越尖、越亮（D 的峰值 ∝ 1/α²），越大波瓣越宽、单次散射丢的能量越多：拖到 0.05 看 Step 05 的 3D 波瓣收成一根"针"，拖到 1 看 Step 06 / 09 的白炉损失与补偿。',
+        },
+        {
+            id: 'theta', label: 'θ', min: 0, max: 89, step: 1, value: 55, unit: '°', map: (d) => d * Math.PI / 180, title: '入射角：波瓣 / 热力图里是光源 θi；Step 08 采样里当作视线 θo（BRDF 互易）',
+            desc: '入射角：在波瓣、热力图和 3D 视图里是光源方向 θ<sub>i</sub>（位于 x–z 入射平面），在 Step 08 的采样里当作视线 θ<sub>o</sub>（BRDF 互易），在球体渲染里是主光的<strong>俯仰角</strong>（球心处的入射角 = θ，偏航由光源方位控制）。拖到 80° 看 off-specular 峰——波瓣不再对准镜面方向而倒向地平线（Step 05），以及 NDF 采样大量作废的样本（Step 08）。',
+        },
+        {
+            id: 'lightAz', label: '光源方位', min: -170, max: 170, step: 1, value: -35, unit: '°',
+            desc: '球体渲染里主光的<strong>偏航角</strong>：绕竖直轴转动主光（0° = 光在视线正上方的竖直面内，正 = 右侧，±170° ≈ 逆光），俯仰由 θ 决定；轮廓光、补光跟着主光转。只影响球体渲染，波瓣、热力图和采样图始终在入射面内。',
+        },
         {
             id: 'mat', label: '材质', value: 'gold', title: 'Fresnel 数据：导体用 BX.METALS 的复 IOR；电介质用 η；自定义只有 F0（只能用 Schlick）',
             options: [{ value: 'gold', label: '金 Au' }, { value: 'copper', label: '铜 Cu' }, { value: 'aluminum', label: '铝 Al' }, { value: 'silver', label: '银 Ag' }, { value: 'dielectric', label: '电介质 η' }, { value: 'custom', label: '自定义 F0' }],
+            desc: '<strong>Fresnel 数据</strong>的来源：导体（金、铜、铝、银）用 RGB 三个波长的复 IOR η + iκ，电介质用顶栏的 η，自定义只给 F0（只能走 Schlick）。它决定高光的颜色和随角度的变化：看 Step 04 的 F(θ) 曲线与色条，以及 Step 09 里多次散射让金更"金"。',
         },
-        { id: 'fres', label: 'Fresnel', value: 'schlick', options: [{ value: 'schlick', label: 'Schlick' }, { value: 'exact', label: '精确' }], title: 'BRDF 里用哪种 Fresnel（Schlick 的 F0 取精确公式在 0° 的值）' },
-        { id: 'ior', label: 'η', min: 1.0, max: 3.0, step: 0.01, value: 1.5, digits: 2, title: '电介质相对 IOR η = η_t/η_i（mat = 电介质时生效）' },
-        { id: 'f0', label: 'F0', value: '#d8b26a', map: BX.hex2lin, title: '自定义 F0（sRGB 拾色 → 线性 RGB；mat = 自定义 F0 时生效）' },
-        { id: 'aniso', label: 'aniso', min: 0, max: 0.95, step: 0.01, value: 0.8, digits: 2, title: '各向异性（只用于 Step 07）：aspect = √(1 − 0.9·aniso)' },
-        { id: 'lutN', label: 'LUT', options: [8, 16, 32], value: 32, title: 'E(μ, r) LUT 分辨率（Step 09；只有它变化时才真正重烘）' },
+        {
+            id: 'fres', label: 'Fresnel', value: 'schlick', options: [{ value: 'schlick', label: 'Schlick' }, { value: 'exact', label: '精确' }], title: 'BRDF 里用哪种 Fresnel（Schlick 的 F0 取精确公式在 0° 的值）',
+            desc: 'Step 05 起所有 BRDF 预览用哪种 Fresnel：Schlick（F0 取精确公式在 0° 的值）或精确公式（查 257 项的表）。Step 04 始终把两者画在一起：铝在 80° 附近的下凹、金在 60–85° 的偏色只有精确公式才有；自定义 F0 没有 η、κ，两者相同。',
+        },
+        {
+            id: 'ior', label: 'η', min: 1.0, max: 3.0, step: 0.01, value: 1.5, digits: 2, title: '电介质相对 IOR η = η_t/η_i（mat = 电介质时生效）',
+            steps: ['fresnel', 'brdf', 'ms'],      // 只在 mat = 电介质时起作用，默认材质（金）下测不到 → 手动挂到相关步骤
+            desc: '电介质的相对折射率 η = η<sub>t</sub>/η<sub>i</sub>，只在材质 = 电介质时生效：F0 = ((η − 1)/(η + 1))²，η = 1.5 时 F0 ≈ 0.04。拖大 η，Step 04 的 F0 抬高，但所有曲线在掠射角都趋于 1。',
+        },
+        {
+            id: 'f0', label: 'F0', value: '#d8b26a', map: BX.hex2lin, title: '自定义 F0（sRGB 拾色 → 线性 RGB；mat = 自定义 F0 时生效）',
+            steps: ['fresnel', 'brdf', 'ms'],      // 同上：只在 mat = 自定义 F0 时起作用
+            desc: '自定义 F0（sRGB 拾色 → 线性 RGB），只在材质 = 自定义 F0 时生效。没有 η、κ，Fresnel 只能用 Schlick（Step 04 的误差图为 0）；它决定高光颜色，也决定 Step 09 多次散射的颜色 F<sub>ms</sub>。',
+        },
+        {
+            id: 'aniso', label: 'aniso', min: 0, max: 0.95, step: 0.01, value: 0.8, digits: 2, title: '各向异性（只用于 Step 07）：aspect = √(1 − 0.9·aniso)',
+            desc: '各向异性强度，只用于 Step 07：aspect = √(1 − 0.9·aniso)，α<sub>x</sub> = α/aspect（沿切线 t），α<sub>y</sub> = α·aspect（沿副切线 b）。0 = 各向同性；拉到 0.95 时 α<sub>x</sub>/α<sub>y</sub> ≈ 10，球上的高光拉成细长条，3D 波瓣在 t 方向摊开、在 b 方向收窄。',
+        },
+        {
+            id: 'lutN', label: 'LUT', options: [8, 16, 32], value: 32, title: 'E(μ, r) LUT 分辨率（Step 09；只有它变化时才真正重烘）',
+            desc: 'E(μ, r) 能量 LUT 的分辨率，只影响 Step 09，也是唯一会触发 LUT 重烘的参数。切到 8 看白炉检验曲线在 μ → 0 处偏离 1——那是 8×8 双线性插值的误差，也是生产中 LUT 至少 32² 的原因。',
+        },
     ],
 
     stages: [
@@ -742,6 +914,15 @@ PipelineLab.mount({
                 });
             },
         },
+        {
+            // 3D 波瓣（Step 05 / 07）：各向同性 α 与各向异性两张 f·cosθo 网格；预览的 pos 只读这里的顶点。
+            // 各向异性那张把切线 t 放在入射平面的法向（局部 ±y，所以局部 x 用 αy、局部 y 用 αx），顺着波瓣轴看截面最清楚
+            id: 'lobe3d', lifetime: 'param', lazy: true, run(S) {
+                const n = (MF_L3D.nu + 1) * (MF_L3D.nv + 1) * 3;
+                S.l3dIsoPk = mfLobeGrid(S, S.a, S.a, PL.buf(S, 'l3dIso', n));
+                S.l3dAniPk = mfLobeGrid(S, S.ay, S.ax, PL.buf(S, 'l3dAni', n));
+            },
+        },
     ],
 
     intro: {
@@ -780,12 +961,12 @@ PipelineLab.mount({
             },
             previews: [
                 {
-                    id: 'phongSphere', label: 'Phong（n<sub>p</sub> = n/4）', sub: '光源 = [0, sin2θ, cos2θ]：高光中心处 θi = θo = θ', smooth: true,
-                    render: (c, S) => { const np = MF.bpExp(S.a) / 4; BX.renderSphere(c, (wi, wo) => { const k = (np + 2) / (2 * Math.PI) * Math.pow(Math.max(0, -wi[0] * wo[0] - wi[1] * wo[1] + wi[2] * wo[2]), np); return S.F0.map((f) => f * k); }, { lights: [{ dir: [0, Math.sin(2 * S.theta), Math.cos(2 * S.theta)], color: [3, 3, 3] }] }); },
+                    id: 'phongSphere', label: 'Phong（n<sub>p</sub> = n/4）', sub: '主光：俯仰 θ · 偏航 = 光源方位；高光落在半角方向（方位 0° 时在纬度 θ/2，那里 θi = θo = θ/2）', smooth: true,
+                    render: (c, S) => { const np = MF.bpExp(S.a) / 4; BX.renderSphere(c, (wi, wo) => { const k = (np + 2) / (2 * Math.PI) * Math.pow(Math.max(0, -wi[0] * wo[0] - wi[1] * wo[1] + wi[2] * wo[2]), np); return S.F0.map((f) => f * k); }, { lights: BX.lightsFor(S.theta, S.lightAz, { single: true, keyColor: [3, 3, 3] }) }); },
                 },
                 {
                     id: 'blinnSphere', label: '归一化 Blinn-Phong', sub: 'n = 2/α² − 2 · 同一光源', smooth: true,
-                    render: (c, S) => { const n = MF.bpExp(S.a); BX.renderSphere(c, (wi, wo) => { const k = (n + 8) / (8 * Math.PI) * Math.pow(Math.max(0, BX.half(wi, wo)[2]), n); return S.F0.map((f) => f * k); }, { lights: [{ dir: [0, Math.sin(2 * S.theta), Math.cos(2 * S.theta)], color: [3, 3, 3] }] }); },
+                    render: (c, S) => { const n = MF.bpExp(S.a); BX.renderSphere(c, (wi, wo) => { const k = (n + 8) / (8 * Math.PI) * Math.pow(Math.max(0, BX.half(wi, wo)[2]), n); return S.F0.map((f) => f * k); }, { lights: BX.lightsFor(S.theta, S.lightAz, { single: true, keyColor: [3, 3, 3] }) }); },
                 },
                 {
                     id: 'phongLobe', label: '入射平面内的波瓣 f(ω<sub>i</sub>, ω<sub>o</sub>)', sub: '黄线 = ω<sub>i</sub>（θ 参数），虚线 = 镜面方向', size: MF_PLOT,
@@ -1013,8 +1194,8 @@ PipelineLab.mount({
             code: { title: 'HLSL · BRDF_CookTorrance', src: MF_HLSL_BRDF },
             previews: [
                 {
-                    id: 'ctSphere', label: 'Cook-Torrance · GGX', sub: '三灯 studio（key / rim / fill），仅镜面项', smooth: true,
-                    render: (c, S) => BX.renderSphere(c, (wi, wo) => MF.ct(wi, wo, S.a, S.a, S.Ftab)),
+                    id: 'ctSphere', label: 'Cook-Torrance · GGX', sub: '主光（俯仰 θ · 偏航 = 光源方位）+ 轮廓光 + 补光，仅镜面项', smooth: true,
+                    render: (c, S) => BX.renderSphere(c, (wi, wo) => MF.ct(wi, wo, S.a, S.a, S.Ftab), { lights: BX.lightsFor(S.theta, S.lightAz) }),
                 },
                 {
                     id: 'ctLobe', label: '入射平面波瓣（log 3 decades）', sub: '实线 = 完整 f · 虚线 = 去掉 G2', size: MF_PLOT,
@@ -1029,6 +1210,11 @@ PipelineLab.mount({
                     id: 'ctHemi', label: 'f(ω<sub>i</sub>, ω<sub>o</sub>) over ω<sub>o</sub>', sub: 'ω<sub>i</sub> 在 +x（右侧），镜面峰在左 · sqrt 拉伸', smooth: true,
                     render: (c, S) => PL.draw.field(c, S.hF, MF_RES, MF_RES, { map: 'inferno', stretch: 'sqrt' }),
                     probe: MF.hemiProbe(MF_RES, (w, S) => `f = ${BX.lum(MF.ct(BX.dir(S.theta, 0), w, S.a, S.a, S.Ftab)).toExponential(3)} /sr`),
+                },
+                {
+                    id: 'ctLobe3d', needs: ['lobe3d'], large: true, label: '3D：GGX 镜面波瓣 f·cosθo（整个 ω<sub>o</sub> 半球）',
+                    sub: '半径 = f·cosθo 的亮度，按峰值归一化（白点 = 峰值）；颜色取当前材质 F0 的色调。黄箭头 = ω<sub>i</sub>（指向光源），青色虚线 = 镜面方向。θ 拖到 80° 看波瓣贴着地平线被压扁（f 本身的 off-specular 峰见中间的入射平面图；乘上 cosθo 后峰值又回到镜面方向附近），r 拖小看波瓣收成一根针',
+                    render: (c, S) => mfDrawLobe3d(c, S, 'iso'),
                 },
             ],
             notes: 'θ 推到 80°：中图主波瓣不再对准镜面方向，而是向地平线倾斜（off-specular peak），虚线（无 G2）在地平线附近冲出图外。右图热力图里高光被拉成"月牙"——湿路面上的路灯倒影为什么是竖条。把 r 拖到 0.05 看球上的高光收缩成小点、亮度飙升（D 峰值 ∝ 1/α²）。',
@@ -1111,16 +1297,21 @@ PipelineLab.mount({
             previews: [
                 {
                     id: 'anSphereUp', label: '切线 = cross(up, n)', sub: '沿纬线方向的拉丝', smooth: true,
-                    render: (c, S) => BX.renderSphere(c, (wi, wo) => MF.ct(wi, wo, S.ax, S.ay, S.Ftab), { axis: [0, 1, 0] }),
+                    render: (c, S) => BX.renderSphere(c, (wi, wo) => MF.ct(wi, wo, S.ax, S.ay, S.Ftab), { axis: [0, 1, 0], lights: BX.lightsFor(S.theta, S.lightAz) }),
                 },
                 {
                     id: 'anSphereView', label: '切线 = cross(view, n)', sub: '绕视线的同心圆（车削金属）', smooth: true,
-                    render: (c, S) => BX.renderSphere(c, (wi, wo) => MF.ct(wi, wo, S.ax, S.ay, S.Ftab), { axis: [0, 0, 1] }),
+                    render: (c, S) => BX.renderSphere(c, (wi, wo) => MF.ct(wi, wo, S.ax, S.ay, S.Ftab), { axis: [0, 0, 1], lights: BX.lightsFor(S.theta, S.lightAz) }),
                 },
                 {
                     id: 'anHemi', label: 'D(h)cosθ<sub>h</sub> · 各向异性', sub: '水平 = t（α<sub>x</sub>），竖直 = b（α<sub>y</sub>）· log 4', smooth: true,
                     render: (c, S) => MF.logField(c, S.hDA, MF_RES),
                     probe: MF.hemiProbe(MF_RES, (w, S) => `D·cos = ${(BX.ggxD(w, S.ax, S.ay) * w[2]).toExponential(2)}\nαx = ${S.ax.toFixed(3)}  αy = ${S.ay.toFixed(3)}`),
+                },
+                {
+                    id: 'anLobe3d', needs: ['lobe3d'], large: true, label: '3D：各向异性波瓣 vs 各向同性（同一 r）',
+                    sub: '实体 = 各向异性 GGX 的 f·cosθo，线框 = Step 05 的各向同性波瓣，各按自身峰值归一化、只比形状。这里切线 t（α<sub>x</sub>，红）垂直于入射平面、b（α<sub>y</sub>，绿）在入射平面内：实体沿 b 被压扁（线框在 b 方向高出一截），沿 t 摊开成扁片。拖动旋转，顺着波瓣轴看截面最清楚',
+                    render: (c, S) => mfDrawLobe3d(c, S, 'aniso'),
                 },
             ],
             notes: 'aniso = 0 时两个球与 Step 05 完全一样；拉到 0.95，α<sub>x</sub>/α<sub>y</sub> ≈ 10，右图的 NDF 变成扁椭圆。左球的高光沿纬线拉长，右球的高光沿以视线为轴的圆周拉长——切线场决定了一切。',
@@ -1321,6 +1512,16 @@ PipelineLab.mount({
             ],
         },
     ],
+
+    library: {
+        title: '附录 · 辅助函数（HLSL）',
+        intro: '正文代码调用、但没有在步骤里展开的辅助部分：Step 08 估计器的环境查询 <code>SampleEnv</code>，Step 10 预滤波 CS 的立方体贴图 texel 方向与正交基，以及光照 PS 的 GBuffer 读取（布局对应 Graph 里的 GBuffer 节点：三张 RGBA8 + D32）。',
+        blocks: [
+            { title: 'SampleEnv · 切线空间方向查环境（Step 08）', code: MF_HLSL_ENV },
+            { title: 'CubeTexelDirection · BuildBasis（Step 10 · CS_PrefilterEnv）', code: MF_HLSL_CUBE },
+            { title: 'GBuffer 布局 · LoadGBuffer · OctDecode（Step 10 · PS_DeferredLighting）', code: MF_HLSL_GBUFFER },
+        ],
+    },
 
     graph: {
         intro: '<strong>RDG 风格</strong>：BxDF 的各项（D、V、F、采样）只是被内联的函数（⊘ INLINE 节点），真正的 pass 是三个 LUT / 环境预滤波 bake 和每帧的光照 PS。E(μ, r) LUT 是 PARAM-BAKE（只随 LUT 分辨率变化），DFG 与预滤波环境是 RESIDENT；同名资源自动连线。',

@@ -1,6 +1,10 @@
 // ════════════════════════════════════════════════════════════════════════════
-// BxDF series · shared helpers — prepended to every module at build time:
+// BxDF series · shared helpers — prepended to every module at build time (run inside pages/):
 //   node <skill>/scripts/build_doc.mjs bxdf_common.js bxdf_0N_xxx.lab.js -o bxdf_0N_xxx.html
+//   node <skill>/scripts/build_doc.mjs bxdf_common.js index.lab.js -o ../index.html     (entry page lives one level up)
+// Layout (GitHub Pages friendly): BxDF/index.html is the only top-level file; every other page, source and
+// helper lives in BxDF/pages/. Links: modules ↔ modules are siblings; modules → index is ../index.html;
+// index → modules is pages/<file> (use BX.href(m, true)).
 //
 // Conventions shared by every module (formulas, HLSL and JS must all follow these):
 //   • Local shading frame: n = +Z, tangent t = +X, bitangent b = +Y; θ from +Z, φ from +X toward +Y.
@@ -173,6 +177,17 @@ const BX = (() => {
         ],
         key: [{ dir: norm([-0.55, 0.6, 0.58]), color: [3, 3, 3] }],
     };
+    /** Key light of the sphere renders, shared by every page (view space: x right, y up, z toward the camera).
+     *  θi (radians) = PITCH: tilts the light up from the view direction — exactly the incidence angle of the 2D profile
+     *  plots at the sphere's centre, where n = V; yaw (degrees, + = right) = 光源方位: turns it around the vertical axis.
+     *  θi = 0, yaw = 0 → head light; θi → 90° → light from straight above; |yaw| → 180° → back light. */
+    const keyLight = (thetaI, yawDeg) => { const y = (yawDeg || 0) * PI / 180, c = Math.cos(thetaI); return norm([c * Math.sin(y), Math.sin(thetaI), c * Math.cos(y)]); };
+    /** Studio set driven by θi / yaw: key + a rim behind the key + a dim fill from below. o: { single (key only), keyColor } */
+    const lightsFor = (thetaI, yawDeg, o = {}) => {
+        const key = keyLight(thetaI, yawDeg), kc = o.keyColor || [2.8, 2.7, 2.55];
+        if (o.single) return [{ dir: key, color: kc }];
+        return [{ dir: key, color: kc }, { dir: norm([-key[0], 0.25, -key[2] - 0.35]), color: [0.9, 0.95, 1.1] }, { dir: norm([0.35, -0.45, 0.8]), color: [0.2, 0.22, 0.26] }];
+    };
     /** f(wi, wo, info) with LOCAL directions; info = { n, t, b (view space), x, y }. o: { res, lights, axis (tangent
      *  direction for anisotropy, default up), exposure, ambient(wo, info) → rgb radiance, bg (linear RGB radiance or
      *  (x, y) → rgb, shown through the same display transform — e.g. [1,1,1] for a white-furnace backdrop) }. Returns max radiance. */
@@ -278,9 +293,12 @@ const BX = (() => {
         { id: 'subsurface', no: '05', file: 'bxdf_05_subsurface.html', title: '次表面散射 BSSRDF：Dipole → Normalized Diffusion', short: '次表面散射' },
         { id: 'layering', no: '06', file: 'bxdf_06_layering.html', title: '多层混合与叠加：Clearcoat → 分层 BSDF → 材质总装', short: '多层混合' },
     ];
+    const PAGES_DIR = 'pages/';
+    /** link to a module: from a module page (siblings) or from the entry page one level up (fromRoot = true) */
+    const href = (m, fromRoot) => (fromRoot ? PAGES_DIR : '') + m.file;
     const nav = (id) => {
         const i = MODULES.findIndex((m) => m.id === id), p = MODULES[i - 1], q = MODULES[i + 1];
-        return `<p style="margin-top:8px;font-size:0.74rem;color:#789">BxDF 系列 · <a href="index.html">索引</a>` +
+        return `<p style="margin-top:8px;font-size:0.74rem;color:#789">BxDF 系列 · <a href="../index.html">索引</a>` +
             (p ? ` · ← <a href="${p.file}">${p.no} ${p.short}</a>` : '') + (q ? ` · <a href="${q.file}">${q.no} ${q.short}</a> →` : '') + '</p>';
     };
 
@@ -318,6 +336,6 @@ const BX = (() => {
         alpha, ggxD, ggxLambda, smithG1, smithG2, sampleVNDF, pdfVNDF, sampleNDF,
         sampleCosine, sampleUniform, hammersley, albedoQuad, albedoMC,
         hemiDir, hemiPixel, hemiImage, aces, toSrgb, display, hex2lin, lum,
-        LIGHTS, renderSphere, lobe, MODULES, nav, HLSL_COMMON,
+        LIGHTS, keyLight, lightsFor, renderSphere, lobe, MODULES, PAGES_DIR, href, nav, HLSL_COMMON,
     };
 })();

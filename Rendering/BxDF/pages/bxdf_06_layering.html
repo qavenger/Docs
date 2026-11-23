@@ -7,17 +7,18 @@
 <title>BxDF 06 · 多层混合与叠加：Clearcoat → 分层 BSDF → 材质总装</title>
 <!-- Source: bxdf_common.js + bxdf_06_layering.lab.js — edit and rebuild with pipeline-explainer/scripts/build_doc.mjs (same file order) -->
 <style>
-/* Pipeline Lab — visual language of ocean_pipeline.html (dark, dense, technical). */
+/* Pipeline Lab — visual language of ocean_pipeline.html (dark, dense, technical).
+ * All text sizes are rem-based: the ⚙ menu scales them through the root font size. */
 :root {
     --pl-bg: #0a0a0a;
     --pl-panel: #131313;
     --pl-panel2: #0e0e0e;
     --pl-border: #1f1f1f;
     --pl-border2: #2a2a2a;
-    --pl-text: #aaa;
-    --pl-dim: #777;
-    --pl-dimmer: #555;
-    --pl-hi: #d8d8d8;
+    --pl-text: #b4b4b4;
+    --pl-dim: #8a8a8a;
+    --pl-dimmer: #666;
+    --pl-hi: #dcdcdc;
     --pl-accent: #6ab0e0;
     --pl-mono: 'Consolas', 'Cascadia Code', 'JetBrains Mono', 'Menlo', monospace;
     --pl-sans: 'Segoe UI', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -27,11 +28,13 @@ body {
     background: var(--pl-bg);
     color: var(--pl-text);
     font-family: var(--pl-sans);
-    line-height: 1.5;
+    line-height: 1.55;
 }
+body.pl-noscroll { overflow: hidden; }
 a { color: var(--pl-accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-strong { color: #c8c8c8; }
+strong { color: #d0d0d0; }
+.pl-dim { color: var(--pl-dimmer); }
 
 /* ── Sticky header (global parameters) ── */
 .pl-header {
@@ -44,34 +47,37 @@ strong { color: #c8c8c8; }
     padding: 12px 24px;
 }
 .pl-header-inner {
-    max-width: 1200px;
+    max-width: 1320px;
     margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 18px;
+    gap: 10px 20px;
 }
 .pl-header h1 {
-    font-size: 0.72rem;
-    letter-spacing: 4px;
+    font-size: 0.82rem;
+    letter-spacing: 3px;
     text-transform: uppercase;
-    color: #888;
+    color: #9a9a9a;
     font-weight: 500;
     margin-right: auto;
 }
-.pl-ctrl { display: flex; align-items: center; gap: 6px; }
-.pl-ctrl label { font-size: 0.7rem; color: #666; letter-spacing: 1px; white-space: nowrap; }
-.pl-ctrl .pl-val { font-size: 0.7rem; color: #aaa; min-width: 3.5em; text-align: right; font-family: var(--pl-mono); white-space: nowrap; }
-.pl-ctrl input[type="color"] { width: 28px; height: 18px; border: 1px solid #2a2a2e; border-radius: 3px; background: transparent; cursor: pointer; padding: 0; }
+.pl-ctrl { display: flex; align-items: center; gap: 7px; border-radius: 4px; padding: 1px 3px; transition: background 0.15s; }
+.pl-ctrl.hl { background: #12202e; }
+.pl-ctrl label { font-size: 0.82rem; color: #8a8a8a; letter-spacing: 0.5px; white-space: nowrap; }
+.pl-ctrl .pl-val { font-size: 0.82rem; color: #c0c0c0; min-width: 3.6em; text-align: right; font-family: var(--pl-mono); white-space: nowrap; }
+.pl-plabel.has-desc { cursor: help; border-bottom: 1px dotted #4a6a8a; }
+.pl-plabel.has-desc:hover { color: #b8d4ec; }
+.pl-ctrl input[type="color"], .pl-mini input[type="color"] { width: 30px; height: 20px; border: 1px solid #2a2a2e; border-radius: 3px; background: transparent; cursor: pointer; padding: 0; }
 .pl-ctrl input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 .pl-ctrl input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
-.pl-ctrl input[type="checkbox"] { accent-color: var(--pl-accent); }
+input[type="checkbox"] { accent-color: var(--pl-accent); width: 15px; height: 15px; }
 button, select {
     background: #161616;
     color: #ccc;
     border: 1px solid #2a2a2a;
     padding: 5px 12px;
-    font-size: 0.74rem;
+    font-size: 0.84rem;
     border-radius: 3px;
     font-family: inherit;
     cursor: pointer;
@@ -79,55 +85,108 @@ button, select {
 }
 select { padding: 3px 8px; }
 button:hover, select:hover { background: #1f1f1f; border-color: #3a3a3a; color: #fff; }
-button.pl-play { background: #1a2a3a; border-color: #2a3a4a; color: #6ab0e0; min-width: 36px; }
+button.pl-play { background: #1a2a3a; border-color: #2a3a4a; color: #6ab0e0; min-width: 38px; }
 button.pl-play:hover { background: #1f3045; }
+.pl-htools { display: flex; gap: 6px; align-items: center; }
+.pl-hbtn { padding: 4px 10px; color: #9cc4e4; background: #101a24; border-color: #22384c; }
+.pl-hbtn.on { background: #1a3050; color: #cfe6f8; border-color: #3a6a9a; }
 input[type=number] {
     background: #161616; color: #ccc; border: 1px solid #2a2a2a; border-radius: 3px;
-    padding: 2px 6px; font-family: var(--pl-mono); font-size: 0.7rem; width: 80px;
+    padding: 2px 6px; font-family: var(--pl-mono); font-size: 0.82rem; width: 84px;
 }
 input[type=range] {
     -webkit-appearance: none;
     appearance: none;
-    width: 90px; height: 3px;
-    background: #2a2a2a;
+    width: 100px; height: 4px;
+    background: #2e2e2e;
     border-radius: 2px;
     outline: none;
     cursor: pointer;
 }
 input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 11px; height: 11px;
+    width: 13px; height: 13px;
     background: #6ab0e0;
     border-radius: 50%;
     border: none;
 }
 input[type=range]::-moz-range-thumb {
-    width: 11px; height: 11px;
+    width: 13px; height: 13px;
     background: #6ab0e0;
     border-radius: 50%;
     border: none;
 }
 .pl-time {
     font-family: var(--pl-mono);
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     color: #6ab0e0;
     padding: 4px 10px;
     background: #0c1420;
     border-radius: 3px;
-    min-width: 130px;
+    min-width: 140px;
     text-align: center;
     white-space: nowrap;
 }
 
+/* parameter card (hover / pinned) and the 参数说明 panel */
+.pl-ptip {
+    position: fixed; z-index: 10010; display: none;
+    width: min(420px, 92vw);
+    background: #111a24; border: 1px solid #2a4560; border-radius: 6px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    padding: 10px 14px 10px; font-size: 0.86rem; color: #b8c4d0; line-height: 1.65;
+}
+.pl-ptip.pinned { border-color: #4a7ab0; }
+.pl-ptip-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.pl-ptip-head b { color: #e6f0f8; font-size: 0.95rem; }
+.pl-ptip-head code, .pl-pp-name code { font-family: var(--pl-mono); font-size: 0.74rem; color: #6a8aa8; background: #0c141c; padding: 0 5px; border-radius: 2px; }
+.pl-ptip-val { margin-left: auto; font-family: var(--pl-mono); color: #8ac4ec; }
+.pl-ptip-desc { color: #c4ced8; margin-bottom: 6px; }
+.pl-ptip-desc code, .pl-pp-desc code { font-family: var(--pl-mono); font-size: 0.92em; color: #b0d0e4; background: #0c1620; padding: 0 4px; border-radius: 2px; }
+.pl-ptip-row { font-size: 0.8rem; color: #8a9aaa; margin-top: 3px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.pl-ptip-k { color: #6a8aa8; margin-right: 2px; }
+.pl-ptip-row .pl-lt { margin: 0; }
+.pl-ptip-foot { margin-top: 6px; font-size: 0.72rem; color: #4f6a84; }
+.pl-sjump {
+    display: inline-block; font-family: var(--pl-mono); font-size: 0.78rem; color: #9cc8ec; background: #16283a;
+    border: 1px solid #24425e; border-radius: 3px; padding: 0 6px; margin: 1px 2px 1px 0; cursor: pointer;
+}
+.pl-sjump:hover { background: #20405e; color: #fff; text-decoration: none; }
+.pl-param-panel {
+    display: none; max-width: 1320px; margin: 10px auto 0; max-height: 52vh; overflow-y: auto;
+    background: #0e151c; border: 1px solid #1e3142; border-radius: 6px; padding: 10px 14px;
+}
+.pl-param-panel.open { display: block; }
+.pl-pp-title { font-size: 0.8rem; color: #6ab0e0; letter-spacing: 1px; margin-bottom: 6px; }
+.pl-pp-row { display: grid; grid-template-columns: minmax(120px, 190px) 1fr minmax(90px, 220px); gap: 6px 16px; padding: 7px 0; border-top: 1px solid #16222e; align-items: start; }
+.pl-pp-name { color: #dce8f2; font-size: 0.88rem; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.pl-pp-desc { color: #b4c0cc; font-size: 0.86rem; line-height: 1.65; }
+.pl-pp-meta { margin-top: 3px; font-size: 0.76rem; color: #7a8a9a; }
+.pl-pp-meta .pl-lt { margin: 0; }
+.pl-pp-steps { line-height: 1.9; }
+@media (max-width: 760px) { .pl-pp-row { grid-template-columns: 1fr; } }
+
+/* display menu (⚙) */
+.pl-viewmenu {
+    position: fixed; z-index: 10012; display: none; min-width: 250px;
+    background: #121820; border: 1px solid #2a3a4a; border-radius: 6px; padding: 8px 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); font-size: 0.84rem; color: #aab8c6;
+}
+.pl-vm-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; }
+.pl-vm-row > span:first-child { min-width: 64px; color: #7a90a4; }
+.pl-vm-row button { padding: 2px 9px; font-size: 0.8rem; }
+.pl-vm-row button.on { background: #1a3050; border-color: #3a6a9a; color: #fff; }
+.pl-vm-val { font-family: var(--pl-mono); min-width: 44px; text-align: center; }
+
 /* ── Generic section shell ── */
 .pl-section {
-    max-width: 1100px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 28px 24px 12px;
 }
-.pl-section.wide { max-width: 1400px; }
+.pl-section.wide { max-width: 1440px; }
 .pl-h2, .pl-section > h2 {
-    font-size: 0.78rem;
+    font-size: 0.92rem;
     letter-spacing: 3px;
     text-transform: uppercase;
     color: #6ab0e0;
@@ -135,14 +194,14 @@ input[type=range]::-moz-range-thumb {
     font-weight: 500;
 }
 .pl-sub {
-    font-size: 0.72rem;
-    color: #777;
+    font-size: 0.86rem;
+    color: #8a8a8a;
     margin-bottom: 14px;
-    line-height: 1.7;
+    line-height: 1.75;
 }
 .pl-sub code, .pl-step-desc code, .pl-note code, .pl-intro code, .pl-nd-desc code, .pl-sec-body code, .pl-refs code, .pl-legend code {
-    background: #161616;
-    color: #b0c4d4;
+    background: #171717;
+    color: #b8cada;
     padding: 1px 5px;
     border-radius: 2px;
     font-family: var(--pl-mono);
@@ -150,51 +209,54 @@ input[type=range]::-moz-range-thumb {
 }
 .pl-step-desc ul, .pl-step-desc ol, .pl-note ul, .pl-note ol, .pl-intro ul, .pl-intro ol, .pl-sec-body ul, .pl-sec-body ol, .pl-nd-desc ul, .pl-nd-desc ol { padding-left: 1.5em; margin: 4px 0; }
 .pl-step-desc p + p, .pl-intro p + p, .pl-sec-body p + p { margin-top: 6px; }
-.pl-sec-body { font-size: 0.78rem; color: #888; line-height: 1.7; }
+.pl-sec-body { font-size: 0.9rem; color: #9a9a9a; line-height: 1.75; }
 .pl-sec-body canvas { display: block; background: #050505; border: 1px solid #2a2a2a; border-radius: 4px; }
 
 /* ── Pipeline (step cards) ── */
 .pl-pipeline {
-    max-width: 1100px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 32px 24px 64px;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 30px;
 }
 .pl-intro {
     background: #0e1418;
     border: 1px solid #1a2530;
     border-radius: 8px;
-    padding: 20px 24px;
-    font-size: 0.82rem;
-    color: #88a;
-    line-height: 1.8;
+    padding: 22px 26px;
+    font-size: 0.95rem;
+    color: #9aa4b4;
+    line-height: 1.85;
 }
 .pl-intro h2 {
     color: #6ab0e0;
-    font-size: 0.92rem;
+    font-size: 1.05rem;
     margin-bottom: 8px;
     letter-spacing: 2px;
 }
-.pl-intro code { background: #1a2530; color: #b0d0e0; }
-.pl-flow { margin-bottom: 4px; }
-.pl-flow .pl-arrow { color: #456; margin: 0 4px; }
+.pl-intro code { background: #1a2530; color: #b8d6e6; }
+.pl-flow { margin-bottom: 6px; }
+.pl-flow .pl-arrow { color: #4a6070; margin: 0 4px; }
+.pl-tips { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #1e2c38; font-size: 0.82rem; color: #6f8496; line-height: 1.8; }
+.pl-tips b { color: #9cc4e4; font-weight: 600; }
 
 .pl-step {
     background: #131313;
     border: 1px solid #1f1f1f;
     border-radius: 8px;
-    padding: 22px 24px;
+    padding: 24px 26px;
     position: relative;
-    scroll-margin-top: 90px;
+    scroll-margin-top: 110px;
     transition: border-color 0.4s, box-shadow 0.4s;
 }
 .pl-step.flash { border-color: #5aa0e0; box-shadow: 0 0 24px rgba(90, 160, 224, 0.25); }
+.pl-step.pl-pdep { border-color: #2d5478; box-shadow: inset 3px 0 0 #3a78b0; }
 .pl-step + .pl-step::before {
     content: '↓';
     position: absolute;
-    top: -23px;
+    top: -25px;
     left: 50%;
     transform: translateX(-50%);
     color: #333;
@@ -209,71 +271,85 @@ input[type=range]::-moz-range-thumb {
     gap: 14px;
     margin-bottom: 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid #1c1c1c;
 }
 .pl-step-num {
     background: #1a3050;
-    color: #6a9fd8;
+    color: #7aaee4;
     padding: 4px 10px;
     border-radius: 4px;
-    font-size: 0.72rem;
+    font-size: 0.84rem;
     font-weight: 600;
     font-family: var(--pl-mono);
 }
-.pl-step-title { font-size: 0.95rem; color: #d8d8d8; }
+.pl-step-title { font-size: 1.12rem; color: #e0e0e0; }
 .pl-step-tag {
     margin-left: auto;
-    font-size: 0.6rem;
+    font-size: 0.68rem;
     padding: 3px 8px;
     border-radius: 3px;
     letter-spacing: 1.5px;
     white-space: nowrap;
 }
 .pl-step-desc {
-    font-size: 0.8rem;
-    color: #808080;
+    font-size: 0.95rem;
+    color: #a2a2a2;
     margin-bottom: 12px;
-    line-height: 1.75;
+    line-height: 1.85;
 }
-.pl-step-desc strong { color: #b8b8b8; }
+.pl-step-desc strong { color: #d0d0d0; }
+
+/* per-step parameter strip (linked to the header controls) */
+.pl-step-params {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+    margin: 16px 0 2px; padding: 8px 12px;
+    background: #0e141a; border: 1px solid #1a2836; border-radius: 5px;
+}
+.pl-sp-title { font-size: 0.74rem; letter-spacing: 2px; color: #5a86ae; text-transform: uppercase; margin-right: 2px; }
+.pl-mini { display: inline-flex; align-items: center; gap: 6px; padding: 1px 4px; border-radius: 4px; transition: background 0.15s; }
+.pl-mini.hl { background: #16283a; }
+.pl-mini label { font-size: 0.82rem; color: #9aaaba; white-space: nowrap; }
+.pl-mini input[type=range] { width: 92px; }
+.pl-mini .pl-val { font-family: var(--pl-mono); font-size: 0.8rem; color: #c4d4e2; min-width: 3.4em; text-align: right; white-space: nowrap; }
+.pl-mini select { font-size: 0.8rem; padding: 2px 6px; }
 
 /* ── Formula ── */
 .pl-formula {
     background: #0e0e0e;
     border-left: 2px solid #2a2a2a;
-    padding: 8px 14px;
+    padding: 9px 15px;
     margin: 10px 0;
     font-family: var(--pl-mono);
-    font-size: 0.82rem;
-    color: #999;
+    font-size: 0.92rem;
+    color: #a4a4a4;
     border-radius: 0 3px 3px 0;
-    line-height: 1.8;
+    line-height: 1.85;
     white-space: pre-wrap;
     overflow-x: auto;
 }
 .pl-formula .pl-flabel, .pl-code-label {
     display: block;
     font-family: var(--pl-sans);
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     letter-spacing: 2px;
-    color: #4a7aa8;
+    color: #5a8ab8;
     margin-bottom: 2px;
 }
 .pl-code-label { margin: 14px 0 6px; }
-.pl-formula .sym, .pl-conv .sym { color: #6a9fd8; }
+.pl-formula .sym, .pl-conv .sym { color: #72a6dc; }
 .pl-formula .op,  .pl-conv .op  { color: #c678dd; }
 .pl-formula .fn,  .pl-conv .fn  { color: #61afef; }
 .pl-formula .num, .pl-conv .num { color: #d19a66; }
-.pl-formula .cmt, .pl-conv .cmt { color: #4f5866; font-style: italic; }
+.pl-formula .cmt, .pl-conv .cmt { color: #5a6474; font-style: italic; }
 .pl-formula sup, .pl-formula sub, .pl-conv sup, .pl-conv sub { font-size: 0.72em; line-height: 0; }
 
 /* ── Code block ── */
 .pl-code-sec { margin-top: 14px; }
 .pl-code-toggle {
     display: inline-block;
-    font-size: 0.6rem;
-    letter-spacing: 2px;
-    color: #4a7aa8;
+    font-size: 0.74rem;
+    letter-spacing: 1.5px;
+    color: #5a8ab8;
     background: #0c1420;
     padding: 5px 12px;
     border-radius: 3px;
@@ -283,7 +359,7 @@ input[type=range]::-moz-range-thumb {
     transition: background 0.12s;
 }
 .pl-code-toggle:hover { background: #11253d; }
-.pl-code-toggle::before { content: '▶ '; font-size: 0.55rem; display: inline-block; transition: transform 0.15s; }
+.pl-code-toggle::before { content: '▶ '; font-size: 0.62rem; display: inline-block; transition: transform 0.15s; }
 .pl-code-sec.open .pl-code-toggle::before { transform: rotate(90deg); }
 .pl-code-body { display: none; margin-top: 6px; }
 .pl-code-sec.open .pl-code-body { display: block; }
@@ -292,9 +368,9 @@ pre.pl-code {
     border-left: 2px solid #2c4a6a;
     padding: 12px 16px;
     font-family: var(--pl-mono);
-    font-size: 0.74rem;
-    line-height: 1.6;
-    color: #9ba3ad;
+    font-size: 0.86rem;
+    line-height: 1.62;
+    color: #a4acb6;
     overflow-x: auto;
     border-radius: 0 4px 4px 0;
     margin: 0;
@@ -305,15 +381,36 @@ pre.pl-code .kw  { color: #c678dd; }
 pre.pl-code .ty  { color: #56b6c2; }
 pre.pl-code .fn  { color: #61afef; }
 pre.pl-code .num { color: #d19a66; }
-pre.pl-code .cmt { color: #4f5866; font-style: italic; }
+pre.pl-code .cmt { color: #5a6474; font-style: italic; }
 pre.pl-code .at  { color: #e5c07b; }
 pre.pl-code .pp  { color: #e06c75; }
 pre.pl-code .str { color: #98c379; }
+/* symbol links: dotted underline = has a definition in this document (hover = definition card, click = jump) */
+.pl-sym { cursor: pointer; text-decoration: underline dotted rgba(140, 190, 235, 0.55); text-underline-offset: 3px; border-radius: 2px; }
+.pl-sym:not(.fn):not(.ty) { color: #d4b8f0; }
+.pl-sym:hover, .pl-sym:focus { background: rgba(97, 175, 239, 0.16); outline: none; text-decoration-color: #8cc4f0; }
+.pl-sym.ext { text-decoration-style: dashed; text-decoration-color: rgba(200, 170, 110, 0.6); }
+.pl-defname { text-decoration: underline solid rgba(97, 175, 239, 0.35); text-underline-offset: 3px; }
+.pl-defblock { border-radius: 3px; transition: background 0.5s, box-shadow 0.5s; }
+.pl-defblock.flash { background: rgba(97, 175, 239, 0.16); box-shadow: 0 0 0 1px rgba(97, 175, 239, 0.45); }
+.pl-symtip {
+    position: fixed; z-index: 10011; display: none;
+    max-width: min(760px, 94vw); min-width: 280px;
+    background: #10161d; border: 1px solid #2c4a68; border-radius: 6px;
+    box-shadow: 0 12px 44px rgba(0, 0, 0, 0.7); padding: 8px 10px 8px;
+}
+.pl-symtip pre.pl-code { max-height: 46vh; overflow: auto; font-size: 0.8rem; border-left-color: #3a6a9a; }
+.pl-symtip-head { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 6px; font-size: 0.8rem; }
+.pl-symtip-name { font-family: var(--pl-mono); color: #e6f0fa; font-weight: 600; font-size: 0.88rem; }
+.pl-symtip-kind { color: #8ab4dc; background: #172a3c; border-radius: 3px; padding: 0 6px; font-size: 0.72rem; }
+.pl-symtip-where { color: #7a8a9a; margin-left: auto; text-align: right; }
+.pl-symtip-foot { margin: 6px 2px 0; font-size: 0.78rem; color: #7a8a9a; line-height: 1.7; }
+.pl-symtip-ext { font-size: 0.84rem; color: #c8b890; padding: 2px 4px 4px; }
 
 /* ── Previews ── */
 .pl-previews {
     display: flex;
-    gap: 16px;
+    gap: 18px;
     margin-top: 14px;
     flex-wrap: wrap;
     align-items: flex-start;
@@ -325,52 +422,82 @@ pre.pl-code .str { color: #98c379; }
     gap: 6px;
     max-width: 100%;
 }
-.pl-pv-box { position: relative; max-width: 100%; }
+.pl-pv-box { position: relative; width: 100%; }
 .pl-pv canvas {
-    width: 180px;
-    height: 180px;
-    max-width: 100%;
+    display: block;
+    width: 100%;
+    height: auto;
     border: 1px solid #2a2a2a;
     image-rendering: pixelated;
     background: #050505;
-    display: block;
 }
 .pl-pv canvas.smooth, canvas.pl-smooth { image-rendering: auto; }
-.pl-pv.large canvas { width: 360px; height: 360px; }
-.pl-pv.interactive canvas { cursor: grab; }
-.pl-pv .pl-live {
+.pl-pv.interactive canvas { cursor: grab; touch-action: none; }
+.pl-pv canvas.pl-pickable { cursor: crosshair; touch-action: none; }
+.pl-pv .pl-live, .pl-pv .pl-i3d {
     position: absolute;
-    top: 4px; left: 4px;
-    background: rgba(164, 95, 165, 0.8);
+    top: 5px; left: 5px;
+    background: rgba(164, 95, 165, 0.82);
     color: #fff;
-    font-size: 0.5rem;
-    padding: 2px 5px;
+    font-size: 0.62rem;
+    padding: 2px 6px;
     border-radius: 2px;
     letter-spacing: 1px;
     pointer-events: none;
 }
-.pl-pv-label { font-size: 0.66rem; color: #888; letter-spacing: 1px; font-family: var(--pl-mono); text-align: center; }
-.pl-pv-sub { font-size: 0.58rem; color: #5a5a5a; text-align: center; max-width: 360px; }
+.pl-pv .pl-i3d { top: auto; bottom: 5px; background: rgba(40, 110, 170, 0.62); pointer-events: auto; cursor: help; transition: opacity 0.2s; }
+.pl-pv-box:hover .pl-i3d { opacity: 0.35; }
+.pl-pv-expand {
+    position: absolute; top: 5px; right: 5px;
+    width: 26px; height: 26px; padding: 0; line-height: 1;
+    font-size: 0.95rem; color: #cfe3f5; background: rgba(12, 20, 32, 0.78); border: 1px solid #2a4a6a; border-radius: 4px;
+    opacity: 0; transition: opacity 0.15s;
+}
+.pl-pv-box:hover .pl-pv-expand, .pl-pv-expand:focus { opacity: 1; }
+@media (hover: none) { .pl-pv-expand { opacity: 0.85; } }
+.pl-pv-label { font-size: 0.8rem; color: #9a9a9a; letter-spacing: 0.5px; font-family: var(--pl-mono); text-align: center; line-height: 1.45; }
+.pl-pv-sub { font-size: 0.74rem; color: #7a7a7a; text-align: center; line-height: 1.5; }
 .pl-probe {
-    position: fixed; z-index: 10002; pointer-events: none;
+    position: fixed; z-index: 10013; pointer-events: none;
     background: rgba(12, 20, 32, 0.95); color: #cfe3f5; border: 1px solid #2a4a6a;
-    font-family: var(--pl-mono); font-size: 0.66rem; padding: 3px 7px; border-radius: 3px;
+    font-family: var(--pl-mono); font-size: 0.78rem; padding: 3px 8px; border-radius: 3px;
     white-space: pre; display: none;
 }
 
+/* enlarged preview */
+.pl-lightbox {
+    display: none; position: fixed; inset: 0; z-index: 10005;
+    background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center;
+}
+.pl-lightbox.open { display: flex; }
+.pl-lb-panel {
+    max-width: 96vw; max-height: 96vh; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: #101215; border: 1px solid #262a30; border-radius: 8px; padding: 10px 14px 12px; overflow: auto;
+}
+.pl-lb-head { width: 100%; display: flex; align-items: center; gap: 14px; }
+.pl-lb-title { font-family: var(--pl-mono); color: #e0e6ec; font-size: 0.92rem; }
+.pl-lb-hint { margin-left: auto; font-size: 0.74rem; color: #6a7a8a; }
+.pl-lb-close { width: 30px; height: 30px; padding: 0; font-size: 1.1rem; background: transparent; }
+.pl-lb-view { overflow: hidden; border: 1px solid #2a2a2a; background: #050505; max-width: 100%; }
+.pl-lb-view canvas { display: block; height: auto; max-width: 100%; image-rendering: pixelated; }
+.pl-lb-view canvas.smooth { image-rendering: auto; }
+.pl-lb-sub { font-size: 0.8rem; color: #8a8a8a; text-align: center; max-width: 900px; }
+.pl-lb-foot .pl-step-params { margin: 2px 0 0; }
+
 .pl-note {
     margin-top: 12px;
-    padding: 8px 12px;
+    padding: 9px 13px;
     background: #0e1a0e;
     border-radius: 3px;
-    font-size: 0.74rem;
-    color: #5f945f;
+    font-size: 0.88rem;
+    color: #74a874;
     border-left: 2px solid #2a4a2a;
-    line-height: 1.7;
+    line-height: 1.75;
 }
 .pl-note.warn {
     background: #1a1108;
-    color: #b88860;
+    color: #c49870;
     border-left-color: #6a4022;
 }
 .pl-note strong { color: inherit; filter: brightness(1.3); }
@@ -379,7 +506,7 @@ pre.pl-code .str { color: #98c379; }
 .pl-graph {
     position: relative;
     width: 100%;
-    height: 560px;
+    height: 600px;
     background: linear-gradient(135deg, #0a0a0a 0%, #0e0e10 100%);
     border: 1px solid #1f1f1f;
     border-radius: 6px;
@@ -418,18 +545,18 @@ pre.pl-code .str { color: #98c379; }
     border-radius: 4px;
     border: 1px solid #2a2a2e;
 }
-.pl-graph-ctrl .pl-zoom { font-size: 0.68rem; color: #8aa8c8; font-family: var(--pl-mono); min-width: 38px; }
+.pl-graph-ctrl .pl-zoom { font-size: 0.76rem; color: #8aa8c8; font-family: var(--pl-mono); min-width: 40px; }
 .pl-graph-ctrl button {
     background: #1a2530; color: #aac8e0; border: 1px solid #2a3a4a;
-    padding: 2px 9px; font-size: 0.65rem; border-radius: 3px;
+    padding: 2px 9px; font-size: 0.74rem; border-radius: 3px;
 }
 .pl-graph-ctrl button:hover { background: #243545; }
 .pl-graph-hint {
     position: absolute;
     bottom: 8px; left: 10px;
     z-index: 10;
-    font-size: 0.62rem;
-    color: #555;
+    font-size: 0.72rem;
+    color: #666;
     background: rgba(20, 20, 24, 0.75);
     padding: 3px 8px;
     border-radius: 3px;
@@ -445,7 +572,7 @@ pre.pl-code .str { color: #98c379; }
     transition: border-color 0.15s, box-shadow 0.15s;
     user-select: none;
     cursor: pointer;
-    max-width: 480px;
+    max-width: 520px;
 }
 .pl-node:hover { border-color: #5aa0e0; box-shadow: 0 0 16px rgba(106, 176, 224, 0.15); }
 .pl-node.dragging { box-shadow: 0 4px 24px rgba(106, 176, 224, 0.3); border-color: #5aa0e0; z-index: 3; }
@@ -459,16 +586,16 @@ pre.pl-code .str { color: #98c379; }
     box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 .pl-node.dragging .pl-node-head { cursor: grabbing; }
-.pl-node-title { flex: 1; white-space: nowrap; color: #fff; font-weight: 600; font-size: 0.72rem; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45); }
+.pl-node-title { flex: 1; white-space: nowrap; color: #fff; font-weight: 600; font-size: 0.8rem; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45); }
 .pl-node-tag {
-    font-size: 0.52rem; padding: 1px 5px; border-radius: 2px; letter-spacing: 1px;
+    font-size: 0.6rem; padding: 1px 5px; border-radius: 2px; letter-spacing: 1px;
     color: rgba(255, 255, 255, 0.95); font-weight: 600;
     background: rgba(0, 0, 0, 0.32); border: 1px solid rgba(255, 255, 255, 0.18);
 }
 .pl-lt {
     margin: 5px 9px 0;
     padding: 2px 6px;
-    font-size: 0.55rem;
+    font-size: 0.62rem;
     font-family: var(--pl-mono);
     font-weight: 700;
     letter-spacing: 0.8px;
@@ -487,7 +614,7 @@ pre.pl-code .str { color: #98c379; }
 .pl-node-dp {
     margin: 4px 9px 0;
     padding: 4px 7px;
-    font-size: 0.56rem;
+    font-size: 0.64rem;
     font-family: var(--pl-mono);
     line-height: 1.45;
     border-radius: 3px;
@@ -499,24 +626,24 @@ pre.pl-code .str { color: #98c379; }
     font-weight: 700; letter-spacing: 1px; padding: 0 3px; margin-right: 4px; border-radius: 2px;
     color: var(--dp, #5aa0e0); background: color-mix(in srgb, var(--dp, #5aa0e0) 18%, transparent);
 }
-.pl-dp-id { color: #8aa8b8; font-size: 0.54rem; }
+.pl-dp-id { color: #8aa8b8; font-size: 0.62rem; }
 .pl-dp-note { color: #8a8a90; font-style: italic; }
-.pl-node-desc { padding: 5px 9px 0; font-size: 0.58rem; color: #6a6a72; font-family: var(--pl-mono); font-style: italic; }
+.pl-node-desc { padding: 5px 9px 0; font-size: 0.66rem; color: #7a7a82; font-family: var(--pl-mono); font-style: italic; }
 .pl-node-pins { display: flex; justify-content: space-between; padding: 6px 0 7px; gap: 8px; }
 .pl-pins { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .pl-pins.out { align-items: flex-end; text-align: right; }
-.pl-pin { display: flex; align-items: center; gap: 5px; font-size: 0.62rem; color: #999; padding: 1px 0; white-space: nowrap; }
+.pl-pin { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: #a4a4a4; padding: 1px 0; white-space: nowrap; }
 .pl-pin-dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #131316; flex-shrink: 0; }
 .pl-pins.in .pl-pin-dot { margin-left: -5px; }
 .pl-pins.out .pl-pin-dot { margin-right: -5px; }
-.pl-pin.ext span { font-style: italic; color: #777; }
+.pl-pin.ext span { font-style: italic; color: #808080; }
 
-.pl-legend { display: flex; gap: 8px 18px; margin-top: 10px; font-size: 0.65rem; color: #888; flex-wrap: wrap; align-items: center; }
-.pl-legend > strong { color: #bbb; letter-spacing: 1px; font-size: 0.62rem; width: 100%; display: block; }
+.pl-legend { display: flex; gap: 8px 18px; margin-top: 10px; font-size: 0.76rem; color: #9a9a9a; flex-wrap: wrap; align-items: center; }
+.pl-legend > strong { color: #c4c4c4; letter-spacing: 1px; font-size: 0.72rem; width: 100%; display: block; }
 .pl-legend-item { display: flex; align-items: center; gap: 6px; }
 .pl-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .pl-legend .pl-lt { margin: 0; }
-.pl-legend .pl-dp-kind { font-family: var(--pl-mono); font-size: 0.58rem; }
+.pl-legend .pl-dp-kind { font-family: var(--pl-mono); font-size: 0.66rem; }
 
 .pl-common {
     background: linear-gradient(to bottom, #0a1015, #0e1418);
@@ -526,21 +653,21 @@ pre.pl-code .str { color: #98c379; }
 }
 .pl-common > summary {
     cursor: pointer;
-    padding: 8px 14px;
+    padding: 9px 14px;
     color: #6ab0e0;
-    font-size: 0.7rem;
-    letter-spacing: 1.5px;
+    font-size: 0.82rem;
+    letter-spacing: 1.2px;
     font-weight: 600;
     user-select: none;
     list-style: none;
 }
 .pl-common > summary::-webkit-details-marker { display: none; }
-.pl-common > summary::before { content: '▶ '; display: inline-block; transition: transform 0.15s; font-size: 0.55rem; margin-right: 4px; }
+.pl-common > summary::before { content: '▶ '; display: inline-block; transition: transform 0.15s; font-size: 0.62rem; margin-right: 4px; }
 .pl-common[open] > summary::before { transform: rotate(90deg); }
 .pl-common > summary:hover { background: #131e25; }
 .pl-common-body { padding: 4px 14px 12px; border-top: 1px solid #1a2a30; }
 .pl-common-body pre.pl-code { margin: 6px 0; }
-.pl-common-note { color: #779; font-size: 0.7rem; margin: 8px 0 4px; }
+.pl-common-note { color: #8a90a4; font-size: 0.8rem; margin: 8px 0 4px; }
 
 /* ── Node detail modal ── */
 .pl-backdrop {
@@ -553,9 +680,9 @@ pre.pl-code .str { color: #98c379; }
     position: fixed;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 680px;
-    max-width: 92vw;
-    max-height: 85vh;
+    width: 760px;
+    max-width: 94vw;
+    max-height: 86vh;
     background: #161618;
     border: 1px solid #2a2a30;
     border-radius: 8px;
@@ -564,69 +691,70 @@ pre.pl-code .str { color: #98c379; }
     box-shadow: 0 12px 64px rgba(0, 0, 0, 0.8);
 }
 .pl-modal.open { display: flex; }
-.pl-modal.wide { width: min(94vw, 980px); max-height: 92vh; }
+.pl-modal.wide { width: min(94vw, 1040px); max-height: 92vh; }
 .pl-modal-head {
     display: flex; align-items: center; gap: 10px;
     padding: 12px 18px; border-bottom: 1px solid #232328;
 }
-.pl-modal-title { color: #eee; font-weight: 600; font-size: 0.9rem; flex: 1; font-family: var(--pl-mono); }
-.pl-modal-tag { font-size: 0.6rem; padding: 2px 8px; border-radius: 3px; color: #fff; letter-spacing: 1px; font-weight: 600; }
+.pl-modal-title { color: #eee; font-weight: 600; font-size: 1rem; flex: 1; font-family: var(--pl-mono); }
+.pl-modal-tag { font-size: 0.68rem; padding: 2px 8px; border-radius: 3px; color: #fff; letter-spacing: 1px; font-weight: 600; }
 .pl-modal-close {
     background: transparent; border: 1px solid #2a2a30; color: #888;
-    width: 28px; height: 28px; padding: 0; font-size: 1rem; border-radius: 4px;
+    width: 30px; height: 30px; padding: 0; font-size: 1.05rem; border-radius: 4px;
 }
 .pl-modal-close:hover { color: #fff; border-color: #4a4a50; background: #2a2a30; }
-.pl-modal-body { padding: 16px 20px 18px; overflow-y: auto; color: #aaa; font-size: 0.78rem; line-height: 1.75; }
+.pl-modal-body { padding: 16px 20px 18px; overflow-y: auto; color: #b0b0b0; font-size: 0.88rem; line-height: 1.75; }
 .pl-nd-label {
-    color: #6ab0e0; font-size: 0.6rem; letter-spacing: 2px; margin: 14px 0 6px;
+    color: #6ab0e0; font-size: 0.7rem; letter-spacing: 2px; margin: 14px 0 6px;
     text-transform: uppercase; display: block; font-weight: 600;
 }
 .pl-nd-label:first-child { margin-top: 0; }
-.pl-nd-desc { color: #999; font-size: 0.78rem; line-height: 1.7; margin-bottom: 4px; }
+.pl-nd-desc { color: #a4a4a4; font-size: 0.88rem; line-height: 1.75; margin-bottom: 4px; }
 .pl-nd-lt { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid; border-radius: 4px; margin-bottom: 4px; }
 .pl-nd-lt .pl-lt { margin: 0; }
-.pl-nd-lt .pl-lt-tip { font-size: 0.7rem; color: #999; }
+.pl-nd-lt .pl-lt-tip { font-size: 0.8rem; color: #a4a4a4; }
 .pl-nd-lt.resident { border-color: #7a5a2a; background: rgba(160, 106, 42, 0.10); }
 .pl-nd-lt.param    { border-color: #7a4a2a; background: rgba(160, 80, 42, 0.10); }
 .pl-nd-lt.frame    { border-color: #2a6a8a; background: rgba(48, 128, 170, 0.10); }
 .pl-nd-lt.history  { border-color: #5a3a8a; background: rgba(110, 70, 170, 0.10); }
-.pl-nd-dp { border-left: 2px solid var(--dp, #5aa0e0); background: #0e1114; padding: 6px 10px; border-radius: 0 4px 4px 0; font-family: var(--pl-mono); font-size: 0.68rem; }
+.pl-nd-dp { border-left: 2px solid var(--dp, #5aa0e0); background: #0e1114; padding: 6px 10px; border-radius: 0 4px 4px 0; font-family: var(--pl-mono); font-size: 0.78rem; }
 .pl-nd-dp + .pl-nd-dp { margin-top: 6px; }
 .pl-nd-dp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
 .pl-nd-dp-name { color: #e0e0e8; font-weight: 600; }
 .pl-nd-dp table { width: 100%; border-collapse: collapse; }
 .pl-nd-dp td { padding: 2px 6px 2px 0; vertical-align: top; }
-.pl-nd-dp td:first-child { color: #7a8090; width: 130px; font-size: 0.64rem; }
+.pl-nd-dp td:first-child { color: #8a90a0; width: 140px; font-size: 0.74rem; }
 .pl-nd-dp td code { color: #c8d6e6; background: #161a20; padding: 0 5px; border-radius: 2px; }
-.pl-nd-dp .pl-dp-note { margin-top: 4px; font-size: 0.64rem; }
+.pl-nd-dp .pl-dp-note { margin-top: 4px; font-size: 0.74rem; }
 .pl-conv, .pl-nd-common {
     background: #0e0e0e; border-left: 2px solid #3a3a2a; padding: 8px 12px;
-    font-family: var(--pl-mono); font-size: 0.72rem; color: #9a9a9a; white-space: pre-wrap; line-height: 1.7;
+    font-family: var(--pl-mono); font-size: 0.82rem; color: #a4a4a4; white-space: pre-wrap; line-height: 1.7;
     border-radius: 0 3px 3px 0; overflow-x: auto;
 }
 .pl-nd-common { border-left-color: #2a4a5a; }
-.pl-nd-pins { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-family: var(--pl-mono); font-size: 0.68rem; }
-.pl-nd-pins div { display: flex; align-items: center; gap: 6px; color: #aaa; }
+.pl-nd-pins { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-family: var(--pl-mono); font-size: 0.78rem; }
+.pl-nd-pins div { display: flex; align-items: center; gap: 6px; color: #b0b0b0; }
 .pl-nd-preview { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 8px 0; }
-.pl-nd-preview canvas { width: 256px; height: 256px; max-width: 100%; border: 1px solid #2a2a2a; image-rendering: pixelated; background: #050505; }
+.pl-nd-preview canvas { display: block; width: 300px; height: auto; max-width: 100%; border: 1px solid #2a2a2a; image-rendering: pixelated; background: #050505; }
 .pl-nd-preview canvas.smooth { image-rendering: auto; }
-.pl-nd-preview.large canvas { width: min(72vh, 760px); height: min(72vh, 760px); }
-.pl-nd-preview .pl-pv-label { font-size: 0.66rem; }
-.pl-nd-none { color: #555; font-style: italic; font-size: 0.72rem; text-align: center; padding: 10px; }
-.pl-nd-jump { display: inline-block; margin-top: 12px; font-size: 0.7rem; }
+.pl-nd-preview.large canvas { width: min(72vh, 760px); }
+.pl-nd-preview .pl-pv-label { font-size: 0.78rem; }
+.pl-nd-none { color: #666; font-style: italic; font-size: 0.82rem; text-align: center; padding: 10px; }
+.pl-nd-jump { display: inline-block; margin-top: 12px; font-size: 0.82rem; }
 
-/* ── References ── */
-.pl-refs { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; }
+/* ── Library appendix + References ── */
+.pl-lib { padding-top: 0; }
+.pl-refs { max-width: 1240px; margin: 0 auto; padding: 0 24px 64px; }
 .pl-refs-card { background: #111; border: 1px solid #1f1f1f; border-radius: 8px; padding: 18px 24px; }
-.pl-refs ol { padding-left: 1.4em; font-size: 0.76rem; color: #888; line-height: 1.9; }
-.pl-refs .pl-ref-note { color: #666; }
+.pl-refs ol { padding-left: 1.4em; font-size: 0.86rem; color: #9a9a9a; line-height: 1.95; }
+.pl-refs .pl-ref-note { color: #777; }
 
 /* ── Runtime problem overlay (only visible when something is broken) ── */
 .pl-overlay {
     position: fixed; right: 12px; bottom: 12px; z-index: 10003;
-    max-width: min(520px, 90vw); max-height: 40vh; overflow: auto;
+    max-width: min(560px, 90vw); max-height: 40vh; overflow: auto;
     background: rgba(40, 10, 10, 0.95); border: 1px solid #7a2a2a; border-radius: 6px;
-    color: #f0b0b0; font-family: var(--pl-mono); font-size: 0.68rem; padding: 10px 12px;
+    color: #f0b0b0; font-family: var(--pl-mono); font-size: 0.76rem; padding: 10px 12px;
     white-space: pre-wrap; display: none;
 }
 .pl-overlay b { color: #ffd0d0; }
@@ -797,7 +925,9 @@ const cmapOf = (m) => (isFn(m) ? m : PL.cmap[m] || PL.cmap.gray);
 let rangeGen = 0;   // bumped on resident/param invalidation → `hold` ranges re-snapshot
 function imageFor(canvas, W, H) {
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; canvas._plImg = null; }
+    canvas._plCtx = false;   // data-resolution image (the CSS box scales it)
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (!canvas._plImg) canvas._plImg = ctx.createImageData(W, H);
     return { ctx, img: canvas._plImg };
 }
@@ -933,24 +1063,34 @@ PL.draw.normalFromSlopes = function (canvas, sx, sz, W, H, o) {
         return out;
     });
 };
-/** Hi-DPI 2D context sized to the canvas' CSS box. Returns { ctx, w, h } in CSS pixels. */
+/** Hi-DPI 2D context sized to the canvas' CSS box. Returns { ctx, w, h, dpr, scale } in *design* pixels: previews keep the
+ *  coordinate system of their declared size (default 180×180) however large they are displayed (preview zoom, enlarged
+ *  view), so text, line widths and layout scale together instead of shrinking relative to the box. */
 PL.draw.ctx = function (canvas, o) {
     o = o || {};
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = Math.max(1, canvas.clientWidth || parseFloat(canvas.style.width) || 180);
-    const h = Math.max(1, canvas.clientHeight || parseFloat(canvas.style.height) || 180);
-    const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+    const cw = Math.max(1, canvas.clientWidth || parseFloat(canvas.style.width) || 180);
+    const ch = Math.max(1, canvas.clientHeight || parseFloat(canvas.style.height) || cw);
+    const des = canvas._plDesign, k = des && des[0] > 0 ? cw / des[0] : 1;
+    const w = cw / k, h = ch / k;
+    const pw = Math.round(cw * dpr), ph = Math.round(ch * dpr);
     let snap = null;
     if (o.keep && canvas.width && canvas.height) {   // overlay on top of what is already drawn (e.g. a field / pixels image)
         snap = document.createElement('canvas'); snap.width = canvas.width; snap.height = canvas.height;
         snap.getContext('2d').drawImage(canvas, 0, 0);
     }
     if (canvas.width !== pw || canvas.height !== ph) { canvas.width = pw; canvas.height = ph; canvas._plImg = null; }
+    canvas._plCtx = true;
     const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // the context object persists across redraws: start every draw from a clean state (a leftover globalAlpha / dash /
+    // composite mode would ghost the previous frame and make identical inputs render differently)
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.setLineDash([]); ctx.lineDashOffset = 0;
+    ctx.lineWidth = 1; ctx.lineCap = 'butt'; ctx.lineJoin = 'miter'; ctx.shadowBlur = 0; ctx.shadowColor = 'rgba(0,0,0,0)';
+    ctx.filter = 'none'; ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic'; ctx.font = '11px Consolas, monospace';
+    ctx.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
     if (snap) { ctx.imageSmoothingEnabled = !!o.smooth; ctx.drawImage(snap, 0, 0, w, h); ctx.imageSmoothingEnabled = true; }
     else if (o.clear !== false) { ctx.fillStyle = o.bg || '#050505'; ctx.fillRect(0, 0, w, h); }
-    return { ctx, w, h, dpr };
+    return { ctx, w, h, dpr, scale: k };
 };
 function niceTicks(lo, hi, count) {
     const span = hi - lo || 1, raw = span / Math.max(1, count), mag = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -969,7 +1109,7 @@ PL.draw.plot = function (canvas, o) {
     const { ctx, w, h } = PL.draw.ctx(canvas, { bg: o.bg });
     const lx = !!o.logX, ly = !!o.logY;
     const tx = (v) => (lx ? (v > 0 ? Math.log10(v) : NaN) : v), ty = (v) => (ly ? (v > 0 ? Math.log10(v) : NaN) : v);
-    const padL = 46, padR = 10, padT = 10, padB = o.xLabel ? 32 : 20;
+    const padL = 50, padR = 10, padT = 10, padB = o.xLabel ? 34 : 21;
     const series = arr(o.series).map((sr, k) => {
         const color = sr.color || ['#6ab0e0', '#e0a060', '#5ad07a', '#c678dd', '#e06c75', '#56b6c2'][k % 6];
         let xs = [], ys = [];
@@ -998,7 +1138,7 @@ PL.draw.plot = function (canvas, o) {
     const X = (v) => padL + (v - xr[0]) / (xr[1] - xr[0] || 1) * (w - padL - padR);
     const Y = (v) => h - padB - (v - yr[0]) / (yr[1] - yr[0] || 1) * (h - padT - padB);
     const ticks = (r, log, px) => (log ? (() => { const out = []; for (let e = Math.ceil(r[0] - 1e-9); e <= r[1] + 1e-9; e++) out.push(e); const step = Math.max(1, Math.ceil(out.length / Math.max(2, px))); return out.filter((_, i) => i % step === 0); })() : niceTicks(r[0], r[1], px));
-    ctx.font = '10px Consolas, monospace'; ctx.lineWidth = 1; ctx.strokeStyle = '#1c1c1c'; ctx.fillStyle = '#5a5a5a';
+    ctx.font = '11px Consolas, monospace'; ctx.lineWidth = 1; ctx.strokeStyle = '#1c1c1c'; ctx.fillStyle = '#6a6a6a';
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ticks(xr, lx, Math.max(2, Math.floor((w - padL) / 70))).forEach((v) => {
         ctx.beginPath(); ctx.moveTo(X(v), padT); ctx.lineTo(X(v), h - padB); ctx.stroke();
@@ -1047,16 +1187,16 @@ PL.draw.plot = function (canvas, o) {
         while (rowsEnd[row] != null && rowsEnd[row] > x0) row++;
         rowsEnd[row] = x0 + tw;
         ctx.fillStyle = m.color || '#e8c25a';
-        ctx.fillText(m.label, x0, h - padB - 3 - row * 12);
+        ctx.fillText(m.label, x0, h - padB - 3 - row * 13);
     });
     ctx.textBaseline = 'top';
     arr(o.hmarks).forEach((m) => { const v = ty(m.y); if (m.label && isFinite(v)) { ctx.fillStyle = m.color || '#e8c25a'; ctx.fillText(m.label, padL + 4, Y(v) + 2); } });
     const labeled = series.filter((sr) => sr.label);
     if (labeled.length) {
-        const lw = Math.max(...labeled.map((sr) => ctx.measureText(sr.label).width)) + 22, lh = labeled.length * 13 + 6;
+        const lw = Math.max(...labeled.map((sr) => ctx.measureText(sr.label).width)) + 22, lh = labeled.length * 14 + 6;
         ctx.fillStyle = 'rgba(8,8,10,0.85)'; ctx.fillRect(w - padR - lw - 2, padT + 2, lw, lh);
         labeled.forEach((sr, k) => {
-            const y0 = padT + 5 + k * 13;
+            const y0 = padT + 5 + k * 14;
             ctx.strokeStyle = sr.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - padR - lw + 3, y0 + 6); ctx.lineTo(w - padR - lw + 15, y0 + 6); ctx.stroke();
             ctx.fillStyle = sr.color; ctx.textAlign = 'left'; ctx.fillText(sr.label, w - padR - lw + 18, y0);
         });
@@ -1087,33 +1227,86 @@ PL.draw.vectors = function (canvas, vx, vy, W, H, o) {
     }
 };
 
-// ── 3D height-field viewer: small z-buffered software rasterizer with orbit drag ──
+// ── 3D views: shared orbit controller (drag = rotate, shift/right-drag = pan, wheel = zoom, double-click = reset) ──
+// Inline previews only take the wheel after the user clicked into them (or with Ctrl/⌘), so page scrolling is never hijacked;
+// in the enlarged view the wheel always zooms. While dragging, renderers may lower their resolution (ob.fast).
 function orbitOf(canvas, init) {
     if (canvas._plOrbit) return canvas._plOrbit;
-    const ob = canvas._plOrbit = Object.assign({ yaw: 0.75, pitch: 0.55, dist: 2.7 }, init || {});
-    let drag = null;
-    canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing'; });
-    canvas.addEventListener('pointermove', (e) => {
-        if (!drag) return;
-        ob.yaw -= (e.clientX - drag.x) * 0.01;
-        ob.pitch = PL.clamp(ob.pitch + (e.clientY - drag.y) * 0.01, 0.05, 1.5);
-        drag = { x: e.clientX, y: e.clientY };
-        if (canvas._plRedraw) canvas._plRedraw();
+    const def = Object.assign({ yaw: 0.75, pitch: 0.55, dist: 2.7, target: [0, 0, 0], minPitch: -1.52, maxPitch: 1.52, minDist: 0.2, maxDist: 60 }, init || {});
+    const fresh = () => Object.assign({}, def, { target: def.target.slice(), fast: false });
+    const ob = canvas._plOrbit = fresh();
+    const redraw = () => { if (canvas._plRedraw) canvas._plRedraw(); };
+    ob.reset = () => { Object.assign(ob, fresh()); redraw(); };
+    const ptrs = new Map();
+    let drag = null, pinch = 0;
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('pointerdown', (e) => {
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        canvas.setPointerCapture(e.pointerId);
+        canvas._plActive = true;
+        if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); drag = null; return; }
+        drag = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 1 || e.button === 2 };
+        canvas.style.cursor = drag.pan ? 'move' : 'grabbing';
     });
-    const up = () => { drag = null; canvas.style.cursor = ''; };
+    canvas.addEventListener('pointermove', (e) => {
+        if (!ptrs.has(e.pointerId)) return;
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (ptrs.size === 2 && pinch > 0) {
+            const [a, b] = [...ptrs.values()], dd = Math.hypot(a.x - b.x, a.y - b.y);
+            ob.dist = PL.clamp(ob.dist * pinch / Math.max(1, dd), ob.minDist, ob.maxDist); pinch = dd; ob.fast = true; redraw(); return;
+        }
+        if (!drag) return;
+        const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        drag.x = e.clientX; drag.y = e.clientY;
+        if (drag.pan) {
+            const cyw = Math.cos(ob.yaw), syw = Math.sin(ob.yaw), cp = Math.cos(ob.pitch), sp = Math.sin(ob.pitch);
+            const f = [-cp * syw, -sp, -cp * cyw], r = PL.v3.norm(PL.v3.cross(f, [0, 1, 0])), u = PL.v3.cross(r, f), k = ob.dist * 0.0022;
+            for (let i = 0; i < 3; i++) ob.target[i] += (-dx * r[i] + dy * u[i]) * k;
+        } else {
+            ob.yaw -= dx * 0.01;
+            ob.pitch = PL.clamp(ob.pitch + dy * 0.01, ob.minPitch, ob.maxPitch);
+        }
+        ob.fast = true; redraw();
+    });
+    const up = (e) => {
+        ptrs.delete(e.pointerId);
+        if (ptrs.size < 2) pinch = 0;
+        if (!ptrs.size) { drag = null; canvas.style.cursor = ''; if (ob.fast) { ob.fast = false; redraw(); } }
+    };
     canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
-    canvas.addEventListener('wheel', (e) => { e.preventDefault(); ob.dist = PL.clamp(ob.dist * Math.exp(e.deltaY * 0.001), 1.2, 8); if (canvas._plRedraw) canvas._plRedraw(); }, { passive: false });
+    canvas.addEventListener('pointerleave', () => { if (!ptrs.size) canvas._plActive = false; });
+    canvas.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); ob.reset(); });
+    let wheelT = 0;
+    canvas.addEventListener('wheel', (e) => {
+        if (!(canvas._plActive || canvas._plInLB || e.ctrlKey || e.metaKey)) return;   // let the page scroll
+        e.preventDefault();
+        ob.dist = PL.clamp(ob.dist * Math.exp(e.deltaY * 0.0012), ob.minDist, ob.maxDist);
+        ob.fast = true; redraw();
+        clearTimeout(wheelT); wheelT = setTimeout(() => { ob.fast = false; redraw(); }, 180);
+    }, { passive: false });
     return ob;
+}
+function markInteractive(canvas, kind) {
+    const wrap = canvas.closest ? canvas.closest('.pl-pv') : null;
+    if (wrap && !wrap.classList.contains('interactive')) {
+        wrap.classList.add('interactive');
+        const box = wrap.querySelector('.pl-pv-box');
+        if (box && !box.querySelector('.pl-i3d')) {
+            const b = el('span', 'pl-i3d', esc(kind || T.i3d));
+            b.title = T.i3dTip;
+            box.appendChild(b);
+        }
+    }
 }
 /** o: { height, W, H, dispX, dispZ, heightScale, dispScale, autoScale, color(i, n)→[r,g,b], colors(Float32Array rgb), res, light, bg, wire } */
 PL.draw.surface = function (canvas, o) {
     canvas._plRedraw = () => drawSurface(canvas, o);
-    if (canvas.parentElement && canvas.parentElement.parentElement) canvas.parentElement.parentElement.classList.add('interactive');
+    markInteractive(canvas);
     drawSurface(canvas, o);
 };
 function drawSurface(canvas, o) {
     const W = o.W, H = o.H || o.W, hgt = o.height;
-    const ob = orbitOf(canvas, o.orbit);
+    const ob = orbitOf(canvas, Object.assign({ minPitch: 0.05, maxPitch: 1.5, minDist: 1.2, maxDist: 8 }, o.orbit));
     const dpr = Math.min(1.5, window.devicePixelRatio || 1);
     const cw = Math.max(16, Math.round((canvas.clientWidth || 360) * dpr)), ch = Math.max(16, Math.round((canvas.clientHeight || 360) * dpr));
     const { ctx, img } = imageFor(canvas, cw, ch);
@@ -1132,9 +1325,9 @@ function drawSurface(canvas, o) {
     const ds = o.dispScale == null ? 1 : o.dispScale;
     const nv = R * RZ, px = new Float32Array(nv), py = new Float32Array(nv), pz = new Float32Array(nv);
     const sx = new Float32Array(nv), sy = new Float32Array(nv), sz = new Float32Array(nv), col = new Float32Array(nv * 3);
-    const cy = Math.cos(ob.yaw), sy0 = Math.sin(ob.yaw), cp = Math.cos(ob.pitch), sp = Math.sin(ob.pitch);
-    const eye = [ob.dist * cp * sy0, ob.dist * sp, ob.dist * cp * cy];
-    const f = PL.v3.norm(PL.v3.mul(eye, -1)), r = PL.v3.norm(PL.v3.cross(f, [0, 1, 0])), u = PL.v3.cross(r, f);
+    const cy = Math.cos(ob.yaw), sy0 = Math.sin(ob.yaw), cp = Math.cos(ob.pitch), sp = Math.sin(ob.pitch), T0 = ob.target || [0, 0, 0];
+    const eye = [T0[0] + ob.dist * cp * sy0, T0[1] + ob.dist * sp, T0[2] + ob.dist * cp * cy];
+    const f = PL.v3.norm(PL.v3.sub(T0, eye)), r = PL.v3.norm(PL.v3.cross(f, [0, 1, 0])), u = PL.v3.cross(r, f);
     const foc = 1 / Math.tan(0.5 * 45 * Math.PI / 180), asp = cw / ch;
     const L = PL.v3.norm(o.light || [0.4, 0.8, 0.3]);
     for (let j = 0; j < RZ; j++) for (let i = 0; i < R; i++) {
@@ -1199,6 +1392,315 @@ function drawSurface(canvas, o) {
         for (let j = 0; j < RZ; j += 4) for (let i = 0; i < R - 1; i++) { const a = j * R + i; ctx.moveTo(sx[a], sy[a]); ctx.lineTo(sx[a + 1], sy[a + 1]); }
         ctx.stroke();
     }
+    canvas._plCtx = true;   // backing store follows the CSS box (like ctx draws)
+}
+
+// ── General 3D viewer: parametric / triangle meshes + depth-tested lines, arrows, points and labels ──
+// Deferred software rasterizer: triangles → G-buffer (depth, mesh id, position, normal, uv, vertex colour) at a capped
+// resolution, then one shading pass (mesh.shade(px) per pixel, or vertex colour × Lambert), upscaled into the canvas;
+// overlays are drawn at full resolution with a depth test (hidden parts dimmed, `xray`).
+const DEG3 = Math.PI / 180;
+function basisFrom(axis) {   // two unit vectors orthogonal to axis (Duff et al. 2017)
+    const t = PL.v3.norm(axis), s = t[2] >= 0 ? 1 : -1, a = -1 / (s + t[2]), b = t[0] * t[1] * a;
+    return [t, [1 + s * t[0] * t[0] * a, s * b, -s * t[0]], [b, s + t[1] * t[1] * a, -t[1]]];
+}
+PL.mesh = {
+    /** Generic parametric surface: pos(u, v) → [x, y, z] for u, v ∈ [0, 1]. extra: { color, shade, rgb, wire, closedU, normal } */
+    param: (pos, res, extra) => Object.assign({ pos, res: res || [48, 24] }, extra || {}),
+    sphere(o) {
+        o = o || {};
+        const c = o.c || [0, 0, 0], r = o.r == null ? 1 : o.r, th1 = o.hemi ? Math.PI / 2 : Math.PI;
+        return Object.assign({ res: [48, o.hemi ? 12 : 24], closedU: true }, o, {
+            pos: (u, v) => { const ph = 2 * Math.PI * u, th = th1 * v; return [c[0] + r * Math.sin(th) * Math.cos(ph), c[1] + r * Math.cos(th), c[2] + r * Math.sin(th) * Math.sin(ph)]; },
+            normal: (u, v) => { const ph = 2 * Math.PI * u, th = th1 * v; return [Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)]; },
+        });
+    },
+    /** Spherical function as a radius: fn(dir) ≥ 0. dir is y-up; with up: 'z' fn receives z-up directions (BRDF convention n = +z). */
+    lobe(fn, o) {
+        o = o || {};
+        const hemi = o.hemi !== false, th1 = hemi ? Math.PI / 2 : Math.PI, k = o.scale == null ? 1 : o.scale, c = o.c || [0, 0, 0];
+        const dirOf = (u, v) => { const ph = 2 * Math.PI * u, th = th1 * v; return [Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)]; };
+        const toFn = o.up === 'z' ? (d) => [d[0], -d[2], d[1]] : (d) => d;
+        return Object.assign({ res: [64, hemi ? 24 : 48], closedU: true }, o, {
+            pos: (u, v) => { const d = dirOf(u, v), r = Math.max(0, +fn(toFn(d)) || 0) * k; return [c[0] + d[0] * r, c[1] + d[1] * r, c[2] + d[2] * r]; },
+        });
+    },
+    /** Sample a spherical function into a (nu+1)×(nv+1) radius grid — do this in a lazy stage, then draw with lobeGrid.
+     *  o: { hemi = true, up: 'z' (fn receives z-up directions) }. Returns { R: Float32Array, nu, nv, hemi, max }. */
+    sampleLobe(fn, nu, nv, o) {
+        o = o || {};
+        const hemi = o.hemi !== false, th1 = hemi ? Math.PI / 2 : Math.PI, toFn = o.up === 'z' ? (d) => [d[0], -d[2], d[1]] : (d) => d;
+        const NU = nu + 1, R = new Float32Array(NU * (nv + 1));
+        let max = 0;
+        for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
+            const ph = 2 * Math.PI * i / nu, th = th1 * j / nv, d = [Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)];
+            const v = Math.max(0, +fn(toFn(d)) || 0);
+            R[j * NU + i] = v; if (v > max) max = v;
+        }
+        return { R, nu, nv, hemi, max };
+    },
+    /** Mesh from a sampleLobe grid. o: { scale = 1, normalize (divide by grid max), logDecades (log radius over that many
+     *  decades below the max — for lobes spanning orders of magnitude), c, rgb, color, gloss, … } */
+    lobeGrid(g, o) {
+        o = o || {};
+        const th1 = g.hemi ? Math.PI / 2 : Math.PI, NU = g.nu + 1, sc = o.scale == null ? 1 : o.scale, c = o.c || [0, 0, 0], mx = g.max || 1;
+        const rad = o.logDecades ? (v) => sc * Math.max(0, (Math.log10(Math.max(v, 1e-30) / mx) + o.logDecades) / o.logDecades) : (v) => v * sc / (o.normalize ? mx : 1);
+        return Object.assign({ res: [g.nu, g.nv], closedU: true }, o, {
+            pos: (u, v) => {
+                const i = Math.round(u * g.nu), j = Math.round(v * g.nv), ph = 2 * Math.PI * i / g.nu, th = th1 * j / g.nv, r = rad(g.R[j * NU + i]);
+                return [c[0] + Math.sin(th) * Math.cos(ph) * r, c[1] + Math.cos(th) * r, c[2] + Math.sin(th) * Math.sin(ph) * r];
+            },
+        });
+    },
+    /** Cylinder from a to b with radius r. */
+    cylinder(o) {
+        o = o || {};
+        const a = o.a || [0, -1, 0], b = o.b || [0, 1, 0], r = o.r == null ? 0.1 : o.r, ax = PL.v3.sub(b, a), [, n1, n2] = basisFrom(ax);
+        return Object.assign({ res: [32, 1], closedU: true }, o, {
+            pos: (u, v) => { const ph = 2 * Math.PI * u, cs = Math.cos(ph) * r, sn = Math.sin(ph) * r; return [0, 1, 2].map((i) => a[i] + ax[i] * v + cs * n1[i] + sn * n2[i]); },
+            normal: (u) => { const ph = 2 * Math.PI * u; return [0, 1, 2].map((i) => Math.cos(ph) * n1[i] + Math.sin(ph) * n2[i]); },
+        });
+    },
+    /** Cone of directions around axis with half-angle `angle` (degrees), from apex out to `length`. */
+    cone(o) {
+        o = o || {};
+        const p0 = o.apex || [0, 0, 0], [t, n1, n2] = basisFrom(o.axis || [0, 1, 0]), al = (o.angle == null ? 30 : o.angle) * DEG3, L = o.length == null ? 1 : o.length;
+        return Object.assign({ res: [48, 4], closedU: true }, o, {
+            pos: (u, v) => { const ph = 2 * Math.PI * u, s = v * L; return [0, 1, 2].map((i) => p0[i] + s * (Math.cos(al) * t[i] + Math.sin(al) * (Math.cos(ph) * n1[i] + Math.sin(ph) * n2[i]))); },
+        });
+    },
+    /** Square in the xz plane (y = c[1]), size × size. */
+    plane(o) {
+        o = o || {};
+        const c = o.c || [0, 0, 0], s = o.size == null ? 2 : o.size;
+        return Object.assign({ res: [1, 1] }, o, { pos: (u, v) => [c[0] + (u - 0.5) * s, c[1], c[2] + (v - 0.5) * s], normal: () => [0, 1, 0] });
+    },
+    /** Height field data[W×H] over a size × size square: y = data · scale. */
+    heightfield(data, W, H, o) {
+        o = o || {}; H = H || W;
+        const s = o.size == null ? 2 : o.size, k = o.scale == null ? 1 : o.scale, r = Math.min(o.res || 96, W - 1);
+        return Object.assign({ res: [r, Math.min(o.res || 96, H - 1)] }, o, {
+            pos: (u, v) => { const x = Math.round(u * (W - 1)), z = Math.round(v * (H - 1)); return [(u - 0.5) * s, data[z * W + x] * k, (v - 0.5) * s]; },
+        });
+    },
+};
+function meshGeometry(m) {   // vertex positions / normals / colours / uv + triangle list for one mesh (parametric or explicit)
+    let P, N, C = null, U, Vv, tris;
+    if (m.positions) {
+        P = m.positions; const cnt = P.length / 3;
+        tris = m.indices || Array.from({ length: cnt }, (_, i) => i);
+        N = m.normals || new Float32Array(cnt * 3);
+        if (!m.normals) for (let t = 0; t + 2 < tris.length; t += 3) {
+            const a = tris[t], b = tris[t + 1], c = tris[t + 2];
+            const e1 = [P[b * 3] - P[a * 3], P[b * 3 + 1] - P[a * 3 + 1], P[b * 3 + 2] - P[a * 3 + 2]], e2 = [P[c * 3] - P[a * 3], P[c * 3 + 1] - P[a * 3 + 1], P[c * 3 + 2] - P[a * 3 + 2]], fn = V.cross(e1, e2);
+            for (const v of [a, b, c]) for (let k = 0; k < 3; k++) N[v * 3 + k] += fn[k];
+        }
+        if (m.colors) C = m.colors;
+        U = new Float32Array(cnt); Vv = new Float32Array(cnt);
+        return { P, N, C, U, Vv, tris };
+    }
+    const [nu, nv] = m.res || [48, 24], NU = nu + 1, NV = nv + 1, cnt = NU * NV;
+    P = new Float32Array(cnt * 3); N = new Float32Array(cnt * 3); U = new Float32Array(cnt); Vv = new Float32Array(cnt);
+    for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) {
+        const k = j * NU + i, uu = i / nu, vv = j / nv, p = m.pos(uu, vv);
+        P[k * 3] = p[0]; P[k * 3 + 1] = p[1]; P[k * 3 + 2] = p[2]; U[k] = uu; Vv[k] = vv;
+    }
+    for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) {
+        const k = j * NU + i;
+        let nn = isFn(m.normal) ? m.normal(U[k], Vv[k]) : null;
+        if (!nn) {
+            const iL = m.closedU ? (i === 0 ? nu - 1 : i - 1) : Math.max(0, i - 1), iR = m.closedU ? (i === nu ? 1 : i + 1) : Math.min(nu, i + 1);
+            const jD = Math.max(0, j - 1), jU = Math.min(nv, j + 1), A = (jj, ii) => (jj * NU + ii) * 3;
+            const du = [P[A(j, iR)] - P[A(j, iL)], P[A(j, iR) + 1] - P[A(j, iL) + 1], P[A(j, iR) + 2] - P[A(j, iL) + 2]];
+            const dv = [P[A(jU, i)] - P[A(jD, i)], P[A(jU, i) + 1] - P[A(jD, i) + 1], P[A(jU, i) + 2] - P[A(jD, i) + 2]];
+            nn = V.cross(dv, du);
+            if (V.len(nn) < 1e-12) { const c0 = m.c || [0, 0, 0]; nn = [P[k * 3] - c0[0], P[k * 3 + 1] - c0[1], P[k * 3 + 2] - c0[2]]; }
+        }
+        N[k * 3] = nn[0]; N[k * 3 + 1] = nn[1]; N[k * 3 + 2] = nn[2];
+    }
+    if (isFn(m.color)) {
+        C = new Float32Array(cnt * 3);
+        for (let k = 0; k < cnt; k++) { const c = m.color(U[k], Vv[k], [P[k * 3], P[k * 3 + 1], P[k * 3 + 2]], V.norm([N[k * 3], N[k * 3 + 1], N[k * 3 + 2]])); C[k * 3] = c[0]; C[k * 3 + 1] = c[1]; C[k * 3 + 2] = c[2]; }
+    }
+    tris = [];
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * NU + i, b = a + 1, c = a + NU, e = c + 1; tris.push(a, b, e, a, e, c); }
+    return { P, N, C, U, Vv, tris };
+}
+/** Interactive 3D view. o: { meshes: [mesh…], lines: [{ pts, color, width, arrow, dash, label }], points: [{ p, color, r, label }],
+ *  labels: [{ p, text, color }], axes: true | { origin, size }, grid: true | { y, size, step }, orbit: { yaw, pitch, dist, target, fov },
+ *  light: [x,y,z], bg, xray (hidden overlay alpha, default 0.22; 0 = hide), maxPixels, overlay(ctx, project, view) }.
+ *  mesh: { pos(u,v) | positions (Float32Array xyz) + indices, res: [nu, nv], color(u, v, p, n) → [r,g,b], shade(px) → [r,g,b]
+ *  (px = { p, n, u, v, view, eye, light }), mask(u, v) → bool (alpha test), rgb, lit, gloss, twoSided, wire, wireColor, surface: false (wire only) }; lines also take labelAt: 'start'. Colours are display values 0..1. */
+PL.draw.mesh3d = function (canvas, o) {
+    canvas._plRedraw = () => { try { drawMesh3d(canvas, o); } catch (e) { report('mesh3d', e); } };
+    markInteractive(canvas);
+    drawMesh3d(canvas, o);
+};
+function drawMesh3d(canvas, o) {
+    o = o || {};
+    const ob = orbitOf(canvas, Object.assign({ yaw: 0.6, pitch: 0.45, dist: 3.4 }, o.orbit));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cssW = Math.max(16, canvas.clientWidth || 360), cssH = Math.max(16, canvas.clientHeight || cssW);
+    const cw = Math.round(cssW * dpr), ch = Math.round(cssH * dpr);
+    if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+    canvas._plCtx = true;
+    const meshes = arr(o.meshes), anyShade = meshes.some((m) => isFn(m.shade));
+    const budget = (o.maxPixels || (anyShade ? 110000 : 300000)) * (ob.fast ? 0.3 : 1);
+    const q = Math.min(1, Math.sqrt(budget / (cw * ch))), iw = Math.max(16, Math.round(cw * q)), ih = Math.max(16, Math.round(ch * q));
+    const off = canvas._plOff3d || (canvas._plOff3d = document.createElement('canvas'));
+    const { ctx: octx, img } = imageFor(off, iw, ih);
+    const T0 = ob.target, cyw = Math.cos(ob.yaw), syw = Math.sin(ob.yaw), cp = Math.cos(ob.pitch), sp = Math.sin(ob.pitch);
+    const eye = [T0[0] + ob.dist * cp * syw, T0[1] + ob.dist * sp, T0[2] + ob.dist * cp * cyw];
+    const f = V.norm(V.sub(T0, eye)), rt = V.norm(V.cross(f, [0, 1, 0])), up = V.cross(rt, f);
+    const foc = 1 / Math.tan(((o.orbit && o.orbit.fov) || 40) * Math.PI / 360), asp = cw / ch, near = 1e-3;
+    const toView = (p) => { const a = p[0] - eye[0], b = p[1] - eye[1], c = p[2] - eye[2]; return [a * rt[0] + b * rt[1] + c * rt[2], a * up[0] + b * up[1] + c * up[2], a * f[0] + b * f[1] + c * f[2]]; };
+    const proj = (p, W, H) => { const v = toView(p); return [(v[0] * foc / asp / v[2] * 0.5 + 0.5) * W, (0.5 - v[1] * foc / v[2] * 0.5) * H, v[2]]; };
+    const n = iw * ih, zb = PL.buf(off, '_z', n), mid = PL.buf(off, '_m', n, Int16Array), att = PL.buf(off, '_a', n * 11);
+    zb.fill(Infinity); mid.fill(-1);
+    const d = img.data, bg = PL.hexToRgb(o.bg || '#07090c');
+    for (let i = 0; i < n; i++) { const t = ((i / iw) | 0) / ih, p4 = i * 4, k = 1 - 0.45 * t; d[p4] = bg[0] * 255 * k; d[p4 + 1] = bg[1] * 255 * k; d[p4 + 2] = bg[2] * 255 * k; d[p4 + 3] = 255; }
+    meshes.forEach((m, mi) => {
+        if (m.surface === false) return;   // wire-only mesh
+        const geo = m._geo || (m._geo = meshGeometry(m));   // cached per mesh object: orbiting only re-projects
+        const { P, N, C, U, Vv, tris } = geo;
+        const cnt = P.length / 3, SX = new Float32Array(cnt), SY = new Float32Array(cnt), SZ = new Float32Array(cnt), mask = isFn(m.mask) ? m.mask : null;
+        for (let k = 0; k < cnt; k++) { const s = proj([P[k * 3], P[k * 3 + 1], P[k * 3 + 2]], iw, ih); SX[k] = s[0]; SY[k] = s[1]; SZ[k] = s[2]; }
+        m._proj = { SX, SY, SZ, cnt };
+        for (let t = 0; t + 2 < tris.length; t += 3) {
+            const a = tris[t], b = tris[t + 1], c = tris[t + 2], za = SZ[a], zbb = SZ[b], zc = SZ[c];
+            if (za < near || zbb < near || zc < near) continue;
+            const x0 = SX[a], y0 = SY[a], x1 = SX[b], y1 = SY[b], x2 = SX[c], y2 = SY[c];
+            const area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+            if (Math.abs(area) < 1e-9) continue;
+            const inv = 1 / area, iza = 1 / za, izb = 1 / zbb, izc = 1 / zc;
+            const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2))), maxX = Math.min(iw - 1, Math.ceil(Math.max(x0, x1, x2)));
+            const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2))), maxY = Math.min(ih - 1, Math.ceil(Math.max(y0, y1, y2)));
+            for (let y = minY; y <= maxY; y++) {
+                const qy = y + 0.5;
+                for (let x = minX; x <= maxX; x++) {
+                    const qx = x + 0.5;
+                    const w0 = ((x1 - qx) * (y2 - qy) - (x2 - qx) * (y1 - qy)) * inv, w1 = ((x2 - qx) * (y0 - qy) - (x0 - qx) * (y2 - qy)) * inv, w2 = 1 - w0 - w1;
+                    if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+                    const iz = w0 * iza + w1 * izb + w2 * izc, z = 1 / iz, k = y * iw + x;
+                    if (z >= zb[k]) continue;
+                    const pa = w0 * iza * z, pb = w1 * izb * z, pc = w2 * izc * z, o11 = k * 11;
+                    if (mask && !mask(pa * U[a] + pb * U[b] + pc * U[c], pa * Vv[a] + pb * Vv[b] + pc * Vv[c])) continue;   // alpha test
+                    zb[k] = z; mid[k] = mi;
+                    for (let e = 0; e < 3; e++) {
+                        att[o11 + e] = pa * P[a * 3 + e] + pb * P[b * 3 + e] + pc * P[c * 3 + e];
+                        att[o11 + 3 + e] = pa * N[a * 3 + e] + pb * N[b * 3 + e] + pc * N[c * 3 + e];
+                        if (C) att[o11 + 8 + e] = pa * C[a * 3 + e] + pb * C[b * 3 + e] + pc * C[c * 3 + e];
+                    }
+                    att[o11 + 6] = pa * U[a] + pb * U[b] + pc * U[c]; att[o11 + 7] = pa * Vv[a] + pb * Vv[b] + pc * Vv[c];
+                }
+            }
+        }
+        m._hasC = !!C;
+    });
+    const L = V.norm(o.light || [0.45, 0.8, 0.4]);
+    for (let k = 0; k < n; k++) {
+        const mi = mid[k];
+        if (mi < 0) continue;
+        const m = meshes[mi], b = k * 11, p = [att[b], att[b + 1], att[b + 2]];
+        let nn = V.norm([att[b + 3], att[b + 4], att[b + 5]]);
+        const vd = V.norm(V.sub(eye, p));
+        if (m.twoSided !== false && V.dot(nn, vd) < 0) nn = V.mul(nn, -1);
+        let rgb;
+        if (isFn(m.shade)) rgb = m.shade({ p, n: nn, u: att[b + 6], v: att[b + 7], view: vd, eye, light: L }) || [1, 0, 1];
+        else {
+            const base = m._hasC ? [att[b + 8], att[b + 9], att[b + 10]] : (m.rgb || [0.55, 0.62, 0.7]);
+            if (m.lit === false) rgb = base;
+            else {
+                const dif = Math.max(0, V.dot(nn, L)), amb = 0.3;
+                const spec = m.gloss ? 0.25 * Math.pow(Math.max(0, V.dot(V.reflect(V.mul(L, -1), nn), vd)), m.gloss) : 0;
+                rgb = [base[0] * (amb + (1 - amb) * dif) + spec, base[1] * (amb + (1 - amb) * dif) + spec, base[2] * (amb + (1 - amb) * dif) + spec];
+            }
+        }
+        const p4 = k * 4;
+        d[p4] = PL.clamp(rgb[0], 0, 1) * 255; d[p4 + 1] = PL.clamp(rgb[1], 0, 1) * 255; d[p4 + 2] = PL.clamp(rgb[2], 0, 1) * 255;
+    }
+    octx.putImageData(img, 0, 0);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(off, 0, 0, cw, ch);
+    // ── overlays (CSS-pixel coordinates, depth-tested against the G-buffer) ──
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const project = (p) => { const s = proj(p, cssW, cssH); return s; };
+    const depthOk = (p) => {
+        const s = proj(p, iw, ih); if (s[2] < near) return false;
+        const xi = Math.min(iw - 1, Math.max(0, s[0] | 0)), yi = Math.min(ih - 1, Math.max(0, s[1] | 0));
+        return s[2] <= zb[yi * iw + xi] * 1.004 + 1e-4;
+    };
+    const xray = o.xray == null ? 0.22 : o.xray;
+    const seg3 = (a, b, color, width, dash, hiddenAlpha) => {
+        const sa = project(a), sb = project(b);
+        if (sa[2] < near && sb[2] < near) return;
+        const px = Math.hypot(sb[0] - sa[0], sb[1] - sa[1]), nseg = Math.max(1, Math.min(200, Math.ceil(px / 5)));
+        ctx.strokeStyle = color; ctx.lineWidth = width || 1.6; ctx.setLineDash(dash || []);
+        for (let pass = 0; pass < 2; pass++) {
+            const alpha = pass === 0 ? 1 : hiddenAlpha;
+            if (alpha <= 0) continue;
+            ctx.globalAlpha = alpha; ctx.beginPath();
+            for (let s = 0; s < nseg; s++) {
+                const t0 = s / nseg, t1 = (s + 1) / nseg, tm = (t0 + t1) / 2, pm = V.lerp(a, b, tm);
+                if (depthOk(pm) !== (pass === 0)) continue;
+                const p0 = project(V.lerp(a, b, t0)), p1 = project(V.lerp(a, b, t1));
+                if (p0[2] < near || p1[2] < near) continue;
+                ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]);
+            }
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1; ctx.setLineDash([]);
+    };
+    const arrowHead = (a, b, color, size) => {
+        const sa = project(a), sb = project(b);
+        if (sa[2] < near || sb[2] < near) return;
+        const ang = Math.atan2(sb[1] - sa[1], sb[0] - sa[0]), hs = size || 8;
+        ctx.globalAlpha = depthOk(b) ? 1 : Math.max(xray, 0.15);
+        ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(sb[0], sb[1]);
+        ctx.lineTo(sb[0] - hs * Math.cos(ang - 0.4), sb[1] - hs * Math.sin(ang - 0.4)); ctx.lineTo(sb[0] - hs * Math.cos(ang + 0.4), sb[1] - hs * Math.sin(ang + 0.4));
+        ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    };
+    const label = (p, text, color, dx, dy) => {
+        const s = project(p); if (s[2] < near) return;
+        ctx.font = '12px Consolas, monospace'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+        ctx.strokeText(text, s[0] + (dx || 6), s[1] + (dy || 0)); ctx.fillStyle = color || '#ddd'; ctx.fillText(text, s[0] + (dx || 6), s[1] + (dy || 0));
+    };
+    if (o.grid) {
+        const g = o.grid === true ? {} : o.grid, gy = g.y || 0, gs = g.size == null ? 2 : g.size, st = g.step || gs / 8;
+        for (let v = -gs; v <= gs + 1e-9; v += st) {
+            seg3([v, gy, -gs], [v, gy, gs], g.color || '#25303a', 1, null, 0);
+            seg3([-gs, gy, v], [gs, gy, v], g.color || '#25303a', 1, null, 0);
+        }
+    }
+    meshes.forEach((m) => {
+        if (!m.wire || m.positions || !isFn(m.pos)) return;
+        const [nu, nv] = m.res || [48, 24], NU = nu + 1, stepU = Math.max(1, Math.round(nu / 16)), stepV = Math.max(1, Math.round(nv / 8));
+        const at = (i, j) => { const k = j * NU + i; return m.pos(i / nu, j / nv) || [0, 0, 0]; };
+        for (let j = 0; j <= nv; j += stepV) for (let i = 0; i < nu; i++) seg3(at(i, j), at(i + 1, j), m.wireColor || 'rgba(170,210,240,0.35)', 1, null, 0);
+        for (let i = 0; i <= nu; i += stepU) for (let j = 0; j < nv; j++) seg3(at(i, j), at(i, j + 1), m.wireColor || 'rgba(170,210,240,0.35)', 1, null, 0);
+    });
+    if (o.axes) {
+        const a = o.axes === true ? {} : o.axes, O = a.origin || [0, 0, 0], s = a.size == null ? 1 : a.size;
+        [[[s, 0, 0], '#e06c75', a.x || 'x'], [[0, s, 0], '#5ad07a', a.y || 'y'], [[0, 0, s], '#6ab0e0', a.z || 'z']].forEach(([dv, col, nm]) => {
+            const e = V.add(O, dv); seg3(O, e, col, 1.6, null, xray); arrowHead(O, e, col, 7); label(e, nm, col);
+        });
+    }
+    arr(o.lines).forEach((ln) => {
+        const pts = ln.pts || [ln.from, ln.to], col = ln.color || '#e8c25a';
+        for (let i = 0; i + 1 < pts.length; i++) seg3(pts[i], pts[i + 1], col, ln.width, ln.dash, ln.xray == null ? xray : ln.xray);
+        if (ln.arrow && pts.length > 1) arrowHead(pts[pts.length - 2], pts[pts.length - 1], col, ln.arrowSize);
+        if (ln.label) label(pts[ln.labelAt === 0 || ln.labelAt === 'start' ? 0 : pts.length - 1], ln.label, col);
+    });
+    arr(o.points).forEach((pt) => {
+        const s = project(pt.p); if (s[2] < near) return;
+        ctx.globalAlpha = depthOk(pt.p) ? 1 : Math.max(xray, 0.15);
+        ctx.fillStyle = pt.color || '#e8c25a'; ctx.beginPath(); ctx.arc(s[0], s[1], pt.r || 3.5, 0, 2 * Math.PI); ctx.fill(); ctx.globalAlpha = 1;
+        if (pt.label) label(pt.p, pt.label, pt.color);
+    });
+    arr(o.labels).forEach((lb) => label(lb.p, lb.text, lb.color));
+    if (isFn(o.overlay)) { try { o.overlay(ctx, project, { eye, target: T0, w: cssW, h: cssH, depthOk }); } catch (e) { report('mesh3d.overlay', e); } }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1379,25 +1881,183 @@ function dedent(src) {
     return isFinite(ind) && ind > 0 ? lines.map((l) => l.slice(ind)).join('\n') : lines.join('\n');
 }
 PL.dedent = dedent;
-PL.highlight = function (src, lang) {
+
+// ── Code symbols: every function / struct / macro / constant defined anywhere in the document (step code, graph.common,
+// library, node details) is indexed; call sites become hover/jump links and calls to unknown functions are reported. ──
+const C_FAMILY = new Set(['hlsl', 'glsl', 'cpp', 'c', 'c++', 'cuda', 'metal', 'msl', 'usf', 'ush', 'slang']);
+const famOf = (lang) => { const l = String(lang || 'hlsl').toLowerCase(); return C_FAMILY.has(l) ? 'c' : l === 'wgsl' ? 'wgsl' : (l === 'js' || l === 'javascript' || l === 'ts') ? 'js' : (l === 'py' || l === 'python') ? 'py' : 'c'; };
+const INTRIN = {
+    c: words('abs acos all any asin atan atan2 ceil clamp clip cos cosh cross ddx ddy ddx_coarse ddx_fine ddy_coarse ddy_fine degrees determinant distance dot exp exp2 faceforward floor fma fmod frac frexp fwidth isfinite isinf isnan ldexp length lerp lit log log10 log2 mad max min modf mul noise normalize pow radians rcp reflect refract round rsqrt saturate sign sin sincos sinh smoothstep sqrt step tan tanh transpose trunc asfloat asint asuint asdouble f16tof32 f32tof16 countbits firstbithigh firstbitlow reversebits msad4 D3DCOLORtoUBYTE4 defined ' +
+        'InterlockedAdd InterlockedAnd InterlockedCompareExchange InterlockedCompareStore InterlockedExchange InterlockedMax InterlockedMin InterlockedOr InterlockedXor GroupMemoryBarrier GroupMemoryBarrierWithGroupSync DeviceMemoryBarrier DeviceMemoryBarrierWithGroupSync AllMemoryBarrier AllMemoryBarrierWithGroupSync ' +
+        'WaveActiveAllEqual WaveActiveAllTrue WaveActiveAnyTrue WaveActiveBallot WaveActiveBitAnd WaveActiveBitOr WaveActiveBitXor WaveActiveCountBits WaveActiveMax WaveActiveMin WaveActiveProduct WaveActiveSum WaveGetLaneCount WaveGetLaneIndex WaveIsFirstLane WavePrefixCountBits WavePrefixProduct WavePrefixSum WaveReadLaneAt WaveReadLaneFirst QuadReadAcrossX QuadReadAcrossY QuadReadAcrossDiagonal QuadReadLaneAt NonUniformResourceIndex ' +
+        'TraceRay ReportHit AcceptHitAndEndSearch IgnoreHit CallShader DispatchRaysIndex DispatchRaysDimensions WorldRayOrigin WorldRayDirection ObjectRayOrigin ObjectRayDirection RayTMin RayTCurrent InstanceIndex InstanceID PrimitiveIndex HitKind ObjectToWorld3x4 WorldToObject3x4 SetMeshOutputCounts DispatchMesh EvaluateAttributeAtSample EvaluateAttributeCentroid EvaluateAttributeSnapped GetRenderTargetSampleCount GetRenderTargetSamplePosition CheckAccessFullyMapped printf errorf abort ' +
+        'tex1D tex2D tex2Dlod tex2Dgrad tex2Dbias tex3D texCUBE texCUBElod ' +
+        'inversesqrt fract mod mix roundEven floatBitsToInt floatBitsToUint intBitsToFloat uintBitsToFloat packUnorm2x16 packSnorm2x16 packUnorm4x8 packSnorm4x8 unpackUnorm2x16 unpackSnorm2x16 unpackUnorm4x8 unpackSnorm4x8 packHalf2x16 unpackHalf2x16 matrixCompMult outerProduct inverse lessThan lessThanEqual greaterThan greaterThanEqual equal notEqual not texture textureLod textureGrad textureOffset textureProj texelFetch texelFetchOffset textureSize textureQueryLod textureGather imageLoad imageStore imageSize imageAtomicAdd atomicAdd atomicMin atomicMax atomicAnd atomicOr atomicXor atomicExchange atomicCompSwap atomicCounterIncrement barrier memoryBarrier memoryBarrierShared groupMemoryBarrier dFdx dFdy dFdxFine dFdyFine EmitVertex EndPrimitive bitfieldExtract bitfieldInsert bitfieldReverse bitCount findLSB findMSB uaddCarry usubBorrow umulExtended imulExtended asinh acosh atanh ' +
+        'sqrtf expf exp2f logf log2f log10f powf sinf cosf tanf asinf acosf atanf atan2f fabsf fabs floorf ceilf roundf fminf fmaxf fmodf erff erf erfc tgamma lgamma hypot hypotf cbrt cbrtf copysign memcpy memset malloc free calloc realloc assert fprintf sprintf snprintf puts exit rand srand static_cast reinterpret_cast const_cast dynamic_cast __syncthreads __syncwarp __shfl_sync __shfl_down_sync __shfl_xor_sync __ballot_sync __popc __clz __ffs __fdividef __expf __logf __sinf __cosf __saturatef make_float2 make_float3 make_float4 make_int2 make_int3 make_uint2 atomicCAS ' +
+        'coshf sinhf tanhf acoshf asinhf atanhf copysignf expm1f log1pf truncf nearbyintf rintf lroundf ldexpf frexpf modff fmaf fdimf erfcf cosh sinh tanh expm1 log1p nearbyint rint lround fmin fmax fdim nan isnormal signbit'),
+    wgsl: words('abs acos acosh all any arrayLength asin asinh atan atan2 atanh bitcast ceil clamp cos cosh countLeadingZeros countOneBits countTrailingZeros cross degrees determinant distance dot dpdx dpdxCoarse dpdxFine dpdy dpdyCoarse dpdyFine exp exp2 extractBits faceForward firstLeadingBit firstTrailingBit floor fma fract frexp fwidth insertBits inverseSqrt ldexp length log log2 max min mix modf normalize pack2x16float pack2x16snorm pack2x16unorm pack4x8snorm pack4x8unorm pow quantizeToF16 radians reflect refract reverseBits round saturate select sign sin sinh smoothstep sqrt step storageBarrier tan tanh textureBarrier textureDimensions textureGather textureGatherCompare textureLoad textureNumLayers textureNumLevels textureNumSamples textureSample textureSampleBias textureSampleCompare textureSampleCompareLevel textureSampleGrad textureSampleLevel textureSampleBaseClampToEdge textureStore transpose trunc unpack2x16float unpack2x16snorm unpack2x16unorm unpack4x8snorm unpack4x8unorm workgroupBarrier workgroupUniformLoad atomicLoad atomicStore atomicAdd atomicSub atomicMax atomicMin atomicAnd atomicOr atomicXor atomicExchange atomicCompareExchangeWeak'),
+};
+const NOT_TYPE = words('return else case new delete throw goto do typedef using operator sizeof if for while switch default');
+const KIND_RANK = { fn: 0, macro: 1, struct: 2, cbuffer: 3, const: 4, proto: 5, method: 6 };
+const SYM = new Map(), EXTERNS = new Map(), UNDEF = new Map(), SRCS = [];
+let defSeq = 0;
+const stripTags = (h) => String(h == null ? '' : h).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').trim();
+function maskCode(s, fam) {   // comments / strings → spaces (same length, newlines kept): regexes and bracket matching only see code
+    const out = s.split('');
+    const re = fam === 'py' ? /#.*|"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/g
+        : /\/\*[\s\S]*?\*\/|\/\/.*|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`/g;
+    let m;
+    while ((m = re.exec(s))) for (let k = m.index; k < m.index + m[0].length; k++) if (out[k] !== '\n') out[k] = ' ';
+    return out.join('');
+}
+function matchClose(m, i, open, close) {   // index just past the bracket that closes the one at m[i]
+    let d = 0;
+    for (let k = i; k < m.length; k++) { const ch = m[k]; if (ch === open) d++; else if (ch === close && --d === 0) return k + 1; }
+    return -1;
+}
+function extractDefs(s, lang) {   // top-level definitions in dedented source s → [{ name, kind, start, end, nameStart }]
+    const fam = famOf(lang), m = maskCode(s, fam), defs = [];
+    const depth = new Int32Array(m.length + 1);
+    for (let k = 0, d = 0; k < m.length; k++) { depth[k] = d; if (m[k] === '{') d++; else if (m[k] === '}') d = Math.max(0, d - 1); }
+    const top = (i) => depth[i] === 0;
+    const body = (from) => { let k = from; while (k < m.length && m[k] !== '{' && m[k] !== ';') k++; return m[k] === '{' ? matchClose(m, k, '{', '}') : -1; };
+    let r;
+    if (fam === 'c') {
+        const structs = [];
+        const stRe = /(^|[\n;{}])([ \t]*)(?:typedef[ \t]+)?(struct|class|cbuffer|tbuffer)[ \t]+([A-Za-z_]\w*)[^;{]*\{/g;
+        while ((r = stRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length;
+            if (!top(start)) continue;
+            const e0 = matchClose(m, stRe.lastIndex - 1, '{', '}');
+            if (e0 < 0) continue;
+            let end = e0, k = e0; while (k < m.length && /[ \t]/.test(m[k])) k++; if (m[k] === ';') end = k + 1;
+            const st = { name: r[4], kind: /buffer$/.test(r[3]) ? 'cbuffer' : 'struct', start, end, nameStart: r.index + r[0].indexOf(r[4], r[1].length + r[2].length + r[3].length) };
+            defs.push(st); structs.push(st);
+            stRe.lastIndex = end;
+        }
+        // free functions at top level + member functions directly inside a struct / class body (kind 'method')
+        const fnRe = /(^|[\n;{}\]])([ \t]*)((?:(?:static|inline|precise|export|constexpr|__device__|__host__|__global__|__forceinline__)[ \t]+)*)([A-Za-z_][\w:]*(?:[ \t]*<[^<>;{}()\n]*>)?(?:[ \t]*[*&]+)?)[ \t]+([*&]*)([A-Za-z_]\w*)[ \t]*\(/g;
+        while ((r = fnRe.exec(m))) {
+            const type = r[4].replace(/[ \t*&]+$/, ''), name = r[6], start = r.index + r[1].length + r[2].length;
+            if (NOT_TYPE.has(type) || NOT_TYPE.has(name)) continue;
+            const owner = top(start) ? null : structs.find((st) => start > st.start && start < st.end && depth[start] === 1);
+            if (!top(start) && !owner) continue;
+            const pc = matchClose(m, fnRe.lastIndex - 1, '(', ')');
+            if (pc < 0) continue;
+            let k = pc; while (k < m.length && /\s/.test(m[k])) k++;
+            if (m[k] === ':' && m[k + 1] !== ':') { k++; while (k < m.length && /[\w \t]/.test(m[k])) k++; while (k < m.length && /\s/.test(m[k])) k++; }   // HLSL semantic
+            if (/^const\b/.test(m.slice(k, k + 6))) { k += 5; while (k < m.length && /\s/.test(m[k])) k++; }
+            const nameStart = r.index + r[0].lastIndexOf(name);
+            if (m[k] === '{') { const end = matchClose(m, k, '{', '}'); if (end < 0) continue; defs.push(owner ? { name, kind: 'method', start, end, nameStart, owner } : { name, kind: 'fn', start, end, nameStart }); fnRe.lastIndex = end; }
+            else if (m[k] === ';' && !owner) defs.push({ name, kind: 'proto', start, end: k + 1, nameStart });
+        }
+        const mRe = /(^|\n)([ \t]*)#[ \t]*define[ \t]+([A-Za-z_]\w*)/g;
+        while ((r = mRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length;
+            let end = start;
+            for (;;) { const nl = s.indexOf('\n', end); if (nl < 0) { end = s.length; break; } if (s[nl - 1] === '\\') { end = nl + 1; continue; } end = nl; break; }
+            defs.push({ name: r[3], kind: 'macro', start, end, nameStart: r.index + r[0].length - r[3].length });
+        }
+        const cRe = /(^|[\n;{}])([ \t]*)((?:static[ \t]+)?(?:const|constexpr)[ \t]+[A-Za-z_]\w*[ \t]+)([A-Za-z_]\w*)[ \t]*(\[[^\]\n]*\])?[ \t]*=/g;
+        while ((r = cRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length, semi = m.indexOf(';', cRe.lastIndex);
+            if (!top(start) || semi < 0) continue;
+            defs.push({ name: r[4], kind: 'const', start, end: semi + 1, nameStart: start + r[3].length });
+        }
+    } else if (fam === 'wgsl') {
+        const fnRe = /(^|\n)([ \t]*)fn[ \t]+([A-Za-z_]\w*)[ \t]*\(/g;
+        while ((r = fnRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length, end = body(fnRe.lastIndex);
+            if (end > 0 && top(start)) { defs.push({ name: r[3], kind: 'fn', start, end, nameStart: r.index + r[0].lastIndexOf(r[3]) }); fnRe.lastIndex = end; }
+        }
+        const stRe = /(^|\n)([ \t]*)struct[ \t]+([A-Za-z_]\w*)[ \t]*\{/g;
+        while ((r = stRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length, end = matchClose(m, stRe.lastIndex - 1, '{', '}');
+            if (end > 0) defs.push({ name: r[3], kind: 'struct', start, end, nameStart: r.index + r[0].lastIndexOf(r[3]) });
+        }
+        const cRe = /(^|\n)([ \t]*)(?:const|override)[ \t]+([A-Za-z_]\w*)[^=;\n]*=/g;
+        while ((r = cRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length, semi = m.indexOf(';', cRe.lastIndex);
+            if (semi > 0 && top(start)) defs.push({ name: r[3], kind: 'const', start, end: semi + 1, nameStart: r.index + r[0].indexOf(r[3], r[1].length + r[2].length) });
+        }
+    } else if (fam === 'js') {
+        const fnRe = /(^|[\n;{}])([ \t]*)(?:export[ \t]+)?(?:async[ \t]+)?function[ \t]*\*?[ \t]*([A-Za-z_$][\w$]*)[ \t]*\(/g;
+        while ((r = fnRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length, end = body(fnRe.lastIndex);
+            if (end > 0 && top(start)) { defs.push({ name: r[3], kind: 'fn', start, end, nameStart: r.index + r[0].lastIndexOf(r[3]) }); fnRe.lastIndex = end; }
+        }
+        const arRe = /(^|[\n;{}])([ \t]*)(?:export[ \t]+)?(?:const|let|var)[ \t]+([A-Za-z_$][\w$]*)[ \t]*=[ \t]*(?:async[ \t]*)?(?=\(|[A-Za-z_$][\w$]*[ \t]*=>|function\b)/g;
+        while ((r = arRe.exec(m))) {
+            const start = r.index + r[1].length + r[2].length;
+            if (!top(start)) continue;
+            const arrow = m.indexOf('=>', arRe.lastIndex), fnKw = /^function\b/.test(m.slice(arRe.lastIndex, arRe.lastIndex + 9));
+            let end = -1;
+            if (fnKw) end = body(arRe.lastIndex);
+            else if (arrow > 0) { let k = arrow + 2; while (k < m.length && /[ \t]/.test(m[k])) k++; if (m[k] === '{') end = matchClose(m, k, '{', '}'); else { const nl = m.indexOf('\n', k), sc = m.indexOf(';', k); end = Math.min(nl < 0 ? m.length : nl, sc < 0 ? m.length : sc + 1); } }
+            if (end > 0) defs.push({ name: r[3], kind: 'fn', start, end, nameStart: r.index + r[0].indexOf(r[3], r[1].length + r[2].length) });
+        }
+    } else if (fam === 'py') {
+        const fnRe = /(^|\n)([ \t]*)(def|class)[ \t]+([A-Za-z_]\w*)/g;
+        while ((r = fnRe.exec(m))) {
+            const ind = r[2].length, start = r.index + r[1].length + ind;
+            if (ind > 0) continue;
+            let end = s.indexOf('\n', start); if (end < 0) end = s.length;
+            for (let p = end; p < s.length;) {
+                const nl = s.indexOf('\n', p + 1), line = s.slice(p + 1, nl < 0 ? s.length : nl);
+                if (line.trim() && !/^[ \t]/.test(line)) break;
+                if (line.trim()) end = nl < 0 ? s.length : nl;
+                if (nl < 0) break;
+                p = nl;
+            }
+            defs.push({ name: r[4], kind: r[3] === 'class' ? 'struct' : 'fn', start, end, nameStart: r.index + r[0].lastIndexOf(r[4]) });
+        }
+    }
+    defs.sort((a, b) => a.start - b.start);
+    return defs.filter((d, i) => d.kind === 'method' || !defs.some((o, j) => j !== i && o.start <= d.start && o.end >= d.end && (o.start < d.start || o.end > d.end)));   // drop nested (methods stay, anchored at their struct)
+}
+function docComment(s, start, fam) {   // contiguous comment lines right above a definition (shown in the hover card)
+    const lines = s.slice(0, start).split('\n'); lines.pop();
+    const out = [];
+    for (let k = lines.length - 1; k >= 0 && out.length < 6; k--) { const t = lines[k].trim(); if (t && (fam === 'py' ? t[0] === '#' : t.startsWith('//'))) out.unshift(lines[k]); else break; }
+    return out.length ? dedent(out.join('\n')) + '\n' : '';
+}
+function addSource(raw, lang, where) {
+    const rec = { text: dedent(raw), lang: String(lang || 'hlsl').toLowerCase(), where, anchors: new Map(), names: new Map(), defs: [] };
+    const fam = famOf(rec.lang);
+    let found = [];
+    try { found = extractDefs(rec.text, rec.lang); } catch (e) { report('symbols', e); }
+    found.forEach((d) => {
+        const def = Object.assign(d, { rec, anchor: d.kind === 'method' && d.owner && d.owner.anchor ? d.owner.anchor : 'pl-def-' + (++defSeq), text: rec.text.slice(d.start, d.end), doc: docComment(rec.text, d.start, fam) });
+        rec.defs.push(def); rec.names.set(d.nameStart, def);
+        if (d.kind !== 'method') rec.anchors.set(d.start, def);   // methods jump to (and flash) their struct
+        if (!SYM.has(d.name)) SYM.set(d.name, []);
+        SYM.get(d.name).push(def);
+    });
+    SRCS.push(rec);
+    return rec;
+}
+/** Highlight dedented source s. o: { anchors: Map(start → def), names: Map(nameStart → def), link, undef(name) } */
+function hlCode(s, lang, o) {
+    o = o || {};
     lang = String(lang || 'hlsl').toLowerCase();
-    const L = LANG[lang] || LANG.hlsl, py = L === LANG.py;
-    const s = dedent(src);
-    let out = '', i = 0, prevSig = '', lineStart = true;
+    const L = LANG[lang] || LANG.hlsl, py = L === LANG.py, intr = INTRIN[famOf(lang)] || null;
+    let out = '', i = 0, prevSig = '', prev2 = '', lineStart = true, ppLine = false, closeAt = -1;
     const re = py
         ? /(#.*)|("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(\b0x[0-9a-fA-F]+\b|\b\d+\.?\d*(?:[eE][-+]?\d+)?j?\b|\.\d+(?:[eE][-+]?\d+)?\b)|(@\w+)|([A-Za-z_]\w*)|(\s+)|([\s\S])/y
         : /(\/\*[\s\S]*?\*\/|\/\/.*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|(\b0x[0-9a-fA-F]+[uUlL]*\b|\b\d+\.?\d*(?:[eE][-+]?\d+)?[fFhHuUlL]?\b|\.\d+(?:[eE][-+]?\d+)?[fFhH]?\b)|(#\s*[A-Za-z_]\w*|@\w+)|([A-Za-z_]\w*)|(\s+)|([\s\S])/y;
     let m;
     while (i < s.length && (re.lastIndex = i, m = re.exec(s))) {
-        const tok = m[0];
+        const tok = m[0], t0 = i;
         i = re.lastIndex;
-        if (m[1]) out += `<span class="cmt">${esc(tok)}</span>`;
-        else if (m[2]) out += `<span class="str">${esc(tok)}</span>`;
-        else if (m[3]) out += `<span class="num">${esc(tok)}</span>`;
+        if (o.anchors && o.anchors.has(t0) && closeAt < 0) { const d = o.anchors.get(t0); out += `<span class="pl-defblock" id="${d.anchor}">`; closeAt = d.end; }
+        let html;
+        if (m[1]) html = `<span class="cmt">${esc(tok)}</span>`;
+        else if (m[2]) html = `<span class="str">${esc(tok)}</span>`;
+        else if (m[3]) html = `<span class="num">${esc(tok)}</span>`;
         else if (m[4]) {
-            if (tok[0] === '#' && lineStart) out += `<span class="pp">${esc(tok)}</span>`;
-            else if (tok[0] === '@') out += `<span class="at">${esc(tok)}</span>`;
-            else out += esc(tok);
+            if (tok[0] === '#' && lineStart) { html = `<span class="pp">${esc(tok)}</span>`; ppLine = true; }
+            else if (tok[0] === '@') html = `<span class="at">${esc(tok)}</span>`;
+            else html = esc(tok);
         } else if (m[5]) {
             let rest = i; while (rest < s.length && (s[rest] === ' ' || s[rest] === '\t')) rest++;
             const call = s[rest] === '(';
@@ -1407,13 +2067,80 @@ PL.highlight = function (src, lang) {
             else if (prevSig === '[' && L.at.has(tok)) cls = 'at';
             else if (L.semRe.test(tok) && (prevSig === ':' || /^gl_/.test(tok))) cls = 'at';
             else if (call) cls = 'fn';
-            out += cls ? `<span class="${cls}">${tok}</span>` : tok;
-        } else out += esc(tok);
-        if (m[6]) { if (tok.includes('\n')) lineStart = true; }
-        else { lineStart = false; prevSig = tok.trim() ? tok : prevSig; }
+            const member = prevSig === '.' || (prevSig === '>' && prev2 === '-') || (prevSig === ':' && prev2 === ':');
+            if (o.names && o.names.has(t0)) html = `<span class="${cls || 'fn'} pl-defname">${tok}</span>`;
+            else if (o.link && !member && cls !== 'kw' && (SYM.has(tok) || (call && EXTERNS.has(tok)))) {
+                html = `<span class="pl-sym${cls ? ' ' + cls : ''}${SYM.has(tok) ? '' : ' ext'}" data-sym="${tok}" tabindex="0">${tok}</span>`;
+                if (call && !ppLine && o.arity && SYM.has(tok)) { const args = argList(s, rest); if (args) o.arity(tok, args.length); }
+            }
+            else {
+                if (cls === 'fn' && !member && !ppLine && o.undef && intr && !intr.has(tok) && !SYM.has(tok) && !EXTERNS.has(tok)) o.undef(tok);
+                html = cls ? `<span class="${cls}">${tok}</span>` : tok;
+            }
+        } else html = esc(tok);
+        if (closeAt >= 0 && i >= closeAt) {
+            if (i > closeAt && m[6]) { const cut = closeAt - t0; out += esc(tok.slice(0, cut)) + '</span>' + esc(tok.slice(cut)); }
+            else out += html + '</span>';
+            closeAt = -1;
+        } else out += html;
+        if (m[6]) { if (tok.includes('\n')) { lineStart = true; ppLine = false; } }
+        else { lineStart = false; if (tok.trim()) { prev2 = prevSig; prevSig = tok; } }
     }
+    if (closeAt >= 0) out += '</span>';
     return out;
-};
+}
+PL.highlight = (src, lang) => hlCode(dedent(src), lang, { link: true });
+const hlRec = (rec, own) => hlCode(rec.text, rec.lang, own ? { anchors: rec.anchors, names: rec.names, link: true, undef: undefHook(rec), arity: arityHook(rec) } : { names: rec.names, link: true });
+function argList(s, p) {   // s[p] === '(' → top-level comma-separated argument / parameter strings (null if unbalanced)
+    let d = 0, cur = '';
+    const out = [];
+    for (let k = p; k < s.length; k++) {
+        const ch = s[k];
+        if (ch === '/' && s[k + 1] === '/') { while (k < s.length && s[k] !== '\n') k++; continue; }
+        if (ch === '/' && s[k + 1] === '*') { const e = s.indexOf('*/', k + 2); k = e < 0 ? s.length : e + 1; continue; }
+        if (ch === '"' || ch === "'") { let j = k + 1; while (j < s.length && s[j] !== ch) { if (s[j] === '\\') j++; j++; } cur += s.slice(k, j + 1); k = j; continue; }
+        if (ch === '(' || ch === '[' || ch === '{') { d++; if (d === 1) continue; }
+        else if (ch === ')' || ch === ']' || ch === '}') { d--; if (d === 0) { if (cur.trim() || out.length) out.push(cur.trim()); return out; } }
+        else if (ch === ',' && d === 1) { out.push(cur.trim()); cur = ''; continue; }
+        cur += ch;
+    }
+    return null;
+}
+function defArity(d) {   // { min, max, sig } for functions / prototypes / function-like macros; null when not checkable
+    if (d._arity !== undefined) return d._arity;
+    let r = null;
+    if (d.kind === 'fn' || d.kind === 'proto' || d.kind === 'macro' || d.kind === 'method') {
+        const t = d.text, i = t.indexOf(d.name), p = t.indexOf('(', i + d.name.length);
+        if (i >= 0 && p >= 0 && (d.kind !== 'macro' || p === i + d.name.length) && !/[;{]/.test(t.slice(i + d.name.length, p))) {
+            let ps = argList(t, p);
+            if (ps && ps.length === 1 && /^void$/.test(ps[0])) ps = [];
+            if (ps && !ps.some((x) => x.includes('...'))) {
+                const close = t.indexOf(')', p);
+                r = { min: ps.filter((x) => !x.includes('=')).length, max: ps.length, sig: t.slice(i, close + 1).replace(/\s+/g, ' ') };
+            }
+        }
+    }
+    return (d._arity = r);
+}
+function arityHook(rec) {
+    const seen = new Set();
+    return (name, n) => {
+        const list = (SYM.get(name) || []).map(defArity).filter(Boolean);
+        if (!list.length || list.some((a) => n >= a.min && n <= a.max)) return;
+        const key = name + '/' + n;
+        if (seen.has(key)) return;
+        seen.add(key);
+        problem('warn', 'code', T.arity.replace('{where}', rec.where.label).replace('{name}', name).replace('{n}', n).replace('{sig}', list.map((a) => a.sig).join(' | ')));
+    };
+}
+function undefHook(rec) {
+    return (name) => {
+        if (UNDEF.has(name)) return;
+        UNDEF.set(name, rec.where);
+        problem('warn', 'code', T.undef.replace('{where}', rec.where.label).replace('{name}', name));
+    };
+}
+PL.symbols = () => [...SYM.keys()];
 
 const FORMULA_FN = words('exp log ln lg sin cos tan asin acos atan atan2 sinh cosh tanh sqrt rsqrt max min abs sign floor ceil frac fract mod clamp saturate lerp mix smoothstep step normalize dot cross length distance reflect refract pow det tr Re Im arg conj FFT IFFT DFT IDFT FFT2D IFFT2D mean var Var E Pr erf sinc rect mod Sample SampleLevel Load texture textureLod tex2D tex3D round trunc rcp');
 const IDENT_START = /[A-Za-zÀ-ÖØ-öø-ɏͰ-Ͽἀ-῿∂ℓℏ]/;
@@ -1491,6 +2218,19 @@ const TEXT = {
         ndNone: '此节点为静态输入，无中间结果可视化', ndJump: '↓ 跳到对应步骤', ndIO: '输入 / 输出',
         dpThreads: 'numthreads', dpGroups: 'Dispatch groups', dpTotal: '总线程数', dpTarget: 'Render target', dpRange: 'ID 取值范围', dpCount: '调用次数',
         refs: '参考资料 · 继续阅读', live: 'LIVE', problems: 'Pipeline Lab 运行问题',
+        i3d: '3D · 可拖动', i3dTip: '拖动 = 旋转 · Shift / 右键拖动 = 平移 · 点一下后滚轮 = 缩放 · 双击 = 复位 · ⤢ 放大',
+        expand: '放大查看（Esc 关闭）',
+        lbHint2d: '滚轮 = 缩放 · 拖动 = 平移 · 双击 = 复位 · Esc = 关闭', lbHint3d: '拖动 = 旋转 · Shift / 右键拖动 = 平移 · 滚轮 = 缩放 · 双击 = 复位 · Esc = 关闭', lbHintPick: '点击 / 拖动 = 在图上选点 · 滚轮 = 缩放 · 双击 = 复位 · Esc = 关闭',
+        stepParams: '本步参数', pHelp: '参数说明', pRange: '取值', pSteps: '影响的步骤', pNoDesc: '（没有说明）', pNoSteps: '没有记录到受它影响的步骤',
+        pAff_resident: '改动后重新分配并烘焙全部 RESIDENT 资源（最慢）', pAff_param: '改动后只重烘焙依赖它的 PARAM 阶段', pAff_frame: '只影响逐帧计算 / 显示，不触发重烘焙',
+        pPanelTitle: '参数说明 · 每个参数控制什么、影响哪些步骤（点步骤号跳转）', pPin: '点击参数名固定 / 取消说明卡',
+        viewTip: '显示设置：字号与预览尺寸', fontSize: '字号', pvSize: '预览尺寸', pvSizes: ['小', '中', '大', '特大'],
+        symJump: '跳转到定义 →', symMore: '另有 {n} 处定义', symExtern: '外部函数', symExternTip: '由引擎 / 平台提供，本文不给出实现',
+        symKind_fn: '函数', symKind_proto: '声明', symKind_macro: '宏', symKind_struct: '结构体', symKind_cbuffer: '常量缓冲', symKind_const: '常量', symKind_method: '成员函数',
+        symNode: '节点详情', libTitle: '附录 · 辅助函数定义', libSub: '正文代码里调用到的辅助函数的完整实现。代码中带点线下划线的名字可悬停查看定义、点击跳转。', libSummary: '展开 {n} 个定义',
+        undef: '{where}：调用了未定义的函数 {name}() — 在步骤代码 / graph.common / library 里给出实现，或在 externs 里声明为外部函数',
+        arity: '{where}：{name}() 被以 {n} 个参数调用，与文档里的定义不符：{sig}',
+        tips: '<b>使用提示</b>：悬停顶栏参数名看说明（<b>ⓘ 参数说明</b> 列出全部）· 每步的“本步参数”与顶栏联动 · 预览右上角 <b>⤢</b> 放大查看 · 代码里带点线下划线的函数可悬停看实现、点击跳转 · <b>⚙</b> 调字号与预览尺寸',
     },
     en: {
         regen: 'Regen seed', regenTip: 'New random seed — re-bake RESIDENT resources', speed: 'Speed',
@@ -1501,6 +2241,19 @@ const TEXT = {
         ndNone: 'Static input — no intermediate result to visualize', ndJump: '↓ Jump to step', ndIO: 'Inputs / Outputs',
         dpThreads: 'numthreads', dpGroups: 'Dispatch groups', dpTotal: 'Total threads', dpTarget: 'Render target', dpRange: 'ID range', dpCount: 'Invocations',
         refs: 'References · further reading', live: 'LIVE', problems: 'Pipeline Lab problems',
+        i3d: '3D · drag', i3dTip: 'Drag = orbit · Shift / right-drag = pan · click, then wheel = zoom · double-click = reset · ⤢ enlarge',
+        expand: 'Enlarge (Esc closes)',
+        lbHint2d: 'Wheel = zoom · drag = pan · double-click = reset · Esc = close', lbHint3d: 'Drag = orbit · Shift / right-drag = pan · wheel = zoom · double-click = reset · Esc = close', lbHintPick: 'Click / drag = pick a point · wheel = zoom · double-click = reset · Esc = close',
+        stepParams: 'Parameters', pHelp: 'Parameters', pRange: 'Range', pSteps: 'Affects steps', pNoDesc: '(no description)', pNoSteps: 'No step is recorded as affected',
+        pAff_resident: 'Re-allocates and re-bakes every RESIDENT resource (slowest)', pAff_param: 'Re-bakes only the PARAM stages that depend on it', pAff_frame: 'Only affects per-frame work / display, no re-bake',
+        pPanelTitle: 'Parameters · what each one controls and which steps it affects (click a step to jump)', pPin: 'Click the name to pin / unpin the card',
+        viewTip: 'Display: font size and preview size', fontSize: 'Font', pvSize: 'Previews', pvSizes: ['S', 'M', 'L', 'XL'],
+        symJump: 'Go to definition →', symMore: '{n} more definition(s)', symExtern: 'External', symExternTip: 'Provided by the engine / platform; not implemented here',
+        symKind_fn: 'function', symKind_proto: 'declaration', symKind_macro: 'macro', symKind_struct: 'struct', symKind_cbuffer: 'cbuffer', symKind_const: 'constant', symKind_method: 'method',
+        symNode: 'Node details', libTitle: 'Appendix · helper definitions', libSub: 'Full implementations of helpers called by the code above. Dotted names in code show their definition on hover and jump on click.', libSummary: 'Show {n} definitions',
+        undef: '{where}: calls undefined function {name}() — implement it in step code / graph.common / library, or declare it in externs',
+        arity: '{where}: {name}() is called with {n} argument(s), which matches no definition in the document: {sig}',
+        tips: '<b>Tips</b>: hover a parameter name for its description (<b>ⓘ Parameters</b> lists all) · each step’s parameter strip is linked to the header · <b>⤢</b> on a preview enlarges it · dotted function names in code show their implementation on hover and jump on click · <b>⚙</b> font and preview size',
     },
 };
 const LIFETIMES = {
@@ -1542,6 +2295,18 @@ const errors = [], problems = [], errKeys = new Set();
 let pendingRank = Infinity, booted = false, overlayEl = null, timeEl = null, playBtn = null;
 let G = null, activeNode = null, modalPv = null, io = null, probeEl = null;
 const cats = Object.assign({}, CATEGORIES), types = {};
+// display preferences (stored per browser): preview zoom scales every preview box, font scale scales all rem-based text
+const VIEW = { pvZoom: 1.35, fontScale: 1 };
+const PVZ = [1, 1.35, 1.7, 2.1];
+function loadView() {
+    try {
+        const z = parseFloat(localStorage.getItem('pl.pvZoom')), f = parseFloat(localStorage.getItem('pl.fontScale'));
+        if (z > 0.5 && z < 4) VIEW.pvZoom = z;
+        if (f > 0.6 && f < 2) VIEW.fontScale = f;
+    } catch (_) { /* storage unavailable */ }
+}
+function saveView() { try { localStorage.setItem('pl.pvZoom', String(VIEW.pvZoom)); localStorage.setItem('pl.fontScale', String(VIEW.fontScale)); } catch (_) { /* ignore */ } }
+const PSTEPS = new Map();   // param id → Set(step id) whose previews it changes
 
 function report(where, err) {
     const message = err && err.message ? err.message : String(err);
@@ -1612,21 +2377,13 @@ function renderPv(pv, force) {
     if (!force && !(pv.visible && pv.stale)) return;
     if (!force && pv.live && pv.every > 1 && S.frame % pv.every !== 0 && pv.drawn) return;
     ensureNeeds(pv.needs);
-    try { pv.render(pv.canvas, S, PL); fitAspect(pv); } catch (e) { report('preview:' + pv.id, e); drawErr(pv.canvas, e); }
+    try { pv.render(pv.canvas, S, PL); } catch (e) { report('preview:' + pv.id, e); drawErr(pv.canvas, e); }
     pv.stale = false; pv.drawn = true;
-}
-function fitAspect(pv) {   // keep the data's aspect ratio unless an explicit size was given (ctx-sized canvases already match)
-    const cv = pv.canvas;
-    if (pv.item.size || !cv.width || !cv.height) return;
-    const cw = cv.clientWidth;
-    if (!cw) return;
-    const want = Math.round(cw * cv.height / cv.width);
-    if (Math.abs(cv.clientHeight - want) > 1) cv.style.height = want + 'px';
 }
 function drawErr(canvas, e) {
     try {
         const { ctx, w, h } = PL.draw.ctx(canvas, { bg: '#200808' });
-        ctx.fillStyle = '#f08080'; ctx.font = '10px Consolas, monospace'; ctx.textBaseline = 'top';
+        ctx.fillStyle = '#f08080'; ctx.font = '11px Consolas, monospace'; ctx.textBaseline = 'top';
         String(e && e.message || e).match(/.{1,26}/g).slice(0, 6).forEach((ln, k) => ctx.fillText(ln, 6, 6 + k * 12));
         void w; void h;
     } catch (_) { /* ignore */ }
@@ -1692,8 +2449,11 @@ function buildHeader(root) {
     }
     for (const p of arr(SPEC.params)) {
         const g = el('div', 'pl-ctrl');
-        if (p.title) g.title = p.title;
-        g.appendChild(el('label', '', esc(p.label || p.id)));
+        g.dataset.param = p.id;
+        const desc = paramDesc(p);
+        if (!desc && p.title) g.title = p.title;
+        const lb = el('label', 'pl-plabel' + (desc ? ' has-desc' : ''), esc(p.label || p.id));
+        g.appendChild(lb);
         let input, val = null;
         if (p.type === 'select') {
             input = document.createElement('select');
@@ -1725,11 +2485,13 @@ function buildHeader(root) {
             p.raw = raw; S[p.id] = paramValue(p, raw);
             if (val) val.textContent = fmtParam(p, raw);
             if (isFn(p.onChange)) { try { p.onChange(S[p.id], S, PL); } catch (e) { report('param:' + p.id, e); } }
+            syncMinis(p);
             invalidate(p.affects);
         };
-        p._input = input; p._apply = onIn;
+        p._input = input; p._apply = onIn; p._ctrl = g;
         input.addEventListener(p.type === 'button' ? 'click' : p.type === 'select' || p.type === 'check' || p.type === 'color' ? 'change' : 'input', onIn);
         if (p.type === 'color') input.addEventListener('input', onIn);
+        attachParamTip(g, lb, p);
         inner.appendChild(g);
     }
     if (hasAnim()) {
@@ -1741,7 +2503,200 @@ function buildHeader(root) {
         timeEl = el('span', 'pl-time', 't = 0.00s · — fps');
         inner.appendChild(timeEl);
     }
+    const tools = el('div', 'pl-htools');
+    const panel = el('div', 'pl-param-panel');
+    if (arr(SPEC.params).some((p) => p.type !== 'button')) {
+        const help = el('button', 'pl-hbtn', `ⓘ ${esc(T.pHelp)}`);
+        help.onclick = () => { const open = !panel.classList.contains('open'); if (open) panel.innerHTML = paramPanelHTML(); panel.classList.toggle('open', open); help.classList.toggle('on', open); };
+        tools.appendChild(help);
+    }
+    const viewBtn = el('button', 'pl-hbtn', '⚙');
+    viewBtn.title = T.viewTip;
+    viewBtn.onclick = (e) => { e.stopPropagation(); toggleViewMenu(viewBtn); };
+    tools.appendChild(viewBtn);
+    inner.appendChild(tools);
+    hd.appendChild(panel);
+    panel.addEventListener('click', onStepJumpClick);
     root.appendChild(hd);
+}
+// ── parameter descriptions: hover card, 参数说明 panel, per-step mini controls (two-way bound to the header) ──
+const paramDesc = (p) => (p.desc != null ? String(p.desc) : p.title ? esc(p.title) : '');
+function rangeText(p) {
+    if (p.type === 'range' || p.type === 'number') return `${fmtParam(p, p.min != null ? p.min : 0)} … ${fmtParam(p, p.max != null ? p.max : 1)}`;
+    if (p.type === 'select') return p.options.map((o) => (typeof o === 'object' ? (o.label != null ? o.label : o.value) : o)).join(' / ');
+    if (p.type === 'check') return 'on / off';
+    return '';
+}
+const stepsOf = (p) => [...(PSTEPS.get(p.id) || [])].map((sid) => stepById.get(sid)).filter(Boolean).sort((a, b) => a._idx - b._idx);
+const stepLinks = (p) => { const list = stepsOf(p); return list.length ? list.map((st) => `<a class="pl-sjump" data-step="${esc(st.id)}" title="${esc(stripTags(st.title))}">${st._num}</a>`).join('') : `<span class="pl-dim">${esc(T.pNoSteps)}</span>`; };
+function ltBadge(p) { const k = ltName(p.affects), lt = LIFETIMES[k]; return `<span class="pl-lt ${k}">${lt.icon} ${lt.label}</span> <span class="pl-dim">${esc(T['pAff_' + (k === 'history' ? 'frame' : k)])}</span>`; }
+function paramTipHTML(p) {
+    const desc = paramDesc(p), rt = rangeText(p);
+    return `<div class="pl-ptip-head"><b>${esc(p.label || p.id)}</b><code>${esc(p.id)}</code>${p.type !== 'button' ? `<span class="pl-ptip-val">${esc(fmtParam(p, p.raw))}</span>` : ''}</div>` +
+        `<div class="pl-ptip-desc">${desc || `<span class="pl-dim">${esc(T.pNoDesc)}</span>`}</div>` +
+        (rt ? `<div class="pl-ptip-row"><span class="pl-ptip-k">${esc(T.pRange)}</span>${esc(rt)}</div>` : '') +
+        (p.type !== 'button' ? `<div class="pl-ptip-row">${ltBadge(p)}</div>` : '') +
+        (p.type !== 'button' ? `<div class="pl-ptip-row pl-ptip-steps"><span class="pl-ptip-k">${esc(T.pSteps)}</span>${stepLinks(p)}</div>` : '');
+}
+function paramPanelHTML() {
+    return `<div class="pl-pp-title">${esc(T.pPanelTitle)}</div>` + arr(SPEC.params).filter((p) => p.type !== 'button' || p.desc).map((p) =>
+        `<div class="pl-pp-row"><div class="pl-pp-name">${esc(p.label || p.id)}<code>${esc(p.id)}</code></div>` +
+        `<div class="pl-pp-desc">${paramDesc(p) || `<span class="pl-dim">${esc(T.pNoDesc)}</span>`}<div class="pl-pp-meta">${rangeText(p) ? esc(T.pRange) + ' ' + esc(rangeText(p)) + ' · ' : ''}${p.type !== 'button' ? ltBadge(p) : ''}</div></div>` +
+        `<div class="pl-pp-steps">${p.type !== 'button' ? stepLinks(p) : ''}</div></div>`).join('');
+}
+let ptipEl = null, ptipFor = null, ptipAnchor = null, ptipPinned = false, ptipT = 0, ptipHideT = 0;
+function showParamTip(p, anchor, pinned) {
+    if (!ptipEl) {
+        ptipEl = el('div', 'pl-ptip');
+        document.body.appendChild(ptipEl);
+        ptipEl.addEventListener('mouseenter', () => clearTimeout(ptipHideT));
+        ptipEl.addEventListener('mouseleave', () => { if (!ptipPinned) hideParamTip(220); });
+        ptipEl.addEventListener('click', onStepJumpClick);
+    }
+    ptipFor = p; ptipAnchor = anchor; ptipPinned = !!pinned;
+    ptipEl.innerHTML = paramTipHTML(p) + (pinned ? '' : `<div class="pl-ptip-foot">${esc(T.pPin)}</div>`);
+    ptipEl.classList.toggle('pinned', ptipPinned);
+    ptipEl.style.display = 'block';
+    const r = anchor.getBoundingClientRect(), tw = ptipEl.offsetWidth, th = ptipEl.offsetHeight;
+    const inHeader = !!(anchor.closest && anchor.closest('.pl-header'));
+    const x = Math.min(window.innerWidth - tw - 8, Math.max(8, r.left));
+    // header controls: below the header; per-step / enlarged-view controls: above, away from the previews under them
+    let y = inHeader ? r.bottom + 6 : r.top - th - 6;
+    if (!inHeader && y < 8) y = r.bottom + 6;
+    if (inHeader && y + th > window.innerHeight - 8) y = Math.max(8, r.top - th - 6);
+    ptipEl.style.left = x + 'px'; ptipEl.style.top = y + 'px';
+}
+function hideParamTip(delay) {
+    clearTimeout(ptipHideT);
+    const hide = () => { if (ptipEl) ptipEl.style.display = 'none'; ptipFor = null; ptipPinned = false; };
+    if (!delay) hide(); else ptipHideT = setTimeout(hide, delay);   // 0 = right now (drag start must not leave a frame of overlap)
+}
+function highlightParam(p, on) {
+    stepsOf(p).forEach((st) => { const c = document.getElementById('step-' + st.id); if (c) c.classList.toggle('pl-pdep', on); });
+    arr(p._minis).forEach((m) => m.wrap.classList.toggle('hl', on));
+    if (p._ctrl) p._ctrl.classList.toggle('hl', on);
+}
+function attachParamTip(node, label, p) {
+    // the card opens only while hovering the parameter NAME (or its value read-out) — never the slider itself — and any
+    // drag / typed value hides it at once (and the 参数说明 panel), so description text never covers the previews
+    const enter = () => {
+        if (p._drag) return;
+        clearTimeout(ptipHideT); clearTimeout(ptipT);
+        if (!ptipPinned) ptipT = setTimeout(() => { if (!p._drag) showParamTip(p, label, false); }, 300);
+    };
+    const leave = () => { clearTimeout(ptipT); if (!ptipPinned) hideParamTip(200); };
+    [label].concat([...node.querySelectorAll('.pl-val')]).forEach((t) => { t.addEventListener('mouseenter', enter); t.addEventListener('mouseleave', leave); });
+    node.addEventListener('mouseenter', () => highlightParam(p, true));
+    node.addEventListener('mouseleave', () => highlightParam(p, false));
+    const stop = () => {
+        clearTimeout(ptipT);
+        if (ptipEl && ptipEl.style.display === 'block') hideParamTip(0);
+        const panel = document.querySelector('.pl-param-panel.open');
+        if (panel) { panel.classList.remove('open'); document.querySelectorAll('.pl-hbtn.on').forEach((b) => b.classList.remove('on')); }
+    };
+    node.addEventListener('pointerdown', (e) => { if (e.target !== label) { p._drag = true; stop(); } }, true);
+    node.addEventListener('input', stop, true);
+    node.addEventListener('change', stop, true);
+    label.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        if (ptipPinned && ptipFor === p) hideParamTip(0); else showParamTip(p, label, true);
+    });
+}
+function onStepJumpClick(e) {
+    const a = e.target.closest && e.target.closest('.pl-sjump');
+    if (!a) return;
+    e.preventDefault();
+    hideParamTip(0);
+    scrollToStep(a.dataset.step);
+}
+function scrollToStep(id) {
+    const c = document.getElementById('step-' + id);
+    if (!c) return;
+    c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 1200);
+}
+function miniControl(p) {
+    const w = el('span', 'pl-mini');
+    w.dataset.param = p.id;
+    const lb = el('label', 'pl-plabel' + (paramDesc(p) ? ' has-desc' : ''), esc(p.label || p.id));
+    w.appendChild(lb);
+    let inp, val = null;
+    if (p.type === 'select') {
+        inp = document.createElement('select');
+        p.options.forEach((o) => { const op = document.createElement('option'), v = typeof o === 'object' ? o.value : o; op.value = v; op.textContent = typeof o === 'object' ? (o.label != null ? o.label : o.value) : o; inp.appendChild(op); });
+        inp.value = String(p.raw);
+    } else {
+        inp = document.createElement('input');
+        inp.type = p.type === 'check' ? 'checkbox' : p.type === 'color' ? 'color' : p.type === 'number' ? 'number' : 'range';
+        if (p.type === 'check') inp.checked = !!p.raw;
+        else { if (p.min != null) inp.min = p.min; if (p.max != null) inp.max = p.max; if (p.step != null) inp.step = p.step; inp.value = p.raw; }
+    }
+    w.appendChild(inp);
+    if (p.type === 'range' || p.type === 'number') { val = el('span', 'pl-val', esc(fmtParam(p, p.raw))); w.appendChild(val); }
+    const fire = () => { const v = p.type === 'check' ? inp.checked : inp.value; if (p.type === 'check') p._input.checked = !!v; else p._input.value = v; p._apply(); };
+    inp.addEventListener(p.type === 'select' || p.type === 'check' ? 'change' : 'input', fire);
+    (p._minis = p._minis || []).push({ inp, val, wrap: w });
+    attachParamTip(w, lb, p);
+    return w;
+}
+function syncMinis(p) {
+    if (!p._minis) return;
+    p._minis = p._minis.filter((m) => m.inp.isConnected);
+    p._minis.forEach(({ inp, val }) => {
+        if (p.type === 'check') inp.checked = !!p.raw;
+        else if (inp.value !== String(p.raw)) inp.value = p.raw;
+        if (val) val.textContent = fmtParam(p, p.raw);
+    });
+}
+function paramBar(params) {
+    const bar = el('div', 'pl-step-params');
+    bar.appendChild(el('span', 'pl-sp-title', esc(T.stepParams)));
+    params.forEach((p) => bar.appendChild(miniControl(p)));
+    return bar;
+}
+function stepParams(st) { return arr(SPEC.params).filter((p) => p.type !== 'button' && PSTEPS.has(p.id) && PSTEPS.get(p.id).has(st.id)); }
+function buildParamMaps() {
+    const add = (pid, sid) => { if (!PSTEPS.has(pid)) PSTEPS.set(pid, new Set()); PSTEPS.get(pid).add(sid); };
+    const known = new Set(arr(SPEC.params).map((p) => p.id));
+    Object.entries(SPEC.paramSteps || {}).forEach(([pid, list]) => {
+        if (!known.has(pid)) { problem('warn', 'paramSteps', `unknown param "${pid}"`); return; }
+        arr(list).forEach((sid) => { if (stepById.has(sid)) add(pid, sid); else problem('warn', 'paramSteps', `param "${pid}": unknown step "${sid}"`); });
+    });
+    arr(SPEC.params).forEach((p) => arr(p.steps).forEach((sid) => add(p.id, sid)));
+    arr(SPEC.steps).forEach((st) => arr(st.params).forEach((pid) => { if (known.has(pid)) add(pid, st.id); else problem('warn', 'step:' + st.id, `params: unknown param "${pid}"`); }));
+}
+// ── display menu: font size + preview size ──
+let viewMenuEl = null;
+function toggleViewMenu(btn) {
+    if (viewMenuEl && viewMenuEl.style.display === 'block') { viewMenuEl.style.display = 'none'; return; }
+    if (!viewMenuEl) {
+        viewMenuEl = el('div', 'pl-viewmenu');
+        document.body.appendChild(viewMenuEl);
+        viewMenuEl.addEventListener('click', (e) => e.stopPropagation());
+        document.addEventListener('click', () => { if (viewMenuEl) viewMenuEl.style.display = 'none'; });
+    }
+    const render = () => {
+        viewMenuEl.innerHTML = `<div class="pl-vm-row"><span>${esc(T.fontSize)}</span><button data-f="-1">A−</button><span class="pl-vm-val">${Math.round(VIEW.fontScale * 100)}%</span><button data-f="1">A+</button></div>` +
+            `<div class="pl-vm-row"><span>${esc(T.pvSize)}</span>${PVZ.map((z, k) => `<button data-z="${z}" class="${Math.abs(VIEW.pvZoom - z) < 1e-3 ? 'on' : ''}">${esc(T.pvSizes[k])}</button>`).join('')}</div>`;
+        viewMenuEl.querySelectorAll('button[data-f]').forEach((b) => { b.onclick = () => { setFontScale(VIEW.fontScale + 0.1 * Number(b.dataset.f)); render(); }; });
+        viewMenuEl.querySelectorAll('button[data-z]').forEach((b) => { b.onclick = () => { setPvZoom(Number(b.dataset.z)); render(); }; });
+    };
+    render();
+    viewMenuEl.style.display = 'block';
+    const r = btn.getBoundingClientRect();
+    viewMenuEl.style.top = (r.bottom + 6) + 'px';
+    viewMenuEl.style.left = Math.max(8, Math.min(window.innerWidth - viewMenuEl.offsetWidth - 8, r.right - viewMenuEl.offsetWidth)) + 'px';
+}
+function setFontScale(f) {
+    VIEW.fontScale = PL.clamp(Math.round(f * 10) / 10, 0.8, 1.6);
+    document.documentElement.style.fontSize = (16 * VIEW.fontScale) + 'px';
+    saveView();
+    if (G && !G.nodes.some((n) => n._dragged)) requestAnimationFrame(layoutGraph);
+}
+function setPvZoom(z) {
+    VIEW.pvZoom = z;
+    saveView();
+    previews.forEach((pv) => { if (pv.wrap) pv.wrap.style.width = Math.round(pv.design[0] * z) + 'px'; pv.stale = true; });
 }
 function buildFormula(b) {
     const f = el('div', 'pl-formula');
@@ -1749,8 +2704,8 @@ function buildFormula(b) {
     return f;
 }
 function buildCode(b) {
-    const lang = b.lang || SPEC.codeLang || 'hlsl';
-    const pre = `<pre class="pl-code">${PL.highlight(b.src != null ? b.src : b.code, lang)}</pre>`;
+    const lang = b.lang || SPEC.codeLang || 'hlsl', rec = b._plSrc;
+    const pre = `<pre class="pl-code">${rec ? hlRec(rec, true) : PL.highlight(b.src != null ? b.src : b.code, lang)}</pre>`;
     if (b.collapsible === false) {
         const w = el('div', '');
         w.innerHTML = (b.title ? `<span class="pl-code-label">${esc(b.title)}</span>` : '') + pre;
@@ -1778,37 +2733,66 @@ function previewItem(item, ownerId, k, intoModal) {
     const id = intoModal ? '__modal' : item.id || `${ownerId}_${k}`;
     const wrap = el('div', 'pl-pv' + (item.large ? ' large' : '') + (item.live ? ' live' : ''));
     const box = el('div', 'pl-pv-box'), cv = document.createElement('canvas');
-    const size = item.size || (item.large ? [360, 360] : [180, 180]);
-    if (!intoModal) { cv.style.width = size[0] + 'px'; cv.style.height = size[1] + 'px'; }
+    const design = (item.size || (item.large ? [360, 360] : [180, 180])).slice();
+    cv._plDesign = design;
+    cv.width = design[0]; cv.height = design[1];   // intrinsic aspect until the first draw (data draws then set their own)
+    try { cv.getContext('2d', { willReadFrequently: true }); } catch (_) { /* CPU-backed: deterministic pixels, fast putImageData */ }
+    if (item.size) cv.style.aspectRatio = `${design[0]} / ${design[1]}`;
+    if (!intoModal) wrap.style.width = Math.round(design[0] * VIEW.pvZoom) + 'px';
     if (item.smooth != null ? item.smooth : (item.large || item.kind === 'plot')) cv.classList.add('smooth');
     box.appendChild(cv);
     if (item.live && !intoModal) box.appendChild(el('span', 'pl-live', esc(T.live)));
     wrap.appendChild(box);
     if (item.label && !intoModal) wrap.appendChild(el('span', 'pl-pv-label', item.label));
     if (item.sub && !intoModal) wrap.appendChild(el('span', 'pl-pv-sub', item.sub));
-    const pv = { id, item, canvas: cv, el: wrap, live: !!item.live, every: item.every || 1, needs: item.needs ? new Set(arr(item.needs)) : null, render: item.render, visible: !!intoModal, stale: true, drawn: false };
+    const pv = { id, item, canvas: cv, el: wrap, wrap: intoModal ? null : wrap, design, owner: ownerId, live: !!item.live, every: item.every || 1, needs: item.needs ? new Set(arr(item.needs)) : null, render: item.render, visible: !!intoModal, stale: true, drawn: false };
     if (!isFn(pv.render)) { problem('error', 'preview:' + id, 'missing render(canvas, S, PL)'); pv.render = () => { throw new Error('no render()'); }; }
     if (isFn(item.probe)) attachProbe(cv, item.probe);
+    if (isFn(item.pick)) attachPick(cv, pv);
     if (!intoModal) {
         if (previews.has(id)) problem('error', 'preview:' + id, 'duplicate preview id');
         previews.set(id, pv);
         if (io) io.observe(wrap);
         wrap._pv = pv;
+        const ex = el('button', 'pl-pv-expand', '⤢');
+        ex.title = T.expand;
+        ex.onclick = (e) => { e.stopPropagation(); openLightbox(pv); };
+        box.appendChild(ex);
+        cv.addEventListener('dblclick', () => { if (!cv._plOrbit && !isFn(item.pick)) openLightbox(pv); });
     }
     return pv;
+}
+function canvasInfo(cv, e) {   // pointer → data texel (x, y), normalized (u, v) and design coordinates (dx, dy)
+    const r = cv.getBoundingClientRect(), u = (e.clientX - r.left) / r.width, v = (e.clientY - r.top) / r.height;
+    const des = cv._plDesign, dw = des ? des[0] : r.width, dh = des ? dw * r.height / r.width : r.height;
+    return { x: PL.clamp(Math.floor(u * cv.width), 0, cv.width - 1), y: PL.clamp(Math.floor(v * cv.height), 0, cv.height - 1), u, v, dx: u * dw, dy: v * dh };
 }
 function attachProbe(cv, fn) {
     cv.addEventListener('pointermove', (e) => {
         if (!probeEl) { probeEl = el('div', 'pl-probe'); document.body.appendChild(probeEl); }
-        const r = cv.getBoundingClientRect();
-        const x = Math.floor((e.clientX - r.left) / r.width * cv.width), y = Math.floor((e.clientY - r.top) / r.height * cv.height);
+        const ci = canvasInfo(cv, e);
         let txt = '';
-        try { txt = fn(PL.clamp(x, 0, cv.width - 1), PL.clamp(y, 0, cv.height - 1), S, PL); } catch (err) { txt = String(err.message); }
+        try { txt = fn(ci.x, ci.y, S, PL, ci); } catch (err) { txt = String(err.message); }
         if (!txt) { probeEl.style.display = 'none'; return; }
         probeEl.textContent = txt; probeEl.style.display = 'block';
         probeEl.style.left = (e.clientX + 14) + 'px'; probeEl.style.top = (e.clientY + 12) + 'px';
     });
     cv.addEventListener('pointerleave', () => { if (probeEl) probeEl.style.display = 'none'; });
+}
+function attachPick(cv, pv) {   // item.pick(x, y, S, PL, info) on click / drag; return an invalidation level to recompute
+    let down = false;
+    const call = (e) => {
+        const ci = canvasInfo(cv, e);
+        let lvl;
+        try { lvl = pv.item.pick(ci.x, ci.y, S, PL, Object.assign(ci, { type: e.type, event: e })); } catch (err) { report('pick:' + pv.id, err); }
+        if (lvl) invalidate(lvl === true ? 'frame' : lvl);
+        previews.forEach((q) => { q.stale = true; });
+    };
+    cv.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; down = true; cv.setPointerCapture(e.pointerId); call(e); });
+    cv.addEventListener('pointermove', (e) => { if (down) call(e); });
+    const up = () => { down = false; };
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.classList.add('pl-pickable');
 }
 function buildBlock(b, st) {
     switch (b.type) {
@@ -1836,6 +2820,15 @@ function stepBlocks(st) {
     arr(st.warn || st.warns).forEach((n) => b.push({ type: 'warn', html: n }));
     return b;
 }
+function assignStepIds() {
+    arr(SPEC.steps).forEach((st, i) => {
+        st.id = st.id || 'step' + (i + 1);
+        st._num = String(i + 1).padStart(2, '0');
+        st._idx = i;
+        if (stepById.has(st.id) && stepById.get(st.id) !== st) problem('error', 'step:' + st.id, 'duplicate step id');
+        stepById.set(st.id, st);
+    });
+}
 function buildSteps(root) {
     const pipe = el('main', 'pl-pipeline');
     const intro = SPEC.intro;
@@ -1844,22 +2837,78 @@ function buildSteps(root) {
         let html = intro.title ? `<h2>${esc(intro.title)}</h2>` : '';
         if (intro.flow) html += `<p class="pl-flow">${arr(intro.flow).map((x) => `<code>${x}</code>`).join('<span class="pl-arrow">→</span>')}</p>`;
         html += intro.html || '';
+        if (SPEC.tips !== false) html += `<p class="pl-tips">${SPEC.tips || T.tips}</p>`;
         d.innerHTML = html;
         pipe.appendChild(d);
     }
-    arr(SPEC.steps).forEach((st, i) => {
-        st.id = st.id || 'step' + (i + 1);
-        st._num = String(i + 1).padStart(2, '0');
-        if (stepById.has(st.id)) problem('error', 'step:' + st.id, 'duplicate step id');
-        stepById.set(st.id, st);
+    arr(SPEC.steps).forEach((st) => {
         const card = el('section', 'pl-step');
         card.id = 'step-' + st.id;
         card.innerHTML = `<div class="pl-step-head"><span class="pl-step-num">${st._num}</span><span class="pl-step-title">${st.title || ''}</span>${st.tag ? `<span class="pl-step-tag" style="${tagStyle(st.tag)}">${esc(st.tag)}</span>` : ''}</div>` +
             (st.desc ? `<div class="pl-step-desc">${st.desc}</div>` : '');
-        stepBlocks(st).forEach((b) => card.appendChild(buildBlock(b, st)));
+        const sp = stepParams(st), blocks = stepBlocks(st);
+        let barDone = !sp.length;
+        if (!barDone && !blocks.some((b) => b.type === 'previews')) { card.appendChild(paramBar(sp)); barDone = true; }
+        blocks.forEach((b) => {
+            if (!barDone && b.type === 'previews') { card.appendChild(paramBar(sp)); barDone = true; }
+            card.appendChild(buildBlock(b, st));
+        });
         pipe.appendChild(card);
     });
     root.appendChild(pipe);
+}
+function libraryBlocks() {
+    const lib = SPEC.library;
+    if (!lib) return [];
+    if (!SPEC._libNorm) SPEC._libNorm = arr(lib.blocks || lib).map((b) => (typeof b === 'string' ? { code: b } : b)).filter((b) => b && (b.code != null || b.src != null));
+    return SPEC._libNorm;
+}
+function buildLibrary(root) {
+    const blocks = libraryBlocks();
+    if (!blocks.length) return;
+    const lib = Array.isArray(SPEC.library) ? {} : SPEC.library;
+    const s = el('section', 'pl-section pl-lib');
+    s.id = 'library';
+    s.appendChild(el('h2', 'pl-h2', esc(lib.title || T.libTitle)));
+    s.appendChild(el('div', 'pl-sub', lib.intro || esc(T.libSub)));
+    const d = el('details', 'pl-common');
+    if (lib.open) d.open = true;
+    const nDefs = blocks.reduce((a, b) => a + (b._plSrc ? b._plSrc.defs.length : 0), 0);
+    d.innerHTML = `<summary>${esc(T.libSummary.replace('{n}', nDefs))}</summary>`;
+    const body = el('div', 'pl-common-body');
+    blocks.forEach((b) => {
+        if (b.title) body.appendChild(el('div', 'pl-common-note', esc(b.title)));
+        if (b.desc) body.appendChild(el('div', 'pl-common-note', b.desc));
+        body.appendChild(el('div', '', `<pre class="pl-code">${b._plSrc ? hlRec(b._plSrc, true) : PL.highlight(b.code != null ? b.code : b.src, b.lang || SPEC.codeLang)}</pre>`));
+    });
+    d.appendChild(body);
+    s.appendChild(d);
+    root.appendChild(s);
+}
+function buildSymbols() {
+    const lang0 = SPEC.codeLang || 'hlsl';
+    arr(SPEC.steps).forEach((st) => {
+        const codes = st.blocks ? st.blocks.filter((b) => b && b.type === 'code') : arr(st.code);
+        codes.forEach((c) => {
+            if (!c || typeof c !== 'object') return;
+            c._plSrc = addSource(c.src != null ? c.src : c.code, c.lang || lang0, { kind: 'step', stepId: st.id, label: `${st._num} · ${stripTags(st.title || st.id)}${c.title ? ' · ' + stripTags(c.title) : ''}` });
+        });
+    });
+    libraryBlocks().forEach((b) => { b._plSrc = addSource(b.code != null ? b.code : b.src, b.lang || lang0, { kind: 'library', label: T.libTitle + (b.title ? ' · ' + stripTags(b.title) : '') }); });
+    const gc = SPEC.graph && SPEC.graph.common;
+    if (gc) arr(gc.blocks).forEach((b) => {
+        if (b && (b.code != null || b.src != null)) b._plSrc = addSource(b.code != null ? b.code : b.src, b.lang || gc.lang || lang0, { kind: 'common', label: 'Common' + (b.label ? ' · ' + stripTags(b.label).replace(/━/g, '').trim() : '') });
+    });
+    arr(SPEC.graph && SPEC.graph.nodes).forEach((n, i) => {
+        const det = n.detail || {}, nid = n.id || 'node' + i, label = `${T.symNode} · ${n.title || nid}`;
+        if (det.code && typeof det.code === 'object' && det.code.src != null && !det.code._plSrc) det.code._plSrc = addSource(det.code.src, det.code.lang || det.lang || lang0, { kind: 'node', nodeId: nid, label });
+        else if (typeof det.code === 'string') n._plCodeSrc = addSource(det.code, det.lang || lang0, { kind: 'node', nodeId: nid, label });
+        if (typeof det.commonUsed === 'string') n._plCommonSrc = addSource(det.commonUsed, det.lang || lang0, { kind: 'node', nodeId: nid, label: label + ' · Common' });
+    });
+    const ex = SPEC.externs;
+    if (Array.isArray(ex)) ex.forEach((nm) => EXTERNS.set(String(nm), ''));
+    else if (ex && typeof ex === 'object') Object.entries(ex).forEach(([k, v]) => EXTERNS.set(k, String(v || '')));
+    SYM.forEach((list) => list.sort((a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind]));
 }
 function buildSection(sc, root) {
     const s = el('section', 'pl-section' + (sc.wide ? ' wide' : ''));
@@ -1938,7 +2987,7 @@ function buildGraph(root) {
         const body = el('div', 'pl-common-body');
         arr(c.blocks).forEach((b) => {
             if (b.label) body.appendChild(el('div', 'pl-common-note', b.label));
-            if (b.code != null || b.src != null) body.appendChild(el('div', '', `<pre class="pl-code">${PL.highlight(b.code != null ? b.code : b.src, b.lang || c.lang || SPEC.codeLang)}</pre>`));
+            if (b.code != null || b.src != null) body.appendChild(el('div', '', `<pre class="pl-code">${b._plSrc ? hlRec(b._plSrc, true) : PL.highlight(b.code != null ? b.code : b.src, b.lang || c.lang || SPEC.codeLang)}</pre>`));
             if (b.html) body.appendChild(el('div', 'pl-common-note', b.html));
         });
         d.appendChild(body);
@@ -2209,6 +3258,7 @@ function dpTable(p) {
 function openNode(id) {
     const n = G && G.byId.get(id);
     if (!n) return;
+    closeLightbox();
     activeNode = n;
     const det = n.detail || {}, st = n.step ? stepById.get(n.step) : null;
     const cat = cats[n.category || 'function'] || cats.function;
@@ -2225,7 +3275,7 @@ function openNode(id) {
         const pin = (p) => `<div><span class="pl-legend-dot" style="background:${typeColor(p.type)}"></span>${esc(pinLabel(p))}</div>`;
         html += `<span class="pl-nd-label">${esc(T.ndIO)}</span><div class="pl-nd-pins"><div>${n.inputs.map(pin).join('') || '<div>—</div>'}</div><div>${n.outputs.map(pin).join('') || '<div>—</div>'}</div></div>`;
     }
-    if (det.commonUsed) html += `<span class="pl-nd-label">${esc(T.ndCommon)}</span><div class="pl-nd-common">${PL.highlight(det.commonUsed, det.lang || SPEC.codeLang)}</div>`;
+    if (det.commonUsed) html += `<span class="pl-nd-label">${esc(T.ndCommon)}</span><div class="pl-nd-common">${n._plCommonSrc ? hlRec(n._plCommonSrc, true) : PL.highlight(det.commonUsed, det.lang || SPEC.codeLang)}</div>`;
     if (det.conversion) html += `<span class="pl-nd-label">${esc(T.ndConv)}</span><div class="pl-conv">${PL.formula(det.conversion)}</div>`;
     const stF = st ? (st.blocks ? st.blocks.filter((b) => b.type === 'formula') : arr(st.formula)) : [];
     const stC = st ? (st.blocks ? st.blocks.filter((b) => b.type === 'code') : arr(st.code)) : [];
@@ -2233,7 +3283,11 @@ function openNode(id) {
     const formula = det.formula !== undefined ? pick(det.formula, stF) : stF[0] || null;
     if (formula) html += `<span class="pl-nd-label">${esc(T.ndFormula)}</span><div class="pl-formula">${typeof formula === 'object' && formula.html != null ? formula.html : PL.formula(typeof formula === 'object' ? formula.text : formula)}</div>`;
     const code = det.code !== undefined ? pick(det.code, stC) : stC[0] || null;
-    if (code) html += `<span class="pl-nd-label">${esc(T.ndCode)}${code.title ? ' · ' + esc(code.title) : ''}</span><pre class="pl-code">${PL.highlight(typeof code === 'string' ? code : code.src, (code && code.lang) || det.lang || SPEC.codeLang)}</pre>`;
+    if (code) {
+        const rec = typeof code === 'string' ? n._plCodeSrc : code._plSrc;
+        const body = rec ? hlRec(rec, rec.where.kind === 'node') : PL.highlight(typeof code === 'string' ? code : code.src, (code && code.lang) || det.lang || SPEC.codeLang);
+        html += `<span class="pl-nd-label">${esc(T.ndCode)}${code.title ? ' · ' + esc(code.title) : ''}</span><pre class="pl-code">${body}</pre>`;
+    }
     let pvItem = det.preview !== undefined ? det.preview : null;
     if (typeof pvItem === 'string') { const ref = previews.get(pvItem); pvItem = ref ? ref.item : (problem('warn', 'node:' + n.id, `preview "${det.preview}" not found`), null); }
     if (pvItem === null && det.preview === undefined && st && st.previews) pvItem = arr(st.previews)[0] || null;
@@ -2243,7 +3297,7 @@ function openNode(id) {
         const wrap = el('div', 'pl-nd-preview' + (pvItem.large || det.large ? ' large' : ''));
         const pv = previewItem(pvItem, n.id, 0, true);
         if (pvItem.smooth || pvItem.large || pvItem.kind === 'plot') pv.canvas.classList.add('smooth');
-        if (pvItem.size && !(pvItem.large || det.large)) { pv.canvas.style.width = pvItem.size[0] * 1.4 + 'px'; pv.canvas.style.height = pvItem.size[1] * 1.4 + 'px'; }
+        if (!(pvItem.large || det.large)) pv.canvas.style.width = Math.round(pv.design[0] * 1.6) + 'px';
         wrap.appendChild(pv.canvas);
         wrap.appendChild(el('span', 'pl-pv-label', (det.previewLabel || pvItem.label || '') + (pvItem.sub ? ' · ' + pvItem.sub : '')));
         body.insertAdjacentHTML('beforeend', `<span class="pl-nd-label">${esc(T.ndPreview)}</span>`);
@@ -2261,8 +3315,174 @@ function openNode(id) {
     if (modalPv) requestAnimationFrame(() => { if (modalPv) renderPv(modalPv, true); });
 }
 function closeNode() {
-    activeNode = null; modalPv = null;
+    activeNode = null;
+    if (modalPv !== lbPv) modalPv = null;
     if (modalEl) { modalEl.classList.remove('open'); backdropEl.classList.remove('open'); }
+}
+
+// ── Enlarged preview: same render function, larger canvas (design coordinates keep the layout), 2D zoom / pan or 3D orbit ──
+let lbEl = null, lbPv = null;
+function openLightbox(pv) {
+    if (!pv) return;
+    closeNode();
+    if (!lbEl) {
+        lbEl = el('div', 'pl-lightbox', '<div class="pl-lb-panel"><div class="pl-lb-head"><span class="pl-lb-title"></span><span class="pl-lb-hint"></span><button class="pl-lb-close" title="Esc">×</button></div><div class="pl-lb-view"></div><div class="pl-lb-sub"></div><div class="pl-lb-foot"></div></div>');
+        document.body.appendChild(lbEl);
+        lbEl.addEventListener('click', (e) => { if (e.target === lbEl) closeLightbox(); });
+        lbEl.querySelector('.pl-lb-close').onclick = closeLightbox;
+    }
+    const item = pv.item, view = lbEl.querySelector('.pl-lb-view');
+    view.innerHTML = '';
+    view.onwheel = null;
+    const npv = previewItem(item, pv.owner, 0, true);
+    npv.id = pv.id + '__lb';
+    const cv = npv.canvas, src = pv.canvas, ctxDrawn = src._plCtx !== false;
+    cv._plInLB = true;
+    let dw = pv.design[0], dh = pv.design[1];
+    if (!item.size && !ctxDrawn && src.width && src.height) { dw = src.width; dh = src.height; }
+    else if (!item.size && src.clientWidth && src.clientHeight) dh = dw * src.clientHeight / src.clientWidth;
+    const aw = Math.min(window.innerWidth - 56, 1680), ah = Math.max(220, window.innerHeight - 200), s = Math.min(aw / dw, ah / dh);
+    cv.style.width = Math.round(dw * s) + 'px';
+    if (!item.size) cv.style.aspectRatio = `${dw} / ${dh}`;
+    view.appendChild(cv);
+    lbEl.querySelector('.pl-lb-title').innerHTML = item.label || '';
+    lbEl.querySelector('.pl-lb-sub').innerHTML = item.sub || '';
+    const foot = lbEl.querySelector('.pl-lb-foot'), st = stepById.get(pv.owner), sp = st ? stepParams(st) : [];
+    foot.innerHTML = '';
+    if (sp.length) foot.appendChild(paramBar(sp));
+    lbEl.classList.add('open');
+    document.body.classList.add('pl-noscroll');
+    lbPv = npv; modalPv = npv;
+    requestAnimationFrame(() => {
+        if (modalPv !== npv) return;
+        renderPv(npv, true);
+        const is3d = !!cv._plOrbit;
+        lbEl.querySelector('.pl-lb-hint').textContent = is3d ? T.lbHint3d : isFn(item.pick) ? T.lbHintPick : T.lbHint2d;
+        if (!is3d) attachPanZoom(view, cv, !isFn(item.pick));
+    });
+}
+function closeLightbox() {
+    if (!lbEl || !lbEl.classList.contains('open')) return;
+    lbEl.classList.remove('open');
+    document.body.classList.remove('pl-noscroll');
+    if (modalPv === lbPv) modalPv = null;
+    lbPv = null;
+    lbEl.querySelector('.pl-lb-view').innerHTML = '';
+    lbEl.querySelector('.pl-lb-foot').innerHTML = '';
+    arr(SPEC.params).forEach(syncMinis);   // forget the lightbox's mini controls
+}
+function attachPanZoom(view, cv, allowDrag) {
+    let z = 1, tx = 0, ty = 0, drag = null;
+    cv.style.transformOrigin = '0 0';
+    const apply = () => { cv.style.transform = z === 1 && !tx && !ty ? '' : `translate(${tx}px, ${ty}px) scale(${z})`; };
+    view.onwheel = (e) => {
+        e.preventDefault();
+        const r = cv.getBoundingClientRect(), bx = r.left - tx, by = r.top - ty;
+        const lx = (e.clientX - bx - tx) / z, ly = (e.clientY - by - ty) / z, nz = PL.clamp(z * Math.exp(-e.deltaY * 0.0015), 1, 24);
+        tx = e.clientX - bx - lx * nz; ty = e.clientY - by - ly * nz; z = nz;
+        if (z === 1) { tx = 0; ty = 0; }
+        apply();
+    };
+    if (allowDrag) {
+        cv.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+        cv.addEventListener('pointermove', (e) => { if (!drag) return; tx += e.clientX - drag.x; ty += e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; apply(); });
+        const up = () => { drag = null; cv.style.cursor = ''; };
+        cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    }
+    cv.addEventListener('dblclick', () => { z = 1; tx = 0; ty = 0; apply(); });
+}
+
+// ── Code symbol hover cards + go to definition ──
+let symTipEl = null, symShowT = 0, symHideT = 0, symCur = null, lastPtr = 'mouse';
+function symTip() {
+    if (!symTipEl) {
+        symTipEl = el('div', 'pl-symtip');
+        document.body.appendChild(symTipEl);
+        symTipEl.addEventListener('mouseenter', () => clearTimeout(symHideT));
+        symTipEl.addEventListener('mouseleave', () => hideSymTip(220));
+        symTipEl.addEventListener('click', (e) => {
+            const a = e.target.closest('.pl-symtip-jump');
+            if (!a) return;
+            e.preventDefault();
+            const d = findDef(a.dataset.def);
+            if (d) jumpToDef(d);
+        });
+    }
+    return symTipEl;
+}
+function findDef(anchor) { for (const list of SYM.values()) for (const d of list) if (d.anchor === anchor) return d; return null; }
+function showSymTip(t) {
+    const name = t.dataset.sym, list = SYM.get(name) || [], tip = symTip();
+    let html;
+    if (list.length) {
+        const d = list[0];
+        html = `<div class="pl-symtip-head"><span class="pl-symtip-name">${esc(name)}</span><span class="pl-symtip-kind">${esc(T['symKind_' + d.kind] || d.kind)}</span><span class="pl-symtip-where">${esc(d.rec.where.label)}</span></div>` +
+            `<pre class="pl-code">${hlCode(d.doc + d.text, d.rec.lang, { link: true })}</pre>` +
+            `<div class="pl-symtip-foot"><a href="#" class="pl-symtip-jump" data-def="${d.anchor}">${esc(T.symJump)}</a>` +
+            (list.length > 1 ? ` <span class="pl-dim">· ${esc(T.symMore.replace('{n}', list.length - 1))}：</span>` + list.slice(1, 5).map((x) => `<a href="#" class="pl-symtip-jump" data-def="${x.anchor}">${esc(x.rec.where.label)}</a>`).join(' · ') : '') + '</div>';
+    } else html = `<div class="pl-symtip-head"><span class="pl-symtip-name">${esc(name)}</span><span class="pl-symtip-kind">${esc(T.symExtern)}</span></div><div class="pl-symtip-ext">${esc(EXTERNS.get(name) || T.symExternTip)}</div>`;
+    tip.innerHTML = html;
+    tip.style.display = 'block';
+    symCur = t;
+    const r = t.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+    const x = PL.clamp(r.left - 8, 8, Math.max(8, window.innerWidth - tw - 8));
+    let y = r.bottom + 6;
+    if (y + th > window.innerHeight - 8 && r.top - th - 6 > 8) y = r.top - th - 6;
+    tip.style.left = x + 'px'; tip.style.top = Math.max(8, y) + 'px';
+}
+function hideSymTip(delay) {
+    clearTimeout(symHideT);
+    const hide = () => { if (symTipEl) symTipEl.style.display = 'none'; symCur = null; };
+    if (!delay) hide(); else symHideT = setTimeout(hide, delay);
+}
+function jumpToDef(d) {
+    hideSymTip(0);
+    if (d.rec.where.kind === 'node') { openNode(d.rec.where.nodeId); requestAnimationFrame(() => focusAnchor(d.anchor)); return; }
+    closeNode(); closeLightbox();
+    focusAnchor(d.anchor);
+}
+function focusAnchor(id) {
+    const a = document.getElementById(id);
+    if (!a) return;
+    for (let p = a.parentElement; p; p = p.parentElement) {
+        if (p.classList && p.classList.contains('pl-code-sec')) p.classList.add('open');
+        if (p.tagName === 'DETAILS') p.open = true;
+    }
+    a.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    a.classList.remove('flash'); void a.offsetWidth; a.classList.add('flash');
+    setTimeout(() => a.classList.remove('flash'), 1900);
+}
+function installGlobalUI() {
+    document.addEventListener('pointerdown', (e) => { lastPtr = e.pointerType || 'mouse'; }, true);
+    const endDrag = () => arr(SPEC.params).forEach((q) => { q._drag = false; });   // the next hover may show the card again
+    window.addEventListener('pointerup', endDrag, true); window.addEventListener('pointercancel', endDrag, true);
+    document.addEventListener('mouseover', (e) => {
+        const t = e.target.closest && e.target.closest('.pl-sym');
+        if (!t || (symTipEl && symTipEl.contains(t))) return;
+        clearTimeout(symHideT); clearTimeout(symShowT);
+        symShowT = setTimeout(() => showSymTip(t), 160);
+    });
+    document.addEventListener('mouseout', (e) => {
+        const t = e.target.closest && e.target.closest('.pl-sym');
+        if (!t || (symTipEl && symTipEl.contains(t))) return;
+        clearTimeout(symShowT); hideSymTip(240);
+    });
+    document.addEventListener('click', (e) => {
+        const t = e.target.closest && e.target.closest('.pl-sym');
+        if (t) {
+            e.preventDefault();
+            const list = SYM.get(t.dataset.sym);
+            if (lastPtr === 'touch' && symCur !== t) { showSymTip(t); return; }   // touch: first tap shows the card, second tap jumps
+            if (list && list.length) jumpToDef(list[0]); else showSymTip(t);
+            return;
+        }
+        if (ptipPinned && ptipEl && !ptipEl.contains(e.target) && !(e.target.closest && e.target.closest('.pl-plabel'))) hideParamTip(0);
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closeLightbox(); hideSymTip(0); hideParamTip(0); }
+        const a = document.activeElement;
+        if (e.key === 'Enter' && a && a.classList && a.classList.contains('pl-sym')) { const list = SYM.get(a.dataset.sym); if (list && list.length) jumpToDef(list[0]); }
+    });
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2285,6 +3505,8 @@ function mountImpl(spec) {
     overlayEl = el('div', 'pl-overlay');
     document.body.appendChild(overlayEl);
     updateOverlay();
+    loadView();
+    if (VIEW.fontScale !== 1) document.documentElement.style.fontSize = (16 * VIEW.fontScale) + 'px';
 
     S = PL.S = { t: 0, dt: 0, frame: 0, epoch: 0, seed: (SPEC.seed >>> 0) || 1337, playing: SPEC.autoplay !== false, timeScale: 1 };
     S.rand = PL.rng(S.seed);
@@ -2302,6 +3524,9 @@ function mountImpl(spec) {
         stages.push({ id: st.id || 'stage' + i, lifetime: lt, rank: LIFETIMES[lt].rank, lazy: !!st.lazy, needs: st.needs, run: st.run, valid: false, order: i });
     });
     stages.sort((a, b) => a.rank - b.rank || a.order - b.order);
+    assignStepIds();
+    buildParamMaps();
+    buildSymbols();
 
     if ('IntersectionObserver' in window) {
         io = new IntersectionObserver((ents) => ents.forEach((en) => {
@@ -2318,8 +3543,12 @@ function mountImpl(spec) {
     secs.filter((s) => s.position === 'afterGraph').forEach((s) => buildSection(s, root));
     buildSteps(root);
     secs.filter((s) => s.position === 'afterSteps').forEach((s) => buildSection(s, root));
+    buildLibrary(root);
     buildRefs(root);
     buildModal();
+    installGlobalUI();
+    arr(SPEC.params).forEach((p) => { if (p.type !== 'button' && !p.desc) problem('warn', 'param:' + p.id, 'no desc — say what it controls and what to watch for (shown in the parameter card and the 参数说明 panel)'); });
+    if (arr(SPEC.params).some((p) => p.type !== 'button') && !PSTEPS.size) problem('warn', 'params', 'no param → step map: run validate_doc.mjs --deps --write-deps <file.lab.js> (or set step.params)');
     if (!io) { previews.forEach((pv) => { pv.visible = true; }); sections.forEach((s) => { s.visible = true; }); }
     if (G) G.nodes.forEach((n) => { if (n.step && !stepById.has(n.step)) problem('warn', 'node:' + n.id, `step "${n.step}" not found`); });
 
@@ -2345,6 +3574,9 @@ PL.setParam = function (id, value) {   // drive a header control programmaticall
 };
 PL.openNode = (id) => openNode(id);
 PL.closeNode = closeNode;
+PL.openPreview = (id) => openLightbox(previews.get(id));
+PL.closePreview = closeLightbox;
+PL._dbg = { previews, stages, sig: (id) => sigOf(previews.get(id).canvas), render: (id) => renderPv(previews.get(id), true), settle: () => { invalidate('param'); runPending(); } };
 PL.problems = problems;
 PL.errors = errors;
 
@@ -2409,6 +3641,14 @@ PL.selfTest = async function (opts) {
             if (s.blank) rep.issues.push({ level: 'warn', where: `section:${sc.id}:canvas${k}`, message: 'section canvas looks blank' });
         });
     });
+    const firstPv = previews.values().next().value;   // enlarged-view smoke test
+    if (firstPv) {
+        try {
+            openLightbox(firstPv); await raf(); await raf();
+            if (lbPv) { renderPv(lbPv, true); const s = canvasStats(lbPv.canvas); if (s.blank) rep.issues.push({ level: 'warn', where: 'lightbox:' + firstPv.id, message: 'enlarged preview is blank' }); }
+        } catch (e) { report('lightbox', e); }
+        closeLightbox();
+    }
     if (G) {
         rep.nodePreviews = [];
         for (const n of G.nodes) {
@@ -2426,17 +3666,125 @@ PL.selfTest = async function (opts) {
     }
     problems.forEach((p) => rep.issues.push(p));
     errors.forEach((e) => rep.issues.push({ level: 'error', where: e.where, message: e.message }));
+    rep.links = [...new Set([...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')))];
+    rep.symbols = SYM.size;
+    rep.undefinedFns = [...UNDEF.keys()];
+    rep.paramMap = PSTEPS.size;
     rep.ok = !rep.issues.some((i) => i.level === 'error');
     return rep;
 };
+// Parameter → step map by perturbation: change one parameter, recompute, re-render every preview, record which changed.
+// Deterministic previews only (time is frozen; previews that change without any parameter change are reported and ignored).
+function sigOf(cv) {   // exact hash of the canvas pixels (a drawImage downscale is not deterministic across GPU / CPU canvas paths)
+    let d;
+    try { d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; } catch (_) { return 'x'; }
+    const u = new Uint32Array(d.buffer, d.byteOffset, d.byteLength >> 2);
+    let h1 = 2166136261 >>> 0, h2 = 0;
+    for (let i = 0; i < u.length; i++) { h1 = Math.imul(h1 ^ u[i], 16777619) >>> 0; h2 = (h2 + (u[i] % 65521) * (i % 251 + 1)) % 1000000007; }
+    return h1.toString(36) + '.' + h2.toString(36) + '.' + cv.width + 'x' + cv.height;
+}
+function altValueOf(p) {
+    if (p.type === 'check') return !p.raw;
+    if (p.type === 'select') { const vals = p.options.map((o) => String(typeof o === 'object' ? o.value : o)), i = vals.indexOf(String(p.raw)); return vals.length > 1 ? vals[(i + 1) % vals.length] : undefined; }
+    if (p.type === 'color') { const c = PL.hexToRgb(String(p.raw)); return '#' + c.map((v) => Math.round((1 - v) * 255).toString(16).padStart(2, '0')).join(''); }
+    if (p.type === 'range' || p.type === 'number') {
+        const lo = Number(p.min != null ? p.min : 0), hi = Number(p.max != null ? p.max : 1), st = Number(p.step) || (hi - lo) / 100, v = Number(p.raw);
+        let x = v + 0.37 * (hi - lo);
+        if (x > hi) x = v - 0.37 * (hi - lo);
+        x = lo + Math.round((x - lo) / st) * st;
+        x = PL.clamp(x, lo, hi);
+        return Math.abs(x - v) < st * 0.5 ? undefined : +x.toFixed(8);
+    }
+    return undefined;
+}
+PL.depScan = async function () {
+    await PL.ready; await raf();
+    closeLightbox(); closeNode();
+    const wasPlaying = S.playing, frame0 = S.frame, t0 = S.t, ACC = 8;
+    S.playing = false;
+    // every state is measured the same way: reset (epoch++), rewind the frame counter, accumulate ACC frames at dt = 0 —
+    // history accumulators seeded by S.frame then reproduce exactly; ones with their own RNG state are compared fuzzily
+    const settle = () => { S.frame = frame0; S.t = t0; invalidate('param'); runPending(); for (let k = 0; k < ACC; k++) advanceFrame(0); };
+    const snap = () => { const m = new Map(); previews.forEach((pv) => { renderPv(pv, true); m.set(pv.id, sampleOf(pv.canvas)); }); return m; };
+    const setRaw = (p, v) => { if (p.type === 'check') p._input.checked = v === true || v === 'true'; else p._input.value = v; p._apply(); };
+    settle(); let base = snap();
+    settle(); const b2 = snap();
+    settle(); const b3 = snap();
+    const ids = [...base.keys()];
+    const unstable = ids.filter((id) => base.get(id).sig !== b2.get(id).sig || base.get(id).sig !== b3.get(id).sig);
+    const noise = {};
+    unstable.forEach((id) => { const a = base.get(id).fz, b = b2.get(id).fz, c = b3.get(id).fz; noise[id] = Math.max(fdist(a, b), fdist(a, c), fdist(b, c)); });
+    const differs = (id, s, ref) => (id in noise ? fdist(s.fz, ref.get(id).fz) > 2.5 * noise[id] + 0.75 : s.sig !== ref.get(id).sig);
+    const paramSteps = {}, paramPreviews = {}, skipped = [], drift = {};
+    for (const p of arr(SPEC.params)) {
+        if (p.type === 'button' || !p._apply) continue;
+        const orig = p.raw, alt = altValueOf(p);
+        if (alt === undefined) { skipped.push(p.id); continue; }
+        setRaw(p, alt); settle();
+        const now = snap();
+        const changed = ids.filter((id) => differs(id, now.get(id), base));
+        setRaw(p, orig); settle();
+        const after = snap(), moved = ids.filter((id) => differs(id, after.get(id), base));
+        if (moved.length) { drift[p.id] = moved; base = after; }   // restoring did not reproduce the baseline → re-anchor
+        paramPreviews[p.id] = changed;
+        const steps = [];
+        changed.forEach((id) => { const o = previews.get(id).owner; if (stepById.has(o) && !steps.includes(o)) steps.push(o); });
+        paramSteps[p.id] = steps.sort((a, b) => stepById.get(a)._idx - stepById.get(b)._idx);
+    }
+    // parameters with no visible effect may be gated by a select (e.g. IOR only matters for a dielectric material):
+    // retry them once under every other option of every other select parameter
+    const conditional = [], selects = arr(SPEC.params).filter((q) => q.type === 'select' && q._apply && q.options.length > 1);
+    for (const p of arr(SPEC.params)) {
+        if (!(p.id in paramSteps) || paramSteps[p.id].length) continue;
+        const altP = altValueOf(p);
+        if (altP === undefined) continue;
+        const found = new Set(), foundPv = new Set();
+        for (const q of selects) {
+            if (q === p) continue;
+            const qOrig = q.raw;
+            for (const o of q.options) {
+                const ov = String(typeof o === 'object' ? o.value : o);
+                if (ov === String(qOrig)) continue;
+                setRaw(q, ov); settle();
+                const bq = snap(), pOrig = p.raw;
+                setRaw(p, altP); settle();
+                const nq = snap();
+                setRaw(p, pOrig);
+                ids.forEach((id) => { if (differs(id, nq.get(id), bq)) { foundPv.add(id); const ow = previews.get(id).owner; if (stepById.has(ow)) found.add(ow); } });
+            }
+            setRaw(q, qOrig); settle();
+        }
+        if (found.size) { paramSteps[p.id] = [...found].sort((a, b) => stepById.get(a)._idx - stepById.get(b)._idx); paramPreviews[p.id] = [...foundPv]; conditional.push(p.id); }
+    }
+    S.frame = frame0; S.t = t0;
+    S.playing = wasPlaying;
+    return { paramSteps, paramPreviews, unstable, noise, skipped, drift, conditional };
+};
+function sampleOf(cv) {   // exact pixel hash + a 16×16 mean-luminance grid (for noisy, self-accumulating previews)
+    const G = 16, fz = new Float32Array(G * G);
+    let d;
+    try { d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; } catch (_) { return { sig: 'x', fz }; }
+    const W = cv.width, H = cv.height, cnt = new Float32Array(G * G);
+    for (let y = 0; y < H; y++) {
+        const gy = Math.min(G - 1, (y * G / H) | 0);
+        for (let x = 0; x < W; x++) { const g = gy * G + Math.min(G - 1, (x * G / W) | 0), i = (y * W + x) * 4; fz[g] += 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]; cnt[g]++; }
+    }
+    for (let g = 0; g < G * G; g++) fz[g] /= cnt[g] || 1;
+    return { sig: sigOf(cv), fz };
+}
+function fdist(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; }
 })();
 
 </script>
 <script>
 // ── bxdf_common.js ──
 // ════════════════════════════════════════════════════════════════════════════
-// BxDF series · shared helpers — prepended to every module at build time:
+// BxDF series · shared helpers — prepended to every module at build time (run inside pages/):
 //   node <skill>/scripts/build_doc.mjs bxdf_common.js bxdf_0N_xxx.lab.js -o bxdf_0N_xxx.html
+//   node <skill>/scripts/build_doc.mjs bxdf_common.js index.lab.js -o ../index.html     (entry page lives one level up)
+// Layout (GitHub Pages friendly): BxDF/index.html is the only top-level file; every other page, source and
+// helper lives in BxDF/pages/. Links: modules ↔ modules are siblings; modules → index is ../index.html;
+// index → modules is pages/<file> (use BX.href(m, true)).
 //
 // Conventions shared by every module (formulas, HLSL and JS must all follow these):
 //   • Local shading frame: n = +Z, tangent t = +X, bitangent b = +Y; θ from +Z, φ from +X toward +Y.
@@ -2609,6 +3957,17 @@ const BX = (() => {
         ],
         key: [{ dir: norm([-0.55, 0.6, 0.58]), color: [3, 3, 3] }],
     };
+    /** Key light of the sphere renders, shared by every page (view space: x right, y up, z toward the camera).
+     *  θi (radians) = PITCH: tilts the light up from the view direction — exactly the incidence angle of the 2D profile
+     *  plots at the sphere's centre, where n = V; yaw (degrees, + = right) = 光源方位: turns it around the vertical axis.
+     *  θi = 0, yaw = 0 → head light; θi → 90° → light from straight above; |yaw| → 180° → back light. */
+    const keyLight = (thetaI, yawDeg) => { const y = (yawDeg || 0) * PI / 180, c = Math.cos(thetaI); return norm([c * Math.sin(y), Math.sin(thetaI), c * Math.cos(y)]); };
+    /** Studio set driven by θi / yaw: key + a rim behind the key + a dim fill from below. o: { single (key only), keyColor } */
+    const lightsFor = (thetaI, yawDeg, o = {}) => {
+        const key = keyLight(thetaI, yawDeg), kc = o.keyColor || [2.8, 2.7, 2.55];
+        if (o.single) return [{ dir: key, color: kc }];
+        return [{ dir: key, color: kc }, { dir: norm([-key[0], 0.25, -key[2] - 0.35]), color: [0.9, 0.95, 1.1] }, { dir: norm([0.35, -0.45, 0.8]), color: [0.2, 0.22, 0.26] }];
+    };
     /** f(wi, wo, info) with LOCAL directions; info = { n, t, b (view space), x, y }. o: { res, lights, axis (tangent
      *  direction for anisotropy, default up), exposure, ambient(wo, info) → rgb radiance, bg (linear RGB radiance or
      *  (x, y) → rgb, shown through the same display transform — e.g. [1,1,1] for a white-furnace backdrop) }. Returns max radiance. */
@@ -2714,9 +4073,12 @@ const BX = (() => {
         { id: 'subsurface', no: '05', file: 'bxdf_05_subsurface.html', title: '次表面散射 BSSRDF：Dipole → Normalized Diffusion', short: '次表面散射' },
         { id: 'layering', no: '06', file: 'bxdf_06_layering.html', title: '多层混合与叠加：Clearcoat → 分层 BSDF → 材质总装', short: '多层混合' },
     ];
+    const PAGES_DIR = 'pages/';
+    /** link to a module: from a module page (siblings) or from the entry page one level up (fromRoot = true) */
+    const href = (m, fromRoot) => (fromRoot ? PAGES_DIR : '') + m.file;
     const nav = (id) => {
         const i = MODULES.findIndex((m) => m.id === id), p = MODULES[i - 1], q = MODULES[i + 1];
-        return `<p style="margin-top:8px;font-size:0.74rem;color:#789">BxDF 系列 · <a href="index.html">索引</a>` +
+        return `<p style="margin-top:8px;font-size:0.74rem;color:#789">BxDF 系列 · <a href="../index.html">索引</a>` +
             (p ? ` · ← <a href="${p.file}">${p.no} ${p.short}</a>` : '') + (q ? ` · <a href="${q.file}">${q.no} ${q.short}</a> →` : '') + '</p>';
     };
 
@@ -2754,7 +4116,7 @@ const BX = (() => {
         alpha, ggxD, ggxLambda, smithG1, smithG2, sampleVNDF, pdfVNDF, sampleNDF,
         sampleCosine, sampleUniform, hammersley, albedoQuad, albedoMC,
         hemiDir, hemiPixel, hemiImage, aces, toSrgb, display, hex2lin, lum,
-        LIGHTS, renderSphere, lobe, MODULES, nav, HLSL_COMMON,
+        LIGHTS, keyLight, lightsFor, renderSphere, lobe, MODULES, PAGES_DIR, href, nav, HLSL_COMMON,
     };
 })();
 
@@ -2906,9 +4268,11 @@ const mat = (S, over) => {
     return Object.assign(P, over || {});
 };
 const thetaW = (S) => BX.dir(S.thetaI * Math.PI / 180, Math.PI);
-const sph = (rule, over) => (c, S) => BX.renderSphere(c, L6.rules[rule](mat(S, over)), { res: 128 });
+const lights6 = (S) => BX.lightsFor(S.thetaI * Math.PI / 180, S.lightAz);   // series convention: pitch = θi, yaw = 光源方位
+const sph = (rule, over) => (c, S) => BX.renderSphere(c, L6.rules[rule](mat(S, over)), { res: 128, lights: lights6(S) });
 const RULE_LABEL = { add: '直接相加', filament: 'Filament：(1−F_c(v·h))', fresnel2: '(1−F(μi))(1−F(μo))', albedo: 'albedo scaling (1−E_c(μo))', albedoMin: 'min(1−E_c(μi), 1−E_c(μo))', ww: '一阶折射模型（W-W 结构）', smooth: '光滑解析（含内部反射）' };
 const RULE_COLOR = { add: '#e06c75', filament: '#d19a66', fresnel2: '#e8c25a', albedo: '#5ad07a', albedoMin: '#56b6c2', ww: '#c678dd', smooth: '#6ab0e0' };
+const L6_3D = { n: 9, H: 0.55, B: 1.5 };   // 3D 光路：路径数、示意层厚、显示盒半宽（局部单位）
 
 const HLSL_LAYER = `
     // ── BxDF 06 · 分层工具 ──
@@ -2923,6 +4287,7 @@ const HLSL_LAYER = `
     }`;
 
 PipelineLab.mount({
+    paramSteps: { thetaI: ['mix', 'coat', 'fresnel', 'smooth', 'absorb', 'ww', 'albedo', 'uber'], lightAz: ['mix', 'coat', 'fresnel', 'smooth', 'absorb', 'ww', 'albedo', 'uber'], baseColor: ['mix', 'coat', 'fresnel', 'smooth', 'absorb', 'ww', 'albedo', 'uber'], coatRough: ['coat', 'fresnel', 'smooth', 'absorb', 'ww', 'albedo', 'mc', 'uber', 'prod'], coatIor: ['coat', 'fresnel', 'smooth', 'absorb', 'ww', 'albedo', 'mc', 'uber', 'prod'], coatTint: ['smooth', 'ww', 'mc'], thick: ['absorb'], metal: ['mix'], sheenW: ['uber'] },   // generated by validate_doc --deps (param → steps whose previews change)
     title: 'BxDF 06 · 多层混合与叠加：Clearcoat → 分层 BSDF → 材质总装',
     lang: 'zh-CN',
     codeLang: 'hlsl',
@@ -2930,14 +4295,23 @@ PipelineLab.mount({
     animated: false,
     tagColors: { MIX: 'gray', COAT: 'rust', FRESNEL: 'olive', SMOOTH: 'blue', ABSORB: 'magenta', WW: 'indigo', ALBEDO: 'green', MC: 'teal', UBER: 'teal', PROD: 'gray' },
     params: [
-        { id: 'thetaI', label: 'θi', min: 0, max: 85, step: 1, value: 50, unit: '°', title: '入射角（波瓣、曲线用）' },
-        { id: 'baseColor', label: 'base', value: '#a8322a', map: BX.hex2lin, title: 'Lambert 底层反照率 ρ（sRGB 输入）' },
-        { id: 'coatRough', label: 'coat r', min: 0.02, max: 0.8, step: 0.01, value: 0.12, title: '涂层感知粗糙度（GGX α = r²）' },
-        { id: 'coatIor', label: 'coat η', min: 1.2, max: 2.0, step: 0.01, value: 1.5, digits: 2, title: '涂层折射率' },
-        { id: 'coatTint', label: 'coat tint', value: '#ffffff', map: BX.hex2lin, title: '涂层颜色 = 垂直穿过一次（厚度 1）的透射率；白 = 透明' },
-        { id: 'thick', label: '厚度', min: 0, max: 3, step: 0.05, value: 1, title: '涂层光学厚度倍数' },
-        { id: 'metal', label: 'metalness', min: 0, max: 1, step: 0.01, value: 0.5, title: 'Step 01 的线性混合权重' },
-        { id: 'sheenW', label: 'sheen', min: 0, max: 1, step: 0.01, value: 0.35, title: 'Step 09 uber 材质的 sheen 权重' },
+        { id: 'thetaI', label: 'θi', min: 0, max: 85, step: 1, value: 50, unit: '°', title: '入射角（波瓣、曲线用）；球体渲染里 = 主光俯仰角',
+            desc: '入射角 θi（光在 x–z 入射面内）：Step 02 的 GTR1 / GGX 对比波瓣和 Step 04 的 3D 层间光路用它。拖到 75° 以上：涂层 Fresnel 接近 1，大部分光在涂层表面就被反射走，进入涂层的光变少。在球体渲染里它是主光的<strong>俯仰角</strong>（从视线方向向上抬 θi；偏航由光源方位控制，方位 = 0° 时球心处的入射角就是 θi）。' },
+        { id: 'lightAz', label: '光源方位', min: -170, max: 170, step: 1, value: -35, unit: '°', desc: '球体渲染里主光的<strong>偏航角</strong>：绕竖直轴转动主光（0° = 光在视线正上方的竖直面内，正 = 右侧，±170° ≈ 逆光），俯仰由 θi 决定；轮廓光、补光跟着主光转。只影响球体渲染（含顶部的四种规则对比），波瓣与曲线始终在入射面内。' },
+        { id: 'baseColor', label: 'base', value: '#a8322a', map: BX.hex2lin, title: 'Lambert 底层反照率 ρ（sRGB 输入）',
+            desc: 'Lambert 底层反照率 ρ（sRGB 输入，内部转线性）。它决定涂层下颜色变深、变饱和的程度：ρ 小的通道被内部反射级数压得更狠（Step 04 的饱和度曲线与 3D 光路的颜色）；白炉曲线固定用 ρ = 1，不随它变。' },
+        { id: 'coatRough', label: 'coat r', min: 0.02, max: 0.8, step: 0.01, value: 0.12, title: '涂层感知粗糙度（GGX α = r²）',
+            desc: '涂层感知粗糙度 r（GGX α = r²）。越大 → 涂层高光越宽、E<sub>coat</sub> 的正面值被抬高（Step 07 的 LUT）、宏观 Fresnel 规则越偏离随机游走参考（Step 03 / 08）。拖到 0.5 以上看所有闭式规则与 MC 拉开差距；光滑解析解只在 r 很小时精确。' },
+        { id: 'coatIor', label: 'coat η', min: 1.2, max: 2.0, step: 0.01, value: 1.5, digits: 2, title: '涂层折射率',
+            desc: '涂层折射率 η：决定 F0、内侧平均反射率 F̄<sub>in</sub>（η = 1.5 时约 60%，大部分是全内反射）和出射时的 1/η² 立体角压缩。拖大看涂层下颜色更深更饱和、光在层间反弹更多次（Step 04），以及 E<sub>coat</sub> LUT 整体变亮（Step 07）。' },
+        { id: 'coatTint', label: 'coat tint', value: '#ffffff', map: BX.hex2lin, title: '涂层颜色 = 垂直穿过一次（厚度 1）的透射率；白 = 透明',
+            desc: '涂层颜色 = 厚度 1 时垂直穿过一次的透射率，白 = 透明。进入光滑解析、一阶折射模型和随机游走里的吸收项（Step 04 / 06 / 08；Step 05 用固定的琥珀色作示例）。调成橙色：掠射处颜色更深，每次层间往返都再吸收一次。白炉曲线固定用透明涂层。' },
+        { id: 'thick', label: '厚度', min: 0, max: 3, step: 0.05, value: 1, title: '涂层光学厚度倍数',
+            desc: '涂层光学厚度倍数 d：吸收路径长 = d / cosθ<sub>t</sub>，进、出各一段。0 = 不吸收；拖到 2–3 看 Step 05 的透射率曲线与琥珀球变深——折射把角度压向法线，变化比按入射角算温和得多。顶栏 tint 为白（透明）时，它只影响 Step 05 的琥珀示例。' },
+        { id: 'metal', label: 'metalness', min: 0, max: 1, step: 0.01, value: 0.5, title: 'Step 01 的线性混合权重',
+            desc: 'Step 01 线性混合的金属度 m：f = (1 − m)·f<sub>dielectric</sub> + m·f<sub>metal</sub>。拖动看混合球和白炉曲线始终夹在两个端点之间——凸组合不需要任何能量修正。只影响 Step 01。' },
+        { id: 'sheenW', label: 'sheen', min: 0, max: 1, step: 0.01, value: 0.35, title: 'Step 09 uber 材质的 sheen 权重',
+            desc: 'Step 09 uber 材质最外层 sheen 的权重。拖大看顶层在掠射角拿走更多能量（sheen 的 E(μ) 在掠射最大），下面各层在球的边缘一起变暗；能量去向图里每条带随之重新分配。只影响 Step 09。' },
     ],
     stages: [
         {
@@ -2985,6 +4359,15 @@ PipelineLab.mount({
             },
         },
         {
+            id: 'walk3d', lifetime: 'param', lazy: true, run(S) {   // a few Step 08 walks with positions for the 3D view + bounce statistics (white base, clear coat)
+                const rnd = PL.rng((S.seed ^ 0x3d06) >>> 0), wi = thetaW(S), P = mat(S), Pw = mat(S, { rho: [1, 1, 1], tint: [1, 1, 1] }), N = 4000;
+                const paths = Array.from({ length: L6_3D.n }, () => layerPath(wi, P, rnd, L6_3D.H));
+                let coat = 0, out = 0, bounces = 0;
+                for (let k = 0; k < N; k++) { const r = layerPath(wi, Pw, rnd, L6_3D.H, true); if (r.kind === 'coat') coat++; else if (r.kind === 'out') { out++; bounces += r.bounces; } }
+                S.walk3d = { paths, coat: coat / N, meanB: out ? bounces / out : 0 };
+            },
+        },
+        {
             id: 'uber', lifetime: 'param', run(S) {   // albedo tables for the uber stack: sheen (Charlie + Neubelt), base specular (GGX η 1.5)
                 const a = 0.25, sh = new Float32Array(L6.N_MU);
                 for (let i = 0; i < L6.N_MU; i++) {
@@ -2996,6 +4379,81 @@ PipelineLab.mount({
             },
         },
     ],
+    library: {
+        title: '附录 · 辅助函数（HLSL）',
+        intro: 'Step 04 / 07 / 08 的代码调用的采样、遮蔽、Fresnel 与随机数函数，以及随机游走用到的材质常量。约定与系列一致：局部系 n = +Z，方向都指离表面，η = η<sub>t</sub>/η<sub>i</sub>，α = r²；<code>Lambda_GGX</code>、<code>PI</code> 来自 Common。',
+        blocks: [
+            {
+                title: '材质常量 · 采样 · Smith 遮蔽（Step 07 / 08）', code: `
+                // Step 07 烘焙与 Step 08 随机游走用到的材质常量（引擎里来自材质 cbuffer）
+                cbuffer LayerWalkCB : register(b2) {
+                    float  aCoat;      // 涂层 GGX α = r²
+                    float  eta;        // 涂层折射率（外 → 涂层的 η_t/η_i）
+                    float  CoatEta;    // 烘焙 E_coat LUT 用的 η（每个 η 预设一张表）
+                    float  d;          // 涂层光学厚度倍数
+                    float3 tint;       // 厚度 1、垂直穿过一次的透射率
+                    float  padL0;
+                    float3 rho;        // Lambert 底层反照率（线性）
+                    float  padL1;
+                };
+
+                // Hammersley 点集的第 i 个点（共 N 个）：x = (i + ½)/N，y = 以 2 为底的 radical inverse（位反转）；与 BX.hammersley 相同
+                float2 Hammersley(uint i, uint N) { return float2((i + 0.5) / N, reversebits(i) * 2.3283064365386963e-10); }
+
+                // Heitz 2018 可见法线采样：返回微表面法线 H，pdf(H) = G1(V)·max(0, V·H)·D(H) / V.z（V 在局部系上半球）
+                float3 SampleGGXVNDF(float3 V, float a, float2 u) {
+                    float3 Vh = normalize(float3(a * V.x, a * V.y, V.z));             // 拉伸成 α = 1 的半球
+                    float  l2 = Vh.x * Vh.x + Vh.y * Vh.y;
+                    float3 T1 = l2 > 0.0 ? float3(-Vh.y, Vh.x, 0.0) * rsqrt(l2) : float3(1.0, 0.0, 0.0);
+                    float3 T2 = cross(Vh, T1);
+                    float  r  = sqrt(u.x), phi = 2.0 * PI * u.y;
+                    float  t1 = r * cos(phi), t2 = r * sin(phi);
+                    float  s  = 0.5 * (1.0 + Vh.z);
+                    t2 = (1.0 - s) * sqrt(1.0 - t1 * t1) + s * t2;                     // 按投影面积压扁圆盘的一半
+                    float3 Nh = t1 * T1 + t2 * T2 + sqrt(max(0.0, 1.0 - t1 * t1 - t2 * t2)) * Vh;
+                    return normalize(float3(a * Nh.x, a * Nh.y, max(0.0, Nh.z)));    // 反拉伸回 α
+                }
+
+                // 余弦加权半球采样（Malley）：pdf = cosθ / π；与 BX.sampleCosine 相同
+                float3 SampleCosine(float2 u) {
+                    float r = sqrt(u.x), phi = 2.0 * PI * u.y;
+                    return float3(r * cos(phi), r * sin(phi), sqrt(max(0.0, 1.0 - u.x)));
+                }
+
+                // GGX Smith 遮蔽 G1 = 1 / (1 + Λ(ω))，α = aCoat；Λ 只依赖 cos²θ，涂层内外两侧通用
+                float SmithG1(float3 w) { return 1.0 / (1.0 + Lambda_GGX(abs(w.z), aCoat)); }
+                // 高度相关的遮蔽-阴影 G2 = 1 / (1 + Λ(ωa) + Λ(ωb))（Heitz 2014），反射、透射两种配置都用它
+                float SmithG2(float3 wa, float3 wb) { return 1.0 / (1.0 + Lambda_GGX(abs(wa.z), aCoat) + Lambda_GGX(abs(wb.z), aCoat)); }`,
+            },
+            {
+                title: 'Fresnel · 随机数（Step 04 / 07 / 08）', code: `
+                // 非偏振介电 Fresnel（与 BX.fresnelDielectric 相同）：cosI = 入射侧余弦，eta = η_t/η_i；cosI < 0 表示从另一侧入射；全内反射 → 1
+                float FresnelDielectric(float cosI, float eta) {
+                    if (cosI < 0.0) { eta = 1.0 / eta; cosI = -cosI; }
+                    cosI = min(cosI, 1.0);
+                    float sin2T = (1.0 - cosI * cosI) / (eta * eta);
+                    if (sin2T >= 1.0) return 1.0;
+                    float cosT  = sqrt(1.0 - sin2T);
+                    float rPar  = (eta * cosI - cosT) / (eta * cosI + cosT);
+                    float rPerp = (cosI - eta * cosT) / (cosI + eta * cosT);
+                    return 0.5 * (rPar * rPar + rPerp * rPerp);
+                }
+
+                // 每条路径一个 PCG 随机数状态
+                struct RNG { uint state; };
+
+                // PCG-RXS-M-XS 32 位：推进 LCG 状态并返回 [0, 1) 的均匀数（取高 24 位，保证严格 < 1）
+                float Rand(inout RNG rng) {
+                    rng.state = rng.state * 747796405u + 2891336453u;
+                    uint w = ((rng.state >> ((rng.state >> 28u) + 4u)) ^ rng.state) * 277803737u;
+                    w = (w >> 22u) ^ w;
+                    return float(w >> 8) * (1.0 / 16777216.0);
+                }
+                // 两个独立的均匀数（VNDF / 余弦采样用）
+                float2 Rand2(inout RNG rng) { float a = Rand(rng); return float2(a, Rand(rng)); }`,
+            },
+        ],
+    },
     intro: {
         title: '多层混合与叠加 · 把各类 lobe 组成一个真实材质',
         flow: ['线性混合', 'clearcoat 相加', 'Fresnel 让能量', '光滑解析', '吸收涂层', '一阶折射模型', 'albedo scaling', '随机游走参考', 'uber 总装'],
@@ -3006,7 +4464,7 @@ PipelineLab.mount({
         id: 'hero', title: '同一涂层、同一底层 · 四种叠加规则', position: 'top',
         sub: '从左到右：直接相加（掠射处发亮）· (1−F)(1−F) · albedo scaling · 光滑解析（含内部反射，颜色更深更饱和）。改 base / coat 参数四个球同时重算。',
         html: `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:860px">${['add', 'fresnel2', 'albedo', 'smooth'].map((k, i) => `<div style="text-align:center"><canvas class="h${i}" style="width:100%;aspect-ratio:1"></canvas><div style="font:0.68rem Consolas,monospace;color:#888;margin-top:4px">${RULE_LABEL[k]}</div></div>`).join('')}</div>`,
-        frame(el, S) { ['add', 'fresnel2', 'albedo', 'smooth'].forEach((k, i) => BX.renderSphere(el.querySelector('.h' + i), L6.rules[k](mat(S)), { res: 144 })); },
+        frame(el, S) { ['add', 'fresnel2', 'albedo', 'smooth'].forEach((k, i) => BX.renderSphere(el.querySelector('.h' + i), L6.rules[k](mat(S)), { res: 144, lights: lights6(S) })); },
     }],
     steps: [
         {
@@ -3024,9 +4482,9 @@ PipelineLab.mount({
                     return lerp(dielectric, metal, metalness);               // 同一点上的面积混合
                 }` },
             previews: [
-                { id: 'mixD', label: '电介质 (m = 0)', smooth: true, render: (c, S) => BX.renderSphere(c, mixBRDF(S, 0), { res: 128 }) },
-                { id: 'mixM', label: '金属 (m = 1)', smooth: true, render: (c, S) => BX.renderSphere(c, mixBRDF(S, 1), { res: 128 }) },
-                { id: 'mixX', label: '混合 (m = 参数)', sub: '凸组合', smooth: true, render: (c, S) => BX.renderSphere(c, mixBRDF(S, S.metal), { res: 128 }) },
+                { id: 'mixD', label: '电介质 (m = 0)', smooth: true, render: (c, S) => BX.renderSphere(c, mixBRDF(S, 0), { res: 128, lights: lights6(S) }) },
+                { id: 'mixM', label: '金属 (m = 1)', smooth: true, render: (c, S) => BX.renderSphere(c, mixBRDF(S, 1), { res: 128, lights: lights6(S) }) },
+                { id: 'mixX', label: '混合 (m = 参数)', sub: '凸组合', smooth: true, render: (c, S) => BX.renderSphere(c, mixBRDF(S, S.metal), { res: 128, lights: lights6(S) }) },
                 { id: 'mixE', label: '白炉：E_mix 恒介于两者之间', size: [300, 160], render: (c, S) => { const mus = S.mus; const e = (m) => Array.from(mus, (mu) => BX.lum(BX.albedoQuad((wi) => mixBRDF(S, m, [1, 1, 1])(wi, [Math.sqrt(1 - mu * mu), 0, mu]), [Math.sqrt(1 - mu * mu), 0, mu], 24))); PL.draw.plot(c, { x: [0, 1], y: [0, 1.1], xLabel: 'μ = cosθo', series: [{ data: e(0), x: mus, label: 'm = 0', color: '#6ab0e0' }, { data: e(1), x: mus, label: 'm = 1', color: '#e0a060' }, { data: e(S.metal), x: mus, label: `m = ${S.metal.toFixed(2)}`, color: '#5ad07a' }], hmarks: [{ y: 1, color: '#555' }] }); } },
             ],
             notes: '白炉曲线用白色 baseColor：混合曲线永远夹在两条端点曲线之间。低于 1 的部分来自单次散射 GGX 的能量损失（见模块 02 的多次散射补偿），不是混合造成的。',
@@ -3082,7 +4540,7 @@ PipelineLab.mount({
                     return (1.0 - Fi) * (1.0 - Fo) * rho * INV_PI / (eta * eta * (1.0 - rho * FinAvg));
                 }   // FinAvg 只依赖 η：常量或 1D LUT` },
             previews: [
-                { id: 'smDry', label: '无涂层 Lambert', smooth: true, render: (c, S) => BX.renderSphere(c, (wi, wo) => (wi[2] > 0 && wo[2] > 0 ? S.baseColor.map((v) => v * BX.INV_PI) : [0, 0, 0]), { res: 128 }) },
+                { id: 'smDry', label: '无涂层 Lambert', smooth: true, render: (c, S) => BX.renderSphere(c, (wi, wo) => (wi[2] > 0 && wo[2] > 0 ? S.baseColor.map((v) => v * BX.INV_PI) : [0, 0, 0]), { res: 128, lights: lights6(S) }) },
                 { id: 'smWet', label: '光滑涂层（解析）', sub: '更深、更饱和', smooth: true, render: sph('smooth', null) },
                 {
                     id: 'smCheck', needs: ['mc'], label: '解析解 vs 随机游走（ρ = 0.5，光滑涂层）', sub: '实线 = 解析；点 = MC', size: [320, 170],
@@ -3096,8 +4554,13 @@ PipelineLab.mount({
                     },
                 },
                 { id: 'smSat', label: '饱和度：ρ → 涂层下的有效反照率', sub: 'ρ_eff = ρ(1 − F̄_in)/(1 − ρF̄_in)；虚线 = 无涂层', size: [300, 170], render: (c, S) => PL.draw.plot(c, { x: [0, 1], y: [0, 1], xLabel: 'ρ', series: [{ fn: (r) => r * (1 - S.FinAvg) / (1 - r * S.FinAvg), color: '#5ad07a', label: `η = ${S.coatIor.toFixed(2)}` }, { fn: (r) => r, color: '#666', dash: [4, 3], label: 'ρ' }] }) },
+                {
+                    id: 'layer3d', needs: ['walk3d'], large: true, label: '3D：涂层与底层之间来回反弹的光',
+                    sub: '同一入射点（黄箭头，θi），Step 08 随机游走的 9 条路径。线色 = 当前吞吐量的颜色，亮度随能量衰减：每碰一次底层就乘一次 ρ，越弹越深、越饱和。蓝色线框 = 涂层界面，平面 = Lambert 底层（层厚只是示意：平行层里横向位置不影响结果）；超出盒子的部分截掉',
+                    render: (c, S) => drawLayer3d(c, S),
+                },
             ],
-            notes: '右图：ρ 小的颜色分量被压得更厉害（曲线在低 ρ 段远低于对角线），所以三个通道的比例被拉开——颜色变饱和。η 越大 F̄<sub>in</sub> 越大，效果越强。MC 点由本页 Step 08 的随机游走算出，和解析解吻合，说明两边的模型一致。',
+            notes: '右图：ρ 小的颜色分量被压得更厉害（曲线在低 ρ 段远低于对角线），所以三个通道的比例被拉开——颜色变饱和。η 越大 F̄<sub>in</sub> 越大，效果越强。MC 点由本页 Step 08 的随机游走算出，和解析解吻合，说明两边的模型一致。3D 图把级数画成了真实的光路：进入涂层的光平均要碰底层 1/(1 − F̄<sub>in</sub>) 次（η = 1.5 时 ≈ 2.5 次）才逃出，每碰一次乘一次 ρ——分母 1 − ρF̄<sub>in</sub> 就是这么来的。拖 coat η 看反弹次数变多。',
         },
         {
             id: 'absorb', title: '有色涂层：Beer-Lambert 与折射路径长度', tag: 'ABSORB',
@@ -3105,7 +4568,7 @@ PipelineLab.mount({
             formula: 'T(μ) = tint^{d / cos θ_t}      cos θ_t = √(1 − (1 − μ^2)/η^2)\nf_base,coated = T(μ_i) · T(μ_o) · (…透射项…) · f_base      // tint = 厚度 1 时垂直穿过一次的透射率',
             code: { title: 'HLSL · 涂层吸收', src: HLSL_LAYER },
             previews: [
-                { id: 'abSph', label: '有色涂层（tint = 琥珀）', sub: '光滑解析 + 吸收', smooth: true, render: (c, S) => BX.renderSphere(c, L6.rules.smooth(mat(S, { tint: BX.hex2lin('#e0a050'), Tavg: [0, 1, 2].map((ch) => avgT(BX.hex2lin('#e0a050')[ch], S.thick)) })), { res: 128 }) },
+                { id: 'abSph', label: '有色涂层（tint = 琥珀）', sub: '光滑解析 + 吸收', smooth: true, render: (c, S) => BX.renderSphere(c, L6.rules.smooth(mat(S, { tint: BX.hex2lin('#e0a050'), Tavg: [0, 1, 2].map((ch) => avgT(BX.hex2lin('#e0a050')[ch], S.thick)) })), { res: 128, lights: lights6(S) }) },
                 { id: 'abPlot', label: '单次穿过的透射率 vs 入射角', sub: '实线 = 按折射角；虚线 = 错误地按入射角', size: [320, 170], render: (c, S) => { const tint = BX.hex2lin('#e0a050'); PL.draw.plot(c, { x: [0, 89], y: [0, 1], xLabel: 'θ (°)', series: [0, 1, 2].map((ch) => ({ fn: (t) => L6.transmit(tint, S.thick, Math.cos(t * Math.PI / 180), S.coatIor)[ch], color: ['#e06c75', '#5ad07a', '#6ab0e0'][ch], label: 'RGB'[ch] })).concat([0, 1, 2].map((ch) => ({ fn: (t) => Math.pow(tint[ch], S.thick / Math.max(1e-3, Math.cos(t * Math.PI / 180))), color: ['#e06c75', '#5ad07a', '#6ab0e0'][ch], dash: [3, 3] }))) }); } },
             ],
             warn: '用入射角而不是折射角算路径长，是有色涂层最常见的错误：掠射角会黑掉。另外吸收也要进入内部反射级数（每次往返再乘一次 T）——本页解析式用余弦加权平均的 T̄ 近似这一项。',
@@ -3154,19 +4617,33 @@ PipelineLab.mount({
             desc: '无限大平行层里，横向位置无关紧要——只需要跟踪方向和"在哪个界面"（position-free 的思路，Guo et al. 2018）。从外部射入：在粗糙涂层上按 VNDF 采样微表面法线，按 Fresnel 选反射或折射；折射进去后按 cosθ<sub>t</sub> 吸收，到底层 Lambert 漫反射，向上再吸收，在界面内侧再按 Fresnel 选择透射出去或反射回去（含全内反射）……直到逃逸。白色底层下它的总反照率就是"真正的"E(μ)，可以拿来检验所有近似。',
             formula: '权重（VNDF + 按 F 选分支）：w ← w · G_2(ω, ω^{′}) / G_1(ω)      // 反射与透射分支相同\n吸收：w ← w · tint^{d / |cos θ_t|}      漫反射：w ← w · ρ，新方向 ~ cosθ / π',
             code: { title: 'HLSL · 随机游走参考（离线验证用，CPU / 光追 shader）', src: `
+                // wi 指向光源（局部系 n = +Z）；返回逃逸出来的吞吐量。与页面 JS 的 L6.walk 一一对应；常量与辅助函数见附录
                 float3 LayeredRandomWalk(float3 wi, inout RNG rng) {
                     float3 thr = 1;
-                    float3 H = SampleGGXVNDF(wi, aCoat, rng.Next2());
-                    if (rng.Next() < FresnelDielectric(dot(wi, H), eta)) return SmithG2(wi, reflect(-wi, H)) / SmithG1(wi);
-                    float3 t = refract(-wi, H, 1.0 / eta);  thr *= SmithG2(wi, -t) / SmithG1(wi);
+                    float3 H = SampleGGXVNDF(wi, aCoat, Rand2(rng));
+                    if (Rand(rng) < FresnelDielectric(dot(wi, H), eta)) {          // 涂层表面直接反射
+                        float3 l = reflect(-wi, H);
+                        return l.z > 0.0 ? SmithG2(wi, l) / SmithG1(wi) : 0.0;
+                    }
+                    float3 t = refract(-wi, H, 1.0 / eta);                          // 外 → 涂层：η_i/η_t = 1/η，t 朝下
+                    if (t.z >= 0.0) return 0;
+                    thr *= SmithG2(wi, -t) / SmithG1(wi);
                     for (int ev = 0; ev < 48; ++ev) {
                         thr *= pow(tint, d / abs(t.z)) * rho;                    // 下行吸收 + 漫反射
-                        float3 u = SampleCosine(rng.Next2());
+                        float3 u = SampleCosine(Rand2(rng));
                         thr *= pow(tint, d / u.z);                               // 上行吸收
                         float3 wf = float3(-u.x, -u.y, u.z);                     // 翻转坐标系：内侧为"上"
-                        H = SampleGGXVNDF(wf, aCoat, rng.Next2());
-                        if (rng.Next() < FresnelDielectric(dot(wf, H), 1.0 / eta)) { /* 内部反射 → 回到底层 */ ... continue; }
-                        return thr * SmithG2(wf, out) / SmithG1(wf);             // 透射出去
+                        H = SampleGGXVNDF(wf, aCoat, Rand2(rng));
+                        if (Rand(rng) < FresnelDielectric(dot(wf, H), 1.0 / eta)) {   // 内部反射（含全内反射）→ 回到底层
+                            float3 l = reflect(-wf, H);
+                            if (l.z <= 0.0) return 0;
+                            thr *= SmithG2(wf, l) / SmithG1(wf);
+                            t = float3(l.x, l.y, -l.z);                          // 翻回真实坐标系：向下走
+                            continue;
+                        }
+                        float3 e = refract(-wf, H, eta);                         // 涂层 → 外：η_i/η_t = η
+                        if (e.z >= 0.0) return 0;                                // 翻转系里朝下 = 真实系里朝上
+                        return thr * SmithG2(wf, e) / SmithG1(wf);               // 透射出去
                     }
                     return 0;
                 }` },
@@ -3198,7 +4675,7 @@ PipelineLab.mount({
             previews: [
                 { id: 'uberStack', label: '层序（上 → 下）', size: [260, 200], render: (c) => drawStack(c) },
                 { id: 'uberBudget', label: '能量去向 vs 视角', sub: '白色漫反射底；sheen / coat 权重 = 参数', size: [380, 200], render: (c, S) => drawBudget(c, S) },
-                { id: 'uberSph', label: 'uber 材质', sub: 'sheen + coat + 电介质 + 漫反射', smooth: true, render: (c, S) => BX.renderSphere(c, uberBRDF(S), { res: 128 }) },
+                { id: 'uberSph', label: 'uber 材质', sub: 'sheen + coat + 电介质 + 漫反射', smooth: true, render: (c, S) => BX.renderSphere(c, uberBRDF(S), { res: 128, lights: lights6(S) }) },
             ],
             notes: '拖 sheen：顶层拿走的能量在掠射角最多（sheen 的 E(μ) 在掠射最大），下面所有层在边缘一起变暗。拖 coat r：coat 那条带在正面变宽。这里底层是白色（ρ = 1），所以四条带加起来恰好等于 1：albedo scaling 把每层没反射走的能量（包括它自身单次散射的损失）全部交给下一层；底层有颜色时，最下面一条才会按 ρ 缩小，差值就是被吸收的能量。',
         },
@@ -3328,6 +4805,96 @@ function drawBudget(c, S) {
     ctx.fillText('μ = cosθo', padL + (w - padL - padR) / 2, h - 12);
     ctx.textAlign = 'left';
     names.forEach((nm, k) => { ctx.fillStyle = cols[k]; ctx.fillText('■ ' + nm, w - padR - 78, padT + 4 + k * 13); });
+}
+// ── 3D 层间光路 ──
+/** Step 08 的随机游走（规则与 L6.walk 相同），额外记录位置：涂层界面 z = 0，底层 z = −H。
+ *  pts = 折线顶点（局部系），seg[i] = 走 pts[i] → pts[i+1] 这段时的吞吐量 RGB；statsOnly 时只返回结果类型与底层反弹次数 */
+function layerPath(winc, P, rnd, H, statsOnly) {
+    const a = BX.alpha(P.coatRough), eta = P.ior, flip = (w) => [w[0], w[1], -w[2]];
+    let x = [0, 0, 0], thr = [1, 1, 1];
+    const pts = statsOnly ? null : [winc.map((v) => v * 1.3), [0, 0, 0]], seg = statsOnly ? null : [[1, 1, 1]];
+    const push = (p) => { if (pts) { pts.push(p); seg.push(thr.slice()); } };
+    const done = (kind, bounces) => ({ pts, seg, kind, bounces });
+    let h = BX.sampleVNDF(winc, a, a, rnd(), rnd());
+    if (rnd() < BX.fresnelDielectric(BX.dot(winc, h), eta)) {   // 涂层表面直接反射
+        const l = BX.reflect(winc, h);
+        if (l[2] <= 0) return done('lost', 0);
+        push(l.map((v) => v * 1.1));
+        return done('coat', 0);
+    }
+    let t = BX.refract(winc, h, eta);
+    if (!t || t[2] >= 0) return done('lost', 0);
+    let g = BX.smithG2(winc, t, a) / BX.smithG1(winc, a);
+    thr = thr.map((v) => v * g);
+    for (let ev = 0; ev < 48; ev++) {
+        const down = P.tint.map((c) => Math.pow(Math.max(1e-4, c), P.thick / Math.max(1e-3, -t[2])));
+        thr = thr.map((v, ch) => v * down[ch]);
+        const s = H / -t[2]; x = [x[0] + t[0] * s, x[1] + t[1] * s, -H]; push(x);   // 下行到底层
+        const u = BX.sampleCosine(rnd(), rnd());
+        const up = P.tint.map((c) => Math.pow(Math.max(1e-4, c), P.thick / Math.max(1e-3, u[2])));
+        thr = thr.map((v, ch) => v * P.rho[ch] * up[ch]);
+        const s2 = H / Math.max(1e-3, u[2]); x = [x[0] + u[0] * s2, x[1] + u[1] * s2, 0]; push(x);   // 漫反射后上行到界面
+        if (Math.max(thr[0], thr[1], thr[2]) < 1e-4) return done('lost', ev + 1);
+        const wf = flip([-u[0], -u[1], -u[2]]);
+        h = BX.sampleVNDF(wf, a, a, rnd(), rnd());
+        if (rnd() < BX.fresnelDielectric(BX.dot(wf, h), 1 / eta)) {   // 内部反射（含全内反射）
+            const l = BX.reflect(wf, h);
+            if (l[2] <= 0) return done('lost', ev + 1);
+            g = BX.smithG2(wf, l, a) / BX.smithG1(wf, a); thr = thr.map((v) => v * g);
+            t = flip(l);
+            continue;
+        }
+        const e = BX.refract(wf, h, 1 / eta);
+        if (!e || e[2] >= 0) return done('lost', ev + 1);
+        g = BX.smithG2(wf, e, a) / BX.smithG1(wf, a); thr = thr.map((v) => v * g);
+        const eo = flip(e); push([x[0] + eo[0] * 1.1, x[1] + eo[1] * 1.1, eo[2] * 1.1]);   // 逃逸
+        return done('out', ev + 1);
+    }
+    return done('lost', 48);
+}
+function drawLayer3d(c, S) {
+    const W = S.walk3d, { H, B } = L6_3D, P = (p) => [p[0], p[2], -p[1]];   // 局部 n = +Z → mesh3d 的 y-up（绕 x 轴旋转）
+    const enc = (v) => Math.round(255 * Math.pow(BX.clamp(v, 0, 1), 1 / 2.2));
+    const col = (thr) => { const m = Math.max(thr[0], thr[1], thr[2], 1e-9), b = BX.clamp(Math.pow(m, 0.3), 0.3, 1); return `rgb(${enc(thr[0] / m * b)},${enc(thr[1] / m * b)},${enc(thr[2] / m * b)})`; };
+    const inside = (p) => Math.max(Math.abs(p[0]), Math.abs(p[1])) <= B;
+    const lines = [];
+    for (const r of W.paths) {
+        for (let i = 1; i + 1 < r.pts.length; i++) {   // i = 0 是共同的入射段，下面单独画
+            const a = r.pts[i];
+            let b = r.pts[i + 1], cut = false;
+            if (!inside(a)) break;
+            if (!inside(b)) {   // 截到盒子边界
+                let tt = 1;
+                for (const k of [0, 1]) { const dd = b[k] - a[k]; if (Math.abs(dd) > 1e-9) { const tk = ((dd > 0 ? B : -B) - a[k]) / dd; if (tk >= 0 && tk < tt) tt = tk; } }
+                b = [0, 1, 2].map((k) => a[k] + (b[k] - a[k]) * tt); cut = true;
+            }
+            const last = !cut && i + 2 === r.pts.length;
+            lines.push({ pts: [P(a), P(b)], color: r.kind === 'coat' ? '#9ccfee' : col(r.seg[i]), width: 1.6, arrow: last });
+            if (cut) break;
+        }
+    }
+    const wi = thetaW(S);
+    lines.push({ pts: [P(wi.map((v) => v * 1.3)), [0, 0, 0]], color: '#e8c25a', width: 2.4, arrow: true, labelAt: 'start', label: 'ωi' });
+    const sq = (y) => [[-B, y, -B], [B, y, -B], [B, y, B], [-B, y, B], [-B, y, -B]];
+    lines.push({ pts: sq(0), color: 'rgba(106,176,224,0.7)', width: 1.2 });
+    const base = S.baseColor.map((v) => 0.6 * Math.pow(BX.clamp(v, 0, 1), 1 / 2.2));   // 压暗，让光路更显眼
+    PL.draw.mesh3d(c, {
+        meshes: [
+            PL.mesh.plane({ c: [0, 0, 0], size: 2 * B, surface: false, wire: true, wireColor: 'rgba(106,176,224,0.25)' }),
+            PL.mesh.plane({ c: [0, -H, 0], size: 2 * B, rgb: base }),
+        ],
+        lines,
+        labels: [
+            { p: [B, 0.06, B], text: `涂层界面 η = ${S.coatIor.toFixed(2)}`, color: '#8cc4ea' },
+            { p: [B, -H - 0.02, B], text: 'Lambert 底层 ρ', color: '#c8a8a0' },
+        ],
+        orbit: { yaw: 0.35, pitch: 0.32, dist: 7.0 },
+        overlay: (ctx) => {
+            ctx.font = '11px Consolas, monospace'; ctx.textBaseline = 'top'; ctx.textAlign = 'left'; ctx.fillStyle = '#99a';
+            ctx.fillText(`白底、透明涂层（4000 条）：涂层直接反射 ${(W.coat * 100).toFixed(0)} %`, 8, 30);
+            ctx.fillText(`进入后平均碰底层 ${W.meanB.toFixed(2)} 次才逃出（1/(1 − F̄in) = ${(1 / (1 - S.FinAvg)).toFixed(2)}）`, 8, 45);
+        },
+    });
 }
 
 </script>

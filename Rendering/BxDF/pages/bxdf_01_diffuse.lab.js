@@ -110,9 +110,9 @@ const D1 = (() => {
     };
 
     // ── 画图辅助 ──
-    const lightDir = (th) => [-Math.sin(th), 0, Math.cos(th)];         // 视空间：与视线夹角 th，从左侧照来
+    const lightDir = (th, S) => BX.keyLight(th, S ? S.lightAz : 0);   // 视空间：俯仰 = th（偏航 0 时 = 与视线的夹角），偏航 = 光源方位（系列统一约定）
     const sphere = (c, m, S, o = {}) => BX.renderSphere(c, (wi, wo) => fRGB(m, wi, wo, S), {
-        res: 112, lights: o.lights || [{ dir: lightDir(o.theta === undefined ? S.thetaI : o.theta), color: [PI, PI, PI] }], exposure: o.exposure || 1,
+        res: 112, lights: o.lights || [{ dir: lightDir(o.theta === undefined ? S.thetaI : o.theta, S), color: [PI, PI, PI] }], exposure: o.exposure || 1,
     });
     const outline = (c, res) => {
         const ctx = c.getContext('2d');
@@ -223,6 +223,7 @@ const HLSL_LAMBERT = `
 
 const HLSL_FURNACE = `
     // 白炉检查（Debug CS）：环境 radiance ≡ 1、albedo = 1，输出 E(θo)；守恒 ⇔ 处处 = 1
+    cbuffer FurnaceCB { uint FurnaceModel; float FurnaceR; };   // 被测模型与粗糙度（同 EvalDiffuse 的 model / r）
     RWTexture1D<float> FurnaceOut;
     [numthreads(64, 1, 1)]
     void CS_WhiteFurnace(uint3 id : SV_DispatchThreadID) {
@@ -232,7 +233,8 @@ const HLSL_FURNACE = `
         for (uint i = 0; i < 1024; ++i) {
             float  pdf;
             float3 L = SampleCosineHemisphere(Hammersley(i, 1024), pdf);
-            E += EvalDiffuse(float3(1, 1, 1), L, V).x * L.z / pdf;   // f·cosθi / pdf
+            // 局部坐标 n = +Z：NoL = L.z，NoV = V.z
+            E += EvalDiffuse(FurnaceModel, float3(1, 1, 1), FurnaceR, L.z, V.z, dot(L, V)).x * L.z / pdf;   // f·cosθi / pdf
         }
         FurnaceOut[id.x] = E / 1024.0;
     }`;
@@ -381,7 +383,86 @@ const HLSL_LIGHTING = `
         SceneColor[id.xy] = float4(Lo, 1);
     }`;
 
+// ── 附录：CS_DeferredLighting 用到的 G-buffer 解码与 SH 辐照度（布局 = Graph 里 BasePass 的三张 RT + 深度） ──
+const HLSL_GBUFFER = `
+    // 方向光：dir 指向光源（世界空间单位向量），E = 法向入射照度（线性 RGB）
+    struct Light {
+        float3 dir;
+        float3 E;
+    };
+    cbuffer ViewConstants {
+        float4x4 ClipToWorld;      // (View · Proj)⁻¹
+        float3   CameraPos;
+        uint     NumLights;
+        float2   InvViewSize;      // 1 / 分辨率
+    };
+    Texture2D<float> SceneDepth;   // 设备深度（BasePass 写出）
+    SamplerState     LinearClamp;
+
+    // 逐像素表面属性（GBufferA = baseColor · metallic，B = 八面体法线，C = r · model）
+    struct GBufferData {
+        float3 baseColor;          // 线性（SRGB 格式的 Load 也会解码）
+        float  metallic;
+        float3 N;                  // 世界空间单位法线
+        float  r;                  // 感知粗糙度
+        uint   model;              // 0 = Lambert，1 = EON，2 = Frostbite
+        float3 worldPos;
+    };
+
+    // 八面体解码（Cigolle et al. 2014）：e ∈ [−1, 1]² → 单位法线；|x| + |y| > 1 的部分是折上来的下半球
+    float3 OctDecode(float2 e) {
+        float3 n = float3(e, 1.0 - abs(e.x) - abs(e.y));
+        float  t = saturate(-n.z);
+        n.x += n.x >= 0.0 ? -t : t;
+        n.y += n.y >= 0.0 ? -t : t;
+        return normalize(n);
+    }
+
+    // 读三张 G-buffer + 深度（Load：整数坐标、不过滤），世界坐标由深度反投影
+    GBufferData DecodeGBuffer(uint2 pix) {
+        float4 a = GBufferA.Load(int3(pix, 0));
+        float4 b = GBufferB.Load(int3(pix, 0));
+        float4 c = GBufferC.Load(int3(pix, 0));
+        GBufferData g;
+        g.baseColor = a.rgb;
+        g.metallic  = a.a;
+        g.N         = OctDecode(b.xy * 2.0 - 1.0);
+        g.r         = c.r;
+        g.model     = (uint)round(c.g * 255.0);              // RGBA8 UNORM 里存 model / 255
+        float2 uv   = (pix + 0.5) * InvViewSize;
+        float4 clip = float4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, SceneDepth.Load(int3(pix, 0)), 1.0);
+        float4 wp   = mul(ClipToWorld, clip);
+        g.worldPos  = wp.xyz / wp.w;
+        return g;
+    }`;
+
+const HLSL_SH = `
+    // 天空 radiance 投影到实 SH（l ≤ 2）的 9 组 rgb 系数 L_lm；用 float4 避开 cbuffer 中 float3 数组的填充
+    cbuffer SkyLight {
+        float4 SkyIrradianceSH[9];  // 顺序 (l, m)：00 | 1−1 10 11 | 2−2 2−1 20 21 22
+    };
+
+    // E(N) = ∫ L(ω) max(0, N·ω) dω ≈ Σ_l Â_l Σ_m L_lm Y_lm(N)，Â_0 = π，Â_1 = 2π/3，Â_2 = π/4（Ramamoorthi & Hanrahan 2001）
+    float3 EvalSHIrradiance(float3 N) {
+        float  x = N.x, y = N.y, z = N.z;
+        float3 E = PI * 0.282095 * SkyIrradianceSH[0].rgb;                                    // l = 0：Y = 1/(2√π)
+        E += (2.0 * PI / 3.0) * 0.488603 * (y * SkyIrradianceSH[1].rgb + z * SkyIrradianceSH[2].rgb + x * SkyIrradianceSH[3].rgb);
+        E += (PI / 4.0) * (1.092548 * (x * y * SkyIrradianceSH[4].rgb + y * z * SkyIrradianceSH[5].rgb + x * z * SkyIrradianceSH[7].rgb)
+                         + 0.315392 * (3.0 * z * z - 1.0) * SkyIrradianceSH[6].rgb
+                         + 0.546274 * (x * x - y * y) * SkyIrradianceSH[8].rgb);
+        return max(E, 0.0);         // L2 截断在高对比天空下会振铃出负值
+    }`;
+
+// ── 3D lobe：(φ, θ) 网格，局部 n = +Z；mesh3d 是 y 朝上，W() 把局部坐标转成世界坐标（x → x，z → y，y → −z） ──
+const L3D = {
+    nu: 64, nv: 24, scale: 1.3,
+    dir: (i, j) => BX.dir((j / L3D.nv) * Math.PI / 2, (i / L3D.nu) * 2 * Math.PI),
+    W: (v) => [v[0], v[2], -v[1]],
+    rgb: (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255),
+};
+
 PipelineLab.mount({
+    paramSteps: { albedo: ['lambert', 'lfurnace', 'retro', 'eon', 'graze', 'prod'], thetaI: ['lambert', 'sample', 'vcavity', 'qon', 'retro', 'eon', 'burley', 'graze'], lightAz: ['lambert', 'retro', 'graze'], sigma: ['sample', 'vcavity', 'qon', 'retro', 'onenergy', 'eon', 'prod'], rough: ['sample', 'retro', 'burley', 'graze', 'benergy', 'frost', 'prod'], nSamp: ['sample'], l3dMode: ['qon', 'burley'] },   // generated by validate_doc --deps (param → steps whose previews change)
     title: 'BxDF 01 · 漫反射：Lambert → Oren-Nayar → Burley',
     lang: 'zh-CN',
     codeLang: 'hlsl',
@@ -389,11 +470,34 @@ PipelineLab.mount({
     regen: false,
 
     params: [
-        { id: 'albedo', label: 'ρ', value: '#b06a48', map: BX.hex2lin, title: 'albedo（sRGB 拾色 → 线性 RGB）' },
-        { id: 'thetaI', label: 'θi', min: 0, max: 85, step: 1, value: 60, unit: '°', map: (d) => d * Math.PI / 180, title: 'lobe / 热图中的入射角 θi；球体渲染中 = 光线与视线的夹角（相位角）' },
-        { id: 'sigma', label: 'σ (ON)', min: 0, max: 90, step: 1, value: 45, unit: '°', map: (d) => d * Math.PI / 180, title: 'Oren-Nayar facet 坡度角标准差 σ；FON / EON 用 r = σ/(π/2)' },
-        { id: 'rough', label: 'r (Burley)', min: 0, max: 1, step: 0.01, value: 0.7, digits: 2, title: 'Burley / Frostbite 的感知粗糙度 r（直接用 r，不是 α = r²）' },
-        { id: 'nSamp', label: 'N 样本', options: [64, 256, 1024], value: 256, title: '采样散点图的样本数' },
+        {
+            id: 'albedo', label: 'ρ', value: '#b06a48', map: BX.hex2lin, title: 'albedo（sRGB 拾色 → 线性 RGB）',
+            desc: '漫反射反照率 ρ（拾色器取 sRGB，内部转成线性 RGB）：决定反射多少、什么颜色。除 EON 外各模型都与 ρ 成正比，k = π f/ρ 不变，只有球体渲染变色；EON 的多次散射项 f<sub>ms</sub> 对 ρ 非线性（∝ ρ²），调亮 albedo 时 Step 06 剖面和 Step 08 lobe 里的 EON 跟着抬高。',
+        },
+        {
+            id: 'thetaI', label: 'θi', min: 0, max: 85, step: 1, value: 60, unit: '°', map: (d) => d * Math.PI / 180, title: 'lobe / 热图中的入射角 θi；球体渲染中 = 主光的俯仰角',
+            desc: '入射角 θ<sub>i</sub>：在 lobe、热图和 3D 视图里是 ω<sub>i</sub> 与法线的夹角，在球体渲染里是主光的<strong>俯仰角</strong>（从视线方向向上抬 θ<sub>i</sub>；光源方位 = 0° 时它就是光线与视线的夹角，也是球心处的入射角）。拖到 70° 以上看 QON 回射瓣和 Burley 掠射亮边最强（Step 05 / 09 的 3D lobe），拖到 0°（顶光）看 Step 06 的 QON 球变"平"、Step 10 的 Burley 轮廓亮环。',
+        },
+        {
+            id: 'lightAz', label: '光源方位', min: -170, max: 170, step: 1, value: 0, unit: '°',
+            desc: '球体渲染里主光的<strong>偏航角</strong>：绕竖直轴转动主光（0° = 光在视线正上方的竖直面内，正 = 右侧，±170° ≈ 逆光），俯仰由 θ<sub>i</sub> 决定。只影响球体渲染和球面比值图；lobe、热图与曲线始终画在入射面内，不受它影响。',
+        },
+        {
+            id: 'sigma', label: 'σ (ON)', min: 0, max: 90, step: 1, value: 45, unit: '°', map: (d) => d * Math.PI / 180, title: 'Oren-Nayar facet 坡度角标准差 σ；FON / EON 用 r = σ/(π/2)',
+            desc: 'Oren-Nayar 的 facet 坡度角标准差 σ（弧度意义上的粗糙度，0 = Lambert；FON / EON 取 r = σ/(π/2)）。σ 越大 V 槽越深：回射越强、A 越小（正面越暗）——看 Step 04 的槽剖面、Step 05 的 3D lobe 向光源一侧倾斜，以及 Step 07 白炉里丢掉的能量。',
+        },
+        {
+            id: 'rough', label: 'r (Burley)', min: 0, max: 1, step: 0.01, value: 0.7, digits: 2, title: 'Burley / Frostbite 的感知粗糙度 r（直接用 r，不是 α = r²）',
+            desc: 'Burley / Frostbite 的感知粗糙度 r（直接用 r，不是 α = r²），决定掠射极限 F<sub>D90</sub> = 0.5 + 2r·cos²θ<sub>d</sub>。r ≈ 0.25 时回射配置下等于 Lambert；拖到 0 看掠射变暗，拖到 1 看轮廓亮边与白炉能量增益（Step 09–12）。',
+        },
+        {
+            id: 'nSamp', label: 'N 样本', options: [64, 256, 1024], value: 256, title: '采样散点图的样本数',
+            desc: '采样散点图的样本数，只影响 Step 03 的两张散点：点越多越容易看出 cosine 采样向中心（法线方向）聚集、均匀采样在等面积投影上铺满。收敛曲线固定扫 N = 2…2048，不受它影响。',
+        },
+        {
+            id: 'l3dMode', label: '3D 半径', options: [{ value: 'k', label: 'k = πf/ρ' }, { value: 'kcos', label: 'k·cosθo' }], value: 'k',
+            desc: 'Step 05 / 09 的 3D lobe 用什么量作半径：<code>k = π f/ρ</code> 与入射平面 lobe 一致，Lambert 是半径 1 的半球，最能看出贴近地平线一圈的回射抬高与压暗；<code>k·cosθo</code> 是常说的"余弦瓣"（出射 radiant intensity），Lambert 是与表面相切的球，QON 的瓣整体倒向光源一侧。',
+        },
     ],
 
     stages: [
@@ -504,13 +608,30 @@ PipelineLab.mount({
                 }
             },
         },
+        {
+            // 3D lobe（Step 05 / 09）：ωi 固定，k(ωi, ωo)（或 k·cosθo）在 ωo 半球的 (φ, θ) 网格上；Lambert 的最大值 = 1
+            id: 'lobe3d', lifetime: 'param', lazy: true, run(S) {
+                const { nu, nv } = L3D, NU = nu + 1, NV = nv + 1, withCos = S.l3dMode === 'kcos';
+                S.l3d = {};
+                for (const key of ['qon', 'burley']) {
+                    const m = D1.M[key], R = PL.buf(S, 'l3d_' + key, NU * NV);
+                    let mx = 0, at = 0;
+                    for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) {
+                        const wo = L3D.dir(i, j), v = m.k(S.wi, wo, S, S.rhoL) * (withCos ? Math.max(0, wo[2]) : 1);
+                        R[j * NU + i] = v;
+                        if (v > mx) { mx = v; at = j * NU + i; }
+                    }
+                    S.l3d[key] = { R, max: mx, at };
+                }
+            },
+        },
     ],
 
     intro: {
         title: '漫反射 BRDF 的三代：常数 → 微表面 V 腔 → 经验拟合',
         flow: ['Lambert ρ/π', '白炉 E = ρ', 'cosine 采样', 'V 腔 σ', 'QON A·B', '回射', 'FON → EON', 'Burley F_D90', 'Frostbite 归一化', '生产版'],
         html: '<p>每个模型拆成若干步：公式 + HLSL + <strong>由页面内 JS 参考实现实时算出的结果</strong>（球体渲染、入射平面 lobe、半球热图、白炉曲线、采样散点）。所有模型都写成 <code>k(ωi, ωo) = π·f/ρ</code> —— "相对 Lambert 的倍数"，热图里 1 = 与 Lambert 相同。' +
-            '顶栏 <code>θi</code> 是 lobe / 热图的入射角，在球体渲染中是光线与视线的夹角；<code>σ</code> 驱动 Oren-Nayar（FON / EON 用 r = σ/(π/2)）；<code>r</code> 驱动 Burley / Frostbite。悬停热图可读数。</p>' +
+            '顶栏 <code>θi</code> 是 lobe / 热图的入射角，在球体渲染中是主光的俯仰角（<code>光源方位</code> 控制偏航，方位 = 0° 时 θi 就是光线与视线的夹角）；<code>σ</code> 驱动 Oren-Nayar（FON / EON 用 r = σ/(π/2)）；<code>r</code> 驱动 Burley / Frostbite。悬停热图可读数。</p>' +
             '<p>镜面（GGX）与 Phong / Blinn-Phong 的历史在 02 模块；漫反射与镜面的能量分配在最后一步与 06 模块。</p>' + BX.nav('diffuse'),
     },
 
@@ -526,7 +647,7 @@ PipelineLab.mount({
             ],
             code: { title: 'HLSL · Fd_Lambert', src: HLSL_LAMBERT },
             previews: [
-                { id: 'lambertSphere', label: 'Lambert 球', sub: '方向光，与视线夹角 = θi，E = π', render: (c, S) => D1.sphere(c, D1.M.lambert, S) },
+                { id: 'lambertSphere', label: 'Lambert 球', sub: '方向光：俯仰 = θi，偏航 = 光源方位，E = π', render: (c, S) => D1.sphere(c, D1.M.lambert, S) },
                 {
                     id: 'lambertLobe', label: '入射平面 lobe', sub: '蓝：k = π f/ρ ≡ 1（半圆）；橙：k·cosθo', size: [240, 150],
                     render: (c, S) => BX.lobe(c, { wi: S.wi, scale: 1.05, series: [{ fn: () => 1, color: '#6ab0e0', label: 'π f/ρ' }, { fn: (wo) => wo[2], color: '#e0a060', label: 'π f/ρ · cosθo' }] }),
@@ -654,6 +775,11 @@ PipelineLab.mount({
                 {
                     id: 'qonMap', label: 'log₂ k(ωo)，ωi 固定', sub: '黄圈 = ωi；右半 = 光源一侧', render: (c, S) => D1.ratioMap(c, S.hmQON, S), probe: (x, y, S) => D1.hemiProbe(S.hmQON)(x, y),
                 },
+                {
+                    id: 'qonLobe3d', needs: ['lobe3d'], large: true, label: '3D：QON 与 Lambert 的 lobe（整个 ωo 半球）',
+                    sub: '实体 = QON（当前 σ），灰色线框 = Lambert。半径 = 顶栏"3D 半径"：k = π f/ρ（Lambert 为半球）或 k·cosθo（Lambert 为与表面相切的球）；两者同一比例尺，按 max(1, 峰值) 归一化。黄箭头 = ω<sub>i</sub>（指向光源），青色虚线 = 镜像方向。拖动旋转',
+                    render: (c, S) => drawLobe3d(c, S, 'qon'),
+                },
             ],
             notes: '热图是 ωo 的等面积投影，颜色 = log₂(π f/ρ)：橙 = 比 Lambert 亮，蓝 = 暗，范围 ±1（2× / 0.5×）。QON 的左半（s ≤ 0）是一块均匀的蓝 —— 那里 B 项被 max(0, ·) 截掉，只剩 A；下一步 Fujii 的修改正是针对这一点。',
             warn: 'σ 是弧度而不是 [0,1] 的"粗糙度"；把 GGX 的 r 或 α 直接当 σ 用没有物理依据（本页 FON / EON 用 r = σ/(π/2) 只是沿用 EON 论文的比较方式）。HLSL 里不要用 acos / tan：tanβ 在 θ → 90° 发散，<code>s / max(NoL, NoV)</code> 是同一个量且稳定。',
@@ -666,8 +792,8 @@ PipelineLab.mount({
                 'L / E = (ρ/π) · cosθ · k = (ρ/π) · (A cosθ + B sin^2θ)   // 边缘 θ → 90°：Lambert → 0，QON → ρB/π',
             ],
             previews: [
-                { id: 'retroLambert', label: 'Lambert · 顶光', sub: '相位角 0°', render: (c, S) => D1.sphere(c, D1.M.lambert, S, { theta: 0 }) },
-                { id: 'retroQON', label: 'QON · 顶光', sub: '相位角 0°，当前 σ', render: (c, S) => D1.sphere(c, D1.M.qon, S, { theta: 0 }) },
+                { id: 'retroLambert', label: 'Lambert · 头灯', sub: '光在相机处：相位角 0°', render: (c, S) => D1.sphere(c, D1.M.lambert, S, { lights: [{ dir: [0, 0, 1], color: [Math.PI, Math.PI, Math.PI] }] }) },
+                { id: 'retroQON', label: 'QON · 头灯', sub: '相位角 0°，当前 σ', render: (c, S) => D1.sphere(c, D1.M.qon, S, { lights: [{ dir: [0, 0, 1], color: [Math.PI, Math.PI, Math.PI] }] }) },
                 {
                     id: 'retroProfile', label: '顶光下赤道剖面 L/(ρE)', sub: '球面 x ∈ [−1, 1]', size: [300, 180],
                     render: (c, S) => {
@@ -680,7 +806,7 @@ PipelineLab.mount({
                         PL.draw.plot(c, { x: [-1, 1], y: [0, 0.45], xLabel: 'x', series: Object.keys(ser).map((k) => ({ data: ser[k], x: xs, color: D1.M[k].color, label: D1.M[k].name })) });
                     },
                 },
-                { id: 'retroQONside', label: 'QON · 相位角 θi', sub: '光从左侧照来', render: (c, S) => D1.sphere(c, D1.M.qon, S) },
+                { id: 'retroQONside', label: 'QON · 顶栏主光', sub: '俯仰 θi · 偏航 = 光源方位', render: (c, S) => D1.sphere(c, D1.M.qon, S) },
             ],
             notes: '剖面图把四个模型放在一起（EON 用 r = σ/(π/2)，Burley 用 r）：Lambert 是半圆形的 cosθ；QON / EON 边缘不归零；Burley 在 r 大时边缘先升后降（下一组步骤）。拖 <code>σ</code> = 0 时 QON 曲线与 Lambert 重合。',
         },
@@ -775,6 +901,11 @@ PipelineLab.mount({
                     render: (c, S) => BX.lobe(c, { wi: S.wi, series: [{ fn: () => 1, color: '#9aa4ae', label: 'Lambert' }, { fn: (wo) => D1.M.burley.k(S.wi, wo, S, 1), color: '#6ab0e0', label: `Burley r=${S.rough.toFixed(2)}` }] }),
                 },
                 { id: 'burleyMap', label: 'log₂ k(ωo)，ωi 固定', sub: '黄圈 = ωi', render: (c, S) => D1.ratioMap(c, S.hmBurley, S), probe: (x, y, S) => D1.hemiProbe(S.hmBurley)(x, y) },
+                {
+                    id: 'burleyLobe3d', needs: ['lobe3d'], large: true, label: '3D：Burley 与 Lambert 的 lobe（整个 ωo 半球）',
+                    sub: '实体 = Burley（当前 r），灰色线框 = Lambert；半径与归一化同 Step 05。k 模式下看贴近地平线的一圈：光源一侧被 F<sub>D90</sub> 抬高，镜像一侧被压低；切到 k·cosθo，这圈差别乘上 cosθo 后几乎消失——这也是 Burley 在普通光照下不显眼的原因',
+                    render: (c, S) => drawLobe3d(c, S, 'burley'),
+                },
             ],
             notes: '拖 <code>r</code>：r ≈ 0.25 时回射配置下 F_D90 = 1，正好退化为 Lambert；更小则掠射变暗，更大则掠射变亮。热图里 Burley 的亮区集中在<strong>边缘一圈</strong>（两个 (1 − μ)^5 因子），并偏向光源一侧（θd 小）—— 与 QON 的回射瓣形状不同。',
             warn: '这里的 r 是 Burley 的感知粗糙度，与 GGX 的 α = r² 不同；把 α 喂给 F_D90 会让中等粗糙度的回射明显偏弱。镜面项与漫反射用同一个 r 是 Disney 的设计选择，不是物理约束。',
@@ -784,8 +915,8 @@ PipelineLab.mount({
             desc: '在球上看最直观：r = 0 时球的轮廓附近比 Lambert 暗（(1 − μ)^5 把 F_D90 = 0.5 的压暗集中在掠射）；r 大时轮廓附近出现亮边，光越靠近视线（相位角小）越明显，因为 θd 小、F_D90 大。比值图逐像素给出 Burley / Lambert。',
             formula: 'k_Burley = F(μl) · F(μv)，F(μ) = 1 + (F_D90 − 1)(1 − μ)^5\n边缘 μv → 0：k → F_D90 · F(μl)   // r = 0 → ≤ 0.5；r = 1、顶光 → 2.5 · F(μl)',
             previews: [
-                { id: 'grazeR0', label: 'Burley r = 0', sub: '相位角 θi', render: (c, S) => D1.sphere(c, D1.M.burley, Object.assign({}, S, { rough: 0 })) },
-                { id: 'grazeR', label: 'Burley r = 当前', sub: '相位角 θi', render: (c, S) => D1.sphere(c, D1.M.burley, S) },
+                { id: 'grazeR0', label: 'Burley r = 0', sub: '主光：俯仰 θi · 偏航 = 方位', render: (c, S) => D1.sphere(c, D1.M.burley, Object.assign({}, S, { rough: 0 })) },
+                { id: 'grazeR', label: 'Burley r = 当前', sub: '主光：俯仰 θi · 偏航 = 方位', render: (c, S) => D1.sphere(c, D1.M.burley, S) },
                 { id: 'grazeL', label: 'Lambert', sub: '同一光照', render: (c, S) => D1.sphere(c, D1.M.lambert, S) },
                 { id: 'grazeRatio0', label: 'log₂(Burley / Lambert) · r = 0', sub: '球面逐像素，范围 ±1；黑 = 背光', render: (c, S) => sphereRatio(c, S, 0) },
                 { id: 'grazeRatio', label: 'log₂(Burley / Lambert) · r = 当前', sub: '橙 = 比 Lambert 亮', render: (c, S) => sphereRatio(c, S, S.rough) },
@@ -869,6 +1000,15 @@ PipelineLab.mount({
             ],
         },
     ],
+
+    library: {
+        title: '附录 · 辅助函数（HLSL）',
+        intro: 'Step 13 的 <code>CS_DeferredLighting</code> 调用、正文没有展开的两部分：G-buffer 解码（布局 = Graph 里 BasePass 节点输出的 GBufferA/B/C，再加一张深度）与天空光的 L2 SH 辐照度。都是引擎里很常见的写法，换成自己引擎的布局即可。',
+        blocks: [
+            { title: 'G-buffer 布局 · DecodeGBuffer · OctDecode', code: HLSL_GBUFFER },
+            { title: 'EvalSHIrradiance · L2 SH 辐照度（Ramamoorthi & Hanrahan 2001）', code: HLSL_SH },
+        ],
+    },
 
     graph: {
         intro: '<strong>RDG 风格</strong>：BxDF 本身不是 pass，而是被内联（<code>INLINE</code>）进真实 pass 的函数 —— 延迟光照 CS 逐像素调用漫反射函数，LUT 烘焙 CS 用 cosine 采样对同一个函数做预积分。同名资源自动连线；函数 pin 的"格式"写返回类型。',
@@ -969,6 +1109,8 @@ PipelineLab.mount({
         { title: 'Physically Based Rendering in Filament', author: 'Romain Guy, Mathias Agopian', venue: 'Google', year: 2018, url: 'https://google.github.io/filament/Filament.html', note: '漫反射 BRDF 的取舍' },
         { title: 'OpenPBR Surface Specification', author: 'Andersson et al.', venue: 'Academy Software Foundation', year: 2024, note: '采用 EON 作为粗糙漫反射' },
         { title: 'Physically Based Rendering: From Theory to Implementation (4th ed.)', author: 'Matt Pharr, Wenzel Jakob, Greg Humphreys', venue: 'MIT Press', year: 2023, note: 'Malley 方法 / cosine 采样' },
+        { title: 'An Efficient Representation for Irradiance Environment Maps', author: 'Ravi Ramamoorthi, Pat Hanrahan', venue: 'SIGGRAPH', year: 2001, note: 'L2 SH 辐照度（附录 EvalSHIrradiance）' },
+        { title: 'A Survey of Efficient Representations for Independent Unit Vectors', author: 'Zina H. Cigolle, Sam Donow, Daniel Evangelakos, Michael Mara, Morgan McGuire, Quirin Meyer', venue: 'Journal of Computer Graphics Techniques 3(2)', year: 2014, url: 'https://jcgt.org/published/0003/02/01/', note: '八面体法线编码（附录 OctDecode）' },
     ],
 });
 
@@ -1000,9 +1142,9 @@ function lutProbe(lut, x, y) {
     const N = 32, yy = N - 1 - y;
     return `NoV=${((x + 0.5) / N).toFixed(2)} r=${((yy + 0.5) / N).toFixed(2)}  E=${lut[yy * N + x].toFixed(3)}`;
 }
-// ── 球面逐像素 log₂(Burley / Lambert)：光与视线夹角 = θi（与 D1.sphere 相同的几何） ──
+// ── 球面逐像素 log₂(Burley / Lambert)：主光俯仰 = θi、偏航 = 光源方位（与 D1.sphere 相同的几何） ──
 function sphereRatio(c, S, r) {
-    const res = 112, img = PL.buf(c, '_ratio', res * res), L = D1.lightDir(S.thetaI);
+    const res = 112, img = PL.buf(c, '_ratio', res * res), L = D1.lightDir(S.thetaI, S);
     for (let y = 0; y < res; y++) for (let x = 0; x < res; x++) {
         const u = 2 * (x + 0.5) / res - 1, v = -(2 * (y + 0.5) / res - 1), r2 = u * u + v * v;
         if (r2 > 1) { img[y * res + x] = NaN; continue; }
@@ -1011,4 +1153,32 @@ function sphereRatio(c, S, r) {
         img[y * res + x] = wi[2] > 0 ? Math.log2(Math.max(1e-3, D1.kBurley(wi, wo, r))) : NaN;
     }
     PL.draw.field(c, img, res, res, { range: [-1, 1], map: 'diverge' });
+}
+// ── 3D：某个模型的 k·cosθo lobe（实体，读 lobe3d 网格）+ Lambert 参照（线框，解析） ──
+function drawLobe3d(c, S, key) {
+    const { nu, nv, W } = L3D, NU = nu + 1, m = D1.M[key], L = S.l3d[key], R = L.R, withCos = S.l3dMode === 'kcos';
+    const SC = L3D.scale / Math.max(1, L.max);                          // 同一比例尺：模型与 Lambert（峰值 1）中较大者 → 半径 1.3
+    const at = (d, r) => W([d[0] * r, d[1] * r, d[2] * r]);
+    const pos = (u, v) => { const i = Math.round(u * nu), j = Math.round(v * nv); return at(L3D.dir(i, j), SC * R[j * NU + i]); };
+    const lam = (u, v) => { const d = BX.dir(v * Math.PI / 2, u * 2 * Math.PI); return at(d, SC * (withCos ? d[2] : 1)); };
+    const wi = S.wi, mir = [-wi[0], -wi[1], wi[2]];
+    // 标签：模型名放在光源一侧 θ = 25° 的瓣面上方；Lambert 放在镜像一侧 θ = 35° 的线框外（两种模型在那里都低于 Lambert）
+    const jM = Math.round(nv * 25 / 90), up = L3D.dir(0, jM), back = BX.dir(35 * Math.PI / 180, Math.PI);
+    PL.draw.mesh3d(c, {
+        meshes: [
+            PL.mesh.param(pos, [nu, nv], { closedU: true, rgb: L3D.rgb(m.color), gloss: 18 }),
+            PL.mesh.param(lam, [24, 8], { closedU: true, surface: false, wire: true, wireColor: 'rgba(190,200,210,0.5)' }),
+        ],
+        lines: [
+            { pts: [[0, 0, 0], at([0, 0, 1], 1.7)], color: '#9aa4ae', width: 1.4, arrow: true, label: 'n' },
+            { pts: [[0, 0, 0], at(wi, 1.7)], color: '#e8c25a', width: 2.4, arrow: true, label: 'ωi' },
+            { pts: [[0, 0, 0], at(mir, 1.5)], color: '#56d0e0', width: 1.2, dash: [4, 3], label: '镜像' },
+        ],
+        labels: [
+            { p: at(up, SC * R[jM * NU] + 0.3), text: key === 'qon' ? `QON σ = ${D1.deg(S.sigma)}` : `Burley r = ${S.rough.toFixed(2)}`, color: m.color },
+            { p: at(back, SC * (withCos ? back[2] : 1) + 0.12), text: 'Lambert', color: '#b8c2cc' },
+        ],
+        grid: { y: 0, size: 2.4 },
+        orbit: { yaw: 0.5, pitch: 0.42, dist: 5, target: [0.2, 0.5, 0] },
+    });
 }

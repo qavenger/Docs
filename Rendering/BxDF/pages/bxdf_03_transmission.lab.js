@@ -333,6 +333,39 @@ function textPanel(canvas, lines) {
     ctx.font = '11px Consolas, monospace'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
     lines.forEach(([t, c], k) => { ctx.fillStyle = c || '#9aa'; ctx.fillText(t, 8, 8 + k * 16); });
 }
+// ── 3D：反射 / 透射 lobe + 界面平面。mesh3d 是 y 朝上：W() 把局部 (x, y, z = n) 转成世界 (x, z, −y) ──
+function trDrawLobe3d(c, S) {
+    const { nu, nv, scale } = TR_L3D, NU = nu + 1, L = S.l3d, DEC = 3, W = (v) => [v[0], v[2], -v[1]];
+    // 半径 = 对数刻度：r = scale · max(0, (log10(v / 两者峰值) + 3) / 3)，与右侧 log 图一致（线性刻度下透射 lobe 只是一根针）
+    const grid = (P) => (u, v) => {
+        const q = 3 * (Math.round(v * nv) * NU + Math.round(u * nu)), x = P[q], y = P[q + 1], z = P[q + 2], m = Math.hypot(x, y, z);
+        if (!(m > 0)) return [0, 0, 0];
+        const r = scale * Math.max(0, (Math.log10(m / L.max) + DEC) / DEC);
+        return W([x / m * r, y / m * r, z / m * r]);
+    };
+    const at = (d, r) => W([d[0] * r, d[1] * r, d[2] * r]), wi = S.wi, up = wi[2] >= 0;
+    const lines = [
+        { pts: [[0, 0, 0], at([0, 0, up ? 1 : -1], 1.45)], color: '#9aa4ae', width: 1.2, arrow: true, label: 'n' },
+        { pts: [[0, 0, 0], at(wi, 1.7)], color: '#e8c25a', width: 2.4, arrow: true, label: 'ωi' },
+        { pts: [[0, 0, 0], at(L.mir, 1.55)], color: '#e0a060', width: 1.2, dash: [4, 3], label: '镜面反射' },
+    ];
+    if (L.wt) lines.push({ pts: [[0, 0, 0], at(L.wt, 1.55)], color: '#5ad07a', width: 1.2, dash: [4, 3], label: '光滑折射' });
+    const labels = [
+        { p: [-1.25, 0.16, 1.1], text: '空气 η = 1.00', color: '#9aa4ae' },
+        { p: [-1.25, -0.2, 1.1], text: `介质 η = ${S.ior.toFixed(2)}`, color: '#7fb0dc' },
+    ];
+    if (!L.wt) labels.push({ p: at(BX.norm([-wi[0], -wi[1], up ? -0.35 : 0.35]), 1.2), text: `TIR（θi > θc = ${deg(S.thetaC).toFixed(1)}°）`, color: '#e06c75' });
+    PL.draw.mesh3d(c, {
+        meshes: [
+            PL.mesh.plane({ c: [0, 0, 0], size: 2.6, surface: false, wire: true, wireColor: 'rgba(120,170,220,0.35)' }),
+            PL.mesh.param(grid(S.l3dR), [nu, nv], { closedU: true, rgb: [0.88, 0.63, 0.38], gloss: 24 }),
+            PL.mesh.param(grid(S.l3dT), [nu, nv], { closedU: true, rgb: [0.42, 0.69, 0.88], gloss: 24 }),
+        ],
+        lines, labels,
+        grid: { y: 0, size: 2.6 },
+        orbit: { yaw: 0.5, pitch: 0.2, dist: 5.4, target: [0, 0, 0] },
+    });
+}
 const thetaDeg = (k, n) => Math.min(89, 90 * k / (n - 1));
 const EN_N = 31, EN_RS = [0.1, 0.25, 0.4, 0.6, 0.8, 1.0], EN_COLORS = ['#56b6c2', '#6ab0e0', '#5ad07a', '#e8c25a', '#e0a060', '#e06c75'];
 const NS = 4096, NBIN = 60, NSUB = 6, NPHI = 64, HRES = 96;
@@ -531,18 +564,183 @@ const HLSL_PT = `
         PathTraceAccum[DispatchRaysIndex().xy] += float4(L, 1);
     }`;
 
+// ── 附录：正文代码调用、步骤里没有展开的辅助函数 ──
+const HLSL_LIB_SEQ = `
+    // Hammersley 点集：x = (i + 0.5)/N，y = 以 2 为底的 radical inverse（reversebits）
+    float2 Hammersley(uint i, uint N) {
+        return float2((i + 0.5) / N, reversebits(i) * 2.3283064365386963e-10);   // 2⁻³²
+    }`;
+
+const HLSL_LIB_RT = `
+    cbuffer ViewCB : register(b1) {
+        float4x4 WorldToClip;
+        float4x4 ClipToWorld;
+        float3   CameraPos;
+        float    NearZ, FarZ;                 // 标准 D3D 投影：设备深度 0 = 近平面，1 = 远平面
+        float    ScreenHeight, TanHalfFov;
+    };
+    TextureCube<float4> PrefilteredEnvCube;   // 02 的 split-sum 预滤波链：mip = r · (ENV_MIP_COUNT − 1)
+    #define ENV_MIP_COUNT 6
+
+    // 透明物体的 VS 输出（前向 pass）
+    struct VSOut {
+        float4 pos      : SV_Position;
+        float3 posWS    : TEXCOORD0;
+        float3 normalWS : TEXCOORD1;
+        float  viewZ    : TEXCOORD2;          // 视空间线性深度（到相机平面的距离）
+    };
+
+    // 设备深度 → 视空间线性深度（标准透视投影的逆：z = n·f / (f − d·(f − n))）
+    float LinearDepth(float deviceZ) {
+        return NearZ * FarZ / (FarZ - deviceZ * (FarZ - NearZ));
+    }
+
+    // 世界坐标 → 屏幕 uv（[0, 1]²，v 向下）：透视除法后把 NDC 映射到纹理坐标
+    float2 WorldToScreenUV(float3 posWS) {
+        float4 clip = mul(WorldToClip, float4(posWS, 1.0));
+        float2 ndc  = clip.xy / clip.w;
+        return float2(0.5 + 0.5 * ndc.x, 0.5 - 0.5 * ndc.y);
+    }
+
+    // split-sum 的预滤波环境（02 的 CS_PrefilterEnv 产物）：按感知粗糙度选 mip
+    float3 PrefilteredEnv(float3 R, float roughness) {
+        return PrefilteredEnvCube.SampleLevel(LinearClamp, R, roughness * (ENV_MIP_COUNT - 1)).rgb;
+    }`;
+
+const HLSL_LIB_PT = `
+    cbuffer PathTraceCB : register(b2) { uint FrameIndex; };
+    Texture2D<float4>   EnvMap;               // 等距柱状环境图（页面右图）
+    SamplerState        LinearWrap;
+    RWTexture2D<float4> PathTraceAccum;       // rgb = 累加辐亮度，a = 样本数
+
+    // 一次求交的结果；inside = 这段光线在介质内部（从球内射向球面）
+    struct Hit {
+        float3 pos;
+        float3 normalOut;                     // 外法线：局部上半球 = 空气
+        float  t;
+        bool   inside;
+    };
+
+    // 相机光线：像素中心 + 抖动，经 ClipToWorld 反投影出方向（z = 1 在两种深度约定下都是有限远的点）
+    RayDesc CameraRay(uint2 pix, float2 jitter) {
+        float2 uv = (pix + 0.5 + jitter) / DispatchRaysDimensions().xy;
+        float4 p  = mul(ClipToWorld, float4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, 1.0, 1.0));
+        RayDesc ray;
+        ray.Origin    = CameraPos;
+        ray.Direction = normalize(p.xyz / p.w - CameraPos);
+        ray.TMin      = 1e-4;                 // 后续弹射从球面出发，TMin 跳过自身
+        ray.TMax      = 1e30;
+        return ray;
+    }
+
+    // 以 b 为底的 radical inverse（Halton 序列的一维）
+    float Halton(uint i, uint b) {
+        float f = 1.0, r = 0.0;
+        for (; i > 0; i /= b) { f /= b; r += f * (i % b); }
+        return r;
+    }
+    // 第 frame 帧的像素内抖动 ∈ [−0.5, 0.5)²：Halton(2, 3)，渐进累加时逐帧覆盖整个像素
+    float2 Jitter(uint frame) {
+        return float2(Halton(frame + 1, 2), Halton(frame + 1, 3)) - 0.5;
+    }
+
+    // 参考场景 = 原点处的单位玻璃球（与页面里的 JS 路径追踪相同），解析求交；一般场景换成 TraceRay + closest hit
+    bool TraceScene(RayDesc ray, out Hit hit) {
+        hit = (Hit)0;
+        float b = dot(ray.Origin, ray.Direction), c = dot(ray.Origin, ray.Origin) - 1.0, disc = b * b - c;
+        if (disc <= 0.0) return false;
+        float q = sqrt(disc), t0 = -b - q, t1 = -b + q;
+        if (t0 > ray.TMin)      { hit.t = t0; hit.inside = false; }   // 从外面打到球
+        else if (t1 > ray.TMin) { hit.t = t1; hit.inside = true;  }   // 起点在球内（或在球面上朝里）
+        else return false;
+        if (hit.t > ray.TMax) return false;
+        hit.pos       = ray.Origin + hit.t * ray.Direction;
+        hit.normalOut = normalize(hit.pos);
+        return true;
+    }
+
+    // 方向 → 等距柱状 uv（与页面环境图相同：u = atan2(x, −z)/2π + 0.5，v = acos(y)/π，y 朝上）
+    float2 DirToEquirect(float3 d) {
+        return float2(atan2(d.x, -d.z) * (0.5 * INV_PI) + 0.5, acos(clamp(d.y, -1.0, 1.0)) * INV_PI);
+    }
+
+    // 以 n 为 z 轴的正交基，按行 (t, b, n)：mul(TBN, v) = 世界 → 局部，mul(v, TBN) = 局部 → 世界（Duff et al. 2017）
+    float3x3 Basis(float3 n) {
+        float  s = n.z >= 0.0 ? 1.0 : -1.0;
+        float  a = -1.0 / (s + n.z), c = n.x * n.y * a;
+        float3 t = float3(1.0 + s * n.x * n.x * a, s * c, -s * n.x);
+        float3 b = float3(c, s + n.y * n.y * a, -n.y);
+        return float3x3(t, b, n);
+    }
+
+    // PCG 哈希（Jarzynski & Olano 2020, JCGT 9(3)）
+    uint PcgHash(uint v) {
+        uint state = v * 747796405u + 2891336453u;
+        uint word  = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+        return (word >> 22u) ^ word;
+    }
+    // 线程私有的随机数状态：第一次调用时用 (像素, FrameIndex) 播种，之后每次推进
+    static uint RngState = 0;
+    float Rand() {
+        if (RngState == 0) {
+            uint2 p = DispatchRaysIndex().xy;
+            RngState = PcgHash(p.x + PcgHash(p.y + PcgHash(FrameIndex))) | 1u;
+        }
+        RngState = PcgHash(RngState);
+        return (RngState >> 8) * (1.0 / 16777216.0);                  // 24 位 → [0, 1)
+    }
+    // 三个独立的 [0, 1) 随机数：x 选 R / T，yz 驱动 VNDF（即 Sample_RoughDielectric 的 u）
+    float3 Rand3() {
+        return float3(Rand(), Rand(), Rand());
+    }`;
+
+// ── 3D lobe：以 lobe 轴为极点的 (φ, ψ) 网格，ψ = π·t² 向极点加密（窄 lobe 也有足够顶点） ──
+const TR_L3D = { nu: 72, nv: 48, scale: 1.3 };
+/** fn(ω) ≥ 0 over the sphere; writes local (z-up) vertices r·ω into P (unnormalized), returns the max */
+function trLobeGrid(fn, axis, P) {
+    const { nu, nv } = TR_L3D, NU = nu + 1, [e1, e2] = TR.tangents(axis);
+    let vmax = 0;
+    for (let j = 0; j <= nv; j++) {
+        const ps = Math.PI * (j / nv) ** 2, cp = Math.cos(ps), sp = Math.sin(ps);
+        for (let i = 0; i <= nu; i++) {
+            const ph = 2 * Math.PI * i / nu, c = Math.cos(ph) * sp, s = Math.sin(ph) * sp, k = 3 * (j * NU + i);
+            const d = [cp * axis[0] + c * e1[0] + s * e2[0], cp * axis[1] + c * e1[1] + s * e2[1], cp * axis[2] + c * e1[2] + s * e2[2]];
+            const v = Math.max(0, fn(d) || 0);
+            P[k] = d[0] * v; P[k + 1] = d[1] * v; P[k + 2] = d[2] * v;
+            if (v > vmax) vmax = v;
+        }
+    }
+    return vmax;
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 PipelineLab.mount({
+    paramSteps: { rough: ['half', 'btdf', 'lobe', 'eta2', 'sample', 'energy', 'prod'], ior: ['snell', 'fresnel', 'half', 'jacob', 'btdf', 'lobe', 'eta2', 'sample', 'energy', 'prod'], thetaI: ['snell', 'fresnel', 'half', 'jacob', 'btdf', 'lobe', 'eta2', 'sample', 'energy'], side: ['half', 'jacob', 'btdf', 'lobe', 'sample'], tint: ['prod'] },   // generated by validate_doc --deps (param → steps whose previews change)
     title: 'BxDF 03 · 粗糙透射 BTDF（Walter 2007）',
     lang: 'zh-CN', codeLang: 'hlsl', seed: 3,
     tagColors: { SNELL: 'teal', FRESNEL: 'blue', HALF: 'magenta', JACOB: 'indigo', BTDF: 'green', LOBE: 'olive', ETA2: 'rust', SAMPLE: 'magenta', ENERGY: 'teal', PROD: 'gray' },
 
     params: [
-        { id: 'rough', label: 'roughness r', min: 0.1, max: 1, step: 0.01, value: 0.4, digits: 2, title: '感知粗糙度 r，GGX α = r²' },
-        { id: 'ior', label: 'IOR η', min: 1.05, max: 2.5, step: 0.01, value: 1.5, digits: 2, title: '介质折射率（外部为空气 1.0）：相对 IOR η = η_int / η_ext' },
-        { id: 'thetaI', label: 'θi', min: 0, max: 89, step: 1, value: 40, unit: '°', map: (d) => d * Math.PI / 180, title: '入射角（lobe / 热图 / 采样步骤共用）' },
-        { id: 'side', label: '入射侧', options: [{ value: 'out', label: '外部 → 介质' }, { value: 'in', label: '介质 → 外部' }], value: 'out', title: '光线从哪一侧打到界面（影响 HALF / JACOB / BTDF / SAMPLE 步骤）' },
-        { id: 'tint', label: '吸收色', value: '#bfe3d0', title: 'Beer-Lambert：光在介质里走 1 个球半径后剩下的颜色（只影响最后一步的球）' },
+        {
+            id: 'rough', label: 'roughness r', min: 0.1, max: 1, step: 0.01, value: 0.4, digits: 2, title: '感知粗糙度 r，GGX α = r²',
+            desc: '感知粗糙度 r（GGX α = r²），反射与透射共用同一个微表面分布。越大两个 lobe 越宽、透射 lobe 越偏向掠射一侧：拖到 0.1 看 Step 06 的 3D lobe 收成指向镜面方向与折射方向的两根尖刺，拖到 1 看 Step 09 白炉里 E<sub>R</sub> + E<sub>T</sub> 的缺口变大。',
+        },
+        {
+            id: 'ior', label: 'IOR η', min: 1.05, max: 2.5, step: 0.01, value: 1.5, digits: 2, title: '介质折射率（外部为空气 1.0）：相对 IOR η = η_int / η_ext',
+            desc: '介质折射率 η（外部按空气 1.0）。它决定折射角、F0 = ((η − 1)/(η + 1))² 和临界角 θ<sub>c</sub> = asin(1/η)：η 越大折射越强、透射 lobe 越贴近法线、TIR 区越宽（Step 01 / 02 / 06），也进入 Step 07 的 η² 辐亮度缩放。',
+        },
+        {
+            id: 'thetaI', label: 'θi', min: 0, max: 89, step: 1, value: 40, unit: '°', map: (d) => d * Math.PI / 180, title: '入射角（lobe / 热图 / 采样步骤共用）',
+            desc: '入射角 θ<sub>i</sub>（ω<sub>i</sub> 与它所在一侧法线的夹角），所有 lobe、热图与采样图共用。切到"介质 → 外部"后拖过临界角 θ<sub>c</sub>（玻璃约 41.8°），看透射 lobe 塌成贴着界面的细尾巴（Step 01 / 06）；外部入射拖到 70° 以上，看透射 lobe 变成偏向掠射的"彗星"（Step 05）。',
+        },
+        {
+            id: 'side', label: '入射侧', options: [{ value: 'out', label: '外部 → 介质' }, { value: 'in', label: '介质 → 外部' }], value: 'out', title: '光线从哪一侧打到界面（影响 HALF / JACOB / BTDF / SAMPLE 步骤）',
+            desc: '光从哪一侧打到界面：外部 → 介质（ω<sub>i</sub> 在上半球的空气里）或介质 → 外部（ω<sub>i</sub> 在下半球）。切换后 Step 03–05 的热图、Step 06 的 3D lobe 和 Step 08 的采样都换到另一侧；介质 → 外部且 θ<sub>i</sub> &gt; θ<sub>c</sub> 时出现全内反射，反射 lobe 成为主角。',
+        },
+        {
+            id: 'tint', label: '吸收色', value: '#bfe3d0', title: 'Beer-Lambert：光在介质里走 1 个球半径后剩下的颜色（只影响最后一步的球）',
+            desc: 'Beer-Lambert 吸收色：光在介质里走 1 个球半径后剩下的颜色，σ<sub>a</sub> = −ln(tint)。只影响 Step 10 的两个玻璃球（路径追踪参考与实时近似）：颜色越深吸收越强，穿过的路径越长（球心）颜色越饱和。',
+        },
     ],
 
     stages: [
@@ -665,6 +863,17 @@ PipelineLab.mount({
                     ths, cur, rs,
                     vsR: rs.map((r) => [TR.albedoSplit(dirO(tI), BX.alpha(r), ior, 128), TR.albedoSplit(dirI(tI), BX.alpha(r), ior, 128)]),
                 };
+            },
+        },
+        {
+            // 3D lobe（Step 06）：固定 ωi，f·|cos θo| 在整个 ωo 球面上；反射网格以镜面方向为极点，透射网格以光滑折射方向为极点
+            id: 'lobe3d', lifetime: 'param', lazy: true, run(S) {
+                const wi = S.wi, a = S.a, ior = S.ior, up = wi[2] >= 0, n = (TR_L3D.nu + 1) * (TR_L3D.nv + 1) * 3;
+                const mir = [-wi[0], -wi[1], wi[2]], wt = BX.refract(wi, [0, 0, up ? 1 : -1], up ? ior : 1 / ior);
+                const axT = wt || BX.norm([-wi[0], -wi[1], up ? -0.05 : 0.05]);   // TIR：没有光滑折射方向，网格极点取贴着界面的方向
+                const mR = trLobeGrid((w) => TR.evalR(wi, w, a, ior) * Math.abs(w[2]), mir, PL.buf(S, 'l3dR', n));
+                const mT = trLobeGrid((w) => TR.evalT(wi, w, a, ior) * Math.abs(w[2]), axT, PL.buf(S, 'l3dT', n));
+                S.l3d = { mR, mT, mir, wt, max: Math.max(mR, mT) || 1 };
             },
         },
         {
@@ -962,7 +1171,11 @@ PipelineLab.mount({
                     });
                     lobeOverlay(c, S, wi);
                 },
-            })),
+            })).concat([{
+                id: 'lobe3d', needs: ['lobe3d'], large: true, label: '3D：界面上下的反射 lobe 与透射 lobe（整个 ω<sub>o</sub> 球面）',
+                sub: '固定 ω<sub>i</sub>（金色箭头，"入射侧"决定它在哪一侧）。橙 = f<sub>r</sub>·|cosθo|，蓝 = f<sub>t</sub>·|cosθo|（radiance 模式）；半径用对数刻度（3 个数量级，与右侧 log 图相同，两者共用同一个峰值）——线性刻度下透射 lobe 只是一根针。线框平面 = 界面（上 = 空气，下 = 介质）；虚线 = 镜面反射 / 光滑折射方向（TIR 时没有折射方向）',
+                render: (c, S) => trDrawLobe3d(c, S),
+            }]),
             notes: '拖 <code>roughness</code> 到 0.1：两个 lobe 收缩成指向镜面方向与绿色折射方向的尖刺（线性图的 max 很大）。拖 <code>θi</code> 跨过 θc（玻璃 41.8°）：右下“内部入射”的蓝色 lobe 从主 lobe 迅速缩成一条贴着界面的细尾巴。拖 <code>IOR</code>：外部入射的透射 lobe 随 η 增大更贴近法线（折射更强）。',
             warn: '透射 lobe 的峰值并不在光滑折射方向上——粗糙时它系统地偏向掠射一侧（D 对称，但雅可比与 G₂ 不对称）。用“绕折射方向旋转的对称 lobe”（如 Phong 式近似）做实时粗糙折射会把模糊的中心放错位置。',
         },
@@ -1205,6 +1418,16 @@ PipelineLab.mount({
             warn: '实时版不能用“同一张 SceneColor”同时代表物体背后和物体自身：屏幕空间折射只能看到屏幕上已有的不透明像素，折射偏移出屏幕或被前景遮挡时要回退到反射探针；多层透明（玻璃里的玻璃）需要按深度排序或 OIT，否则后画的层看不到先画的层。',
         },
     ],
+
+    library: {
+        title: '附录 · 辅助函数（HLSL）',
+        intro: '正文代码调用、但步骤里没有展开的辅助部分：Step 09 白炉积分用的 Hammersley 点集，Step 10 实时折射 PS 的深度 / 屏幕坐标 / 预滤波环境查询，以及路径追踪参考的相机光线、抖动、场景求交（参考场景就是页面里那个单位玻璃球，所以直接解析求交）、等距柱状映射、正交基和随机数。',
+        blocks: [
+            { title: 'Hammersley（Step 09 · Furnace_RT）', code: HLSL_LIB_SEQ },
+            { title: 'VSOut · LinearDepth · WorldToScreenUV · PrefilteredEnv（Step 10 · PS_RoughRefraction）', code: HLSL_LIB_RT },
+            { title: 'CameraRay · Jitter · TraceScene · DirToEquirect · Basis · Rand3（Step 10 · RayGen_PathTrace）', code: HLSL_LIB_PT },
+        ],
+    },
 
     graph: {
         title: 'Rough Dielectric · 实时前向折射 + 路径追踪参考',
