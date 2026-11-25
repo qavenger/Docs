@@ -1857,7 +1857,7 @@ const LANG = {
         semRe: /^$/,
     },
     cpp: {
-        kw: words(C_KW + ' class public private protected virtual override final new delete this nullptr template typename namespace using constexpr auto enum union operator friend explicit mutable noexcept static_assert co_await'),
+        kw: words(C_KW + ' class public private protected virtual override final new delete this nullptr template typename namespace using constexpr auto enum union operator friend explicit mutable noexcept static_assert co_await try catch throw'),
         ty: words('void bool char short int long unsigned signed float double size_t uint8_t uint16_t uint32_t uint64_t int8_t int16_t int32_t int64_t std vector array string'),
         tyRe: /^(float|int|uint)[234](x[234])?$|^[A-Z]\w*_t$/, at: words(''), semRe: /^$/,
     },
@@ -2627,7 +2627,7 @@ function miniControl(p) {
         inp.value = String(p.raw);
     } else {
         inp = document.createElement('input');
-        inp.type = p.type === 'check' ? 'checkbox' : p.type === 'color' ? 'color' : p.type === 'number' ? 'number' : 'range';
+        inp.type = p.type === 'check' ? 'checkbox' : p.type === 'color' ? 'color' : p.type === 'number' ? 'number' : p.type === 'text' ? 'text' : 'range';
         if (p.type === 'check') inp.checked = !!p.raw;
         else { if (p.min != null) inp.min = p.min; if (p.max != null) inp.max = p.max; if (p.step != null) inp.step = p.step; inp.value = p.raw; }
     }
@@ -3684,6 +3684,7 @@ function sigOf(cv) {   // exact hash of the canvas pixels (a drawImage downscale
     return h1.toString(36) + '.' + h2.toString(36) + '.' + cv.width + 'x' + cv.height;
 }
 function altValueOf(p) {
+    if (p.type === 'text') return p.alt != null && String(p.alt) !== String(p.raw) ? String(p.alt) : undefined;   // free text: scan with the declared alternative value
     if (p.type === 'check') return !p.raw;
     if (p.type === 'select') { const vals = p.options.map((o) => String(typeof o === 'object' ? o.value : o)), i = vals.indexOf(String(p.raw)); return vals.length > 1 ? vals[(i + 1) % vals.length] : undefined; }
     if (p.type === 'color') { const c = PL.hexToRgb(String(p.raw)); return '#' + c.map((v) => Math.round((1 - v) * 255).toString(16).padStart(2, '0')).join(''); }
@@ -4166,7 +4167,7 @@ const LM = (function () {
         });
     };
 
-    // ── 第二批算子（第 08–15 篇：VAE、卷积 / U-Net、扩散、世界模型…）。全部做过有限差分梯度校验（tools/test_engine.js） ──
+    // ── 第二批算子（第 03–05、11–15 篇：VAE、卷积 / U-Net、扩散、世界模型…）。全部做过有限差分梯度校验（tools/test_engine.js） ──
     const unary = (fwd, dfn) => function (A) {   // dfn(x, y) = dy/dx
         const Y = new Tensor(A.r, A.c), a = A.data, y = Y.data;
         for (let i = 0; i < y.length; i++) y[i] = fwd(a[i]);
@@ -4653,7 +4654,7 @@ const LM = (function () {
         return { itos, stoi, size: itos.length, encode: (s) => Int32Array.from(Array.from(s, (ch) => stoi.get(ch))), decode: (ids) => Array.from(ids, (i) => itos[i]).join('') };
     };
 
-    // ═════════════════════════════════ 程序化手写数字（与第 02 篇同一个生成器，第 08、09 篇复用） ═════════════════════════════════
+    // ═════════════════════════════════ 程序化手写数字（与第 02 篇同一个生成器，第 03、04 篇复用） ═════════════════════════════════
     // 16×16 灰度（0..1），字形 = 笔画折线 + 随机仿射 / 粗细 / 手抖 / 噪声。MNIST（28×28、6 万张）的缩小替身。
     LM.digits = (() => {
         const IMG = 16, D = IMG * IMG, K = 10;
@@ -5048,37 +5049,52 @@ const LM = (function () {
     draw.gridHit = function (canvas, info) { const g = canvas._lmGrid; if (!g || !info) return -1; const c = Math.floor((info.dx - g.gap) / (g.cell + g.gap)), r = Math.floor((info.dy - g.gap) / (g.cell * g.H / g.W + g.gap + g.lab)); const k = r * g.cols + c; return c >= 0 && c < g.cols && k >= 0 && k < g.n ? k : -1; };
 
     // ═════════════════════════════════ 系列导航 ═════════════════════════════════
-    // 篇号 = 写作顺序（正文里互相引用「第 05 篇」），part = 知识结构里的位置（入口页和导航条按 part 分组：从共享基础到分化领域）
+    // 篇号 = 分类顺序（同时也是一种合法的前置知识顺序：每篇的前置篇号都更小），part = 知识结构里的位置（入口页和导航条按 part 分组：从共享基础到分化领域）
     LM.PARTS = [
         { id: 'base', name: '共享基础', desc: '所有模型都要用的：优化、反向传播、卷积、潜空间、强化学习' },
         { id: 'arch', name: '通用架构', desc: '把任何数据变成 token 序列，再用 Transformer 处理' },
         { id: 'llm', name: '大语言模型', desc: '预训练学知识，后训练学说话' },
         { id: 'domain', name: '分化领域', desc: '在共享基础上长出来的各个方向：多模态理解、扩散生成、视频、音频、世界模型、3D' },
+        { id: 'agent', name: '智能体', desc: '让语言模型调用工具、在循环里完成任务：Tool Calling、Agent、Harness' },
     ];
+    /** 篇号按「分类」顺序排（同一类连续编号）；pre = 直接的前置篇（读这一篇之前最好先读的）。这个顺序本身也满足前置关系：每篇的前置都排在它前面 */
     LM.PAGES = [
-        { file: '01_linear_regression.html', no: '01', part: 'base', title: 'Hello World：线性回归与梯度下降', short: '线性回归 · 梯度下降' },
-        { file: '02_mlp_backprop.html', no: '02', part: 'base', title: '手写数字：从 Softmax 回归到 MLP 与反向传播', short: 'MLP · 反向传播' },
-        { file: '03_tokenizer_embedding.html', no: '03', part: 'arch', title: '文本变向量：Tokenizer、Embedding 与位置编码', short: 'Tokenizer · Embedding' },
-        { file: '04_transformer.html', no: '04', part: 'arch', title: 'Transformer：逐层拆解一次前向传播', short: 'Attention · Transformer' },
-        { file: '05_pretraining.html', no: '05', part: 'llm', title: '预训练：在浏览器里从零训练一个迷你 GPT', short: '预训练 · 采样' },
-        { file: '06_alignment.html', no: '06', part: 'llm', title: '后训练与对齐：SFT、奖励模型、RLHF、DPO、GRPO', short: 'SFT · RLHF · DPO' },
-        { file: '07_multimodal.html', no: '07', part: 'domain', title: '多模态：ViT、CLIP 对比学习与迷你 LLaVA', short: 'ViT · CLIP · LLaVA' },
-        { file: '08_cnn_unet.html', no: '08', part: 'base', title: '卷积神经网络：从卷积核到 U-Net', short: 'CNN · U-Net' },
-        { file: '09_latent_vae.html', no: '09', part: 'base', title: '潜空间：自编码器、VAE 与 VQ-VAE', short: 'AE · VAE · VQ' },
-        { file: '10_reinforcement_learning.html', no: '10', part: 'base', title: '强化学习：从价值迭代到策略梯度', short: '强化学习' },
-        { file: '11_diffusion.html', no: '11', part: 'domain', title: '扩散模型与流匹配：从噪声里生成数据', short: '扩散 · 流匹配' },
-        { file: '12_video_generation.html', no: '12', part: 'domain', title: '视频生成：时空扩散与时间一致性', short: '视频生成' },
-        { file: '13_audio_generation.html', no: '13', part: 'domain', title: '音频与语音：频谱、音频 token 与生成', short: '音频 · 语音' },
-        { file: '14_world_models.html', no: '14', part: 'domain', title: '世界模型：学会模拟环境，在想象中规划', short: '世界模型' },
-        { file: '15_nerf_gaussian_splatting.html', no: '15', part: 'domain', title: '3D 重建：NeRF 与 3D Gaussian Splatting', short: 'NeRF · 3DGS' },
+        { file: '01_linear_regression.html', no: '01', part: 'base', pre: [], title: 'Hello World：线性回归与梯度下降', short: '线性回归 · 梯度下降' },
+        { file: '02_mlp_backprop.html', no: '02', part: 'base', pre: ['01'], title: '手写数字：从 Softmax 回归到 MLP 与反向传播', short: 'MLP · 反向传播' },
+        { file: '03_cnn_unet.html', no: '03', part: 'base', pre: ['02'], title: '卷积神经网络：从卷积核到 U-Net', short: 'CNN · U-Net' },
+        { file: '04_latent_vae.html', no: '04', part: 'base', pre: ['03'], title: '潜空间：自编码器、VAE 与 VQ-VAE', short: 'AE · VAE · VQ' },
+        { file: '05_reinforcement_learning.html', no: '05', part: 'base', pre: ['02'], title: '强化学习：从价值迭代到策略梯度', short: '强化学习' },
+        { file: '06_tokenizer_embedding.html', no: '06', part: 'arch', pre: ['02'], title: '文本变向量：Tokenizer、Embedding 与位置编码', short: 'Tokenizer · Embedding' },
+        { file: '07_transformer.html', no: '07', part: 'arch', pre: ['06'], title: 'Transformer：逐层拆解一次前向传播', short: 'Attention · Transformer' },
+        { file: '08_pretraining.html', no: '08', part: 'llm', pre: ['07'], title: '预训练：在浏览器里从零训练一个迷你 GPT', short: '预训练 · 采样' },
+        { file: '09_alignment.html', no: '09', part: 'llm', pre: ['08', '05'], title: '后训练与对齐：SFT、奖励模型、RLHF、DPO、GRPO', short: 'SFT · RLHF · DPO' },
+        { file: '10_multimodal.html', no: '10', part: 'domain', pre: ['08'], title: '多模态：ViT、CLIP 对比学习与迷你 LLaVA', short: 'ViT · CLIP · LLaVA' },
+        { file: '11_diffusion.html', no: '11', part: 'domain', pre: ['03', '04'], title: '扩散模型与流匹配：从噪声里生成数据', short: '扩散 · 流匹配' },
+        { file: '12_video_generation.html', no: '12', part: 'domain', pre: ['11', '07'], title: '视频生成：时空扩散与时间一致性', short: '视频生成' },
+        { file: '13_audio_generation.html', no: '13', part: 'domain', pre: ['04', '08', '11'], title: '音频与语音：频谱、音频 token 与生成', short: '音频 · 语音' },
+        { file: '14_world_models.html', no: '14', part: 'domain', pre: ['05', '04'], title: '世界模型：学会模拟环境，在想象中规划', short: '世界模型' },
+        { file: '15_nerf_gaussian_splatting.html', no: '15', part: 'domain', pre: ['02'], title: '3D 重建：NeRF 与 3D Gaussian Splatting', short: 'NeRF · 3DGS' },
+        { file: '16_tool_calling.html', no: '16', part: 'agent', pre: ['09'], title: '工具调用：模型怎样「调用函数」', short: 'Tool Calling' },
+        { file: '17_agent_loop.html', no: '17', part: 'agent', pre: ['16'], title: 'Agent：在循环里用工具完成任务', short: 'Agent 循环' },
+        { file: '18_agent_harness.html', no: '18', part: 'agent', pre: ['17'], title: 'Harness：Agent 外面那一圈运行时', short: 'Harness' },
+        { file: '19_tool_retrieval.html', no: '19', part: 'agent', pre: ['18', '06'], title: '成千上万个工具：检索、路由与按需加载', short: '工具检索' },
+        { file: '20_coding_agent.html', no: '20', part: 'agent', pre: ['18', '19'], title: '编程 Agent：几个通用工具，做成千上万种事', short: 'Coding Agent' },
+        { file: '21_engine_mcp.html', no: '21', part: 'agent', pre: ['19', '20'], title: '接进游戏引擎与商用软件：MCP、脚本接口、Computer Use', short: '引擎 · MCP' },
     ];
-    /** 系列导航条 HTML。cur = 当前篇序号（'01'…，入口页传 null）；fromIndex = 入口页（链接加 pages/ 前缀）。上一篇 / 下一篇按篇号顺序 */
+    /** 前置关系：直接前置、全部前置（传递闭包）、直接后续、深度（最长前置链的长度，01 = 0） */
+    LM.prePages = (no) => ((LM.PAGES.find((p) => p.no === no) || {}).pre || []).map((n) => LM.PAGES.find((p) => p.no === n)).filter(Boolean);
+    LM.postPages = (no) => LM.PAGES.filter((p) => (p.pre || []).includes(no));
+    LM.allPre = (no) => { const out = new Set(), go = (n) => LM.prePages(n).forEach((p) => { if (!out.has(p.no)) { out.add(p.no); go(p.no); } }); go(no); return [...out].sort(); };
+    LM.depth = (no) => { const ps = LM.prePages(no); return ps.length ? 1 + Math.max(...ps.map((p) => LM.depth(p.no))) : 0; };
+    /** 系列导航条 HTML。cur = 当前篇序号（'01'…，入口页传 null）；fromIndex = 入口页（链接加 pages/ 前缀）。上一篇 / 下一篇按篇号顺序；篇内再列出前置与后续 */
     LM.navHtml = function (cur, fromIndex) {
         const pre = fromIndex ? 'pages/' : '', home = fromIndex ? 'index.html' : '../index.html';
         const i = LM.PAGES.findIndex((p) => p.no === cur), prev = LM.PAGES[i - 1], next = LM.PAGES[i + 1];
         const chip = (p) => (p.no === cur ? `<span class="lm-nav-cur">${p.no} ${p.short}</span>` : `<a href="${pre}${p.file}">${p.no} ${p.short}</a>`);
         const groups = LM.PARTS.map((pt) => `<span class="lm-nav-part">${pt.name}</span>${LM.PAGES.filter((p) => p.part === pt.id).map(chip).join('')}`).join('<span class="lm-nav-sep"></span>');
-        return `<div class="lm-nav"><a class="lm-nav-home" href="${home}">⌂ 系列目录</a>${groups}</div>` +
+        const link = (p) => `<a href="${pre}${p.file}">${p.no} ${p.short}</a>`, pres = cur ? LM.prePages(cur) : [], posts = cur ? LM.postPages(cur) : [];
+        const preLine = cur ? `<div class="lm-nav-pre"><span class="lm-nav-k">前置知识</span>${pres.length ? pres.map(link).join('') : '<span class="lm-nav-none">无（从这里开始）</span>'}<span class="lm-nav-k">读完可以接着读</span>${posts.length ? posts.map(link).join('') : '<span class="lm-nav-none">—</span>'}</div>` : '';
+        return `<div class="lm-nav"><a class="lm-nav-home" href="${home}">⌂ 系列目录</a>${groups}</div>` + preLine +
             (cur ? `<div class="lm-nav-pn">${prev ? `<a href="${prev.file}">← ${prev.no} ${prev.title}</a>` : '<span></span>'}${next ? `<a href="${next.file}">${next.no} ${next.title} →</a>` : '<span></span>'}</div>` : '');
     };
     LM.CSS = `
@@ -5089,6 +5105,11 @@ const LM = (function () {
         .lm-nav .lm-nav-home { color: #c8ccd4; border-color: #3a3f46; }
         .lm-nav .lm-nav-part { border: none; background: none; color: #6f8496; padding: 2px 2px 2px 4px; font-size: 0.74rem; letter-spacing: 0.05em; }
         .lm-nav .lm-nav-sep { border: none; background: none; padding: 0; width: 6px; }
+        .lm-nav-pre { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 10px; font-size: 0.78rem; }
+        .lm-nav-pre a { padding: 1px 8px; border: 1px solid #2a3a2a; border-radius: 10px; color: #9fd0a0; background: #0d1610; }
+        .lm-nav-pre a:hover { background: #142a18; text-decoration: none; }
+        .lm-nav-pre .lm-nav-k { color: #6f8496; margin-left: 4px; }
+        .lm-nav-pre .lm-nav-none { color: #55606b; }
         .lm-nav-pn { display: flex; justify-content: space-between; gap: 12px; font-size: 0.8rem; margin: -2px 0 10px; }
         .lm-tbl { border-collapse: collapse; margin: 6px 0; font-size: 0.86rem; }
         .lm-tbl th, .lm-tbl td { border: 1px solid #262b31; padding: 3px 9px; text-align: left; vertical-align: top; }
@@ -6191,6 +6212,25 @@ inline std::string decode(const Vocab& v, const std::vector<int>& ids) {
     // <CPP-END>
 
     return LM;
+})();
+// 步骤同时写了 blocks 和 formula / code / previews / notes / warn 时，框架只渲染 blocks；这里把后者按默认顺序接到 blocks 后面（系列里的「教学版 → 生产版」步骤是「表格 + 预览 + 说明」）
+(function () {
+    if (typeof PipelineLab === 'undefined' || !PipelineLab.mount || PipelineLab.mount._lmBlocks) return;
+    const mount0 = PipelineLab.mount, list = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
+    PipelineLab.mount = function (spec) {
+        for (const st of (spec && spec.steps) || []) {
+            if (!st.blocks) continue;
+            const extra = [];
+            list(st.formula).forEach((f) => extra.push(typeof f === 'object' ? Object.assign({ type: 'formula' }, f) : { type: 'formula', text: f }));
+            list(st.code).forEach((c) => extra.push(Object.assign({ type: 'code' }, c)));
+            if (st.previews) extra.push({ type: 'previews', items: st.previews });
+            list(st.notes || st.note).forEach((n) => extra.push({ type: 'note', html: n }));
+            list(st.warn || st.warns).forEach((n) => extra.push({ type: 'warn', html: n }));
+            if (extra.length) { st.blocks = st.blocks.concat(extra); for (const k of ['formula', 'code', 'previews', 'notes', 'note', 'warn', 'warns']) delete st[k]; }
+        }
+        return mount0.apply(this, arguments);
+    };
+    PipelineLab.mount._lmBlocks = true;
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = LM;
 
@@ -7916,8 +7956,8 @@ PipelineLab.mount({
         title: '世界模型：先学会「做梦」，再在梦里练习',
         flow: ['随机探索收集经验', 'V：帧 → 4 维潜变量 z', 'M：GRU 记住速度、预测下一个 z', '开环想象：误差会复利', '在想象中规划（CEM + MPC）', '在想象中学策略（Dreamer）', '模型被钻空子', '方向键在「梦」里玩'],
         html: LM.navHtml('14') + `
-            <p><a href="10_reinforcement_learning.html">第 10 篇</a>的强化学习（Q-learning、REINFORCE、PPO：价值 V、折扣 γ、策略梯度）都是<strong>无模型</strong>的：智能体只在真实环境里试错，把每一次交互直接变成一次价值 / 策略更新。<strong>世界模型</strong>（World Model）换一种思路：先用收集来的经验学一个<strong>能模拟环境的神经网络</strong> p(o<sub>t+1</sub> | o<sub>≤t</sub>, a<sub>≤t</sub>)，然后在它的「想象」里展开未来、规划动作、甚至训练整个策略——在模型里走一步只要几次矩阵乘法。它和<a href="12_video_generation.html">第 12 篇</a>的视频生成（用扩散模型生成一段连贯的帧序列）是同一件事的两面：视频模型预测下一帧，世界模型预测<em>做了动作 a 之后</em>的下一帧。</p>
-            <p>本页的环境是一个 16×16 像素的小房间：一个有惯性的小球（亮黄）、四周的墙和一道从上墙垂下的隔墙（灰）、右下角的目标区（暗色方块，预览里用绿虚框标出）。智能体<strong>只看得到像素</strong>，5 个动作是不推 / 向上 / 下 / 左 / 右推一下。我们按 World Models（Ha &amp; Schmidhuber 2018）的分工搭一个迷你版：<b>V</b> = VAE，把一帧压成 4 维潜变量 z（<a href="09_latent_vae.html">第 09 篇</a>：编码器输出 μ、σ，重参数化采样，损失 = 重建 + KL）；<b>M</b> = GRU，记住历史并预测下一个 z 和奖励；控制器 <b>C</b>（规划器或策略网络）只在潜空间里工作。</p>
+            <p><a href="05_reinforcement_learning.html">第 05 篇</a>的强化学习（Q-learning、REINFORCE、PPO：价值 V、折扣 γ、策略梯度）都是<strong>无模型</strong>的：智能体只在真实环境里试错，把每一次交互直接变成一次价值 / 策略更新。<strong>世界模型</strong>（World Model）换一种思路：先用收集来的经验学一个<strong>能模拟环境的神经网络</strong> p(o<sub>t+1</sub> | o<sub>≤t</sub>, a<sub>≤t</sub>)，然后在它的「想象」里展开未来、规划动作、甚至训练整个策略——在模型里走一步只要几次矩阵乘法。它和<a href="12_video_generation.html">第 12 篇</a>的视频生成（用扩散模型生成一段连贯的帧序列）是同一件事的两面：视频模型预测下一帧，世界模型预测<em>做了动作 a 之后</em>的下一帧。</p>
+            <p>本页的环境是一个 16×16 像素的小房间：一个有惯性的小球（亮黄）、四周的墙和一道从上墙垂下的隔墙（灰）、右下角的目标区（暗色方块，预览里用绿虚框标出）。智能体<strong>只看得到像素</strong>，5 个动作是不推 / 向上 / 下 / 左 / 右推一下。我们按 World Models（Ha &amp; Schmidhuber 2018）的分工搭一个迷你版：<b>V</b> = VAE，把一帧压成 4 维潜变量 z（<a href="04_latent_vae.html">第 04 篇</a>：编码器输出 μ、σ，重参数化采样，损失 = 重建 + KL）；<b>M</b> = GRU，记住历史并预测下一个 z 和奖励；控制器 <b>C</b>（规划器或策略网络）只在潜空间里工作。</p>
             <p>下方的 <b>playground</b> 可以直接用方向键在模型的想象里玩。所有预览都由页面里的 JS 实时算出：Step 03、04、07 的训练在你看到它们时进行（每帧 1 步，可在顶栏加速）；Step 05–09 和 playground 用的是<strong>同一份代码、同一个配方离线训练好</strong>的权重（<code>tools/p14_train.js</code>：V、M 各 6000 步，actor-critic 2000 次更新，float16 内嵌在页面里）。正文里的成功率等数字也是这个脚本用页面的代码测出来的，页面里的实时评估会复现它们。代码块是同一算法的 C++ 版（本系列自带的 minml 库，页末 Common 面板里）。</p>`,
     },
     sections: [{
@@ -7963,7 +8003,7 @@ PipelineLab.mount({
     steps: [
         {
             id: 'world', title: '什么是世界模型：会「做梦」的环境模拟器', tag: 'WORLD',
-            desc: '强化学习里环境是一个黑盒：给它动作 a<sub>t</sub>，它返回新的观测 o<sub>t+1</sub> 和奖励 r<sub>t+1</sub>。无模型方法（第 10 篇）只把这些样本当训练数据；<strong>有模型</strong>的方法先学一个环境的替身——世界模型，然后在替身里预测、规划、训练策略。在替身里走一步不用等真实世界，也不会摔坏真实的机器人；代价是替身不完美，它的错误会被放大、被利用（Step 05、08）。这一步先看真实环境本身：小球有<strong>惯性</strong>，推一下只改变速度，速度每步衰减到 0.8 倍；撞墙时停在墙面、该方向的速度反向并减半。注意<strong>一帧图像里看不出速度</strong>——这就是后面的模型为什么需要记忆。',
+            desc: '强化学习里环境是一个黑盒：给它动作 a<sub>t</sub>，它返回新的观测 o<sub>t+1</sub> 和奖励 r<sub>t+1</sub>。无模型方法（第 05 篇）只把这些样本当训练数据；<strong>有模型</strong>的方法先学一个环境的替身——世界模型，然后在替身里预测、规划、训练策略。在替身里走一步不用等真实世界，也不会摔坏真实的机器人；代价是替身不完美，它的错误会被放大、被利用（Step 05、08）。这一步先看真实环境本身：小球有<strong>惯性</strong>，推一下只改变速度，速度每步衰减到 0.8 倍；撞墙时停在墙面、该方向的速度反向并减半。注意<strong>一帧图像里看不出速度</strong>——这就是后面的模型为什么需要记忆。',
             blocks: [
                 { type: 'formula', text: 'p_θ(o_{t+1}, r_{t+1} | o_{≤t}, a_{≤t})   // 世界模型：给定历史观测和动作，预测下一帧与奖励' },
                 { type: 'formula', text: 'v ← 0.8 · v + 0.25 · dir(a)      p ← p + v      // 真实物理（像素单位）；撞墙：停在墙面，v_⊥ ← −0.5 · v_⊥' },
@@ -7990,7 +8030,7 @@ PipelineLab.mount({
                     },
                 },
                 ] },
-                { type: 'html', html: `<table class="lm-tbl"><tr><th></th><th>无模型 RL（第 10 篇）</th><th>有模型 RL / 世界模型（本篇）</th></tr>
+                { type: 'html', html: `<table class="lm-tbl"><tr><th></th><th>无模型 RL（第 05 篇）</th><th>有模型 RL / 世界模型（本篇）</th></tr>
                     <tr><td>学什么</td><td>价值 V / Q 或策略 π</td><td>环境的模拟器 p(o′, r | 历史, a)，再用它规划或学 π</td></tr>
                     <tr><td>一次真实交互的用处</td><td>一次（或几次回放的）更新</td><td>训练模型；模型可以生成任意多的「想象」经验</td></tr>
                     <tr><td>主要风险</td><td>需要大量真实交互</td><td>模型误差会复利（Step 05），会被优化器利用（Step 08）</td></tr>
@@ -8036,7 +8076,7 @@ PipelineLab.mount({
         },
         {
             id: 'vae', title: '编码器 V：把一帧压进 4 维潜空间（实时训练）', tag: 'V · VAE',
-            desc: '直接在 256 维的像素上预测下一帧又贵又难。World Models 的第一步是用 <strong>VAE</strong>（第 09 篇）把每一帧压成一个很短的潜变量 z：编码器给出 q(z|o) = N(μ, σ²)，重参数化采样 z = μ + σ·ε，解码器把 z 还原成图；损失 = 重建误差 + β·KL，KL 逼着潜空间贴近标准正态、变得连续。这一步在页面里<strong>实时训练</strong>（每帧 1 步，batch 32，共 6000 步）。一帧里真正变化的只有小球的位置——2 个自由度——所以 4 维的 z 学到的就是「小球在哪」：右上把 z 的每一维画成「小球在房间里每个位置时 μ<sub>j</sub> 的值」，训练中它们从噪声变成平滑的坐标图。速度不在一帧里，V 学不到它。',
+            desc: '直接在 256 维的像素上预测下一帧又贵又难。World Models 的第一步是用 <strong>VAE</strong>（第 04 篇）把每一帧压成一个很短的潜变量 z：编码器给出 q(z|o) = N(μ, σ²)，重参数化采样 z = μ + σ·ε，解码器把 z 还原成图；损失 = 重建误差 + β·KL，KL 逼着潜空间贴近标准正态、变得连续。这一步在页面里<strong>实时训练</strong>（每帧 1 步，batch 32，共 6000 步）。一帧里真正变化的只有小球的位置——2 个自由度——所以 4 维的 z 学到的就是「小球在哪」：右上把 z 的每一维画成「小球在房间里每个位置时 μ<sub>j</sub> 的值」，训练中它们从噪声变成平滑的坐标图。速度不在一帧里，V 学不到它。',
             formula: [
                 'μ, log σ^2 = Enc(o)      z = μ + σ ⊙ ε,  ε ~ N(0, I)      ô = Dec(z)',
                 'L_V = 25 · ‖ô − o‖^2 + β · KL( N(μ, σ^2) ‖ N(0, I) )      // KL = ½ Σ_j (μ_j^2 + σ_j^2 − 1 − log σ_j^2)',
@@ -8076,7 +8116,7 @@ PipelineLab.mount({
             ],
             notes: [
                 `默认设置下大约 1000 步后小球就清楚了；离线训满 6000 步的 V（后面各步都用它）在验证集上每帧 Σ(ô − o)² = ${F14.vae.valSSE}，解码出的小球位置平均偏 ${F14.vae.posErr} 像素（最多 ${F14.vae.posMax}）。4 维全都被用上（每维 KL ≈ 2 nats）：两个自由度的信息被「摊」到 4 维里，每一维都是位置的一个平滑函数（上面四张图）。`,
-                '把 <b>VAE 的 β</b> 拖到 10：在 Node 里同样训练 3000 步，4 维的 KL 全部降到 0.00——<strong>后验坍缩</strong>：编码器什么都不传，解码器只会画「没有小球的平均房间」，重建误差停在 2.9。β = 0.1 时每维 KL ≈ 3.5 nats，位置误差 0.15 px（β = 1 是 0.18 px）。β 是「压缩率 vs 重建质量」的旋钮（第 09 篇的率-失真）。',
+                '把 <b>VAE 的 β</b> 拖到 10：在 Node 里同样训练 3000 步，4 维的 KL 全部降到 0.00——<strong>后验坍缩</strong>：编码器什么都不传，解码器只会画「没有小球的平均房间」，重建误差停在 2.9。β = 0.1 时每维 KL ≈ 3.5 nats，位置误差 0.15 px（β = 1 是 0.18 px）。β 是「压缩率 vs 重建质量」的旋钮（第 04 篇的率-失真）。',
             ],
             warn: '后面的 M 用的是编码器的均值 μ（不是采样的 z）；World Models 原文用采样的 z 训练 M。重建权重 25 相当于把解码器看成方差 σ² = 1/50 的高斯分布。真实系统的 V 是卷积网络，64×64 RGB 输入（World Models 用 32 维 z）。',
         },
@@ -8228,7 +8268,7 @@ PipelineLab.mount({
         },
         {
             id: 'exploit', title: '模型被钻空子：优化器会找到想象里的捷径', tag: 'EXPLOIT',
-            desc: `规划器在模型里寻找回报最高的动作序列——如果模型在某处错了（比如以为隔墙的拐角能穿过去），规划器会<strong>恰好找到那里</strong>：越用力优化，越会撞上模型的漏洞。这和第 06 篇的奖励过度优化（Goodhart 定律）是同一回事。左图是一个真实例子：起点在隔墙左侧 (${F14.trap.p[0]}, ${F14.trap.p[1]})，CEM 的第一个计划在想象里直接穿过了隔墙（解码出的小球陷进墙里 ${F14.trap.pen} 像素）；在真实环境里执行同一串动作，小球被墙挡住。离线统计：默认 MPC 每一步选中的计划里，有 ${pc14(F14.mpc.ms.pen)} 在想象中穿墙（teacher forcing 的 M：${pc14(F14.mpc.tf.pen)}）。下面实测三种对策。`,
+            desc: `规划器在模型里寻找回报最高的动作序列——如果模型在某处错了（比如以为隔墙的拐角能穿过去），规划器会<strong>恰好找到那里</strong>：越用力优化，越会撞上模型的漏洞。这和第 09 篇的奖励过度优化（Goodhart 定律）是同一回事。左图是一个真实例子：起点在隔墙左侧 (${F14.trap.p[0]}, ${F14.trap.p[1]})，CEM 的第一个计划在想象里直接穿过了隔墙（解码出的小球陷进墙里 ${F14.trap.pen} 像素）；在真实环境里执行同一串动作，小球被墙挡住。离线统计：默认 MPC 每一步选中的计划里，有 ${pc14(F14.mpc.ms.pen)} 在想象中穿墙（teacher forcing 的 M：${pc14(F14.mpc.tf.pen)}）。下面实测三种对策。`,
             formula: [
                 'gap(N) = E[ R_model(a*_N) − R_real(a*_N) ]      // a*_N = N 个候选里模型认为最好的；N 越大，越可能落在模型的误差上',
                 'score(a) = (1/K) Σ_k R_k(a) − κ · Σ_j mean_d std_k( ẑ^{(k)}_{t+j,d} )      // K = 4 个不同随机种子训练的 M',

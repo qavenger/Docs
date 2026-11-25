@@ -129,7 +129,7 @@ const P12 = (() => {
     /** 拟合轨迹在第 t 帧的位置（画图用） */
     function fitAt(fit, t) { const L = W - 2 * fit.r; return [fit.r + tri(fit.fx.a + fit.fx.v * t, L), fit.r + tri(fit.fy.a + fit.fy.v * t, L)]; }
 
-    // ═══════════════ patch：每帧切成 4×4 的块（与第 07 篇的 ViT 相同） ═══════════════
+    // ═══════════════ patch：每帧切成 4×4 的块（与第 10 篇的 ViT 相同） ═══════════════
     /** 视频 [nT × 16 × 16] → token [nT·16 × inD]：token 顺序 (t, gy, gx)，块内 (py, px)；inD = 17 时最后一维是「这一帧已知」的掩码 */
     function patchify(vid, voff, out, ooff, nT, inD, known) {
         for (let t = 0; t < nT; t++) for (let gy = 0; gy < GP; gy++) for (let gx = 0; gx < GP; gx++) {
@@ -358,7 +358,7 @@ const P12 = (() => {
         return true;
     }
 
-    // ═══════════════ Step 02：线性「潜空间」——对 patch / tubelet 做 PCA（= 线性自编码器，第 09 篇） ═══════════════
+    // ═══════════════ Step 02：线性「潜空间」——对 patch / tubelet 做 PCA（= 线性自编码器，第 04 篇） ═══════════════
     /** 把视频切成 pt 帧 × 4 × 4 的 tubelet：返回 Float32Array(nTok · D)，D = pt·16，token 顺序 (tt, gy, gx)，块内 (帧, py, px) */
     function tubelets(vid, voff, pt, out, ooff) {
         const D = pt * PD, nTT = T / pt;
@@ -864,7 +864,7 @@ const P12CPP = {
         // 对称矩阵的特征向量，按特征值从大到小排成行（循环 Jacobi 旋转；实现略，页面里的 JS 版 P12.eigSym 是完整的）
         Tensor eigenvectorsSym(const Tensor& C);
 
-        // PCA = 最简单的「线性自编码器」（第 09 篇）：编码 z = U_k (x − μ)，解码 x̂ = μ + U_kᵀ z
+        // PCA = 最简单的「线性自编码器」（第 04 篇）：编码 z = U_k (x − μ)，解码 x̂ = μ + U_kᵀ z
         struct PCA { int pt = 1; std::vector<float> mean; Tensor U; };
 
         // 在 nVideos 段视频（首尾相接存在 videos 里）的全部 tubelet 上估计均值与协方差
@@ -1625,7 +1625,7 @@ PipelineLab.mount({
         },
         {
             id: 'tokens', title: 'token 与压缩：逐帧 patch vs 时空 tubelet', tag: 'TOKENS',
-            desc: 'Transformer 吃的是一串 token。图像的做法（第 07 篇 ViT）是切成 P×P 的块、每块拉平成一个向量。视频有两种切法：<strong>逐帧 patch</strong>——每帧各切各的，8 帧 × 16 块 = 128 个 token，每个 16 维；<strong>时空 patch（tubelet）</strong>——连同时间一起切，2 帧 × 4 × 4 的小立方体 → 64 个 token，每个 32 维（4 帧 → 32 个 token）。token 数直接决定 Transformer 的代价：全注意力要算 N² 个打分。tubelet 划算的前提是<strong>相邻帧高度相似</strong>：把它们装进同一个 token，同样多的数能描述更多内容。下面用最简单的「编码器」检验：对 patch / tubelet 做 PCA（线性自编码器，第 09 篇），只留前 k 个主成分，在<strong>同样的压缩倍数</strong>下比较重建误差——时间方向也一起压缩，误差明显更小。真实系统用的是非线性的视频 VAE（Step 10），道理相同。',
+            desc: 'Transformer 吃的是一串 token。图像的做法（第 10 篇 ViT）是切成 P×P 的块、每块拉平成一个向量。视频有两种切法：<strong>逐帧 patch</strong>——每帧各切各的，8 帧 × 16 块 = 128 个 token，每个 16 维；<strong>时空 patch（tubelet）</strong>——连同时间一起切，2 帧 × 4 × 4 的小立方体 → 64 个 token，每个 32 维（4 帧 → 32 个 token）。token 数直接决定 Transformer 的代价：全注意力要算 N² 个打分。tubelet 划算的前提是<strong>相邻帧高度相似</strong>：把它们装进同一个 token，同样多的数能描述更多内容。下面用最简单的「编码器」检验：对 patch / tubelet 做 PCA（线性自编码器，第 04 篇），只留前 k 个主成分，在<strong>同样的压缩倍数</strong>下比较重建误差——时间方向也一起压缩，误差明显更小。真实系统用的是非线性的视频 VAE（Step 10），道理相同。',
             formula: [
                 'N = (T / p_t)·(H / p)·(W / p)      d_tok = p_t·p^2·C   // p = 4：逐帧 N = 128；p_t = 2 → N = 64；p_t = 4 → N = 32',
                 'z = U_k (x − μ)      x̂ = μ + U_k^T z      压缩倍数 = d_tok / k   // U_k = 协方差矩阵的前 k 个特征向量',

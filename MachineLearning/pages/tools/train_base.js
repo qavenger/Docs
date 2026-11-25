@@ -1,4 +1,4 @@
-// 离线训练「基座模型」权重并写入 pages/llm_weights.js（第 04 篇前向拆解、第 06 篇 SFT 的起点）。
+// 离线训练「基座模型」权重并写入 pages/llm_weights.js（第 07 篇前向拆解、第 09 篇 SFT 的起点）。
 // 与页面里实时训练用的是同一份 JS 实现（llm_common.js），只是步数更多、batch 更大。
 // 用法：node pages/tools/train_base.js [steps=4000] [B=16]
 const fs = require('fs');

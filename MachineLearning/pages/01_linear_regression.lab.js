@@ -292,7 +292,7 @@ PipelineLab.mount({
         flow: ['数据 (x, y)', '模型 ŷ = w·x + b', '损失 MSE', '梯度 ∇L', '更新 w ← w − η∇L', '重复 → 收敛', '泛化到新数据'],
         html: LM.navHtml('01') + `
             <p>这一篇只有两个参数 <code>w</code>、<code>b</code>，但它已经包含了训练大模型的全部骨架：<strong>一个带参数的函数</strong>（模型）、<strong>一个衡量错误的数</strong>（损失）、<strong>损失对参数的导数</strong>（梯度）、<strong>沿负梯度反复走小步</strong>（优化器）。
-            第 05 篇训练 GPT 时，这四样东西一个不少，只是参数从 2 个变成了几万（真实模型是几十亿到上万亿）、损失从均方误差换成交叉熵、优化器从 GD 换成 AdamW。</p>
+            第 08 篇训练 GPT 时，这四样东西一个不少，只是参数从 2 个变成了几万（真实模型是几十亿到上万亿）、损失从均方误差换成交叉熵、优化器从 GD 换成 AdamW。</p>
             <p>页面里所有预览都由内嵌的 JS 参考实现<strong>实时算出</strong>：改任何参数，数据、损失地形、梯度下降轨迹都会立即重算；带 <span style="color:#a45fa5">LIVE</span> 的图在播放梯度下降的过程（每秒 12 步，可在顶栏暂停 / 调速）。代码块是同一算法的 C++ 版本（C++17 + 标准库，不用第三方库）：前 9 步是手写的 <code>std::vector&lt;double&gt;</code> 循环，最后一步换成本系列自带的迷你自动微分库 <code>pages/cpp/minml_*.h</code>（源码收在页面上方「训练循环 · 数据流」一节的 Common 里）。悬停代码里的函数名可以看定义，点击跳过去。</p>`,
     },
 
@@ -563,7 +563,7 @@ PipelineLab.mount({
                     },
                 },
             ],
-            notes: '最终损失随 η 先降后在 η_c 处陡然飙升——<b>最好的学习率往往就在发散边缘的下方</b>。这也是训练大模型时学习率要 warmup、要随训练衰减的原因之一（第 05 篇）。',
+            notes: '最终损失随 η 先降后在 η_c 处陡然飙升——<b>最好的学习率往往就在发散边缘的下方</b>。这也是训练大模型时学习率要 warmup、要随训练衰减的原因之一（第 08 篇）。',
             warn: '这里的临界值只对二次碗精确成立。神经网络的曲率随位置变化，实践中靠扫描（LR range test）和经验来定学习率；但「曲率越大、能承受的步长越小」这一点完全通用。',
         },
         {
@@ -769,19 +769,19 @@ PipelineLab.mount({
                 },
             ],
             notes: '默认 12 个样本、k = 9：黄线扭成蛇形，测试误差比 k = 1 高出几个数量级。三种修法：把 <b>log₁₀λ</b> 拖到 −2；把 <b>拟合样本数</b> 拖到 60；或者降低 <b>多项式次数</b>。大模型参数远多于这里，却能泛化——海量数据、正则化与「早停」都在起作用。',
-            warn: '测试集只能用来<strong>最终评估</strong>。如果反复看测试误差来调超参数，测试集就悄悄变成了训练集的一部分；正确做法是再切出一份验证集（第 05 篇的 val loss）。',
+            warn: '测试集只能用来<strong>最终评估</strong>。如果反复看测试误差来调超参数，测试集就悄悄变成了训练集的一部分；正确做法是再切出一份验证集（第 08 篇的 val loss）。',
         },
         {
             id: 'scaleup', title: '从 Hello World 到大模型：同一个配方', tag: 'NEXT',
-            desc: '把手写的 <code>gradients()</code> 换成<strong>自动微分</strong>：框架记录前向计算的每一步，再按链式法则自动反推梯度（第 02 篇手写一遍，第 04 篇之后全部交给 autograd）。下面左图是同一个梯度下降，一条用手写梯度（float64），一条用本系列的 JS 自动微分引擎 <code>LM.AG</code>（float32）——两条轨迹逐步重合。这四件套原样放大，就是训练 GPT 的流程：',
+            desc: '把手写的 <code>gradients()</code> 换成<strong>自动微分</strong>：框架记录前向计算的每一步，再按链式法则自动反推梯度（第 02 篇手写一遍，第 07 篇之后全部交给 autograd）。下面左图是同一个梯度下降，一条用手写梯度（float64），一条用本系列的 JS 自动微分引擎 <code>LM.AG</code>（float32）——两条轨迹逐步重合。这四件套原样放大，就是训练 GPT 的流程：',
             blocks: [
-                { type: 'html', html: `<table class="lm-tbl"><tr><th>要素</th><th>本篇（线性回归）</th><th>大语言模型（第 05 篇起）</th></tr>
+                { type: 'html', html: `<table class="lm-tbl"><tr><th>要素</th><th>本篇（线性回归）</th><th>大语言模型（第 08 篇起）</th></tr>
                     <tr><td>数据</td><td>n 个 (x, y) 数对</td><td>万亿级 token 的文本；样本 = 一段文字，目标 = 每个位置的下一个 token</td></tr>
                     <tr><td>模型</td><td>ŷ = w·x + b，2 个参数</td><td>Transformer，10⁹–10¹² 个参数（本系列的迷你 GPT 约 2.9 万）</td></tr>
                     <tr><td>损失</td><td>均方误差 MSE</td><td>交叉熵（下一个 token 的负对数概率）</td></tr>
                     <tr><td>梯度</td><td>手推公式</td><td>自动微分（反向传播），一次 backward 算出全部参数的梯度</td></tr>
                     <tr><td>优化器</td><td>GD / mini-batch SGD</td><td>AdamW + warmup + cosine 学习率 + 梯度裁剪</td></tr>
-                    <tr><td>评估</td><td>测试集 MSE</td><td>验证集 loss、下游任务、人类偏好（第 06 篇）</td></tr></table>` },
+                    <tr><td>评估</td><td>测试集 MSE</td><td>验证集 loss、下游任务、人类偏好（第 09 篇）</td></tr></table>` },
                 {
                     type: 'code', title: 'C++ · 自动微分版：同一个训练循环（cpp/minml_autograd.h）', src: `
                     // 同一个梯度下降，梯度改由自动微分来算（与页面 JS 的 LM.AG 一一对应）。真实框架（如 PyTorch）里

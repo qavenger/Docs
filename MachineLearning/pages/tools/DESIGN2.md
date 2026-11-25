@@ -1,4 +1,4 @@
-# 系列扩展设计说明（第 08–15 篇）：从共享基础到分化领域
+# 系列扩展设计说明（第 03–05、11–15 篇）：从共享基础到分化领域
 
 > **更新**：用户要求全部代码改为 C++（C++17 + 标准库 + 本系列自带的 pages/cpp/ 库）。本文件里关于 Python / NumPy / PyTorch 代码块的说法已作废，以 `DESIGN3.md` 为准。
 
@@ -16,7 +16,7 @@
 | 大语言模型 llm | 05 预训练 · 06 对齐（SFT / RLHF / DPO / GRPO） |
 | 分化领域 domain | 07 多模态理解（ViT / CLIP / LLaVA）· **11 扩散与流匹配** · **12 视频生成** · **13 音频与语音** · **14 世界模型** · **15 3D 重建：NeRF / 3DGS** |
 
-新篇的文件名（全小写，已写进 `LM.PAGES`）：`08_cnn_unet` · `09_latent_vae` · `10_reinforcement_learning` · `11_diffusion` · `12_video_generation` · `13_audio_generation` · `14_world_models` · `15_nerf_gaussian_splatting`（`.lab.js` → `.html`）。
+新篇的文件名（全小写，已写进 `LM.PAGES`）：`03_cnn_unet` · `04_latent_vae` · `05_reinforcement_learning` · `11_diffusion` · `12_video_generation` · `13_audio_generation` · `14_world_models` · `15_nerf_gaussian_splatting`（`.lab.js` → `.html`）。
 
 依赖关系（写正文时可以引用，读者可能跳着读，所以引用时带上一句话的回顾）：
 - 08 用到 02（反向传播、He 初始化、优化器）；为 11（U-Net 去噪器）、07（ViT 对比）、12、14 做准备。
@@ -26,7 +26,7 @@
 - 12 用到 11、09、04（时空注意力）、07（patch）。
 - 13 用到 09（VQ）、04 / 05（token 语言模型）、11（扩散）。
 - 14 用到 10、09、12（动作条件视频预测）。
-- 15 用到 02、08（位置编码 ↔ 第 03 篇的正弦编码）、01（梯度下降拟合）。
+- 15 用到 02、08（位置编码 ↔ 第 06 篇的正弦编码）、01（梯度下降拟合）。
 
 ## 2. 共享库新增内容（`llm_common.js`，只读；都已通过 `tools/test_engine2.js` 的有限差分梯度校验）
 
@@ -36,7 +36,7 @@
   `AG.conv2d(X, Wt, b, { C, H, W, K | KH, KW, stride, pad | padH, padW })`（Wt: `[Cout × C·KH·KW]`；一维卷积 = `H: 1, KH: 1`）、`AG.avgPool2`、`AG.maxPool2`、`AG.upsample2`（最近邻）、`AG.addChannel(X, B[N×C], {C})`（扩散 U-Net 加时间 embedding）、`AG.mulChannel`（FiLM 调制）。
   速度参考（Node）：1→8 通道 3×3、16×16、batch 32 的前向 + 反向约 3.3 ms；**浏览器里还要慢约 1.7 倍**。
 - 初始化：`LM.init.he(rand, fanIn)`、`LM.init.xavier(rand, fanIn, fanOut)`、`LM.init.normal(rand, std)`、`LM.init.uniform(rand, lim)`（返回给 `AG.param(name, r, c, init)` 用的填充函数）
-- 数据：`LM.digits = { IMG: 16, D: 256, K: 10, render(d, rand, out, {clean, dx, dy}), makeSet(n, rand, {clean}) }`——与第 02 篇同一个程序化手写数字生成器（逐像素一致，已验证），第 08、09 篇复用。
+- 数据：`LM.digits = { IMG: 16, D: 256, K: 10, render(d, rand, out, {clean, dx, dy}), makeSet(n, rand, {clean}) }`——与第 02 篇同一个程序化手写数字生成器（逐像素一致，已验证），第 03、04 篇复用。
 - 绘图：`LM.draw.imageGrid(..., { rgb: true })` 画交错 RGB（W·H·3，0..1）小图网格；所有带 `title` 的绘图函数支持 `titleX`（live 预览左上角有 LIVE 徽标，传 `titleX: 46` 避开）；`LM.draw.heat` 支持 `labelEvery`；`LM.draw.text` 按词换行、组合附加符（r̂）正确显示；图例 / 刻度 / id 文字统一 ≥ 11 px。
 - 导航：`LM.PARTS`、`LM.PAGES[i].part`；`LM.navHtml('NN')` 自动分组。
 
@@ -46,7 +46,7 @@
 
 1. **训练步数不要按 `S.dt` 或墙钟时间缩放**：`--deps` 扫描用 dt = 0 推进帧，按 dt 缩放的训练一步都不走；每帧固定步数。
 2. **浏览器比 Node 慢约 1.7 倍**（自动微分大量分配数组 + GC）。在 Node 里量好每步耗时后，按 1.7 倍估浏览器开销；最终以验证器打印的 per-frame 为准（默认 ≲ 15 ms）。本轮有 8 个作者同时在这台机器上跑训练和浏览器，计时会偏高、有抖动——多跑几次取较低值，并在报告里注明。
-3. 验证器只模拟约 20 帧：截图看到的是训练初期。长期行为在 Node 里用页面自己的代码验证（参考 `tools/p02_proto.js` 的写法：`new Function('LM', head + '\nreturn P02;')(LM)` 直接加载 `.lab.js` 里 `PipelineLab.mount(` 之前的部分），需要时另写脚本截取训练完成后的预览（参考 `tools/p05_final_shots.js`、`tools/p07_shots_trained.js`）。
+3. 验证器只模拟约 20 帧：截图看到的是训练初期。长期行为在 Node 里用页面自己的代码验证（参考 `tools/p02_proto.js` 的写法：`new Function('LM', head + '\nreturn P02;')(LM)` 直接加载 `.lab.js` 里 `PipelineLab.mount(` 之前的部分），需要时另写脚本截取训练完成后的预览（参考 `tools/p08_final_shots.js`、`tools/p10_shots_trained.js`）。
 4. 只在评估点（每 N 步）才更新的预览如果标了 `live`，验证器会警告「live 但没变化」。要么让它每帧都有可见变化（例如画出「当前步」游标），要么不标 `live` 而在数据变化时由 stage 写入新数据（它们仍会被重画）。
 5. `PL.draw.plot`：给了 `o.x` 时，没有自带 `x` 数组的 series 会被拉伸铺满整个 x 范围——画「前 k 步」的部分曲线必须传 `x`。
 6. probe / pick 拿不到 canvas：把绘图函数返回的布局（`LM.draw.heat` / `scatter` 的返回值）存进 `S`，在 probe 里用 `info.dx / info.dy` 反算。
@@ -54,7 +54,7 @@
 8. 改任何参数都会让 `S.epoch` 自增、所有 history stage 重置；如果某个参数不该重置主训练，自己用参数 key 判断（第 02 篇的做法），但要保证 `--deps` 扫描结果可复现。`--deps` 看不到「只影响长期训练结果」的参数时，手写 `param.steps`。
 9. 嵌入离线训练好的权重 / checkpoint 时，生成它的 Node 脚本放 `tools/pNN_*.js`，用页面里同一份代码，页面里写明「离线训练 N 步，脚本 xxx」。
 10. **只构建、验证你自己的页面**，不要运行 `tools/build_all.mjs`（它会重建所有人的页面）。指向尚未完成的新篇的 broken link 是预期的。
-11. 第一批的经验：真数据比完美叙事重要。实验结果不如预期时（例如第 06 篇真实模型上的 DPO 变差了），如实呈现并解释，再给出最接近的忠实版本。
+11. 第一批的经验：真数据比完美叙事重要。实验结果不如预期时（例如第 09 篇真实模型上的 DPO 变差了），如实呈现并解释，再给出最接近的忠实版本。
 
 ## 4. 各篇提纲（建议；核心内容要覆盖，具体步骤作者可调整，6–12 步）
 
@@ -68,7 +68,7 @@
 6. 平移鲁棒性 / 数据增强：平移后的测试集上 CNN vs MLP（真实）
 7. 编码器-解码器与 U-Net：上采样、跳连；训练一个小 U-Net 做去噪（或分割数字笔画），与无跳连版本对比（为第 11 篇的去噪网络铺垫）
 8. 残差连接与归一化：深 CNN 可训练性（可与 7 合并）
-9. 教学版 → 生产版：LeNet → AlexNet → VGG → ResNet、检测（YOLO 思路）/ 分割（U-Net、SAM）、CNN vs ViT（链到第 07 篇）、扩散里的 U-Net
+9. 教学版 → 生产版：LeNet → AlexNet → VGG → ResNet、检测（YOLO 思路）/ 分割（U-Net、SAM）、CNN vs ViT（链到第 10 篇）、扩散里的 U-Net
 
 ### 09 · 潜空间：自编码器、VAE 与 VQ-VAE（PyTorch）
 数据：`LM.digits`。
@@ -78,7 +78,7 @@
 4. VAE（live）：μ、logσ²、重参数化、ELBO = 重建 + KL；潜空间变连续，网格解码平滑，从先验采样
 5. β 的权衡：重建 vs KL（率-失真）；后验坍缩
 6. 插值：AE vs VAE 在两个数字之间插值
-7. VQ-VAE（live）：码本、最近邻量化、直通估计、commitment loss；码本使用率、死码；每张图变成一串离散 token（链到第 07、13 篇）
+7. VQ-VAE（live）：码本、最近邻量化、直通估计、commitment loss；码本使用率、死码；每张图变成一串离散 token（链到第 10、13 篇）
 8. 潜空间里的生成：在 VAE 潜空间 / VQ token 上拟合一个先验并采样新数字（链到第 11 篇的潜空间扩散）
 9. 教学版 → 生产版：Stable Diffusion 的 VAE（8× 下采样）、VQGAN（感知 + 对抗损失）、RVQ（SoundStream / EnCodec）、FSQ、视频 VAE——数字只写有把握的
 
@@ -92,7 +92,7 @@
 6. 探索与利用：多臂赌博机上 ε-greedy vs UCB（真实）
 7. 函数逼近 / DQN 思路：小网络 Q 值、经验回放、目标网络（规模允许就真实训练）
 8. 策略梯度 REINFORCE：方差、基线（真实）
-9. Actor-Critic、优势函数、PPO 的裁剪目标（链到第 06 篇的 RLHF / GRPO）
+9. Actor-Critic、优势函数、PPO 的裁剪目标（链到第 09 篇的 RLHF / GRPO）
 10. 教学版 → 生产版：DQN Atari、AlphaGo / AlphaZero（MCTS + 价值 / 策略网络）、RLHF、离线 RL、模型式 RL（链到第 14 篇）
 
 ### 11 · 扩散模型与流匹配：从噪声里生成数据（PyTorch）
@@ -105,7 +105,7 @@
 6. DDIM / 概率流 ODE：确定性轨迹；采样步数（10 / 50 / 1000）与质量（用真实的分布距离度量，如 MMD / 最近邻距离）
 7. 条件生成与 Classifier-Free Guidance：条件丢弃训练、引导强度 w：更像但更单一（真实）
 8. 流匹配 / Rectified Flow：直线插值路径、预测速度场；轨迹更直、少步数（与 DDPM 轨迹对比，真实）
-9. 图像上的扩散（小规模真实训练，或接第 09 篇潜空间做「潜空间扩散」）
+9. 图像上的扩散（小规模真实训练，或接第 04 篇潜空间做「潜空间扩散」）
 10. 教学版 → 生产版：U-Net vs DiT、潜空间扩散（Stable Diffusion）、文本条件（交叉注意力）、采样器（DPM-Solver 等）、少步蒸馏（consistency models）、流匹配在新一代模型中的使用——只写有把握的
 
 ### 12 · 视频生成：时空扩散与时间一致性（PyTorch）
@@ -135,9 +135,9 @@
 
 ### 14 · 世界模型：学会模拟环境，在想象中规划（PyTorch）
 环境：一个简单的、渲染成小图（如 12×12 / 16×16）的环境：网格或带惯性的小球、墙、目标；离散或连续动作。
-1. 什么是世界模型：p(o_{t+1} | o_≤t, a_t)；无模型 vs 有模型（链到第 10 篇）
+1. 什么是世界模型：p(o_{t+1} | o_≤t, a_t)；无模型 vs 有模型（链到第 05 篇）
 2. 收集经验：随机策略的轨迹数据集
-3. 编码器 V：把观测压进潜空间（链到第 09 篇，真实训练）
+3. 编码器 V：把观测压进潜空间（链到第 04 篇，真实训练）
 4. 动力学模型 M：z_{t+1} = f(z_t, a_t)（MLP / GRU；确定性 + 随机部分，RSSM 思路），实时训练，一步预测误差
 5. 想象：开环 rollout vs 真实帧并排；误差随预测步数复合增长（真实曲线）；多步训练 vs teacher forcing
 6. 在想象中规划：潜空间里用 CEM / random shooting 做 MPC，执行到真实环境，成功率（真实）
@@ -149,7 +149,7 @@
 ### 15 · 3D 重建：NeRF 与 3D Gaussian Splatting（PyTorch；读者多是图形 / 游戏工程师，可以讲得更硬核）
 1. 问题设定：多视角图像 → 3D 表示；针孔相机与光线（`mesh3d` 画相机、视锥、光线）
 2. 体渲染方程：σ、c、透射率 T、离散化的 alpha 合成（对一个已知解析体积真实光线步进）
-3. 谱偏差与位置编码 / Fourier features：MLP 拟合一张 2D 图，有无位置编码对比（live，经典演示；链到第 03 篇的正弦编码）
+3. 谱偏差与位置编码 / Fourier features：MLP 拟合一张 2D 图，有无位置编码对比（live，经典演示；链到第 06 篇的正弦编码）
 4. 一个小 NeRF：在低分辨率的合成多视角图上实时训练或离线训练 + 页面续训（预算紧就降分辨率、射线数、采样点数并写明）
 5. 3D Gaussian Splatting：高斯参数（μ、Σ = R S Sᵀ Rᵀ、颜色、不透明度）、投影到屏幕（EWA、投影雅可比）、排序与 alpha 混合、可微光栅化
 6. 拟合：2D 高斯拟合一张图（live），以及少量 3D 高斯拟合多视角（规模允许）；`mesh3d` 把高斯画成椭球

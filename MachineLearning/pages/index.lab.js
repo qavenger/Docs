@@ -1,4 +1,4 @@
-// index.lab.js — 系列入口：从机器学习 Hello World 到大模型与 AI 的各个分支（15 篇，按「共享基础 → 通用架构 → 大语言模型 → 分化领域」分组）
+// index.lab.js — 系列入口：从机器学习 Hello World 到大模型与 AI 的各个分支（21 篇，按「共享基础 → 通用架构 → 大语言模型 → 分化领域 → 智能体」分组）
 // 构建（在 pages/ 目录下）：node <skill>/scripts/build_doc.mjs llm_common.js llm_weights.js index.lab.js -o ../index.html
 // 每个步骤卡片是一篇讲义的缩影，预览同样由真实计算得到：GD、实时训练的小 MLP、基座模型的 embedding / 注意力 / 训练曲线 / 生成。
 
@@ -49,7 +49,7 @@ const PIDX = (() => {
         const gen = LM.gpt.generate(base, pIds, 12, { greedy: true });
         return { pIds, aIds, top: LM.topk(pr, 6).map((i) => ({ tok: V.show(i), p: pr[i] })), cont: V.decode(gen.gen) };
     }
-    /** 合成一张 24×24 的小图并切成 6×6 的 patch（第 07 篇的输入形式） */
+    /** 合成一张 24×24 的小图并切成 6×6 的 patch（第 10 篇的输入形式） */
     function imageDemo() {
         const W = 24, img = new Float32Array(W * W * 3);
         for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
@@ -77,22 +77,41 @@ const PIDX = (() => {
 const PIDX_TOC = {
     '01': '模型、损失、梯度、学习率、SGD、泛化——训练任何模型的四件套',
     '02': '交叉熵、隐藏层、手推反向传播 + 梯度校验、优化器、初始化与梯度流',
-    '03': '字节级 BPE、embedding 查表、word2vec 实时训练、正弦位置编码与 RoPE',
-    '04': '用训练好的迷你 GPT 做一次前向：LayerNorm、QKV、注意力、残差、FFN、KV cache',
-    '05': '在浏览器里从零预训练：batch、loss、反传、AdamW、学习率调度、采样、scaling law',
-    '06': '对话模板与 loss mask、SFT、Bradley-Terry 奖励模型、PPO、DPO、GRPO',
-    '07': 'patch 化与 ViT、CLIP 对比学习、zero-shot、视觉 token 接入语言模型（LLaVA）',
-    '08': '卷积与权重共享、感受野、实时训练 CNN、平移鲁棒性、U-Net 去噪',
-    '09': 'PCA、自编码器、VAE 与 ELBO、潜空间插值、VQ-VAE 码本与离散 token',
-    '10': 'MDP、价值迭代、Q-learning 与 SARSA、探索、策略梯度、Actor-Critic 到 PPO',
+    '03': '卷积与权重共享、感受野、实时训练 CNN、平移鲁棒性、U-Net 去噪',
+    '04': 'PCA、自编码器、VAE 与 ELBO、潜空间插值、VQ-VAE 码本与离散 token',
+    '05': 'MDP、价值迭代、Q-learning 与 SARSA、探索、策略梯度、Actor-Critic 到 PPO',
+    '06': '字节级 BPE、embedding 查表、word2vec 实时训练、正弦位置编码与 RoPE',
+    '07': '用训练好的迷你 GPT 做一次前向：LayerNorm、QKV、注意力、残差、FFN、KV cache',
+    '08': '在浏览器里从零预训练：batch、loss、反传、AdamW、学习率调度、采样、scaling law',
+    '09': '对话模板与 loss mask、SFT、Bradley-Terry 奖励模型、PPO、DPO、GRPO',
+    '10': 'patch 化与 ViT、CLIP 对比学习、zero-shot、视觉 token 接入语言模型（LLaVA）',
     '11': '前向加噪、去噪网络、DDPM / DDIM 采样、Classifier-Free Guidance、潜空间扩散、流匹配',
     '12': '逐帧生成为何闪烁、从图像模型膨胀、时空分解注意力、物理一致性度量、图生视频与 CFG、长视频漂移',
     '13': '采样与混叠、STFT / Mel、Griffin-Lim、RVQ 编解码与音频 token 语言模型、mel 扩散、TTS 与 ASR',
     '14': '编码器 + 动力学模型、想象 rollout 与误差累积、潜空间规划、在模型里玩',
     '15': '体渲染、位置编码与谱偏差、训练小 NeRF、3D 高斯的投影 / 排序 / 混合与拟合',
+    '16': '工具写进 system prompt、&lt;call&gt; 特殊 token、只在回答上算损失、解析与执行、约束解码、tool_choice',
+    '17': '「行动 → 观察」循环、模仿专家轨迹、在浏览器里实时跑 Agent、采样与重试、失败类型、规划的局限',
+    '18': 'Agent 外面的那圈程序：上下文窗口与压缩、KV cache 复用、权限与沙箱、超时重试、预算、评测',
+    '19': '工具多到放不进一次请求：BM25 / 向量 / 混合检索、两级路由、按需加载、参数校验、该不该调工具',
+    '20': '编程 Agent：读 / 搜 / 改 / 跑命令几个通用工具，仓库地图、权限分级、测试驱动的循环、隐藏测试',
+    '21': '把引擎和商用软件接进来：MCP 会话与工具注解、代码即动作、大结果与注入、Computer Use 的代价',
 };
 
-// ── 第 08–15 篇的首页缩影：全部是真实计算（卷积、PCA、价值迭代、精确的扩散反向过程、视频、频谱、表格世界模型、体渲染） ──
+/** 入口页的目录：按分类（篇号连续）/ 按前置知识（第 k 层 = 最长前置链有 k 篇；同层的篇互不依赖，可以按任意顺序读） */
+function PIDX_VIEWS() {
+    const card = (p, withPre) => `<a href="pages/${p.file}"><b>${p.no}</b>${p.title}<span>${PIDX_TOC[p.no] || ''}</span>${withPre ? `<i>前置：${p.pre.length ? p.pre.join('、') : '无'}</i>` : ''}</a>`;
+    const cat = LM.PARTS.map((pt) => `<div class="lm-part"><h3>${pt.name}<span>${pt.desc}</span></h3><div class="lm-toc">${LM.PAGES.filter((p) => p.part === pt.id).map((p) => card(p, false)).join('')}</div></div>`).join('');
+    const maxD = Math.max(...LM.PAGES.map((p) => LM.depth(p.no))), layers = [];
+    for (let k = 0; k <= maxD; k++) { const ps = LM.PAGES.filter((p) => LM.depth(p.no) === k); if (ps.length) layers.push(`<div class="lm-layer"><h4>第 ${k} 层<span>${k ? '它的前置都在前面几层' : '起点：不需要任何前置'}</span></h4><div class="lm-toc">${ps.map((p) => card(p, true)).join('')}</div></div>`); }
+    const goals = [['21', '大语言模型 → 智能体 → 接进引擎'], ['10', '多模态（看图说话）'], ['12', '图像与视频生成'], ['13', '音频与语音'], ['14', '决策与世界模型'], ['15', '3D 重建']];
+    const routes = goals.map(([g, name]) => { const seq = LM.allPre(g).concat([g]); return `<div class="lm-route"><b>${name}</b>${seq.map((n) => `<a href="pages/${LM.PAGES.find((p) => p.no === n).file}">${n}</a>`).join(' → ')}<span class="pl-dim">（${seq.length} 篇）</span></div>`; }).join('');
+    return `<div class="lm-views"><input type="radio" name="lmv" id="lmv-cat" checked><label for="lmv-cat">按分类</label><input type="radio" name="lmv" id="lmv-pre"><label for="lmv-pre">按前置知识</label>
+        <div class="lm-view lm-view-cat">${cat}</div>
+        <div class="lm-view lm-view-pre"><p class="pl-dim" style="margin:10px 0 0">篇号就是一条可行的阅读顺序（每篇的前置都排在它前面）。只想看某个方向时，按下面的路线读就够了——路线 = 这一篇的全部前置 + 它自己，按篇号排好：</p><div class="lm-routes">${routes}</div>${layers.join('')}</div></div>`;
+}
+
+// ── 第 03–05、11–15 篇的首页缩影：全部是真实计算（卷积、PCA、价值迭代、精确的扩散反向过程、视频、频谱、表格世界模型、体渲染） ──
 const PIDX2 = (() => {
     const { AG } = LM;
     // 08：一张数字 × 4 个固定卷积核（共享算子 AG.conv2d）
@@ -294,10 +313,63 @@ const PIDX2 = (() => {
     return { convDemo, pcaDemo, GW, valueIteration, worldDemo, drawGrid, rollout, GMM, abar, diffusionDemo, videoDemo, audioDemo, renderVolume };
 })();
 
+const PIDX3 = (() => {   // 第 16–18 篇的缩影：同一个会用工具的迷你 GPT（agent_weights.js，17 万参数），页面里实时跑
+    const clone = (H) => JSON.parse(JSON.stringify(H));
+    function demo() {
+        const w = AGT_W.main, m = LM.gpt.create(w.cfg, 1); LM.gpt.loadWeights(m, w.b64);
+        const out = {};
+        // 16：同一道乘法题，有计算器 / 没有工具
+        const task = AGT.qaTask(LM.rng(1604), 'mul'), world = AGT.newWorld(LM.rng(7));
+        out.qa = { task, want: task.expr + '等于' + task.ans + '。', tools: AGT.runEpisode(m, AGT.sysText(['算', '查']), task.q, AGT.qaEnv(['算', '查'], world), { greedy: true }), none: AGT.runEpisode(m, AGT.sysText([]), task.q, AGT.qaEnv([], world), { greedy: true }) };
+        // 17：在房子里搬东西（与第 18 篇默认的那一局相同）
+        const rand = LM.rng(19000 + 3 * 23 + 7919), ht = AGT.houseTask(rand, 'move'), H0 = AGT.newHouse(rand), moves = [];
+        let k = 0;
+        const r = AGT.runHouse(m, ht, clone(H0), { greedy: true, maxCalls: 24, onStep: (h, tool, arg, res) => { k++; if (tool === '去' && res.ok) moves.push({ k, room: h.room }); } });
+        out.house = { task: ht, H0, r, moves };
+        // 18：同一局，Harness 只给 96 个 token 的上下文：不处理 / 保留任务 / 压缩
+        out.full = AGT.runHouse(m, ht, clone(H0), { greedy: true, maxCalls: 24, trackFwd: true });
+        out.ctx = ['none', 'keep-task', 'compact'].map((policy) => ({ policy, r: AGT.runHouse(m, ht, clone(H0), { greedy: true, maxCalls: 24, window: 96, policy, trackFwd: true }) }));
+        return out;
+    }
+    const POS = [[178, 112], [56, 50], [56, 172], [312, 112], [446, 112]];   // 客厅 厨房 卧室 书房 院子 在地图上的位置
+    function fit(ctx, t, maxW) { if (ctx.measureText(t).width <= maxW) return t; while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1); return t + '…'; }
+    /** 房子地图 + 走过的路线（箭头上的数字 = 第几次调用）+ 右侧的调用列表 */
+    function drawHouse(c, D) {
+        const { ctx, w } = PL.draw.ctx(c), C = LM.C, A = D.house, H0 = A.H0, task = A.task;
+        ctx.lineWidth = 2; ctx.strokeStyle = '#3a3f46';
+        AGT.ADJ.forEach((ns, a) => ns.forEach((b) => { if (a < b) { ctx.beginPath(); ctx.moveTo(POS[a][0], POS[a][1]); ctx.lineTo(POS[b][0], POS[b][1]); ctx.stroke(); } }));
+        let prev = H0.room;
+        ctx.font = LM.FONT(11, true); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (const mv of A.moves) {
+            const [ax, ay] = POS[prev], [bx, by] = POS[mv.room], L = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / L * 7, ny = (bx - ax) / L * 7;
+            const x1 = ax + (bx - ax) * 0.3 + nx, y1 = ay + (by - ay) * 0.3 + ny, x2 = ax + (bx - ax) * 0.7 + nx, y2 = ay + (by - ay) * 0.7 + ny, ang = Math.atan2(y2 - y1, x2 - x1);
+            ctx.strokeStyle = C.orange; ctx.fillStyle = C.orange; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 8 * Math.cos(ang - 0.45), y2 - 8 * Math.sin(ang - 0.45)); ctx.lineTo(x2 - 8 * Math.cos(ang + 0.45), y2 - 8 * Math.sin(ang + 0.45)); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#0b0d10'; ctx.beginPath(); ctx.arc((x1 + x2) / 2 + nx * 1.6, (y1 + y2) / 2 + ny * 1.6, 8, 0, 2 * Math.PI); ctx.fill(); ctx.fillStyle = C.orange; ctx.fillText(String(mv.k), (x1 + x2) / 2 + nx * 1.6, (y1 + y2) / 2 + ny * 1.6 + 0.5);
+            prev = mv.room;
+        }
+        AGT.ROOMS.forEach((name, r) => {
+            const [x, y] = POS[r], bw = 92, bh = 46, its = AGT.ITEMS.filter((it) => H0.at[it] === r);
+            ctx.fillStyle = '#11161c'; ctx.fillRect(x - bw / 2, y - bh / 2, bw, bh);
+            ctx.lineWidth = r === task.room ? 2.5 : 1.2; ctx.strokeStyle = r === task.room ? C.green : r === H0.room ? C.blue : '#56606b'; ctx.strokeRect(x - bw / 2 + 0.5, y - bh / 2 + 0.5, bw - 1, bh - 1);
+            ctx.font = LM.FONT(12, true); ctx.fillStyle = C.text; ctx.textAlign = 'center'; ctx.fillText(name + (r === H0.room ? '（起点）' : ''), x, y - 9);
+            ctx.font = LM.FONT(its.length > 3 ? 10 : 11); let tx = x - ctx.measureText(its.join(',') || '空').width / 2; ctx.textAlign = 'left';
+            (its.length ? its : ['空']).forEach((it, i) => { const t = (i ? ',' : '') + it; ctx.fillStyle = it === task.item ? C.yellow : C.gray; ctx.fillText(t, tx, y + 10); tx += ctx.measureText(t).width; });
+        });
+        const ev = A.r.events.filter((e) => e.type === 'call'), x0 = 506;
+        ctx.font = LM.FONT(11); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillStyle = C.text; ctx.fillText(fit(ctx, '任务：' + task.q, w - x0 - 6), x0, 6);
+        ev.slice(0, 11).forEach((e, i) => { ctx.fillStyle = e.ok === false ? C.orange : C.text; ctx.fillText(fit(ctx, (i + 1) + '. ' + e.tool + '(' + e.arg + ') → ' + e.res, w - x0 - 6), x0, 24 + i * 16); });
+        ctx.fillStyle = A.r.success ? C.green : C.red; ctx.fillText(fit(ctx, (A.r.success ? '✓ ' : '✗ ') + '「' + A.r.answer + '」', w - x0 - 6), x0, 24 + Math.min(11, ev.length) * 16 + 4);
+        ctx.fillStyle = C.gray; ctx.textAlign = 'left'; ctx.fillText('绿框 = 目的地 · 黄字 = 要搬的东西 · 蓝框 = 起点', 8, 208);
+    }
+    return { demo, drawHouse };
+})();
+
 PipelineLab.mount({
     paramSteps: { prompt: [], temp: [], lr: ['nn'], digit: ['cnn'], nData: ['world'], yaw: ['nerf'] },   // generated by validate_doc --deps (param → steps whose previews change)
     title: '从 Hello World 到大模型与生成式 AI · 系列目录',
-    tagColors: { '共享基础': 'green', '通用架构': 'blue', '大语言模型': 'magenta', '分化领域': 'rust' },
+    tagColors: { '共享基础': 'green', '通用架构': 'blue', '大语言模型': 'magenta', '分化领域': 'rust', '智能体': 'teal' },
     lang: 'zh-CN',
     codeLang: 'cpp',
     seed: 7,
@@ -310,15 +382,30 @@ PipelineLab.mount({
         .lm-part { margin-top: 14px; }
         .lm-part h3 { font-size: 0.95rem; color: #c8ccd4; margin: 0 0 2px; }
         .lm-part h3 span { font-weight: normal; font-size: 0.8rem; color: #6f8496; margin-left: 10px; }
+        .lm-views { margin-top: 12px; }
+        .lm-views > input { display: none; }
+        .lm-views > label { display: inline-block; padding: 4px 14px; margin-right: 6px; border: 1px solid #2a3d4f; border-radius: 14px; color: #8fb4cc; cursor: pointer; font-size: 0.85rem; }
+        .lm-views > label:hover { background: #142230; }
+        #lmv-cat:checked + label, #lmv-pre:checked + label { background: #6ab0e0; color: #0a0a0a; border-color: #6ab0e0; font-weight: 600; }
+        .lm-view { display: none; }
+        #lmv-cat:checked ~ .lm-view-cat, #lmv-pre:checked ~ .lm-view-pre { display: block; }
+        .lm-layer { margin-top: 12px; }
+        .lm-layer h4 { font-size: 0.85rem; color: #c8ccd4; margin: 0 0 2px; font-weight: 600; }
+        .lm-layer h4 span { font-weight: normal; color: #6f8496; margin-left: 8px; }
+        .lm-toc a i { display: block; font-style: normal; color: #9fd0a0; font-size: 0.76rem; margin-top: 4px; }
+        .lm-routes { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 8px; margin: 8px 0 4px; }
+        .lm-route { padding: 8px 12px; border: 1px solid #22303c; border-radius: 8px; background: #0d141a; font-size: 0.82rem; color: #9fb4c4; }
+        .lm-route b { color: #c8ccd4; display: block; margin-bottom: 3px; }
+        .lm-route a { color: #6ab0e0; font-family: var(--pl-mono); }
         .lm-typer { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
         @media (max-width: 760px) { .lm-typer { grid-template-columns: 1fr; } }`,
     regen: false,
 
     params: [
         { id: 'prompt', label: '开头', options: PIDX.PROMPTS, value: '熊猫', affects: 'frame', desc: '顶部「现场续写」的提示词：迷你 GPT 从这几个字开始一个字一个字往下写。' },
-        { id: 'temp', label: '温度', min: 0.2, max: 2, step: 0.1, value: 0.8, affects: 'frame', desc: '采样温度。低于 1 → 更保守、几乎总写对；高于 1.5 → 分布被拉平，开始出现错别字和胡话（第 05 篇详细讲）。' },
+        { id: 'temp', label: '温度', min: 0.2, max: 2, step: 0.1, value: 0.8, affects: 'frame', desc: '采样温度。低于 1 → 更保守、几乎总写对；高于 1.5 → 分布被拉平，开始出现错别字和胡话（第 08 篇详细讲）。' },
         { id: 'lr', label: '学习率', min: 0.002, max: 0.05, step: 0.002, value: 0.02, desc: 'Step 02 里实时训练的小 MLP 的 Adam 学习率。调太大会看到决策边界乱跳。' },
-        { id: 'digit', label: '数字', options: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], value: 3, desc: 'Step 08 里拿去做卷积的手写数字（与第 02、08、09 篇同一个生成器）。' },
+        { id: 'digit', label: '数字', options: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], value: 3, desc: 'Step 08 里拿去做卷积的手写数字（与第 02、03、04 篇同一个生成器）。' },
         { id: 'nData', label: '经验条数', options: [20, 60, 150, 300, 1000, 5000], value: 150, desc: 'Step 14 的世界模型从多少条随机转移里「数」出环境规律。太少 → 模型没见过的地方以为原地不动，在想象里规划出的路线到真实环境就失败。' },
         { id: 'yaw', label: '相机方位', min: 0, max: 360, step: 5, value: 35, unit: '°', map: (d) => d * Math.PI / 180, desc: 'Step 15 体渲染的相机绕场景转的角度（俯仰固定 20°）：每个像素一条光线、沿光线累积密度和颜色。' },
     ],
@@ -382,7 +469,7 @@ PipelineLab.mount({
         },
         {
             id: 'demos2', lifetime: 'resident', run(S) {
-                // 第 08–15 篇的缩影里不随参数变的部分
+                // 第 03–05、11–15 篇的缩影里不随参数变的部分
                 S.pca = PIDX2.pcaDemo();
                 S.vi = PIDX2.valueIteration((s, a) => PIDX2.GW.trans(s, a, 0.2), 0.95, 30);
                 S.diff = PIDX2.diffusionDemo(360, 40);
@@ -393,17 +480,18 @@ PipelineLab.mount({
         { id: 'conv', lifetime: 'param', run(S) { S.conv = PIDX2.convDemo(S.digit); } },
         { id: 'world', lifetime: 'param', run(S) { S.world = PIDX2.worldDemo(S.nData, 0.2); } },
         { id: 'volume', lifetime: 'param', run(S) { S.vol = PIDX2.renderVolume(S.yaw, 20 * Math.PI / 180, 72, 56); } },
+        { id: 'agents', lifetime: 'resident', lazy: true, run(S) { S.ag = PIDX3.demo(); } },   // 第 16–18 篇的缩影：加载会用工具的迷你 GPT，跑 6 局（约 0.1 秒）
     ],
 
     intro: {
         title: '从机器学习的 Hello World，到大模型与 AI 的各个分支',
-        flow: ['共享基础：优化 · 反向传播 · 卷积 · 潜空间 · 强化学习', '通用架构：Token · Transformer', '大语言模型：预训练 · 对齐', '分化领域：多模态 · 扩散 · 视频 · 音频 · 世界模型 · 3D'],
+        flow: ['共享基础：优化 · 反向传播 · 卷积 · 潜空间 · 强化学习', '通用架构：Token · Transformer', '大语言模型：预训练 · 对齐', '分化领域：多模态 · 扩散 · 视频 · 音频 · 世界模型 · 3D', '智能体：工具调用 · Agent 循环 · Harness'],
         html: LM.navHtml(null, true) + `
-            <p>这是一套<strong>能跑的讲义</strong>：15 篇文章，每篇都是一个离线 HTML，页面里内嵌了算法的 JS 参考实现——损失地形、反向传播的梯度、卷积特征图、VAE 的潜空间、Q 表、BPE 的合并、注意力矩阵、训练曲线、奖励模型、扩散的反向轨迹、生成的视频和音频、世界模型的「想象」、NeRF 和高斯点云，全部是<strong>当场算出来</strong>的，改参数就重算。代码块是对应的 <strong>C++</strong> 实现：只用 C++17 标准库，外加本系列自带的一个小型 C++ 机器学习库（张量、自动微分、优化器、迷你 GPT，源码在 <code>pages/cpp/</code>，可以直接编译，并且和页面里的 JS 实现逐位对得上）。</p>
-            <p>15 篇按知识结构分成四层：<strong>共享基础</strong>是所有模型都要用的工具（梯度下降、反向传播、卷积、潜空间、强化学习）；<strong>通用架构</strong>把任何数据变成 token 序列交给 Transformer；<strong>大语言模型</strong>是这套架构规模化后的第一个大成功；<strong>分化领域</strong>是从同一套基础上长出来的各个方向。篇号是写作顺序，可以按下面的分组、也可以按页面底部的「知识依赖图」挑着读。</p>
+            <p>这是一套<strong>能跑的讲义</strong>：21 篇文章，每篇都是一个离线 HTML，页面里内嵌了算法的 JS 参考实现——损失地形、反向传播的梯度、卷积特征图、VAE 的潜空间、Q 表、BPE 的合并、注意力矩阵、训练曲线、奖励模型、扩散的反向轨迹、生成的视频和音频、世界模型的「想象」、NeRF 和高斯点云，全部是<strong>当场算出来</strong>的，改参数就重算。代码块是对应的 <strong>C++</strong> 实现：只用 C++17 标准库，外加本系列自带的一个小型 C++ 机器学习库（张量、自动微分、优化器、迷你 GPT，源码在 <code>pages/cpp/</code>，可以直接编译，并且和页面里的 JS 实现逐位对得上）。</p>
+            <p>21 篇按知识结构分成五层：<strong>共享基础</strong>是所有模型都要用的工具（梯度下降、反向传播、卷积、潜空间、强化学习）；<strong>通用架构</strong>把任何数据变成 token 序列交给 Transformer；<strong>大语言模型</strong>是这套架构规模化后的第一个大成功；<strong>分化领域</strong>是从同一套基础上长出来的各个方向；<strong>智能体</strong>让对齐好的语言模型调用工具、在「行动 → 观察」的循环里完成多步任务，并讲清楚包在模型外面的那一圈程序（Harness）。篇号按分类连续编排，同时也是一条可行的阅读顺序：每篇的前置都排在它前面。下面的目录可以切换成「按前置知识」：按依赖分层，并给出几个方向的最短阅读路线；页面底部的「知识依赖图」画出了概念在各篇之间怎样流动。</p>
             <p>贯穿 LLM 部分的玩具是一个 <strong>2.9 万参数的迷你 GPT</strong>，在一个「玩具世界」语料（8 种动物 × 爱吃 / 住处 / 颜色）上训练：它小到能在浏览器里几十秒训完，又大到能展示真实大模型的关键机制——注意力学会回头去找主语、权重里记住世界知识、SFT 教会它按格式回答问题、强化学习（GRPO）让它在没训练过的问题上也答得更准。顶部就是它在现场续写。</p>
             <p class="pl-dim">每篇都是单个离线 HTML，直接用浏览器（推荐 Chrome / Edge）打开即可；带训练的页面打开后训练会自动推进，可以随时在顶栏暂停、调速。</p>
-            ${LM.PARTS.map((pt) => `<div class="lm-part"><h3>${pt.name}<span>${pt.desc}</span></h3><div class="lm-toc">${LM.PAGES.filter((p) => p.part === pt.id).map((p) => `<a href="pages/${p.file}"><b>${p.no}</b>${p.title}<span>${PIDX_TOC[p.no] || ''}</span></a>`).join('')}</div></div>`).join('')}`,
+            ${PIDX_VIEWS()}`,
     },
 
     sections: [{
@@ -516,181 +604,8 @@ PipelineLab.mount({
             notes: '拖 <b>学习率</b> 会从头重新训练：0.02 大约两三百步就能把三条螺旋臂分开；拖到 0.05 能看到边界在训练初期剧烈抖动。',
         },
         {
-            id: 'tok', title: '文本变成向量：Tokenizer + Embedding', tag: '通用架构',
-            desc: '神经网络只吃数字。<strong>Tokenizer</strong> 把文本切成 token 并映射成整数 id（真实模型用字节级 BPE，词表 3 万–25 万；本系列的迷你 GPT 用字符级，词表 76）；<strong>Embedding</strong> 把每个 id 查表变成一个 d 维向量。这些向量是训练出来的——下图是基座模型学到的 embedding 投影到 2D：同一类的字（动物、食物、颜色、虚词）自己聚到了一起，没人告诉过它这些类别。<br><a href="pages/03_tokenizer_embedding.html">→ 打开第 03 篇：Tokenizer、Embedding 与位置编码</a>',
-            formula: ['ids = tokenize("熊猫喜欢吃竹子") = [i_1, …, i_T]', 'X = W_te[ids] + W_pe[0..T−1]   // [T × d]：token embedding + 位置 embedding'],
-            code: {
-                title: 'C++ · 字符级 tokenizer 与 embedding 查表', src: `
-                // 字符级 tokenizer：一个汉字 / 标点 = 一个 token（encode / decode 见 Common · minml_gpt.h）
-                // embedding 查表 + 位置：X = W_te[ids] + W_pe[0..T−1]
-                Var embedTokens(const std::vector<int>& ids, const Var& wte, const Var& wpe) {
-                    std::vector<int> pos = ints((int)ids.size());
-                    for (int t = 0; t < (int)ids.size(); t++) pos[t] = t;
-                    return add(embedding(ids, wte), gatherRows(wpe, pos));
-                }`,
-            },
-            previews: [
-                {
-                    id: 'tokChips', label: 'Tokenize：字符 → id', sub: '每个方块 = 一个 token，下面是它的 id', size: [360, 120],
-                    render: (c, S) => { const s = '熊猫喜欢吃竹子，它住在山里。'; LM.draw.tokens(c, Array.from(PIDX.V.encode(s), (id) => ({ text: PIDX.V.itos[id], id, sub: id })), { showIds: true, px: 15 }); },
-                },
-                {
-                    id: 'embPca', label: '基座模型的 token embedding（PCA 2D）', sub: '颜色 = 类别（只用于上色，训练时模型并不知道）', large: true,
-                    render: (c, S) => {
-                        const E = S.emb;
-                        LM.draw.scatter(c, E.items.map((it, i) => ({ x: E.pts[2 * i], y: E.pts[2 * i + 1], color: it.color, r: 4, label: it.ch, labelPx: 14 })), { equal: true, xLabel: `PC1（${(E.var[0] * 100).toFixed(0)}% 方差）`, yLabel: `PC2（${(E.var[1] * 100).toFixed(0)}%）` });
-                        const { ctx } = PL.draw.ctx(c, { keep: true, smooth: true });
-                        ctx.font = LM.FONT(11); E.groups.forEach((g, k) => { ctx.fillStyle = g.color; ctx.fillText('● ' + g.name, 40 + k * 78, 14); });
-                    },
-                },
-            ],
-        },
-        {
-            id: 'attn', title: 'Transformer：注意力让每个位置去「看」前文', tag: '通用架构',
-            desc: 'Transformer 的核心是<strong>自注意力</strong>：每个位置算出 query，与前面所有位置的 key 做点积打分，softmax 后按权重汇总它们的 value。下图是训练好的迷你 GPT 在句子「熊猫喜欢吃竹子，所以熊猫每天都吃竹子。」上真实的注意力矩阵（程序自动挑出的一个头）：读到第二个「吃」、要预测吃的是什么时，这个头几乎把全部注意力投向了<strong>主语「熊猫」</strong>——它并不是去抄前文那个「竹」（所有头对它的注意力都不超过 ' + PIDX.foodMax.toFixed(2) + '），而是先回头确认「谁在吃」，再从预训练记住的知识（熊猫 → 竹子）里调出答案。注意力负责「去哪里找信息」，记忆在权重里。<br><a href="pages/04_transformer.html">→ 打开第 04 篇：Transformer 逐层拆解</a>',
-            formula: ['Attention(Q, K, V) = softmax(Q K^T / √d_h + M) · V   // M = 因果掩码（未来位置 −∞）', 'x ← x + Attn(LN(x))      x ← x + MLP(LN(x))   // 一个 Pre-LN Block'],
-            code: {
-                title: 'C++ · 单头因果注意力', src: `
-                // 单头因果注意力：q、k、v 都是 [T × dh]，返回 [T × dh]
-                Tensor causalAttention(const Tensor& q, const Tensor& k, const Tensor& v) {
-                    int T = q.rows, dh = q.cols;
-                    Tensor out = zeros(T, dh);
-                    for (int i = 0; i < T; i++) {
-                        std::vector<float> s = floats(i + 1);           // 只看 j ≤ i：因果掩码
-                        for (int j = 0; j <= i; j++) {
-                            float dot = 0;
-                            for (int c = 0; c < dh; c++) dot += q.at(i, c) * k.at(j, c);
-                            s[j] = dot / std::sqrt((float)dh);          // 打分
-                        }
-                        softmaxInPlace(s, 1.0f);                        // 每行和为 1
-                        for (int j = 0; j <= i; j++)
-                            for (int c = 0; c < dh; c++) out.at(i, c) += s[j] * v.at(j, c);   // 加权求和
-                    }
-                    return out;
-                }`,
-            },
-            previews: [
-                {
-                    id: 'attnMap', label: '注意力权重（训练后的迷你 GPT）', sub: '行 = 查询位置，列 = 被看的位置；斜纹 = 因果掩码遮住的未来', large: true, size: [380, 380],
-                    render: (c, S) => { const A = S.attn; S._attnLay = LM.draw.heat(c, A.A, A.T, A.T, { rowLabels: A.labels, colLabels: A.labels, map: 'inferno', range: [0, 1], hiRow: A.best.qi, hiCells: [[A.best.qi, A.best.kj]], title: `第 ${A.best.l + 1} 层 · 头 ${A.best.h + 1} · 对主语的注意力 ${(A.best.score * 100).toFixed(0)}%` }); },
-                    probe: (x, y, S, PL, info) => {
-                        const L = S._attnLay, A = S.attn; if (!L) return '';
-                        const cc = Math.floor((info.dx - L.x0) / L.cw), r = Math.floor((info.dy - L.y0) / L.ch);
-                        if (r < 0 || cc < 0 || r >= L.R || cc >= L.C || cc > r) return '';
-                        return `查询「${A.labels[r]}」(位置 ${r}) → 看「${A.labels[cc]}」(位置 ${cc})
-权重 ${A.A[r * L.C + cc].toFixed(3)}`;
-                    },
-                },
-                {
-                    id: 'attnNext', label: '于是下一个字……', sub: '黄框那一行（第二个「吃」）处，整个模型输出的下一个 token 分布', size: [360, 170],
-                    render: (c, S) => { const n = S.attn.next; LM.draw.bars(c, n.map((q) => q.p), n.map((q) => q.tok), { horizontal: true, hi: 0, range: [0, 1], labelPx: 14 }); },
-                },
-            ],
-        },
-        {
-            id: 'pretrain', title: '预训练：在海量文本上预测下一个 token', tag: '大语言模型',
-            desc: '预训练的目标简单到只有一句话：<strong>预测下一个 token</strong>（自回归语言建模）。随机截取一段文本，输入 x，目标 y 是 x 右移一位；损失是每个位置交叉熵的平均；AdamW + warmup + cosine 学习率跑上几千步（真实模型是上万亿 token）。下图是本系列基座模型真实的离线训练记录：loss 从 ln 76 ≈ 4.33 一路降到 0.51，中间先学会单字频率、再学会词和句式、最后记住每种动物的事实。第 05 篇会在浏览器里从零把它重新训练一遍。<br><a href="pages/05_pretraining.html">→ 打开第 05 篇：预训练一个迷你 GPT</a>',
-            formula: ['L = −(1/BT) Σ_{b,t} log p_θ(x_{t+1} | x_{≤t})', 'C ≈ 6 · N · D   // 训练 FLOPs ≈ 6 × 参数量 × token 数'],
-            code: {
-                title: 'C++ · 预训练主循环（详见第 05 篇）', src: `
-                // 预训练主循环：随机窗口 → 前向 → 交叉熵 → 反向 → 梯度裁剪 → AdamW（trainStep 等见 Common · minml_gpt.h）
-                void pretrain(GPT& m, const std::vector<int>& data, int steps, int B, int T, float maxLR, Rng& r) {
-                    AdamW opt = makeAdamW(m.params, m.decay, maxLR, 0.1f);
-                    for (int it = 0; it < steps; it++) {
-                        float lr = cosineLR(it, maxLR, maxLR / 10, 100, steps);   // warmup + cosine
-                        Batch b = getBatch(data, B, T, r);
-                        trainStep(m, opt, b, B, T, lr);
-                    }
-                }`,
-            },
-            previews: [
-                {
-                    id: 'baseCurve', label: '基座模型的训练曲线（离线训练日志）', sub: `batch ${LM_WEIGHTS.base.batch} × T 32 · ${LM_WEIGHTS.base.steps} 步 · 每 50 步记录一次`, large: true, size: [360, 240],
-                    render: (c, S) => {
-                        const cv = LM_WEIGHTS.base.curve;
-                        PL.draw.plot(c, { logY: true, xLabel: '训练步', x: [0, LM_WEIGHTS.base.steps], series: [{ data: cv.map((r) => r[1]), x: cv.map((r) => r[0]), color: LM.C.train, label: 'train loss' }, { data: cv.map((r) => r[2]), x: cv.map((r) => r[0]), color: LM.C.val, label: 'val loss', width: 2 }], hmarks: [{ y: Math.log(76), label: 'ln 76（随机猜）', color: LM.C.gray }] });
-                    },
-                },
-                {
-                    id: 'baseSamples', label: '训练完成后的生成样本', sub: '温度 0.7，从四种动物名开头（训练脚本当时生成并记录）', size: [360, 240],
-                    render: (c, S) => LM.draw.text(c, LM_WEIGHTS.base.samples.map((s) => ({ text: s, color: LM.C.text })), { px: 13, lineGap: 7 }),
-                },
-            ],
-        },
-        {
-            id: 'align', title: '后训练：从「续写机器」到「对话助手」', tag: '大语言模型',
-            desc: '基座模型只会续写。把问题包进<strong>对话模板</strong> <code>&lt;user&gt;…&lt;bot&gt;</code> 喂给它，它不认识这些特殊 token（预训练里从没出现过），只会把整段当普通文本接着写——下图是它在 <code>&lt;bot&gt;</code> 之后真实的预测：续写出「吃竹子。小兔喜欢吃萝卜。…」，事实没错，但既不是一句完整的回答，也不会停下来。<strong>SFT</strong> 用「问题 → 标准回答」数据微调（只在回答部分计算损失），教会它格式；再用<strong>人类偏好</strong>训练奖励模型，用 PPO / DPO / GRPO 把回答往人更喜欢的方向推，同时用 KL 约束防止它跑偏。<br><a href="pages/06_alignment.html">→ 打开第 06 篇：SFT、RLHF、DPO、GRPO</a>',
-            formula: ['L_SFT = −Σ_{t ∈ 回答} log π_θ(y_t | x, y_{<t})   // 问题部分不计损失', 'max_π E_{y~π}[r(x, y)] − β · KL(π ‖ π_ref)      ⇒  π* ∝ π_ref · exp(r / β)'],
-            code: {
-                title: 'C++ · SFT 的 loss mask', src: `
-                // SFT 样本：输入 = 问题 + 回答；目标 = 右移一位，问题部分设为 −1（crossEntropy 会跳过这些位置）
-                struct SftSample { std::vector<int> ids, targets; };
-
-                SftSample sftTargets(const std::vector<int>& promptIds, const std::vector<int>& answerIds) {
-                    SftSample s;
-                    s.ids = promptIds;
-                    s.ids.insert(s.ids.end(), answerIds.begin(), answerIds.end());
-                    s.targets = ints((int)s.ids.size(), -1);
-                    for (int t = (int)promptIds.size() - 1; t + 1 < (int)s.ids.size(); t++) s.targets[t] = s.ids[t + 1];   // 只在回答上算损失
-                    return s;
-                }`,
-            },
-            previews: [
-                {
-                    id: 'chatChips', label: '一条 SFT 样本', sub: '灰色 = 问题（不计损失）· 彩色 = 回答（计算损失）', size: [360, 120],
-                    render: (c, S) => {
-                        const V = PIDX.V, ch = S.chat, toks = [];
-                        ch.pIds.forEach((id) => toks.push({ text: V.show(id), id, dim: true }));
-                        ch.aIds.forEach((id) => toks.push({ text: V.show(id), id }));
-                        LM.draw.tokens(c, toks, { px: 14 });
-                    },
-                },
-                {
-                    id: 'chatBase', label: '基座模型在 ⟨bot⟩ 之后的预测', sub: `贪心续写：「${PIDX.chatDemo().cont.replace(/</g, '⟨').replace(/>/g, '⟩')}」`, size: [360, 190],
-                    render: (c, S) => { const t = S.chat.top; LM.draw.bars(c, t.map((q) => q.p), t.map((q) => q.tok), { horizontal: true, range: [0, 1], labelPx: 14, color: LM.C.red }); },
-                },
-            ],
-        },
-        {
-            id: 'mm', title: '多模态：图像也切成 token', tag: '分化领域',
-            desc: '视觉 Transformer（ViT）把图像切成固定大小的 patch，每个 patch 展平后线性投影成一个向量——图像就变成了一串「视觉 token」，可以和文字 token 用同一套 Transformer 处理。<strong>CLIP</strong> 用对比学习把图像和文字映射到同一个向量空间；<strong>LLaVA</strong> 再用一个投影层把视觉 token 接到语言模型前面，让它能「看图说话」。下图把一张 24×24 的小图切成 16 个 6×6 的 patch。<br><a href="pages/07_multimodal.html">→ 打开第 07 篇：ViT、CLIP 与迷你 LLaVA</a>',
-            formula: ['patches = reshape(img, [(H/P)·(W/P), P·P·3])      z = patches · W_E + E_pos', 'L_CLIP = ½ [CE(s·I T^T, diag) + CE(s·T I^T, diag)]   // I、T 为 L2 归一化后的图 / 文嵌入'],
-            code: {
-                title: 'C++ · patchify', src: `
-                // 把 H×W×C 的图（行优先、通道交错）切成 P×P 的 patch，每个 patch 展平成一行：[(H/P)·(W/P) × P·P·C]
-                Tensor patchify(const std::vector<float>& img, int H, int W, int C, int P) {
-                    int nx = W / P, ny = H / P;
-                    Tensor out = zeros(nx * ny, P * P * C);
-                    for (int py = 0; py < ny; py++)
-                        for (int px = 0; px < nx; px++)
-                            for (int y = 0; y < P; y++)
-                                for (int x = 0; x < P; x++)
-                                    for (int c = 0; c < C; c++)
-                                        out.at(py * nx + px, (y * P + x) * C + c) = img[((py * P + y) * W + (px * P + x)) * C + c];
-                    return out;                                     // 每行就是一个视觉 token
-                }`,
-            },
-            previews: [{
-                id: 'patches', label: '一张图 = 16 个视觉 token', sub: '左：原图 · 右：按 patch 拆开（每块就是一个 token，按行优先编号）', size: [360, 180],
-                render: (c, S) => {
-                    const { ctx, w } = PL.draw.ctx(c), I = S.img, W = I.W, P = I.P, n = W / P, cell = 6;
-                    const px = (x, y) => { const o = (y * W + x) * 3; return `rgb(${I.img[o] * 255 | 0},${I.img[o + 1] * 255 | 0},${I.img[o + 2] * 255 | 0})`; };
-                    for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) { ctx.fillStyle = px(x, y); ctx.fillRect(10 + x * cell, 14 + y * cell, cell, cell); }
-                    const ox = 184, gap = 9, pc = 4.4;
-                    for (let py = 0; py < n; py++) for (let pxi = 0; pxi < n; pxi++) {
-                        const X0 = ox + pxi * (P * pc + gap), Y0 = 14 + py * (P * pc + gap);
-                        for (let y = 0; y < P; y++) for (let x = 0; x < P; x++) { ctx.fillStyle = px(pxi * P + x, py * P + y); ctx.fillRect(X0 + x * pc, Y0 + y * pc, pc + 0.3, pc + 0.3); }
-                        ctx.strokeStyle = '#2a3038'; ctx.strokeRect(X0 - 0.5, Y0 - 0.5, P * pc + 1, P * pc + 1);
-                        ctx.fillStyle = LM.C.gray; ctx.font = LM.FONT(11); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(String(py * n + pxi), X0 + 1, Y0 + 1);
-                    }
-                    ctx.strokeStyle = LM.C.gray; for (let k = 1; k < n; k++) { ctx.beginPath(); ctx.moveTo(10 + k * P * cell, 14); ctx.lineTo(10 + k * P * cell, 14 + W * cell); ctx.stroke(); ctx.beginPath(); ctx.moveTo(10, 14 + k * P * cell); ctx.lineTo(10 + W * cell, 14 + k * P * cell); ctx.stroke(); }
-                    void w;
-                },
-            }],
-        },
-        {
             id: 'cnn', title: '卷积：同一个小卷积核扫过整张图', tag: '共享基础',
-            desc: '全连接层让每个输出连到所有像素；<strong>卷积</strong>只看一个小邻域（3×3），并且在所有位置<strong>共享同一组权重</strong>——参数从几万个降到 9 个，图像平移时输出也跟着平移。下面是同一张手写数字分别过 4 个经典卷积核（用本系列共享的 <code>AG.conv2d</code> 真实计算）：每个核都是一个「特征探测器」。CNN 的第一层学到的核和它们很像；把卷积、池化、上采样和跳连堆起来就是 U-Net——扩散模型里的去噪网络。<br><a href="pages/08_cnn_unet.html">→ 打开第 08 篇：卷积神经网络与 U-Net</a>',
+            desc: '全连接层让每个输出连到所有像素；<strong>卷积</strong>只看一个小邻域（3×3），并且在所有位置<strong>共享同一组权重</strong>——参数从几万个降到 9 个，图像平移时输出也跟着平移。下面是同一张手写数字分别过 4 个经典卷积核（用本系列共享的 <code>AG.conv2d</code> 真实计算）：每个核都是一个「特征探测器」。CNN 的第一层学到的核和它们很像；把卷积、池化、上采样和跳连堆起来就是 U-Net——扩散模型里的去噪网络。<br><a href="pages/03_cnn_unet.html">→ 打开第 03 篇：卷积神经网络与 U-Net</a>',
             formula: ['y[c_o, i, j] = b[c_o] + Σ_{c_i} Σ_{u,v ∈ 3×3} W[c_o, c_i, u, v] · x[c_i, i + u − 1, j + v − 1]   // 互相关，padding = 1', '参数量：3×3×C_in×C_out（与图像大小无关）   vs   全连接 (H·W·C_in) × (H·W·C_out)'],
             code: {
                 title: 'C++ · 一层卷积', src: `
@@ -710,11 +625,11 @@ PipelineLab.mount({
         },
         {
             id: 'latent', title: '潜空间：把 256 个像素压成 2 个数', tag: '共享基础',
-            desc: '一张 16×16 的数字有 256 个像素，但「所有可能的手写数字」只占这个 256 维空间里很薄的一层。<strong>自编码器</strong>学一个编码器把图压成几个数（潜变量 z）、再学一个解码器从 z 还原。最简单的线性自编码器就是 PCA：下图左边是 600 张数字投影到前两个主成分上（按真实标签上色，PCA 本身没用到标签）：只靠两个<strong>线性</strong>方向，0 和 1、2 和 6 这类差别大的数字分得开一些，大多数数字仍然大面积重叠；右边沿这两个方向在潜空间里取网格、解码回图像。第 09 篇会换成非线性的 AE、能采样的 VAE 和输出离散 token 的 VQ-VAE——它们是潜空间扩散、视频压缩、音频编解码和世界模型的共同基础。<br><a href="pages/09_latent_vae.html">→ 打开第 09 篇：AE、VAE 与 VQ-VAE</a>',
-            formula: ['z = W^T (x − μ)      x̂ = μ + W z   // PCA：W = 协方差矩阵的前 k 个特征向量（线性自编码器的最优解）', 'VAE：max E_q[log p(x|z)] − KL(q(z|x) ‖ N(0, I))   // 第 09 篇'],
+            desc: '一张 16×16 的数字有 256 个像素，但「所有可能的手写数字」只占这个 256 维空间里很薄的一层。<strong>自编码器</strong>学一个编码器把图压成几个数（潜变量 z）、再学一个解码器从 z 还原。最简单的线性自编码器就是 PCA：下图左边是 600 张数字投影到前两个主成分上（按真实标签上色，PCA 本身没用到标签）：只靠两个<strong>线性</strong>方向，0 和 1、2 和 6 这类差别大的数字分得开一些，大多数数字仍然大面积重叠；右边沿这两个方向在潜空间里取网格、解码回图像。第 04 篇会换成非线性的 AE、能采样的 VAE 和输出离散 token 的 VQ-VAE——它们是潜空间扩散、视频压缩、音频编解码和世界模型的共同基础。<br><a href="pages/04_latent_vae.html">→ 打开第 04 篇：AE、VAE 与 VQ-VAE</a>',
+            formula: ['z = W^T (x − μ)      x̂ = μ + W z   // PCA：W = 协方差矩阵的前 k 个特征向量（线性自编码器的最优解）', 'VAE：max E_q[log p(x|z)] − KL(q(z|x) ‖ N(0, I))   // 第 04 篇'],
             code: {
                 title: 'C++ · PCA 作为线性自编码器', src: `
-                // PCA = 线性自编码器：用幂迭代求协方差矩阵的前 k 个特征向量（第 09 篇换成非线性的 AE / VAE）
+                // PCA = 线性自编码器：用幂迭代求协方差矩阵的前 k 个特征向量（第 04 篇换成非线性的 AE / VAE）
                 struct PcaCodec { std::vector<float> mean; Tensor W; };   // W: [k × D]，每行一个主方向
 
                 PcaCodec fitPca(const Tensor& X, int k, int iters, Rng& r) {
@@ -771,11 +686,11 @@ PipelineLab.mount({
                 },
                 { id: 'pcaGrid', label: '在潜空间网格上解码', sub: '横 = PC1、纵 = PC2，各取 ±2σ：线性解码器只能做像素的加权叠加', size: [220, 220], render: (c, S) => LM.draw.imageGrid(c, S.pca.grid, 16, 16, { cols: S.pca.G, range: [0, 1], gap: 2 }) },
             ],
-            notes: '两个主成分一共只解释了约 16% 的方差，网格里的图都是「几个模板的叠加」，所以模糊。同样压到 2 维，非线性自编码器能把数字分得清楚得多、还原得也更像，但它的潜空间里有「洞」——第 09 篇用 VAE 把洞补上。',
+            notes: '两个主成分一共只解释了约 16% 的方差，网格里的图都是「几个模板的叠加」，所以模糊。同样压到 2 维，非线性自编码器能把数字分得清楚得多、还原得也更像，但它的潜空间里有「洞」——第 04 篇用 VAE 把洞补上。',
         },
         {
             id: 'rl', title: '强化学习：没有标准答案，只有奖励', tag: '共享基础',
-            desc: '监督学习有「正确答案」；<strong>强化学习</strong>只有环境给的奖励，而且往往要走很多步之后才知道好坏。核心对象是马尔可夫决策过程（MDP）：状态、动作、转移概率、奖励、折扣 γ。<strong>价值函数</strong> V(s) = 从 s 出发能拿到的折扣回报；贝尔曼方程把它写成递推，反复套用就是<strong>价值迭代</strong>。下面的 6×6 网格世界（每步 −0.04，+1 终点，−1 陷阱，20% 概率滑向两侧）正在真实地做价值迭代：价值从终点一圈圈往外传，箭头是当前的贪心策略。它也是第 06 篇 RLHF（PPO / GRPO）和第 14 篇世界模型的基础。<br><a href="pages/10_reinforcement_learning.html">→ 打开第 10 篇：从价值迭代到策略梯度</a>',
+            desc: '监督学习有「正确答案」；<strong>强化学习</strong>只有环境给的奖励，而且往往要走很多步之后才知道好坏。核心对象是马尔可夫决策过程（MDP）：状态、动作、转移概率、奖励、折扣 γ。<strong>价值函数</strong> V(s) = 从 s 出发能拿到的折扣回报；贝尔曼方程把它写成递推，反复套用就是<strong>价值迭代</strong>。下面的 6×6 网格世界（每步 −0.04，+1 终点，−1 陷阱，20% 概率滑向两侧）正在真实地做价值迭代：价值从终点一圈圈往外传，箭头是当前的贪心策略。它也是第 09 篇 RLHF（PPO / GRPO）和第 14 篇世界模型的基础。<br><a href="pages/05_reinforcement_learning.html">→ 打开第 05 篇：从价值迭代到策略梯度</a>',
             formula: ['V_{k+1}(s) = max_a Σ_{s′} P(s′ | s, a) · [ r(s′) + γ · V_k(s′) ]   // 贝尔曼最优方程，γ = 0.95', 'π(s) = argmax_a Σ_{s′} P(s′ | s, a) · [ r(s′) + γ · V(s′) ]'],
             code: {
                 title: 'C++ · 价值迭代', src: `
@@ -829,6 +744,179 @@ PipelineLab.mount({
                     const pi = new Int8Array(PIDX2.GW.N).fill(-1), G = PIDX2.GW;
                     for (let s = 0; s < G.N; s++) { if (G.cells[s] === '#' || G.term(s)) continue; let best = -Infinity; for (let a = 0; a < 4; a++) { let q = 0; G.trans(s, a, 0.2).forEach((p, s2) => { q += p * (G.reward(s2) + (G.term(s2) ? 0 : 0.95 * Vk[s2])); }); if (q > best + 1e-12) { best = q; pi[s] = a; } } }
                     PIDX2.drawGrid(c, Vk, k ? pi : null, { values: true, title: `第 ${k} / ${K} 次迭代`, titleX: 46 });
+                },
+            }],
+        },
+        {
+            id: 'tok', title: '文本变成向量：Tokenizer + Embedding', tag: '通用架构',
+            desc: '神经网络只吃数字。<strong>Tokenizer</strong> 把文本切成 token 并映射成整数 id（真实模型用字节级 BPE，词表 3 万–25 万；本系列的迷你 GPT 用字符级，词表 76）；<strong>Embedding</strong> 把每个 id 查表变成一个 d 维向量。这些向量是训练出来的——下图是基座模型学到的 embedding 投影到 2D：同一类的字（动物、食物、颜色、虚词）自己聚到了一起，没人告诉过它这些类别。<br><a href="pages/06_tokenizer_embedding.html">→ 打开第 06 篇：Tokenizer、Embedding 与位置编码</a>',
+            formula: ['ids = tokenize("熊猫喜欢吃竹子") = [i_1, …, i_T]', 'X = W_te[ids] + W_pe[0..T−1]   // [T × d]：token embedding + 位置 embedding'],
+            code: {
+                title: 'C++ · 字符级 tokenizer 与 embedding 查表', src: `
+                // 字符级 tokenizer：一个汉字 / 标点 = 一个 token（encode / decode 见 Common · minml_gpt.h）
+                // embedding 查表 + 位置：X = W_te[ids] + W_pe[0..T−1]
+                Var embedTokens(const std::vector<int>& ids, const Var& wte, const Var& wpe) {
+                    std::vector<int> pos = ints((int)ids.size());
+                    for (int t = 0; t < (int)ids.size(); t++) pos[t] = t;
+                    return add(embedding(ids, wte), gatherRows(wpe, pos));
+                }`,
+            },
+            previews: [
+                {
+                    id: 'tokChips', label: 'Tokenize：字符 → id', sub: '每个方块 = 一个 token，下面是它的 id', size: [360, 120],
+                    render: (c, S) => { const s = '熊猫喜欢吃竹子，它住在山里。'; LM.draw.tokens(c, Array.from(PIDX.V.encode(s), (id) => ({ text: PIDX.V.itos[id], id, sub: id })), { showIds: true, px: 15 }); },
+                },
+                {
+                    id: 'embPca', label: '基座模型的 token embedding（PCA 2D）', sub: '颜色 = 类别（只用于上色，训练时模型并不知道）', large: true,
+                    render: (c, S) => {
+                        const E = S.emb;
+                        LM.draw.scatter(c, E.items.map((it, i) => ({ x: E.pts[2 * i], y: E.pts[2 * i + 1], color: it.color, r: 4, label: it.ch, labelPx: 14 })), { equal: true, xLabel: `PC1（${(E.var[0] * 100).toFixed(0)}% 方差）`, yLabel: `PC2（${(E.var[1] * 100).toFixed(0)}%）` });
+                        const { ctx } = PL.draw.ctx(c, { keep: true, smooth: true });
+                        ctx.font = LM.FONT(11); E.groups.forEach((g, k) => { ctx.fillStyle = g.color; ctx.fillText('● ' + g.name, 40 + k * 78, 14); });
+                    },
+                },
+            ],
+        },
+        {
+            id: 'attn', title: 'Transformer：注意力让每个位置去「看」前文', tag: '通用架构',
+            desc: 'Transformer 的核心是<strong>自注意力</strong>：每个位置算出 query，与前面所有位置的 key 做点积打分，softmax 后按权重汇总它们的 value。下图是训练好的迷你 GPT 在句子「熊猫喜欢吃竹子，所以熊猫每天都吃竹子。」上真实的注意力矩阵（程序自动挑出的一个头）：读到第二个「吃」、要预测吃的是什么时，这个头几乎把全部注意力投向了<strong>主语「熊猫」</strong>——它并不是去抄前文那个「竹」（所有头对它的注意力都不超过 ' + PIDX.foodMax.toFixed(2) + '），而是先回头确认「谁在吃」，再从预训练记住的知识（熊猫 → 竹子）里调出答案。注意力负责「去哪里找信息」，记忆在权重里。<br><a href="pages/07_transformer.html">→ 打开第 07 篇：Transformer 逐层拆解</a>',
+            formula: ['Attention(Q, K, V) = softmax(Q K^T / √d_h + M) · V   // M = 因果掩码（未来位置 −∞）', 'x ← x + Attn(LN(x))      x ← x + MLP(LN(x))   // 一个 Pre-LN Block'],
+            code: {
+                title: 'C++ · 单头因果注意力', src: `
+                // 单头因果注意力：q、k、v 都是 [T × dh]，返回 [T × dh]
+                Tensor causalAttention(const Tensor& q, const Tensor& k, const Tensor& v) {
+                    int T = q.rows, dh = q.cols;
+                    Tensor out = zeros(T, dh);
+                    for (int i = 0; i < T; i++) {
+                        std::vector<float> s = floats(i + 1);           // 只看 j ≤ i：因果掩码
+                        for (int j = 0; j <= i; j++) {
+                            float dot = 0;
+                            for (int c = 0; c < dh; c++) dot += q.at(i, c) * k.at(j, c);
+                            s[j] = dot / std::sqrt((float)dh);          // 打分
+                        }
+                        softmaxInPlace(s, 1.0f);                        // 每行和为 1
+                        for (int j = 0; j <= i; j++)
+                            for (int c = 0; c < dh; c++) out.at(i, c) += s[j] * v.at(j, c);   // 加权求和
+                    }
+                    return out;
+                }`,
+            },
+            previews: [
+                {
+                    id: 'attnMap', label: '注意力权重（训练后的迷你 GPT）', sub: '行 = 查询位置，列 = 被看的位置；斜纹 = 因果掩码遮住的未来', large: true, size: [380, 380],
+                    render: (c, S) => { const A = S.attn; S._attnLay = LM.draw.heat(c, A.A, A.T, A.T, { rowLabels: A.labels, colLabels: A.labels, map: 'inferno', range: [0, 1], hiRow: A.best.qi, hiCells: [[A.best.qi, A.best.kj]], title: `第 ${A.best.l + 1} 层 · 头 ${A.best.h + 1} · 对主语的注意力 ${(A.best.score * 100).toFixed(0)}%` }); },
+                    probe: (x, y, S, PL, info) => {
+                        const L = S._attnLay, A = S.attn; if (!L) return '';
+                        const cc = Math.floor((info.dx - L.x0) / L.cw), r = Math.floor((info.dy - L.y0) / L.ch);
+                        if (r < 0 || cc < 0 || r >= L.R || cc >= L.C || cc > r) return '';
+                        return `查询「${A.labels[r]}」(位置 ${r}) → 看「${A.labels[cc]}」(位置 ${cc})
+权重 ${A.A[r * L.C + cc].toFixed(3)}`;
+                    },
+                },
+                {
+                    id: 'attnNext', label: '于是下一个字……', sub: '黄框那一行（第二个「吃」）处，整个模型输出的下一个 token 分布', size: [360, 170],
+                    render: (c, S) => { const n = S.attn.next; LM.draw.bars(c, n.map((q) => q.p), n.map((q) => q.tok), { horizontal: true, hi: 0, range: [0, 1], labelPx: 14 }); },
+                },
+            ],
+        },
+        {
+            id: 'pretrain', title: '预训练：在海量文本上预测下一个 token', tag: '大语言模型',
+            desc: '预训练的目标简单到只有一句话：<strong>预测下一个 token</strong>（自回归语言建模）。随机截取一段文本，输入 x，目标 y 是 x 右移一位；损失是每个位置交叉熵的平均；AdamW + warmup + cosine 学习率跑上几千步（真实模型是上万亿 token）。下图是本系列基座模型真实的离线训练记录：loss 从 ln 76 ≈ 4.33 一路降到 0.51，中间先学会单字频率、再学会词和句式、最后记住每种动物的事实。第 08 篇会在浏览器里从零把它重新训练一遍。<br><a href="pages/08_pretraining.html">→ 打开第 08 篇：预训练一个迷你 GPT</a>',
+            formula: ['L = −(1/BT) Σ_{b,t} log p_θ(x_{t+1} | x_{≤t})', 'C ≈ 6 · N · D   // 训练 FLOPs ≈ 6 × 参数量 × token 数'],
+            code: {
+                title: 'C++ · 预训练主循环（详见第 08 篇）', src: `
+                // 预训练主循环：随机窗口 → 前向 → 交叉熵 → 反向 → 梯度裁剪 → AdamW（trainStep 等见 Common · minml_gpt.h）
+                void pretrain(GPT& m, const std::vector<int>& data, int steps, int B, int T, float maxLR, Rng& r) {
+                    AdamW opt = makeAdamW(m.params, m.decay, maxLR, 0.1f);
+                    for (int it = 0; it < steps; it++) {
+                        float lr = cosineLR(it, maxLR, maxLR / 10, 100, steps);   // warmup + cosine
+                        Batch b = getBatch(data, B, T, r);
+                        trainStep(m, opt, b, B, T, lr);
+                    }
+                }`,
+            },
+            previews: [
+                {
+                    id: 'baseCurve', label: '基座模型的训练曲线（离线训练日志）', sub: `batch ${LM_WEIGHTS.base.batch} × T 32 · ${LM_WEIGHTS.base.steps} 步 · 每 50 步记录一次`, large: true, size: [360, 240],
+                    render: (c, S) => {
+                        const cv = LM_WEIGHTS.base.curve;
+                        PL.draw.plot(c, { logY: true, xLabel: '训练步', x: [0, LM_WEIGHTS.base.steps], series: [{ data: cv.map((r) => r[1]), x: cv.map((r) => r[0]), color: LM.C.train, label: 'train loss' }, { data: cv.map((r) => r[2]), x: cv.map((r) => r[0]), color: LM.C.val, label: 'val loss', width: 2 }], hmarks: [{ y: Math.log(76), label: 'ln 76（随机猜）', color: LM.C.gray }] });
+                    },
+                },
+                {
+                    id: 'baseSamples', label: '训练完成后的生成样本', sub: '温度 0.7，从四种动物名开头（训练脚本当时生成并记录）', size: [360, 240],
+                    render: (c, S) => LM.draw.text(c, LM_WEIGHTS.base.samples.map((s) => ({ text: s, color: LM.C.text })), { px: 13, lineGap: 7 }),
+                },
+            ],
+        },
+        {
+            id: 'align', title: '后训练：从「续写机器」到「对话助手」', tag: '大语言模型',
+            desc: '基座模型只会续写。把问题包进<strong>对话模板</strong> <code>&lt;user&gt;…&lt;bot&gt;</code> 喂给它，它不认识这些特殊 token（预训练里从没出现过），只会把整段当普通文本接着写——下图是它在 <code>&lt;bot&gt;</code> 之后真实的预测：续写出「吃竹子。小兔喜欢吃萝卜。…」，事实没错，但既不是一句完整的回答，也不会停下来。<strong>SFT</strong> 用「问题 → 标准回答」数据微调（只在回答部分计算损失），教会它格式；再用<strong>人类偏好</strong>训练奖励模型，用 PPO / DPO / GRPO 把回答往人更喜欢的方向推，同时用 KL 约束防止它跑偏。<br><a href="pages/09_alignment.html">→ 打开第 09 篇：SFT、RLHF、DPO、GRPO</a>',
+            formula: ['L_SFT = −Σ_{t ∈ 回答} log π_θ(y_t | x, y_{<t})   // 问题部分不计损失', 'max_π E_{y~π}[r(x, y)] − β · KL(π ‖ π_ref)      ⇒  π* ∝ π_ref · exp(r / β)'],
+            code: {
+                title: 'C++ · SFT 的 loss mask', src: `
+                // SFT 样本：输入 = 问题 + 回答；目标 = 右移一位，问题部分设为 −1（crossEntropy 会跳过这些位置）
+                struct SftSample { std::vector<int> ids, targets; };
+
+                SftSample sftTargets(const std::vector<int>& promptIds, const std::vector<int>& answerIds) {
+                    SftSample s;
+                    s.ids = promptIds;
+                    s.ids.insert(s.ids.end(), answerIds.begin(), answerIds.end());
+                    s.targets = ints((int)s.ids.size(), -1);
+                    for (int t = (int)promptIds.size() - 1; t + 1 < (int)s.ids.size(); t++) s.targets[t] = s.ids[t + 1];   // 只在回答上算损失
+                    return s;
+                }`,
+            },
+            previews: [
+                {
+                    id: 'chatChips', label: '一条 SFT 样本', sub: '灰色 = 问题（不计损失）· 彩色 = 回答（计算损失）', size: [360, 120],
+                    render: (c, S) => {
+                        const V = PIDX.V, ch = S.chat, toks = [];
+                        ch.pIds.forEach((id) => toks.push({ text: V.show(id), id, dim: true }));
+                        ch.aIds.forEach((id) => toks.push({ text: V.show(id), id }));
+                        LM.draw.tokens(c, toks, { px: 14 });
+                    },
+                },
+                {
+                    id: 'chatBase', label: '基座模型在 ⟨bot⟩ 之后的预测', sub: `贪心续写：「${PIDX.chatDemo().cont.replace(/</g, '⟨').replace(/>/g, '⟩')}」`, size: [360, 190],
+                    render: (c, S) => { const t = S.chat.top; LM.draw.bars(c, t.map((q) => q.p), t.map((q) => q.tok), { horizontal: true, range: [0, 1], labelPx: 14, color: LM.C.red }); },
+                },
+            ],
+        },
+        {
+            id: 'mm', title: '多模态：图像也切成 token', tag: '分化领域',
+            desc: '视觉 Transformer（ViT）把图像切成固定大小的 patch，每个 patch 展平后线性投影成一个向量——图像就变成了一串「视觉 token」，可以和文字 token 用同一套 Transformer 处理。<strong>CLIP</strong> 用对比学习把图像和文字映射到同一个向量空间；<strong>LLaVA</strong> 再用一个投影层把视觉 token 接到语言模型前面，让它能「看图说话」。下图把一张 24×24 的小图切成 16 个 6×6 的 patch。<br><a href="pages/10_multimodal.html">→ 打开第 10 篇：ViT、CLIP 与迷你 LLaVA</a>',
+            formula: ['patches = reshape(img, [(H/P)·(W/P), P·P·3])      z = patches · W_E + E_pos', 'L_CLIP = ½ [CE(s·I T^T, diag) + CE(s·T I^T, diag)]   // I、T 为 L2 归一化后的图 / 文嵌入'],
+            code: {
+                title: 'C++ · patchify', src: `
+                // 把 H×W×C 的图（行优先、通道交错）切成 P×P 的 patch，每个 patch 展平成一行：[(H/P)·(W/P) × P·P·C]
+                Tensor patchify(const std::vector<float>& img, int H, int W, int C, int P) {
+                    int nx = W / P, ny = H / P;
+                    Tensor out = zeros(nx * ny, P * P * C);
+                    for (int py = 0; py < ny; py++)
+                        for (int px = 0; px < nx; px++)
+                            for (int y = 0; y < P; y++)
+                                for (int x = 0; x < P; x++)
+                                    for (int c = 0; c < C; c++)
+                                        out.at(py * nx + px, (y * P + x) * C + c) = img[((py * P + y) * W + (px * P + x)) * C + c];
+                    return out;                                     // 每行就是一个视觉 token
+                }`,
+            },
+            previews: [{
+                id: 'patches', label: '一张图 = 16 个视觉 token', sub: '左：原图 · 右：按 patch 拆开（每块就是一个 token，按行优先编号）', size: [360, 180],
+                render: (c, S) => {
+                    const { ctx, w } = PL.draw.ctx(c), I = S.img, W = I.W, P = I.P, n = W / P, cell = 6;
+                    const px = (x, y) => { const o = (y * W + x) * 3; return `rgb(${I.img[o] * 255 | 0},${I.img[o + 1] * 255 | 0},${I.img[o + 2] * 255 | 0})`; };
+                    for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) { ctx.fillStyle = px(x, y); ctx.fillRect(10 + x * cell, 14 + y * cell, cell, cell); }
+                    const ox = 184, gap = 9, pc = 4.4;
+                    for (let py = 0; py < n; py++) for (let pxi = 0; pxi < n; pxi++) {
+                        const X0 = ox + pxi * (P * pc + gap), Y0 = 14 + py * (P * pc + gap);
+                        for (let y = 0; y < P; y++) for (let x = 0; x < P; x++) { ctx.fillStyle = px(pxi * P + x, py * P + y); ctx.fillRect(X0 + x * pc, Y0 + y * pc, pc + 0.3, pc + 0.3); }
+                        ctx.strokeStyle = '#2a3038'; ctx.strokeRect(X0 - 0.5, Y0 - 0.5, P * pc + 1, P * pc + 1);
+                        ctx.fillStyle = LM.C.gray; ctx.font = LM.FONT(11); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(String(py * n + pxi), X0 + 1, Y0 + 1);
+                    }
+                    ctx.strokeStyle = LM.C.gray; for (let k = 1; k < n; k++) { ctx.beginPath(); ctx.moveTo(10 + k * P * cell, 14); ctx.lineTo(10 + k * P * cell, 14 + W * cell); ctx.stroke(); ctx.beginPath(); ctx.moveTo(10, 14 + k * P * cell); ctx.lineTo(10 + W * cell, 14 + k * P * cell); ctx.stroke(); }
+                    void w;
                 },
             }],
         },
@@ -1032,22 +1120,142 @@ PipelineLab.mount({
                 },
             ],
         },
+        {
+            id: 'tool', title: '工具调用：模型只写文字，外面的程序去执行', tag: '智能体',
+            desc: '语言模型只会一件事：给下一个 token 打分。要让它「用计算器」，就在词表里加几个特殊 token，并在训练数据里示范：遇到算术题先写 <code>&lt;call&gt;算(28×7)&lt;/call&gt;</code>，然后停下。外面的程序（<strong>Harness</strong>）看到 <code>&lt;/call&gt;</code> 就去执行，把 <code>&lt;res&gt;196&lt;/res&gt;</code> 写回上下文，模型再接着写回答。训练（SFT）时只对模型自己写的 token 算损失；工具结果由 Harness 写，不学。下面是同一个 17 万参数的迷你 GPT 在你的浏览器里做同一道乘法：上面系统提示里有计算器，下面没有。第 16 篇还讲了模型怎样决定「要不要调用」、约束解码、tool_choice 与生产里的 JSON function calling。<br><a href="pages/16_tool_calling.html">→ 打开第 16 篇：工具调用</a>',
+            formula: ['<sys>可用:算查<user>28×7等于多少？<bot><call>算(28×7)</call><res>196</res>28×7等于196。<eos>', 'L = −Σ_{t ∈ 模型写的} log p(x_t | x_{<t})      // 系统提示、问题和 <res>…</res> 都不计损失'],
+            code: {
+                title: 'C++ · Harness 的主循环：生成 → 遇到调用就执行 → 结果写回上下文', src: `
+                // 特殊 token 的 id 与工具执行（第 16 篇给出完整实现：词表、解析、ToolBox）
+                const int EOS = 1, CALL = 5, ECALL = 6;
+                std::string runTool(const std::string& call);                   // 解析「算(28×7)」并执行，返回「196」
+
+                std::vector<int> chatWithTools(const GPT& m, const Vocab& v, std::vector<int> ctx, int maxNew) {
+                    KVCache cache;
+                    cache.k.assign(m.cfg.L, std::vector<float>(m.cfg.T * m.cfg.d, 0.f));
+                    cache.v.assign(m.cfg.L, std::vector<float>(m.cfg.T * m.cfg.d, 0.f));
+                    std::vector<float> logits;
+                    int fed = 0;
+                    std::string call;
+                    bool inCall = false;
+                    for (int n = 0; n < maxNew && (int)ctx.size() < m.cfg.T; n++) {
+                        while (fed < (int)ctx.size()) { logits = gptStep(m, cache, ctx[fed], fed); fed++; }   // 只喂新 token（KV cache）
+                        int t = argmaxIndex(logits);
+                        ctx.push_back(t);
+                        if (t == EOS) break;
+                        if (t == CALL) { inCall = true; call.clear(); continue; }
+                        if (t == ECALL && inCall) {                               // 模型写完一个调用：执行，把结果写回上下文
+                            inCall = false;
+                            for (int r : encode(v, "<res>" + runTool(call) + "</res>")) ctx.push_back(r);
+                            continue;
+                        }
+                        if (inCall) call += v.itos[t];
+                    }
+                    return ctx;
+                }`,
+            },
+            previews: [
+                {
+                    id: 'toolTrace', needs: ['agents'], label: '同一道题：有计算器 vs 没有工具（页面里实时跑）', sub: '颜色 = 谁写的：灰 = 系统提示 · 蓝 = 用户 · 橙 = Harness 写入 · 绿 = 模型 · 黄 = 模型写的工具调用', large: true, size: [720, 170],
+                    render: (c, S) => {
+                        const { ctx } = PL.draw.ctx(c), D = S.ag, C = LM.C, Q = D.qa;
+                        AGT.drawRoleLegend(ctx, 8, 10);
+                        const row = (r, y0, title) => { ctx.font = LM.FONT(12); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = C.gray; ctx.fillText(title, 8, y0); const q = AGT.drawChips(ctx, r.ids, { y0: y0 + 18, w: 704, px: 12 }); const ok = r.answer === Q.want; ctx.font = LM.FONT(12); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = ok ? C.green : C.red; ctx.fillText(ok ? '✓ 答对了' : '✗ 答错了（正确答案 ' + Q.task.ans + '）', 8, q.y + 5); return q.y + 24; };
+                        const y = row(Q.tools, 26, '系统提示里有计算器（可用:算查）：');
+                        row(Q.none, y + 4, '没有工具（可用:无）：只能「心算」');
+                    },
+                },
+            ],
+            notes: '有计算器时，模型写出 <code>&lt;call&gt;算(28×7)&lt;/call&gt;</code>，Harness 算出 196 写回去，模型照抄；没有工具时它只能凭训练里见过的算式「背」答案，写出了 192。训练结束时的评测（每格 200 题）：不用工具时两位数加法对 88.5%、减法 32%、乘法 25%；用工具时全部 100%。',
+        },
+        {
+            id: 'agent', title: 'Agent：在循环里「行动 → 观察」，直到完成任务', tag: '智能体',
+            desc: '一次调用解决不了的任务——「把杯子拿到卧室」，可杯子在哪还不知道——就要在循环里一步步做：模型写一个调用（<code>看()</code>、<code>去(书房)</code>、<code>拿(杯子)</code>、<code>放(杯子)</code>），Harness 在环境里执行、写回观察，模型看了再决定下一步，直到它写出 <code>&lt;eos&gt;</code>。这就是 <strong>Agent</strong>。这里的模型没有用强化学习，而是模仿一个会深度优先探索的「专家」的轨迹（行为克隆）；任务成没成由环境的真实状态判定，不看模型怎么说。下面是同一个迷你 GPT 在你的浏览器里完成的一局。第 17 篇还讲了注意力在看什么、失败的类型、多试几次（pass@k）、工具出故障与换一个没见过的房子布局。<br><a href="pages/17_agent_loop.html">→ 打开第 17 篇：Agent 循环</a>',
+            formula: ['a_t ~ π(· | 任务, a_1, o_1, …, a_{t−1}, o_{t−1})      o_t = Env(a_t)      // 直到模型写出 <eos>', '成功 = 环境的最终状态满足任务      // 不听模型说「做完了」'],
+            code: {
+                title: 'C++ · Agent 循环（第 17 篇给出房子环境与专家的完整实现）', src: `
+                // 环境与「生成到下一个调用」（第 16、17 篇）
+                struct House;                                                   // 5 个房间、5 件物品、模型在哪、手里拿着什么
+                std::string step(House& h, const std::string& call);           // 执行「去(书房)」这样的调用，返回观察「书房:钥匙,苹果」
+                bool taskDone(const House& h);                                 // 按环境的真实状态判断任务是否完成
+                bool generateUntilCall(const GPT& m, const Vocab& v, std::vector<int>& ctx, std::string& call);   // 写到 </call> 返回 true，写到 <eos> 返回 false
+
+                bool runAgent(const GPT& m, const Vocab& v, std::vector<int> ctx, House& h, int maxCalls) {
+                    std::string call;
+                    for (int calls = 0; calls < maxCalls; calls++) {
+                        if (!generateUntilCall(m, v, ctx, call)) return taskDone(h);                 // 模型说完了：交给环境判定
+                        for (int t : encode(v, "<res>" + step(h, call) + "</res>")) ctx.push_back(t);   // 行动 → 观察
+                    }
+                    return false;                                                                    // 调用预算用完
+                }`,
+            },
+            previews: [
+                { id: 'agentTrace', needs: ['agents'], label: '一局「把杯子拿到卧室」：走过的路线与每次调用', sub: '左：房子的布局，箭头 = 模型走过的路（数字 = 第几次调用）· 右：调用与环境返回的观察', large: true, size: [720, 220], render: (c, S) => PIDX3.drawHouse(c, S.ag) },
+            ],
+            notes: '模型不知道杯子在哪：先看了起点（院子），按专家教的顺序去书房、客厅、厨房，在厨房找到杯子，再走最短路线到卧室放下。训练结束时的评测（每类 200 局）：找东西 100%（平均 3.5 次调用）、搬东西 98%（6.7 次）、看房间 100%（2.6 次）。',
+        },
+        {
+            id: 'harness', title: 'Harness：模型外面的那一圈运行时', tag: '智能体',
+            desc: '前两步里，除了「给下一个 token 打分」，其余全是 Harness 的工作：拼提示、在 <code>&lt;/call&gt;</code> 处停下、执行工具、写回结果、判定成败。真实系统里它还要管：上下文快满了怎么办（截断、删旧的往返、压缩成摘要）、KV cache 与前缀复用、执行前的权限检查、工具失败时谁来重试、调用与 token 的预算、死循环检测，以及怎样可靠地评测「改了 Harness 是不是真的更好」。下面是上一步那一局，但 Harness 只给 96 个 token 的上下文（原本要 133 个）：三种处理方式，上下文长度随时间的变化。<br><a href="pages/18_agent_harness.html">→ 打开第 18 篇：Harness</a>',
+            formula: ['Agent 系统 = 模型 + Harness（提示、工具、上下文、缓存、权限、重试、预算、判定、评测）'],
+            code: {
+                title: 'C++ · Harness 的一个组件：上下文快满时改写它（第 18 篇是完整版）', src: `
+                // 在每次写回工具结果之后调用；前 prefixLen 个 token（系统提示 + 任务）永远保留
+                enum class CtxPolicy { None, KeepTask, Compact };
+                const int ERES = 8;                                             // </res>
+                std::vector<int> memoTokens();                                  // Harness 按环境的真实记录写的记忆：<res>记:在书房;客厅:书;…</res>
+
+                bool fitContext(std::vector<int>& ctx, int prefixLen, int budget, CtxPolicy p) {
+                    if ((int)ctx.size() <= budget) return true;
+                    if (p == CtxPolicy::KeepTask) {                             // 从最旧的一次「调用 + 结果」开始删
+                        while ((int)ctx.size() > budget) {
+                            auto it = std::find(ctx.begin() + prefixLen, ctx.end(), ERES);
+                            if (it == ctx.end()) return false;
+                            ctx.erase(ctx.begin() + prefixLen, it + 1);
+                        }
+                        return true;
+                    }
+                    if (p == CtxPolicy::Compact) {                              // 整段历史换成一条记忆
+                        std::vector<int> memo = memoTokens();
+                        ctx.resize(prefixLen);
+                        ctx.insert(ctx.end(), memo.begin(), memo.end());
+                        return (int)ctx.size() <= budget;
+                    }
+                    return false;                                               // 不处理：这一局只能结束
+                }`,
+            },
+            previews: [
+                {
+                    id: 'harnessCtx', needs: ['agents'], label: '同一局，上下文预算 96：上下文长度随时间', sub: '竖直下落 = Harness 改写了上下文 · 台阶 = 写回工具结果 · 黄线 = 预算 · 深灰 = 不限预算', large: true, size: [720, 220],
+                    render: (c, S) => {
+                        const D = S.ag, L = (r) => r.fwdFull.map((v, i) => v - (i ? r.fwdFull[i - 1] : 0)), xs = (v) => v.map((_, i) => i + 1);
+                        const col = { none: LM.C.red, 'keep-task': LM.C.blue, compact: LM.C.green }, name = { none: '不处理', 'keep-task': '保留任务，删最旧的往返', compact: '压缩成一条记忆' };
+                        const verdict = (r) => (r.success ? '完成' : r.reason === 'context' ? '上下文放不下了' : '没完成');
+                        const full = L(D.full), series = [{ data: full, x: xs(full), color: '#56606b', width: 1.5, label: '不限预算 · ' + verdict(D.full) }].concat(D.ctx.map((q) => { const a = L(q.r); return { data: a, x: xs(a), color: col[q.policy], width: 2.2, label: name[q.policy] + ' · ' + verdict(q.r) }; }));
+                        PL.draw.plot(c, { x: [1, Math.max(...series.map((s) => s.data.length), 2)], y: [0, 250], xLabel: '模型写出的 token', yLabel: '上下文长度', series, hmarks: [{ y: 96, label: '预算 96', color: LM.C.yellow }] });
+                    },
+                },
+            ],
+            notes: '不处理：做完第 6 次调用，上下文就放不下了，这一局只能结束。保留任务、删最旧的往返：每次只删掉一对「调用 + 结果」，曲线在预算下面来回锯齿。压缩：把全部历史换成一条记忆（<code>记:在客厅;院子:空;书房:…</code>），一下子掉到 60 多个 token。同一个模型，Harness 不同，结果就不同。第 18 篇在页面里实测了 4 种策略 × 4 种预算、KV cache、权限、重试的位置、调用预算，以及怎样用配对比较判断两个 Harness 谁更好。',
+        },
     ],
 
     graph: {
-        title: '知识依赖图 · 从共享基础到分化领域',
-        intro: '节点 = 一篇讲义，标题颜色 = 所在的层（<span style="color:#5ad07a">共享基础</span> · <span style="color:#6ab0e0">通用架构</span> · <span style="color:#c678dd">大语言模型</span> · <span style="color:#e0a060">分化领域</span>）；右侧的 pin = 这一篇<b>交出去</b>的核心概念，左侧的 pin = 它<b>用到</b>的前置概念，同名概念自动连线。想读某个分化领域时，顺着连线往左找它依赖的基础就行。点击节点看对应的缩影。',
+        title: '知识依赖图 · 从共享基础到分化领域与智能体',
+        intro: '节点 = 一篇讲义，标题颜色 = 所在的层（<span style="color:#5ad07a">共享基础</span> · <span style="color:#6ab0e0">通用架构</span> · <span style="color:#c678dd">大语言模型</span> · <span style="color:#e0a060">分化领域</span> · <span style="color:#56c2b6">智能体</span>）；右侧的 pin = 这一篇<b>交出去</b>的核心概念，左侧的 pin = 它<b>用到</b>的前置概念，同名概念自动连线。想读某个分化领域时，顺着连线往左找它依赖的基础就行。连线表示「用到了哪个概念」，比阅读顺序更细；按篇排好的阅读顺序见页面顶部的「按前置知识」视图。点击节点看对应的缩影。',
         categories: {
             base: { color: '#2f7a48', label: '共享基础 · 所有模型都要用的工具' },
             arch: { color: '#2f5f8f', label: '通用架构 · 一切皆 token + Transformer' },
             llm: { color: '#7a3f8f', label: '大语言模型 · 预训练与对齐' },
             domain: { color: '#9a6428', label: '分化领域 · 在基础之上长出的方向' },
+            agent: { color: '#2a7a78', label: '智能体 · 让模型调用工具、在循环里做事' },
         },
         types: {
             base: { color: '#5ad07a', label: '共享基础交出的概念' },
             arch: { color: '#6ab0e0', label: '通用架构交出的概念' },
             llm: { color: '#c678dd', label: '大语言模型交出的概念' },
             domain: { color: '#e0a060', label: '分化领域交出的概念' },
+            agent: { color: '#56c2b6', label: '智能体交出的概念' },
         },
         common: {
             title: 'Common · 本系列自带的 C++ 库（pages/cpp/*.h，可直接编译）', open: false,
@@ -1056,42 +1264,49 @@ PipelineLab.mount({
         nodes: [
             { id: 'c01', title: '01 线性回归', tag: '01', category: 'base', step: 'learn', desc: '损失 · 梯度 · 学习率 · SGD · 泛化', outputs: [{ name: '梯度下降', format: 'θ ← θ − η∇L', type: 'base' }], detail: { preview: 'linFit' } },
             { id: 'c02', title: '02 MLP · 反向传播', tag: '02', category: 'base', step: 'nn', desc: '交叉熵 · 链式法则 · Adam · 初始化', inputs: [{ name: '梯度下降', format: '优化', type: 'base' }], outputs: [{ name: '反向传播', format: '自动微分', type: 'base' }, { name: 'MLP', format: '非线性层', type: 'base' }], detail: { preview: 'mlpBoundary' } },
-            { id: 'c08', title: '08 CNN · U-Net', tag: '08', category: 'base', step: 'cnn', desc: '卷积 · 感受野 · 跳连', inputs: [{ name: '反向传播', format: '训练', type: 'base' }], outputs: [{ name: '卷积 · U-Net', format: '图像特征 / 去噪网络', type: 'base' }], detail: { preview: 'convMaps' } },
-            { id: 'c09', title: '09 AE · VAE · VQ', tag: '09', category: 'base', step: 'latent', desc: '编码 / 解码 · ELBO · 码本', inputs: [{ name: 'MLP', format: '编码器 / 解码器', type: 'base' }], outputs: [{ name: '潜空间', format: 'z ∈ R^k', type: 'base' }, { name: '离散 token（VQ）', format: '码本索引', type: 'base' }], detail: { preview: 'pcaScatter' } },
-            { id: 'c10', title: '10 强化学习', tag: '10', category: 'base', step: 'rl', desc: 'MDP · 价值迭代 · Q-learning · 策略梯度', inputs: [{ name: '梯度下降', format: '策略优化', type: 'base' }], outputs: [{ name: '策略梯度 · PPO', format: '∇ log π · A', type: 'base' }, { name: '价值与规划', format: 'V(s) · Q(s, a)', type: 'base' }], detail: { preview: 'viGrid' } },
-            { id: 'c03', title: '03 Tokenizer · Embedding', tag: '03', category: 'arch', step: 'tok', desc: 'BPE · 词向量 · 位置编码', inputs: [{ name: '反向传播', format: '训练 embedding', type: 'base' }], outputs: [{ name: 'Token · Embedding', format: 'ids → 向量', type: 'arch' }, { name: '位置编码', format: '正弦 / RoPE', type: 'arch' }], detail: { preview: 'tokChips' } },
-            { id: 'c04', title: '04 Transformer', tag: '04', category: 'arch', step: 'attn', desc: '注意力 · 残差流 · FFN · KV cache', inputs: [{ name: 'Token · Embedding', format: '输入序列', type: 'arch' }, { name: '位置编码', format: '顺序信息', type: 'arch' }, { name: 'MLP', format: 'FFN', type: 'base' }], outputs: [{ name: 'Transformer', format: '序列 → 序列', type: 'arch' }], detail: { preview: 'attnMap' } },
-            { id: 'c05', title: '05 预训练', tag: '05', category: 'llm', step: 'pretrain', desc: '下一个 token · AdamW · 采样 · scaling law', inputs: [{ name: 'Transformer', format: '架构', type: 'arch' }], outputs: [{ name: '基座模型', format: '世界知识', type: 'llm' }], detail: { preview: 'baseCurve' } },
-            { id: 'c06', title: '06 SFT · RLHF · DPO', tag: '06', category: 'llm', step: 'align', desc: '对话模板 · 奖励模型 · PPO / DPO / GRPO', inputs: [{ name: '基座模型', format: '起点', type: 'llm' }, { name: '策略梯度 · PPO', format: 'RLHF / GRPO', type: 'base' }], outputs: [{ name: '对话模型', format: '会按格式回答', type: 'llm' }], detail: { preview: 'chatBase' } },
-            { id: 'c07', title: '07 ViT · CLIP · LLaVA', tag: '07', category: 'domain', step: 'mm', desc: 'patch token · 对比学习 · 视觉接入 LLM', inputs: [{ name: 'Transformer', format: '视觉编码器', type: 'arch' }, { name: '对话模型', format: '语言端', type: 'llm' }], outputs: [{ name: '图像 token', format: 'patch → 向量', type: 'domain' }], detail: { preview: 'patches' } },
+            { id: 'c03', title: '03 CNN · U-Net', tag: '03', category: 'base', step: 'cnn', desc: '卷积 · 感受野 · 跳连', inputs: [{ name: '反向传播', format: '训练', type: 'base' }], outputs: [{ name: '卷积 · U-Net', format: '图像特征 / 去噪网络', type: 'base' }], detail: { preview: 'convMaps' } },
+            { id: 'c04', title: '04 AE · VAE · VQ', tag: '04', category: 'base', step: 'latent', desc: '编码 / 解码 · ELBO · 码本', inputs: [{ name: 'MLP', format: '编码器 / 解码器', type: 'base' }], outputs: [{ name: '潜空间', format: 'z ∈ R^k', type: 'base' }, { name: '离散 token（VQ）', format: '码本索引', type: 'base' }], detail: { preview: 'pcaScatter' } },
+            { id: 'c05', title: '05 强化学习', tag: '05', category: 'base', step: 'rl', desc: 'MDP · 价值迭代 · Q-learning · 策略梯度', inputs: [{ name: '梯度下降', format: '策略优化', type: 'base' }], outputs: [{ name: '策略梯度 · PPO', format: '∇ log π · A', type: 'base' }, { name: '价值与规划', format: 'V(s) · Q(s, a)', type: 'base' }], detail: { preview: 'viGrid' } },
+            { id: 'c06', title: '06 Tokenizer · Embedding', tag: '06', category: 'arch', step: 'tok', desc: 'BPE · 词向量 · 位置编码', inputs: [{ name: '反向传播', format: '训练 embedding', type: 'base' }], outputs: [{ name: 'Token · Embedding', format: 'ids → 向量', type: 'arch' }, { name: '位置编码', format: '正弦 / RoPE', type: 'arch' }], detail: { preview: 'tokChips' } },
+            { id: 'c07', title: '07 Transformer', tag: '07', category: 'arch', step: 'attn', desc: '注意力 · 残差流 · FFN · KV cache', inputs: [{ name: 'Token · Embedding', format: '输入序列', type: 'arch' }, { name: '位置编码', format: '顺序信息', type: 'arch' }, { name: 'MLP', format: 'FFN', type: 'base' }], outputs: [{ name: 'Transformer', format: '序列 → 序列', type: 'arch' }], detail: { preview: 'attnMap' } },
+            { id: 'c08', title: '08 预训练', tag: '08', category: 'llm', step: 'pretrain', desc: '下一个 token · AdamW · 采样 · scaling law', inputs: [{ name: 'Transformer', format: '架构', type: 'arch' }], outputs: [{ name: '基座模型', format: '世界知识', type: 'llm' }], detail: { preview: 'baseCurve' } },
+            { id: 'c09', title: '09 SFT · RLHF · DPO', tag: '09', category: 'llm', step: 'align', desc: '对话模板 · 奖励模型 · PPO / DPO / GRPO', inputs: [{ name: '基座模型', format: '起点', type: 'llm' }, { name: '策略梯度 · PPO', format: 'RLHF / GRPO', type: 'base' }], outputs: [{ name: '对话模型', format: '会按格式回答', type: 'llm' }], detail: { preview: 'chatBase' } },
+            { id: 'c10', title: '10 ViT · CLIP · LLaVA', tag: '10', category: 'domain', step: 'mm', desc: 'patch token · 对比学习 · 视觉接入 LLM', inputs: [{ name: 'Transformer', format: '视觉编码器', type: 'arch' }, { name: '对话模型', format: '语言端', type: 'llm' }], outputs: [{ name: '图像 token', format: 'patch → 向量', type: 'domain' }], detail: { preview: 'patches' } },
             { id: 'c11', title: '11 扩散 · 流匹配', tag: '11', category: 'domain', step: 'diff', desc: '加噪 · 去噪 · DDIM · CFG · 流匹配', inputs: [{ name: '卷积 · U-Net', format: '去噪网络', type: 'base' }, { name: '潜空间', format: '潜空间扩散', type: 'base' }], outputs: [{ name: '扩散生成', format: '噪声 → 数据', type: 'domain' }], detail: { preview: 'diffFlow' } },
             { id: 'c12', title: '12 视频生成', tag: '12', category: 'domain', step: 'video', desc: '时空 patch · 时间一致性 · 图生视频', inputs: [{ name: '扩散生成', format: '生成框架', type: 'domain' }, { name: '图像 token', format: '时空 patch', type: 'domain' }, { name: 'Transformer', format: '时空注意力', type: 'arch' }], outputs: [{ name: '视频生成', format: '[T, H, W, C]', type: 'domain' }], detail: { preview: 'vidFrames' } },
             { id: 'c13', title: '13 音频 · 语音', tag: '13', category: 'domain', step: 'audio', desc: '频谱 · RVQ codec · 音频 token LM · TTS / ASR', inputs: [{ name: '离散 token（VQ）', format: 'RVQ', type: 'base' }, { name: 'Transformer', format: 'token 语言模型', type: 'arch' }, { name: '扩散生成', format: '频谱扩散', type: 'domain' }], outputs: [{ name: '音频生成', format: '波形 / token', type: 'domain' }], detail: { preview: 'audSpec' } },
             { id: 'c14', title: '14 世界模型', tag: '14', category: 'domain', step: 'world', desc: '编码器 · 动力学 · 想象 · 规划', inputs: [{ name: '价值与规划', format: '规划 / 策略', type: 'base' }, { name: '潜空间', format: '观测编码', type: 'base' }, { name: '视频生成', format: '动作条件视频', type: 'domain' }], outputs: [{ name: '世界模型', format: 'p(o′ | o, a)', type: 'domain' }], detail: { preview: 'wmGrid' } },
             { id: 'c15', title: '15 NeRF · 3DGS', tag: '15', category: 'domain', step: 'nerf', desc: '体渲染 · 位置编码 · 高斯泼溅', inputs: [{ name: '位置编码', format: 'Fourier features', type: 'arch' }, { name: 'MLP', format: '辐射场', type: 'base' }], outputs: [{ name: '3D 表示', format: '辐射场 / 高斯', type: 'domain' }], detail: { preview: 'volImg' } },
+            { id: 'c16', title: '16 工具调用', tag: '16', category: 'agent', step: 'tool', desc: '工具写进 prompt · &lt;call&gt; token · loss mask · 约束解码', inputs: [{ name: '对话模型', format: 'SFT 的起点', type: 'llm' }], outputs: [{ name: '工具调用', format: '<call>工具(参数)</call>', type: 'agent' }], detail: { preview: 'toolTrace' } },
+            { id: 'c17', title: '17 Agent 循环', tag: '17', category: 'agent', step: 'agent', desc: '行动 → 观察 · 模仿专家轨迹 · 采样与重试', inputs: [{ name: '工具调用', format: '每一步的动作', type: 'agent' }, { name: '策略梯度 · PPO', format: '用奖励训练 Agent', type: 'base' }], outputs: [{ name: 'Agent', format: '多步完成任务', type: 'agent' }], detail: { preview: 'agentTrace' } },
+            { id: 'c18', title: '18 Harness', tag: '18', category: 'agent', step: 'harness', desc: '上下文压缩 · KV 复用 · 权限 · 重试 · 评测', inputs: [{ name: 'Agent', format: '被包在里面的模型循环', type: 'agent' }], outputs: [{ name: 'Agent 系统', format: '能上线的运行时', type: 'agent' }], detail: { preview: 'harnessCtx' } },
         ],
     },
 
     references: [
-        { title: 'Attention Is All You Need', author: 'A. Vaswani et al.', venue: 'NeurIPS', year: 2017, note: 'Transformer（第 04 篇）' },
-        { title: 'Language Models are Unsupervised Multitask Learners', author: 'A. Radford et al.（OpenAI）', year: 2019, note: 'GPT-2：本系列迷你 GPT 的结构原型（第 04、05 篇）' },
+        { title: 'Attention Is All You Need', author: 'A. Vaswani et al.', venue: 'NeurIPS', year: 2017, note: 'Transformer（第 07 篇）' },
+        { title: 'Language Models are Unsupervised Multitask Learners', author: 'A. Radford et al.（OpenAI）', year: 2019, note: 'GPT-2：本系列迷你 GPT 的结构原型（第 07、08 篇）' },
         { title: 'Language Models are Few-Shot Learners', author: 'T. Brown et al.', venue: 'NeurIPS', year: 2020, note: 'GPT-3：规模化与上下文学习' },
-        { title: 'Training Compute-Optimal Large Language Models', author: 'J. Hoffmann et al.', venue: 'NeurIPS', year: 2022, note: 'Chinchilla scaling law（第 05 篇）' },
-        { title: 'Training language models to follow instructions with human feedback', author: 'L. Ouyang et al.', venue: 'NeurIPS', year: 2022, note: 'InstructGPT：SFT → RM → PPO（第 06 篇）' },
-        { title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward Model', author: 'R. Rafailov et al.', venue: 'NeurIPS', year: 2023, note: 'DPO（第 06 篇）' },
-        { title: 'Learning Transferable Visual Models From Natural Language Supervision', author: 'A. Radford et al.', venue: 'ICML', year: 2021, note: 'CLIP（第 07 篇）' },
-        { title: 'Visual Instruction Tuning', author: 'H. Liu, C. Li, Q. Wu, Y. J. Lee', venue: 'NeurIPS', year: 2023, note: 'LLaVA（第 07 篇）' },
+        { title: 'Training Compute-Optimal Large Language Models', author: 'J. Hoffmann et al.', venue: 'NeurIPS', year: 2022, note: 'Chinchilla scaling law（第 08 篇）' },
+        { title: 'Training language models to follow instructions with human feedback', author: 'L. Ouyang et al.', venue: 'NeurIPS', year: 2022, note: 'InstructGPT：SFT → RM → PPO（第 09 篇）' },
+        { title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward Model', author: 'R. Rafailov et al.', venue: 'NeurIPS', year: 2023, note: 'DPO（第 09 篇）' },
+        { title: 'Learning Transferable Visual Models From Natural Language Supervision', author: 'A. Radford et al.', venue: 'ICML', year: 2021, note: 'CLIP（第 10 篇）' },
+        { title: 'Visual Instruction Tuning', author: 'H. Liu, C. Li, Q. Wu, Y. J. Lee', venue: 'NeurIPS', year: 2023, note: 'LLaVA（第 10 篇）' },
         { title: 'nanoGPT', author: 'A. Karpathy', venue: 'GitHub', year: 2023, url: 'https://github.com/karpathy/nanoGPT', note: '本系列迷你 GPT 的 PyTorch 代码风格参考' },
-        { title: 'Gradient-Based Learning Applied to Document Recognition', author: 'Y. LeCun, L. Bottou, Y. Bengio, P. Haffner', venue: 'Proceedings of the IEEE', year: 1998, note: 'LeNet：卷积网络（第 08 篇）' },
-        { title: 'U-Net: Convolutional Networks for Biomedical Image Segmentation', author: 'O. Ronneberger, P. Fischer, T. Brox', venue: 'MICCAI', year: 2015, note: 'U-Net（第 08、11 篇）' },
-        { title: 'Auto-Encoding Variational Bayes', author: 'D. P. Kingma, M. Welling', venue: 'ICLR', year: 2014, note: 'VAE（第 09 篇）' },
-        { title: 'Neural Discrete Representation Learning', author: 'A. van den Oord, O. Vinyals, K. Kavukcuoglu', venue: 'NeurIPS', year: 2017, note: 'VQ-VAE（第 09、13 篇）' },
-        { title: 'Reinforcement Learning: An Introduction（第 2 版）', author: 'R. S. Sutton, A. G. Barto', venue: 'MIT Press', year: 2018, note: '强化学习教材（第 10 篇）' },
+        { title: 'Gradient-Based Learning Applied to Document Recognition', author: 'Y. LeCun, L. Bottou, Y. Bengio, P. Haffner', venue: 'Proceedings of the IEEE', year: 1998, note: 'LeNet：卷积网络（第 03 篇）' },
+        { title: 'U-Net: Convolutional Networks for Biomedical Image Segmentation', author: 'O. Ronneberger, P. Fischer, T. Brox', venue: 'MICCAI', year: 2015, note: 'U-Net（第 03、11 篇）' },
+        { title: 'Auto-Encoding Variational Bayes', author: 'D. P. Kingma, M. Welling', venue: 'ICLR', year: 2014, note: 'VAE（第 04 篇）' },
+        { title: 'Neural Discrete Representation Learning', author: 'A. van den Oord, O. Vinyals, K. Kavukcuoglu', venue: 'NeurIPS', year: 2017, note: 'VQ-VAE（第 04、13 篇）' },
+        { title: 'Reinforcement Learning: An Introduction（第 2 版）', author: 'R. S. Sutton, A. G. Barto', venue: 'MIT Press', year: 2018, note: '强化学习教材（第 05 篇）' },
         { title: 'Denoising Diffusion Probabilistic Models', author: 'J. Ho, A. Jain, P. Abbeel', venue: 'NeurIPS', year: 2020, note: 'DDPM（第 11 篇）' },
         { title: 'Flow Matching for Generative Modeling', author: 'Y. Lipman et al.', venue: 'ICLR', year: 2023, note: '流匹配（第 11 篇）' },
         { title: 'High-Resolution Image Synthesis with Latent Diffusion Models', author: 'R. Rombach et al.', venue: 'CVPR', year: 2022, note: '潜空间扩散 / Stable Diffusion（第 11、12 篇）' },
         { title: 'World Models', author: 'D. Ha, J. Schmidhuber', venue: 'arXiv / NeurIPS 2018', year: 2018, note: 'V + M + C 世界模型（第 14 篇）' },
         { title: 'NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis', author: 'B. Mildenhall et al.', venue: 'ECCV', year: 2020, note: 'NeRF（第 15 篇）' },
         { title: '3D Gaussian Splatting for Real-Time Radiance Field Rendering', author: 'B. Kerbl, G. Kopanas, T. Leimkühler, G. Drettakis', venue: 'ACM TOG (SIGGRAPH)', year: 2023, note: '3DGS（第 15 篇）' },
+        { title: 'Toolformer: Language Models Can Teach Themselves to Use Tools', author: 'T. Schick et al.', venue: 'NeurIPS', year: 2023, note: '让模型自己学会插入 API 调用（第 16 篇）' },
+        { title: 'ReAct: Synergizing Reasoning and Acting in Language Models', author: 'S. Yao et al.', venue: 'ICLR', year: 2023, note: '推理与行动交替的 Agent 循环（第 17 篇）' },
+        { title: 'SWE-bench: Can Language Models Resolve Real-World GitHub Issues?', author: 'C. E. Jimenez et al.', venue: 'ICLR', year: 2024, note: '编程 Agent 的评测（第 17、18 篇）' },
+        { title: 'Efficient Memory Management for Large Language Model Serving with PagedAttention', author: 'W. Kwon et al.', venue: 'SOSP', year: 2023, note: 'KV cache 的管理与前缀共享（第 18 篇）' },
     ],
 });

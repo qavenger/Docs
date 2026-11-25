@@ -1,5 +1,5 @@
 // check_cpp.js — 把一篇讲义里的全部 C++ 代码块拼成一个翻译单元，用 clang++ 做语法 / 类型检查（-fsyntax-only）。
-// 用法（在 pages/ 下）：node tools/check_cpp.js 04_transformer.lab.js [--keep]
+// 用法（在 pages/ 下）：node tools/check_cpp.js 07_transformer.lab.js [--keep]
 // 规则：
 //   · 顺序 = graph.common（跳过 LM.CPP 库本身，改为 #include 全部 cpp/minml_*.h）→ library → 各步骤代码（按页面顺序）→ 节点详情代码。
 //     所以「先定义后使用」：步骤代码里用到的辅助函数，要么在更早的代码块里，要么放进 graph.common / library。
@@ -31,6 +31,12 @@ const PLstub = {
 const sources = ['llm_common.js'];
 if (fs.existsSync(path.join(pages, 'llm_weights.js'))) sources.push('llm_weights.js');
 const pageSrc = fs.readFileSync(path.join(pages, file), 'utf8');
+if (/\bAGT(_CPP|_W)?\b/.test(pageSrc)) sources.push('agent_common.js', 'agent_cpp.js', 'agent_weights.js');   // 第 16–18 篇与入口页：会用工具的迷你 GPT
+if (/\bTK(_CPP|_W|CAT)?\b/.test(pageSrc)) sources.push('tk_bpe.js', 'tools_catalog.js', 'tools_common.js', 'tools_cpp.js', 'tools_weights.js');   // 第 19–21 篇：工具目录、检索与 MCP
+if (/\bCA(_CPP)?\b/.test(pageSrc)) sources.push('coding_common.js', 'coding_cpp.js');   // 第 20 篇：编程 Agent（虚拟仓库、工具、仓库地图）
+if (/\bMC(_CPP)?\b/.test(pageSrc)) sources.push('mcp_common.js', 'mcp_cpp.js');   // 第 21 篇：引擎与商用软件（MCP）
+const uniq = [...new Set(sources)];
+sources.length = 0; sources.push(...uniq);
 const ctx = { console, Math, Float32Array, Float64Array, Int32Array, Int8Array, Uint8Array, Uint16Array, Uint32Array, Int16Array, Array, Object, Map, Set, JSON, Number, String, Date, Promise, Proxy, Symbol, isFinite, isNaN, parseInt, parseFloat, setTimeout, clearTimeout };
 ctx.window = ctx; ctx.PipelineLab = PLstub; ctx.PL = PLstub;
 vm.createContext(ctx);
@@ -66,7 +72,7 @@ if (library) (library.blocks || []).forEach((b, i) => push(`library#${i} ${b.tit
 
 // 拼成一个翻译单元：每块前面加 #line 注释，报错时能对回代码块
 const dedent = (s) => { const ls = s.replace(/\t/g, '    ').replace(/^\s*\n/, '').replace(/\s+$/, '').split('\n'); const ind = Math.min(...ls.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length)); return isFinite(ind) ? ls.map((l) => l.slice(ind)).join('\n') : ls.join('\n'); };
-let tu = '#include "minml_gpt.h"\n#include <array>\n#include <map>\n#include <set>\n#include <numeric>\n#include <cstring>\n#include <cassert>\n#include <climits>\n#include <cfloat>\n#include <utility>\n#include <tuple>\n#include <unordered_map>\n#include <queue>\n#include <deque>\n#include <random>\n#include <chrono>\n#include <complex>\n';
+let tu = '#include "minml_gpt.h"\n#include <array>\n#include <map>\n#include <set>\n#include <numeric>\n#include <cstring>\n#include <cassert>\n#include <climits>\n#include <cfloat>\n#include <utility>\n#include <tuple>\n#include <unordered_map>\n#include <queue>\n#include <deque>\n#include <random>\n#include <chrono>\n#include <complex>\n#include <functional>\n#include <memory>\n#include <regex>\n#include <filesystem>\n#include <fstream>\n#include <sstream>\n#include <cstdio>\n';
 blocks.forEach((b, i) => { tu += `\n// ═══ [${i}] ${b.where} ═══\n#line 1 "block${i}"\n${dedent(b.text)}\n`; });
 const tmp = path.join(os.tmpdir(), `check_cpp_${path.basename(file, '.lab.js')}.cpp`);
 fs.writeFileSync(tmp, tu);

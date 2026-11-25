@@ -1857,7 +1857,7 @@ const LANG = {
         semRe: /^$/,
     },
     cpp: {
-        kw: words(C_KW + ' class public private protected virtual override final new delete this nullptr template typename namespace using constexpr auto enum union operator friend explicit mutable noexcept static_assert co_await'),
+        kw: words(C_KW + ' class public private protected virtual override final new delete this nullptr template typename namespace using constexpr auto enum union operator friend explicit mutable noexcept static_assert co_await try catch throw'),
         ty: words('void bool char short int long unsigned signed float double size_t uint8_t uint16_t uint32_t uint64_t int8_t int16_t int32_t int64_t std vector array string'),
         tyRe: /^(float|int|uint)[234](x[234])?$|^[A-Z]\w*_t$/, at: words(''), semRe: /^$/,
     },
@@ -2627,7 +2627,7 @@ function miniControl(p) {
         inp.value = String(p.raw);
     } else {
         inp = document.createElement('input');
-        inp.type = p.type === 'check' ? 'checkbox' : p.type === 'color' ? 'color' : p.type === 'number' ? 'number' : 'range';
+        inp.type = p.type === 'check' ? 'checkbox' : p.type === 'color' ? 'color' : p.type === 'number' ? 'number' : p.type === 'text' ? 'text' : 'range';
         if (p.type === 'check') inp.checked = !!p.raw;
         else { if (p.min != null) inp.min = p.min; if (p.max != null) inp.max = p.max; if (p.step != null) inp.step = p.step; inp.value = p.raw; }
     }
@@ -3684,6 +3684,7 @@ function sigOf(cv) {   // exact hash of the canvas pixels (a drawImage downscale
     return h1.toString(36) + '.' + h2.toString(36) + '.' + cv.width + 'x' + cv.height;
 }
 function altValueOf(p) {
+    if (p.type === 'text') return p.alt != null && String(p.alt) !== String(p.raw) ? String(p.alt) : undefined;   // free text: scan with the declared alternative value
     if (p.type === 'check') return !p.raw;
     if (p.type === 'select') { const vals = p.options.map((o) => String(typeof o === 'object' ? o.value : o)), i = vals.indexOf(String(p.raw)); return vals.length > 1 ? vals[(i + 1) % vals.length] : undefined; }
     if (p.type === 'color') { const c = PL.hexToRgb(String(p.raw)); return '#' + c.map((v) => Math.round((1 - v) * 255).toString(16).padStart(2, '0')).join(''); }
@@ -4166,7 +4167,7 @@ const LM = (function () {
         });
     };
 
-    // ── 第二批算子（第 08–15 篇：VAE、卷积 / U-Net、扩散、世界模型…）。全部做过有限差分梯度校验（tools/test_engine.js） ──
+    // ── 第二批算子（第 03–05、11–15 篇：VAE、卷积 / U-Net、扩散、世界模型…）。全部做过有限差分梯度校验（tools/test_engine.js） ──
     const unary = (fwd, dfn) => function (A) {   // dfn(x, y) = dy/dx
         const Y = new Tensor(A.r, A.c), a = A.data, y = Y.data;
         for (let i = 0; i < y.length; i++) y[i] = fwd(a[i]);
@@ -4653,7 +4654,7 @@ const LM = (function () {
         return { itos, stoi, size: itos.length, encode: (s) => Int32Array.from(Array.from(s, (ch) => stoi.get(ch))), decode: (ids) => Array.from(ids, (i) => itos[i]).join('') };
     };
 
-    // ═════════════════════════════════ 程序化手写数字（与第 02 篇同一个生成器，第 08、09 篇复用） ═════════════════════════════════
+    // ═════════════════════════════════ 程序化手写数字（与第 02 篇同一个生成器，第 03、04 篇复用） ═════════════════════════════════
     // 16×16 灰度（0..1），字形 = 笔画折线 + 随机仿射 / 粗细 / 手抖 / 噪声。MNIST（28×28、6 万张）的缩小替身。
     LM.digits = (() => {
         const IMG = 16, D = IMG * IMG, K = 10;
@@ -5048,37 +5049,52 @@ const LM = (function () {
     draw.gridHit = function (canvas, info) { const g = canvas._lmGrid; if (!g || !info) return -1; const c = Math.floor((info.dx - g.gap) / (g.cell + g.gap)), r = Math.floor((info.dy - g.gap) / (g.cell * g.H / g.W + g.gap + g.lab)); const k = r * g.cols + c; return c >= 0 && c < g.cols && k >= 0 && k < g.n ? k : -1; };
 
     // ═════════════════════════════════ 系列导航 ═════════════════════════════════
-    // 篇号 = 写作顺序（正文里互相引用「第 05 篇」），part = 知识结构里的位置（入口页和导航条按 part 分组：从共享基础到分化领域）
+    // 篇号 = 分类顺序（同时也是一种合法的前置知识顺序：每篇的前置篇号都更小），part = 知识结构里的位置（入口页和导航条按 part 分组：从共享基础到分化领域）
     LM.PARTS = [
         { id: 'base', name: '共享基础', desc: '所有模型都要用的：优化、反向传播、卷积、潜空间、强化学习' },
         { id: 'arch', name: '通用架构', desc: '把任何数据变成 token 序列，再用 Transformer 处理' },
         { id: 'llm', name: '大语言模型', desc: '预训练学知识，后训练学说话' },
         { id: 'domain', name: '分化领域', desc: '在共享基础上长出来的各个方向：多模态理解、扩散生成、视频、音频、世界模型、3D' },
+        { id: 'agent', name: '智能体', desc: '让语言模型调用工具、在循环里完成任务：Tool Calling、Agent、Harness' },
     ];
+    /** 篇号按「分类」顺序排（同一类连续编号）；pre = 直接的前置篇（读这一篇之前最好先读的）。这个顺序本身也满足前置关系：每篇的前置都排在它前面 */
     LM.PAGES = [
-        { file: '01_linear_regression.html', no: '01', part: 'base', title: 'Hello World：线性回归与梯度下降', short: '线性回归 · 梯度下降' },
-        { file: '02_mlp_backprop.html', no: '02', part: 'base', title: '手写数字：从 Softmax 回归到 MLP 与反向传播', short: 'MLP · 反向传播' },
-        { file: '03_tokenizer_embedding.html', no: '03', part: 'arch', title: '文本变向量：Tokenizer、Embedding 与位置编码', short: 'Tokenizer · Embedding' },
-        { file: '04_transformer.html', no: '04', part: 'arch', title: 'Transformer：逐层拆解一次前向传播', short: 'Attention · Transformer' },
-        { file: '05_pretraining.html', no: '05', part: 'llm', title: '预训练：在浏览器里从零训练一个迷你 GPT', short: '预训练 · 采样' },
-        { file: '06_alignment.html', no: '06', part: 'llm', title: '后训练与对齐：SFT、奖励模型、RLHF、DPO、GRPO', short: 'SFT · RLHF · DPO' },
-        { file: '07_multimodal.html', no: '07', part: 'domain', title: '多模态：ViT、CLIP 对比学习与迷你 LLaVA', short: 'ViT · CLIP · LLaVA' },
-        { file: '08_cnn_unet.html', no: '08', part: 'base', title: '卷积神经网络：从卷积核到 U-Net', short: 'CNN · U-Net' },
-        { file: '09_latent_vae.html', no: '09', part: 'base', title: '潜空间：自编码器、VAE 与 VQ-VAE', short: 'AE · VAE · VQ' },
-        { file: '10_reinforcement_learning.html', no: '10', part: 'base', title: '强化学习：从价值迭代到策略梯度', short: '强化学习' },
-        { file: '11_diffusion.html', no: '11', part: 'domain', title: '扩散模型与流匹配：从噪声里生成数据', short: '扩散 · 流匹配' },
-        { file: '12_video_generation.html', no: '12', part: 'domain', title: '视频生成：时空扩散与时间一致性', short: '视频生成' },
-        { file: '13_audio_generation.html', no: '13', part: 'domain', title: '音频与语音：频谱、音频 token 与生成', short: '音频 · 语音' },
-        { file: '14_world_models.html', no: '14', part: 'domain', title: '世界模型：学会模拟环境，在想象中规划', short: '世界模型' },
-        { file: '15_nerf_gaussian_splatting.html', no: '15', part: 'domain', title: '3D 重建：NeRF 与 3D Gaussian Splatting', short: 'NeRF · 3DGS' },
+        { file: '01_linear_regression.html', no: '01', part: 'base', pre: [], title: 'Hello World：线性回归与梯度下降', short: '线性回归 · 梯度下降' },
+        { file: '02_mlp_backprop.html', no: '02', part: 'base', pre: ['01'], title: '手写数字：从 Softmax 回归到 MLP 与反向传播', short: 'MLP · 反向传播' },
+        { file: '03_cnn_unet.html', no: '03', part: 'base', pre: ['02'], title: '卷积神经网络：从卷积核到 U-Net', short: 'CNN · U-Net' },
+        { file: '04_latent_vae.html', no: '04', part: 'base', pre: ['03'], title: '潜空间：自编码器、VAE 与 VQ-VAE', short: 'AE · VAE · VQ' },
+        { file: '05_reinforcement_learning.html', no: '05', part: 'base', pre: ['02'], title: '强化学习：从价值迭代到策略梯度', short: '强化学习' },
+        { file: '06_tokenizer_embedding.html', no: '06', part: 'arch', pre: ['02'], title: '文本变向量：Tokenizer、Embedding 与位置编码', short: 'Tokenizer · Embedding' },
+        { file: '07_transformer.html', no: '07', part: 'arch', pre: ['06'], title: 'Transformer：逐层拆解一次前向传播', short: 'Attention · Transformer' },
+        { file: '08_pretraining.html', no: '08', part: 'llm', pre: ['07'], title: '预训练：在浏览器里从零训练一个迷你 GPT', short: '预训练 · 采样' },
+        { file: '09_alignment.html', no: '09', part: 'llm', pre: ['08', '05'], title: '后训练与对齐：SFT、奖励模型、RLHF、DPO、GRPO', short: 'SFT · RLHF · DPO' },
+        { file: '10_multimodal.html', no: '10', part: 'domain', pre: ['08'], title: '多模态：ViT、CLIP 对比学习与迷你 LLaVA', short: 'ViT · CLIP · LLaVA' },
+        { file: '11_diffusion.html', no: '11', part: 'domain', pre: ['03', '04'], title: '扩散模型与流匹配：从噪声里生成数据', short: '扩散 · 流匹配' },
+        { file: '12_video_generation.html', no: '12', part: 'domain', pre: ['11', '07'], title: '视频生成：时空扩散与时间一致性', short: '视频生成' },
+        { file: '13_audio_generation.html', no: '13', part: 'domain', pre: ['04', '08', '11'], title: '音频与语音：频谱、音频 token 与生成', short: '音频 · 语音' },
+        { file: '14_world_models.html', no: '14', part: 'domain', pre: ['05', '04'], title: '世界模型：学会模拟环境，在想象中规划', short: '世界模型' },
+        { file: '15_nerf_gaussian_splatting.html', no: '15', part: 'domain', pre: ['02'], title: '3D 重建：NeRF 与 3D Gaussian Splatting', short: 'NeRF · 3DGS' },
+        { file: '16_tool_calling.html', no: '16', part: 'agent', pre: ['09'], title: '工具调用：模型怎样「调用函数」', short: 'Tool Calling' },
+        { file: '17_agent_loop.html', no: '17', part: 'agent', pre: ['16'], title: 'Agent：在循环里用工具完成任务', short: 'Agent 循环' },
+        { file: '18_agent_harness.html', no: '18', part: 'agent', pre: ['17'], title: 'Harness：Agent 外面那一圈运行时', short: 'Harness' },
+        { file: '19_tool_retrieval.html', no: '19', part: 'agent', pre: ['18', '06'], title: '成千上万个工具：检索、路由与按需加载', short: '工具检索' },
+        { file: '20_coding_agent.html', no: '20', part: 'agent', pre: ['18', '19'], title: '编程 Agent：几个通用工具，做成千上万种事', short: 'Coding Agent' },
+        { file: '21_engine_mcp.html', no: '21', part: 'agent', pre: ['19', '20'], title: '接进游戏引擎与商用软件：MCP、脚本接口、Computer Use', short: '引擎 · MCP' },
     ];
-    /** 系列导航条 HTML。cur = 当前篇序号（'01'…，入口页传 null）；fromIndex = 入口页（链接加 pages/ 前缀）。上一篇 / 下一篇按篇号顺序 */
+    /** 前置关系：直接前置、全部前置（传递闭包）、直接后续、深度（最长前置链的长度，01 = 0） */
+    LM.prePages = (no) => ((LM.PAGES.find((p) => p.no === no) || {}).pre || []).map((n) => LM.PAGES.find((p) => p.no === n)).filter(Boolean);
+    LM.postPages = (no) => LM.PAGES.filter((p) => (p.pre || []).includes(no));
+    LM.allPre = (no) => { const out = new Set(), go = (n) => LM.prePages(n).forEach((p) => { if (!out.has(p.no)) { out.add(p.no); go(p.no); } }); go(no); return [...out].sort(); };
+    LM.depth = (no) => { const ps = LM.prePages(no); return ps.length ? 1 + Math.max(...ps.map((p) => LM.depth(p.no))) : 0; };
+    /** 系列导航条 HTML。cur = 当前篇序号（'01'…，入口页传 null）；fromIndex = 入口页（链接加 pages/ 前缀）。上一篇 / 下一篇按篇号顺序；篇内再列出前置与后续 */
     LM.navHtml = function (cur, fromIndex) {
         const pre = fromIndex ? 'pages/' : '', home = fromIndex ? 'index.html' : '../index.html';
         const i = LM.PAGES.findIndex((p) => p.no === cur), prev = LM.PAGES[i - 1], next = LM.PAGES[i + 1];
         const chip = (p) => (p.no === cur ? `<span class="lm-nav-cur">${p.no} ${p.short}</span>` : `<a href="${pre}${p.file}">${p.no} ${p.short}</a>`);
         const groups = LM.PARTS.map((pt) => `<span class="lm-nav-part">${pt.name}</span>${LM.PAGES.filter((p) => p.part === pt.id).map(chip).join('')}`).join('<span class="lm-nav-sep"></span>');
-        return `<div class="lm-nav"><a class="lm-nav-home" href="${home}">⌂ 系列目录</a>${groups}</div>` +
+        const link = (p) => `<a href="${pre}${p.file}">${p.no} ${p.short}</a>`, pres = cur ? LM.prePages(cur) : [], posts = cur ? LM.postPages(cur) : [];
+        const preLine = cur ? `<div class="lm-nav-pre"><span class="lm-nav-k">前置知识</span>${pres.length ? pres.map(link).join('') : '<span class="lm-nav-none">无（从这里开始）</span>'}<span class="lm-nav-k">读完可以接着读</span>${posts.length ? posts.map(link).join('') : '<span class="lm-nav-none">—</span>'}</div>` : '';
+        return `<div class="lm-nav"><a class="lm-nav-home" href="${home}">⌂ 系列目录</a>${groups}</div>` + preLine +
             (cur ? `<div class="lm-nav-pn">${prev ? `<a href="${prev.file}">← ${prev.no} ${prev.title}</a>` : '<span></span>'}${next ? `<a href="${next.file}">${next.no} ${next.title} →</a>` : '<span></span>'}</div>` : '');
     };
     LM.CSS = `
@@ -5089,6 +5105,11 @@ const LM = (function () {
         .lm-nav .lm-nav-home { color: #c8ccd4; border-color: #3a3f46; }
         .lm-nav .lm-nav-part { border: none; background: none; color: #6f8496; padding: 2px 2px 2px 4px; font-size: 0.74rem; letter-spacing: 0.05em; }
         .lm-nav .lm-nav-sep { border: none; background: none; padding: 0; width: 6px; }
+        .lm-nav-pre { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 10px; font-size: 0.78rem; }
+        .lm-nav-pre a { padding: 1px 8px; border: 1px solid #2a3a2a; border-radius: 10px; color: #9fd0a0; background: #0d1610; }
+        .lm-nav-pre a:hover { background: #142a18; text-decoration: none; }
+        .lm-nav-pre .lm-nav-k { color: #6f8496; margin-left: 4px; }
+        .lm-nav-pre .lm-nav-none { color: #55606b; }
         .lm-nav-pn { display: flex; justify-content: space-between; gap: 12px; font-size: 0.8rem; margin: -2px 0 10px; }
         .lm-tbl { border-collapse: collapse; margin: 6px 0; font-size: 0.86rem; }
         .lm-tbl th, .lm-tbl td { border: 1px solid #262b31; padding: 3px 9px; text-align: left; vertical-align: top; }
@@ -6191,6 +6212,25 @@ inline std::string decode(const Vocab& v, const std::vector<int>& ids) {
     // <CPP-END>
 
     return LM;
+})();
+// 步骤同时写了 blocks 和 formula / code / previews / notes / warn 时，框架只渲染 blocks；这里把后者按默认顺序接到 blocks 后面（系列里的「教学版 → 生产版」步骤是「表格 + 预览 + 说明」）
+(function () {
+    if (typeof PipelineLab === 'undefined' || !PipelineLab.mount || PipelineLab.mount._lmBlocks) return;
+    const mount0 = PipelineLab.mount, list = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
+    PipelineLab.mount = function (spec) {
+        for (const st of (spec && spec.steps) || []) {
+            if (!st.blocks) continue;
+            const extra = [];
+            list(st.formula).forEach((f) => extra.push(typeof f === 'object' ? Object.assign({ type: 'formula' }, f) : { type: 'formula', text: f }));
+            list(st.code).forEach((c) => extra.push(Object.assign({ type: 'code' }, c)));
+            if (st.previews) extra.push({ type: 'previews', items: st.previews });
+            list(st.notes || st.note).forEach((n) => extra.push({ type: 'note', html: n }));
+            list(st.warn || st.warns).forEach((n) => extra.push({ type: 'warn', html: n }));
+            if (extra.length) { st.blocks = st.blocks.concat(extra); for (const k of ['formula', 'code', 'previews', 'notes', 'note', 'warn', 'warns']) delete st[k]; }
+        }
+        return mount0.apply(this, arguments);
+    };
+    PipelineLab.mount._lmBlocks = true;
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = LM;
 
@@ -7696,7 +7736,7 @@ PipelineLab.mount({
         // ─────────────────────────────── 03 谱偏差与位置编码 ───────────────────────────────
         {
             id: 'fourier', title: '谱偏差与位置编码：坐标 MLP 拟合一张图', tag: 'PE',
-            desc: 'NeRF 的 MLP 输入的是坐标，输出那里的 σ 和颜色。但普通 MLP 有<strong>谱偏差</strong>（spectral bias，Rahaman 等 2019）：梯度下降总是先学会函数的低频成分，高频细节学得极慢——直接喂坐标，得到的是糊成一团的结果。NeRF 的办法是先把坐标变成一组频率按 2 倍递增的正弦 / 余弦（<strong>位置编码</strong> γ），再喂给 MLP：高频已经写在输入里，MLP 只需要把它们组合起来。这和第 03 篇 Transformer 的<a href="03_tokenizer_embedding.html#step-sinpe">正弦位置编码</a>是同一个思路（那里编码的是 token 的序号，这里编码的是连续的空间坐标）；Tancik 等（2020）用神经正切核（NTK）解释了它为什么有效，并把它推广成随机的 Fourier features。下面用同一个两层 × 64 宽的 MLP 在浏览器里实时拟合一张 48×48 的照片：中间直接喂 (x, y)，右边喂 γ(x, y)。',
+            desc: 'NeRF 的 MLP 输入的是坐标，输出那里的 σ 和颜色。但普通 MLP 有<strong>谱偏差</strong>（spectral bias，Rahaman 等 2019）：梯度下降总是先学会函数的低频成分，高频细节学得极慢——直接喂坐标，得到的是糊成一团的结果。NeRF 的办法是先把坐标变成一组频率按 2 倍递增的正弦 / 余弦（<strong>位置编码</strong> γ），再喂给 MLP：高频已经写在输入里，MLP 只需要把它们组合起来。这和第 06 篇 Transformer 的<a href="06_tokenizer_embedding.html#step-sinpe">正弦位置编码</a>是同一个思路（那里编码的是 token 的序号，这里编码的是连续的空间坐标）；Tancik 等（2020）用神经正切核（NTK）解释了它为什么有效，并把它推广成随机的 Fourier features。下面用同一个两层 × 64 宽的 MLP 在浏览器里实时拟合一张 48×48 的照片：中间直接喂 (x, y)，右边喂 γ(x, y)。',
             formula: [
                 'γ(p) = (p, sin(2^0 π p), cos(2^0 π p), …, sin(2^{L−1} π p), cos(2^{L−1} π p))   // 每个坐标分量各编码一遍：2D 输入维度 = 2 + 4L，3D = 3 + 6L',
                 '最高频的周期 = 2/2^{L−1}（归一化坐标）= W/2^{L−1} 像素   // W = 48：L = 5 → 3 像素；L = 6 → 1.5 像素，已经低于奈奎斯特的 2 像素',
@@ -7786,7 +7826,7 @@ PipelineLab.mount({
                     },
                 },
                 {
-                    id: 'ffEnc', label: 'γ(x) 沿这一行的样子', sub: '行 = 这一行的 48 个像素（x 从 −1 到 1）· 列 = γ 的 2 + 4L 维 · 和第 03 篇的位置编码热图是同一种图', size: [360, 230],
+                    id: 'ffEnc', label: 'γ(x) 沿这一行的样子', sub: '行 = 这一行的 48 个像素（x 从 −1 到 1）· 列 = γ 的 2 + 4L 维 · 和第 06 篇的位置编码热图是同一种图', size: [360, 230],
                     render: (c, S) => {
                         const W = P15.IMG, L = S.ffL, D = P15.pe2Dim(L), M = new Float32Array(W * D);
                         for (let i = 0; i < W; i++) P15.pe2(L, (i + 0.5) / W * 2 - 1, 0.1, M, i * D);

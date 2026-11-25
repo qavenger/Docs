@@ -923,7 +923,7 @@ PipelineLab.mount({
         title: '让网络自己学会「看」：从一层线性打分到多层网络与反向传播',
         flow: ['16×16 图 → 256 维向量', 'Softmax 回归', '交叉熵', '隐藏层 + 非线性', '前向传播', '反向传播', '训练循环', '优化器 / 初始化 / 正则化'],
         html: LM.navHtml('02') + `
-            <p>第 01 篇的四件套——<strong>模型、损失、梯度、优化器</strong>——这一篇原样保留，只是全部放大：输入从 1 个数变成一张 16×16 的灰度图（256 个数），输出从 1 个数变成 10 个类别的概率，模型从一条直线变成多层神经网络（MLP，Multi-Layer Perceptron），梯度不再手推公式，而是用<strong>反向传播</strong>（Backpropagation）一层一层算出来。这套机制原封不动地用在后面所有的大模型里：第 04 篇 Transformer 的每一层都有一个和本篇几乎一样的 MLP。</p>
+            <p>第 01 篇的四件套——<strong>模型、损失、梯度、优化器</strong>——这一篇原样保留，只是全部放大：输入从 1 个数变成一张 16×16 的灰度图（256 个数），输出从 1 个数变成 10 个类别的概率，模型从一条直线变成多层神经网络（MLP，Multi-Layer Perceptron），梯度不再手推公式，而是用<strong>反向传播</strong>（Backpropagation）一层一层算出来。这套机制原封不动地用在后面所有的大模型里：第 07 篇 Transformer 的每一层都有一个和本篇几乎一样的 MLP。</p>
             <p><strong>数据是 MNIST 的缩小替身。</strong>真实的 MNIST 是 28×28 的手写数字，6 万张训练 + 1 万张测试；这里在页面里程序化生成 4000 张训练 + 500 张测试的 16×16 数字（笔画字形 + 随机仿射 / 粗细 / 抖动 / 噪点），点顶栏「重新生成数据」换一批。</p>
             <p>页面里<strong>实时训练</strong>两个模型：Step 04 的 Softmax 回归和 Step 08 的 MLP（每帧 4 步 mini-batch SGD，训练到 3000 步停止；改训练参数或点「重新训练」从头开始）。Step 02 / 03 和 06 / 07 用这两个模型的<strong>当前权重</strong>分析选中的那张图，所以训练进行中它们也在变（<span style="color:#a45fa5">LIVE</span>）。代码块是同一算法的 C++ 版本（C++17 + 标准库；张量和随机数用本系列自带的小库 <code>pages/cpp/minml_*.h</code>，在节点图的 Common 面板里），所有反向传播都是手写的——只有 Step 07 的对照组和 Step 12 的生产版用了库里的自动微分。</p>`,
     },
@@ -1414,7 +1414,7 @@ PipelineLab.mount({
         // ───────────────────────────── 05 隐藏层与非线性 ─────────────────────────────
         {
             id: 'nonlin', title: '隐藏层与非线性：为什么线性层叠起来还是线性', tag: 'MODEL',
-            desc: '要突破线性的极限，就在输入和输出之间加一层<strong>隐藏层</strong>：<code>h = act(xW₁ + b₁)</code>，再 <code>z = hW₂ + b₂</code>。关键是激活函数 act：如果去掉它，两层线性变换的复合 <code>x(W₁W₂) + (b₁W₂ + b₂)</code> 仍然是一个线性变换——叠多少层都等价于一层。第一张图就是这样一个「两层线性网络」在 XOR 上的结果：只能画出一条直线边界，准确率约 50%（XOR 不是线性可分的——Minsky & Papert 1969 正是用它说明单层感知机的局限）。加上逐元素的非线性之后，每个隐藏单元变成一个「折痕」或「台阶」（第二张图的白线是 16 个单元各自的分界线），组合起来就能拼出弯曲的边界；足够宽的单隐藏层网络可以以任意精度逼近连续函数（万能近似定理，Cybenko 1989、Hornik et al. 1989）。常用的激活：sigmoid（早期神经网络）、tanh、ReLU（2010 年代以来的默认选择：计算便宜，正半轴梯度恒为 1）、GELU（BERT、GPT 系列 Transformer 的默认，第 04 篇的 FFN 用的就是它）。',
+            desc: '要突破线性的极限，就在输入和输出之间加一层<strong>隐藏层</strong>：<code>h = act(xW₁ + b₁)</code>，再 <code>z = hW₂ + b₂</code>。关键是激活函数 act：如果去掉它，两层线性变换的复合 <code>x(W₁W₂) + (b₁W₂ + b₂)</code> 仍然是一个线性变换——叠多少层都等价于一层。第一张图就是这样一个「两层线性网络」在 XOR 上的结果：只能画出一条直线边界，准确率约 50%（XOR 不是线性可分的——Minsky & Papert 1969 正是用它说明单层感知机的局限）。加上逐元素的非线性之后，每个隐藏单元变成一个「折痕」或「台阶」（第二张图的白线是 16 个单元各自的分界线），组合起来就能拼出弯曲的边界；足够宽的单隐藏层网络可以以任意精度逼近连续函数（万能近似定理，Cybenko 1989、Hornik et al. 1989）。常用的激活：sigmoid（早期神经网络）、tanh、ReLU（2010 年代以来的默认选择：计算便宜，正半轴梯度恒为 1）、GELU（BERT、GPT 系列 Transformer 的默认，第 07 篇的 FFN 用的就是它）。',
             formula: [
                 'h = act(x · W_1 + b_1)      z = h · W_2 + b_2      p = softmax(z)',
                 '去掉 act：z = x (W_1 W_2) + (b_1 W_2 + b_2) = x · W′ + b′   // 仍是线性；W′ = W₁W₂ 的秩 ≤ min(H, 10)',
@@ -2007,7 +2007,7 @@ PipelineLab.mount({
                 },
             ],
             notes: '点击地形把起点放到别处：SGD（蓝，η = 0.4，已接近这个峡谷的稳定上限 2/4 = 0.5）在陡的方向上来回锯齿、沿平缓的谷底慢慢爬；Momentum（橙，同样的 η）冲过头又拐回来、振荡很大，但沿谷底快得多；Adam（绿）每个坐标的步长被归一化，平稳地沿谷底前进。MLP 上，同样 η 的 Momentum 比 SGD 收敛快得多——它的稳态等效步长是 10η；如果把 Momentum 的 η 降到 η/10，它就和 SGD 几乎一样（Node 原型里验证过）。Adam 不调参、直接用默认的 10⁻³，loss 也比 η = 0.1 的 SGD 低一些——省掉调学习率的麻烦，是它流行的主要原因。',
-            warn: 'Adam 的学习率含义和 SGD 不同：它近似「每个参数每步移动的幅度」，所以 MLP 上取 10⁻³、二维函数上取 0.2（参数的尺度不同）。训练大模型用的 AdamW（第 05 篇）把权重衰减从梯度里拆出来单独做（Loshchilov & Hutter 2019），β₂ 也常取 0.95。二维函数上「谁最快」取决于学习率和起点：这里的 η 只是合理的固定取值，不是公平的调参比赛。',
+            warn: 'Adam 的学习率含义和 SGD 不同：它近似「每个参数每步移动的幅度」，所以 MLP 上取 10⁻³、二维函数上取 0.2（参数的尺度不同）。训练大模型用的 AdamW（第 08 篇）把权重衰减从梯度里拆出来单独做（Loshchilov & Hutter 2019），β₂ 也常取 0.95。二维函数上「谁最快」取决于学习率和起点：这里的 η 只是合理的固定取值，不是公平的调参比赛。',
         },
         // ───────────────────────────── 10 初始化与梯度流 ─────────────────────────────
         {
@@ -2085,7 +2085,7 @@ PipelineLab.mount({
                 },
             ],
             notes: '默认 ReLU + He：每层的标准差几乎不变（一条平线）。换成 <b>太小</b>：激活每层缩小十几倍，8 层后只剩 10⁻¹⁰ ~ 10⁻¹¹，信号根本传不到输出；<b>太大</b>：每层放大约 6 倍（≈ √(64/2)）。切到 <b>sigmoid</b>：权重梯度从输出层到第一层缩小好几个数量级（梯度消失）。把 <b>深度</b> 拖到 16，指数效应更夸张。Step 08 的训练也使用这里的 <b>初始化</b> 设置（两层网络受的影响小得多，但「太大」仍明显变差）。',
-            warn: '这些统计只是<strong>初始化时</strong>一个 batch 上的快照，训练开始后分布会变。现代深层网络还依靠归一化层（BatchNorm、LayerNorm）和残差连接让信号保持在合理范围（第 04 篇的 Transformer 每个子层都有 LayerNorm + 残差）。',
+            warn: '这些统计只是<strong>初始化时</strong>一个 batch 上的快照，训练开始后分布会变。现代深层网络还依靠归一化层（BatchNorm、LayerNorm）和残差连接让信号保持在合理范围（第 07 篇的 Transformer 每个子层都有 LayerNorm + 残差）。',
         },
         // ───────────────────────────── 11 正则化 ─────────────────────────────
         {
@@ -2172,9 +2172,9 @@ PipelineLab.mount({
                     <tr><td>求导</td><td>手写 <code>mlpBackward()</code>，逐层链式法则</td><td>autograd：<code>backward(loss)</code> 沿前向时记录的计算图自动反传（PyTorch / JAX 的做法，PyTorch 里写作 <code>loss.backward()</code>；本系列的 <code>minml_autograd.h</code> 是同一机制的极简版，见下面的代码）；只有写自定义算子时才需要手推梯度</td></tr>
                     <tr><td>计算</td><td>JS / C++ 循环，CPU 单线程</td><td>GPU 上的批量矩阵乘（cuBLAS、Tensor Core），batch 内的样本并行计算；混合精度（fp16 / bf16）</td></tr>
                     <tr><td>数据</td><td>16×16 程序化数字，4000 张</td><td>MNIST 28×28、6 万张训练图；再往上是 ImageNet（约 128 万张训练图）。数据增强（平移、旋转、弹性形变——Simard et al. 2003 在 MNIST 上用的正是弹性形变）</td></tr>
-                    <tr><td>模型</td><td>256 → H → 10 的 MLP</td><td>图像：卷积网络 CNN（LeNet-5 在 MNIST 上 0.95% 错误率）→ ResNet → ViT（第 07 篇）</td></tr>
-                    <tr><td>训练技巧</td><td>SGD / Momentum / Adam、He 初始化、L2 / dropout / 早停</td><td>再加 BatchNorm / LayerNorm、残差连接、学习率 warmup + 衰减、AdamW（第 05 篇）</td></tr>
-                    <tr><td>在大模型里</td><td>隐藏层 + 激活</td><td>Transformer 每一层的 FFN 就是一个 MLP：d → 4d → GELU → d，对每个 token 独立计算（第 04 篇）</td></tr></table>`,
+                    <tr><td>模型</td><td>256 → H → 10 的 MLP</td><td>图像：卷积网络 CNN（LeNet-5 在 MNIST 上 0.95% 错误率）→ ResNet → ViT（第 10 篇）</td></tr>
+                    <tr><td>训练技巧</td><td>SGD / Momentum / Adam、He 初始化、L2 / dropout / 早停</td><td>再加 BatchNorm / LayerNorm、残差连接、学习率 warmup + 衰减、AdamW（第 08 篇）</td></tr>
+                    <tr><td>在大模型里</td><td>隐藏层 + 激活</td><td>Transformer 每一层的 FFN 就是一个 MLP：d → 4d → GELU → d，对每个 token 独立计算（第 07 篇）</td></tr></table>`,
                 },
                 {
                     type: 'code', title: 'C++ · 自动微分版：同一个 MLP 与训练循环（写法对应 PyTorch）', src: `
@@ -2231,7 +2231,7 @@ PipelineLab.mount({
                     }],
                 },
                 { type: 'note', html: '真实 MNIST 上更多的参考点（错误率）：两层 MLP 加弹性形变数据增强 0.7%（Simard et al. 2003）；在 GPU 上训练的 6 层大 MLP 加弹性形变 0.35%（Ciresan et al. 2010）——足够大的 MLP 加上足够多的（增强）数据，也能非常强。' },
-                { type: 'note', html: '下一篇（03）从图像换到文本：文字怎样变成向量（Tokenizer、Embedding、位置编码），再交给第 04 篇的 Transformer——它的每一层里都有本篇的 MLP，训练它用的也是本篇的反向传播。' },
+                { type: 'note', html: '下一篇（03）还留在图像上：把全连接层换成在图上滑动的小卷积核，同样的手写数字只用几分之一的参数就能学好。文字怎样变成向量（Tokenizer、Embedding、位置编码）在第 06 篇，再交给第 07 篇的 Transformer——它的每一层里都有本篇的 MLP，训练它用的也是本篇的反向传播。' },
             ],
         },
     ],

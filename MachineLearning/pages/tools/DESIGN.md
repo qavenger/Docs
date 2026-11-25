@@ -15,11 +15,11 @@ F:\Docs\MachineLearning\
     llm_weights.js                ← 离线训练好的迷你 GPT「基座模型」权重（04、06 篇需要；05、07 可选）——不要修改
     01_linear_regression.lab.js   ← 已完成，作为风格与结构的参考实现
     02_mlp_backprop.lab.js        → 02_mlp_backprop.html
-    03_tokenizer_embedding.lab.js → 03_tokenizer_embedding.html
-    04_transformer.lab.js         → 04_transformer.html
-    05_pretraining.lab.js         → 05_pretraining.html
-    06_alignment.lab.js           → 06_alignment.html
-    07_multimodal.lab.js          → 07_multimodal.html
+    06_tokenizer_embedding.lab.js → 06_tokenizer_embedding.html
+    07_transformer.lab.js         → 07_transformer.html
+    08_pretraining.lab.js         → 08_pretraining.html
+    09_alignment.lab.js           → 09_alignment.html
+    10_multimodal.lab.js          → 10_multimodal.html
     index.lab.js                  → ../index.html
     tools\                        ← Node 脚本（测试引擎、离线训练权重）、各篇的截图目录 shotsNN\
 ```
@@ -31,11 +31,11 @@ SK="C:/Users/User/.claude/skills/pipeline-explainer/scripts"
 # 不需要基座权重的篇（02、03）：
 node "$SK/build_doc.mjs" llm_common.js 02_mlp_backprop.lab.js -o 02_mlp_backprop.html
 # 需要基座权重的篇（04、06，05/07 如用到也加上）：
-node "$SK/build_doc.mjs" llm_common.js llm_weights.js 04_transformer.lab.js -o 04_transformer.html
+node "$SK/build_doc.mjs" llm_common.js llm_weights.js 07_transformer.lab.js -o 07_transformer.html
 # 验证（截图放到各自的目录）：
-node "$SK/validate_doc.mjs" 04_transformer.html --shots tools/shots04
+node "$SK/validate_doc.mjs" 07_transformer.html --shots tools/shots07
 # 参数和预览定稿后生成「参数 → 步骤」映射，然后重新构建：
-node "$SK/validate_doc.mjs" 04_transformer.html --write-deps 04_transformer.lab.js --shots tools/shots04
+node "$SK/validate_doc.mjs" 07_transformer.html --write-deps 07_transformer.lab.js --shots tools/shots07
 ```
 
 - 指向**其他尚未完成的篇**的 `broken link` 错误是预期的（导航条链接全部 7 篇 + 入口），可以忽略；其他 error 必须清零。
@@ -60,7 +60,7 @@ node "$SK/validate_doc.mjs" 04_transformer.html --write-deps 04_transformer.lab.
   加载：`const base = LM.gpt.loadWeights(LM.gpt.create(LM_WEIGHTS.base.cfg, 1), LM_WEIGHTS.base.b64)`。
   它是 `cfg = {V:76, T:32, d:32, L:2, H:4, ff:128}`（28 928 个参数），在玩具世界语料上训练了 4000 步（batch 16），val loss 0.507。
 - **玩具世界语料 `LM.world`**：8 种动物 × 3 个属性（爱吃 / 住处 / 颜色）= 24 条事实；10 个句式（含需要「抄写」前文的句式：`…所以{名字}每天都吃{食物}`、`…，它住在{住处}`）；`world.sentence(rand, k)`、`world.corpus(rand, n)`、`world.questions`（问答模板，SFT 用）。
-- **字符级词表 `LM.vocab`**：76 个 token = 4 个特殊 token（`<pad>`=0、`<eos>`=1、`<user>`=2、`<bot>`=3）+ 72 个汉字/标点。`encode(str)`（特殊 token 写作 `<eos>` 等）、`decode(ids)`、`show(id)`（特殊 token 显示成 `⟨eos⟩`）。基座模型预训练时**从没把**特殊 token 当作输入或目标。注意：它们的 embedding **不是**初始化值——由于权重共享（wte 同时是 LM head），softmax 的梯度每一步都在推所有行，9 个从未出现的 token（4 个特殊 token + 什么？哪颜）在 Adam 下被推成了**同一个向量**（两两余弦 1.000，范数 3.34，而初始化时约 0.11）。所以 SFT 开始时 `<user>`、`<bot>`、`<eos>` 作为输入完全无法区分（第 03 篇实测，第 06 篇可以讲这一点）。`LM.makeVocab(specials, text)` 构造其他字符级词表（多模态 caption 用）。
+- **字符级词表 `LM.vocab`**：76 个 token = 4 个特殊 token（`<pad>`=0、`<eos>`=1、`<user>`=2、`<bot>`=3）+ 72 个汉字/标点。`encode(str)`（特殊 token 写作 `<eos>` 等）、`decode(ids)`、`show(id)`（特殊 token 显示成 `⟨eos⟩`）。基座模型预训练时**从没把**特殊 token 当作输入或目标。注意：它们的 embedding **不是**初始化值——由于权重共享（wte 同时是 LM head），softmax 的梯度每一步都在推所有行，9 个从未出现的 token（4 个特殊 token + 什么？哪颜）在 Adam 下被推成了**同一个向量**（两两余弦 1.000，范数 3.34，而初始化时约 0.11）。所以 SFT 开始时 `<user>`、`<bot>`、`<eos>` 作为输入完全无法区分（第 06 篇实测，第 09 篇可以讲这一点）。`LM.makeVocab(specials, text)` 构造其他字符级词表（多模态 caption 用）。
 - 绘图（深色主题、设计坐标）：`LM.draw.heat(canvas, data, R, C, {rowLabels, colLabels, map, range, symmetric, digits, hiRow, hiCol, hiCells, title, legend, square, cellMax, colorFor})`（NaN 画成暗色斜纹，适合因果掩码）+ `heatHit(canvas, info)`；`LM.draw.bars(canvas, vals, labels, {horizontal, colors, hi, range, digits, title, showValues})`；`LM.draw.tokens(canvas, toks, {px, showIds, title})` + `tokenHit`；`LM.draw.text(canvas, lines, {px, title})`（行可以是带颜色的片段数组）；`LM.draw.scatter(canvas, pts, {x, y, paths, lines, bg, xLabel, yLabel, equal, title})`（返回 `{X, Y, inv}`，probe/pick 时用 `inv(info.dx, info.dy)` 反算数据坐标——把返回值存到 `S` 里再在 probe 里用，probe 拿不到 canvas）；`LM.draw.curves(canvas, series, plotOpts)`；`LM.draw.imageGrid(canvas, imgs, W, H, {cols, labels, symmetric, map, outline})` + `gridHit`。
   `PL.draw.plot` 的坑：给了 `o.x` 时，没有自带 `x` 数组的 series 会被**拉伸铺满整个 x 范围**——画「前 k 步」这种部分曲线时必须给 series 传 `x: [0, 1, …, k]`。
 - Python 源码字符串：`LM.PY.gpt`（PyTorch 版 `GPTConfig / CausalSelfAttention / MLP / Block / GPT / init_weights`，与 JS 一一对应）、`LM.PY.gptInit`（`configure_init`）、`LM.PY.train`（`get_lr / get_batch / configure_optimizer`）。04–07 篇把需要的放进 `graph.common` 的 blocks，代码里调用 `GPT(...)`、`get_lr(...)` 等就能悬停跳转。
@@ -112,7 +112,7 @@ node "$SK/validate_doc.mjs" 04_transformer.html --write-deps 04_transformer.lab.
 7. 相似度与类比：余弦相似度热图、最近邻；类比测试结果如实展示
 8. 为什么需要位置信息：注意力对顺序不敏感（打乱 token → 输出集合不变，真实演示）；正弦位置编码热图与 PE(i)·PE(j) 随距离的变化
 9. RoPE：成对维度按 pos·θᵢ 旋转；q·k 只依赖相对位置 m−n（不同绝对位置的打分曲线完全重合，真实计算）
-10. 输入层合起来：X = E[ids] + P → [T × d]，交给第 04 篇
+10. 输入层合起来：X = E[ids] + P → [T × d]，交给第 07 篇
 11. 教学版 → 生产版：tiktoken / SentencePiece、byte fallback、真实词表大小（只写确定的：GPT-2 50257、LLaMA/LLaMA-2 32000、LLaMA-3 128256…）、中文 token 效率、特殊 token 与 chat template、权重共享、长上下文的 RoPE 外推（NTK / YaRN）
 
 ### 04 · Transformer：逐层拆解一次前向传播（PyTorch；构建时加 llm_weights.js）

@@ -1498,7 +1498,7 @@ PipelineLab.mount({
         // ─────────────────────────────── 03 谱偏差与位置编码 ───────────────────────────────
         {
             id: 'fourier', title: '谱偏差与位置编码：坐标 MLP 拟合一张图', tag: 'PE',
-            desc: 'NeRF 的 MLP 输入的是坐标，输出那里的 σ 和颜色。但普通 MLP 有<strong>谱偏差</strong>（spectral bias，Rahaman 等 2019）：梯度下降总是先学会函数的低频成分，高频细节学得极慢——直接喂坐标，得到的是糊成一团的结果。NeRF 的办法是先把坐标变成一组频率按 2 倍递增的正弦 / 余弦（<strong>位置编码</strong> γ），再喂给 MLP：高频已经写在输入里，MLP 只需要把它们组合起来。这和第 03 篇 Transformer 的<a href="03_tokenizer_embedding.html#step-sinpe">正弦位置编码</a>是同一个思路（那里编码的是 token 的序号，这里编码的是连续的空间坐标）；Tancik 等（2020）用神经正切核（NTK）解释了它为什么有效，并把它推广成随机的 Fourier features。下面用同一个两层 × 64 宽的 MLP 在浏览器里实时拟合一张 48×48 的照片：中间直接喂 (x, y)，右边喂 γ(x, y)。',
+            desc: 'NeRF 的 MLP 输入的是坐标，输出那里的 σ 和颜色。但普通 MLP 有<strong>谱偏差</strong>（spectral bias，Rahaman 等 2019）：梯度下降总是先学会函数的低频成分，高频细节学得极慢——直接喂坐标，得到的是糊成一团的结果。NeRF 的办法是先把坐标变成一组频率按 2 倍递增的正弦 / 余弦（<strong>位置编码</strong> γ），再喂给 MLP：高频已经写在输入里，MLP 只需要把它们组合起来。这和第 06 篇 Transformer 的<a href="06_tokenizer_embedding.html#step-sinpe">正弦位置编码</a>是同一个思路（那里编码的是 token 的序号，这里编码的是连续的空间坐标）；Tancik 等（2020）用神经正切核（NTK）解释了它为什么有效，并把它推广成随机的 Fourier features。下面用同一个两层 × 64 宽的 MLP 在浏览器里实时拟合一张 48×48 的照片：中间直接喂 (x, y)，右边喂 γ(x, y)。',
             formula: [
                 'γ(p) = (p, sin(2^0 π p), cos(2^0 π p), …, sin(2^{L−1} π p), cos(2^{L−1} π p))   // 每个坐标分量各编码一遍：2D 输入维度 = 2 + 4L，3D = 3 + 6L',
                 '最高频的周期 = 2/2^{L−1}（归一化坐标）= W/2^{L−1} 像素   // W = 48：L = 5 → 3 像素；L = 6 → 1.5 像素，已经低于奈奎斯特的 2 像素',
@@ -1588,7 +1588,7 @@ PipelineLab.mount({
                     },
                 },
                 {
-                    id: 'ffEnc', label: 'γ(x) 沿这一行的样子', sub: '行 = 这一行的 48 个像素（x 从 −1 到 1）· 列 = γ 的 2 + 4L 维 · 和第 03 篇的位置编码热图是同一种图', size: [360, 230],
+                    id: 'ffEnc', label: 'γ(x) 沿这一行的样子', sub: '行 = 这一行的 48 个像素（x 从 −1 到 1）· 列 = γ 的 2 + 4L 维 · 和第 06 篇的位置编码热图是同一种图', size: [360, 230],
                     render: (c, S) => {
                         const W = P15.IMG, L = S.ffL, D = P15.pe2Dim(L), M = new Float32Array(W * D);
                         for (let i = 0; i < W; i++) P15.pe2(L, (i + 0.5) / W * 2 - 1, 0.1, M, i * D);
